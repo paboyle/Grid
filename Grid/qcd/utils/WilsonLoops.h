@@ -367,7 +367,7 @@ public:
       FS = 0.125*(FS - adj(FS));
   }
 
-  static Real TopologicalCharge(GaugeLorentz &U){
+  static Real TopologicalCharge(const GaugeLorentz &U){
     // 4d topological charge
     assert(Nd==4);
     // Bx = -iF(y,z), By = -iF(z,y), Bz = -iF(x,y)

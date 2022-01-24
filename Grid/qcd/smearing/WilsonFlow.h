@@ -34,28 +34,44 @@ NAMESPACE_BEGIN(Grid);
 
 template <class Gimpl>
 class WilsonFlow: public Smear<Gimpl>{
+public:
+  //Store generic measurements to take during smearing process using std::function
+  typedef std::function<void(int, RealD, const typename Gimpl::GaugeField &)> FunctionType;  //int: step,  RealD: flow time,  GaugeField : the gauge field
+  
+private:
   unsigned int Nstep;
-  unsigned int measure_interval;
-  mutable RealD epsilon, taus;
-
+  RealD epsilon; //for regular smearing this is the time step, for adaptive it is the initial time step
+ 
+  std::vector< std::pair<int, FunctionType> > functions; //The int maps to the measurement frequency
 
   mutable WilsonGaugeAction<Gimpl> SG;
 
-  void evolve_step(typename Gimpl::GaugeField&) const;
-  void evolve_step_adaptive(typename Gimpl::GaugeField&, RealD);
-  RealD tau(unsigned int t)const {return epsilon*(t+1.0); }
+  //Evolve the gauge field by 1 step and update tau
+  void evolve_step(typename Gimpl::GaugeField &U, RealD &tau) const;
+  //Evolve the gauge field by 1 step and update tau and the current time step eps
+  void evolve_step_adaptive(typename Gimpl::GaugeField&U, RealD &tau, RealD &eps, RealD maxTau) const;
 
 public:
   INHERIT_GIMPL_TYPES(Gimpl)
 
+  void resetActions(){ functions.clear(); }
+
+  void addMeasurement(int meas_interval, FunctionType meas){ functions.push_back({meas_interval, meas}); }
+
+  //Set the class to perform the default measurements: 
+  //the plaquette energy density every step
+  //the plaquette topological charge every 'topq_meas_interval' steps
+  //and output to stdout
+  void setDefaultMeasurements(int topq_meas_interval = 1);
+
   explicit WilsonFlow(unsigned int Nstep, RealD epsilon, unsigned int interval = 1):
   Nstep(Nstep),
     epsilon(epsilon),
-    measure_interval(interval),
     SG(WilsonGaugeAction<Gimpl>(3.0)) {
     // WilsonGaugeAction with beta 3.0
     assert(epsilon > 0.0);
     LogMessage();
+    setDefaultMeasurements(interval);
   }
 
   void LogMessage() {
@@ -74,29 +90,29 @@ public:
     // undefined for WilsonFlow
   }
 
-  void smear_adaptive(GaugeField&, const GaugeField&, RealD maxTau);
+  void smear_adaptive(GaugeField&, const GaugeField&, RealD maxTau) const;
 
-  //Compute t^2 <E(t)> for timestep 'step' from the plaquette
-  RealD energyDensityPlaquette(unsigned int step, const GaugeField& U) const;
+  //Compute t^2 <E(t)> for time t from the plaquette
+  static RealD energyDensityPlaquette(const RealD t, const GaugeField& U);
 
-  //Compute t^2 <E(t)> for time taus, set by smear_adaptive, from the plaquette
-  RealD energyDensityPlaquette(const GaugeField& U) const;
+  //Compute t^2 <E(t)> for time t from the 1x1 cloverleaf form
+  //t is the Wilson flow time
+  static RealD energyDensityCloverleaf(const RealD t, const GaugeField& U);
   
   //Evolve the gauge field by Nstep steps of epsilon and return the energy density computed every interval steps
   //The smeared field is output as V
-  std::vector<RealD> flowMeasureEnergyDensityPlaquette(GaugeField &V, const GaugeField& U) const;
+  std::vector<RealD> flowMeasureEnergyDensityPlaquette(GaugeField &V, const GaugeField& U, int measure_interval = 1);
 
-  std::vector<RealD> flowMeasureEnergyDensityPlaquette(const GaugeField& U) const;
+  //Version that does not return the smeared field
+  std::vector<RealD> flowMeasureEnergyDensityPlaquette(const GaugeField& U, int measure_interval = 1);
 
-  //Compute t^2 <E(t)> for time from the 1x1 cloverleaf form
-  //t is the Wilson flow time
-  RealD energyDensityCloverleaf(RealD t, const GaugeField& U) const;
 
   //Evolve the gauge field by Nstep steps of epsilon and return the Cloverleaf energy density computed every interval steps
   //The smeared field is output as V
-  std::vector<RealD> flowMeasureEnergyDensityCloverleaf(GaugeField &V, const GaugeField& U) const;
+  std::vector<RealD> flowMeasureEnergyDensityCloverleaf(GaugeField &V, const GaugeField& U, int measure_interval = 1);
 
-  std::vector<RealD> flowMeasureEnergyDensityCloverleaf(const GaugeField& U) const;
+  //Version that does not return the smeared field
+  std::vector<RealD> flowMeasureEnergyDensityCloverleaf(const GaugeField& U, int measure_interval = 1);
 };
 
 
@@ -104,7 +120,7 @@ public:
 // Implementations
 ////////////////////////////////////////////////////////////////////////////////
 template <class Gimpl>
-void WilsonFlow<Gimpl>::evolve_step(typename Gimpl::GaugeField &U) const{
+void WilsonFlow<Gimpl>::evolve_step(typename Gimpl::GaugeField &U, RealD &tau) const{
   GaugeField Z(U.Grid());
   GaugeField tmp(U.Grid());
   SG.deriv(U, Z);
@@ -120,12 +136,13 @@ void WilsonFlow<Gimpl>::evolve_step(typename Gimpl::GaugeField &U) const{
   SG.deriv(U, tmp); Z += tmp;                 // 4/3*(17/36*Z0 -8/9*Z1) +Z2
   Z *= 3.0/4.0;                               // Z = 17/36*Z0 -8/9*Z1 +3/4*Z2
   Gimpl::update_field(Z, U, -2.0*epsilon);    // V(t+e) = exp(ep*Z)*W2
+  tau += epsilon;
 }
 
 template <class Gimpl>
-void WilsonFlow<Gimpl>::evolve_step_adaptive(typename Gimpl::GaugeField &U, RealD maxTau) {
-  if (maxTau - taus < epsilon){
-    epsilon = maxTau-taus;
+void WilsonFlow<Gimpl>::evolve_step_adaptive(typename Gimpl::GaugeField &U, RealD &tau, RealD &eps, RealD maxTau) const{
+  if (maxTau - tau < eps){
+    eps = maxTau-tau;
   }
   //std::cout << GridLogMessage << "Integration epsilon : " << epsilon << std::endl;
   GaugeField Z(U.Grid());
@@ -135,70 +152,45 @@ void WilsonFlow<Gimpl>::evolve_step_adaptive(typename Gimpl::GaugeField &U, Real
   SG.deriv(U, Z);
   Zprime = -Z;
   Z *= 0.25;                                  // Z0 = 1/4 * F(U)
-  Gimpl::update_field(Z, U, -2.0*epsilon);    // U = W1 = exp(ep*Z0)*W0
+  Gimpl::update_field(Z, U, -2.0*eps);    // U = W1 = exp(ep*Z0)*W0
 
   Z *= -17.0/8.0;
   SG.deriv(U, tmp); Z += tmp;                 // -17/32*Z0 +Z1
   Zprime += 2.0*tmp;
   Z *= 8.0/9.0;                               // Z = -17/36*Z0 +8/9*Z1
-  Gimpl::update_field(Z, U, -2.0*epsilon);    // U_= W2 = exp(ep*Z)*W1
+  Gimpl::update_field(Z, U, -2.0*eps);    // U_= W2 = exp(ep*Z)*W1
     
 
   Z *= -4.0/3.0;
   SG.deriv(U, tmp); Z += tmp;                 // 4/3*(17/36*Z0 -8/9*Z1) +Z2
   Z *= 3.0/4.0;                               // Z = 17/36*Z0 -8/9*Z1 +3/4*Z2
-  Gimpl::update_field(Z, U, -2.0*epsilon);    // V(t+e) = exp(ep*Z)*W2
+  Gimpl::update_field(Z, U, -2.0*eps);    // V(t+e) = exp(ep*Z)*W2
 
   // Ramos 
-  Gimpl::update_field(Zprime, Uprime, -2.0*epsilon); // V'(t+e) = exp(ep*Z')*W0
+  Gimpl::update_field(Zprime, Uprime, -2.0*eps); // V'(t+e) = exp(ep*Z')*W0
   // Compute distance as norm^2 of the difference
   GaugeField diffU = U - Uprime;
   RealD diff = norm2(diffU);
   // adjust integration step
     
-  taus += epsilon;
+  tau += eps;
   //std::cout << GridLogMessage << "Adjusting integration step with distance: " << diff << std::endl;
     
-  epsilon = epsilon*0.95*std::pow(1e-4/diff,1./3.);
+  eps = eps*0.95*std::pow(1e-4/diff,1./3.);
   //std::cout << GridLogMessage << "New epsilon : " << epsilon << std::endl;
 
 }
 
-template <class Gimpl>
-RealD WilsonFlow<Gimpl>::energyDensityPlaquette(unsigned int step, const GaugeField& U) const {
-  RealD td = tau(step);
-  return 2.0 * td * td * SG.S(U)/U.Grid()->gSites();
-}
 
 template <class Gimpl>
-RealD WilsonFlow<Gimpl>::energyDensityPlaquette(const GaugeField& U) const {
-  return 2.0 * taus * taus * SG.S(U)/U.Grid()->gSites();
-}
-
-template <class Gimpl>
-std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityPlaquette(GaugeField &V, const GaugeField& U) const{
-  std::vector<RealD> out;
-  V = U;
-  for (unsigned int step = 0; step < Nstep; step++) { //bn  tau = epsilon*(step+1) so tau after performing step=0 is epsilon
-    std::cout << GridLogMessage << "[WilsonFlow] Evolving step " << step << std::endl;
-    evolve_step(V);
-    if( step % measure_interval == 0){
-      std::cout << GridLogMessage << "[WilsonFlow] Computing energy density for step " << step << std::endl;
-      out.push_back( energyDensityPlaquette(step,V) );
-    }
-  }
-  return out;
-}
-
-template <class Gimpl>
-std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityPlaquette(const GaugeField& U) const{
-  GaugeField V(U);
-  return flowMeasureEnergyDensityPlaquette(V,U);
+RealD WilsonFlow<Gimpl>::energyDensityPlaquette(const RealD t, const GaugeField& U){
+  static WilsonGaugeAction<Gimpl> SG(3.0);
+  return 2.0 * t * t * SG.S(U)/U.Grid()->gSites();
 }
 
 //Compute t^2 <E(t)> for time from the 1x1 cloverleaf form
 template <class Gimpl>
-RealD WilsonFlow<Gimpl>::energyDensityCloverleaf(RealD t, const GaugeField& U) const{
+RealD WilsonFlow<Gimpl>::energyDensityCloverleaf(const RealD t, const GaugeField& U){
   typedef typename Gimpl::GaugeLinkField GaugeMat;
   typedef typename Gimpl::GaugeField GaugeLorentz;
 
@@ -221,74 +213,90 @@ RealD WilsonFlow<Gimpl>::energyDensityCloverleaf(RealD t, const GaugeField& U) c
   return -real(out); //minus sign necessary for +ve energy
 }
 
+
 template <class Gimpl>
-std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityCloverleaf(GaugeField &V, const GaugeField& U) const{
+std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityPlaquette(GaugeField &V, const GaugeField& U, int measure_interval){
   std::vector<RealD> out;
-  V = U;
-  for (unsigned int step = 0; step < Nstep; step++) { //bn  tau = epsilon*(step+1) so tau after performing step=0 is epsilon
-    std::cout << GridLogMessage << "[WilsonFlow] Evolving step " << step << std::endl;
-    evolve_step(V);
-    if( step % measure_interval == 0){
-      std::cout << GridLogMessage << "[WilsonFlow] Computing Cloverleaf energy density for step " << step << std::endl;
-      out.push_back( energyDensityCloverleaf(tau(step),V) );
-    }
-  }
+  resetActions();
+  addMeasurement(measure_interval, [&out](int step, RealD t, const typename Gimpl::GaugeField &U){ 
+      std::cout << GridLogMessage << "[WilsonFlow] Computing plaquette energy density for step " << step << std::endl;
+      out.push_back( energyDensityPlaquette(t,U) );
+    });      
+  smear(V,U);
   return out;
 }
 
 template <class Gimpl>
-std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityCloverleaf(const GaugeField& U) const{
+std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityPlaquette(const GaugeField& U, int measure_interval){
   GaugeField V(U);
-  return flowMeasureEnergyDensityCloverleaf(V,U);
+  return flowMeasureEnergyDensityPlaquette(V,U, measure_interval);
+}
+
+template <class Gimpl>
+std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityCloverleaf(GaugeField &V, const GaugeField& U, int measure_interval){
+  std::vector<RealD> out;
+  resetActions();
+  addMeasurement(measure_interval, [&out](int step, RealD t, const typename Gimpl::GaugeField &U){ 
+      std::cout << GridLogMessage << "[WilsonFlow] Computing Cloverleaf energy density for step " << step << std::endl;
+      out.push_back( energyDensityCloverleaf(t,U) );
+    });      
+  smear(V,U);
+  return out;
+}
+
+template <class Gimpl>
+std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityCloverleaf(const GaugeField& U, int measure_interval){
+  GaugeField V(U);
+  return flowMeasureEnergyDensityCloverleaf(V,U, measure_interval);
 }
 
 
 
 //#define WF_TIMING 
 template <class Gimpl>
-void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const {
+void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const{
   out = in;
-  for (unsigned int step = 1; step <= Nstep; step++) {
+  RealD taus = 0.;
+  for (unsigned int step = 1; step <= Nstep; step++) { //step indicates the number of smearing steps applied at the time of measurement
     auto start = std::chrono::high_resolution_clock::now();
-    evolve_step(out);
+    evolve_step(out, taus);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> diff = end - start;
 #ifdef WF_TIMING
     std::cout << "Time to evolve " << diff.count() << " s\n";
 #endif
-    std::cout << GridLogMessage << "[WilsonFlow] Energy density (plaq) : "
-		  << step << "  " << tau(step) << "  " 
-	      << energyDensityPlaquette(step,out) << std::endl;
-    if( step % measure_interval == 0){
-      std::cout << GridLogMessage << "[WilsonFlow] Top. charge           : "
-		<< step << "  " 
-		<< WilsonLoops<Gimpl>::TopologicalCharge(out) << std::endl;
-    }
+    //Perform measurements
+    for(auto const &meas : functions)
+      if( step % meas.first == 0 ) meas.second(step,taus,out);
   }
 }
 
 template <class Gimpl>
-void WilsonFlow<Gimpl>::smear_adaptive(GaugeField& out, const GaugeField& in, RealD maxTau){
+void WilsonFlow<Gimpl>::smear_adaptive(GaugeField& out, const GaugeField& in, RealD maxTau) const{
   out = in;
-  taus = epsilon;
+  RealD taus = 0.;
+  RealD eps = epsilon;
   unsigned int step = 0;
   do{
     step++;
     //std::cout << GridLogMessage << "Evolution time :"<< taus << std::endl;
-    evolve_step_adaptive(out, maxTau);
-    std::cout << GridLogMessage << "[WilsonFlow] Energy density (plaq) : "
-		  << step << "  " << taus << "  "
-	      << energyDensityPlaquette(out) << std::endl;
-    if( step % measure_interval == 0){
-      std::cout << GridLogMessage << "[WilsonFlow] Top. charge           : "
-		<< step << "  " 
-		<< WilsonLoops<Gimpl>::TopologicalCharge(out) << std::endl;
-    }
+    evolve_step_adaptive(out, taus, eps, maxTau);
+    //Perform measurements
+    for(auto const &meas : functions)
+      if( step % meas.first == 0 ) meas.second(step,taus,out);
   } while (taus < maxTau);
-
-
-
 }
+
+template <class Gimpl>
+void WilsonFlow<Gimpl>::setDefaultMeasurements(int topq_meas_interval){
+  addMeasurement(1, [](int step, RealD t, const typename Gimpl::GaugeField &U){
+      std::cout << GridLogMessage << "[WilsonFlow] Energy density (plaq) : "  << step << "  " << t << "  " << energyDensityPlaquette(t,U) << std::endl;
+    });
+  addMeasurement(topq_meas_interval, [](int step, RealD t, const typename Gimpl::GaugeField &U){
+      std::cout << GridLogMessage << "[WilsonFlow] Top. charge           : "  << step << "  " << WilsonLoops<Gimpl>::TopologicalCharge(U) << std::endl;
+    });
+}
+
 
 NAMESPACE_END(Grid);
 
