@@ -125,6 +125,56 @@ public:
     return sumplaq / vol / faces / Nc; // Nd , Nc dependent... FIXME
   }
 
+  //////////////////////////////////////////////////
+  // sum over all spatial planes of plaquette
+  //////////////////////////////////////////////////
+  static void siteSpatialPlaquette(ComplexField &Plaq,
+                            const std::vector<GaugeMat> &U) {
+    ComplexField sitePlaq(U[0].Grid());
+    Plaq = Zero();
+    for (int mu = 1; mu < Nd-1; mu++) {
+      for (int nu = 0; nu < mu; nu++) {
+        traceDirPlaquette(sitePlaq, U, mu, nu);
+        Plaq = Plaq + sitePlaq;
+      }
+    }
+  }
+
+  ////////////////////////////////////
+  // sum over all x,y,z and over all spatial planes of plaquette
+  //////////////////////////////////////////////////
+  static std::vector<RealD> timesliceSumSpatialPlaquette(const GaugeLorentz &Umu) {
+    std::vector<GaugeMat> U(Nd, Umu.Grid());
+    // inefficient here
+    for (int mu = 0; mu < Nd; mu++) {
+      U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
+    }
+
+    ComplexField Plaq(Umu.Grid());
+
+    siteSpatialPlaquette(Plaq, U);
+    typedef typename ComplexField::scalar_object sobj;
+    std::vector<sobj> Tq;
+    sliceSum(Plaq, Tq, Nd-1);
+
+    std::vector<Real> out(Tq.size());
+    for(int t=0;t<Tq.size();t++) out[t] = TensorRemove(Tq[t]).real();
+    return out;
+  }
+  
+  //////////////////////////////////////////////////
+  // average over all x,y,z and over all spatial planes of plaquette
+  //////////////////////////////////////////////////
+  static std::vector<RealD> timesliceAvgSpatialPlaquette(const GaugeLorentz &Umu) {
+    std::vector<RealD> sumplaq = timesliceSumSpatialPlaquette(Umu);
+    int Lt = Umu.Grid()->FullDimensions()[Nd-1];
+    assert(sumplaq.size() == Lt);
+    double vol = Umu.Grid()->gSites() / Lt;
+    double faces = (1.0 * (Nd - 1)* (Nd - 2)) / 2.0;
+    for(int t=0;t<Lt;t++)
+      sumplaq[t] = sumplaq[t] / vol / faces / Nc; // Nd , Nc dependent... FIXME
+    return sumplaq;
+  }
 
   //////////////////////////////////////////////////
   // average over all x,y,z the temporal loop
