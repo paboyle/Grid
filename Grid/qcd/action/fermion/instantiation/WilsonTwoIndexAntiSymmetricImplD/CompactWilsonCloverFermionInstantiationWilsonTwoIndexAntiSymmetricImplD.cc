@@ -1,0 +1,1 @@
+../CompactWilsonCloverFermionInstantiation.cc.master
