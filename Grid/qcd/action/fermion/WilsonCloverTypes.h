@@ -42,8 +42,51 @@ public:
   typedef Lattice<SiteClover> CloverField;
 };
 
+template<class Impl>
+class CompactWilsonCloverTypes {
+public:
+  INHERIT_IMPL_TYPES(Impl);
+
+  static_assert(Nd == 4 && Nc == 3 && Ns == 4 && Impl::Dimension == 3, "Wrong dimensions");
+
+  static constexpr int Nred      = Nc * Nhs;        // 6
+  static constexpr int Nblock    = Nhs;             // 2
+  static constexpr int Ndiagonal = Nred;            // 6
+  static constexpr int Ntriangle = (Nred - 1) * Nc; // 15
+
+  template<typename vtype> using iImplCloverDiagonal = iScalar<iVector<iVector<vtype, Ndiagonal>, Nblock>>;
+  template<typename vtype> using iImplCloverTriangle = iScalar<iVector<iVector<vtype, Ntriangle>, Nblock>>;
+
+  typedef iImplCloverDiagonal<Simd> SiteCloverDiagonal;
+  typedef iImplCloverTriangle<Simd> SiteCloverTriangle;
+  typedef iSinglet<Simd>            SiteMask;
+
+  typedef Lattice<SiteCloverDiagonal> CloverDiagonalField;
+  typedef Lattice<SiteCloverTriangle> CloverTriangleField;
+  typedef Lattice<SiteMask>           MaskField;
+};
+
 #define INHERIT_CLOVER_TYPES(Impl)                                 \
   typedef typename WilsonCloverTypes<Impl>::SiteClover SiteClover; \
   typedef typename WilsonCloverTypes<Impl>::CloverField CloverField;
+
+#define INHERIT_COMPACT_CLOVER_TYPES(Impl) \
+  typedef typename CompactWilsonCloverTypes<Impl>::SiteCloverDiagonal  SiteCloverDiagonal; \
+  typedef typename CompactWilsonCloverTypes<Impl>::SiteCloverTriangle  SiteCloverTriangle; \
+  typedef typename CompactWilsonCloverTypes<Impl>::SiteMask            SiteMask; \
+  typedef typename CompactWilsonCloverTypes<Impl>::CloverDiagonalField CloverDiagonalField; \
+  typedef typename CompactWilsonCloverTypes<Impl>::CloverTriangleField CloverTriangleField; \
+  typedef typename CompactWilsonCloverTypes<Impl>::MaskField           MaskField; \
+  /* ugly duplication but needed inside functionality classes */ \
+  template<typename vtype> using iImplCloverDiagonal = \
+    iScalar<iVector<iVector<vtype, CompactWilsonCloverTypes<Impl>::Ndiagonal>, CompactWilsonCloverTypes<Impl>::Nblock>>; \
+  template<typename vtype> using iImplCloverTriangle = \
+    iScalar<iVector<iVector<vtype, CompactWilsonCloverTypes<Impl>::Ntriangle>, CompactWilsonCloverTypes<Impl>::Nblock>>;
+
+#define INHERIT_COMPACT_CLOVER_SIZES(Impl)                                    \
+  static constexpr int Nred      = CompactWilsonCloverTypes<Impl>::Nred;      \
+  static constexpr int Nblock    = CompactWilsonCloverTypes<Impl>::Nblock;    \
+  static constexpr int Ndiagonal = CompactWilsonCloverTypes<Impl>::Ndiagonal; \
+  static constexpr int Ntriangle = CompactWilsonCloverTypes<Impl>::Ntriangle;
 
 NAMESPACE_END(Grid);
