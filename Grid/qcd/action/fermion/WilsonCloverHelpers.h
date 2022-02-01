@@ -85,12 +85,12 @@ public:
     T = Zero();
     autoView(T_v,T,AcceleratorWrite);
     autoView(F_v,F,AcceleratorRead);
-    accelerator_for(i, T.Grid()->oSites(),1,
+    accelerator_for(i, T.Grid()->oSites(),CloverField::vector_type::Nsimd(),
     {
-      T_v[i]()(0, 1) = timesMinusI(F_v[i]()());
-      T_v[i]()(1, 0) = timesMinusI(F_v[i]()());
-      T_v[i]()(2, 3) = timesMinusI(F_v[i]()());
-      T_v[i]()(3, 2) = timesMinusI(F_v[i]()());
+      coalescedWrite(T_v[i]()(0, 1), coalescedRead(timesMinusI(F_v[i]()())));
+      coalescedWrite(T_v[i]()(1, 0), coalescedRead(timesMinusI(F_v[i]()())));
+      coalescedWrite(T_v[i]()(2, 3), coalescedRead(timesMinusI(F_v[i]()())));
+      coalescedWrite(T_v[i]()(3, 2), coalescedRead(timesMinusI(F_v[i]()())));
     });
 
     return T;
@@ -103,12 +103,12 @@ public:
     
     autoView(T_v, T,AcceleratorWrite);
     autoView(F_v, F,AcceleratorRead);
-    accelerator_for(i, T.Grid()->oSites(),1,
+    accelerator_for(i, T.Grid()->oSites(),CloverField::vector_type::Nsimd(),
     {
-      T_v[i]()(0, 1) = -F_v[i]()();
-      T_v[i]()(1, 0) = F_v[i]()();
-      T_v[i]()(2, 3) = -F_v[i]()();
-      T_v[i]()(3, 2) = F_v[i]()();
+      coalescedWrite(T_v[i]()(0, 1), coalescedRead(-F_v[i]()()));
+      coalescedWrite(T_v[i]()(1, 0), coalescedRead(F_v[i]()()));
+      coalescedWrite(T_v[i]()(2, 3), coalescedRead(-F_v[i]()()));
+      coalescedWrite(T_v[i]()(3, 2), coalescedRead(F_v[i]()()));
     });
 
     return T;
@@ -121,12 +121,12 @@ public:
 
     autoView(T_v,T,AcceleratorWrite);
     autoView(F_v,F,AcceleratorRead);
-    accelerator_for(i, T.Grid()->oSites(),1,
+    accelerator_for(i, T.Grid()->oSites(),CloverField::vector_type::Nsimd(),
     {
-      T_v[i]()(0, 0) = timesMinusI(F_v[i]()());
-      T_v[i]()(1, 1) = timesI(F_v[i]()());
-      T_v[i]()(2, 2) = timesMinusI(F_v[i]()());
-      T_v[i]()(3, 3) = timesI(F_v[i]()());
+      coalescedWrite(T_v[i]()(0, 0), coalescedRead(timesMinusI(F_v[i]()())));
+      coalescedWrite(T_v[i]()(1, 1), coalescedRead(timesI(F_v[i]()())));
+      coalescedWrite(T_v[i]()(2, 2), coalescedRead(timesMinusI(F_v[i]()())));
+      coalescedWrite(T_v[i]()(3, 3), coalescedRead(timesI(F_v[i]()())));
     });
 
     return T;
@@ -139,12 +139,12 @@ public:
 
     autoView( T_v , T, AcceleratorWrite);
     autoView( F_v , F, AcceleratorRead);
-    accelerator_for(i, T.Grid()->oSites(),1,
+    accelerator_for(i, T.Grid()->oSites(),CloverField::vector_type::Nsimd(),
     {
-      T_v[i]()(0, 1) = timesI(F_v[i]()());
-      T_v[i]()(1, 0) = timesI(F_v[i]()());
-      T_v[i]()(2, 3) = timesMinusI(F_v[i]()());
-      T_v[i]()(3, 2) = timesMinusI(F_v[i]()());
+      coalescedWrite(T_v[i]()(0, 1), coalescedRead(timesI(F_v[i]()())));
+      coalescedWrite(T_v[i]()(1, 0), coalescedRead(timesI(F_v[i]()())));
+      coalescedWrite(T_v[i]()(2, 3), coalescedRead(timesMinusI(F_v[i]()())));
+      coalescedWrite(T_v[i]()(3, 2), coalescedRead(timesMinusI(F_v[i]()())));
     });
 
     return T;
@@ -157,12 +157,12 @@ public:
     
     autoView( T_v ,T,AcceleratorWrite);
     autoView( F_v ,F,AcceleratorRead);
-    accelerator_for(i, T.Grid()->oSites(),1,
+    accelerator_for(i, T.Grid()->oSites(),CloverField::vector_type::Nsimd(),
     {
-      T_v[i]()(0, 1) = -(F_v[i]()());
-      T_v[i]()(1, 0) = (F_v[i]()());
-      T_v[i]()(2, 3) = (F_v[i]()());
-      T_v[i]()(3, 2) = -(F_v[i]()());
+      coalescedWrite(T_v[i]()(0, 1), coalescedRead(-(F_v[i]()())));
+      coalescedWrite(T_v[i]()(1, 0), coalescedRead((F_v[i]()())));
+      coalescedWrite(T_v[i]()(2, 3), coalescedRead((F_v[i]()())));
+      coalescedWrite(T_v[i]()(3, 2), coalescedRead(-(F_v[i]()())));
     });
 
     return T;
@@ -176,12 +176,12 @@ public:
 
     autoView( T_v , T,AcceleratorWrite);
     autoView( F_v , F,AcceleratorRead);
-    accelerator_for(i, T.Grid()->oSites(),1,
+    accelerator_for(i, T.Grid()->oSites(),CloverField::vector_type::Nsimd(),
     {
-      T_v[i]()(0, 0) = timesI(F_v[i]()());
-      T_v[i]()(1, 1) = timesMinusI(F_v[i]()());
-      T_v[i]()(2, 2) = timesMinusI(F_v[i]()());
-      T_v[i]()(3, 3) = timesI(F_v[i]()());
+      coalescedWrite(T_v[i]()(0, 0), coalescedRead(timesI(F_v[i]()())));
+      coalescedWrite(T_v[i]()(1, 1), coalescedRead(timesMinusI(F_v[i]()())));
+      coalescedWrite(T_v[i]()(2, 2), coalescedRead(timesMinusI(F_v[i]()())));
+      coalescedWrite(T_v[i]()(3, 3), coalescedRead(timesI(F_v[i]()())));
     });
 
     return T;
