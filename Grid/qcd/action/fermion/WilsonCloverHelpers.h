@@ -186,6 +186,26 @@ public:
 
     return T;
   }
+
+  template<class _Spinor>
+  static accelerator_inline void multClover(_Spinor& phi, const SiteClover& C, const _Spinor& chi) {
+    auto CC = coalescedRead(C);
+    mult(&phi, &CC, &chi);
+  }
+
+  template<class _SpinorField>
+  inline void multCloverField(_SpinorField& out, const CloverField& C, const _SpinorField& phi) {
+    const int Nsimd = SiteSpinor::Nsimd();
+    autoView(out_v, out, AcceleratorWrite);
+    autoView(phi_v, phi, AcceleratorRead);
+    autoView(C_v,   C,   AcceleratorRead);
+    typedef decltype(coalescedRead(out_v[0])) calcSpinor;
+    accelerator_for(sss,out.Grid()->oSites(),Nsimd,{
+      calcSpinor tmp;
+      multClover(tmp,C_v[sss],phi_v(sss));
+      coalescedWrite(out_v[sss],tmp);
+    });
+  }
 };
 
 NAMESPACE_END(Grid);

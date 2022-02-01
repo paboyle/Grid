@@ -243,12 +243,12 @@ void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionFie
       {
         Clover = (inv) ? &CloverTermInvDagEven : &CloverTermDagEven;
       }
-      out = *Clover * in;
+      Helpers::multCloverField(out, *Clover, in);
     }
     else
     {
       Clover = (inv) ? &CloverTermInv : &CloverTerm;
-      out = adj(*Clover) * in;
+      Helpers::multCloverField(out, *Clover, in); // don't bother with adj, hermitian anyway
     }
   }
   else
@@ -266,13 +266,13 @@ void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionFie
         //  std::cout << "Calling clover term Even" << std::endl;
         Clover = (inv) ? &CloverTermInvEven : &CloverTermEven;
       }
-      out = *Clover * in;
+      Helpers::multCloverField(out, *Clover, in);
       //  std::cout << GridLogMessage << "*Clover.Checkerboard() "  << (*Clover).Checkerboard() << std::endl;
     }
     else
     {
       Clover = (inv) ? &CloverTermInv : &CloverTerm;
-      out = *Clover * in;
+      Helpers::multCloverField(out, *Clover, in);
     }
   }
 } // MooeeInternal
