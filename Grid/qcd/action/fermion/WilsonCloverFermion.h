@@ -4,10 +4,11 @@
 
     Source file: ./lib/qcd/action/fermion/WilsonCloverFermion.h
 
-    Copyright (C) 2017
+    Copyright (C) 2017 - 2022
 
     Author: Guido Cossu <guido.cossu@ed.ac.uk>
     Author: David Preti <>
+    Author: Daniel Richtmann <daniel.richtmann@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,7 +30,8 @@
 
 #pragma once
 
-#include <Grid/Grid.h>
+#include <Grid/qcd/action/fermion/WilsonCloverTypes.h>
+#include <Grid/qcd/action/fermion/WilsonCloverHelpers.h>
 
 NAMESPACE_BEGIN(Grid);
 
@@ -50,18 +52,15 @@ NAMESPACE_BEGIN(Grid);
 //////////////////////////////////////////////////////////////////
 
 template <class Impl>
-class WilsonCloverFermion : public WilsonFermion<Impl>
+class WilsonCloverFermion : public WilsonFermion<Impl>,
+                            public WilsonCloverHelpers<Impl>
 {
 public:
-  // Types definitions
   INHERIT_IMPL_TYPES(Impl);
-  template <typename vtype>
-  using iImplClover = iScalar<iMatrix<iMatrix<vtype, Impl::Dimension>, Ns>>;
-  typedef iImplClover<Simd> SiteCloverType;
-  typedef Lattice<SiteCloverType> CloverFieldType;
+  INHERIT_CLOVER_TYPES(Impl);
 
-public:
-  typedef WilsonFermion<Impl> WilsonBase;
+  typedef WilsonFermion<Impl>       WilsonBase;
+  typedef WilsonCloverHelpers<Impl> Helpers;
 
   virtual int    ConstEE(void)     { return 0; };
   virtual void Instantiatable(void){};
@@ -72,42 +71,7 @@ public:
                       const RealD _csw_r = 0.0,
                       const RealD _csw_t = 0.0,
                       const WilsonAnisotropyCoefficients &clover_anisotropy = WilsonAnisotropyCoefficients(),
-                      const ImplParams &impl_p = ImplParams()) : WilsonFermion<Impl>(_Umu,
-                                                                                     Fgrid,
-                                                                                     Hgrid,
-                                                                                     _mass, impl_p, clover_anisotropy),
-                                                                 CloverTerm(&Fgrid),
-                                                                 CloverTermInv(&Fgrid),
-                                                                 CloverTermEven(&Hgrid),
-                                                                 CloverTermOdd(&Hgrid),
-                                                                 CloverTermInvEven(&Hgrid),
-                                                                 CloverTermInvOdd(&Hgrid),
-                                                                 CloverTermDagEven(&Hgrid),
-                                                                 CloverTermDagOdd(&Hgrid),
-                                                                 CloverTermInvDagEven(&Hgrid),
-                                                                 CloverTermInvDagOdd(&Hgrid)
-  {
-    assert(Nd == 4); // require 4 dimensions
-
-    if (clover_anisotropy.isAnisotropic)
-    {
-      csw_r = _csw_r * 0.5 / clover_anisotropy.xi_0;
-      diag_mass = _mass + 1.0 + (Nd - 1) * (clover_anisotropy.nu / clover_anisotropy.xi_0);
-    }
-    else
-    {
-      csw_r = _csw_r * 0.5;
-      diag_mass = 4.0 + _mass;
-    }
-    csw_t = _csw_t * 0.5;
-
-    if (csw_r == 0)
-      std::cout << GridLogWarning << "Initializing WilsonCloverFermion with csw_r = 0" << std::endl;
-    if (csw_t == 0)
-      std::cout << GridLogWarning << "Initializing WilsonCloverFermion with csw_t = 0" << std::endl;
-
-    ImportGauge(_Umu);
-  }
+                      const ImplParams &impl_p = ImplParams());
 
   virtual void M(const FermionField &in, FermionField &out);
   virtual void Mdag(const FermionField &in, FermionField &out);
@@ -124,250 +88,21 @@ public:
   void ImportGauge(const GaugeField &_Umu);
 
   // Derivative parts unpreconditioned pseudofermions
-  void MDeriv(GaugeField &force, const FermionField &X, const FermionField &Y, int dag)
-  {
-    conformable(X.Grid(), Y.Grid());
-    conformable(X.Grid(), force.Grid());
-    GaugeLinkField force_mu(force.Grid()), lambda(force.Grid());
-    GaugeField clover_force(force.Grid());
-    PropagatorField Lambda(force.Grid());
+  void MDeriv(GaugeField &force, const FermionField &X, const FermionField &Y, int dag);
 
-    // Guido: Here we are hitting some performance issues:
-    // need to extract the components of the DoubledGaugeField
-    // for each call
-    // Possible solution
-    // Create a vector object to store them? (cons: wasting space)
-    std::vector<GaugeLinkField> U(Nd, this->Umu.Grid());
-
-    Impl::extractLinkField(U, this->Umu);
-
-    force = Zero();
-    // Derivative of the Wilson hopping term
-    this->DhopDeriv(force, X, Y, dag);
-
-    ///////////////////////////////////////////////////////////
-    // Clover term derivative
-    ///////////////////////////////////////////////////////////
-    Impl::outerProductImpl(Lambda, X, Y);
-    //std::cout << "Lambda:" << Lambda << std::endl;
-
-    Gamma::Algebra sigma[] = {
-        Gamma::Algebra::SigmaXY,
-        Gamma::Algebra::SigmaXZ,
-        Gamma::Algebra::SigmaXT,
-        Gamma::Algebra::MinusSigmaXY,
-        Gamma::Algebra::SigmaYZ,
-        Gamma::Algebra::SigmaYT,
-        Gamma::Algebra::MinusSigmaXZ,
-        Gamma::Algebra::MinusSigmaYZ,
-        Gamma::Algebra::SigmaZT,
-        Gamma::Algebra::MinusSigmaXT,
-        Gamma::Algebra::MinusSigmaYT,
-        Gamma::Algebra::MinusSigmaZT};
-
-    /*
-      sigma_{\mu \nu}=
-      | 0         sigma[0]  sigma[1]  sigma[2] |
-      | sigma[3]    0       sigma[4]  sigma[5] |
-      | sigma[6]  sigma[7]     0      sigma[8] |
-      | sigma[9]  sigma[10] sigma[11]   0      |
-    */
-
-    int count = 0;
-    clover_force = Zero();
-    for (int mu = 0; mu < 4; mu++)
-    {
-      force_mu = Zero();
-      for (int nu = 0; nu < 4; nu++)
-      {
-        if (mu == nu)
-        continue;
-        
-        RealD factor;
-        if (nu == 4 || mu == 4)
-        {
-          factor = 2.0 * csw_t;
-        }
-        else
-        {
-          factor = 2.0 * csw_r;
-        }
-        PropagatorField Slambda = Gamma(sigma[count]) * Lambda; // sigma checked
-        Impl::TraceSpinImpl(lambda, Slambda);                   // traceSpin ok
-        force_mu -= factor*Cmunu(U, lambda, mu, nu);                   // checked
-        count++;
-      }
-
-      pokeLorentz(clover_force, U[mu] * force_mu, mu);
-    }
-    //clover_force *= csw;
-    force += clover_force;
-  }
-
-  // Computing C_{\mu \nu}(x) as in Eq.(B.39) in Zbigniew Sroczynski's PhD thesis
-  GaugeLinkField Cmunu(std::vector<GaugeLinkField> &U, GaugeLinkField &lambda, int mu, int nu)
-  {
-    conformable(lambda.Grid(), U[0].Grid());
-    GaugeLinkField out(lambda.Grid()), tmp(lambda.Grid());
-    // insertion in upper staple
-    // please check redundancy of shift operations
-
-    // C1+
-    tmp = lambda * U[nu];
-    out = Impl::ShiftStaple(Impl::CovShiftForward(tmp, nu, Impl::CovShiftBackward(U[mu], mu, Impl::CovShiftIdentityBackward(U[nu], nu))), mu);
-
-    // C2+
-    tmp = U[mu] * Impl::ShiftStaple(adj(lambda), mu);
-    out += Impl::ShiftStaple(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(tmp, mu, Impl::CovShiftIdentityBackward(U[nu], nu))), mu);
-
-    // C3+
-    tmp = U[nu] * Impl::ShiftStaple(adj(lambda), nu);
-    out += Impl::ShiftStaple(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, Impl::CovShiftIdentityBackward(tmp, nu))), mu);
-
-    // C4+
-    out += Impl::ShiftStaple(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, Impl::CovShiftIdentityBackward(U[nu], nu))), mu) * lambda;
-
-    // insertion in lower staple
-    // C1-
-    out -= Impl::ShiftStaple(lambda, mu) * Impl::ShiftStaple(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, U[nu])), mu);
-
-    // C2-
-    tmp = adj(lambda) * U[nu];
-    out -= Impl::ShiftStaple(Impl::CovShiftBackward(tmp, nu, Impl::CovShiftBackward(U[mu], mu, U[nu])), mu);
-
-    // C3-
-    tmp = lambda * U[nu];
-    out -= Impl::ShiftStaple(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, tmp)), mu);
-
-    // C4-
-    out -= Impl::ShiftStaple(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, U[nu])), mu) * lambda;
-
-    return out;
-  }
-
-protected:
+public:
   // here fixing the 4 dimensions, make it more general?
 
   RealD csw_r;                                               // Clover coefficient - spatial
   RealD csw_t;                                               // Clover coefficient - temporal
   RealD diag_mass;                                           // Mass term
-  CloverFieldType CloverTerm, CloverTermInv;                 // Clover term
-  CloverFieldType CloverTermEven, CloverTermOdd;             // Clover term EO
-  CloverFieldType CloverTermInvEven, CloverTermInvOdd;       // Clover term Inv EO
-  CloverFieldType CloverTermDagEven, CloverTermDagOdd;       // Clover term Dag EO
-  CloverFieldType CloverTermInvDagEven, CloverTermInvDagOdd; // Clover term Inv Dag EO
-
- public:
-  // eventually these can be compressed into 6x6 blocks instead of the 12x12
-  // using the DeGrand-Rossi basis for the gamma matrices
-  CloverFieldType fillCloverYZ(const GaugeLinkField &F)
-  {
-    CloverFieldType T(F.Grid());
-    T = Zero();
-    autoView(T_v,T,AcceleratorWrite);
-    autoView(F_v,F,AcceleratorRead);
-    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
-    {
-      T_v[i]()(0, 1) = timesMinusI(F_v[i]()());
-      T_v[i]()(1, 0) = timesMinusI(F_v[i]()());
-      T_v[i]()(2, 3) = timesMinusI(F_v[i]()());
-      T_v[i]()(3, 2) = timesMinusI(F_v[i]()());
-    });
-
-    return T;
-  }
-
-  CloverFieldType fillCloverXZ(const GaugeLinkField &F)
-  {
-    CloverFieldType T(F.Grid());
-    T = Zero();
-    
-    autoView(T_v, T,AcceleratorWrite);
-    autoView(F_v, F,AcceleratorRead);
-    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
-    {
-      T_v[i]()(0, 1) = -F_v[i]()();
-      T_v[i]()(1, 0) = F_v[i]()();
-      T_v[i]()(2, 3) = -F_v[i]()();
-      T_v[i]()(3, 2) = F_v[i]()();
-    });
-
-    return T;
-  }
-
-  CloverFieldType fillCloverXY(const GaugeLinkField &F)
-  {
-    CloverFieldType T(F.Grid());
-    T = Zero();
-
-    autoView(T_v,T,AcceleratorWrite);
-    autoView(F_v,F,AcceleratorRead);
-    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
-    {
-      T_v[i]()(0, 0) = timesMinusI(F_v[i]()());
-      T_v[i]()(1, 1) = timesI(F_v[i]()());
-      T_v[i]()(2, 2) = timesMinusI(F_v[i]()());
-      T_v[i]()(3, 3) = timesI(F_v[i]()());
-    });
-
-    return T;
-  }
-
-  CloverFieldType fillCloverXT(const GaugeLinkField &F)
-  {
-    CloverFieldType T(F.Grid());
-    T = Zero();
-
-    autoView( T_v , T, AcceleratorWrite);
-    autoView( F_v , F, AcceleratorRead);
-    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
-    {
-      T_v[i]()(0, 1) = timesI(F_v[i]()());
-      T_v[i]()(1, 0) = timesI(F_v[i]()());
-      T_v[i]()(2, 3) = timesMinusI(F_v[i]()());
-      T_v[i]()(3, 2) = timesMinusI(F_v[i]()());
-    });
-
-    return T;
-  }
-
-  CloverFieldType fillCloverYT(const GaugeLinkField &F)
-  {
-    CloverFieldType T(F.Grid());
-    T = Zero();
-    
-    autoView( T_v ,T,AcceleratorWrite);
-    autoView( F_v ,F,AcceleratorRead);
-    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
-    {
-      T_v[i]()(0, 1) = -(F_v[i]()());
-      T_v[i]()(1, 0) = (F_v[i]()());
-      T_v[i]()(2, 3) = (F_v[i]()());
-      T_v[i]()(3, 2) = -(F_v[i]()());
-    });
-
-    return T;
-  }
-
-  CloverFieldType fillCloverZT(const GaugeLinkField &F)
-  {
-    CloverFieldType T(F.Grid());
-
-    T = Zero();
-
-    autoView( T_v , T,AcceleratorWrite);
-    autoView( F_v , F,AcceleratorRead);
-    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
-    {
-      T_v[i]()(0, 0) = timesI(F_v[i]()());
-      T_v[i]()(1, 1) = timesMinusI(F_v[i]()());
-      T_v[i]()(2, 2) = timesMinusI(F_v[i]()());
-      T_v[i]()(3, 3) = timesI(F_v[i]()());
-    });
-
-    return T;
-  }
+  CloverField CloverTerm, CloverTermInv;                     // Clover term
+  CloverField CloverTermEven, CloverTermOdd;                 // Clover term EO
+  CloverField CloverTermInvEven, CloverTermInvOdd;           // Clover term Inv EO
+  CloverField CloverTermDagEven, CloverTermDagOdd;           // Clover term Dag EO
+  CloverField CloverTermInvDagEven, CloverTermInvDagOdd;     // Clover term Inv Dag EO
 };
+
 NAMESPACE_END(Grid);
 
 

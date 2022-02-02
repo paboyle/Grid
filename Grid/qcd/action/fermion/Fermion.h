@@ -53,6 +53,7 @@ NAMESPACE_CHECK(Wilson);
 #include <Grid/qcd/action/fermion/WilsonTMFermion.h>       // 4d wilson like
 NAMESPACE_CHECK(WilsonTM);
 #include <Grid/qcd/action/fermion/WilsonCloverFermion.h> // 4d wilson clover fermions
+#include <Grid/qcd/action/fermion/CompactWilsonCloverFermion.h> // 4d compact wilson clover fermions
 NAMESPACE_CHECK(WilsonClover);
 #include <Grid/qcd/action/fermion/WilsonFermion5D.h>     // 5d base used by all 5d overlap types
 NAMESPACE_CHECK(Wilson5D);
@@ -152,6 +153,23 @@ typedef WilsonCloverFermion<WilsonTwoIndexSymmetricImplD> WilsonCloverTwoIndexSy
 typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplR> WilsonCloverTwoIndexAntiSymmetricFermionR;
 typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplF> WilsonCloverTwoIndexAntiSymmetricFermionF;
 typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplD> WilsonCloverTwoIndexAntiSymmetricFermionD;
+
+// Compact Clover fermions
+typedef CompactWilsonCloverFermion<WilsonImplR> CompactWilsonCloverFermionR;
+typedef CompactWilsonCloverFermion<WilsonImplF> CompactWilsonCloverFermionF;
+typedef CompactWilsonCloverFermion<WilsonImplD> CompactWilsonCloverFermionD;
+
+typedef CompactWilsonCloverFermion<WilsonAdjImplR> CompactWilsonCloverAdjFermionR;
+typedef CompactWilsonCloverFermion<WilsonAdjImplF> CompactWilsonCloverAdjFermionF;
+typedef CompactWilsonCloverFermion<WilsonAdjImplD> CompactWilsonCloverAdjFermionD;
+
+typedef CompactWilsonCloverFermion<WilsonTwoIndexSymmetricImplR> CompactWilsonCloverTwoIndexSymmetricFermionR;
+typedef CompactWilsonCloverFermion<WilsonTwoIndexSymmetricImplF> CompactWilsonCloverTwoIndexSymmetricFermionF;
+typedef CompactWilsonCloverFermion<WilsonTwoIndexSymmetricImplD> CompactWilsonCloverTwoIndexSymmetricFermionD;
+
+typedef CompactWilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplR> CompactWilsonCloverTwoIndexAntiSymmetricFermionR;
+typedef CompactWilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplF> CompactWilsonCloverTwoIndexAntiSymmetricFermionF;
+typedef CompactWilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplD> CompactWilsonCloverTwoIndexAntiSymmetricFermionD;
 
 // Domain Wall fermions
 typedef DomainWallFermion<WilsonImplR> DomainWallFermionR;

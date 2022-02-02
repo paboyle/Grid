@@ -40,7 +40,7 @@ EOF
 
 done
 
-CC_LIST="WilsonCloverFermionInstantiation WilsonFermionInstantiation WilsonKernelsInstantiation WilsonTMFermionInstantiation"
+CC_LIST="WilsonCloverFermionInstantiation CompactWilsonCloverFermionInstantiation WilsonFermionInstantiation WilsonKernelsInstantiation WilsonTMFermionInstantiation"
 
 for impl in $WILSON_IMPL_LIST
 do
