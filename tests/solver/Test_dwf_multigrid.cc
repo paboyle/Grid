@@ -57,6 +57,7 @@ private:
   OperatorFunction<Field> & _Solver;
   LinearFunction<Field>   & _Guess;
 public:
+  using LinearFunction<Field>::operator();
 
   /////////////////////////////////////////////////////
   // Wrap the usual normal equations trick
@@ -118,6 +119,7 @@ RealD InverseApproximation(RealD x){
 template<class Field,class Matrix> class ChebyshevSmoother : public LinearFunction<Field>
 {
 public:
+  using LinearFunction<Field>::operator();
   typedef LinearOperatorBase<Field>                            FineOperator;
   Matrix         & _SmootherMatrix;
   FineOperator   & _SmootherOperator;
@@ -174,6 +176,7 @@ public:
 template<class Fobj,class CComplex,int nbasis, class CoarseSolver>
 class HDCRPreconditioner : public LinearFunction< Lattice<Fobj> > {
 public:
+  using LinearFunction<Lattice<Fobj> >::operator();
 
   typedef Aggregation<Fobj,CComplex,nbasis> Aggregates;
   typedef CoarsenedMatrix<Fobj,CComplex,nbasis> CoarseOperator;

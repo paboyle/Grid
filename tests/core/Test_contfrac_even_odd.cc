@@ -235,7 +235,6 @@ void  TestWhat(What & Ddwf,
   pickCheckerboard(Odd ,chi_o,chi);
   pickCheckerboard(Even,phi_e,phi);
   pickCheckerboard(Odd ,phi_o,phi);
-  RealD t1,t2;
 
   SchurDiagMooeeOperator<What,LatticeFermion> HermOpEO(Ddwf);
   HermOpEO.MpcDagMpc(chi_e,dchi_e);

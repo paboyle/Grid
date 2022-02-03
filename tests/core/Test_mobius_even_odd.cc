@@ -262,7 +262,6 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd ,chi_o,chi);
   pickCheckerboard(Even,phi_e,phi);
   pickCheckerboard(Odd ,phi_o,phi);
-  RealD t1,t2;
 
 
   SchurDiagMooeeOperator<MobiusFermionR,LatticeFermion> HermOpEO(Ddwf);

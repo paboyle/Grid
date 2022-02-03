@@ -95,6 +95,7 @@ void     acceleratorInit(void);
 //////////////////////////////////////////////
 
 #ifdef GRID_CUDA
+
 #include <cuda.h>
 
 #ifdef __CUDA_ARCH__
@@ -114,6 +115,14 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
   return 0;
 #endif
 } // CUDA specific
+
+inline void cuda_mem(void)
+{
+  size_t free_t,total_t,used_t;
+  cudaMemGetInfo(&free_t,&total_t);
+  used_t=total_t-free_t;
+  std::cout << " MemoryManager : GPU used "<<used_t<<" free "<<free_t<< " total "<<total_t<<std::endl;
+}
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   {									\
@@ -221,6 +230,7 @@ inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes
   cudaMemcpyAsync(to,from,bytes, cudaMemcpyDeviceToDevice,copyStream);
 }
 inline void acceleratorCopySynchronise(void) { cudaStreamSynchronize(copyStream); };
+
 inline int  acceleratorIsCommunicable(void *ptr)
 {
   //  int uvm=0;
@@ -297,7 +307,7 @@ inline void acceleratorFreeDevice(void *ptr){free(ptr,*theGridAccelerator);};
 inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  {
   theGridAccelerator->memcpy(to,from,bytes);
 }
-inline void acceleratorCopySynchronise(void) {  theGridAccelerator->wait(); }
+inline void acceleratorCopySynchronise(void) {  theGridAccelerator->wait(); std::cout<<"acceleratorCopySynchronise() wait "<<std::endl; }
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { theGridAccelerator->memset(base,value,bytes); theGridAccelerator->wait();}
@@ -328,6 +338,7 @@ NAMESPACE_BEGIN(Grid);
 #define accelerator        __host__ __device__
 #define accelerator_inline __host__ __device__ inline
 
+extern hipStream_t copyStream;
 /*These routines define mapping from thread grid to loop & vector lane indexing */
 accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 #ifdef GRID_SIMT
@@ -402,9 +413,15 @@ inline void acceleratorFreeShared(void *ptr){ hipFree(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ hipFree(ptr);};
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
-inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyDeviceToDevice);}
-inline void acceleratorCopySynchronise(void) {  }
+//inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyDeviceToDevice);}
+//inline void acceleratorCopySynchronise(void) {  }
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { hipMemset(base,value,bytes);}
+
+inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) // Asynch
+{
+  hipMemcpyAsync(to,from,bytes, hipMemcpyDeviceToDevice,copyStream);
+}
+inline void acceleratorCopySynchronise(void) { hipStreamSynchronize(copyStream); };
 
 #endif
 
@@ -476,17 +493,11 @@ inline void acceleratorFreeCpu  (void *ptr){free(ptr);};
 ///////////////////////////////////////////////////
 // Synchronise across local threads for divergence resynch
 ///////////////////////////////////////////////////
-accelerator_inline void acceleratorSynchronise(void) 
+accelerator_inline void acceleratorSynchronise(void)  // Only Nvidia needs 
 {
 #ifdef GRID_SIMT
 #ifdef GRID_CUDA
   __syncwarp();
-#endif
-#ifdef GRID_SYCL
-  //cl::sycl::detail::workGroupBarrier();
-#endif
-#ifdef GRID_HIP
-  __syncthreads();
 #endif
 #endif
   return;

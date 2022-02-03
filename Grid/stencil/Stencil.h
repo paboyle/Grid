@@ -322,8 +322,8 @@ public:
     int simd_layout     = _grid->_simd_layout[dimension];
     int comm_dim        = _grid->_processors[dimension] >1 ;
 
-    int recv_from_rank;
-    int xmit_to_rank;
+    //    int recv_from_rank;
+    //    int xmit_to_rank;
 
     if ( ! comm_dim ) return 1;
     if ( displacement == 0 ) return 1;
