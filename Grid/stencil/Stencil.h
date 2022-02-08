@@ -571,6 +571,7 @@ public:
   }
   void AddCopy(void *from,void * to, Integer bytes)
   {
+    std::cout << "Adding CopyReceiveBuffer "<<std::hex<<from<<" "<<to<<std::dec<<" "<<bytes<<std::endl;
     CopyReceiveBuffer obj;
     obj.from_p = from;
     obj.to_p = to;
@@ -584,6 +585,7 @@ public:
       cobj *from=(cobj *)CopyReceiveBuffers[i].from_p;
       cobj *to  =(cobj *)CopyReceiveBuffers[i].to_p;
       Integer words = CopyReceiveBuffers[i].bytes/sizeof(cobj);
+    std::cout << "CopyReceiveBuffer "<<std::hex<<from<<" "<<to<<std::dec<<" "<<words*sizeof(cobj)<<std::endl;
       accelerator_forNB(j, words, cobj::Nsimd(), {
 	to[j] = from [j]; // Start with a debug check that these give the same data.
       });
@@ -610,6 +612,7 @@ public:
 	AddCopy(CachedTransfers[i].recv_buf,recv_buf,bytes);
 	return 1;
       } else {
+	std::cout << "No duplicate plane dir "<<direction<<" plane "<< OrthogPlane<< " simd "<<lane << " relproc "<<DestProc<<std::endl;
 	CachedTransfers.push_back(obj);
 	return 0;
       }
