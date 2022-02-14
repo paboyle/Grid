@@ -56,12 +56,12 @@ int main(int argc, char **argv) {
   MD.trajL   = 1.0;
 
   HMCparameters HMCparams;
-  HMCparams.StartTrajectory  = 0;
+  HMCparams.StartTrajectory  = 17;
   HMCparams.Trajectories     = 200;
-  HMCparams.NoMetropolisUntil=  20;
+  HMCparams.NoMetropolisUntil=  0;
   // "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
-  HMCparams.StartingType     =std::string("ColdStart");
-  // HMCparams.StartingType     =std::string("CheckpointStart");
+  //  HMCparams.StartingType     =std::string("ColdStart");
+  HMCparams.StartingType     =std::string("CheckpointStart");
   HMCparams.MD = MD;
   HMCWrapper TheHMC(HMCparams);
 
@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
   RealD b   = 1.0;
   RealD c   = 0.0;
 
-  std::vector<Real> hasenbusch({ 0.1 });
+  std::vector<Real> hasenbusch({ 0.1, 0.4, 0.7 });
 
   auto GridPtr   = TheHMC.Resources.GetCartesian();
   auto GridRBPtr = TheHMC.Resources.GetRBCartesian();

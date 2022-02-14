@@ -138,9 +138,11 @@ protected:
       std::cout << GridLogIntegrator << "Smearing (on/off): " << as[level].actions.at(a)->is_smeared << std::endl;
       auto name = as[level].actions.at(a)->action_name();
       if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
+      DumpSliceNorm("force before Ta",force,Nd-1);
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
       double end_force = usecond();
 
+      DumpSliceNorm("force before filter",force,Nd-1);
       MomFilter->applyFilter(force);
       
       Real force_abs   = std::sqrt(norm2(force)/U.Grid()->gSites()); //average per-site norm.  nb. norm2(latt) = \sum_x norm2(latt[x]) 
@@ -162,20 +164,12 @@ protected:
       double time_force = (end_force - start_force) / 1e3;
       std::cout << GridLogMessage << "["<<level<<"]["<<a<<"] P update elapsed time: " << time_full << " ms (force: " << time_force << " ms)"  << std::endl;
 
-      DumpSliceNorm("force",force,Nd-1);
-      /*
-      auto pol = PeekIndex<LorentzIndex>(force,Nd-1);
-      DumpSliceNorm("force_t",pol);
-      pol=Zero();
-      PokeIndex<LorentzIndex>(force,pol,Nd-1);
-      DumpSliceNorm("force_xyz",force);
-      */      
+      DumpSliceNorm("force after filter",force,Nd-1);
     }
 
     // Force from the other representations
     as[level].apply(update_P_hireps, Representations, Mom, U, ep);
 
-    MomFilter->applyFilter(Mom);
   }
 
   void update_U(Field& U, double ep) 
@@ -189,8 +183,12 @@ protected:
   
   void update_U(MomentaField& Mom, Field& U, double ep) 
   {
+    MomentaField MomFiltered(Mom.Grid());
+    MomFiltered = Mom;
+    MomFilter->applyFilter(MomFiltered);
+
     // exponential of Mom*U in the gauge fields case
-    FieldImplementation::update_field(Mom, U, ep);
+    FieldImplementation::update_field(MomFiltered, U, ep);
 
     // Update the smeared fields, can be implemented as observer
     Smearer.set_Field(U);
@@ -366,7 +364,6 @@ public:
       as[level].apply(refresh_hireps, Representations, sRNG, pRNG);
     }
 
-    MomFilter->applyFilter(P);
   }
 
   // to be used by the actionlevel class to iterate

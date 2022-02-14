@@ -59,20 +59,20 @@ int main(int argc, char **argv) {
   IntegratorParameters MD;
   //  typedef GenericHMCRunner<LeapFrog> HMCWrapper; 
   //  MD.name    = std::string("Leap Frog");
-  //  typedef GenericHMCRunner<ForceGradient> HMCWrapper; 
-  //  MD.name    = std::string("Force Gradient");
-  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper; 
-  MD.name    = std::string("MinimumNorm2");
-  MD.MDsteps = 12;
+  typedef GenericHMCRunner<ForceGradient> HMCWrapper; 
+  MD.name    = std::string("Force Gradient");
+  //typedef GenericHMCRunner<MinimumNorm2> HMCWrapper; 
+  //MD.name    = std::string("MinimumNorm2");
+  MD.MDsteps = 15;
   MD.trajL   = 1.0;
   
   HMCparameters HMCparams;
-  HMCparams.StartTrajectory  = 211;
+  HMCparams.StartTrajectory  = 0;
   HMCparams.Trajectories     = 1000;
-  HMCparams.NoMetropolisUntil=  0;
+  HMCparams.NoMetropolisUntil=  10;
   //  "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
-  //  HMCparams.StartingType     =std::string("ColdStart");
-  HMCparams.StartingType     =std::string("CheckpointStart");
+  HMCparams.StartingType     =std::string("ColdStart");
+  //HMCparams.StartingType     =std::string("CheckpointStart");
   HMCparams.MD = MD;
   HMCWrapper TheHMC(HMCparams);
 
@@ -97,16 +97,16 @@ int main(int argc, char **argv) {
   TheHMC.Resources.AddObservable<PlaqObs>();
   //////////////////////////////////////////////
 
-  const int Ls      = 16;
+  const int Ls      = 24;
   Real beta         = 2.13;
-  Real light_mass   = 0.01;
-  Real strange_mass = 0.04;
+  Real light_mass   = 0.005;
+  Real strange_mass = 0.0362;
   Real pv_mass      = 1.0;
   RealD M5  = 1.8;
-  RealD b   = 1.0; 
-  RealD c   = 0.0;
+  RealD b   = 1.5; 
+  RealD c   = 0.5;
 
-  std::vector<Real> hasenbusch({ 0.1, 0.3, 0.6 });
+  std::vector<Real> hasenbusch({ 0.02, 0.2, 0.6 });
 
   auto GridPtr   = TheHMC.Resources.GetCartesian();
   auto GridRBPtr = TheHMC.Resources.GetRBCartesian();

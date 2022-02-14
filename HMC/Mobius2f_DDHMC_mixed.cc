@@ -51,7 +51,7 @@ public:
     {};
   virtual void refreshRestrict(FermionField &eta)
   {
-    Domains.ProjectDomain(eta,1);
+    Domains.ProjectDomain(eta,0);
     DumpSliceNorm("refresh Restrict eta",eta);
   };
 };
@@ -97,20 +97,29 @@ int main(int argc, char **argv)
   //  typedef GenericHMCRunner<ForceGradient> HMCWrapper; 
   //  MD.name    = std::string("Force Gradient");
   typedef GenericHMCRunner<MinimumNorm2> HMCWrapper; 
+  /*
   MD.name    = std::string("MinimumNorm2");
   MD.MDsteps = 4; // dH = 0.08
   //  MD.MDsteps = 3; // dH = 0.8
   MD.trajL   = 1.0;
+  */
   
   HMCparameters HMCparams;
-  HMCparams.StartTrajectory  = 48;
-  HMCparams.Trajectories     = 20;
+  {
+    XmlReader  HMCrd("HMCparameters.xml");
+    read(HMCrd,"HMCparameters",HMCparams);
+    std::cout << GridLogMessage<< HMCparams <<std::endl;
+  }
+  HMCWrapper TheHMC(HMCparams);
+  /*
+  HMCparams.StartTrajectory  = 66;
+  HMCparams.Trajectories     = 200;
   HMCparams.NoMetropolisUntil=  0;
   //  "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
-  //  HMCparams.StartingType     =std::string("ColdStart");
+  // HMCparams.StartingType     =std::string("ColdStart");
   HMCparams.StartingType     =std::string("CheckpointStart");
   HMCparams.MD = MD;
-  HMCWrapper TheHMC(HMCparams);
+  */
 
   // Grid from the command line arguments --grid and --mpi
   TheHMC.Resources.AddFourDimGrid("gauge"); // use default simd lanes decomposition
@@ -177,8 +186,10 @@ int main(int argc, char **argv)
   
   double ActionStoppingCondition     = 1e-10;
   double DerivativeStoppingCondition = 1e-10;
-  //  double BoundaryDerivativeStoppingCondition = 1e-6;
-  double BoundaryDerivativeStoppingCondition = 1e-10;
+  //  double BoundaryDerivativeStoppingCondition = 1e-10; decent acceptance
+  double BoundaryDerivativeStoppingCondition = 1e-7;   // decent acceptance
+  //  double BoundaryDerivativeStoppingCondition = 1e-6;  // bit bigger not huge
+  //  double BoundaryDerivativeStoppingCondition = 1e-5; // Large dH poor acceptance
   double MaxCGIterations = 30000;
 
   ////////////////////////////////////
@@ -239,8 +250,8 @@ int main(int argc, char **argv)
   std::vector<LinearOperatorD *> LinOpD;
   std::vector<LinearOperatorF *> LinOpF; 
 
-  const int MX_inner = 1000;
-  const RealD MX_tol = 1.0e-8;
+  int MX_inner = 1000;
+  RealD MX_tol = 1.0e-5;
 
   for(int h=0;h<n_hasenbusch+1;h++){
 
@@ -335,7 +346,9 @@ int main(int argc, char **argv)
 							    DirichletHasenD,DirichletHasenF,
 							    Block);
 
+#if 1
   std::cout << GridLogMessage << " Boundary NO ratio "<< std::endl;
+  MX_tol = 1.0e-5;
   Level1.push_back(new
 		   DomainDecomposedBoundaryTwoFlavourPseudoFermion<FimplD,FimplF>
 		   (BoundaryDenominator,
@@ -344,13 +357,13 @@ int main(int argc, char **argv)
 		   DomainDecomposedBoundaryTwoFlavourBosonPseudoFermion<FimplD,FimplF>
 		   (BoundaryNumerator,
 		    BoundaryDerivativeStoppingCondition,ActionStoppingCondition,MX_tol));
-  /*
+#else
   Level1.push_back(new
 		   DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion<FimplD,FimplF>
 		   (BoundaryNumerator,
 		    BoundaryDenominator,
 		    BoundaryDerivativeStoppingCondition,ActionStoppingCondition));
-  */
+#endif
 
   /////////////////////////////////////////////////////////////
   // Gauge action
