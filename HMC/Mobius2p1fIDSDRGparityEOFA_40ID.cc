@@ -499,16 +499,47 @@ int main(int argc, char **argv) {
 
   std::string param_file = "params.xml";
   bool file_load_check = false;
-  for(int i=1;i<argc;i++){
+
+  std::string serial_seeds = "1 2 3 4 5";
+  std::string parallel_seeds = "6 7 8 9 10";
+
+  int i=1;
+  while(i < argc){
     std::string sarg(argv[i]);
     if(sarg == "--param_file"){
       assert(i!=argc-1);
       param_file = argv[i+1];
+      i+=2;
     }else if(sarg == "--read_check"){ //check the fields load correctly and pass checksum/plaquette repro
       file_load_check = true;
+      i++;
+    }else if(sarg == "--set_seeds"){ //set the rng seeds. Expects two vector args, e.g.  --set_seeds 1.2.3.4 5.6.7.8
+      assert(i < argc-2);
+      std::vector<int> tmp;
+      GridCmdOptionIntVector(argv[i+1],tmp);
+      {
+	std::stringstream ss;
+	for(int j=0;j<tmp.size()-1;j++) ss << tmp[j] << " ";
+	ss << tmp.back();
+	serial_seeds = ss.str();
+      }
+      GridCmdOptionIntVector(argv[i+2],tmp);
+      {
+	std::stringstream ss;
+	for(int j=0;j<tmp.size()-1;j++) ss << tmp[j] << " ";
+	ss << tmp.back();
+	parallel_seeds = ss.str();
+      }
+      i+=3;
+      std::cout << GridLogMessage << "Set serial seeds to " << serial_seeds << std::endl;
+      std::cout << GridLogMessage << "Set parallel seeds to " << parallel_seeds << std::endl;
+      
+    }else{
+      i++;
     }
   }
 
+  
   //Read the user parameters
   EvolParameters user_params;
   
@@ -587,8 +618,8 @@ int main(int argc, char **argv) {
 
   //Note that checkpointing saves the RNG state so that this initialization is required only for the very first configuration
   RNGModuleParameters RNGpar;
-  RNGpar.serial_seeds = "1 2 3 4 5";
-  RNGpar.parallel_seeds = "6 7 8 9 10";
+  RNGpar.serial_seeds = serial_seeds;
+  RNGpar.parallel_seeds = parallel_seeds;
   TheHMC.Resources.SetRNGSeeds(RNGpar);
 
   typedef PlaquetteMod<GaugeImplPolicy> PlaqObs;
@@ -614,6 +645,14 @@ int main(int argc, char **argv) {
   RealD mob_b = (mobius_scale + mob_bmc)/2.;
   RealD mob_c = (mobius_scale - mob_bmc)/2.;
 
+  std::cout << GridLogMessage
+	    << "Ensemble parameters:" << std::endl
+	    << "Ls=" << Ls << std::endl
+	    << "beta=" << beta << std::endl
+	    << "light_mass=" << light_mass << std::endl
+	    << "strange_mass=" << strange_mass << std::endl
+	    << "mobius_scale=" << mobius_scale << std::endl;
+  
   //Setup the Grids
   auto UGridD   = TheHMC.Resources.GetCartesian();
   auto UrbGridD = TheHMC.Resources.GetRBCartesian();

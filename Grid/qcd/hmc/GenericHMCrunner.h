@@ -151,12 +151,22 @@ public:
       Resources.GetCheckPointer()->CheckpointRestore(Parameters.StartTrajectory, U,
 						     Resources.GetSerialRNG(),
 						     Resources.GetParallelRNG());
+    } else if (Parameters.StartingType == "CheckpointStartReseed") {
+      // Same as CheckpointRestart but reseed the RNGs using the fixed integer seeding used for ColdStart and HotStart
+      // Useful for creating new evolution streams from an existing stream
+      
+      // WARNING: Unfortunately because the checkpointer doesn't presently allow us to separately restore the RNG and gauge fields we have to load
+      // an existing RNG checkpoint first; make sure one is available and named correctly
+      Resources.GetCheckPointer()->CheckpointRestore(Parameters.StartTrajectory, U,
+						     Resources.GetSerialRNG(),
+						     Resources.GetParallelRNG());
+      Resources.SeedFixedIntegers();      
     } else {
       // others
       std::cout << GridLogError << "Unrecognized StartingType\n";
       std::cout
 	<< GridLogError
-	<< "Valid [HotStart, ColdStart, TepidStart, CheckpointStart]\n";
+	<< "Valid [HotStart, ColdStart, TepidStart, CheckpointStart, CheckpointStartReseed]\n";
       exit(1);
     }
   }
