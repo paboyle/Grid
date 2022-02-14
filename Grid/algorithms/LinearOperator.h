@@ -545,6 +545,16 @@ public:
 template<class Field> class LinearFunction {
 public:
   virtual void operator() (const Field &in, Field &out) = 0;
+
+  virtual void operator() (const std::vector<Field> &in, std::vector<Field> &out)
+  {
+    assert(in.size() == out.size());
+
+    for (unsigned int i = 0; i < in.size(); ++i)
+    {
+      (*this)(in[i], out[i]);
+    }
+  }
 };
 
 template<class Field> class IdentityLinearFunction : public LinearFunction<Field> {

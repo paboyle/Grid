@@ -1,5 +1,5 @@
 /*************************************************************************************
-
+n
     Grid physics library, www.github.com/paboyle/Grid 
 
     Source file: ./lib/tensors/Tensor_extract_merge.h
@@ -153,7 +153,7 @@ void insertLane(int lane, vobj & __restrict__ vec,const typename vobj::scalar_ob
 // Extract to a bunch of scalar object pointers of different scalar type, with offset. Useful for precision change
 ////////////////////////////////////////////////////////////////////////
 template<class vobj, class sobj> accelerator
-void extract(const vobj &vec,ExtractPointerArray<sobj> &extracted, int offset)
+void extract(const vobj &vec,const ExtractPointerArray<sobj> &extracted, int offset)
 {
   typedef typename GridTypeMapper<sobj>::scalar_type sobj_scalar_type;
   typedef typename GridTypeMapper<vobj>::scalar_type scalar_type;
@@ -181,7 +181,7 @@ void extract(const vobj &vec,ExtractPointerArray<sobj> &extracted, int offset)
 // Merge bunch of scalar object pointers of different scalar type, with offset. Useful for precision change
 ////////////////////////////////////////////////////////////////////////
 template<class vobj, class sobj> accelerator
-void merge(vobj &vec,ExtractPointerArray<sobj> &extracted, int offset)
+void merge(vobj &vec,const ExtractPointerArray<sobj> &extracted, int offset)
 {
   typedef typename GridTypeMapper<sobj>::scalar_type sobj_scalar_type;
   typedef typename GridTypeMapper<vobj>::scalar_type scalar_type;

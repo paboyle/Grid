@@ -910,7 +910,7 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   }
 
   std::vector<RealD> G_s(Ls,1.0);
-  Integer sign = 1; // sign flip for vector/tadpole
+  RealD sign = 1; // sign flip for vector/tadpole
   if ( curr_type == Current::Axial ) {
     for(int s=0;s<Ls/2;s++){
       G_s[s] = -1.0;
@@ -931,8 +931,8 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   for(int s=0;s<Ls;s++){
 
     int sp = (s+1)%Ls;
-    int sr = Ls-1-s;
-    int srp= (sr+1)%Ls;
+    //    int sr = Ls-1-s;
+    //    int srp= (sr+1)%Ls;
 
     // Mobius parameters
     auto b=this->bs[s];

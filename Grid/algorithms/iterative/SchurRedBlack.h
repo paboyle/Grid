@@ -134,6 +134,31 @@ namespace Grid {
       (*this)(_Matrix,in,out,guess);
     }
 
+    void RedBlackSource(Matrix &_Matrix, const std::vector<Field> &in, std::vector<Field> &src_o) 
+    {
+      GridBase *grid = _Matrix.RedBlackGrid();
+      Field tmp(grid);
+      int nblock = in.size();
+      for(int b=0;b<nblock;b++){
+	RedBlackSource(_Matrix,in[b],tmp,src_o[b]);
+      }
+    }
+    // James can write his own deflated guesser
+    // with optimised code for the inner products
+    //    RedBlackSolveSplitGrid();
+    //    RedBlackSolve(_Matrix,src_o,sol_o); 
+
+    void RedBlackSolution(Matrix &_Matrix, const std::vector<Field> &in, const std::vector<Field> &sol_o, std::vector<Field> &out)
+    {
+      GridBase *grid = _Matrix.RedBlackGrid();
+      Field tmp(grid);
+      int nblock = in.size();
+      for(int b=0;b<nblock;b++) {
+	pickCheckerboard(Even,tmp,in[b]);
+	RedBlackSolution(_Matrix,sol_o[b],tmp,out[b]);
+      }
+    }
+
     template<class Guesser>
     void operator()(Matrix &_Matrix, const std::vector<Field> &in, std::vector<Field> &out,Guesser &guess) 
     {
@@ -152,24 +177,29 @@ namespace Grid {
       ////////////////////////////////////////////////
       // Prepare RedBlack source
       ////////////////////////////////////////////////
-      for(int b=0;b<nblock;b++){
-	RedBlackSource(_Matrix,in[b],tmp,src_o[b]);
-      }
+      RedBlackSource(_Matrix,in,src_o);
+	//      for(int b=0;b<nblock;b++){
+	//	RedBlackSource(_Matrix,in[b],tmp,src_o[b]);
+	//      }
+      
       ////////////////////////////////////////////////
       // Make the guesses
       ////////////////////////////////////////////////
       if ( subGuess ) guess_save.resize(nblock,grid);
 
-      for(int b=0;b<nblock;b++){
-        if(useSolnAsInitGuess) {
+      
+      if(useSolnAsInitGuess) {
+        for(int b=0;b<nblock;b++){
           pickCheckerboard(Odd, sol_o[b], out[b]);
-        } else {
-          guess(src_o[b],sol_o[b]); 
         }
+      } else {
+        guess(src_o, sol_o); 
+      }
 
-	if ( subGuess ) { 
-	  guess_save[b] = sol_o[b];
-	}
+	    if ( subGuess ) { 
+        for(int b=0;b<nblock;b++){
+          guess_save[b] = sol_o[b];
+        }
       }
       //////////////////////////////////////////////////////////////
       // Call the block solver
