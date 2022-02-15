@@ -601,6 +601,7 @@ public:
     obj.recv_buf    = recv_buf;
     obj.bytes       = bytes;
     obj.lane        = lane;
+
     for(int i=0;i<CachedTransfers.size();i++){
       if (   (CachedTransfers[i].direction  ==direction)
 	   &&(CachedTransfers[i].OrthogPlane==OrthogPlane)
@@ -611,12 +612,11 @@ public:
 	std::cout << "Found duplicate copy plane dir "<<direction<<" plane "<< OrthogPlane<< " simd "<<lane << " relproc "<<DestProc<<std::endl;
 	AddCopy(CachedTransfers[i].recv_buf,recv_buf,bytes);
 	return 1;
-      } else {
-	std::cout << "No duplicate plane dir "<<direction<<" plane "<< OrthogPlane<< " simd "<<lane << " relproc "<<DestProc<<std::endl;
-	CachedTransfers.push_back(obj);
-	return 0;
       }
     }
+
+    std::cout << "No duplicate plane dir "<<direction<<" plane "<< OrthogPlane<< " simd "<<lane << " relproc "<<DestProc<<std::endl;
+    CachedTransfers.push_back(obj);
     return 0;
   }
   void AddPacket(void *xmit,void * rcv, Integer to,Integer from,Integer bytes){
