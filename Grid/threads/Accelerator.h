@@ -342,7 +342,7 @@ extern hipStream_t copyStream;
 /*These routines define mapping from thread grid to loop & vector lane indexing */
 accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 #ifdef GRID_SIMT
-  return hipThreadIdx_z; 
+  return hipThreadIdx_x; 
 #else
   return 0;
 #endif
@@ -356,19 +356,41 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
       { __VA_ARGS__;}							\
     };									\
     int nt=acceleratorThreads();					\
-    dim3 hip_threads(nt,1,nsimd);					\
-    dim3 hip_blocks ((num1+nt-1)/nt,num2,1);				\
-    hipLaunchKernelGGL(LambdaApply,hip_blocks,hip_threads,		\
-		       0,0,						\
-		       num1,num2,nsimd,lambda);				\
+    dim3 hip_threads(nsimd, nt, 1);					 \
+    dim3 hip_blocks ((num1+nt-1)/nt,num2,1); \
+    if(hip_threads.x * hip_threads.y * hip_threads.z <= 64){ \
+      hipLaunchKernelGGL(LambdaApply64,hip_blocks,hip_threads,		\
+            0,0,						\
+            num1,num2,nsimd, lambda);				\
+    } else { \
+      hipLaunchKernelGGL(LambdaApply,hip_blocks,hip_threads,		\
+            0,0,						\
+            num1,num2,nsimd, lambda);				\
+    } \
   }
 
+
 template<typename lambda>  __global__
+__launch_bounds__(64,1)
+void LambdaApply64(uint64_t numx, uint64_t numy, uint64_t numz, lambda Lambda)
+{
+  // Following the same scheme as CUDA for now
+  uint64_t x = threadIdx.y + blockDim.y*blockIdx.x;
+  uint64_t y = threadIdx.z + blockDim.z*blockIdx.y;
+  uint64_t z = threadIdx.x;
+  if ( (x < numx) && (y<numy) && (z<numz) ) {
+    Lambda(x,y,z);
+  }
+}
+
+template<typename lambda>  __global__
+__launch_bounds__(1024,1)
 void LambdaApply(uint64_t numx, uint64_t numy, uint64_t numz, lambda Lambda)
 {
-  uint64_t x = hipThreadIdx_x + hipBlockDim_x*hipBlockIdx_x;
-  uint64_t y = hipThreadIdx_y + hipBlockDim_y*hipBlockIdx_y;
-  uint64_t z = hipThreadIdx_z ;//+ hipBlockDim_z*hipBlockIdx_z;
+  // Following the same scheme as CUDA for now
+  uint64_t x = threadIdx.y + blockDim.y*blockIdx.x;
+  uint64_t y = threadIdx.z + blockDim.z*blockIdx.y;
+  uint64_t z = threadIdx.x;
   if ( (x < numx) && (y<numy) && (z<numz) ) {
     Lambda(x,y,z);
   }

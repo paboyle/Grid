@@ -1,0 +1,12 @@
+../../configure --enable-comms=mpi-auto \
+--enable-unified=no \
+--enable-shm=nvlink \
+--enable-accelerator=hip \
+--enable-gen-simd-width=64 \
+--enable-simd=GPU \
+--disable-fermion-reps \
+--disable-gparity \
+CXX=hipcc MPICXX=mpicxx \
+CXXFLAGS="-fPIC -I/opt/rocm-4.5.0/include/ -std=c++14 -I${MPICH_DIR}/include " \
+ LDFLAGS=" -L${MPICH_DIR}/lib -lmpi -L${CRAY_MPICH_ROOTDIR}/gtl/lib -lmpi_gtl_hsa "
+HIPFLAGS = --amdgpu-target=gfx90a
