@@ -726,8 +726,8 @@ public:
   static strong_inline void ApplyBoundaryMask(Field& f, const Mask& m) {
     conformable(f, m);
     auto grid  = f.Grid();
-    const int Nsite = grid->oSites();
-    const int Nsimd = grid->Nsimd();
+    const uint32_t Nsite = grid->oSites();
+    const uint32_t Nsimd = grid->Nsimd();
     autoView(f_v, f, AcceleratorWrite);
     autoView(m_v, m, AcceleratorRead);
     // NOTE: this function cannot be 'private' since nvcc forbids this for kernels
