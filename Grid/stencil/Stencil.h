@@ -251,6 +251,7 @@ public:
     Integer DestProc;
     Integer bytes;
     Integer lane;
+    Integer cb;
     void *recv_buf;
   };
 
@@ -571,7 +572,7 @@ public:
   }
   void AddCopy(void *from,void * to, Integer bytes)
   {
-    std::cout << "Adding CopyReceiveBuffer "<<std::hex<<from<<" "<<to<<std::dec<<" "<<bytes<<std::endl;
+    //    std::cout << "Adding CopyReceiveBuffer "<<std::hex<<from<<" "<<to<<std::dec<<" "<<bytes<<std::endl;
     CopyReceiveBuffer obj;
     obj.from_p = from;
     obj.to_p = to;
@@ -585,22 +586,23 @@ public:
       cobj *from=(cobj *)CopyReceiveBuffers[i].from_p;
       cobj *to  =(cobj *)CopyReceiveBuffers[i].to_p;
       Integer words = CopyReceiveBuffers[i].bytes/sizeof(cobj);
-    std::cout << "CopyReceiveBuffer "<<std::hex<<from<<" "<<to<<std::dec<<" "<<words*sizeof(cobj)<<std::endl;
+      //    std::cout << "CopyReceiveBuffer "<<std::hex<<from<<" "<<to<<std::dec<<" "<<words*sizeof(cobj)<<std::endl;
       accelerator_forNB(j, words, cobj::Nsimd(), {
-	to[j] = from [j]; // Start with a debug check that these give the same data.
+	  coalescedWrite(to[j] ,coalescedRead(from [j]));
       });
     }
   }
   
-  Integer CheckForDuplicate(Integer direction, Integer OrthogPlane, Integer DestProc, void *recv_buf,Integer lane,Integer bytes)
+  Integer CheckForDuplicate(Integer direction, Integer OrthogPlane, Integer DestProc, void *recv_buf,Integer lane,Integer bytes,Integer cb)
   {
     CachedTransfer obj;
     obj.direction   = direction;
     obj.OrthogPlane = OrthogPlane;
     obj.DestProc    = DestProc;
     obj.recv_buf    = recv_buf;
-    obj.bytes       = bytes;
     obj.lane        = lane;
+    obj.bytes       = bytes;
+    obj.cb          = cb;
 
     for(int i=0;i<CachedTransfers.size();i++){
       if (   (CachedTransfers[i].direction  ==direction)
@@ -608,14 +610,15 @@ public:
 	   &&(CachedTransfers[i].DestProc   ==DestProc)
 	   &&(CachedTransfers[i].bytes      ==bytes)
 	   &&(CachedTransfers[i].lane       ==lane)
+	   &&(CachedTransfers[i].cb         ==cb)
 	     ){
-	std::cout << "Found duplicate copy plane dir "<<direction<<" plane "<< OrthogPlane<< " simd "<<lane << " relproc "<<DestProc<<std::endl;
+	//	std::cout << "Found duplicate plane dir "<<direction<<" plane "<< OrthogPlane<< " simd "<<lane << " relproc "<<DestProc<< " bytes "<<bytes <<std::endl;
 	AddCopy(CachedTransfers[i].recv_buf,recv_buf,bytes);
 	return 1;
       }
     }
 
-    std::cout << "No duplicate plane dir "<<direction<<" plane "<< OrthogPlane<< " simd "<<lane << " relproc "<<DestProc<<std::endl;
+    //    std::cout << "No duplicate plane dir "<<direction<<" plane "<< OrthogPlane<< " simd "<<lane << " relproc "<<DestProc<<"  bytes "<<bytes<<std::endl;
     CachedTransfers.push_back(obj);
     return 0;
   }
@@ -1126,8 +1129,8 @@ public:
 	Gather_plane_simple_table(face_table[face_idx],rhs,send_buf,compress,u_comm_offset,so); face_idx++;
 	gathertime+=usecond();
 
-	int duplicate = CheckForDuplicate(dimension,x,comm_proc,(void *)&recv_buf[u_comm_offset],0,bytes);
-	if (!duplicate || 1) { // Force comms for now
+	int duplicate = CheckForDuplicate(dimension,sx,comm_proc,(void *)&recv_buf[u_comm_offset],0,bytes,cbmask);
+	if ( (!duplicate) ) { // Force comms for now
 
 	  ///////////////////////////////////////////////////////////
 	  // Build a list of things to do after we synchronise GPUs
@@ -1255,8 +1258,8 @@ public:
 
 	    rpointers[i] = rp;
 
-	    int duplicate = CheckForDuplicate(dimension,x,nbr_proc,(void *)rp,i,bytes);
-	    if (!duplicate || 1 ) { // Force comms for now
+	    int duplicate = CheckForDuplicate(dimension,sx,nbr_proc,(void *)rp,i,bytes,cbmask);
+	    if ( (!duplicate) ) { // Force comms for now
 	      AddPacket((void *)sp,(void *)rp,xmit_to_rank,recv_from_rank,bytes);
 	    }
 
