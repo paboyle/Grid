@@ -32,17 +32,18 @@
 #include <Grid/qcd/spin/Dirac.h>
 #include <Grid/qcd/action/fermion/CompactWilsonCloverFermion.h>
 
+
 NAMESPACE_BEGIN(Grid);
-template<class Impl>
-CompactWilsonCloverFermion<Impl>::CompactWilsonCloverFermion(GaugeField& _Umu,
-                                                             GridCartesian& Fgrid,
-                                                             GridRedBlackCartesian& Hgrid,
-                                                             const RealD _mass,
-                                                             const RealD _csw_r,
-                                                             const RealD _csw_t,
-                                                             const RealD _cF,
-                                                             const WilsonAnisotropyCoefficients& clover_anisotropy,
-                                                             const ImplParams& impl_p)
+template<class Impl, class CloverHelpers>
+CompactWilsonCloverFermion<Impl, CloverHelpers>::CompactWilsonCloverFermion(GaugeField& _Umu,
+                                                                            GridCartesian& Fgrid,
+                                                                            GridRedBlackCartesian& Hgrid,
+                                                                            const RealD _mass,
+                                                                            const RealD _csw_r,
+                                                                            const RealD _csw_t,
+                                                                            const RealD _cF,
+                                                                            const WilsonAnisotropyCoefficients& clover_anisotropy,
+                                                                            const ImplParams& impl_p)
   : WilsonBase(_Umu, Fgrid, Hgrid, _mass, impl_p, clover_anisotropy)
   , csw_r(_csw_r)
   , csw_t(_csw_t)
@@ -68,40 +69,40 @@ CompactWilsonCloverFermion<Impl>::CompactWilsonCloverFermion(GaugeField& _Umu,
     CompactHelpers::SetupMasks(this->BoundaryMask, this->BoundaryMaskEven, this->BoundaryMaskOdd);
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::Dhop(const FermionField& in, FermionField& out, int dag) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::Dhop(const FermionField& in, FermionField& out, int dag) {
   WilsonBase::Dhop(in, out, dag);
   if(open_boundaries) ApplyBoundaryMask(out);
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::DhopOE(const FermionField& in, FermionField& out, int dag) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::DhopOE(const FermionField& in, FermionField& out, int dag) {
   WilsonBase::DhopOE(in, out, dag);
   if(open_boundaries) ApplyBoundaryMask(out);
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::DhopEO(const FermionField& in, FermionField& out, int dag) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::DhopEO(const FermionField& in, FermionField& out, int dag) {
   WilsonBase::DhopEO(in, out, dag);
   if(open_boundaries) ApplyBoundaryMask(out);
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::DhopDir(const FermionField& in, FermionField& out, int dir, int disp) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::DhopDir(const FermionField& in, FermionField& out, int dir, int disp) {
   WilsonBase::DhopDir(in, out, dir, disp);
   if(this->open_boundaries) ApplyBoundaryMask(out);
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::DhopDirAll(const FermionField& in, std::vector<FermionField>& out) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::DhopDirAll(const FermionField& in, std::vector<FermionField>& out) {
   WilsonBase::DhopDirAll(in, out);
   if(this->open_boundaries) {
     for(auto& o : out) ApplyBoundaryMask(o);
   }
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::M(const FermionField& in, FermionField& out) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::M(const FermionField& in, FermionField& out) {
   out.Checkerboard() = in.Checkerboard();
   WilsonBase::Dhop(in, out, DaggerNo); // call base to save applying bc
   Mooee(in, Tmp);
@@ -109,8 +110,8 @@ void CompactWilsonCloverFermion<Impl>::M(const FermionField& in, FermionField& o
   if(open_boundaries) ApplyBoundaryMask(out);
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::Mdag(const FermionField& in, FermionField& out) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::Mdag(const FermionField& in, FermionField& out) {
   out.Checkerboard() = in.Checkerboard();
   WilsonBase::Dhop(in, out, DaggerYes);  // call base to save applying bc
   MooeeDag(in, Tmp);
@@ -118,20 +119,20 @@ void CompactWilsonCloverFermion<Impl>::Mdag(const FermionField& in, FermionField
   if(open_boundaries) ApplyBoundaryMask(out);
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::Meooe(const FermionField& in, FermionField& out) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::Meooe(const FermionField& in, FermionField& out) {
   WilsonBase::Meooe(in, out);
   if(open_boundaries) ApplyBoundaryMask(out);
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::MeooeDag(const FermionField& in, FermionField& out) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::MeooeDag(const FermionField& in, FermionField& out) {
   WilsonBase::MeooeDag(in, out);
   if(open_boundaries) ApplyBoundaryMask(out);
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::Mooee(const FermionField& in, FermionField& out) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::Mooee(const FermionField& in, FermionField& out) {
   if(in.Grid()->_isCheckerBoarded) {
     if(in.Checkerboard() == Odd) {
       MooeeInternal(in, out, DiagonalOdd, TriangleOdd);
@@ -144,13 +145,13 @@ void CompactWilsonCloverFermion<Impl>::Mooee(const FermionField& in, FermionFiel
   if(open_boundaries) ApplyBoundaryMask(out);
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::MooeeDag(const FermionField& in, FermionField& out) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::MooeeDag(const FermionField& in, FermionField& out) {
   Mooee(in, out); // blocks are hermitian
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::MooeeInv(const FermionField& in, FermionField& out) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::MooeeInv(const FermionField& in, FermionField& out) {
   if(in.Grid()->_isCheckerBoarded) {
     if(in.Checkerboard() == Odd) {
       MooeeInternal(in, out, DiagonalInvOdd, TriangleInvOdd);
@@ -163,23 +164,23 @@ void CompactWilsonCloverFermion<Impl>::MooeeInv(const FermionField& in, FermionF
   if(open_boundaries) ApplyBoundaryMask(out);
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::MooeeInvDag(const FermionField& in, FermionField& out) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::MooeeInvDag(const FermionField& in, FermionField& out) {
   MooeeInv(in, out); // blocks are hermitian
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::Mdir(const FermionField& in, FermionField& out, int dir, int disp) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::Mdir(const FermionField& in, FermionField& out, int dir, int disp) {
   DhopDir(in, out, dir, disp);
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::MdirAll(const FermionField& in, std::vector<FermionField>& out) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::MdirAll(const FermionField& in, std::vector<FermionField>& out) {
   DhopDirAll(in, out);
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::MDeriv(GaugeField& force, const FermionField& X, const FermionField& Y, int dag) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::MDeriv(GaugeField& force, const FermionField& X, const FermionField& Y, int dag) {
   assert(!open_boundaries); // TODO check for changes required for open bc
 
   // NOTE: code copied from original clover term
@@ -251,7 +252,7 @@ void CompactWilsonCloverFermion<Impl>::MDeriv(GaugeField& force, const FermionFi
       }
       PropagatorField Slambda = Gamma(sigma[count]) * Lambda; // sigma checked
       Impl::TraceSpinImpl(lambda, Slambda);                   // traceSpin ok
-      force_mu -= factor*Helpers::Cmunu(U, lambda, mu, nu);   // checked
+      force_mu -= factor*CloverHelpers::Cmunu(U, lambda, mu, nu);   // checked
       count++;
     }
 
@@ -261,18 +262,18 @@ void CompactWilsonCloverFermion<Impl>::MDeriv(GaugeField& force, const FermionFi
   force += clover_force;
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::MooDeriv(GaugeField& mat, const FermionField& U, const FermionField& V, int dag) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::MooDeriv(GaugeField& mat, const FermionField& U, const FermionField& V, int dag) {
   assert(0);
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::MeeDeriv(GaugeField& mat, const FermionField& U, const FermionField& V, int dag) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::MeeDeriv(GaugeField& mat, const FermionField& U, const FermionField& V, int dag) {
   assert(0);
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::MooeeInternal(const FermionField&        in,
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::MooeeInternal(const FermionField&        in,
                     FermionField&              out,
                     const CloverDiagonalField& diagonal,
                     const CloverTriangleField& triangle) {
@@ -285,8 +286,8 @@ void CompactWilsonCloverFermion<Impl>::MooeeInternal(const FermionField&        
   CompactHelpers::MooeeKernel(diagonal.oSites(), 1, in, out, diagonal, triangle);
 }
 
-template<class Impl>
-void CompactWilsonCloverFermion<Impl>::ImportGauge(const GaugeField& _Umu) {
+template<class Impl, class CloverHelpers>
+void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeField& _Umu) {
   // NOTE: parts copied from original implementation
 
   // Import gauge into base class
@@ -318,8 +319,9 @@ void CompactWilsonCloverFermion<Impl>::ImportGauge(const GaugeField& _Umu) {
   TmpOriginal += Helpers::fillCloverXT(Ex) * csw_t;
   TmpOriginal += Helpers::fillCloverYT(Ey) * csw_t;
   TmpOriginal += Helpers::fillCloverZT(Ez) * csw_t;
-  TmpOriginal += this->diag_mass;
-
+  // Handle mass term based on clover policy
+  CloverHelpers::MassTerm(TmpOriginal, this->diag_mass);
+  
   // Convert the data layout of the clover term
   double t4 = usecond();
   CompactHelpers::ConvertLayout(TmpOriginal, Diagonal, Triangle);
@@ -328,9 +330,9 @@ void CompactWilsonCloverFermion<Impl>::ImportGauge(const GaugeField& _Umu) {
   double t5 = usecond();
   if(open_boundaries) CompactHelpers::ModifyBoundaries(Diagonal, Triangle, csw_t, cF, this->diag_mass);
 
-  // Invert the clover term in the improved layout
+  // Instantiate based on clover policy
   double t6 = usecond();
-  CompactHelpers::Invert(Diagonal, Triangle, DiagonalInv, TriangleInv);
+  CloverHelpers::Instantiate(Diagonal, Triangle, DiagonalInv, TriangleInv, csw_t, this->diag_mass);
 
   // Fill the remaining clover fields
   double t7 = usecond();
@@ -353,7 +355,7 @@ void CompactWilsonCloverFermion<Impl>::ImportGauge(const GaugeField& _Umu) {
             << ", fill clover = "               << (t4 - t3) / 1e6
             << ", convert = "                   << (t5 - t4) / 1e6
             << ", boundaries = "                << (t6 - t5) / 1e6
-            << ", inversions = "                << (t7 - t6) / 1e6
+            << ", instantiate = "               << (t7 - t6) / 1e6
             << ", pick cbs = "                  << (t8 - t7) / 1e6
             << ", total = "                     << (t8 - t0) / 1e6
             << std::endl;

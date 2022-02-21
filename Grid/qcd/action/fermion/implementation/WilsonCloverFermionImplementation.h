@@ -34,8 +34,8 @@
 
 NAMESPACE_BEGIN(Grid);
 
-template<class Impl>
-WilsonCloverFermion<Impl>::WilsonCloverFermion(GaugeField&                         _Umu,
+template<class Impl, class CloverHelpers>
+WilsonCloverFermion<Impl, CloverHelpers>::WilsonCloverFermion(GaugeField&                         _Umu,
                                                GridCartesian&                      Fgrid,
                                                GridRedBlackCartesian&              Hgrid,
                                                const RealD                         _mass,
@@ -74,8 +74,8 @@ WilsonCloverFermion<Impl>::WilsonCloverFermion(GaugeField&                      
 }
 
 // *NOT* EO
-template <class Impl>
-void WilsonCloverFermion<Impl>::M(const FermionField &in, FermionField &out)
+template<class Impl, class CloverHelpers>
+void WilsonCloverFermion<Impl, CloverHelpers>::M(const FermionField &in, FermionField &out)
 {
   FermionField temp(out.Grid());
 
@@ -89,8 +89,8 @@ void WilsonCloverFermion<Impl>::M(const FermionField &in, FermionField &out)
   out += temp;
 }
 
-template <class Impl>
-void WilsonCloverFermion<Impl>::Mdag(const FermionField &in, FermionField &out)
+template<class Impl, class CloverHelpers>
+void WilsonCloverFermion<Impl, CloverHelpers>::Mdag(const FermionField &in, FermionField &out)
 {
   FermionField temp(out.Grid());
 
@@ -104,8 +104,8 @@ void WilsonCloverFermion<Impl>::Mdag(const FermionField &in, FermionField &out)
   out += temp;
 }
 
-template <class Impl>
-void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
+template<class Impl, class CloverHelpers>
+void WilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeField &_Umu)
 {
   double t0 = usecond();
   WilsonFermion<Impl>::ImportGauge(_Umu);
@@ -131,47 +131,50 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
   CloverTerm += Helpers::fillCloverXT(Ex) * csw_t;
   CloverTerm += Helpers::fillCloverYT(Ey) * csw_t;
   CloverTerm += Helpers::fillCloverZT(Ez) * csw_t;
-  CloverTerm += diag_mass;
-
+   
   double t4 = usecond();
-  int lvol = _Umu.Grid()->lSites();
-  int DimRep = Impl::Dimension;
+  CloverHelpers::Instantiate(CloverTerm, CloverTermInv, csw_t, this->diag_mass);
+//   CloverTerm += diag_mass;
+// 
+//   double t4 = usecond();
+//   int lvol = _Umu.Grid()->lSites();
+//   int DimRep = Impl::Dimension;
+// 
+//   double t5 = usecond();
+//   {
+//     autoView(CTv,CloverTerm,CpuRead);
+//     autoView(CTIv,CloverTermInv,CpuWrite);
+//     thread_for(site, lvol, {
+//       Coordinate lcoor;
+//       grid->LocalIndexToLocalCoor(site, lcoor);
+//       Eigen::MatrixXcd EigenCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
+//       Eigen::MatrixXcd EigenInvCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
+//       typename SiteClover::scalar_object Qx = Zero(), Qxinv = Zero();
+//       peekLocalSite(Qx, CTv, lcoor);
+//       //if (csw!=0){
+//       for (int j = 0; j < Ns; j++)
+// 	for (int k = 0; k < Ns; k++)
+// 	  for (int a = 0; a < DimRep; a++)
+// 	    for (int b = 0; b < DimRep; b++){
+// 	      auto zz =  Qx()(j, k)(a, b);
+// 	      EigenCloverOp(a + j * DimRep, b + k * DimRep) = std::complex<double>(zz);
+// 	    }
+//       //   if (site==0) std::cout << "site =" << site << "\n" << EigenCloverOp << std::endl;
+//       
+//       EigenInvCloverOp = EigenCloverOp.inverse();
+//       //std::cout << EigenInvCloverOp << std::endl;
+//       for (int j = 0; j < Ns; j++)
+// 	for (int k = 0; k < Ns; k++)
+// 	  for (int a = 0; a < DimRep; a++)
+// 	    for (int b = 0; b < DimRep; b++)
+// 	      Qxinv()(j, k)(a, b) = EigenInvCloverOp(a + j * DimRep, b + k * DimRep);
+//       //    if (site==0) std::cout << "site =" << site << "\n" << EigenInvCloverOp << std::endl;
+//       //  }
+//       pokeLocalSite(Qxinv, CTIv, lcoor);
+//     });
+//   }
 
   double t5 = usecond();
-  {
-    autoView(CTv,CloverTerm,CpuRead);
-    autoView(CTIv,CloverTermInv,CpuWrite);
-    thread_for(site, lvol, {
-      Coordinate lcoor;
-      grid->LocalIndexToLocalCoor(site, lcoor);
-      Eigen::MatrixXcd EigenCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
-      Eigen::MatrixXcd EigenInvCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
-      typename SiteClover::scalar_object Qx = Zero(), Qxinv = Zero();
-      peekLocalSite(Qx, CTv, lcoor);
-      //if (csw!=0){
-      for (int j = 0; j < Ns; j++)
-	for (int k = 0; k < Ns; k++)
-	  for (int a = 0; a < DimRep; a++)
-	    for (int b = 0; b < DimRep; b++){
-	      auto zz =  Qx()(j, k)(a, b);
-	      EigenCloverOp(a + j * DimRep, b + k * DimRep) = std::complex<double>(zz);
-	    }
-      //   if (site==0) std::cout << "site =" << site << "\n" << EigenCloverOp << std::endl;
-      
-      EigenInvCloverOp = EigenCloverOp.inverse();
-      //std::cout << EigenInvCloverOp << std::endl;
-      for (int j = 0; j < Ns; j++)
-	for (int k = 0; k < Ns; k++)
-	  for (int a = 0; a < DimRep; a++)
-	    for (int b = 0; b < DimRep; b++)
-	      Qxinv()(j, k)(a, b) = EigenInvCloverOp(a + j * DimRep, b + k * DimRep);
-      //    if (site==0) std::cout << "site =" << site << "\n" << EigenInvCloverOp << std::endl;
-      //  }
-      pokeLocalSite(Qxinv, CTIv, lcoor);
-    });
-  }
-
-  double t6 = usecond();
   // Separate the even and odd parts
   pickCheckerboard(Even, CloverTermEven, CloverTerm);
   pickCheckerboard(Odd, CloverTermOdd, CloverTerm);
@@ -184,7 +187,7 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
 
   pickCheckerboard(Even, CloverTermInvDagEven, adj(CloverTermInv));
   pickCheckerboard(Odd, CloverTermInvDagOdd, adj(CloverTermInv));
-  double t7 = usecond();
+  double t6 = usecond();
 
 #if 0
   std::cout << GridLogMessage << "WilsonCloverFermion::ImportGauge timings:"
@@ -192,40 +195,39 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
             << ", allocations = "               << (t2 - t1) / 1e6
             << ", field strength = "            << (t3 - t2) / 1e6
             << ", fill clover = "               << (t4 - t3) / 1e6
-            << ", misc = "                      << (t5 - t4) / 1e6
-            << ", inversions = "                << (t6 - t5) / 1e6
-            << ", pick cbs = "                  << (t7 - t6) / 1e6
-            << ", total = "                     << (t7 - t0) / 1e6
+            << ", instantiation = "             << (t5 - t4) / 1e6
+            << ", pick cbs = "                  << (t6 - t5) / 1e6
+            << ", total = "                     << (t6 - t0) / 1e6
             << std::endl;
 #endif
 }
 
-template <class Impl>
-void WilsonCloverFermion<Impl>::Mooee(const FermionField &in, FermionField &out)
+template<class Impl, class CloverHelpers>
+void WilsonCloverFermion<Impl, CloverHelpers>::Mooee(const FermionField &in, FermionField &out)
 {
   this->MooeeInternal(in, out, DaggerNo, InverseNo);
 }
 
-template <class Impl>
-void WilsonCloverFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out)
+template<class Impl, class CloverHelpers>
+void WilsonCloverFermion<Impl, CloverHelpers>::MooeeDag(const FermionField &in, FermionField &out)
 {
   this->MooeeInternal(in, out, DaggerYes, InverseNo);
 }
 
-template <class Impl>
-void WilsonCloverFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out)
+template<class Impl, class CloverHelpers>
+void WilsonCloverFermion<Impl, CloverHelpers>::MooeeInv(const FermionField &in, FermionField &out)
 {
   this->MooeeInternal(in, out, DaggerNo, InverseYes);
 }
 
-template <class Impl>
-void WilsonCloverFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out)
+template<class Impl, class CloverHelpers>
+void WilsonCloverFermion<Impl, CloverHelpers>::MooeeInvDag(const FermionField &in, FermionField &out)
 {
   this->MooeeInternal(in, out, DaggerYes, InverseYes);
 }
 
-template <class Impl>
-void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionField &out, int dag, int inv)
+template<class Impl, class CloverHelpers>
+void WilsonCloverFermion<Impl, CloverHelpers>::MooeeInternal(const FermionField &in, FermionField &out, int dag, int inv)
 {
   out.Checkerboard() = in.Checkerboard();
   CloverField *Clover;
@@ -278,8 +280,8 @@ void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionFie
 } // MooeeInternal
 
 // Derivative parts unpreconditioned pseudofermions
-template <class Impl>
-void WilsonCloverFermion<Impl>::MDeriv(GaugeField &force, const FermionField &X, const FermionField &Y, int dag)
+template<class Impl, class CloverHelpers>
+void WilsonCloverFermion<Impl, CloverHelpers>::MDeriv(GaugeField &force, const FermionField &X, const FermionField &Y, int dag)
 {
   conformable(X.Grid(), Y.Grid());
   conformable(X.Grid(), force.Grid());
@@ -349,7 +351,7 @@ void WilsonCloverFermion<Impl>::MDeriv(GaugeField &force, const FermionField &X,
       }
       PropagatorField Slambda = Gamma(sigma[count]) * Lambda; // sigma checked
       Impl::TraceSpinImpl(lambda, Slambda);                   // traceSpin ok
-      force_mu -= factor*Helpers::Cmunu(U, lambda, mu, nu);                   // checked
+      force_mu -= factor*CloverHelpers::Cmunu(U, lambda, mu, nu);                   // checked
       count++;
     }
 
@@ -360,15 +362,15 @@ void WilsonCloverFermion<Impl>::MDeriv(GaugeField &force, const FermionField &X,
 }
 
 // Derivative parts
-template <class Impl>
-void WilsonCloverFermion<Impl>::MooDeriv(GaugeField &mat, const FermionField &X, const FermionField &Y, int dag)
+template<class Impl, class CloverHelpers>
+void WilsonCloverFermion<Impl, CloverHelpers>::MooDeriv(GaugeField &mat, const FermionField &X, const FermionField &Y, int dag)
 {
   assert(0);
 }
 
 // Derivative parts
-template <class Impl>
-void WilsonCloverFermion<Impl>::MeeDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag)
+template<class Impl, class CloverHelpers>
+void WilsonCloverFermion<Impl, CloverHelpers>::MeeDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag)
 {
   assert(0); // not implemented yet
 }
