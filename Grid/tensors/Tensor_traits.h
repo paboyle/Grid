@@ -47,20 +47,20 @@ NAMESPACE_BEGIN(Grid);
   class TypePair {
   public:
     T _internal[2];
-    TypePair<T>& operator=(const Grid::Zero& o) {
+    accelerator TypePair<T>& operator=(const Grid::Zero& o) {
       _internal[0] = Zero();
       _internal[1] = Zero();
       return *this;
     }
 
-    TypePair<T> operator+(const TypePair<T>& o) const {
+    accelerator TypePair<T> operator+(const TypePair<T>& o) const {
       TypePair<T> r;
       r._internal[0] = _internal[0] + o._internal[0];
       r._internal[1] = _internal[1] + o._internal[1];
       return r;
     }
 
-    TypePair<T>& operator+=(const TypePair<T>& o) {
+    accelerator TypePair<T>& operator+=(const TypePair<T>& o) {
       _internal[0] += o._internal[0];
       _internal[1] += o._internal[1];
       return *this;

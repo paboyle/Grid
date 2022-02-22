@@ -456,8 +456,8 @@ public:
 
     siteVector *CBp=Stencil.CommBuf();			
 
-    int ptype;
-    int nb2=nbasis/2;
+    //    int ptype;
+    //    int nb2=nbasis/2;
     
     autoView(in_v ,   in, AcceleratorRead);
     autoView(st, Stencil, AcceleratorRead);
@@ -471,7 +471,7 @@ public:
 	  typedef decltype(coalescedRead(in_v[0])) calcVector;
 	  typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
 	  int sU = sF/Ls;
-	  int  s = sF%Ls;
+	  //	  int  s = sF%Ls;
 
 	  calcComplex res = Zero();
 	  calcVector  nbr;
@@ -517,14 +517,14 @@ public:
     autoView(st, Stencil, AcceleratorRead);
     siteVector *CBp=Stencil.CommBuf();			
 
-    int ptype;
-    int nb2=nbasis/2;
+    //    int ptype;
+    //    int nb2=nbasis/2;
     accelerator_for2d(sF, Coarse5D->oSites(), b, nbasis, Nsimd, {
 
       typedef decltype(coalescedRead(in_v[0])) calcVector;
       typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
       int sU = sF/Ls;
-      int  s = sF%Ls;
+      //      int  s = sF%Ls;
 
       calcComplex res = Zero();
 
@@ -650,7 +650,7 @@ private:
   OperatorFunction<Field> & _Solver;
   LinearFunction<Field>   & _Guess;
 public:
-
+  using LinearFunction<Field>::operator();
   /////////////////////////////////////////////////////
   // Wrap the usual normal equations trick
   /////////////////////////////////////////////////////
@@ -712,6 +712,7 @@ RealD InverseApproximation(RealD x){
 template<class Field,class Matrix> class ChebyshevSmoother : public LinearFunction<Field>
 {
 public:
+  using LinearFunction<Field>::operator();
   typedef LinearOperatorBase<Field>                            FineOperator;
   Matrix         & _SmootherMatrix;
   FineOperator   & _SmootherOperator;
@@ -735,6 +736,7 @@ public:
 template<class Fobj,class CComplex,int nbasis, class CoarseSolver>
 class MGPreconditioner : public LinearFunction< Lattice<Fobj> > {
 public:
+  using LinearFunction<Lattice<Fobj> >::operator();
 
   typedef Aggregation<Fobj,CComplex,nbasis> Aggregates;
   typedef typename Aggregation<Fobj,CComplex,nbasis>::CoarseVector CoarseVector;
@@ -831,6 +833,7 @@ public:
 template<class Fobj,class CComplex,int nbasis, class CoarseSolver>
 class HDCRPreconditioner : public LinearFunction< Lattice<Fobj> > {
 public:
+  using LinearFunction<Lattice<Fobj> >::operator();
 
   typedef Aggregation<Fobj,CComplex,nbasis> Aggregates;
   typedef typename Aggregation<Fobj,CComplex,nbasis>::CoarseVector CoarseVector;
@@ -1174,18 +1177,18 @@ int main (int argc, char ** argv)
   PlainHermOp<CoarseCoarseVector> IRLOpL2    (IRLHermOpL2);
   ImplicitlyRestartedLanczos<CoarseCoarseVector> IRLL2(IRLOpChebyL2,IRLOpL2,cNstop,cNk,cNm,1.0e-3,20);
 
-  int cNconv;
   cNm=0;
   std::vector<RealD>          eval2(cNm);
   std::vector<CoarseCoarseVector>   evec2(cNm,CoarseCoarse5d);
   cc_src=1.0;
+  //  int cNconv;
   //  IRLL2.calc(eval2,evec2,cc_src,cNconv);
 
   ConjugateGradient<CoarseCoarseVector>  CoarseCoarseCG(0.02,10000);
   DeflatedGuesser<CoarseCoarseVector> DeflCoarseCoarseGuesser(evec2,eval2);
   NormalEquations<CoarseCoarseVector> DeflCoarseCoarseCGNE(cc_Dwf,CoarseCoarseCG,DeflCoarseCoarseGuesser);
 
-  ZeroGuesser<CoarseVector> CoarseZeroGuesser;
+  //  ZeroGuesser<CoarseVector> CoarseZeroGuesser;
   ZeroGuesser<CoarseCoarseVector>       CoarseCoarseZeroGuesser;
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;

@@ -181,8 +181,8 @@ void checkAdj(const Gamma::Algebra a)
 
 void checkProject(GridSerialRNG &rng)
 {
-  SpinVector     rv, recon, full;
-  HalfSpinVector hsp, hsm;
+  SpinVector     rv, recon;
+  HalfSpinVector hsm;
   
   random(rng, rv);
   

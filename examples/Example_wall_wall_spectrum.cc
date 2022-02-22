@@ -9,6 +9,7 @@ using namespace std;
 using namespace Grid;
 typedef SpinColourMatrix Propagator;
 typedef SpinColourVector Fermion;
+typedef PeriodicGimplR   GimplR;
 
 template<class Gimpl,class Field> class CovariantLaplacianCshift : public SparseMatrixBase<Field>
 {
@@ -55,6 +56,16 @@ void MakePhase(Coordinate mom,LatticeComplex &phase)
   }
   phase = exp(phase*ci);
 }
+void LinkSmear(int nstep, RealD rho,LatticeGaugeField &Uin,LatticeGaugeField &Usmr)
+{
+  Smear_Stout<GimplR> Stout(rho);
+  LatticeGaugeField Utmp(Uin.Grid());
+  Utmp = Uin;
+  for(int i=0;i<nstep;i++){
+    Stout.smear(Usmr,Utmp);
+    Utmp = Usmr;
+  }
+}
 void PointSource(Coordinate &coor,LatticePropagator &source)
 {
   //  Coordinate coor({0,0,0,0});
@@ -97,23 +108,23 @@ void GaugeFix(LatticeGaugeField &U,LatticeGaugeField &Ufix)
 {
   Real alpha=0.05;
 
-  Real plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(U);
+  Real plaq=WilsonLoops<GimplR>::avgPlaquette(U);
 
   std::cout << " Initial plaquette "<<plaq << std::endl;
 
   LatticeColourMatrix   xform(U.Grid()); 
   Ufix = U;
   int orthog=Nd-1;
-  FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(Ufix,xform,alpha,10000,1.0e-12, 1.0e-12,true,orthog);
+  FourierAcceleratedGaugeFixer<GimplR>::SteepestDescentGaugeFix(Ufix,xform,alpha,100000,1.0e-14, 1.0e-14,true,orthog);
   
-  plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Ufix);
+  plaq=WilsonLoops<GimplR>::avgPlaquette(Ufix);
 
   std::cout << " Final plaquette "<<plaq << std::endl;
 }
 template<class Field>
 void GaussianSmear(LatticeGaugeField &U,Field &unsmeared,Field &smeared)
 {
-  typedef CovariantLaplacianCshift <PeriodicGimplR,Field> Laplacian_t;
+  typedef CovariantLaplacianCshift <GimplR,Field> Laplacian_t;
   Laplacian_t Laplacian(U);
 
   Integer Iterations = 40;
@@ -167,19 +178,21 @@ void Solve(Action &D,LatticePropagator &source,LatticePropagator &propagator)
   GridBase *UGrid = D.GaugeGrid();
   GridBase *FGrid = D.FermionGrid();
 
-  LatticeFermion src4  (UGrid); 
+  LatticeFermion src4  (UGrid); src4 = Zero();
   LatticeFermion src5  (FGrid); 
   LatticeFermion result5(FGrid);
   LatticeFermion result4(UGrid);
   
-  ConjugateGradient<LatticeFermion> CG(1.0e-8,100000);
-  SchurRedBlackDiagMooeeSolve<LatticeFermion> schur(CG);
+  ConjugateGradient<LatticeFermion> CG(1.0e-12,100000);
+  SchurRedBlackDiagTwoSolve<LatticeFermion> schur(CG);
   ZeroGuesser<LatticeFermion> ZG; // Could be a DeflatedGuesser if have eigenvectors
+  std::cout<<GridLogMessage<< " source4 "<<norm2(source)<<std::endl;
   for(int s=0;s<Nd;s++){
     for(int c=0;c<Nc;c++){
       PropToFerm<Action>(src4,source,s,c);
-
+      std::cout<<GridLogMessage<< s<<c<<" src4 "<<norm2(src4)<<std::endl;
       D.ImportPhysicalFermionSource(src4,src5);
+      std::cout<<GridLogMessage<< s<<c<<" src5 "<<norm2(src5)<<std::endl;
 
       result5=Zero();
       schur(D,src5,result5,ZG);
@@ -287,15 +300,10 @@ int main (int argc, char ** argv)
 								   GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
 
-  //////////////////////////////////////////////////////////////////////
-  // You can manage seeds however you like.
-  // Recommend SeedUniqueString.
-  //////////////////////////////////////////////////////////////////////
-  std::vector<int> seeds4({1,2,3,4}); 
-  GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
 
   LatticeGaugeField Umu(UGrid);
-  LatticeGaugeField Ufixed(UGrid);
+  LatticeGaugeField Utmp(UGrid);
+  LatticeGaugeField Usmr(UGrid);
   std::string config;
   if( argc > 1 && argv[1][0] != '-' )
   {
@@ -308,13 +316,20 @@ int main (int argc, char ** argv)
   {
     std::cout<<GridLogMessage <<"Using hot configuration"<<std::endl;
     SU<Nc>::ColdConfiguration(Umu);
-    //    SU<Nc>::HotConfiguration(RNG4,Umu);
-    config="HotConfig";
+    config="ColdConfig";
   }
-  GaugeFix(Umu,Ufixed);
-  Umu=Ufixed;
-    
+  //  GaugeFix(Umu,Utmp);
+  //  Umu=Utmp;
 
+  int nsmr=3;
+  RealD rho=0.1;
+  RealD plaq_gf =WilsonLoops<GimplR>::avgPlaquette(Umu);
+  LinkSmear(nsmr,rho,Umu,Usmr);
+  RealD plaq_smr=WilsonLoops<GimplR>::avgPlaquette(Usmr);
+  std::cout << GridLogMessage << " GF Plaquette " <<plaq_gf<<std::endl;
+  std::cout << GridLogMessage << " SM Plaquette " <<plaq_smr<<std::endl;
+
+  std::vector<int>   smeared_link({ 0,0,1} ); 
   std::vector<RealD> masses({ 0.004,0.02477,0.447} ); // u/d, s, c ??
   std::vector<RealD> M5s   ({ 1.8,1.8,1.0} ); 
   std::vector<RealD> bs   ({ 1.0,1.0,1.5} );  // DDM
@@ -330,6 +345,9 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"MobiusFermion action as Scaled Shamir kernel"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
+  std::vector<Complex> boundary = {1,1,1,-1};
+  typedef MobiusFermionR FermionAction;
+  FermionAction::ImplParams Params(boundary);
 
   for(int m=0;m<masses.size();m++) {
 
@@ -339,30 +357,40 @@ int main (int argc, char ** argv)
     RealD c    = cs[m];
     int   Ls   = Ls_s[m];
 
+    if ( smeared_link[m] ) Utmp = Usmr;
+    else                   Utmp = Umu;
+    
     FGrids.push_back(SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid));
     FrbGrids.push_back(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid));
 
-    FermActs.push_back(new MobiusFermionR(Umu,*FGrids[m],*FrbGrids[m],*UGrid,*UrbGrid,mass,M5,b,c));
+    FermActs.push_back(new MobiusFermionR(Utmp,*FGrids[m],*FrbGrids[m],*UGrid,*UrbGrid,mass,M5,b,c,Params));
   }
 
-  LatticePropagator point_source(UGrid);
   LatticePropagator z2wall_source(UGrid);
   LatticePropagator gfwall_source(UGrid);
 
-  Coordinate Origin({0,0,0,0});
-  PointSource   (Origin,point_source);
-  Z2WallSource  (RNG4,0,z2wall_source);
-  GFWallSource  (0,gfwall_source);
-  
-  std::vector<LatticePropagator> PointProps(nmass,UGrid);
-  std::vector<LatticePropagator> GaussProps(nmass,UGrid);
+  int tslice = 0;
+  //////////////////////////////////////////////////////////////////////
+  // RNG seeded for Z2 wall
+  //////////////////////////////////////////////////////////////////////
+  // You can manage seeds however you like.
+  // Recommend SeedUniqueString.
+  //////////////////////////////////////////////////////////////////////
+  GridParallelRNG          RNG4(UGrid);  RNG4.SeedUniqueString("Study2-Source_Z2_p_0_0_0_t_0-880");
+  Z2WallSource  (RNG4,tslice,z2wall_source);
+  GFWallSource  (tslice,gfwall_source);
+
   std::vector<LatticePropagator> Z2Props   (nmass,UGrid);
   std::vector<LatticePropagator> GFProps   (nmass,UGrid);
 
   for(int m=0;m<nmass;m++) {
 
+    std::cout << GridLogMessage << " Mass " <<m << " z2wall source "<<norm2(z2wall_source)<<std::endl;
     Solve(*FermActs[m],z2wall_source    ,Z2Props[m]);
+    std::cout << GridLogMessage << " Mass " <<m << " gfwall source "<<norm2(gfwall_source)<<std::endl;
     Solve(*FermActs[m],gfwall_source    ,GFProps[m]);
+
+    std::cout << GridLogMessage << " Mass " <<m << " z2wall source "<<norm2(z2wall_source)<< " " << norm2(gfwall_source)<<std::endl;
   
   }
 
@@ -383,14 +411,15 @@ int main (int argc, char ** argv)
     std::stringstream wssg,wssz;
 
     /// Point sinks
-    ssg<<config<< "_m" << m1 << "_m"<< m2 << "p_gf_meson.xml";
-    ssz<<config<< "_m" << m1 << "_m"<< m2 << "p_z2_meson.xml";
+    ssg<<config<< "_m" << m1 << "_m"<< m2 << "_p_gf_meson.xml";
+    ssz<<config<< "_m" << m1 << "_m"<< m2 << "_p_z2_meson.xml";
 
     MesonTrace(ssz.str(),Z2Props[m1],Z2Props[m2],phase);
+    MesonTrace(ssg.str(),GFProps[m1],GFProps[m2],phase);
 
     /// Wall sinks
-    wssg<<config<< "_m" << m1 << "_m"<< m2 << "w_gf_meson.xml";
-    wssz<<config<< "_m" << m1 << "_m"<< m2 << "w_z2_meson.xml";
+    wssg<<config<< "_m" << m1 << "_m"<< m2 << "_w_gf_meson.xml";
+    wssz<<config<< "_m" << m1 << "_m"<< m2 << "_w_z2_meson.xml";
 
     WallSinkMesonTrace(wssg.str(),wsnk_gfProps[m1],wsnk_gfProps[m2]);
     WallSinkMesonTrace(wssz.str(),wsnk_z2Props[m1],wsnk_z2Props[m2]);

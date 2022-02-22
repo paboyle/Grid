@@ -68,6 +68,7 @@ public:
 template<class Fobj,class CComplex,int nbasis>
 class ProjectedHermOp : public LinearFunction<Lattice<iVector<CComplex,nbasis > > > {
 public:
+  using LinearFunction<Lattice<iVector<CComplex,nbasis > > >::operator();
   typedef iVector<CComplex,nbasis >           CoarseSiteVector;
   typedef Lattice<CoarseSiteVector>           CoarseField;
   typedef Lattice<CComplex>   CoarseScalar; // used for inner products on fine field
@@ -98,6 +99,7 @@ public:
 template<class Fobj,class CComplex,int nbasis>
 class ProjectedFunctionHermOp : public LinearFunction<Lattice<iVector<CComplex,nbasis > > > {
 public:
+  using LinearFunction<Lattice<iVector<CComplex,nbasis > > >::operator();
   typedef iVector<CComplex,nbasis >           CoarseSiteVector;
   typedef Lattice<CoarseSiteVector>           CoarseField;
   typedef Lattice<CComplex>   CoarseScalar; // used for inner products on fine field

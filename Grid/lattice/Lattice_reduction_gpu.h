@@ -42,7 +42,6 @@ void getNumBlocksAndThreads(const Iterator n, const size_t sizeofsobj, Iterator 
   std::cout << GridLogDebug << "\twarpSize            = " << warpSize << std::endl;
   std::cout << GridLogDebug << "\tsharedMemPerBlock   = " << sharedMemPerBlock << std::endl;
   std::cout << GridLogDebug << "\tmaxThreadsPerBlock  = " << maxThreadsPerBlock << std::endl;
-  std::cout << GridLogDebug << "\tmaxThreadsPerBlock  = " << warpSize << std::endl;
   std::cout << GridLogDebug << "\tmultiProcessorCount = " << multiProcessorCount << std::endl;
   
   if (warpSize != WARP_SIZE) {
@@ -52,6 +51,10 @@ void getNumBlocksAndThreads(const Iterator n, const size_t sizeofsobj, Iterator 
   
   // let the number of threads in a block be a multiple of 2, starting from warpSize
   threads = warpSize;
+  if ( threads*sizeofsobj > sharedMemPerBlock ) {
+    std::cout << GridLogError << "The object is too large for the shared memory." << std::endl;
+    exit(EXIT_FAILURE);
+  }
   while( 2*threads*sizeofsobj < sharedMemPerBlock && 2*threads <= maxThreadsPerBlock ) threads *= 2;
   // keep all the streaming multiprocessors busy
   blocks = nextPow2(multiProcessorCount);
