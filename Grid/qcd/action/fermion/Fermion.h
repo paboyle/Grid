@@ -138,62 +138,52 @@ typedef WilsonTMFermion<WilsonImplF> WilsonTMFermionF;
 typedef WilsonTMFermion<WilsonImplD> WilsonTMFermionD;
 
 // Clover fermions
-typedef CloverHelpers<WilsonImplR> CloverR;
-typedef CloverHelpers<WilsonImplF> CloverF;
-typedef CloverHelpers<WilsonImplD> CloverD;
+template <typename WImpl> using WilsonClover = WilsonCloverFermion<WImpl, CloverHelpers<WImpl>>;
+template <typename WImpl> using WilsonExpClover = WilsonCloverFermion<WImpl, ExpCloverHelpers<WImpl>>;
 
-typedef ExpCloverHelpers<WilsonImplR> ExpCloverR;
-typedef ExpCloverHelpers<WilsonImplF> ExpCloverF;
-typedef ExpCloverHelpers<WilsonImplD> ExpCloverD;
+typedef WilsonClover<WilsonImplR> WilsonCloverFermionR;
+typedef WilsonClover<WilsonImplF> WilsonCloverFermionF;
+typedef WilsonClover<WilsonImplD> WilsonCloverFermionD;
 
-typedef WilsonCloverFermion<WilsonImplR, CloverR> WilsonCloverFermionR;
-typedef WilsonCloverFermion<WilsonImplF, CloverF> WilsonCloverFermionF;
-typedef WilsonCloverFermion<WilsonImplD, CloverD> WilsonCloverFermionD;
+typedef WilsonExpClover<WilsonImplR> WilsonExpCloverFermionR;
+typedef WilsonExpClover<WilsonImplF> WilsonExpCloverFermionF;
+typedef WilsonExpClover<WilsonImplD> WilsonExpCloverFermionD;
 
-typedef WilsonCloverFermion<WilsonImplR, ExpCloverR> WilsonExpCloverFermionR;
-typedef WilsonCloverFermion<WilsonImplF, ExpCloverF> WilsonExpCloverFermionF;
-typedef WilsonCloverFermion<WilsonImplD, ExpCloverD> WilsonExpCloverFermionD;
+typedef WilsonClover<WilsonAdjImplR> WilsonCloverAdjFermionR;
+typedef WilsonClover<WilsonAdjImplF> WilsonCloverAdjFermionF;
+typedef WilsonClover<WilsonAdjImplD> WilsonCloverAdjFermionD;
 
-typedef WilsonCloverFermion<WilsonAdjImplR, CloverR> WilsonCloverAdjFermionR;
-typedef WilsonCloverFermion<WilsonAdjImplF, CloverF> WilsonCloverAdjFermionF;
-typedef WilsonCloverFermion<WilsonAdjImplD, CloverD> WilsonCloverAdjFermionD;
+typedef WilsonClover<WilsonTwoIndexSymmetricImplR> WilsonCloverTwoIndexSymmetricFermionR;
+typedef WilsonClover<WilsonTwoIndexSymmetricImplF> WilsonCloverTwoIndexSymmetricFermionF;
+typedef WilsonClover<WilsonTwoIndexSymmetricImplD> WilsonCloverTwoIndexSymmetricFermionD;
 
-typedef WilsonCloverFermion<WilsonTwoIndexSymmetricImplR, CloverR> WilsonCloverTwoIndexSymmetricFermionR;
-typedef WilsonCloverFermion<WilsonTwoIndexSymmetricImplF, CloverF> WilsonCloverTwoIndexSymmetricFermionF;
-typedef WilsonCloverFermion<WilsonTwoIndexSymmetricImplD, CloverD> WilsonCloverTwoIndexSymmetricFermionD;
-
-typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplR, CloverR> WilsonCloverTwoIndexAntiSymmetricFermionR;
-typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplF, CloverF> WilsonCloverTwoIndexAntiSymmetricFermionF;
-typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplD, CloverD> WilsonCloverTwoIndexAntiSymmetricFermionD;
+typedef WilsonClover<WilsonTwoIndexAntiSymmetricImplR> WilsonCloverTwoIndexAntiSymmetricFermionR;
+typedef WilsonClover<WilsonTwoIndexAntiSymmetricImplF> WilsonCloverTwoIndexAntiSymmetricFermionF;
+typedef WilsonClover<WilsonTwoIndexAntiSymmetricImplD> WilsonCloverTwoIndexAntiSymmetricFermionD;
 
 // Compact Clover fermions
-typedef CompactCloverHelpers<WilsonImplR> CompactCloverR;
-typedef CompactCloverHelpers<WilsonImplF> CompactCloverF;
-typedef CompactCloverHelpers<WilsonImplD> CompactCloverD;
+template <typename WImpl> using CompactWilsonClover = CompactWilsonCloverFermion<WImpl, CompactCloverHelpers<WImpl>>;
+template <typename WImpl> using CompactWilsonExpClover = CompactWilsonCloverFermion<WImpl, CompactExpCloverHelpers<WImpl>>;
 
-typedef CompactExpCloverHelpers<WilsonImplR> CompactExpCloverR;
-typedef CompactExpCloverHelpers<WilsonImplF> CompactExpCloverF;
-typedef CompactExpCloverHelpers<WilsonImplD> CompactExpCloverD;
+typedef CompactWilsonClover<WilsonImplR> CompactWilsonCloverFermionR;
+typedef CompactWilsonClover<WilsonImplF> CompactWilsonCloverFermionF;
+typedef CompactWilsonClover<WilsonImplD> CompactWilsonCloverFermionD;
 
-typedef CompactWilsonCloverFermion<WilsonImplR, CompactCloverR> CompactWilsonCloverFermionR;
-typedef CompactWilsonCloverFermion<WilsonImplF, CompactCloverF> CompactWilsonCloverFermionF;
-typedef CompactWilsonCloverFermion<WilsonImplD, CompactCloverD> CompactWilsonCloverFermionD;
+typedef CompactWilsonExpClover<WilsonImplR> CompactWilsonExpCloverFermionR;
+typedef CompactWilsonExpClover<WilsonImplF> CompactWilsonExpCloverFermionF;
+typedef CompactWilsonExpClover<WilsonImplD> CompactWilsonExpCloverFermionD;
 
-typedef CompactWilsonCloverFermion<WilsonImplR, CompactExpCloverR> CompactWilsonExpCloverFermionR;
-typedef CompactWilsonCloverFermion<WilsonImplF, CompactExpCloverF> CompactWilsonExpCloverFermionF;
-typedef CompactWilsonCloverFermion<WilsonImplD, CompactExpCloverD> CompactWilsonExpCloverFermionD;
+typedef CompactWilsonClover<WilsonAdjImplR> CompactWilsonCloverAdjFermionR;
+typedef CompactWilsonClover<WilsonAdjImplF> CompactWilsonCloverAdjFermionF;
+typedef CompactWilsonClover<WilsonAdjImplD> CompactWilsonCloverAdjFermionD;
 
-typedef CompactWilsonCloverFermion<WilsonAdjImplR, CompactCloverR> CompactWilsonCloverAdjFermionR;
-typedef CompactWilsonCloverFermion<WilsonAdjImplF, CompactCloverF> CompactWilsonCloverAdjFermionF;
-typedef CompactWilsonCloverFermion<WilsonAdjImplD, CompactCloverD> CompactWilsonCloverAdjFermionD;
+typedef CompactWilsonClover<WilsonTwoIndexSymmetricImplR> CompactWilsonCloverTwoIndexSymmetricFermionR;
+typedef CompactWilsonClover<WilsonTwoIndexSymmetricImplF> CompactWilsonCloverTwoIndexSymmetricFermionF;
+typedef CompactWilsonClover<WilsonTwoIndexSymmetricImplD> CompactWilsonCloverTwoIndexSymmetricFermionD;
 
-typedef CompactWilsonCloverFermion<WilsonTwoIndexSymmetricImplR, CompactCloverR> CompactWilsonCloverTwoIndexSymmetricFermionR;
-typedef CompactWilsonCloverFermion<WilsonTwoIndexSymmetricImplF, CompactCloverF> CompactWilsonCloverTwoIndexSymmetricFermionF;
-typedef CompactWilsonCloverFermion<WilsonTwoIndexSymmetricImplD, CompactCloverD> CompactWilsonCloverTwoIndexSymmetricFermionD;
-
-typedef CompactWilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplR, CompactCloverR> CompactWilsonCloverTwoIndexAntiSymmetricFermionR;
-typedef CompactWilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplF, CompactCloverF> CompactWilsonCloverTwoIndexAntiSymmetricFermionF;
-typedef CompactWilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplD, CompactCloverD> CompactWilsonCloverTwoIndexAntiSymmetricFermionD;
+typedef CompactWilsonClover<WilsonTwoIndexAntiSymmetricImplR> CompactWilsonCloverTwoIndexAntiSymmetricFermionR;
+typedef CompactWilsonClover<WilsonTwoIndexAntiSymmetricImplF> CompactWilsonCloverTwoIndexAntiSymmetricFermionF;
+typedef CompactWilsonClover<WilsonTwoIndexAntiSymmetricImplD> CompactWilsonCloverTwoIndexAntiSymmetricFermionD;
 
 // Domain Wall fermions
 typedef DomainWallFermion<WilsonImplR> DomainWallFermionR;
