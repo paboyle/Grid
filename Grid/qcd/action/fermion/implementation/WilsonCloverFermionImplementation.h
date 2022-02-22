@@ -134,45 +134,6 @@ void WilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeField &_Um
    
   double t4 = usecond();
   CloverHelpers::Instantiate(CloverTerm, CloverTermInv, csw_t, this->diag_mass);
-//   CloverTerm += diag_mass;
-// 
-//   double t4 = usecond();
-//   int lvol = _Umu.Grid()->lSites();
-//   int DimRep = Impl::Dimension;
-// 
-//   double t5 = usecond();
-//   {
-//     autoView(CTv,CloverTerm,CpuRead);
-//     autoView(CTIv,CloverTermInv,CpuWrite);
-//     thread_for(site, lvol, {
-//       Coordinate lcoor;
-//       grid->LocalIndexToLocalCoor(site, lcoor);
-//       Eigen::MatrixXcd EigenCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
-//       Eigen::MatrixXcd EigenInvCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
-//       typename SiteClover::scalar_object Qx = Zero(), Qxinv = Zero();
-//       peekLocalSite(Qx, CTv, lcoor);
-//       //if (csw!=0){
-//       for (int j = 0; j < Ns; j++)
-// 	for (int k = 0; k < Ns; k++)
-// 	  for (int a = 0; a < DimRep; a++)
-// 	    for (int b = 0; b < DimRep; b++){
-// 	      auto zz =  Qx()(j, k)(a, b);
-// 	      EigenCloverOp(a + j * DimRep, b + k * DimRep) = std::complex<double>(zz);
-// 	    }
-//       //   if (site==0) std::cout << "site =" << site << "\n" << EigenCloverOp << std::endl;
-//       
-//       EigenInvCloverOp = EigenCloverOp.inverse();
-//       //std::cout << EigenInvCloverOp << std::endl;
-//       for (int j = 0; j < Ns; j++)
-// 	for (int k = 0; k < Ns; k++)
-// 	  for (int a = 0; a < DimRep; a++)
-// 	    for (int b = 0; b < DimRep; b++)
-// 	      Qxinv()(j, k)(a, b) = EigenInvCloverOp(a + j * DimRep, b + k * DimRep);
-//       //    if (site==0) std::cout << "site =" << site << "\n" << EigenInvCloverOp << std::endl;
-//       //  }
-//       pokeLocalSite(Qxinv, CTIv, lcoor);
-//     });
-//   }
 
   double t5 = usecond();
   // Separate the even and odd parts

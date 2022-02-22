@@ -98,71 +98,10 @@ public:
     }
   }
 
-    
-  static void CloverTermDerivative(GaugeField& clover_force, 
-                                   const FermionField& X, 
-                                   const FermionField& Y,
-                                   const std::vector<GaugeLinkField>& U,
-                                   RealD csw_t, RealD csw_r) {
-    GaugeLinkField force_mu(clover_force.Grid()), lambda(clover_force.Grid());
-    PropagatorField Lambda(clover_force.Grid());
-    
-    ///////////////////////////////////////////////////////////
-    // Clover term derivative
-    ///////////////////////////////////////////////////////////
-    Impl::outerProductImpl(Lambda, X, Y);
-    //std::cout << "Lambda:" << Lambda << std::endl;
-  
-    Gamma::Algebra sigma[] = {
-      Gamma::Algebra::SigmaXY,
-      Gamma::Algebra::SigmaXZ,
-      Gamma::Algebra::SigmaXT,
-      Gamma::Algebra::MinusSigmaXY,
-      Gamma::Algebra::SigmaYZ,
-      Gamma::Algebra::SigmaYT,
-      Gamma::Algebra::MinusSigmaXZ,
-      Gamma::Algebra::MinusSigmaYZ,
-      Gamma::Algebra::SigmaZT,
-      Gamma::Algebra::MinusSigmaXT,
-      Gamma::Algebra::MinusSigmaYT,
-      Gamma::Algebra::MinusSigmaZT};
-  
-    /*
-    sigma_{\mu \nu}=
-    | 0         sigma[0]  sigma[1]  sigma[2] |
-    | sigma[3]    0       sigma[4]  sigma[5] |
-    | sigma[6]  sigma[7]     0      sigma[8] |
-    | sigma[9]  sigma[10] sigma[11]   0      |
-    */
-  
-    int count = 0;
-    clover_force = Zero();
-    for (int mu = 0; mu < 4; mu++)
-    {
-      force_mu = Zero();
-      for (int nu = 0; nu < 4; nu++)
-      {
-        if (mu == nu)
-          continue;
-  
-        RealD factor;
-        if (nu == 4 || mu == 4)
-        {
-          factor = 2.0 * csw_t;
-        }
-        else
-        {
-          factor = 2.0 * csw_r;
-        }
-        PropagatorField Slambda = Gamma(sigma[count]) * Lambda; // sigma checked
-        Impl::TraceSpinImpl(lambda, Slambda);                   // traceSpin ok
-        force_mu -= factor*Helpers::Cmunu(U, lambda, mu, nu);   // checked
-        count++;
-      }
-  
-      pokeLorentz(clover_force, U[mu] * force_mu, mu);
-    }
+  static GaugeLinkField Cmunu(std::vector<GaugeLinkField> &U, GaugeLinkField &lambda, int mu, int nu) {
+    return Helpers::Cmunu(U, lambda, mu, nu);
   }
+
 };
 
 
@@ -227,15 +166,14 @@ public:
       ExpClover += pref * Clover;
     }
   
-    // Convert the data layout of the clover terms
     Clover = ExpClover * diag_mass;
     CloverInv = adj(ExpClover * (1.0/diag_mass));
   }
 
-  static void CloverTermDerivative(GaugeField& clover_force, const FermionField& X, const FermionField& Y,
-                                   const std::vector<GaugeLinkField>& U, RealD csw_t, RealD csw_r) {
+  static GaugeLinkField Cmunu(std::vector<GaugeLinkField> &U, GaugeLinkField &lambda, int mu, int nu) {
     assert(0);
   }
+
 };
 
 
@@ -329,14 +267,9 @@ public:
                           RealD csw_t, RealD diag_mass) {
     GridBase* grid = Diagonal.Grid();
     int NMAX = getNMAX(Diagonal, 3.*csw_t/diag_mass);
-    // To be optimized: too much memory traffic; implement exp in improved layout
-    // Felix + Fabian: replace code below with
-    //
-    // ConvertLayout Clover -> Diagonal, Triangle
-    // ModifyBoundaries
-    // EvaluateExp
     
-    // code to be replaced
+    // To be optimized: implement exp in improved layout
+    // START: code to be replaced
     CloverField Clover(grid), ExpClover(grid);
     
     CompactHelpers::ConvertLayout(Diagonal, Triangle, Clover);
@@ -353,9 +286,11 @@ public:
   
     // Convert the data layout of the clover terms
     CompactHelpers::ConvertLayout(ExpClover, Diagonal, Triangle);
+    CompactHelpers::ConvertLayout(adj(ExpClover), DiagonalInv, TriangleInv);
+    // END: code to be replaced
+    
     Diagonal = Diagonal * diag_mass;
     Triangle = Triangle * diag_mass;
-    CompactHelpers::ConvertLayout(adj(ExpClover), DiagonalInv, TriangleInv);
     DiagonalInv = DiagonalInv*(1.0/diag_mass);
     TriangleInv = TriangleInv*(1.0/diag_mass);
   }
