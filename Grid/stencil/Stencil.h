@@ -131,8 +131,11 @@ class CartesianStencilAccelerator {
   int           _checkerboard;
   int           _npoints; // Move to template param?
   int           _osites;
+  int           _dirichlet;
   StencilVector _directions;
   StencilVector _distances;
+  StencilVector _comms_send;
+  StencilVector _comms_recv;
   StencilVector _comm_buf_size;
   StencilVector _permute_type;
   StencilVector same_node;
@@ -226,6 +229,8 @@ public:
     void * recv_buf;
     Integer to_rank;
     Integer from_rank;
+    Integer do_send;
+    Integer do_recv;
     Integer bytes;
   };
   struct Merge {
@@ -254,7 +259,6 @@ public:
     Integer cb;
     void *recv_buf;
   };
-
 
 protected:
   GridBase *                        _grid;
@@ -299,29 +303,6 @@ public:
   int u_comm_offset;
   int _unified_buffer_size;
 
-  /////////////////////////////////////////
-  // Timing info; ugly; possibly temporary
-  /////////////////////////////////////////
-  double commtime;
-  double mpi3synctime;
-  double mpi3synctime_g;
-  double shmmergetime;
-  double gathertime;
-  double gathermtime;
-  double halogtime;
-  double mergetime;
-  double decompresstime;
-  double comms_bytes;
-  double shm_bytes;
-  double splicetime;
-  double nosplicetime;
-  double calls;
-  std::vector<double> comm_bytes_thr;
-  std::vector<double> shm_bytes_thr;
-  std::vector<double> comm_time_thr;
-  std::vector<double> comm_enter_thr;
-  std::vector<double> comm_leave_thr;
-
   ////////////////////////////////////////
   // Stencil query
   ////////////////////////////////////////
@@ -348,11 +329,12 @@ public:
   //////////////////////////////////////////
   // Comms packet queue for asynch thread
   // Use OpenMP Tasks for cleaner ???
+  // must be called *inside* parallel region
   //////////////////////////////////////////
+  /*
   void CommunicateThreaded()
   {
 #ifdef GRID_OMP
-    // must be called in parallel region
     int mythread = omp_get_thread_num();
     int nthreads = CartesianCommunicator::nCommThreads;
 #else
@@ -361,65 +343,29 @@ public:
 #endif
     if (nthreads == -1) nthreads = 1;
     if (mythread < nthreads) {
-      comm_enter_thr[mythread] = usecond();
       for (int i = mythread; i < Packets.size(); i += nthreads) {
 	uint64_t bytes = _grid->StencilSendToRecvFrom(Packets[i].send_buf,
 						      Packets[i].to_rank,
 						      Packets[i].recv_buf,
 						      Packets[i].from_rank,
 						      Packets[i].bytes,i);
-	comm_bytes_thr[mythread] += bytes;
-	shm_bytes_thr[mythread] += 2*Packets[i].bytes-bytes; // Send + Recv.
-
       }
-      comm_leave_thr[mythread]= usecond();
-      comm_time_thr[mythread] += comm_leave_thr[mythread] - comm_enter_thr[mythread];
     }
   }
-
-  void CollateThreads(void)
-  {
-    int nthreads = CartesianCommunicator::nCommThreads;
-    double first=0.0;
-    double last =0.0;
-
-    for(int t=0;t<nthreads;t++) {
-
-      double t0 = comm_enter_thr[t];
-      double t1 = comm_leave_thr[t];
-      comms_bytes+=comm_bytes_thr[t];
-      shm_bytes  +=shm_bytes_thr[t];
-
-      comm_enter_thr[t] = 0.0;
-      comm_leave_thr[t] = 0.0;
-      comm_time_thr[t]   = 0.0;
-      comm_bytes_thr[t]=0;
-      shm_bytes_thr[t]=0;
-
-      if ( first == 0.0 ) first = t0;                   // first is t0
-      if ( (t0 > 0.0) && ( t0 < first ) ) first = t0;   // min time seen
-
-      if ( t1 > last ) last = t1;                       // max time seen
-
-    }
-    commtime+= last-first;
-  }
+  */
   ////////////////////////////////////////////////////////////////////////
   // Non blocking send and receive. Necessarily parallel.
   ////////////////////////////////////////////////////////////////////////
   void CommunicateBegin(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
     reqs.resize(Packets.size());
-    commtime-=usecond();
     for(int i=0;i<Packets.size();i++){
-      uint64_t bytes=_grid->StencilSendToRecvFromBegin(reqs[i],
-						     Packets[i].send_buf,
-						     Packets[i].to_rank,
-						     Packets[i].recv_buf,
-						     Packets[i].from_rank,
-						     Packets[i].bytes,i);
-      comms_bytes+=bytes;
-      shm_bytes  +=2*Packets[i].bytes-bytes;
+      _grid->StencilSendToRecvFromBegin(reqs[i],
+					Packets[i].send_buf,
+					Packets[i].to_rank,Packets[i].do_send,
+					Packets[i].recv_buf,
+					Packets[i].from_rank,Packets[i].do_recv,
+					Packets[i].bytes,i);
     }
   }
 
@@ -428,7 +374,6 @@ public:
     for(int i=0;i<Packets.size();i++){
       _grid->StencilSendToRecvFromComplete(reqs[i],i);
     }
-    commtime+=usecond();
   }
   ////////////////////////////////////////////////////////////////////////
   // Blocking send and receive. Either sequential or parallel.
@@ -436,28 +381,27 @@ public:
   void Communicate(void)
   {
     if ( CartesianCommunicator::CommunicatorPolicy == CartesianCommunicator::CommunicatorPolicySequential ){
-      thread_region {
-	// must be called in parallel region
-	int mythread  = thread_num();
-	int maxthreads= thread_max();
-	int nthreads = CartesianCommunicator::nCommThreads;
-	assert(nthreads <= maxthreads);
-	if (nthreads == -1) nthreads = 1;
-	if (mythread < nthreads) {
-	  for (int i = mythread; i < Packets.size(); i += nthreads) {
-	    double start = usecond();
-	    uint64_t bytes= _grid->StencilSendToRecvFrom(Packets[i].send_buf,
-							 Packets[i].to_rank,
-							 Packets[i].recv_buf,
-							 Packets[i].from_rank,
-							 Packets[i].bytes,i);
-	    comm_bytes_thr[mythread] += bytes;
-	    shm_bytes_thr[mythread]  += Packets[i].bytes - bytes;
-	    comm_time_thr[mythread]  += usecond() - start;
-	  }
-	}
-      }
-    } else { // Concurrent and non-threaded asynch calls to MPI
+      /////////////////////////////////////////////////////////
+      // several way threaded on different communicators.
+      // Cannot combine with Dirichlet operators
+      // This scheme is needed on Intel Omnipath for best performance
+      // Deprecate once there are very few omnipath clusters
+      /////////////////////////////////////////////////////////
+      int nthreads = CartesianCommunicator::nCommThreads;
+      int old = GridThread::GetThreads();
+      GridThread::SetThreads(nthreads);
+      thread_for(i,Packets.size(),{
+	  _grid->StencilSendToRecvFrom(Packets[i].send_buf,
+				       Packets[i].to_rank,Packets[i].do_send,
+				       Packets[i].recv_buf,
+				       Packets[i].from_rank,Packets[i].do_recv,
+				       Packets[i].bytes,i);
+      });
+      GridThread::SetThreads(old);
+    } else { 
+      /////////////////////////////////////////////////////////
+      // Concurrent and non-threaded asynch calls to MPI
+      /////////////////////////////////////////////////////////
       std::vector<std::vector<CommsRequest_t> > reqs;
       this->CommunicateBegin(reqs);
       this->CommunicateComplete(reqs);
@@ -499,31 +443,23 @@ public:
       sshift[1] = _grid->CheckerBoardShiftForCB(this->_checkerboard,dimension,shift,Odd);
       if ( sshift[0] == sshift[1] ) {
 	if (splice_dim) {
-	  splicetime-=usecond();
-	  auto tmp  = GatherSimd(source,dimension,shift,0x3,compress,face_idx);
+	  auto tmp  = GatherSimd(source,dimension,shift,0x3,compress,face_idx,point);
 	  is_same_node = is_same_node && tmp;
-	  splicetime+=usecond();
 	} else {
-	  nosplicetime-=usecond();
-	  auto tmp  = Gather(source,dimension,shift,0x3,compress,face_idx);
+	  auto tmp  = Gather(source,dimension,shift,0x3,compress,face_idx,point);
 	  is_same_node = is_same_node && tmp;
-	  nosplicetime+=usecond();
 	}
       } else {
 	if(splice_dim){
-	  splicetime-=usecond();
 	  // if checkerboard is unfavourable take two passes
 	  // both with block stride loop iteration
-	  auto tmp1 =  GatherSimd(source,dimension,shift,0x1,compress,face_idx);
-	  auto tmp2 =  GatherSimd(source,dimension,shift,0x2,compress,face_idx);
+	  auto tmp1 =  GatherSimd(source,dimension,shift,0x1,compress,face_idx,point);
+	  auto tmp2 =  GatherSimd(source,dimension,shift,0x2,compress,face_idx,point);
 	  is_same_node = is_same_node && tmp1 && tmp2;
-	  splicetime+=usecond();
 	} else {
-	  nosplicetime-=usecond();
-	  auto tmp1 = Gather(source,dimension,shift,0x1,compress,face_idx);
-	  auto tmp2 = Gather(source,dimension,shift,0x2,compress,face_idx);
+	  auto tmp1 = Gather(source,dimension,shift,0x1,compress,face_idx,point);
+	  auto tmp2 = Gather(source,dimension,shift,0x2,compress,face_idx,point);
 	  is_same_node = is_same_node && tmp1 && tmp2;
-	  nosplicetime+=usecond();
 	}
       }
     }
@@ -533,13 +469,10 @@ public:
   template<class compressor>
   void HaloGather(const Lattice<vobj> &source,compressor &compress)
   {
-    mpi3synctime_g-=usecond();
     _grid->StencilBarrier();// Synch shared memory on a single nodes
-    mpi3synctime_g+=usecond();
 
     // conformable(source.Grid(),_grid);
     assert(source.Grid()==_grid);
-    halogtime-=usecond();
 
     u_comm_offset=0;
 
@@ -553,7 +486,6 @@ public:
     assert(u_comm_offset==_unified_buffer_size);
 
     accelerator_barrier();
-    halogtime+=usecond();
   }
 
   /////////////////////////
@@ -568,7 +500,6 @@ public:
     Packets.resize(0);
     CopyReceiveBuffers.resize(0);
     CachedTransfers.resize(0);
-    calls++;
   }
   void AddCopy(void *from,void * to, Integer bytes)
   {
@@ -622,12 +553,17 @@ public:
     CachedTransfers.push_back(obj);
     return 0;
   }
-  void AddPacket(void *xmit,void * rcv, Integer to,Integer from,Integer bytes){
+  void AddPacket(void *xmit,void * rcv,
+		 Integer to, Integer do_send,
+		 Integer from, Integer do_recv,
+		 Integer bytes){
     Packet p;
     p.send_buf = xmit;
     p.recv_buf = rcv;
     p.to_rank  = to;
     p.from_rank= from;
+    p.do_send  = do_send;
+    p.do_recv  = do_recv;
     p.bytes    = bytes;
     Packets.push_back(p);
   }
@@ -651,19 +587,13 @@ public:
     CommsMerge(decompress,Mergers,Decompressions);
   }
   template<class decompressor>  void CommsMergeSHM(decompressor decompress) {
-    mpi3synctime-=usecond();
     _grid->StencilBarrier();// Synch shared memory on a single nodes
-    mpi3synctime+=usecond();
-    shmmergetime-=usecond();
     CommsMerge(decompress,MergersSHM,DecompressionsSHM);
-    shmmergetime+=usecond();
   }
 
   template<class decompressor>
   void CommsMerge(decompressor decompress,std::vector<Merge> &mm,std::vector<Decompress> &dd)
   {
-    
-    mergetime-=usecond();
     for(int i=0;i<mm.size();i++){
       auto mp = &mm[i].mpointer[0];
       auto vp0= &mm[i].vpointers[0][0];
@@ -673,9 +603,7 @@ public:
 	  decompress.Exchange(mp,vp0,vp1,type,o);
       });
     }
-    mergetime+=usecond();
 
-    decompresstime-=usecond();
     for(int i=0;i<dd.size();i++){
       auto kp = dd[i].kernel_p;
       auto mp = dd[i].mpi_p;
@@ -683,7 +611,6 @@ public:
 	decompress.Decompress(kp,mp,o);
       });
     }
-    decompresstime+=usecond();
   }
   ////////////////////////////////////////
   // Set up routines
@@ -720,19 +647,58 @@ public:
       }
     }
   }
-
+  /// Introduce a block structure and switch off comms on boundaries
+  void DirichletBlock(const std::vector<int> &dirichlet_block)
+  {
+    this->_dirichlet = 1;
+    for(int ii=0;ii<this->_npoints;ii++){
+      int dimension    = this->_directions[ii];
+      int displacement = this->_distances[ii];
+      int shift = displacement;
+      int gd = _grid->_gdimensions[dimension];
+      int fd = _grid->_fdimensions[dimension];
+      int pd = _grid->_processors [dimension];
+      int ld = gd/pd;
+      int pc = _grid->_processor_coor[dimension];
+      ///////////////////////////////////////////
+      // Figure out dirichlet send and receive
+      // on this leg of stencil.
+      ///////////////////////////////////////////
+      int comm_dim        = _grid->_processors[dimension] >1 ;
+      int block = dirichlet_block[dimension];
+      this->_comms_send[ii] = comm_dim;
+      this->_comms_recv[ii] = comm_dim;
+      if ( block ) {
+	assert(abs(displacement) < ld );
+      
+	if( displacement > 0 ) {
+	  // High side, low side
+	  // | <--B--->|
+	  // |    |    |
+	  //           noR
+	  // noS
+	  if ( (ld*(pc+1) ) % block == 0 ) this->_comms_recv[ii] = 0;
+	  if ( ( ld*pc ) % block == 0    ) this->_comms_send[ii] = 0;
+	} else {
+	  // High side, low side
+	  // | <--B--->|
+	  // |    |    |
+	  //           noS
+	  // noR
+	  if ( (ld*(pc+1) ) % block == 0 ) this->_comms_send[ii] = 0;
+	  if ( ( ld*pc ) % block    == 0 ) this->_comms_recv[ii] = 0;
+	}
+      }
+    }
+  }
   CartesianStencil(GridBase *grid,
 		   int npoints,
 		   int checkerboard,
 		   const std::vector<int> &directions,
 		   const std::vector<int> &distances,
 		   Parameters p)
-    : shm_bytes_thr(npoints),
-      comm_bytes_thr(npoints),
-      comm_enter_thr(npoints),
-      comm_leave_thr(npoints),
-      comm_time_thr(npoints)
   {
+    this->_dirichlet = 0;
     face_table_computed=0;
     _grid    = grid;
     this->parameters=p;
@@ -745,6 +711,8 @@ public:
     this->_simd_layout = _grid->_simd_layout; // copy simd_layout to give access to Accelerator Kernels
     this->_directions = StencilVector(directions);
     this->_distances  = StencilVector(distances);
+    this->_comms_send.resize(npoints); 
+    this->_comms_recv.resize(npoints); 
     this->same_node.resize(npoints);
 
     _unified_buffer_size=0;
@@ -763,24 +731,27 @@ public:
       int displacement = distances[i];
       int shift = displacement;
 
+      int gd = _grid->_gdimensions[dimension];
       int fd = _grid->_fdimensions[dimension];
+      int pd = _grid->_processors [dimension];
+      int ld = gd/pd;
       int rd = _grid->_rdimensions[dimension];
+      int pc = _grid->_processor_coor[dimension];
       this->_permute_type[point]=_grid->PermuteType(dimension);
 
       this->_checkerboard = checkerboard;
 
-      //////////////////////////
-      // the permute type
-      //////////////////////////
       int simd_layout     = _grid->_simd_layout[dimension];
       int comm_dim        = _grid->_processors[dimension] >1 ;
       int splice_dim      = _grid->_simd_layout[dimension]>1 && (comm_dim);
       int rotate_dim      = _grid->_simd_layout[dimension]>2;
 
+      this->_comms_send[ii] = comm_dim;
+      this->_comms_recv[ii] = comm_dim;
+
       assert ( (rotate_dim && comm_dim) == false) ; // Do not think spread out is supported
 
       int sshift[2];
-
       //////////////////////////
       // Underlying approach. For each local site build
       // up a table containing the npoint "neighbours" and whether they
@@ -881,6 +852,7 @@ public:
     GridBase *grid=_grid;
     const int Nsimd = grid->Nsimd();
 
+    int comms_recv      = this->_comms_recv[point];
     int fd              = _grid->_fdimensions[dimension];
     int ld              = _grid->_ldimensions[dimension];
     int rd              = _grid->_rdimensions[dimension];
@@ -937,7 +909,9 @@ public:
       if ( (shiftpm== 1) && (sx<x) && (grid->_processor_coor[dimension]==grid->_processors[dimension]-1) ) {
 	wraparound = 1;
       }
-      if (!offnode) {
+
+      // Wrap locally dirichlet support case OR node local
+      if ( (offnode==0) || (comms_recv==0)  ) {
 
 	int permute_slice=0;
 	CopyPlane(point,dimension,x,sx,cbmask,permute_slice,wraparound);
@@ -1054,10 +1028,13 @@ public:
   }
 
   template<class compressor>
-  int Gather(const Lattice<vobj> &rhs,int dimension,int shift,int cbmask,compressor & compress,int &face_idx)
+  int Gather(const Lattice<vobj> &rhs,int dimension,int shift,int cbmask,compressor & compress,int &face_idx, int point)
   {
     typedef typename cobj::vector_type vector_type;
     typedef typename cobj::scalar_type scalar_type;
+
+    int comms_send   = this->_comms_send[point] ;
+    int comms_recv   = this->_comms_recv[point] ;
 
     assert(rhs.Grid()==_grid);
     //	  conformable(_grid,rhs.Grid());
@@ -1124,10 +1101,10 @@ public:
 	////////////////////////////////////////////////////////
 	// Gather locally
 	////////////////////////////////////////////////////////
-	gathertime-=usecond();
 	assert(send_buf!=NULL);
-	Gather_plane_simple_table(face_table[face_idx],rhs,send_buf,compress,u_comm_offset,so); face_idx++;
-	gathertime+=usecond();
+	if ( comms_send ) 
+	  Gather_plane_simple_table(face_table[face_idx],rhs,send_buf,compress,u_comm_offset,so);
+	face_idx++;
 
 	int duplicate = CheckForDuplicate(dimension,sx,comm_proc,(void *)&recv_buf[u_comm_offset],0,bytes,cbmask);
 	if ( (!duplicate) ) { // Force comms for now
@@ -1138,12 +1115,12 @@ public:
 	  ///////////////////////////////////////////////////////////
 	  AddPacket((void *)&send_buf[u_comm_offset],
 		    (void *)&recv_buf[u_comm_offset],
-		    xmit_to_rank,
-		    recv_from_rank,
+		    xmit_to_rank, comms_send,
+		    recv_from_rank, comms_recv,
 		    bytes);
 	}
 	
-	if ( compress.DecompressionStep() ) {
+	if ( compress.DecompressionStep() && comms_recv ) {
 	  AddDecompress(&this->u_recv_buf_p[u_comm_offset],
 			&recv_buf[u_comm_offset],
 			words,Decompressions);
@@ -1155,11 +1132,15 @@ public:
   }
 
   template<class compressor>
-  int  GatherSimd(const Lattice<vobj> &rhs,int dimension,int shift,int cbmask,compressor &compress,int & face_idx)
+  int  GatherSimd(const Lattice<vobj> &rhs,int dimension,int shift,int cbmask,compressor &compress,int & face_idx,int point)
   {
     const int Nsimd = _grid->Nsimd();
 
     const int maxl =2;// max layout in a direction
+
+    int comms_send   = this->_comms_send[point] ;
+    int comms_recv   = this->_comms_recv[point] ;
+
     int fd = _grid->_fdimensions[dimension];
     int rd = _grid->_rdimensions[dimension];
     int ld = _grid->_ldimensions[dimension];
@@ -1224,12 +1205,11 @@ public:
 				  &face_table[face_idx][0],
 				  face_table[face_idx].size()*sizeof(face_table_host[0]));
 	}
-	gathermtime-=usecond();
 
-	Gather_plane_exchange_table(face_table[face_idx],rhs,spointers,dimension,sx,cbmask,compress,permute_type);
+	if ( comms_send )
+	  Gather_plane_exchange_table(face_table[face_idx],rhs,spointers,dimension,sx,cbmask,compress,permute_type);
 	face_idx++;
 
-	gathermtime+=usecond();
 	//spointers[0] -- low
 	//spointers[1] -- high
 
@@ -1260,7 +1240,10 @@ public:
 
 	    int duplicate = CheckForDuplicate(dimension,sx,nbr_proc,(void *)rp,i,bytes,cbmask);
 	    if ( (!duplicate) ) { // Force comms for now
-	      AddPacket((void *)sp,(void *)rp,xmit_to_rank,recv_from_rank,bytes);
+	      AddPacket((void *)sp,(void *)rp,
+			xmit_to_rank,comms_send,
+			recv_from_rank,comms_recv,
+			bytes);
 	    }
 
 	  } else {
@@ -1270,7 +1253,9 @@ public:
 	  }
 	}
 
-	AddMerge(&this->u_recv_buf_p[u_comm_offset],rpointers,reduced_buffer_size,permute_type,Mergers);
+	if ( comms_recv ) {
+	  AddMerge(&this->u_recv_buf_p[u_comm_offset],rpointers,reduced_buffer_size,permute_type,Mergers);
+	}
 
 	u_comm_offset     +=buffer_size;
       }

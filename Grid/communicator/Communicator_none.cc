@@ -45,12 +45,14 @@ void CartesianCommunicator::Init(int *argc, char *** arv)
 CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const CartesianCommunicator &parent,int &srank) 
   : CartesianCommunicator(processors) 
 {
+  _shm_processors = Coordinate(processors.size(),1);
   srank=0;
   SetCommunicator(communicator_world);
 }
 
 CartesianCommunicator::CartesianCommunicator(const Coordinate &processors)
 {
+  _shm_processors = Coordinate(processors.size(),1);
   _processors = processors;
   _ndimension = processors.size();  assert(_ndimension>=1);
   _processor_coor.resize(_ndimension);
@@ -111,18 +113,18 @@ void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest
 }
 
 double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
-						     int xmit_to_rank,
+						     int xmit_to_rank,int dox,
 						     void *recv,
-						     int recv_from_rank,
+						     int recv_from_rank,int dor,
 						     int bytes, int dir)
 {
   return 2.0*bytes;
 }
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 							 void *xmit,
-							 int xmit_to_rank,
+							 int xmit_to_rank,int dox,
 							 void *recv,
-							 int recv_from_rank,
+							 int recv_from_rank,int dor,
 							 int bytes, int dir)
 {
   return 2.0*bytes;

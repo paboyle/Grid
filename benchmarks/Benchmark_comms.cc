@@ -217,9 +217,9 @@ int main (int argc, char ** argv)
 	    dbytes+=
 	      Grid.StencilSendToRecvFromBegin(requests,
 					      (void *)&xbuf[mu][0],
-					      xmit_to_rank,
+					      xmit_to_rank,1,
 					      (void *)&rbuf[mu][0],
-					      recv_from_rank,
+					      recv_from_rank,1,
 					      bytes,mu);
 	
 	    comm_proc = mpi_layout[mu]-1;
@@ -228,9 +228,9 @@ int main (int argc, char ** argv)
 	    dbytes+=
 	      Grid.StencilSendToRecvFromBegin(requests,
 					      (void *)&xbuf[mu+4][0],
-					      xmit_to_rank,
+					      xmit_to_rank,1,
 					      (void *)&rbuf[mu+4][0],
-					      recv_from_rank,
+					      recv_from_rank,1,
 					      bytes,mu+4);
 	  
 	  }
@@ -309,9 +309,9 @@ int main (int argc, char ** argv)
 	    dbytes+=
 	      Grid.StencilSendToRecvFromBegin(requests,
 					      (void *)&xbuf[mu][0],
-					      xmit_to_rank,
+					      xmit_to_rank,1,
 					      (void *)&rbuf[mu][0],
-					      recv_from_rank,
+					      recv_from_rank,1,
 					      bytes,mu);
 	    Grid.StencilSendToRecvFromComplete(requests,mu);
 	    requests.resize(0);
@@ -322,9 +322,9 @@ int main (int argc, char ** argv)
 	    dbytes+=
 	      Grid.StencilSendToRecvFromBegin(requests,
 					      (void *)&xbuf[mu+4][0],
-					      xmit_to_rank,
+					      xmit_to_rank,1,
 					      (void *)&rbuf[mu+4][0],
-					      recv_from_rank,
+					      recv_from_rank,1,
 					      bytes,mu+4);
 	    Grid.StencilSendToRecvFromComplete(requests,mu+4);
 	    requests.resize(0);
@@ -411,8 +411,8 @@ int main (int argc, char ** argv)
 	      Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
 	    }
             int tid = omp_get_thread_num();
-	    tbytes= Grid.StencilSendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,
-					       (void *)&rbuf[dir][0], recv_from_rank, bytes,tid);
+	    tbytes= Grid.StencilSendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,1,
+					       (void *)&rbuf[dir][0], recv_from_rank,1, bytes,tid);
 
 	    thread_critical { dbytes+=tbytes; }
 	  }

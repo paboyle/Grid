@@ -32,18 +32,112 @@
 using namespace std;
 using namespace Grid;
 
-template<class d>
-struct scal {
-  d internal;
+////////////////////////
+/// Move to domains ////
+////////////////////////
+
+struct DomainDecomposition
+{
+  Coordinate Block;
+
+  DomainDecomposition(const Coordinate &_Block): Block(_Block){ assert(Block.size()==Nd);};
+  
+  template<class Field>
+  void ProjectDomain(Field &f,Integer domain)
+  {
+    GridBase *grid = f.Grid();
+    int dims = grid->Nd();
+    int isDWF= (dims==Nd+1);
+    assert((dims==Nd)||(dims==Nd+1));
+
+    Field   zz(grid);  zz = Zero();
+    LatticeInteger coor(grid);
+    LatticeInteger domaincoor(grid);
+    LatticeInteger mask(grid); mask = Integer(1);
+    LatticeInteger zi(grid);     zi = Integer(0);
+    for(int d=0;d<Nd;d++){
+      Integer B= Block[d];
+      if ( B ) {
+	LatticeCoordinate(coor,d+isDWF);
+	domaincoor = mod(coor,B);
+	mask = where(domaincoor==Integer(0),zi,mask);
+	mask = where(domaincoor==Integer(B-1),zi,mask);
+      }
+    }
+    if ( !domain )
+      f = where(mask==Integer(1),f,zz);
+    else 
+      f = where(mask==Integer(0),f,zz);
+  };
 };
 
-  Gamma::Algebra Gmu [] = {
-    Gamma::Algebra::GammaX,
-    Gamma::Algebra::GammaY,
-    Gamma::Algebra::GammaZ,
-    Gamma::Algebra::GammaT
-  };
+template<typename MomentaField>
+struct DirichletFilter: public MomentumFilterBase<MomentaField>
+{
+  Coordinate Block;
+  
+  DirichletFilter(const Coordinate &_Block): Block(_Block) {}
 
+  // Edge detect using domain projectors
+  void applyFilter (MomentaField &U) const override
+  {
+    DomainDecomposition Domains(Block);
+    GridBase *grid = U.Grid();
+    LatticeInteger  coor(grid);
+    LatticeInteger  face(grid);
+    LatticeInteger  one(grid);   one = 1;
+    LatticeInteger  zero(grid); zero = 0;
+    LatticeInteger  omega(grid);
+    LatticeInteger  omegabar(grid);
+    LatticeInteger  tmp(grid);
+
+    omega=one;    Domains.ProjectDomain(omega,0);
+    omegabar=one; Domains.ProjectDomain(omegabar,1);
+    
+    LatticeInteger nface(grid); nface=Zero();
+    
+    MomentaField projected(grid); projected=Zero();
+    typedef decltype(PeekIndex<LorentzIndex>(U,0)) MomentaLinkField;
+    MomentaLinkField  Umu(grid);
+    MomentaLinkField   zz(grid); zz=Zero();
+
+    int dims = grid->Nd();
+    Coordinate Global=grid->GlobalDimensions();
+    assert(dims==Nd);
+
+    for(int mu=0;mu<Nd;mu++){
+
+      if ( Block[mu]!=0 ) {
+
+	Umu = PeekIndex<LorentzIndex>(U,mu);
+
+	// Upper face 
+ 	tmp = Cshift(omegabar,mu,1);
+	tmp = tmp + omega;
+	face = where(tmp == Integer(2),one,zero );
+
+ 	tmp = Cshift(omega,mu,1);
+	tmp = tmp + omegabar;
+	face = where(tmp == Integer(2),one,face );
+
+	Umu = where(face,zz,Umu);
+
+	PokeIndex<LorentzIndex>(U, Umu, mu);
+      }
+    }
+  }
+};
+
+
+
+Gamma::Algebra Gmu [] = {
+			 Gamma::Algebra::GammaX,
+			 Gamma::Algebra::GammaY,
+			 Gamma::Algebra::GammaZ,
+			 Gamma::Algebra::GammaT
+};
+
+void Benchmark(int Ls, std::vector<int> Dirichlet);
 
 int main (int argc, char ** argv)
 {
@@ -52,24 +146,48 @@ int main (int argc, char ** argv)
 
   int threads = GridThread::GetThreads();
 
-  Coordinate latt4 = GridDefaultLatt();
   int Ls=16;
-  for(int i=0;i<argc;i++)
+  for(int i=0;i<argc;i++) {
     if(std::string(argv[i]) == "-Ls"){
       std::stringstream ss(argv[i+1]); ss >> Ls;
     }
-
+  }
+  std::vector<int> Dirichlet(5,0);
+  Benchmark(Ls,Dirichlet);
+  Coordinate latt4  = GridDefaultLatt();
+  Coordinate mpi    = GridDefaultMpi();
+  Coordinate shm;
+  GlobalSharedMemory::GetShmDims(mpi,shm);
+  /*
+  Dirichlet = std::vector<int>({0,
+				latt4[0]/mpi[0] * shm[0],
+				latt4[1]/mpi[1] * shm[1],
+				latt4[2]/mpi[2] * shm[2],
+				latt4[3]/mpi[3] * shm[3]});
+  */
+  Dirichlet = std::vector<int>({0,
+				latt4[0]/mpi[0] ,
+				latt4[1]/mpi[1] ,
+				latt4[2]/mpi[2] ,
+				latt4[3]/mpi[3] });
+  
+  std::cout << " Dirichlet block "<< Dirichlet<< std::endl;
+  Benchmark(Ls,Dirichlet);
+  Grid_finalize();
+  exit(0);
+}
+void Benchmark(int Ls, std::vector<int> Dirichlet)
+{
+  Coordinate latt4 = GridDefaultLatt();
   GridLogLayout();
 
   long unsigned int single_site_flops = 8*Nc*(7+16*Nc);
-
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
-  std::cout << GridLogMessage << "Making s innermost grids"<<std::endl;
   GridCartesian         * sUGrid   = SpaceTimeGrid::makeFourDimDWFGrid(GridDefaultLatt(),GridDefaultMpi());
   GridRedBlackCartesian * sUrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(sUGrid);
   GridCartesian         * sFGrid   = SpaceTimeGrid::makeFiveDimDWFGrid(Ls,UGrid);
@@ -80,26 +198,13 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "Initialising 4d RNG" << std::endl;
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedUniqueString(std::string("The 4D RNG"));
+
   std::cout << GridLogMessage << "Initialising 5d RNG" << std::endl;
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedUniqueString(std::string("The 5D RNG"));
-  std::cout << GridLogMessage << "Initialised RNGs" << std::endl;
 
   LatticeFermionF src   (FGrid); random(RNG5,src);
-#if 0
-  src = Zero();
-  {
-    Coordinate origin({0,0,0,latt4[2]-1,0});
-    SpinColourVectorF tmp;
-    tmp=Zero();
-    tmp()(0)(0)=Complex(-2.0,0.0);
-    std::cout << " source site 0 " << tmp<<std::endl;
-    pokeSite(tmp,src,origin);
-  }
-#else
   RealD N2 = 1.0/::sqrt(norm2(src));
   src = src*N2;
-#endif
-
 
   LatticeFermionF result(FGrid); result=Zero();
   LatticeFermionF    ref(FGrid);    ref=Zero();
@@ -110,18 +215,18 @@ int main (int argc, char ** argv)
   LatticeGaugeFieldF Umu(UGrid);
   SU<Nc>::HotConfiguration(RNG4,Umu);
   std::cout << GridLogMessage << "Random gauge initialised " << std::endl;
-#if 0
-  Umu=1.0;
-  for(int mu=0;mu<Nd;mu++){
-    LatticeColourMatrixF ttmp(UGrid);
-    ttmp = PeekIndex<LorentzIndex>(Umu,mu);
-    //    if (mu !=2 ) ttmp = 0;
-    //    ttmp = ttmp* pow(10.0,mu);
-    PokeIndex<LorentzIndex>(Umu,ttmp,mu);
-  }
-  std::cout << GridLogMessage << "Forced to diagonal " << std::endl;
-#endif
 
+  ////////////////////////////////////
+  // Apply BCs
+  ////////////////////////////////////
+  std::cout << GridLogMessage << "Applying BCs " << std::endl;
+  Coordinate Block(4);
+  for(int d=0;d<4;d++)  Block[d]= Dirichlet[d+1];
+
+  std::cout << GridLogMessage << "Dirichlet Block " << Block<< std::endl;
+  DirichletFilter<LatticeGaugeFieldF> Filter(Block);
+  Filter.applyFilter(Umu);
+  
   ////////////////////////////////////
   // Naive wilson implementation
   ////////////////////////////////////
@@ -191,11 +296,11 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
 
   DomainWallFermionF Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  Dw.DirichletBlock(Dirichlet);
   int ncall =300;
 
   if (1) {
     FGrid->Barrier();
-    Dw.ZeroCounters();
     Dw.Dhop(src,result,0);
     std::cout<<GridLogMessage<<"Called warmup"<<std::endl;
     double t0=usecond();
@@ -220,8 +325,6 @@ int main (int argc, char ** argv)
     double data_mem = (volume * (2*Nd+1)*Nd*Nc + (volume/Ls) *2*Nd*Nc*Nc) * simdwidth / nsimd * ncall / (1024.*1024.*1024.);
 
     std::cout<<GridLogMessage << "Called Dw "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
-    //    std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
-    //    std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NN<<std::endl;
@@ -229,20 +332,13 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mem GiB/s (base 2) =   "<< 1000000. * data_mem/((t1-t0))<<std::endl;
     err = ref-result;
     std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-    //exit(0);
 
     if(( norm2(err)>1.0e-4) ) {
-      /*
-      std::cout << "RESULT\n " << result<<std::endl;
-      std::cout << "REF   \n " << ref   <<std::endl;
-      std::cout << "ERR   \n " << err   <<std::endl;
-      */
       std::cout<<GridLogMessage << "WRONG RESULT" << std::endl;
       FGrid->Barrier();
       exit(-1);
     }
     assert (norm2(err)< 1.0e-4 );
-    Dw.Report();
   }
 
   if (1)
@@ -294,13 +390,14 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "norm dag ref    "<< norm2(ref)<<std::endl;
   err = ref-result;
   std::cout<<GridLogMessage << "norm dag diff   "<< norm2(err)<<std::endl;
-  if((norm2(err)>1.0e-4)){
-/*
-	std::cout<< "DAG RESULT\n "  <<ref     << std::endl;
-	std::cout<< "DAG sRESULT\n " <<result  << std::endl;
-	std::cout<< "DAG ERR   \n "  << err    <<std::endl;
-*/
+
+  if (  norm2(err) > 1.0e-4 ) {
+    std::cout << "Error vector is\n" <<err << std::endl;
+    std::cout << "Ref   vector is\n" <<ref << std::endl;
+    std::cout << "Result  vector is\n" <<result << std::endl;
   }
+  assert((norm2(err)<1.0e-4));
+  
   LatticeFermionF src_e (FrbGrid);
   LatticeFermionF src_o (FrbGrid);
   LatticeFermionF r_e   (FrbGrid);
@@ -330,7 +427,6 @@ int main (int argc, char ** argv)
   if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
   std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
   {
-    Dw.ZeroCounters();
     FGrid->Barrier();
     Dw.DhopEO(src_o,r_e,DaggerNo);
     double t0=usecond();
@@ -352,7 +448,6 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "Deo mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "Deo mflop/s per rank   "<< flops/(t1-t0)/NP<<std::endl;
     std::cout<<GridLogMessage << "Deo mflop/s per node   "<< flops/(t1-t0)/NN<<std::endl;
-    Dw.Report();
   }
   Dw.DhopEO(src_o,r_e,DaggerNo);
   Dw.DhopOE(src_e,r_o,DaggerNo);
@@ -367,13 +462,7 @@ int main (int argc, char ** argv)
 
   err = r_eo-result;
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-  if((norm2(err)>1.0e-4)){
-    /*
-	std::cout<< "Deo RESULT\n " <<r_eo << std::endl;
-	std::cout<< "Deo REF\n " <<result  << std::endl;
-	std::cout<< "Deo ERR   \n " << err <<std::endl;
-    */
-  }
+  assert(norm2(err)<1.0e-4);
 
   pickCheckerboard(Even,src_e,err);
   pickCheckerboard(Odd,src_o,err);
@@ -382,6 +471,4 @@ int main (int argc, char ** argv)
 
   assert(norm2(src_e)<1.0e-4);
   assert(norm2(src_o)<1.0e-4);
-  Grid_finalize();
-  exit(0);
 }

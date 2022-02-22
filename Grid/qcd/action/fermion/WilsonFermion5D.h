@@ -173,7 +173,12 @@ public:
 		  GridCartesian         &FourDimGrid,
 		  GridRedBlackCartesian &FourDimRedBlackGrid,
 		  double _M5,const ImplParams &p= ImplParams());
-    
+
+  void DirichletBlock(std::vector<int> & block){
+    Stencil.DirichletBlock(block); 
+    StencilEven.DirichletBlock(block); 
+    StencilOdd.DirichletBlock(block); 
+  }
   // Constructors
   /*
     WilsonFermion5D(int simd, 
