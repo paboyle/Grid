@@ -119,7 +119,8 @@ public:
   template <typename vtype> using iImplClover = iScalar<iMatrix<iMatrix<vtype, Impl::Dimension>, Ns>>;
   typedef WilsonCloverHelpers<Impl> Helpers;
 
-  static void plusIdentity(const CloverField& in) {
+  // Can this be avoided?
+  static void IdentityTimesC(const CloverField& in, RealD c) {
     int DimRep = Impl::Dimension;
   
     autoView(in_v, in, AcceleratorWrite);
@@ -127,7 +128,7 @@ public:
     accelerator_for(ss, in.Grid()->oSites(), 1, {
       for (int sa=0; sa<Ns; sa++)
         for (int ca=0; ca<DimRep; ca++)
-          in_v[ss]()(sa,sa)(ca,ca) += 1.0;
+          in_v[ss]()(sa,sa)(ca,ca) = c;
     });
   }
 
@@ -155,19 +156,22 @@ public:
     // csw/(diag_mass) * clover
     Clover *= (1.0/diag_mass);
     
-    ExpClover = Clover;
-    plusIdentity(ExpClover); // 1 + Clover
-    
     // Taylor expansion, slow but generic
-    RealD pref = 1.0;
-    for (int i=2; i<=NMAX; i++) {
-      Clover = Clover * Clover;
-      pref /= (RealD)(i);
-      ExpClover += pref * Clover;
-    }
+    // Horner scheme: a0 + a1 x + a2 x^2 + .. = a0 + x (a1 + x(...))
+    // qN = cN
+    // qn = cn + qn+1 X
+    std::vector<RealD> cn(NMAX+1);
+    cn[0] = 1.0;
+    for (int i=1; i<=NMAX; i++)
+      cn[i] = cn[i-1] / RealD(i);
+      
+    ExpClover = Zero();
+    IdentityTimesC(ExpClover, cn[NMAX]);
+    for (int i=NMAX-1; i>=0; i--)
+      ExpClover = ExpClover * Clover + cn[i];
   
     Clover = ExpClover * diag_mass;
-    CloverInv = adj(ExpClover * (1.0/diag_mass));
+    CloverInv = adj(ExpClover) * (1.0/diag_mass);
   }
 
   static GaugeLinkField Cmunu(std::vector<GaugeLinkField> &U, GaugeLinkField &lambda, int mu, int nu) {
