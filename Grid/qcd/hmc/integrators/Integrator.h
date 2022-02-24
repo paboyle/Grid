@@ -33,7 +33,6 @@ directory
 #define INTEGRATOR_INCLUDED
 
 #include <memory>
-#include "MomentumFilter.h"
 
 NAMESPACE_BEGIN(Grid);
 

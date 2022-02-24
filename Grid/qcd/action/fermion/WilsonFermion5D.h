@@ -75,6 +75,10 @@ public:
   FermionField _tmp;
   FermionField &tmp(void) { return _tmp; }
 
+  int Dirichlet;
+  Coordinate Block; 
+
+  /********** Deprecate timers **********/
   void Report(void);
   void ZeroCounters(void);
   double DhopCalls;
@@ -174,10 +178,16 @@ public:
 		  GridRedBlackCartesian &FourDimRedBlackGrid,
 		  double _M5,const ImplParams &p= ImplParams());
 
-  void DirichletBlock(std::vector<int> & block){
-    Stencil.DirichletBlock(block); 
-    StencilEven.DirichletBlock(block); 
-    StencilOdd.DirichletBlock(block); 
+  virtual void DirichletBlock(Coordinate & block)
+  {
+    assert(block.size()==Nd+1);
+    if ( block[0] || block[1] || block[2] || block[3] || block[4] ){
+      Dirichlet = 1;
+      Block = block;
+      Stencil.DirichletBlock(block); 
+      StencilEven.DirichletBlock(block); 
+      StencilOdd.DirichletBlock(block);
+    }
   }
   // Constructors
   /*

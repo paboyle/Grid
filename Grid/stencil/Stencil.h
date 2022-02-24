@@ -648,7 +648,7 @@ public:
     }
   }
   /// Introduce a block structure and switch off comms on boundaries
-  void DirichletBlock(const std::vector<int> &dirichlet_block)
+  void DirichletBlock(const Coordinate &dirichlet_block)
   {
     this->_dirichlet = 1;
     for(int ii=0;ii<this->_npoints;ii++){

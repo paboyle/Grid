@@ -37,6 +37,9 @@ NAMESPACE_CHECK(ActionSet);
 #include <Grid/qcd/action/ActionParams.h>
 NAMESPACE_CHECK(ActionParams);
 
+#include <Grid/qcd/action/filters/MomentumFilter.h>
+#include <Grid/qcd/action/filters/DirichletFilter.h>
+
 ////////////////////////////////////////////
 // Gauge Actions
 ////////////////////////////////////////////

@@ -60,7 +60,8 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   UmuOdd (_FourDimRedBlackGrid),
   Lebesgue(_FourDimGrid),
   LebesgueEvenOdd(_FourDimRedBlackGrid),
-  _tmp(&FiveDimRedBlackGrid)
+  _tmp(&FiveDimRedBlackGrid),
+  Dirichlet(0)
 {
   // some assertions
   assert(FiveDimGrid._ndimension==5);
@@ -218,6 +219,14 @@ void WilsonFermion5D<Impl>::ImportGauge(const GaugeField &_Umu)
 {
   GaugeField HUmu(_Umu.Grid());
   HUmu = _Umu*(-0.5);
+  if ( Dirichlet ) {
+    std::cout << GridLogMessage << " Dirichlet BCs 5d " <<Block<<std::endl;
+    Coordinate GaugeBlock(Nd);
+    for(int d=0;d<Nd;d++) GaugeBlock[d] = Block[d+1];
+    std::cout << GridLogMessage << " Dirichlet BCs 4d " <<GaugeBlock<<std::endl;
+    DirichletFilter<GaugeField> Filter(GaugeBlock);
+    Filter.applyFilter(HUmu);
+  }
   Impl::DoubleStore(GaugeGrid(),Umu,HUmu);
   pickCheckerboard(Even,UmuEven,Umu);
   pickCheckerboard(Odd ,UmuOdd,Umu);
