@@ -73,17 +73,17 @@ WilsonKernels<ZWilsonImplF>::AsmDhopSite(StencilView &st, DoubledGaugeFieldView 
 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<WilsonImplFH>::AsmDhopSite(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+//#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+//template<> void
+//WilsonKernels<WilsonImplFH>::AsmDhopSite(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+//						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+//#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<ZWilsonImplFH>::AsmDhopSite(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+//#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+//template<> void
+//WilsonKernels<ZWilsonImplFH>::AsmDhopSite(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+//						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+//#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
 
 #undef INTERIOR_AND_EXTERIOR
@@ -102,17 +102,17 @@ WilsonKernels<ZWilsonImplF>::AsmDhopSiteInt(StencilView &st, DoubledGaugeFieldVi
 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<WilsonImplFH>::AsmDhopSiteInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+//#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+//template<> void
+//WilsonKernels<WilsonImplFH>::AsmDhopSiteInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+//						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+//#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<ZWilsonImplFH>::AsmDhopSiteInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+//#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+//template<> void
+//WilsonKernels<ZWilsonImplFH>::AsmDhopSiteInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+//						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+//#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
 
 #undef INTERIOR_AND_EXTERIOR
@@ -131,17 +131,17 @@ WilsonKernels<ZWilsonImplF>::AsmDhopSiteExt(StencilView &st, DoubledGaugeFieldVi
 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<WilsonImplFH>::AsmDhopSiteExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+//#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+//template<> void
+//WilsonKernels<WilsonImplFH>::AsmDhopSiteExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+//						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+//#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<ZWilsonImplFH>::AsmDhopSiteExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+//#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+//template<> void
+//WilsonKernels<ZWilsonImplFH>::AsmDhopSiteExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+//						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+//#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
 
 
@@ -165,17 +165,17 @@ WilsonKernels<ZWilsonImplF>::AsmDhopSiteDag(StencilView &st, DoubledGaugeFieldVi
 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<WilsonImplFH>::AsmDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+//#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+//template<> void
+//WilsonKernels<WilsonImplFH>::AsmDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+//						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+//#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<ZWilsonImplFH>::AsmDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+//#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+//template<> void
+//WilsonKernels<ZWilsonImplFH>::AsmDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+//						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+//#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
 
 #undef INTERIOR_AND_EXTERIOR
@@ -194,17 +194,17 @@ WilsonKernels<ZWilsonImplF>::AsmDhopSiteDagInt(StencilView &st, DoubledGaugeFiel
 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<WilsonImplFH>::AsmDhopSiteDagInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+//#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+//template<> void
+//WilsonKernels<WilsonImplFH>::AsmDhopSiteDagInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+//						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+//#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<ZWilsonImplFH>::AsmDhopSiteDagInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+//#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+//template<> void
+//WilsonKernels<ZWilsonImplFH>::AsmDhopSiteDagInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+//						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+//#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
 
 #undef INTERIOR_AND_EXTERIOR
@@ -223,17 +223,17 @@ WilsonKernels<ZWilsonImplF>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFiel
 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<WilsonImplFH>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+//#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+//template<> void
+//WilsonKernels<WilsonImplFH>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+//						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+//#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<ZWilsonImplFH>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+//#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+//template<> void
+//WilsonKernels<ZWilsonImplFH>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+//						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+//#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
 
 
@@ -280,17 +280,17 @@ WilsonKernels<ZWilsonImplD>::AsmDhopSite(StencilView &st, DoubledGaugeFieldView 
 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<WilsonImplDF>::AsmDhopSite(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+// #pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+// template<> void
+// WilsonKernels<WilsonImplDF>::AsmDhopSite(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+// 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+// #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<ZWilsonImplDF>::AsmDhopSite(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+// #pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+// template<> void
+// WilsonKernels<ZWilsonImplDF>::AsmDhopSite(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+// 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+// #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
 
 #undef INTERIOR_AND_EXTERIOR
@@ -309,17 +309,17 @@ WilsonKernels<ZWilsonImplD>::AsmDhopSiteInt(StencilView &st, DoubledGaugeFieldVi
 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<WilsonImplDF>::AsmDhopSiteInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+// #pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+// template<> void
+// WilsonKernels<WilsonImplDF>::AsmDhopSiteInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+// 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+// #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<ZWilsonImplDF>::AsmDhopSiteInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+// #pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+// template<> void
+// WilsonKernels<ZWilsonImplDF>::AsmDhopSiteInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+// 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+// #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
 
 #undef INTERIOR_AND_EXTERIOR
@@ -338,17 +338,17 @@ WilsonKernels<ZWilsonImplD>::AsmDhopSiteExt(StencilView &st, DoubledGaugeFieldVi
 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<WilsonImplDF>::AsmDhopSiteExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+// #pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+// template<> void
+// WilsonKernels<WilsonImplDF>::AsmDhopSiteExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+// 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+// #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<ZWilsonImplDF>::AsmDhopSiteExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+// #pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+// template<> void
+// WilsonKernels<ZWilsonImplDF>::AsmDhopSiteExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+// 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+// #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
 
 /////////////////////////////////////////////////////////////////
@@ -371,17 +371,17 @@ WilsonKernels<ZWilsonImplD>::AsmDhopSiteDag(StencilView &st, DoubledGaugeFieldVi
 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<WilsonImplDF>::AsmDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+// #pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+// template<> void
+// WilsonKernels<WilsonImplDF>::AsmDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+// 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+// #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<ZWilsonImplDF>::AsmDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+// #pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+// template<> void
+// WilsonKernels<ZWilsonImplDF>::AsmDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+// 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+// #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
 
 #undef INTERIOR_AND_EXTERIOR
@@ -400,17 +400,17 @@ WilsonKernels<ZWilsonImplD>::AsmDhopSiteDagInt(StencilView &st, DoubledGaugeFiel
 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<WilsonImplDF>::AsmDhopSiteDagInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+// #pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+// template<> void
+// WilsonKernels<WilsonImplDF>::AsmDhopSiteDagInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+// 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+// #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<ZWilsonImplDF>::AsmDhopSiteDagInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+// #pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+// template<> void
+// WilsonKernels<ZWilsonImplDF>::AsmDhopSiteDagInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+// 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+// #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
 
 #undef INTERIOR_AND_EXTERIOR
@@ -429,17 +429,17 @@ WilsonKernels<ZWilsonImplD>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFiel
 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<WilsonImplDF>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+// #pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+// template<> void
+// WilsonKernels<WilsonImplDF>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+// 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+// #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
-#pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
-template<> void
-WilsonKernels<ZWilsonImplDF>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
+// #pragma GCC optimize ("-O3", "-fno-schedule-insns", "-fno-schedule-insns2")
+// template<> void
+// WilsonKernels<ZWilsonImplDF>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+// 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+// #include <qcd/action/fermion/implementation/WilsonKernelsAsmBodyA64FX.h>
 
 
 
