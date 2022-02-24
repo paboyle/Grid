@@ -81,8 +81,8 @@ int main (int argc, char ** argv)
     Vector<Coeff_t> diag = Dw.bs;
     Vector<Coeff_t> upper= Dw.cs;
     Vector<Coeff_t> lower= Dw.cs;
-    upper[Ls-1]=-Dw.mass*upper[Ls-1];
-    lower[0]   =-Dw.mass*lower[0];
+    upper[Ls-1]=-Dw.mass_minus*upper[Ls-1];
+    lower[0]   =-Dw.mass_plus*lower[0];
     
     LatticeFermion r_eo(FGrid);
     LatticeFermion src_e (FrbGrid);
