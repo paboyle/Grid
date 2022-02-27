@@ -59,7 +59,7 @@ int main (int argc, char ** argv)
 
   LatticeFermion src(&Grid); random(pRNG,src);
   RealD nrm = norm2(src);
-  LatticeFermion result(&Grid); result=Zero();
+  LatticeFermion result(&Grid);
   LatticeGaugeField Umu(&Grid); SU<Nc>::HotConfiguration(pRNG,Umu);
 
   double volume=1;
@@ -70,11 +70,34 @@ int main (int argc, char ** argv)
   RealD mass = -0.1;
   RealD csw_r = 1.0;
   RealD csw_t = 1.0;
+  RealD cF = 1.0;
   WilsonCloverFermionR Dw(Umu, Grid, RBGrid, mass, csw_r, csw_t);
+  CompactWilsonCloverFermionR Dw_compact(Umu, Grid, RBGrid, mass, csw_r, csw_t, 0.0);
+  WilsonExpCloverFermionR Dwe(Umu, Grid, RBGrid, mass, csw_r, csw_t);
+  CompactWilsonExpCloverFermionR Dwe_compact(Umu, Grid, RBGrid, mass, csw_r, csw_t, 0.0);
 
-  MdagMLinearOperator<WilsonFermionR,LatticeFermion> HermOp(Dw);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
+
+  std::cout << GridLogMessage << "Testing Wilson Clover" << std::endl;
+  MdagMLinearOperator<WilsonCloverFermionR,LatticeFermion> HermOp(Dw);
+  result=Zero();
   CG(HermOp,src,result);
+
+  std::cout << GridLogMessage << "Testing Compact Wilson Clover" << std::endl;
+  MdagMLinearOperator<CompactWilsonCloverFermionR,LatticeFermion> HermOp_compact(Dw_compact);
+  result=Zero();
+  CG(HermOp_compact,src,result);
+
+
+  std::cout << GridLogMessage << "Testing Wilson Exp Clover" << std::endl;
+  MdagMLinearOperator<WilsonExpCloverFermionR,LatticeFermion> HermOp_exp(Dwe);
+  result=Zero();
+  CG(HermOp_exp,src,result);
+
+  std::cout << GridLogMessage << "Testing Compact Wilson Exp Clover" << std::endl;
+  MdagMLinearOperator<CompactWilsonExpCloverFermionR,LatticeFermion> HermOp_exp_compact(Dwe_compact);
+  result=Zero();
+  CG(HermOp_exp_compact,src,result);
 
   Grid_finalize();
 }
