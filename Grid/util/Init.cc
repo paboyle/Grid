@@ -167,6 +167,13 @@ void GridCmdOptionInt(std::string &str,int & val)
   return;
 }
 
+void GridCmdOptionFloat(std::string &str,float & val)
+{
+  std::stringstream ss(str);
+  ss>>val;
+  return;
+}
+
 
 void GridParseLayout(char **argv,int argc,
 		     Coordinate &latt_c,
@@ -527,6 +534,7 @@ void Grid_init(int *argc,char ***argv)
 void Grid_finalize(void)
 {
 #if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) || defined (GRID_COMMS_MPIT)
+  MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
   Grid_unquiesce_nodes();
 #endif

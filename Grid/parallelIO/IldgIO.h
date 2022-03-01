@@ -576,7 +576,8 @@ class ScidacReader : public GridLimeReader {
     std::string rec_name(ILDG_BINARY_DATA);
     while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
       if ( !strncmp(limeReaderType(LimeR), rec_name.c_str(),strlen(rec_name.c_str()) )  ) {
-  skipPastObjectRecord(std::string(GRID_FIELD_NORM));
+  // in principle should do the line below, but that breaks backard compatibility with old data
+  // skipPastObjectRecord(std::string(GRID_FIELD_NORM));
 	skipPastObjectRecord(std::string(SCIDAC_CHECKSUM));
 	return;
       }

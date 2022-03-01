@@ -84,7 +84,8 @@ void acceleratorInit(void)
   // IBM Jsrun makes cuda Device numbering screwy and not match rank
   if ( world_rank == 0 ) {
     printf("AcceleratorCudaInit: using default device \n");
-    printf("AcceleratorCudaInit: assume user either uses a) IBM jsrun, or \n");
+    printf("AcceleratorCudaInit: assume user either uses\n");
+    printf("AcceleratorCudaInit: a) IBM jsrun, or \n");
     printf("AcceleratorCudaInit: b) invokes through a wrapping script to set CUDA_VISIBLE_DEVICES, UCX_NET_DEVICES, and numa binding \n");
     printf("AcceleratorCudaInit: Configure options --enable-setdevice=no \n");
   }
@@ -109,6 +110,7 @@ void acceleratorInit(void)
 
 #ifdef GRID_HIP
 hipDeviceProp_t *gpu_props;
+hipStream_t copyStream;
 void acceleratorInit(void)
 {
   int nDevices = 1;
@@ -166,16 +168,25 @@ void acceleratorInit(void)
 #ifdef GRID_DEFAULT_GPU
   if ( world_rank == 0 ) {
     printf("AcceleratorHipInit: using default device \n");
-    printf("AcceleratorHipInit: assume user either uses a wrapping script to set CUDA_VISIBLE_DEVICES, UCX_NET_DEVICES, and numa binding \n");
-    printf("AcceleratorHipInit: Configure options --enable-summit, --enable-select-gpu=no \n");
+    printf("AcceleratorHipInit: assume user or srun sets ROCR_VISIBLE_DEVICES and numa binding \n");
+    printf("AcceleratorHipInit: Configure options --enable-setdevice=no \n");
   }
+  int device = 0;
 #else
   if ( world_rank == 0 ) {
     printf("AcceleratorHipInit: rank %d setting device to node rank %d\n",world_rank,rank);
-    printf("AcceleratorHipInit: Configure options --enable-select-gpu=yes \n");
+    printf("AcceleratorHipInit: Configure options --enable-setdevice=yes \n");
   }
-  hipSetDevice(rank);
+  int device = rank;
 #endif
+  hipSetDevice(device);
+  hipStreamCreate(&copyStream);
+  const int len=64;
+  char busid[len];
+  if( rank == world_rank ) { 
+    hipDeviceGetPCIBusId(busid, len, device);
+    printf("local rank %d device %d bus id: %s\n", rank, device, busid);
+  }
   if ( world_rank == 0 )  printf("AcceleratorHipInit: ================================================\n");
 }
 #endif
