@@ -481,9 +481,10 @@ inline void acceleratorCopySynchronise(void) { hipStreamSynchronize(copyStream);
 #define accelerator_for2d(iter1, num1, iter2, num2, nsimd, ... ) thread_for2d(iter1,num1,iter2,num2,{ __VA_ARGS__ });
 
 accelerator_inline int acceleratorSIMTlane(int Nsimd) { return 0; } // CUDA specific
-inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { memcpy(to,from,bytes);}
-inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ memcpy(to,from,bytes);}
-inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  { memcpy(to,from,bytes);}
+
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { GridThread::bcopy(from,to,bytes);}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ GridThread::bcopy(from,to,bytes);}
+inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  { GridThread::bcopy(from,to,bytes);}
 inline void acceleratorCopySynchronise(void) {};
 
 inline int  acceleratorIsCommunicable(void *ptr){ return 1; }
