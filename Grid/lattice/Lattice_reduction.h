@@ -142,6 +142,15 @@ inline typename vobj::scalar_objectD sumD(const vobj *arg, Integer osites)
   return sumD_cpu(arg,osites);
 #endif  
 }
+template<class vobj>
+inline typename vobj::scalar_objectD sumD_large(const vobj *arg, Integer osites)
+{
+#if defined(GRID_CUDA)||defined(GRID_HIP)
+  return sumD_gpu_large(arg,osites);
+#else
+  return sumD_cpu(arg,osites);
+#endif  
+}
 
 template<class vobj>
 inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)

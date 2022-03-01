@@ -198,7 +198,7 @@ __global__ void reduceKernel(const vobj *lat, sobj *buffer, Iterator n) {
 // Possibly promote to double and sum
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <class vobj>
-inline typename vobj::scalar_objectD sumD_gpu_internal(const vobj *lat, Integer osites) 
+inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osites) 
 {
   typedef typename vobj::scalar_objectD sobj;
   typedef decltype(lat) Iterator;
@@ -207,7 +207,8 @@ inline typename vobj::scalar_objectD sumD_gpu_internal(const vobj *lat, Integer 
   Integer size = osites*nsimd;
 
   Integer numThreads, numBlocks;
-  getNumBlocksAndThreads(size, sizeof(sobj), numThreads, numBlocks);
+  int ok = getNumBlocksAndThreads(size, sizeof(sobj), numThreads, numBlocks);
+  assert(ok);
 
   Integer smemSize = numThreads * sizeof(sobj);
 
@@ -219,6 +220,37 @@ inline typename vobj::scalar_objectD sumD_gpu_internal(const vobj *lat, Integer 
   auto result = buffer_v[0];
   return result;
 }
+
+template <class vobj>
+inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osites)
+{
+  typedef typename vobj::vector_type  vector;
+  typedef typename vobj::scalar_typeD scalarD;
+  typedef typename vobj::scalar_objectD sobj;
+  sobj ret;
+  scalarD *ret_p = (scalarD *)&ret;
+  
+  const int words = sizeof(vobj)/sizeof(vector);
+
+  Integer nsimd= vobj::Nsimd();
+  Integer size = osites*nsimd;
+  Integer numThreads, numBlocks;
+
+  Vector<vector> buffer(osites);
+  vector *dat = (vector *)lat;
+  vector *buf = &buffer[0];
+  iScalar<vector> *tbuf =(iScalar<vector> *)  &buffer[0];
+  for(int w=0;w<words;w++) {
+
+    accelerator_for(ss,osites,1,{
+	buf[ss] = dat[ss*words+w];
+      });
+      
+    ret_p[w] = sumD_gpu_small(tbuf,osites);
+  }
+  return ret;
+}
+
 template <class vobj>
 inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites)
 {
@@ -236,23 +268,14 @@ inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites)
   int ok = getNumBlocksAndThreads(size, sizeof(sobj), numThreads, numBlocks);
   
   if ( ok ) {
-    ret = sumD_gpu_internal(lat,osites);
+    ret = sumD_gpu_small(lat,osites);
   } else {
-    Vector<vector> buffer(osites);
-    vector *dat = (vector *)lat;
-    vector *buf = &buffer[0];
-    iScalar<vector> *tbuf =(iScalar<vector> *)  &buffer[0];
-    for(int w=0;w<words;w++) {
-
-      accelerator_for(ss,osites,1,{
-	 buf[ss] = dat[ss*words+w];
-      });
-      
-      ret_p[w] = sumD_gpu_internal(tbuf,osites);
-    }
+    ret = sumD_gpu_large(lat,osites);
   }
   return ret;
 }
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Return as same precision as input performing reduction in double precision though
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
