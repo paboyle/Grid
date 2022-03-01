@@ -143,7 +143,7 @@ void Benchmark(int Ls, Coordinate Dirichlet)
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedUniqueString(std::string("The 5D RNG"));
 
   LatticeFermionF src   (FGrid); random(RNG5,src);
-#if 1
+#if 0
   src = Zero();
   {
     Coordinate origin({0,0,0,latt4[2]-1,0});

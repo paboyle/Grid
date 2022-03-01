@@ -39,6 +39,7 @@ NAMESPACE_CHECK(ActionParams);
 
 #include <Grid/qcd/action/filters/MomentumFilter.h>
 #include <Grid/qcd/action/filters/DirichletFilter.h>
+#include <Grid/qcd/action/filters/DDHMCFilter.h>
 
 ////////////////////////////////////////////
 // Gauge Actions

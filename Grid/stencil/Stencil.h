@@ -1120,7 +1120,7 @@ public:
 		    bytes);
 	}
 	
-	if ( compress.DecompressionStep() && comms_recv ) {
+	if ( compress.DecompressionStep()  ) {
 	  AddDecompress(&this->u_recv_buf_p[u_comm_offset],
 			&recv_buf[u_comm_offset],
 			words,Decompressions);
@@ -1206,8 +1206,8 @@ public:
 				  face_table[face_idx].size()*sizeof(face_table_host[0]));
 	}
 
-	if ( comms_send )
-	  Gather_plane_exchange_table(face_table[face_idx],rhs,spointers,dimension,sx,cbmask,compress,permute_type);
+	//	if ( comms_send )
+	Gather_plane_exchange_table(face_table[face_idx],rhs,spointers,dimension,sx,cbmask,compress,permute_type);
 	face_idx++;
 
 	//spointers[0] -- low
@@ -1239,7 +1239,7 @@ public:
 	    rpointers[i] = rp;
 
 	    int duplicate = CheckForDuplicate(dimension,sx,nbr_proc,(void *)rp,i,bytes,cbmask);
-	    if ( (!duplicate) ) { // Force comms for now
+	    if ( !duplicate  ) { 
 	      AddPacket((void *)sp,(void *)rp,
 			xmit_to_rank,comms_send,
 			recv_from_rank,comms_recv,
@@ -1253,9 +1253,7 @@ public:
 	  }
 	}
 
-	if ( comms_recv ) {
-	  AddMerge(&this->u_recv_buf_p[u_comm_offset],rpointers,reduced_buffer_size,permute_type,Mergers);
-	}
+	AddMerge(&this->u_recv_buf_p[u_comm_offset],rpointers,reduced_buffer_size,permute_type,Mergers);
 
 	u_comm_offset     +=buffer_size;
       }

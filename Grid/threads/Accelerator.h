@@ -441,7 +441,7 @@ inline void acceleratorMemSet(void *base,int value,size_t bytes) { hipMemset(bas
 
 inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) // Asynch
 {
-  hipMemcpyAsync(to,from,bytes, hipMemcpyDeviceToDevice,copyStream);
+  hipMemcpy(to,from,bytes, hipMemcpyDeviceToDevice);
 }
 inline void acceleratorCopySynchronise(void) { hipStreamSynchronize(copyStream); };
 
@@ -460,6 +460,8 @@ inline void acceleratorCopySynchronise(void) { hipStreamSynchronize(copyStream);
 #define accelerator_for2d(iter1, num1, iter2, num2, nsimd, ... )	\
   accelerator_for2dNB(iter1, num1, iter2, num2, nsimd, { __VA_ARGS__ } ); \
   accelerator_barrier(dummy);
+
+#define GRID_ACCELERATED
 
 #endif
 
