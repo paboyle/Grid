@@ -288,6 +288,14 @@ inline typename vobj::scalar_object sum_gpu(const vobj *lat, Integer osites)
   return result;
 }
 
+template <class vobj>
+inline typename vobj::scalar_object sum_gpu_large(const vobj *lat, Integer osites)
+{
+  typedef typename vobj::scalar_object sobj;
+  sobj result;
+  result = sumD_gpu_large(lat,osites);
+  return result;
+}
 
 
 NAMESPACE_END(Grid);
