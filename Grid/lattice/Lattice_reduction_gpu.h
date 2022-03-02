@@ -232,10 +232,6 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
   
   const int words = sizeof(vobj)/sizeof(vector);
 
-  Integer nsimd= vobj::Nsimd();
-  Integer size = osites*nsimd;
-  Integer numThreads, numBlocks;
-
   Vector<vector> buffer(osites);
   vector *dat = (vector *)lat;
   vector *buf = &buffer[0];
@@ -258,10 +254,7 @@ inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites)
   typedef typename vobj::scalar_typeD scalarD;
   typedef typename vobj::scalar_objectD sobj;
   sobj ret;
-  scalarD *ret_p = (scalarD *)&ret;
   
-  const int words = sizeof(vobj)/sizeof(vector);
-
   Integer nsimd= vobj::Nsimd();
   Integer size = osites*nsimd;
   Integer numThreads, numBlocks;
@@ -274,7 +267,6 @@ inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites)
   }
   return ret;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Return as same precision as input performing reduction in double precision though
@@ -296,6 +288,5 @@ inline typename vobj::scalar_object sum_gpu_large(const vobj *lat, Integer osite
   result = sumD_gpu_large(lat,osites);
   return result;
 }
-
 
 NAMESPACE_END(Grid);
