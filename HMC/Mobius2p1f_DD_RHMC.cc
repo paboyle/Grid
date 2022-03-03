@@ -50,16 +50,16 @@ int main(int argc, char **argv) {
   //  MD.name    = std::string("Force Gradient");
   typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;
   MD.name    = std::string("MinimumNorm2");
-  MD.MDsteps = 10;
+  MD.MDsteps =  4;
   MD.trajL   = 1.0;
 
   HMCparameters HMCparams;
-  HMCparams.StartTrajectory  = 0;
+  HMCparams.StartTrajectory  = 8;
   HMCparams.Trajectories     = 200;
   HMCparams.NoMetropolisUntil=  0;
   // "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
-  HMCparams.StartingType     =std::string("ColdStart");
-  //  HMCparams.StartingType     =std::string("CheckpointStart");
+  //  HMCparams.StartingType     =std::string("ColdStart");
+  HMCparams.StartingType     =std::string("CheckpointStart");
   HMCparams.MD = MD;
   HMCWrapper TheHMC(HMCparams);
 
@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
   ////////////////////////////////////
   ActionLevel<HMCWrapper::Field> Level1(1);
   ActionLevel<HMCWrapper::Field> Level2(2);
-  ActionLevel<HMCWrapper::Field> Level3(4);
+  ActionLevel<HMCWrapper::Field> Level3(8);
 
   ////////////////////////////////////
   // Strange action
