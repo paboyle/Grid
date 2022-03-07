@@ -207,13 +207,13 @@ public:
     Clover += diag_mass;
   }
 
-  static void Instantiate(CloverDiagonalField& Diagonal,
+  static void Exponentiate_Clover(CloverDiagonalField& Diagonal,
                           CloverTriangleField& Triangle,
                           CloverDiagonalField& DiagonalInv,
                           CloverTriangleField& TriangleInv,
                           RealD csw_t, RealD diag_mass) {
-    // Invert the clover term in the improved layout
-    CompactHelpers::Invert(Diagonal, Triangle, DiagonalInv, TriangleInv);
+
+    // Do nothing
   }
 
   // TODO: implement Cmunu for better performances with compact layout, but don't do it
@@ -313,7 +313,7 @@ public:
 
     }
 
-  static void Instantiate(CloverDiagonalField& Diagonal, CloverTriangleField& Triangle,
+  static void Exponentiate_Clover(CloverDiagonalField& Diagonal, CloverTriangleField& Triangle,
                           CloverDiagonalField& DiagonalInv, CloverTriangleField& TriangleInv,
                           RealD csw_t, RealD diag_mass) {
 
@@ -345,8 +345,6 @@ public:
       autoView(triangle_v,  Triangle,  CpuRead);
       autoView(diagonalExp_v, Diagonal, CpuWrite);
       autoView(triangleExp_v, Triangle, CpuWrite);
-      autoView(diagonalExpInv_v, DiagonalInv, CpuWrite);
-      autoView(triangleExpInv_v, TriangleInv, CpuWrite);
 
       thread_for(site, lsites, { // NOTE: Not on GPU because of (peek/poke)LocalSite
 
@@ -421,46 +419,10 @@ public:
 
         pokeLocalSite(diagonal_exp_tmp, diagonalExp_v, lcoor);
         pokeLocalSite(triangle_exp_tmp, triangleExp_v, lcoor);
-
-        // inverse exp(-Clover)
-
-        ExponentiateHermitean6by6(srcCloverOpUL,-1.0/diag_mass,cn,NMAX,ExpCloverOp);
-
-        block = 0;
-        for(int i = 0; i < 6; i++){
-        	for(int j = 0; j < 6; j++){
-            	if (i == j){
-            		diagonal_exp_tmp()(block)(i) = ExpCloverOp(i,j);
-            	}
-            	else if(i < j){
-            		triangle_exp_tmp()(block)(CompactHelpers::triangle_index(i, j)) = ExpCloverOp(i,j);
-            	}
-           	}
-        }
-
-        ExponentiateHermitean6by6(srcCloverOpLR,-1.0/diag_mass,cn,NMAX,ExpCloverOp);
-
-        block = 1;
-        for(int i = 0; i < 6; i++){
-        	for(int j = 0; j < 6; j++){
-              	if (i == j){
-              		diagonal_exp_tmp()(block)(i) = ExpCloverOp(i,j);
-               	}
-               	else if(i < j){
-               		triangle_exp_tmp()(block)(CompactHelpers::triangle_index(i, j)) = ExpCloverOp(i,j);
-               	}
-            }
-        }
-
-        pokeLocalSite(diagonal_exp_tmp, diagonalExpInv_v, lcoor);
-        pokeLocalSite(triangle_exp_tmp, triangleExpInv_v, lcoor);
       });
 
     Diagonal = Diagonal * diag_mass;
     Triangle = Triangle * diag_mass;
-
-    DiagonalInv = DiagonalInv*(1.0/diag_mass);
-    TriangleInv = TriangleInv*(1.0/diag_mass);
   }
 
 
