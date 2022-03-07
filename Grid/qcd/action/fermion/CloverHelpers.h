@@ -74,7 +74,7 @@ public:
         Eigen::MatrixXcd EigenInvCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
         typename SiteClover::scalar_object Qx = Zero(), Qxinv = Zero();
         peekLocalSite(Qx, CTv, lcoor);
-        //if (csw!=0){
+
         for (int j = 0; j < Ns; j++)
           for (int k = 0; k < Ns; k++)
             for (int a = 0; a < DimRep; a++)
@@ -82,17 +82,13 @@ public:
                 auto zz =  Qx()(j, k)(a, b);
                 EigenCloverOp(a + j * DimRep, b + k * DimRep) = std::complex<double>(zz);
               }
-        //   if (site==0) std::cout << "site =" << site << "\n" << EigenCloverOp << std::endl;
 
         EigenInvCloverOp = EigenCloverOp.inverse();
-        //std::cout << EigenInvCloverOp << std::endl;
         for (int j = 0; j < Ns; j++)
           for (int k = 0; k < Ns; k++)
             for (int a = 0; a < DimRep; a++)
               for (int b = 0; b < DimRep; b++)
                 Qxinv()(j, k)(a, b) = EigenInvCloverOp(a + j * DimRep, b + k * DimRep);
-               //    if (site==0) std::cout << "site =" << site << "\n" << EigenInvCloverOp << std::endl;
-               //  }
                pokeLocalSite(Qxinv, CTIv, lcoor);
       });
     }
@@ -153,7 +149,6 @@ public:
 
     int NMAX = getNMAX(Clover, 3.*csw_t/diag_mass);
 
-    // csw/(diag_mass) * clover
     Clover *= (1.0/diag_mass);
 
     // Taylor expansion, slow but generic
@@ -243,19 +238,6 @@ public:
   template <typename vtype> using iImplClover = iScalar<iMatrix<iMatrix<vtype, Impl::Dimension>, Ns>>;
   typedef CompactWilsonCloverHelpers<Impl> CompactHelpers;
 
-/*
-  static void plusIdentity(const CloverField& in) {
-    int DimRep = Impl::Dimension;
-
-    autoView(in_v, in, AcceleratorWrite);
-
-    accelerator_for(ss, in.Grid()->oSites(), 1, {
-      for (int sa=0; sa<Ns; sa++)
-        for (int ca=0; ca<DimRep; ca++)
-          in_v[ss]()(sa,sa)(ca,ca) += 1.0;
-    });
-  }
-*/
   static void MassTerm(CloverField& Clover, RealD diag_mass) {
     // do nothing!
     // mass term is multiplied to exp(Clover) below
@@ -383,7 +365,6 @@ public:
         peekLocalSite(diagonal_tmp, diagonal_v, lcoor);
         peekLocalSite(triangle_tmp, triangle_v, lcoor);
 
-        // block = 0
         int block;
         block = 0;
         for(int i = 0; i < 6; i++){
@@ -396,7 +377,6 @@ public:
         		}
         	}
         }
-        // block = 1
         block = 1;
         for(int i = 0; i < 6; i++){
           	for(int j = 0; j < 6; j++){
