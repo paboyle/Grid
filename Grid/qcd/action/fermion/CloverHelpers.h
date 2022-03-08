@@ -209,8 +209,6 @@ public:
 
   static void Exponentiate_Clover(CloverDiagonalField& Diagonal,
                           CloverTriangleField& Triangle,
-                          CloverDiagonalField& DiagonalInv,
-                          CloverTriangleField& TriangleInv,
                           RealD csw_t, RealD diag_mass) {
 
     // Do nothing
@@ -313,9 +311,7 @@ public:
 
     }
 
-  static void Exponentiate_Clover(CloverDiagonalField& Diagonal, CloverTriangleField& Triangle,
-                          CloverDiagonalField& DiagonalInv, CloverTriangleField& TriangleInv,
-                          RealD csw_t, RealD diag_mass) {
+  static void Exponentiate_Clover(CloverDiagonalField& Diagonal, CloverTriangleField& Triangle, RealD csw_t, RealD diag_mass) {
 
     GridBase* grid = Diagonal.Grid();
     int NMAX = getNMAX(Diagonal, 3.*csw_t/diag_mass);

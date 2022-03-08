@@ -328,7 +328,7 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeFie
 
   // Exponentiate the clover (nothing happens in case of the standard clover)
   double t5 = usecond();
-  CloverHelpers::Exponentiate_Clover(Diagonal, Triangle, DiagonalInv, TriangleInv, csw_t, this->diag_mass);
+  CloverHelpers::Exponentiate_Clover(Diagonal, Triangle, csw_t, this->diag_mass);
 
   // Possible modify the boundary values
   double t6 = usecond();
