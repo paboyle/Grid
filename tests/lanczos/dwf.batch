@@ -1,0 +1,27 @@
+# run script on Cori
+#!/bin/bash
+#SBATCH  -t 30
+#SBATCH  -N 16
+#SBATCH  -C knl
+#SBATCH  -A mp13
+#SBATCH  --ntasks-per-node=1
+
+export OMP_PROC_BIND=true
+export OMP_PLACES=threads
+export OMP_NUM_THREADS=64
+
+#BIN=benchmarks/Benchmark_ITT
+#OPT='--cpu-bind=cores' 
+BIN=./Test_dwf_block_lanczos
+rundir=.
+CONF='--gconf '${rundir}'/ckpoint_lat.IEEE64BIG.5000'
+VOL='--grid 16.16.16.32'
+GRID='--mpi 1.2.2.4'
+OPT='--mass 0.00054 --M5 1.8 --phase in.params --omega in.params --shm 4096'
+BL='--rbl 4.32.32.30.7 --split 1.2.2.1 --check_int 8 --resid 1.0e-5 --cheby_l 0.0027 --cheby_u 7 --cheby_n 51'
+
+#echo srun $OPT $BIN $gridoptions $jobparams
+#srun $OPT $BIN $gridoptions $jobparams
+
+echo srun $BIN $CONF $OPT $BL $VOL $GRID
+srun $BIN $CONF $OPT $BL $VOL $GRID

@@ -34,7 +34,7 @@ using namespace Grid;
 //using namespace Grid::QCD;
 
 //typedef typename GparityDomainWallFermionR::FermionField FermionField;
-typedef typename ZMobiusFermionR::FermionField FermionField;
+typedef typename ZMobiusFermionF::FermionField FermionField;
 
 RealD AllZero(RealD x){ return 0.;}
 
@@ -249,11 +249,11 @@ int main (int argc, char ** argv)
   CmdJobParams JP;
   JP.Parse(argv,argc);
 
-  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
+  GridCartesian         * UGridD   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
+  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(JP.Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(JP.Ls,UGrid);
-//  printf("UGrid=%p UrbGrid=%p FGrid=%p FrbGrid=%p\n",UGrid,UrbGrid,FGrid,FrbGrid);
 
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
@@ -262,16 +262,18 @@ int main (int argc, char ** argv)
   // ypj [note] why seed RNG5 again? bug? In this case, run with a default seed().
   GridParallelRNG          RNG5rb(FrbGrid);  RNG5rb.SeedFixedIntegers(seeds5);
 
-  LatticeGaugeField Umu(UGrid); 
-  std::vector<LatticeColourMatrix> U(4,UGrid);
+  LatticeGaugeField UmuD(UGridD); 
+  LatticeGaugeFieldF Umu(UGrid); 
+  std::vector<LatticeColourMatrixF> U(4,UGrid);
   
   if ( JP.gaugefile.compare("Hot") == 0 ) {
-    SU3::HotConfiguration(RNG4, Umu);
+    SU3::HotConfiguration(RNG4, UmuD);
   } else {
     FieldMetaData header;
-    NerscIO::readConfiguration(Umu,header,JP.gaugefile);
+    NerscIO::readConfiguration(UmuD,header,JP.gaugefile);
     // ypj [fixme] additional checks for the loaded configuration?
   }
+  precisionChange(Umu,UmuD);
   
   for(int mu=0;mu<Nd;mu++){
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
@@ -321,7 +323,7 @@ int main (int argc, char ** argv)
   // Split into 1^4 mpi communicators
   /////////////////////////////////////////////
   GridCartesian         * SGrid = new GridCartesian(GridDefaultLatt(),
-                                                    GridDefaultSimd(Nd,vComplex::Nsimd()),
+                                                    GridDefaultSimd(Nd,vComplexF::Nsimd()),
                                                     mpi_split,
                                                     *UGrid);
 
@@ -329,19 +331,19 @@ int main (int argc, char ** argv)
   GridRedBlackCartesian * SrbGrid  = SpaceTimeGrid::makeFourDimRedBlackGrid(SGrid);
   GridRedBlackCartesian * SFrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(JP.Ls,SGrid);
 
-  LatticeGaugeField s_Umu(SGrid);
+  LatticeGaugeFieldF s_Umu(SGrid);
   Grid_split  (Umu,s_Umu);
 
   //WilsonFermionR::ImplParams params;
-  ZMobiusFermionR::ImplParams params;
+  ZMobiusFermionF::ImplParams params;
   params.overlapCommsCompute = true;
   params.boundary_phases = JP.boundary_phase;
-  ZMobiusFermionR  Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,JP.omega,1.,0.,params);
+  ZMobiusFermionF  Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,JP.omega,1.,0.,params);
 //  SchurDiagTwoOperator<ZMobiusFermionR,FermionField> HermOp(Ddwf);
-  SchurDiagOneOperator<ZMobiusFermionR,FermionField> HermOp(Ddwf);
-  ZMobiusFermionR  Dsplit(s_Umu,*SFGrid,*SFrbGrid,*SGrid,*SrbGrid,mass,M5,JP.omega,1.,0.,params);
+  SchurDiagOneOperator<ZMobiusFermionF,FermionField> HermOp(Ddwf);
+  ZMobiusFermionF  Dsplit(s_Umu,*SFGrid,*SFrbGrid,*SGrid,*SrbGrid,mass,M5,JP.omega,1.,0.,params);
 //  SchurDiagTwoOperator<ZMobiusFermionR,FermionField> SHermOp(Dsplit);
-  SchurDiagOneOperator<ZMobiusFermionR,FermionField> SHermOp(Dsplit);
+  SchurDiagOneOperator<ZMobiusFermionF,FermionField> SHermOp(Dsplit);
 
   //std::vector<double> Coeffs { 0.,-1.}; 
   // ypj [note] this may not be supported by some compilers

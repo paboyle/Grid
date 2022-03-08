@@ -1,0 +1,17 @@
+boundary_phase 0 1 0
+boundary_phase 1 1 0
+boundary_phase 2 1 0
+boundary_phase 3 -1 0
+
+omega 0 0.375 0
+omega 1 0.375 0
+omega 2 0.375 0
+omega 3 0.375 0
+omega 4 0.375 0
+omega 5 0.375 0
+omega 6 0.375 0
+omega 7 0.375 0
+omega 8 0.375 0
+omega 9 0.375 0
+omega 10 0.375 0
+omega 11 0.375 0
