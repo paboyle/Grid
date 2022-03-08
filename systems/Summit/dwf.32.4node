@@ -1,0 +1,206 @@
+OPENMPI detected
+AcceleratorCudaInit[0]: ========================
+AcceleratorCudaInit[0]: Device Number    : 0
+AcceleratorCudaInit[0]: ========================
+AcceleratorCudaInit[0]: Device identifier: Tesla V100-SXM2-16GB
+AcceleratorCudaInit[0]:   totalGlobalMem: 16911433728 
+AcceleratorCudaInit[0]:   managedMemory: 1 
+AcceleratorCudaInit[0]:   isMultiGpuBoard: 0 
+AcceleratorCudaInit[0]:   warpSize: 32 
+AcceleratorCudaInit[0]:   pciBusID: 4 
+AcceleratorCudaInit[0]:   pciDeviceID: 0 
+AcceleratorCudaInit[0]: maxGridSize (2147483647,65535,65535)
+AcceleratorCudaInit: rank 0 setting device to node rank 0
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+local rank 0 device 0 bus id: 0004:04:00.0
+AcceleratorCudaInit: ================================================
+SharedMemoryMpi:  World communicator of size 24
+SharedMemoryMpi:  Node  communicator of size 6
+0SharedMemoryMpi:  SharedMemoryMPI.cc acceleratorAllocDevice 2147483648bytes at 0x200080000000 for comms buffers 
+Setting up IPC
+
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+__|_ |  |  |  |  |  |  |  |  |  |  |  | _|__
+__|_                                    _|__
+__|_   GGGG    RRRR    III    DDDD      _|__
+__|_  G        R   R    I     D   D     _|__
+__|_  G        R   R    I     D    D    _|__
+__|_  G  GG    RRRR     I     D    D    _|__
+__|_  G   G    R  R     I     D   D     _|__
+__|_   GGGG    R   R   III    DDDD      _|__
+__|_                                    _|__
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+  |  |  |  |  |  |  |  |  |  |  |  |  |  |  
+
+
+Copyright (C) 2015 Peter Boyle, Azusa Yamaguchi, Guido Cossu, Antonin Portelli and other authors
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+AcceleratorCudaInit: rank 2 setting device to node rank 2
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+local rank 2 device 2 bus id: 0004:06:00.0
+AcceleratorCudaInit: rank 1 setting device to node rank 1
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+local rank 1 device 1 bus id: 0004:05:00.0
+AcceleratorCudaInit: rank 4 setting device to node rank 4
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+local rank 4 device 4 bus id: 0035:04:00.0
+AcceleratorCudaInit: rank 3 setting device to node rank 3
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+local rank 3 device 3 bus id: 0035:03:00.0
+AcceleratorCudaInit: rank 5 setting device to node rank 5
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+local rank 5 device 5 bus id: 0035:05:00.0
+GNU General Public License for more details.
+Current Grid git commit hash=7cb1ff7395a5833ded6526c43891bd07a0436290: (HEAD -> develop, origin/develop, origin/HEAD) clean
+
+Grid : Message : ================================================ 
+Grid : Message : MPI is initialised and logging filters activated 
+Grid : Message : ================================================ 
+Grid : Message : Requested 2147483648 byte stencil comms buffers 
+Grid : Message : MemoryManager Cache 8388608000 bytes 
+Grid : Message : MemoryManager::Init() setting up
+Grid : Message : MemoryManager::Init() cache pool for recent allocations: SMALL 8 LARGE 2
+Grid : Message : MemoryManager::Init() Non unified: Caching accelerator data in dedicated memory
+Grid : Message : MemoryManager::Init() Using cudaMalloc
+Grid : Message : 1.544984 s : Grid Layout
+Grid : Message : 1.544992 s : 	Global lattice size  : 64 64 64 96 
+Grid : Message : 1.545003 s : 	OpenMP threads       : 6
+Grid : Message : 1.545011 s : 	MPI tasks            : 2 2 2 3 
+AcceleratorCudaInit: rank 8 setting device to node rank 2
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 6 setting device to node rank 0
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 11 setting device to node rank 5
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 16 setting device to node rank 4
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 17 setting device to node rank 5
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 13 setting device to node rank 1
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 12 setting device to node rank 0
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 21 setting device to node rank 3
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 23 setting device to node rank 5
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 22 setting device to node rank 4
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 19 setting device to node rank 1
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 18 setting device to node rank 0
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 7 setting device to node rank 1
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 10 setting device to node rank 4
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 9 setting device to node rank 3
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 14 setting device to node rank 2
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 15 setting device to node rank 3
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 20 setting device to node rank 2
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+Grid : Message : 2.994920 s : Making s innermost grids
+Grid : Message : 2.232502 s : Initialising 4d RNG
+Grid : Message : 2.397047 s : Intialising parallel RNG with unique string 'The 4D RNG'
+Grid : Message : 2.397069 s : Seed SHA256: 49db4542db694e3b1a74bf2592a8c1b83bfebbe18401693c2609a4c3af1
+Grid : Message : 2.653140 s : Initialising 5d RNG
+Grid : Message : 5.285347 s : Intialising parallel RNG with unique string 'The 5D RNG'
+Grid : Message : 5.285369 s : Seed SHA256: b6316f2fac44ce14111f93e0296389330b077bfd0a7b359f781c58589f8a
+Grid : Message : 9.994738 s : Initialised RNGs
+Grid : Message : 13.153426 s : Drawing gauge field
+Grid : Message : 13.825697 s : Random gauge initialised 
+Grid : Message : 18.537657 s : Setting up Cshift based reference 
+Grid : Message : 22.296755 s : *****************************************************************
+Grid : Message : 22.296781 s : * Kernel options --dslash-generic, --dslash-unroll, --dslash-asm
+Grid : Message : 22.296791 s : *****************************************************************
+Grid : Message : 22.296800 s : *****************************************************************
+Grid : Message : 22.296809 s : * Benchmarking DomainWallFermionR::Dhop                  
+Grid : Message : 22.296818 s : * Vectorising space-time by 4
+Grid : Message : 22.296828 s : * VComplexF size is 32 B
+Grid : Message : 22.296838 s : * SINGLE precision 
+Grid : Message : 22.296847 s : * Using Overlapped Comms/Compute
+Grid : Message : 22.296855 s : * Using GENERIC Nc WilsonKernels
+Grid : Message : 22.296863 s : *****************************************************************
+Grid : Message : 24.746452 s : Called warmup
+Grid : Message : 137.525756 s : Called Dw 3000 times in 1.12779e+08 us
+Grid : Message : 137.525818 s : mflop/s =   1.41383e+07
+Grid : Message : 137.525831 s : mflop/s per rank =  589097
+Grid : Message : 137.525843 s : mflop/s per node =  3.53458e+06
+Grid : Message : 137.525854 s : RF  GiB/s (base 2) =   28728.7
+Grid : Message : 137.525864 s : mem GiB/s (base 2) =   17955.5
+Grid : Message : 137.693645 s : norm diff   1.04885e-13
+Grid : Message : 137.965585 s : #### Dhop calls report 
+Grid : Message : 137.965598 s : WilsonFermion5D Number of DhopEO Calls   : 6002
+Grid : Message : 137.965612 s : WilsonFermion5D TotalTime   /Calls        : 18899.7 us
+Grid : Message : 137.965624 s : WilsonFermion5D CommTime    /Calls        : 16041.4 us
+Grid : Message : 137.965634 s : WilsonFermion5D FaceTime    /Calls        : 859.705 us
+Grid : Message : 137.965644 s : WilsonFermion5D ComputeTime1/Calls        : 70.5881 us
+Grid : Message : 137.965654 s : WilsonFermion5D ComputeTime2/Calls        : 2094.8 us
+Grid : Message : 137.965682 s : Average mflops/s per call                : 3.87638e+09
+Grid : Message : 137.965692 s : Average mflops/s per call per rank       : 1.61516e+08
+Grid : Message : 137.965702 s : Average mflops/s per call per node       : 9.69095e+08
+Grid : Message : 137.965712 s : Average mflops/s per call (full)         : 1.43168e+07
+Grid : Message : 137.965721 s : Average mflops/s per call per rank (full): 596533
+Grid : Message : 137.965730 s : Average mflops/s per call per node (full): 3.5792e+06
+Grid : Message : 137.965740 s : WilsonFermion5D Stencil
+Grid : Message : 137.965748 s : WilsonFermion5D StencilEven
+Grid : Message : 137.965756 s : WilsonFermion5D StencilOdd
+Grid : Message : 137.965764 s : WilsonFermion5D Stencil     Reporti()
+Grid : Message : 137.965772 s : WilsonFermion5D StencilEven Reporti()
+Grid : Message : 137.965780 s : WilsonFermion5D StencilOdd  Reporti()
+Grid : Message : 156.554605 s : Compare to naive wilson implementation Dag to verify correctness
+Grid : Message : 156.554632 s : Called DwDag
+Grid : Message : 156.554642 s : norm dag result 12.0421
+Grid : Message : 156.639265 s : norm dag ref    12.0421
+Grid : Message : 156.888281 s : norm dag diff   7.62057e-14
+Grid : Message : 157.609797 s : Calling Deo and Doe and //assert Deo+Doe == Dunprec
+Grid : Message : 158.208630 s : src_e0.499996
+Grid : Message : 158.162447 s : src_o0.500004
+Grid : Message : 158.267780 s : *********************************************************
+Grid : Message : 158.267791 s : * Benchmarking DomainWallFermionF::DhopEO                
+Grid : Message : 158.267801 s : * Vectorising space-time by 4
+Grid : Message : 158.267811 s : * SINGLE precision 
+Grid : Message : 158.267820 s : * Using Overlapped Comms/Compute
+Grid : Message : 158.267828 s : * Using GENERIC Nc WilsonKernels
+Grid : Message : 158.267836 s : *********************************************************
+Grid : Message : 216.487829 s : Deo mflop/s =   1.37283e+07
+Grid : Message : 216.487869 s : Deo mflop/s per rank   572011
+Grid : Message : 216.487881 s : Deo mflop/s per node   3.43206e+06
+Grid : Message : 216.487893 s : #### Dhop calls report 
+Grid : Message : 216.487903 s : WilsonFermion5D Number of DhopEO Calls   : 3001
+Grid : Message : 216.487913 s : WilsonFermion5D TotalTime   /Calls        : 19399.6 us
+Grid : Message : 216.487923 s : WilsonFermion5D CommTime    /Calls        : 16475.4 us
+Grid : Message : 216.487933 s : WilsonFermion5D FaceTime    /Calls        : 972.393 us
+Grid : Message : 216.487943 s : WilsonFermion5D ComputeTime1/Calls        : 49.8474 us
+Grid : Message : 216.487953 s : WilsonFermion5D ComputeTime2/Calls        : 2089.93 us
+Grid : Message : 216.488001 s : Average mflops/s per call                : 5.39682e+09
+Grid : Message : 216.488011 s : Average mflops/s per call per rank       : 2.24867e+08
+Grid : Message : 216.488020 s : Average mflops/s per call per node       : 1.3492e+09
+Grid : Message : 216.488030 s : Average mflops/s per call (full)         : 1.39479e+07
+Grid : Message : 216.488039 s : Average mflops/s per call per rank (full): 581162
+Grid : Message : 216.488048 s : Average mflops/s per call per node (full): 3.48697e+06
+Grid : Message : 216.488057 s : WilsonFermion5D Stencil
+Grid : Message : 216.488065 s : WilsonFermion5D StencilEven
+Grid : Message : 216.488073 s : WilsonFermion5D StencilOdd
+Grid : Message : 216.488081 s : WilsonFermion5D Stencil     Reporti()
+Grid : Message : 216.488089 s : WilsonFermion5D StencilEven Reporti()
+Grid : Message : 216.488097 s : WilsonFermion5D StencilOdd  Reporti()
+Grid : Message : 217.384495 s : r_e6.02113
+Grid : Message : 217.426121 s : r_o6.02096
+Grid : Message : 217.472636 s : res12.0421
+Grid : Message : 218.200068 s : norm diff   0
+Grid : Message : 218.645673 s : norm diff even  0
+Grid : Message : 218.816561 s : norm diff odd   0

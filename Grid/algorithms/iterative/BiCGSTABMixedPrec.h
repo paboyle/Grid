@@ -36,7 +36,8 @@ NAMESPACE_BEGIN(Grid);
 template<class FieldD, class FieldF, typename std::enable_if< getPrecision<FieldD>::value == 2, int>::type = 0, typename std::enable_if< getPrecision<FieldF>::value == 1, int>::type = 0> 
 class MixedPrecisionBiCGSTAB : public LinearFunction<FieldD> 
 {
-  public:                                                
+  public:
+    using LinearFunction<FieldD>::operator();
     RealD   Tolerance;
     RealD   InnerTolerance; // Initial tolerance for inner CG. Defaults to Tolerance but can be changed
     Integer MaxInnerIterations;

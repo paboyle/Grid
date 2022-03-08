@@ -1,0 +1,156 @@
+SLURM detected
+AcceleratorCudaInit[0]: ========================
+AcceleratorCudaInit[0]: Device Number    : 0
+AcceleratorCudaInit[0]: ========================
+AcceleratorCudaInit[0]: Device identifier: A100-SXM4-40GB
+AcceleratorCudaInit[0]:   totalGlobalMem: 42506321920 
+AcceleratorCudaInit[0]:   managedMemory: 1 
+AcceleratorCudaInit[0]:   isMultiGpuBoard: 0 
+AcceleratorCudaInit[0]:   warpSize: 32 
+AcceleratorCudaInit[0]:   pciBusID: 2 
+AcceleratorCudaInit[0]:   pciDeviceID: 0 
+AcceleratorCudaInit[0]: maxGridSize (2147483647,65535,65535)
+AcceleratorCudaInit: using default device 
+AcceleratorCudaInit: assume user either uses a) IBM jsrun, or 
+AcceleratorCudaInit: b) invokes through a wrapping script to set CUDA_VISIBLE_DEVICES, UCX_NET_DEVICES, and numa binding 
+AcceleratorCudaInit: Configure options --enable-setdevice=no 
+AcceleratorCudaInit: ================================================
+SharedMemoryMpi:  World communicator of size 16
+SharedMemoryMpi:  Node  communicator of size 4
+0SharedMemoryMpi:  SharedMemoryMPI.cc acceleratorAllocDevice 2147483648bytes at 0x7fd460000000 for comms buffers 
+Setting up IPC
+
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+__|_ |  |  |  |  |  |  |  |  |  |  |  | _|__
+__|_                                    _|__
+__|_   GGGG    RRRR    III    DDDD      _|__
+__|_  G        R   R    I     D   D     _|__
+__|_  G        R   R    I     D    D    _|__
+__|_  G  GG    RRRR     I     D    D    _|__
+__|_  G   G    R  R     I     D   D     _|__
+__|_   GGGG    R   R   III    DDDD      _|__
+__|_                                    _|__
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+  |  |  |  |  |  |  |  |  |  |  |  |  |  |  
+
+
+Copyright (C) 2015 Peter Boyle, Azusa Yamaguchi, Guido Cossu, Antonin Portelli and other authors
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+Current Grid git commit hash=b2ccaad761798e93a9314f97d8a4d1f851c6962a: (HEAD -> develop) uncommited changes
+
+Grid : Message : ================================================ 
+Grid : Message : MPI is initialised and logging filters activated 
+Grid : Message : ================================================ 
+Grid : Message : Requested 2147483648 byte stencil comms buffers 
+Grid : Message : MemoryManager Cache 34005057536 bytes 
+Grid : Message : MemoryManager::Init() setting up
+Grid : Message : MemoryManager::Init() cache pool for recent allocations: SMALL 32 LARGE 8
+Grid : Message : MemoryManager::Init() Non unified: Caching accelerator data in dedicated memory
+Grid : Message : MemoryManager::Init() Using cudaMalloc
+Grid : Message : 0.667601 s : Grid Layout
+Grid : Message : 0.667602 s : 	Global lattice size  : 64 64 64 64 
+Grid : Message : 0.667610 s : 	OpenMP threads       : 32
+Grid : Message : 0.667611 s : 	MPI tasks            : 2 2 2 2 
+Grid : Message : 0.702872 s : Making s innermost grids
+Grid : Message : 0.742911 s : Initialising 4d RNG
+Grid : Message : 0.813463 s : Intialising parallel RNG with unique string 'The 4D RNG'
+Grid : Message : 0.813479 s : Seed SHA256: 49db4542db694e3b1a74bf2592a8c1b83bfebbe18401693c2609a4c3af1
+Grid : Message : 0.922630 s : Initialising 5d RNG
+Grid : Message : 2.306290 s : Intialising parallel RNG with unique string 'The 5D RNG'
+Grid : Message : 2.306540 s : Seed SHA256: b6316f2fac44ce14111f93e0296389330b077bfd0a7b359f781c58589f8a
+Grid : Message : 3.878430 s : Initialised RNGs
+Grid : Message : 4.536926 s : Drawing gauge field
+Grid : Message : 4.824391 s : Random gauge initialised 
+Grid : Message : 6.253195 s : Setting up Cshift based reference 
+Grid : Message : 7.326402 s : *****************************************************************
+Grid : Message : 7.326411 s : * Kernel options --dslash-generic, --dslash-unroll, --dslash-asm
+Grid : Message : 7.326412 s : *****************************************************************
+Grid : Message : 7.326412 s : *****************************************************************
+Grid : Message : 7.326412 s : * Benchmarking DomainWallFermionR::Dhop                  
+Grid : Message : 7.326412 s : * Vectorising space-time by 8
+Grid : Message : 7.326413 s : * VComplexF size is 64 B
+Grid : Message : 7.326414 s : * SINGLE precision 
+Grid : Message : 7.326414 s : * Using Overlapped Comms/Compute
+Grid : Message : 7.326414 s : * Using GENERIC Nc WilsonKernels
+Grid : Message : 7.326414 s : *****************************************************************
+Grid : Message : 8.283417 s : Called warmup
+Grid : Message : 89.658859 s : Called Dw 3000 times in 8.13753e+07 us
+Grid : Message : 89.658898 s : mflop/s =   1.3063e+07
+Grid : Message : 89.658900 s : mflop/s per rank =  816437
+Grid : Message : 89.658901 s : mflop/s per node =  3.26575e+06
+Grid : Message : 89.658902 s : RF  GiB/s (base 2) =   26543.7
+Grid : Message : 89.658903 s : mem GiB/s (base 2) =   16589.8
+Grid : Message : 89.662424 s : norm diff   1.03481e-13
+Grid : Message : 89.700433 s : #### Dhop calls report 
+Grid : Message : 89.700452 s : WilsonFermion5D Number of DhopEO Calls   : 6002
+Grid : Message : 89.700456 s : WilsonFermion5D TotalTime   /Calls        : 13588.2 us
+Grid : Message : 89.700457 s : WilsonFermion5D CommTime    /Calls        : 12137.3 us
+Grid : Message : 89.700458 s : WilsonFermion5D FaceTime    /Calls        : 548.408 us
+Grid : Message : 89.700459 s : WilsonFermion5D ComputeTime1/Calls        : 42.6163 us
+Grid : Message : 89.700460 s : WilsonFermion5D ComputeTime2/Calls        : 910.312 us
+Grid : Message : 89.700477 s : Average mflops/s per call                : 4.43502e+09
+Grid : Message : 89.700493 s : Average mflops/s per call per rank       : 2.77189e+08
+Grid : Message : 89.700494 s : Average mflops/s per call per node       : 1.10875e+09
+Grid : Message : 89.700495 s : Average mflops/s per call (full)         : 1.32753e+07
+Grid : Message : 89.700496 s : Average mflops/s per call per rank (full): 829709
+Grid : Message : 89.700497 s : Average mflops/s per call per node (full): 3.31884e+06
+Grid : Message : 89.700498 s : WilsonFermion5D Stencil
+Grid : Message : 89.700498 s : WilsonFermion5D StencilEven
+Grid : Message : 89.700498 s : WilsonFermion5D StencilOdd
+Grid : Message : 89.700499 s : WilsonFermion5D Stencil     Reporti()
+Grid : Message : 89.700499 s : WilsonFermion5D StencilEven Reporti()
+Grid : Message : 89.700499 s : WilsonFermion5D StencilOdd  Reporti()
+Grid : Message : 101.462401 s : Compare to naive wilson implementation Dag to verify correctness
+Grid : Message : 101.462412 s : Called DwDag
+Grid : Message : 101.462413 s : norm dag result 12.0421
+Grid : Message : 101.474097 s : norm dag ref    12.0421
+Grid : Message : 101.489396 s : norm dag diff   7.63236e-14
+Grid : Message : 101.529094 s : Calling Deo and Doe and //assert Deo+Doe == Dunprec
+Grid : Message : 101.996820 s : src_e0.499997
+Grid : Message : 102.626690 s : src_o0.500003
+Grid : Message : 102.125734 s : *********************************************************
+Grid : Message : 102.125736 s : * Benchmarking DomainWallFermionF::DhopEO                
+Grid : Message : 102.125737 s : * Vectorising space-time by 8
+Grid : Message : 102.125738 s : * SINGLE precision 
+Grid : Message : 102.125739 s : * Using Overlapped Comms/Compute
+Grid : Message : 102.125739 s : * Using GENERIC Nc WilsonKernels
+Grid : Message : 102.125739 s : *********************************************************
+Grid : Message : 143.296910 s : Deo mflop/s =   1.30119e+07
+Grid : Message : 143.297140 s : Deo mflop/s per rank   813244
+Grid : Message : 143.297160 s : Deo mflop/s per node   3.25297e+06
+Grid : Message : 143.297180 s : #### Dhop calls report 
+Grid : Message : 143.297190 s : WilsonFermion5D Number of DhopEO Calls   : 3001
+Grid : Message : 143.297200 s : WilsonFermion5D TotalTime   /Calls        : 13630 us
+Grid : Message : 143.297210 s : WilsonFermion5D CommTime    /Calls        : 12124.9 us
+Grid : Message : 143.297220 s : WilsonFermion5D FaceTime    /Calls        : 590.958 us
+Grid : Message : 143.297230 s : WilsonFermion5D ComputeTime1/Calls        : 43.2806 us
+Grid : Message : 143.297240 s : WilsonFermion5D ComputeTime2/Calls        : 921.187 us
+Grid : Message : 143.297460 s : Average mflops/s per call                : 4.24329e+09
+Grid : Message : 143.297470 s : Average mflops/s per call per rank       : 2.65206e+08
+Grid : Message : 143.297480 s : Average mflops/s per call per node       : 1.06082e+09
+Grid : Message : 143.297490 s : Average mflops/s per call (full)         : 1.32347e+07
+Grid : Message : 143.297500 s : Average mflops/s per call per rank (full): 827169
+Grid : Message : 143.297510 s : Average mflops/s per call per node (full): 3.30868e+06
+Grid : Message : 143.297520 s : WilsonFermion5D Stencil
+Grid : Message : 143.297520 s : WilsonFermion5D StencilEven
+Grid : Message : 143.297520 s : WilsonFermion5D StencilOdd
+Grid : Message : 143.297520 s : WilsonFermion5D Stencil     Reporti()
+Grid : Message : 143.297520 s : WilsonFermion5D StencilEven Reporti()
+Grid : Message : 143.297520 s : WilsonFermion5D StencilOdd  Reporti()
+Grid : Message : 143.112368 s : r_e6.02111
+Grid : Message : 143.119760 s : r_o6.02102
+Grid : Message : 143.126239 s : res12.0421
+Grid : Message : 143.720780 s : norm diff   0
+Grid : Message : 144.885380 s : norm diff even  0
+Grid : Message : 144.154396 s : norm diff odd   0

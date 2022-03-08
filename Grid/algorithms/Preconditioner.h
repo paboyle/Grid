@@ -30,13 +30,19 @@ Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
-template<class Field> class Preconditioner :  public LinearFunction<Field> { 
+template<class Field> using Preconditioner =  LinearFunction<Field> ;
+
+/*
+template<class Field> class Preconditioner :  public LinearFunction<Field> {
+  using LinearFunction<Field>::operator();
   virtual void operator()(const Field &src, Field & psi)=0;
 };
+*/
 
 template<class Field> class TrivialPrecon :  public Preconditioner<Field> { 
 public:
-  void operator()(const Field &src, Field & psi){
+  using Preconditioner<Field>::operator();
+  virtual void operator()(const Field &src, Field & psi){
     psi = src;
   }
   TrivialPrecon(void){};

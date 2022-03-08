@@ -322,25 +322,12 @@ public:
     int simd_layout     = _grid->_simd_layout[dimension];
     int comm_dim        = _grid->_processors[dimension] >1 ;
 
-    int recv_from_rank;
-    int xmit_to_rank;
+    //    int recv_from_rank;
+    //    int xmit_to_rank;
 
     if ( ! comm_dim ) return 1;
-
-    int nbr_proc;
-    if (displacement>0) nbr_proc = 1;
-    else                 nbr_proc = pd-1;
-
-    // FIXME  this logic needs to be sorted for three link term
-    //    assert( (displacement==1) || (displacement==-1));
-    // Present hack only works for >= 4^4 subvol per node
-    _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank);
-
-    void *shm = (void *) _grid->ShmBufferTranslate(recv_from_rank,this->u_recv_buf_p);
-
-    if ( (shm==NULL) || Stencil_force_mpi ) return 0;
-
-    return 1;
+    if ( displacement == 0 ) return 1;
+    return 0;
   }
 
   //////////////////////////////////////////
@@ -1020,7 +1007,6 @@ public:
     int cb= (cbmask==0x2)? Odd : Even;
     int sshift= _grid->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,cb);
 
-    int shm_receive_only = 1;
     for(int x=0;x<rd;x++){
 
       int sx        = (x+sshift)%rd;
@@ -1052,10 +1038,6 @@ public:
 	assert (xmit_to_rank   != _grid->ThisRank());
 	assert (recv_from_rank != _grid->ThisRank());
 
-	/////////////////////////////////////////////////////////
-	// try the direct copy if possible
-	/////////////////////////////////////////////////////////
-	cobj *send_buf;
 	cobj *recv_buf;
 	if ( compress.DecompressionStep() ) {
 	  recv_buf=u_simd_recv_buf[0];
@@ -1063,52 +1045,36 @@ public:
 	  recv_buf=this->u_recv_buf_p;
 	}
 
-	send_buf = (cobj *)_grid->ShmBufferTranslate(xmit_to_rank,recv_buf);
-	if ( (send_buf==NULL) || Stencil_force_mpi ) {
-	  send_buf = this->u_send_buf_p;
-	}
+	cobj *send_buf;
+	send_buf = this->u_send_buf_p; // Gather locally, must send
 
-	// Find out if we get the direct copy.
-	void *success = (void *) _grid->ShmBufferTranslate(recv_from_rank,this->u_send_buf_p);
-	if ((success==NULL)||Stencil_force_mpi) {
-	  // we found a packet that comes from MPI and contributes to this leg of stencil
-	  shm_receive_only = 0;
-	}
-
+	////////////////////////////////////////////////////////
+	// Gather locally
+	////////////////////////////////////////////////////////
 	gathertime-=usecond();
 	assert(send_buf!=NULL);
 	Gather_plane_simple_table(face_table[face_idx],rhs,send_buf,compress,u_comm_offset,so); face_idx++;
 	gathertime+=usecond();
 
+	///////////////////////////////////////////////////////////
+	// Build a list of things to do after we synchronise GPUs
+	// Start comms now???
+	///////////////////////////////////////////////////////////
+	AddPacket((void *)&send_buf[u_comm_offset],
+		  (void *)&recv_buf[u_comm_offset],
+		  xmit_to_rank,
+		  recv_from_rank,
+		  bytes);
+
 	if ( compress.DecompressionStep() ) {
-
-	  if ( shm_receive_only ) { // Early decompress before MPI is finished is possible
-	    AddDecompress(&this->u_recv_buf_p[u_comm_offset],
-			  &recv_buf[u_comm_offset],
-			  words,DecompressionsSHM);
-	  } else { // Decompress after MPI is finished
-	    AddDecompress(&this->u_recv_buf_p[u_comm_offset],
-			  &recv_buf[u_comm_offset],
-			  words,Decompressions);
-	  }
-
-	  AddPacket((void *)&send_buf[u_comm_offset],
-		    (void *)&recv_buf[u_comm_offset],
-		    xmit_to_rank,
-		    recv_from_rank,
-		    bytes);
-
-	} else {
-	  AddPacket((void *)&send_buf[u_comm_offset],
-		    (void *)&this->u_recv_buf_p[u_comm_offset],
-		    xmit_to_rank,
-		    recv_from_rank,
-		    bytes);
+	  AddDecompress(&this->u_recv_buf_p[u_comm_offset],
+			&recv_buf[u_comm_offset],
+			words,Decompressions);
 	}
 	u_comm_offset+=words;
       }
     }
-    return shm_receive_only;
+    return 0;
   }
 
   template<class compressor>
@@ -1159,7 +1125,6 @@ public:
     int sshift= _grid->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,cb);
 
     // loop over outer coord planes orthog to dim
-    int shm_receive_only = 1;
     for(int x=0;x<rd;x++){
 
       int any_offnode = ( ((x+sshift)%fd) >= rd );
@@ -1214,20 +1179,7 @@ public:
 
 	    _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank);
 
-	    // shm == receive pointer         if offnode
-	    // shm == Translate[send pointer] if on node -- my view of his send pointer
-	    cobj *shm = (cobj *) _grid->ShmBufferTranslate(recv_from_rank,sp);
-	    if ((shm==NULL)||Stencil_force_mpi) {
-	      shm = rp;
-	      // we found a packet that comes from MPI and contributes to this shift.
-	      // is_same_node is only used in the WilsonStencil, and gets set for this point in the stencil.
-	      // Kernel will add the exterior_terms except if is_same_node.
-	      shm_receive_only = 0;
-	      // leg of stencil
-	    }
-	    // if Direct, StencilSendToRecvFrom will suppress copy to a peer on node
-	    // assuming above pointer flip
-	    rpointers[i] = shm;
+	    rpointers[i] = rp;
 
 	    AddPacket((void *)sp,(void *)rp,xmit_to_rank,recv_from_rank,bytes);
 
@@ -1239,102 +1191,17 @@ public:
 	  }
 	}
 
-	if ( shm_receive_only ) {
-	  AddMerge(&this->u_recv_buf_p[u_comm_offset],rpointers,reduced_buffer_size,permute_type,MergersSHM);
-	} else {
-	  AddMerge(&this->u_recv_buf_p[u_comm_offset],rpointers,reduced_buffer_size,permute_type,Mergers);
-	}
+	AddMerge(&this->u_recv_buf_p[u_comm_offset],rpointers,reduced_buffer_size,permute_type,Mergers);
 
 	u_comm_offset     +=buffer_size;
       }
     }
-    return shm_receive_only;
+    return 0;
   }
 
-  void ZeroCounters(void) {
-    gathertime = 0.;
-    commtime = 0.;
-    mpi3synctime=0.;
-    mpi3synctime_g=0.;
-    shmmergetime=0.;
-    for(int i=0;i<this->_npoints;i++){
-      comm_time_thr[i]=0;
-      comm_bytes_thr[i]=0;
-      comm_enter_thr[i]=0;
-      comm_leave_thr[i]=0;
-      shm_bytes_thr[i]=0;
-    }
-    halogtime = 0.;
-    mergetime = 0.;
-    decompresstime = 0.;
-    gathermtime = 0.;
-    splicetime = 0.;
-    nosplicetime = 0.;
-    comms_bytes = 0.;
-    shm_bytes = 0.;
-    calls = 0.;
-  };
+  void ZeroCounters(void) { };
 
-  void Report(void) {
-#define AVERAGE(A)
-#define PRINTIT(A) AVERAGE(A); std::cout << GridLogMessage << " Stencil " << #A << " "<< A/calls<<std::endl;
-    RealD NP = _grid->_Nprocessors;
-    RealD NN = _grid->NodeCount();
-    double t = 0;
-    // if comm_time_thr is set they were all done in parallel so take the max
-    // but add up the bytes
-    int threaded = 0 ;
-    for (int i = 0; i < 8; ++i) {
-      if ( comm_time_thr[i]>0.0 ) {
-	threaded = 1;
-	comms_bytes += comm_bytes_thr[i];
-	shm_bytes   += shm_bytes_thr[i];
-	if (t < comm_time_thr[i]) t = comm_time_thr[i];
-      }
-    }
-    if (threaded) commtime += t;
-
-    _grid->GlobalSum(commtime);    commtime/=NP;
-    if ( calls > 0. ) {
-      std::cout << GridLogMessage << " Stencil calls "<<calls<<std::endl;
-      PRINTIT(halogtime);
-      PRINTIT(gathertime);
-      PRINTIT(gathermtime);
-      PRINTIT(mergetime);
-      PRINTIT(decompresstime);
-      if(comms_bytes>1.0){
-	PRINTIT(comms_bytes);
-	PRINTIT(commtime);
-	std::cout << GridLogMessage << " Stencil " << comms_bytes/commtime/1000. << " GB/s per rank"<<std::endl;
-	std::cout << GridLogMessage << " Stencil " << comms_bytes/commtime/1000.*NP/NN << " GB/s per node"<<std::endl;
-      }
-      if(shm_bytes>1.0){
-	PRINTIT(shm_bytes); // X bytes + R bytes
-	                    // Double this to include spin projection overhead with 2:1 ratio in wilson
-	auto gatheralltime = gathertime+gathermtime;
-	std::cout << GridLogMessage << " Stencil SHM " << (shm_bytes)/gatheralltime/1000. << " GB/s per rank"<<std::endl;
-	std::cout << GridLogMessage << " Stencil SHM " << (shm_bytes)/gatheralltime/1000.*NP/NN << " GB/s per node"<<std::endl;
-
-	auto all_bytes = comms_bytes+shm_bytes;
-	std::cout << GridLogMessage << " Stencil SHM all " << (all_bytes)/gatheralltime/1000. << " GB/s per rank"<<std::endl;
-	std::cout << GridLogMessage << " Stencil SHM all " << (all_bytes)/gatheralltime/1000.*NP/NN << " GB/s per node"<<std::endl;
-
-	auto membytes = (shm_bytes + comms_bytes/2) // read/write
-	              + (shm_bytes+comms_bytes)/2 * sizeof(vobj)/sizeof(cobj);
-	std::cout << GridLogMessage << " Stencil SHM mem " << (membytes)/gatheralltime/1000. << " GB/s per rank"<<std::endl;
-	std::cout << GridLogMessage << " Stencil SHM mem " << (membytes)/gatheralltime/1000.*NP/NN << " GB/s per node"<<std::endl;
-      }
-      /*
-      PRINTIT(mpi3synctime);
-      PRINTIT(mpi3synctime_g);
-      PRINTIT(shmmergetime);
-      PRINTIT(splicetime);
-      PRINTIT(nosplicetime);
-      */
-    }
-#undef PRINTIT
-#undef AVERAGE
-  };
+  void Report(void) {   };
 
 };
 NAMESPACE_END(Grid);

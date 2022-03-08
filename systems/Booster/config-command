@@ -1,0 +1,14 @@
+LIME=/p/home/jusers/boyle2/juwels/gm2dwf/boyle/
+../../configure \
+    --enable-comms=mpi \
+    --enable-simd=GPU \
+    --enable-gen-simd-width=64 \
+    --enable-shm=nvlink \
+    --enable-accelerator=cuda \
+    --with-lime=$LIME \
+    --disable-accelerator-cshift \
+    --disable-unified \
+    CXX=nvcc \
+    LDFLAGS="-cudart shared " \
+    CXXFLAGS="-ccbin mpicxx -gencode arch=compute_80,code=sm_80 -std=c++14 -cudart shared"
+

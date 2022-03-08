@@ -143,6 +143,7 @@ public:
 
 template<class Field> class MultiGridPreconditionerBase : public LinearFunction<Field> {
 public:
+  using LinearFunction<Field>::operator();
   virtual ~MultiGridPreconditionerBase()               = default;
   virtual void setup()                                 = 0;
   virtual void operator()(Field const &in, Field &out) = 0;
@@ -156,6 +157,7 @@ public:
   /////////////////////////////////////////////
   // Type Definitions
   /////////////////////////////////////////////
+  using MultiGridPreconditionerBase<Lattice<Fobj>>::operator();
 
   // clang-format off
   typedef Aggregation<Fobj, CComplex, nBasis>                                                                         Aggregates;
@@ -568,6 +570,7 @@ public:
   /////////////////////////////////////////////
   // Type Definitions
   /////////////////////////////////////////////
+  using MultiGridPreconditionerBase<Lattice<Fobj>>::operator();
 
   typedef Matrix        FineDiracMatrix;
   typedef Lattice<Fobj> FineVector;

@@ -16,6 +16,10 @@ uint64_t  MemoryManager::DeviceToHostXfer;
 void  MemoryManager::ViewClose(void* AccPtr,ViewMode mode){};
 void *MemoryManager::ViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint){ return CpuPtr; };
 int   MemoryManager::isOpen   (void* CpuPtr) { return 0;}
+void  MemoryManager::PrintState(void* CpuPtr)
+{
+std::cout << GridLogMessage << "Host<->Device memory movement not currently managed by Grid." << std::endl;
+};
 void  MemoryManager::Print(void){};
 void  MemoryManager::NotifyDeletion(void *ptr){};
 

@@ -4,7 +4,7 @@ using namespace Grid;
 template<class Field>
 void SimpleConjugateGradient(LinearOperatorBase<Field> &HPDop,const Field &b, Field &x)
 {
-    RealD cp, c, alpha, d, beta, ssq, qq;
+    RealD cp, c, alpha, d, beta, ssq;
     RealD Tolerance=1.0e-10;
     int MaxIterations=10000;
     
