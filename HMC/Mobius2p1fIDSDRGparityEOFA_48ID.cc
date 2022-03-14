@@ -417,6 +417,73 @@ NAMESPACE_BEGIN(Grid);
     }
   };
 
+
+  template<class FermionOperatorD, class FermionOperatorF, class SchurOperatorD, class  SchurOperatorF> 
+  class MixedPrecisionReliableUpdateConjugateGradientOperatorFunction : public OperatorFunction<typename FermionOperatorD::FermionField> {
+  public:
+    typedef typename FermionOperatorD::FermionField FieldD;
+    typedef typename FermionOperatorF::FermionField FieldF;
+
+    using OperatorFunction<FieldD>::operator();
+
+    RealD Tolerance;
+    Integer MaxIterations;
+
+    RealD Delta; //reliable update parameter
+
+    GridBase* SinglePrecGrid4; //Grid for single-precision fields
+    GridBase* SinglePrecGrid5; //Grid for single-precision fields
+
+    FermionOperatorF &FermOpF;
+    FermionOperatorD &FermOpD;;
+    SchurOperatorF &LinOpF;
+    SchurOperatorD &LinOpD;
+    
+    MixedPrecisionReliableUpdateConjugateGradientOperatorFunction(RealD tol, 
+								  RealD delta,
+								  Integer maxit, 
+								  GridBase* _sp_grid4, 
+								  GridBase* _sp_grid5, 
+								  FermionOperatorF &_FermOpF,
+								  FermionOperatorD &_FermOpD,
+								  SchurOperatorF   &_LinOpF,
+								  SchurOperatorD   &_LinOpD): 
+      LinOpF(_LinOpF),
+      LinOpD(_LinOpD),
+      FermOpF(_FermOpF),
+      FermOpD(_FermOpD),
+      Tolerance(tol), 
+      Delta(delta),
+      MaxIterations(maxit), 
+      SinglePrecGrid4(_sp_grid4),
+      SinglePrecGrid5(_sp_grid5)
+    { 
+    };
+
+    void operator()(LinearOperatorBase<FieldD> &LinOpU, const FieldD &src, FieldD &psi) {
+
+      std::cout << GridLogMessage << " Mixed precision reliable CG update wrapper operator() "<<std::endl;
+
+      SchurOperatorD * SchurOpU = static_cast<SchurOperatorD *>(&LinOpU);
+      assert(&(SchurOpU->_Mat)==&(LinOpD._Mat));
+
+      precisionChange(FermOpF.Umu, FermOpD.Umu);
+
+      pickCheckerboard(Even,FermOpF.UmuEven,FermOpF.Umu);
+      pickCheckerboard(Odd ,FermOpF.UmuOdd ,FermOpF.Umu);
+
+      ////////////////////////////////////////////////////////////////////////////////////
+      // Make a mixed precision conjugate gradient
+      ////////////////////////////////////////////////////////////////////////////////////
+
+      ConjugateGradientReliableUpdate<FieldD,FieldF> MPCG(Tolerance,MaxIterations,Delta,SinglePrecGrid5,LinOpF,LinOpD);
+      std::cout << GridLogMessage << "Calling mixed precision reliable update Conjugate Gradient" <<std::endl;
+      MPCG(src,psi);
+    }
+  };
+
+
+
 NAMESPACE_END(Grid);
 
 
@@ -592,7 +659,8 @@ int main(int argc, char **argv) {
   typedef SchurDiagMooeeOperator<EOFAactionF,FermionFieldF> EOFAschuropF;
   typedef ExactOneFlavourRatioMixedPrecHeatbathPseudoFermionAction<FermionImplPolicyD, FermionImplPolicyF> EOFAmixPrecPFaction;
   typedef MixedPrecisionConjugateGradientOperatorFunction<EOFAactionD, EOFAactionF, EOFAschuropD, EOFAschuropF> EOFA_mxCG;
-
+  typedef MixedPrecisionReliableUpdateConjugateGradientOperatorFunction<EOFAactionD, EOFAactionF, EOFAschuropD, EOFAschuropF> EOFA_relupCG;
+  
   std::vector<RealD> eofa_light_masses = { light_mass ,  0.004,   0.016,   0.064,   0.256    };
   std::vector<RealD> eofa_pv_masses =    { 0.004       , 0.016,   0.064,   0.256,   1.0      };
   int n_light_hsb = 5;
@@ -615,6 +683,16 @@ int main(int argc, char **argv) {
     EOFAschuropF* linopL_F = new EOFAschuropF(*LopF);
     EOFAschuropF* linopR_F = new EOFAschuropF(*RopF);
 
+#if 1
+    //Note reusing user_params.eofa_l.action(|md)_mixcg_inner_tolerance  as Delta for now
+    EOFA_relupCG* ActionMCG_L = new EOFA_relupCG(user_params.eofa_l[i].action_tolerance, user_params.eofa_l[i].action_mixcg_inner_tolerance, 50000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
+    EOFA_relupCG* ActionMCG_R = new EOFA_relupCG(user_params.eofa_l[i].action_tolerance, user_params.eofa_l[i].action_mixcg_inner_tolerance, 50000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
+
+    EOFA_relupCG* DerivMCG_L = new EOFA_relupCG(user_params.eofa_l[i].md_tolerance, user_params.eofa_l[i].md_mixcg_inner_tolerance, 50000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
+    EOFA_relupCG* DerivMCG_R = new EOFA_relupCG(user_params.eofa_l[i].md_tolerance, user_params.eofa_l[i].md_mixcg_inner_tolerance, 50000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
+
+#else
+    
     EOFA_mxCG* ActionMCG_L = new EOFA_mxCG(user_params.eofa_l[i].action_tolerance, 10000, 1000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
     ActionMCG_L->InnerTolerance = user_params.eofa_l[i].action_mixcg_inner_tolerance;
     
@@ -629,7 +707,9 @@ int main(int argc, char **argv) {
     
     std::cout << GridLogMessage << "Set EOFA action solver action tolerance outer=" << ActionMCG_L->Tolerance << " inner=" << ActionMCG_L->InnerTolerance << std::endl;
     std::cout << GridLogMessage << "Set EOFA MD solver tolerance outer=" << DerivMCG_L->Tolerance << " inner=" << DerivMCG_L->InnerTolerance << std::endl;
+#endif
 
+    
     EOFAmixPrecPFaction* EOFA = new EOFAmixPrecPFaction(*LopF, *RopF,
 							*LopD, *RopD, 
 							*ActionMCG_L, *ActionMCG_R, 
