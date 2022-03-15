@@ -168,6 +168,22 @@ inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
   return ssum;
 }
 
+template<class vobj>
+inline typename vobj::scalar_object sum_large(const Lattice<vobj> &arg)
+{
+#if defined(GRID_CUDA)||defined(GRID_HIP)
+  autoView( arg_v, arg, AcceleratorRead);
+  Integer osites = arg.Grid()->oSites();
+  auto ssum= sum_gpu_large(&arg_v[0],osites);
+#else
+  autoView(arg_v, arg, CpuRead);
+  Integer osites = arg.Grid()->oSites();
+  auto ssum= sum_cpu(&arg_v[0],osites);
+#endif
+  arg.Grid()->GlobalSum(ssum);
+  return ssum;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Deterministic Reduction operations
 ////////////////////////////////////////////////////////////////////////////////////////////////////
