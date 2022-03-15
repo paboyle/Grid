@@ -326,16 +326,20 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeFie
   double t4 = usecond();
   CompactHelpers::ConvertLayout(TmpOriginal, Diagonal, Triangle);
 
-  // Possible modify the boundary values
+  // Exponentiate the clover (nothing happens in case of the standard clover)
   double t5 = usecond();
+  CloverHelpers::Exponentiate_Clover(Diagonal, Triangle, csw_t, this->diag_mass);
+
+  // Possible modify the boundary values
+  double t6 = usecond();
   if(open_boundaries) CompactHelpers::ModifyBoundaries(Diagonal, Triangle, csw_t, cF, this->diag_mass);
 
-  // Instantiate based on clover policy
-  double t6 = usecond();
-  CloverHelpers::Instantiate(Diagonal, Triangle, DiagonalInv, TriangleInv, csw_t, this->diag_mass);
+  // Invert the Clover term (explicit inversion needed for the improvement in case of open boundary conditions)
+  double t7 = usecond();
+  CompactHelpers::Invert(Diagonal, Triangle, DiagonalInv, TriangleInv);
 
   // Fill the remaining clover fields
-  double t7 = usecond();
+  double t8 = usecond();
   pickCheckerboard(Even, DiagonalEven,    Diagonal);
   pickCheckerboard(Even, TriangleEven,    Triangle);
   pickCheckerboard(Odd,  DiagonalOdd,     Diagonal);
@@ -346,20 +350,19 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeFie
   pickCheckerboard(Odd,  TriangleInvOdd,  TriangleInv);
 
   // Report timings
-  double t8 = usecond();
-#if 0
-  std::cout << GridLogMessage << "CompactWilsonCloverFermion::ImportGauge timings:"
-            << " WilsonFermion::Importgauge = " << (t1 - t0) / 1e6
-            << ", allocations = "               << (t2 - t1) / 1e6
-            << ", field strength = "            << (t3 - t2) / 1e6
-            << ", fill clover = "               << (t4 - t3) / 1e6
-            << ", convert = "                   << (t5 - t4) / 1e6
-            << ", boundaries = "                << (t6 - t5) / 1e6
-            << ", instantiate = "               << (t7 - t6) / 1e6
-            << ", pick cbs = "                  << (t8 - t7) / 1e6
-            << ", total = "                     << (t8 - t0) / 1e6
-            << std::endl;
-#endif
+  double t9 = usecond();
+
+  std::cout << GridLogDebug << "CompactWilsonCloverFermion::ImportGauge timings:" << std::endl;
+  std::cout << GridLogDebug << "WilsonFermion::Importgauge = " << (t1 - t0) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "allocations =                " << (t2 - t1) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "field strength =             " << (t3 - t2) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "fill clover =                " << (t4 - t3) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "convert =                    " << (t5 - t4) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "exponentiation =             " << (t6 - t5) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "boundaries =                 " << (t7 - t6) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "inversions =                 " << (t8 - t7) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "pick cbs =                   " << (t9 - t8) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "total =                      " << (t9 - t0) / 1e6 << std::endl;
 }
 
 NAMESPACE_END(Grid);

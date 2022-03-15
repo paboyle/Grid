@@ -150,17 +150,14 @@ void WilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeField &_Um
   pickCheckerboard(Odd, CloverTermInvDagOdd, adj(CloverTermInv));
   double t6 = usecond();
 
-#if 0
-  std::cout << GridLogMessage << "WilsonCloverFermion::ImportGauge timings:"
-            << " WilsonFermion::Importgauge = " << (t1 - t0) / 1e6
-            << ", allocations = "               << (t2 - t1) / 1e6
-            << ", field strength = "            << (t3 - t2) / 1e6
-            << ", fill clover = "               << (t4 - t3) / 1e6
-            << ", instantiation = "             << (t5 - t4) / 1e6
-            << ", pick cbs = "                  << (t6 - t5) / 1e6
-            << ", total = "                     << (t6 - t0) / 1e6
-            << std::endl;
-#endif
+  std::cout << GridLogDebug << "WilsonCloverFermion::ImportGauge timings:" << std::endl;
+  std::cout << GridLogDebug << "WilsonFermion::Importgauge = " << (t1 - t0) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "allocations =                " << (t2 - t1) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "field strength =             " << (t3 - t2) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "fill clover =                " << (t4 - t3) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "instantiation =              " << (t5 - t4) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "pick cbs =                   " << (t6 - t5) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "total =                      " << (t6 - t0) / 1e6 << std::endl;
 }
 
 template<class Impl, class CloverHelpers>
