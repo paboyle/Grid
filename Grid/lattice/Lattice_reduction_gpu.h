@@ -23,7 +23,7 @@ unsigned int nextPow2(Iterator x) {
 }
 
 template <class Iterator>
-void getNumBlocksAndThreads(const Iterator n, const size_t sizeofsobj, Iterator &threads, Iterator &blocks) {
+int getNumBlocksAndThreads(const Iterator n, const size_t sizeofsobj, Iterator &threads, Iterator &blocks) {
   
   int device;
 #ifdef GRID_CUDA
@@ -37,13 +37,13 @@ void getNumBlocksAndThreads(const Iterator n, const size_t sizeofsobj, Iterator 
   Iterator sharedMemPerBlock   = gpu_props[device].sharedMemPerBlock;
   Iterator maxThreadsPerBlock  = gpu_props[device].maxThreadsPerBlock;
   Iterator multiProcessorCount = gpu_props[device].multiProcessorCount;
-  
+  /*  
   std::cout << GridLogDebug << "GPU has:" << std::endl;
   std::cout << GridLogDebug << "\twarpSize            = " << warpSize << std::endl;
   std::cout << GridLogDebug << "\tsharedMemPerBlock   = " << sharedMemPerBlock << std::endl;
   std::cout << GridLogDebug << "\tmaxThreadsPerBlock  = " << maxThreadsPerBlock << std::endl;
   std::cout << GridLogDebug << "\tmultiProcessorCount = " << multiProcessorCount << std::endl;
-  
+  */  
   if (warpSize != WARP_SIZE) {
     std::cout << GridLogError << "The warp size of the GPU in use does not match the warp size set when compiling Grid." << std::endl;
     exit(EXIT_FAILURE);
@@ -53,12 +53,12 @@ void getNumBlocksAndThreads(const Iterator n, const size_t sizeofsobj, Iterator 
   threads = warpSize;
   if ( threads*sizeofsobj > sharedMemPerBlock ) {
     std::cout << GridLogError << "The object is too large for the shared memory." << std::endl;
-    exit(EXIT_FAILURE);
+    return 0;
   }
   while( 2*threads*sizeofsobj < sharedMemPerBlock && 2*threads <= maxThreadsPerBlock ) threads *= 2;
   // keep all the streaming multiprocessors busy
   blocks = nextPow2(multiProcessorCount);
-  
+  return 1;
 }
 
 template <class sobj, class Iterator>
@@ -198,7 +198,7 @@ __global__ void reduceKernel(const vobj *lat, sobj *buffer, Iterator n) {
 // Possibly promote to double and sum
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <class vobj>
-inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites) 
+inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osites) 
 {
   typedef typename vobj::scalar_objectD sobj;
   typedef decltype(lat) Iterator;
@@ -207,7 +207,9 @@ inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites)
   Integer size = osites*nsimd;
 
   Integer numThreads, numBlocks;
-  getNumBlocksAndThreads(size, sizeof(sobj), numThreads, numBlocks);
+  int ok = getNumBlocksAndThreads(size, sizeof(sobj), numThreads, numBlocks);
+  assert(ok);
+
   Integer smemSize = numThreads * sizeof(sobj);
 
   Vector<sobj> buffer(numBlocks);
@@ -218,6 +220,54 @@ inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites)
   auto result = buffer_v[0];
   return result;
 }
+
+template <class vobj>
+inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osites)
+{
+  typedef typename vobj::vector_type  vector;
+  typedef typename vobj::scalar_typeD scalarD;
+  typedef typename vobj::scalar_objectD sobj;
+  sobj ret;
+  scalarD *ret_p = (scalarD *)&ret;
+  
+  const int words = sizeof(vobj)/sizeof(vector);
+
+  Vector<vector> buffer(osites);
+  vector *dat = (vector *)lat;
+  vector *buf = &buffer[0];
+  iScalar<vector> *tbuf =(iScalar<vector> *)  &buffer[0];
+  for(int w=0;w<words;w++) {
+
+    accelerator_for(ss,osites,1,{
+	buf[ss] = dat[ss*words+w];
+      });
+      
+    ret_p[w] = sumD_gpu_small(tbuf,osites);
+  }
+  return ret;
+}
+
+template <class vobj>
+inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites)
+{
+  typedef typename vobj::vector_type  vector;
+  typedef typename vobj::scalar_typeD scalarD;
+  typedef typename vobj::scalar_objectD sobj;
+  sobj ret;
+  
+  Integer nsimd= vobj::Nsimd();
+  Integer size = osites*nsimd;
+  Integer numThreads, numBlocks;
+  int ok = getNumBlocksAndThreads(size, sizeof(sobj), numThreads, numBlocks);
+  
+  if ( ok ) {
+    ret = sumD_gpu_small(lat,osites);
+  } else {
+    ret = sumD_gpu_large(lat,osites);
+  }
+  return ret;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Return as same precision as input performing reduction in double precision though
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -230,6 +280,13 @@ inline typename vobj::scalar_object sum_gpu(const vobj *lat, Integer osites)
   return result;
 }
 
-
+template <class vobj>
+inline typename vobj::scalar_object sum_gpu_large(const vobj *lat, Integer osites)
+{
+  typedef typename vobj::scalar_object sobj;
+  sobj result;
+  result = sumD_gpu_large(lat,osites);
+  return result;
+}
 
 NAMESPACE_END(Grid);
