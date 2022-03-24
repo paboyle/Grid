@@ -209,26 +209,27 @@ public:
   template<class GaugeStats=PeriodicGaugeStatistics>
   static inline void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,
 					std::string file, 
-					std::string ens_label = std::string("DWF"))
+					std::string ens_label = std::string("DWF"),
+					std::string ens_id = std::string("UKQCD"),
+					unsigned int sequence_number = 1)
   {
-    writeConfiguration(Umu,file,0,1,ens_label);
+    writeConfiguration(Umu,file,0,1,ens_label,ens_id,sequence_number);
   }
   template<class GaugeStats=PeriodicGaugeStatistics>
   static inline void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,
 					std::string file, 
 					int two_row,
 					int bits32,
-					std::string ens_label = std::string("DWF"))
+					std::string ens_label = std::string("DWF"),
+					std::string ens_id = std::string("UKQCD"),
+					unsigned int sequence_number = 1)
   {
     typedef vLorentzColourMatrixD vobj;
     typedef typename vobj::scalar_object sobj;
 
     FieldMetaData header;
-    ///////////////////////////////////////////
-    // Following should become arguments
-    ///////////////////////////////////////////
-    header.sequence_number = 1;
-    header.ensemble_id     = std::string("UKQCD");
+    header.sequence_number = sequence_number;
+    header.ensemble_id     = ens_id;
     header.ensemble_label  = ens_label;
 
     typedef LorentzColourMatrixD fobj3D;
