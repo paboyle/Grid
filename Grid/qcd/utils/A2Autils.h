@@ -1514,13 +1514,42 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
                                      const std::vector<ComplexField > &mom,
                                      int orthogdim, double *t_kernel, double *t_gsum)
 {
-  typedef decltype(coalescedRead(Scalar_v())) calcVector;
-  typedef decltype(coalescedRead(Scalar_s())) calcScalar;
+  typedef decltype(coalescedRead(Scalar_v())) calcScalar;
+  typedef decltype(coalescedRead(vobj())) calcSpinor;
   
+
   int Lblock = mat.dimension(3);
   int Rblock = mat.dimension(4);
-  
-  GridBase *grid = lhs_wi[0].Grid();    
+
+  int sizeL = Lblock;
+  int sizeR = Rblock;
+
+  GridBase *grid  = mom[0].Grid();    
+  GridBase *hgrid = nullptr;
+
+  int cb;
+  Vector<Integer> hcoor;
+
+  int checkerL = lhs_wi[0].Grid()->_isCheckerBoarded, 
+      checkerR = rhs_vj[0].Grid()->_isCheckerBoarded;
+
+  if (checkerL) {
+    sizeL = Lblock/2;
+    hgrid = lhs_wi[0].Grid();
+    cb = lhs_wi[0].Checkerboard();
+
+    if (checkerR) {
+      assert(cb == rhs_vj[0].Checkerboard());
+    }
+  }
+  if(checkerR) {
+    sizeR = Rblock/2;
+    hgrid = rhs_vj[0].Grid();
+    cb = rhs_vj[0].Checkerboard();
+  }
+
+  if (checkerR || checkerL)
+    hcoor.resize(hgrid->oSites(),0);
 
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
@@ -1536,9 +1565,6 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
   // The reduced number of time slices after ignoring SIMD vector lanes
   int rd=grid->_rdimensions[orthogdim];
   
-  // The number of time slices "internal" to a SIMD vector
-  int id=grid->_simd_layout[orthogdim];
-
   int MFrvol = rd*Lblock*Rblock*Nmom*Ngamma;
   int MFlvol = ld*Lblock*Rblock*Nmom*Ngamma;
   
@@ -1552,40 +1578,33 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
     lsSum[r]=scalar_type(0.0);
   });
 
-  // Can iterate over orthogonal vector dimension with 
-  // n*blockStride+rt*rtStride+b
-  // "b" : iterates vecsPerSlicePerBlock
-  // "rt" : iterates rd (reduced dimensionality)
-  // "n" : iterates nBlocks
   int nBlocks = grid->_slice_nblock[orthogdim];
-  int vecsPerSlicePerBlock = grid->_slice_block [orthogdim];
+  int vecsPerSlicePerBlock = grid->_slice_block[orthogdim];
   int blockStride  = grid->_slice_stride[orthogdim];
-
-  // Can iterate over orthogonal SIMD dimension with 
-  // ib*iBlockSize+it*iStride+is
-  // "is" : iterates iStride
-  // "it" : iterates id (internal dimensionality)
-  // "ib" : iterates iBlocks
-  int iSites       = grid->_isites;
-  int iStride      = grid->_istride[orthogdim];
-  int iBlockSize   = iStride*id;
-  int iBlocks      = iSites/iBlockSize;
-
   int rtStride   = grid->_ostride[orthogdim];
 
-  std::cout << GridLogMessage << "nBlocks: " << nBlocks << std::endl;
-  std::cout << GridLogMessage << "vecsPerSlicePerBlock: " << vecsPerSlicePerBlock << std::endl;
-  std::cout << GridLogMessage << "blockStride: " << blockStride << std::endl;
+  if (checkerR || checkerL) {
+    // Global sum fails at end if checkerboard dim is orthogdim
+    assert(hgrid->CheckerBoarded(orthogdim) != 1);
 
-  std::cout << GridLogMessage << "iSites: " << iSites << std::endl;
-  std::cout << GridLogMessage << "iStride: " << iStride << std::endl;
-  std::cout << GridLogMessage << "iBlockSize: " << iBlockSize << std::endl;
-  std::cout << GridLogMessage << "iBlocks: " << iBlocks << std::endl;
-  std::cout << GridLogMessage << "id: " << id << std::endl;
+    nBlocks = hgrid->_slice_nblock[orthogdim];
+    vecsPerSlicePerBlock = hgrid->_slice_block[orthogdim];
+    blockStride  = hgrid->_slice_stride[orthogdim];
+    rtStride   = hgrid->_ostride[orthogdim];
 
-  std::cout << GridLogMessage << "rtStride: " << rtStride << std::endl;
-  std::cout << GridLogMessage << "rd: " << rd << std::endl;
+    thread_for(ss,grid->oSites(),{
+      int cbos;
+      Coordinate coor;
 
+      grid->oCoorFromOindex(coor,ss);
+      cbos=hgrid->CheckerBoard(coor);
+        
+      if (cbos==cb) {
+        int ssh=hgrid->oIndex(coor);
+        hcoor[ssh]=ss;
+      }
+    });
+  }
 
 
   // potentially wasting cores here if local time extent too small
@@ -1627,10 +1646,10 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
   Vector<FermView> AcceleratorViewContainerV, AcceleratorViewContainerW;
   Vector<CView> AcceleratorViewContainerStag, AcceleratorViewContainerMom;
   Vector<Coordinate> icoorContainer(Nsimd,Coordinate(Nd));
-  for(int p=0;p<Lblock;p++) {
+  for(int p=0;p<sizeL;p++) {
     AcceleratorViewContainerW.push_back(lhs_wi[p].View(AcceleratorRead));
   }
-  for(int p=0;p<Rblock;p++) {
+  for(int p=0;p<sizeR;p++) {
     AcceleratorViewContainerV.push_back(rhs_vj[p].View(AcceleratorRead));
   } 
   for(int p=0;p<Ngamma;p++) {
@@ -1639,16 +1658,16 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
   for(int p=0;p<Nmom;p++) {
     AcceleratorViewContainerMom.push_back(mom[p].View(AcceleratorRead));
   }
-
   for(int p=0;p<Nsimd;p++) {
     grid->iCoorFromIindex(icoorContainer[p],p);
   }
 
   // These are hacks to pass data to the device without using std::vector
-  FermView *view_pV = & AcceleratorViewContainerV[0];
   FermView *view_pW = & AcceleratorViewContainerW[0];
+  FermView *view_pV = & AcceleratorViewContainerV[0];
   CView    *view_pS = & AcceleratorViewContainerStag[0];
   CView    *view_pM = & AcceleratorViewContainerMom[0];
+  Integer    *hcoor_p = & hcoor[0];
 
   Scalar_v *lvSum_p = &lvSum[0];
   Scalar_s *lsSum_p = &lsSum[0];
@@ -1656,42 +1675,68 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
   Coordinate *icoor_p = &icoorContainer[0];
 
   // Hack to prefetch fields onto device memory. There's probably a more explicit way to do it?
-  accelerator_forNB(index,Lblock+Rblock,1,{                                                                                                                                                                        
-    if (index < Lblock) {                                                                                                                                                                                        
-      auto a = view_pW[index][0];                                                                                                                                                                                
-    } else {                                                                                                                                                                                                     
-      auto b = view_pV[index-Lblock][0];                                                                                                                                                                         
-    }                                                                                                                                                                                                            
+  accelerator_forNB(index,sizeL+sizeR,1,{
+    if (index < sizeL)
+      auto a = view_pW[index][0];
+    else
+      auto a = view_pV[index-sizeL][0];                                                                                                                                                                                
   });  
 
-
-  accelerator_for2d(l_index,Lblock,r_index,Rblock,Nsimd,{
-
-    calcVector temp_site, temp_phase;
+  accelerator_for2d(l_index,sizeL,r_index,sizeR,Nsimd,{
 
     // Spawn threads for each time slice on the local processor
     for (int rt=0;rt<rd;rt++) {
       int so=rt*rtStride; // base offset for start of the local plane
-      int base = Ngamma*Nmom*l_index+Ngamma*Nmom*Lblock*r_index+Ngamma*Nmom*Lblock*Rblock*rt;
+      int base = Ngamma*Nmom*(checkerL?2:1)*l_index+Ngamma*Nmom*Lblock*(checkerR?2:1)*r_index+Ngamma*Nmom*Lblock*Rblock*rt;
 
+      calcSpinor left, right;
+      calcScalar temp_site, temp_phase, temp_phase_neg, gamma_phase, momentum_phase;
       for(int n=0;n<nBlocks;n++){
         for(int b=0;b<vecsPerSlicePerBlock;b++){
           int ss = so+n*blockStride+b;
+          int fullss = ss;
 
-          auto left = coalescedRead(view_pW[l_index][ss]);
-          auto right = coalescedRead(view_pV[r_index][ss]);
+          if (checkerL || checkerR)
+            fullss = hcoor_p[ss];
+
+          if (checkerL)
+            left  = coalescedRead(view_pW[l_index][ss]);
+          else
+            left  = coalescedRead(view_pW[l_index][fullss]);
+
+          if (checkerR)
+            right = coalescedRead(view_pV[r_index][ss]);
+          else
+            right = coalescedRead(view_pV[r_index][fullss]);
  
-          temp_site = innerProduct(left,right);
+          temp_site  = innerProduct(left,right);
 
           for (int mu = 0; mu < Ngamma; mu++) {
-            auto gamma_phase = coalescedRead(view_pS[mu][ss]);
+            gamma_phase = coalescedRead(view_pS[mu][fullss]);
             for ( int m=0;m<Nmom;m++){
               int idx = base+mu*Nmom+m;
-              auto momentum_phase = coalescedRead(view_pM[m][ss]);
-              auto sum = coalescedRead(lvSum_p[idx]);
+
+              momentum_phase = coalescedRead(view_pM[m][fullss]);
+
               temp_phase = gamma_phase*momentum_phase;
-              mac(&sum,&temp_site,&temp_phase);
-              coalescedWrite(lvSum_p[idx],sum);
+              temp_phase_neg = -temp_phase;
+
+              // Add contribution to 4 combinations of evec pairs
+              for (int lshifts = 0; lshifts < (checkerL?2:1);lshifts ++){
+                for (int rshifts = 0; rshifts < (checkerR?2:1);rshifts ++){
+
+                  int shift_idx = idx + Ngamma*Nmom*(lshifts+rshifts*Lblock);
+                  auto sum = coalescedRead(lvSum_p[shift_idx]);
+
+                  // The Mdag eigenvectors have a negative odd checkerboard
+                  if ( (lshifts != rshifts) && cb == Odd)
+                    mac(&sum,&temp_site,&temp_phase_neg);
+                  else
+                    mac(&sum,&temp_site,&temp_phase);
+
+                  coalescedWrite(lvSum_p[shift_idx],sum);
+                }
+              }
             }
           }
         }
@@ -1736,13 +1781,6 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
       }
     }
   });
-
-
-  // Free all Lattice Views
-  for(int p=0;p<Lblock;p++) AcceleratorViewContainerW[p].ViewClose();
-  for(int p=0;p<Rblock;p++) AcceleratorViewContainerV[p].ViewClose();
-  for(int p=0;p<Ngamma;p++) AcceleratorViewContainerStag[p].ViewClose();
-  for(int p=0;p<Nmom;p++) AcceleratorViewContainerMom[p].ViewClose();
 
   assert(mat.dimension(0) == Nmom);
   assert(mat.dimension(1) == Ngamma);
@@ -1793,6 +1831,12 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
   if (t_gsum) *t_gsum = -usecond();
   grid->GlobalSumVector(&mat(0,0,0,0,0),Nmom*Ngamma*Nt*Lblock*Rblock);
   if (t_gsum) *t_gsum += usecond();
+
+  // Free all Lattice Views
+  for(int p=0;p<sizeL;p++) AcceleratorViewContainerW[p].ViewClose();
+  for(int p=0;p<sizeR;p++) AcceleratorViewContainerV[p].ViewClose();
+  for(int p=0;p<Ngamma;p++) AcceleratorViewContainerStag[p].ViewClose();
+  for(int p=0;p<Nmom;p++) AcceleratorViewContainerMom[p].ViewClose();
 }
 
 // local, taste-nonsignlet staggered mesons
