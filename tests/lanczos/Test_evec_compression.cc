@@ -40,13 +40,14 @@ using namespace std;
 using namespace Grid;
 
 //For the CPS configurations we have to manually seed the RNG and deal with an incorrect factor of 2 in the plaquette metadata
+template<typename Gimpl>
 void readConfiguration(LatticeGaugeFieldD &U,
 		       const std::string &config,
 		       bool is_cps_cfg = false){
 
   if(is_cps_cfg) NerscIO::exitOnReadPlaquetteMismatch() = false;
 
-  typedef GaugeStatistics<ConjugateGimplD> GaugeStats;
+  typedef GaugeStatistics<Gimpl> GaugeStats;
      
   FieldMetaData header;
   NerscIO::readConfiguration<GaugeStats>(U, header, config);
@@ -120,23 +121,30 @@ public:
   }
 
   //Test uncompressed eigenvectors of Linop.HermOp to precision 'base_tolerance' for i<nbasis and 'base_tolerance*relax' for i>=nbasis
-  bool testCompression(LinearOperatorBase<FineField> &Linop,
+  //Because the uncompressed evec has a lot of high mode noise (unimportant for deflation) we apply a smoother before testing.
+  //The Chebyshev used by the Lanczos should be sufficient as a smoother
+  bool testCompression(LinearOperatorBase<FineField> &Linop, OperatorFunction<FineField>   &smoother,
 		       const std::vector<FineField> &basis, const std::vector<CoarseField> &compressed_evecs, const std::vector<RealD> &evals,
 		       const RealD base_tolerance, const RealD relax){
+    std::cout << GridLogMessage << "Testing quality of uncompressed evecs (after smoothing)" << std::endl;
+   
     GridBase* FineGrid = basis[0].Grid();
     GridBase* CoarseGrid = compressed_evecs[0].Grid();
 
     bool fail = false;
-    FineField evec(FineGrid), Mevec(FineGrid);
+    FineField evec(FineGrid), Mevec(FineGrid), evec_sm(FineGrid);
     for(int i=0;i<compressed_evecs.size();i++){
       std::cout << GridLogMessage << "Uncompressing evec " << i << std::endl;
       uncompress(evec, i, basis, compressed_evecs);
 
+      std::cout << GridLogMessage << "Smoothing evec " << i << std::endl;
+      smoother(Linop, evec, evec_sm);
+      
       std::cout << GridLogMessage << "Computing residual for evec " << i << std::endl;
       std::cout << GridLogMessage << "Linop" << std::endl;
-      Linop.HermOp(evec, Mevec);
+      Linop.HermOp(evec_sm, Mevec);
       std::cout << GridLogMessage << "Linalg" << std::endl;
-      Mevec = Mevec - evals[i]*evec;
+      Mevec = Mevec - evals[i]*evec_sm;
 
       std::cout << GridLogMessage << "Resid" << std::endl;
       RealD tol = base_tolerance * (i<nbasis ? 1. : relax);
@@ -146,6 +154,24 @@ public:
     }
     return fail;
   }
+
+  //Compare uncompressed evecs to original evecs
+  void compareEvecs(const std::vector<FineField> &basis, const std::vector<CoarseField> &compressed_evecs, const std::vector<FineField> &orig_evecs){
+    std::cout << GridLogMessage << "Comparing uncompressed evecs to original evecs" << std::endl;
+    
+    GridBase* FineGrid = basis[0].Grid();
+    GridBase* CoarseGrid = compressed_evecs[0].Grid();
+
+    FineField evec(FineGrid), diff(FineGrid);
+    for(int i=0;i<compressed_evecs.size();i++){
+      std::cout << GridLogMessage << "Uncompressing evec " << i << std::endl;
+      uncompress(evec, i, basis, compressed_evecs);
+      diff = orig_evecs[i] - evec;
+      RealD res = sqrt(norm2(diff));
+      std::cout << GridLogMessage << "Evec idx " << i << " res " << res << std::endl;
+    }
+  }
+  
 };
 
 template<class Fobj,class CComplex,int nbasis>
@@ -196,104 +222,52 @@ void compareBlockPromoteTimings(const std::vector<Lattice<Fobj> > &basis, const 
   std::cout << GridLogMessage << "Time for cold blockPromote v1 repeat (should be the same as above) " << timer.Elapsed() << std::endl;
 }
 
-
+struct Args{
+  int Ls;
+  RealD mass;
+  RealD M5;
+  bool is_cps_cfg;
+  RealD mobius_scale; //b+c
   
-
-//Note:  because we rely upon physical properties we must use a "real" gauge configuration
-int main (int argc, char ** argv) {
-  Grid_init(&argc,&argv);
-  GridLogIRL.TimingMode(1);
-
-  std::vector<int> blockSize = {2,2,2,2,2};
-  std::vector<int> GparityDirs = {1,1,1}; //1 for each GP direction
-
-  int Ls = 12;
-  RealD mass = 0.01;
-  RealD M5 = 1.8;
-  bool is_cps_cfg = false;
-
   CPSLanczosParams fine;
+  double coarse_relax_tol;
 
-  fine.alpha = 2;
-  fine.beta = 0.1;
-  fine.ch_ord = 100;
-  fine.N_use = 70;
-  fine.N_get = 60;
-  fine.N_true_get = 60;
-  fine.stop_rsd = 1e-8;
-  fine.maxits = 10000;
+  std::vector<int> blockSize;
+  std::vector<int> GparityDirs;
 
-  double coarse_relax_tol = 1e5;
- 
-  if(argc < 3){
-    std::cout << GridLogMessage << "Usage: <exe> <config> <gparity dirs> <options>" << std::endl;
-    std::cout << GridLogMessage << "<gparity dirs> should have the format a.b.c where a,b,c are 0,1 depending on whether there are G-parity BCs in that direction" << std::endl;
-    std::cout << GridLogMessage << "Options:" << std::endl;
-    std::cout << GridLogMessage << "--Ls <value> : Set Ls (default 12)" << std::endl;
-    std::cout << GridLogMessage << "--mass <value> : Set the mass (default 0.01)" << std::endl;
-    std::cout << GridLogMessage << "--block <value> : Set the block size. Format should be a.b.c.d.e where a-e are the block extents  (default 2.2.2.2.2)" << std::endl;
-    std::cout << GridLogMessage << "--is_cps_cfg : Indicate that the configuration was generated with CPS where until recently the stored plaquette was wrong by a factor of 2" << std::endl;
-    std::cout << GridLogMessage << "--write_irl_templ: Write a template for the parameters file of the Lanczos to \"irl_templ.xml\"" << std::endl;
-    std::cout << GridLogMessage << "--read_irl_fine <filename>: Real the parameters file for the fine Lanczos" << std::endl;
-    std::cout << GridLogMessage << "--write_fine <filename stub>: Write fine evecs/evals to filename starting with the stub" << std::endl;
-    std::cout << GridLogMessage << "--read_fine <filename stub>: Read fine evecs/evals from filename starting with the stub" << std::endl;
-    std::cout << GridLogMessage << "--coarse_relax_tol : Set the relaxation parameter for evaluating the residual of the reconstructed eigenvectors outside of the basis (default 1e5)" << std::endl;
-    Grid_finalize();
-    return 1;
-  }
-  std::string config = argv[1];
-  GridCmdOptionIntVector(argv[2], GparityDirs);
-  assert(GparityDirs.size() == 3);
-
-  bool write_fine = false;
+  bool write_fine;
   std::string write_fine_file;
-
-  bool read_fine = false;
+  bool read_fine;
   std::string read_fine_file;
-
-  for(int i=3;i<argc;i++){
-    std::string sarg = argv[i];
-    if(sarg == "--Ls"){
-      Ls = std::stoi(argv[i+1]);
-      std::cout << GridLogMessage << "Set Ls to " << Ls << std::endl;
-    }else if(sarg == "--mass"){
-      std::istringstream ss(argv[i+1]); ss >> mass;
-      std::cout << GridLogMessage << "Set quark mass to " << mass << std::endl;
-    }else if(sarg == "--block"){
-      GridCmdOptionIntVector(argv[i+1], blockSize);
-      assert(blockSize.size() == 5);
-      std::cout << GridLogMessage << "Set block size to ";
-      for(int q=0;q<5;q++) std::cout << blockSize[q] << " ";
-      std::cout << std::endl;      
-    }else if(sarg == "--is_cps_cfg"){
-      is_cps_cfg = true;
-    }else if(sarg == "--write_irl_templ"){
-      XmlWriter writer("irl_templ.xml");
-      write(writer,"Params",fine);
-      Grid_finalize();
-      return 0;
-    }else if(sarg == "--read_irl_fine"){
-      std::cout << GridLogMessage << "Reading fine IRL params from " << argv[i+1] << std::endl;
-      XmlReader reader(argv[i+1]);
-      read(reader, "Params", fine);
-    }else if(sarg == "--write_fine"){
-      write_fine = true;
-      write_fine_file = argv[i+1];
-    }else if(sarg == "--read_fine"){
-      read_fine = true;
-      read_fine_file = argv[i+1];
-    }else if(sarg == "--coarse_relax_tol"){
-      std::istringstream ss(argv[i+1]); ss >> coarse_relax_tol;
-      std::cout << GridLogMessage << "Set coarse IRL relaxation parameter to " << coarse_relax_tol << std::endl;
-    }      
-  }
   
-  //Fine grids
-  GridCartesian         * UGrid     = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(),  GridDefaultSimd(Nd,vComplex::Nsimd()),   GridDefaultMpi());
-  GridRedBlackCartesian * UrbGrid   = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
-  GridCartesian         * FGrid     = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
-  GridRedBlackCartesian * FrbGrid   = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
+  Args(){
+    blockSize = {2,2,2,2,2};
+    GparityDirs = {1,1,1}; //1 for each GP direction
+    
+    Ls = 12;
+    mass = 0.01;
+    M5 = 1.8;
+    is_cps_cfg = false;
+    mobius_scale = 2;
+    
+    fine.alpha = 2;
+    fine.beta = 0.1;
+    fine.ch_ord = 100;
+    fine.N_use = 70;
+    fine.N_get = 60;
+    fine.N_true_get = 60;
+    fine.stop_rsd = 1e-8;
+    fine.maxits = 10000;
 
+    coarse_relax_tol = 1e5;
+
+    write_fine = false;
+    read_fine = false;
+  }
+};
+    
+
+GparityWilsonImplD::ImplParams setupGparityParams(const std::vector<int> &GparityDirs){
   //Setup G-parity BCs
   assert(Nd == 4);
   std::vector<int> dirs4(4);
@@ -307,52 +281,68 @@ int main (int argc, char ** argv) {
   for(int i=0;i<Nd-1;i++) Params.twists[i] = GparityDirs[i]; //G-parity directions
   Params.twists[Nd-1] = 1; //APBC in time direction
   std::cout << GridLogMessage << "Fermion BCs: " << Params.twists << std::endl;
-  
-  //Read the gauge field
-  LatticeGaugeField Umu(UGrid);  
-  readConfiguration(Umu, config, is_cps_cfg);
+  return Params;
+}
+
+WilsonImplD::ImplParams setupParams(){
+  WilsonImplD::ImplParams Params;
+  Complex one(1.0);
+  Complex mone(-1.0);
+  for(int i=0;i<Nd-1;i++) Params.boundary_phases[i] = one;
+  Params.boundary_phases[Nd-1] = mone;
+  return Params;
+}
+
+template<typename ActionType>
+void run(ActionType &action, const std::string &config, const Args &args){
+  //Fine grids
+  GridCartesian         * UGrid     = (GridCartesian*)action.GaugeGrid();
+  GridRedBlackCartesian * UrbGrid   = (GridRedBlackCartesian*)action.GaugeRedBlackGrid();
+  GridCartesian         * FGrid     = (GridCartesian*)action.FermionGrid();
+  GridRedBlackCartesian * FrbGrid   = (GridRedBlackCartesian*)action.FermionRedBlackGrid();
 
   //Setup the coarse grids  
   auto fineLatt     = GridDefaultLatt();
   Coordinate coarseLatt(4);
   for (int d=0;d<4;d++){
-    coarseLatt[d] = fineLatt[d]/blockSize[d];    assert(coarseLatt[d]*blockSize[d]==fineLatt[d]);
+    coarseLatt[d] = fineLatt[d]/args.blockSize[d];    assert(coarseLatt[d]*args.blockSize[d]==fineLatt[d]);
   }
 
   std::cout << GridLogMessage<< " 5d coarse lattice is ";
   for (int i=0;i<4;i++){
     std::cout << coarseLatt[i]<<"x";
   } 
-  int cLs = Ls/blockSize[4]; assert(cLs*blockSize[4]==Ls);
+  int cLs = args.Ls/args.blockSize[4]; assert(cLs*args.blockSize[4]==args.Ls);
   std::cout << cLs<<std::endl;
   
   GridCartesian         * CoarseGrid4    = SpaceTimeGrid::makeFourDimGrid(coarseLatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * CoarseGrid4rb  = SpaceTimeGrid::makeFourDimRedBlackGrid(CoarseGrid4);
   GridCartesian         * CoarseGrid5    = SpaceTimeGrid::makeFiveDimGrid(cLs,CoarseGrid4);
-  const int nbasis= 60;
+  //const int nbasis= 60;
+  const int nbasis= 100;
   typedef vTComplex CComplex; 
   typedef iVector<CComplex,nbasis >           CoarseSiteVector;
   typedef Lattice<CComplex>                   CoarseScalar;
   typedef Lattice<CoarseSiteVector>           CoarseField;
- 
-  //Dirac operator
-  GparityDomainWallFermionD action(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, Params);
-  typedef GparityDomainWallFermionD::FermionField FermionField;
+
+  typedef typename ActionType::FermionField FermionField; 
   
-  SchurDiagTwoOperator<GparityDomainWallFermionD,FermionField> SchurOp(action);
+  SchurDiagTwoOperator<ActionType,FermionField> SchurOp(action);
 
-  typedef GparityWilsonImplD::SiteSpinor SiteSpinor;
+  typedef typename ActionType::SiteSpinor SiteSpinor;
 
+  const CPSLanczosParams &fine = args.fine;
+  
   //Do the fine Lanczos
   std::vector<RealD> evals;
   std::vector<FermionField> evecs;
 
-  if(read_fine){
+  if(args.read_fine){
     evals.resize(fine.N_true_get);
     evecs.resize(fine.N_true_get, FrbGrid);
 
-    std::string evals_file = read_fine_file + "_evals.xml";
-    std::string evecs_file = read_fine_file + "_evecs.scidac";
+    std::string evals_file = args.read_fine_file + "_evals.xml";
+    std::string evecs_file = args.read_fine_file + "_evecs.scidac";
     
     std::cout << GridLogIRL<< "Reading evals from "<<evals_file<<std::endl;
     XmlReader RDx(evals_file);
@@ -395,9 +385,9 @@ int main (int argc, char ** argv) {
     int Nconv;
     IRL.calc(evals, evecs,src,Nconv,false);
 
-    if(write_fine){
-      std::string evals_file = write_fine_file + "_evals.xml";
-      std::string evecs_file = write_fine_file + "_evecs.scidac";
+    if(args.write_fine){
+      std::string evals_file = args.write_fine_file + "_evals.xml";
+      std::string evecs_file = args.write_fine_file + "_evecs.scidac";
 
       std::cout << GridLogIRL<< "Writing evecs to "<<evecs_file<<std::endl;
 
@@ -425,10 +415,128 @@ int main (int argc, char ** argv) {
 
   compareBlockPromoteTimings(basis, compressed_evecs);
 
-
+  //Compare uncompressed and original evecs
+  compressor.compareEvecs(basis, compressed_evecs, evecs);
   
-  //Test the result
-  assert( compressor.testCompression(SchurOp, basis, compressed_evecs, evals, fine.stop_rsd, coarse_relax_tol) );   
+  //Create the smoother
+  Chebyshev<FermionField> smoother(fine.getChebyParams());
+  
+  //Test the quality of the uncompressed evecs
+  assert( compressor.testCompression(SchurOp, smoother, basis, compressed_evecs, evals, fine.stop_rsd, args.coarse_relax_tol) );   
+}
+  
+//Note:  because we rely upon physical properties we must use a "real" gauge configuration
+int main (int argc, char ** argv) {
+  Grid_init(&argc,&argv);
+  GridLogIRL.TimingMode(1);
 
+  if(argc < 3){
+    std::cout << GridLogMessage << "Usage: <exe> <config file> <gparity dirs> <options>" << std::endl;
+    std::cout << GridLogMessage << "<gparity dirs> should have the format a.b.c where a,b,c are 0,1 depending on whether there are G-parity BCs in that direction" << std::endl;
+    std::cout << GridLogMessage << "Options:" << std::endl;
+    std::cout << GridLogMessage << "--Ls <value> : Set Ls (default 12)" << std::endl;
+    std::cout << GridLogMessage << "--mass <value> : Set the mass (default 0.01)" << std::endl;
+    std::cout << GridLogMessage << "--block <value> : Set the block size. Format should be a.b.c.d.e where a-e are the block extents  (default 2.2.2.2.2)" << std::endl;
+    std::cout << GridLogMessage << "--is_cps_cfg : Indicate that the configuration was generated with CPS where until recently the stored plaquette was wrong by a factor of 2" << std::endl;
+    std::cout << GridLogMessage << "--write_irl_templ: Write a template for the parameters file of the Lanczos to \"irl_templ.xml\"" << std::endl;
+    std::cout << GridLogMessage << "--read_irl_fine <filename>: Real the parameters file for the fine Lanczos" << std::endl;
+    std::cout << GridLogMessage << "--write_fine <filename stub>: Write fine evecs/evals to filename starting with the stub" << std::endl;
+    std::cout << GridLogMessage << "--read_fine <filename stub>: Read fine evecs/evals from filename starting with the stub" << std::endl;    
+    std::cout << GridLogMessage << "--coarse_relax_tol : Set the relaxation parameter for evaluating the residual of the reconstructed eigenvectors outside of the basis (default 1e5)" << std::endl;
+    std::cout << GridLogMessage << "--action : Set the action from 'DWF', 'Mobius'  (default Mobius)" << std::endl;
+    std::cout << GridLogMessage << "--mobius_scale : Set the Mobius scale b+c (default 2)" << std::endl;
+    Grid_finalize();
+    return 1;
+  }
+  std::string config = argv[1];
+
+  Args args;
+  GridCmdOptionIntVector(argv[2], args.GparityDirs);
+  assert(args.GparityDirs.size() == 3);
+
+  std::string action_s = "Mobius"; 
+  
+  for(int i=3;i<argc;i++){
+    std::string sarg = argv[i];
+    if(sarg == "--Ls"){
+      args.Ls = std::stoi(argv[i+1]);
+      std::cout << GridLogMessage << "Set Ls to " << args.Ls << std::endl;
+    }else if(sarg == "--mass"){
+      std::istringstream ss(argv[i+1]); ss >> args.mass;
+      std::cout << GridLogMessage << "Set quark mass to " << args.mass << std::endl;
+    }else if(sarg == "--block"){
+      GridCmdOptionIntVector(argv[i+1], args.blockSize);
+      assert(args.blockSize.size() == 5);
+      std::cout << GridLogMessage << "Set block size to ";
+      for(int q=0;q<5;q++) std::cout << args.blockSize[q] << " ";
+      std::cout << std::endl;      
+    }else if(sarg == "--is_cps_cfg"){
+      args.is_cps_cfg = true;
+    }else if(sarg == "--write_irl_templ"){
+      XmlWriter writer("irl_templ.xml");
+      write(writer,"Params",args.fine);
+      Grid_finalize();
+      return 0;
+    }else if(sarg == "--read_irl_fine"){
+      std::cout << GridLogMessage << "Reading fine IRL params from " << argv[i+1] << std::endl;
+      XmlReader reader(argv[i+1]);
+      read(reader, "Params", args.fine);
+    }else if(sarg == "--write_fine"){
+      args.write_fine = true;
+      args.write_fine_file = argv[i+1];
+    }else if(sarg == "--read_fine"){
+      args.read_fine = true;
+      args.read_fine_file = argv[i+1];
+    }else if(sarg == "--coarse_relax_tol"){
+      std::istringstream ss(argv[i+1]); ss >> args.coarse_relax_tol;
+      std::cout << GridLogMessage << "Set coarse IRL relaxation parameter to " << args.coarse_relax_tol << std::endl;
+    }else if(sarg == "--action"){
+      action_s = argv[i+1];
+      std::cout << "Action set to " << action_s << std::endl;
+    }else if(sarg == "--mobius_scale"){
+      std::istringstream ss(argv[i+1]); ss >> args.mobius_scale;
+      std::cout << GridLogMessage << "Set Mobius scale to " << args.mobius_scale << std::endl;
+    }
+  }
+  
+  //Fine grids
+  GridCartesian         * UGrid     = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(),  GridDefaultSimd(Nd,vComplex::Nsimd()),   GridDefaultMpi());
+  GridRedBlackCartesian * UrbGrid   = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
+  GridCartesian         * FGrid     = SpaceTimeGrid::makeFiveDimGrid(args.Ls,UGrid);
+  GridRedBlackCartesian * FrbGrid   = SpaceTimeGrid::makeFiveDimRedBlackGrid(args.Ls,UGrid);
+
+  LatticeGaugeField Umu(UGrid);  
+  
+  bool is_gparity = false;
+  for(auto g : args.GparityDirs) if(g) is_gparity = true;
+
+  double bmc =  1.;      
+  double b = (args.mobius_scale + bmc)/2.;  // b = 1/2 [ (b+c) + (b-c) ]
+  double c = (args.mobius_scale - bmc)/2.;  // c = 1/2 [ (b+c) - (b-c) ]
+    
+  if(is_gparity){
+    GparityWilsonImplD::ImplParams Params = setupGparityParams(args.GparityDirs);
+    readConfiguration<ConjugateGimplD>(Umu, config, args.is_cps_cfg);   //Read the gauge field
+    
+    if(action_s == "DWF"){    
+      GparityDomainWallFermionD action(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, args.mass, args.M5, Params);
+      run(action, config, args);
+    }else if(action_s == "Mobius"){
+      GparityMobiusFermionD action(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, args.mass, args.M5, b, c, Params);
+      run(action, config, args);	    
+    }      
+  }else{
+    WilsonImplD::ImplParams Params = setupParams();
+    readConfiguration<PeriodicGimplD>(Umu, config, args.is_cps_cfg);   //Read the gauge field
+    
+    if(action_s == "DWF"){    
+      DomainWallFermionD action(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, args.mass, args.M5, Params);
+      run(action, config, args);
+    }else if(action_s == "Mobius"){
+      MobiusFermionD action(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, args.mass, args.M5, b, c, Params);
+      run(action, config, args);	    
+    }
+  } 
+  
   Grid_finalize();
 }
