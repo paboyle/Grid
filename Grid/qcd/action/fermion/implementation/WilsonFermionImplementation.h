@@ -603,6 +603,7 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
   conformable(_grid, q_in_1.Grid());
   conformable(_grid, q_in_2.Grid());
   conformable(_grid, q_out.Grid());
+  auto UGrid= this->GaugeGrid();
 
   PropagatorField tmp_shifted(UGrid); 
   PropagatorField g5Lg5(UGrid); 
@@ -622,18 +623,18 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
   R=q_in_2;
   gmuR=gmu*R;
 
-  qout=adj(g5Lg5)*R;
-  qout+=adj(g5Lg5)*gmuR;
+  q_out=adj(g5Lg5)*R;
+  q_out+=adj(g5Lg5)*gmuR;
 
   g5Lg5=g5*q_in_1*g5;
   tmp_shifted=Cshift(q_in_2,mu,1);
   Impl::multLinkField(R,this->Umu,tmp_shifted,mu);
   gmuR=gmu*R;
 
-  qout-=adj(g5Lg5)*R;
-  qout+=adj(g5Lg5)*gmuR;
+  q_out-=adj(g5Lg5)*R;
+  q_out+=adj(g5Lg5)*gmuR;
 
-  qout/=2;
+  q_out/=2;
 }
 
 
