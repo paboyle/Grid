@@ -634,7 +634,7 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
   q_out-=adj(g5Lg5)*R;
   q_out+=adj(g5Lg5)*gmuR;
 
-  q_out/=2;
+  q_out*=0.5;
 }
 
 
