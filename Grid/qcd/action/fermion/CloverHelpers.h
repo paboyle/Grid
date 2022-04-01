@@ -417,6 +417,11 @@ public:
         pokeLocalSite(triangle_exp_tmp, triangleExp_v, lcoor);
       });
 
+    diagonal_v.ViewClose();
+    triangle_v.ViewClose();
+    diagonalExp_v.ViewClose();
+    triangleExp_v.ViewClose();
+
     Diagonal *= diag_mass;
     Triangle *= diag_mass;
   }
