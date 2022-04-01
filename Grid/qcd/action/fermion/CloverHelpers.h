@@ -417,8 +417,8 @@ public:
         pokeLocalSite(triangle_exp_tmp, triangleExp_v, lcoor);
       });
 
-    Diagonal = Diagonal * diag_mass;
-    Triangle = Triangle * diag_mass;
+    Diagonal *= diag_mass;
+    Triangle *= diag_mass;
   }
 
 
