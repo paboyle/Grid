@@ -619,7 +619,8 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
   Gamma gmu=Gamma(Gmu[mu]);
 
   tmp_shifted=Cshift(q_in_1,mu,1);
-  g5Lg5=g5*tmp_shifted*g5;
+  Impl::multLinkField(g5Lg5,this->Umu,tmp_shifted,mu);
+  g5Lg5=g5*g5Lg5*g5;
   R=q_in_2;
   gmuR=gmu*R;
 
