@@ -4,12 +4,13 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: ./lib/qcd/action/fermion/WilsonFermion.cc
 
-Copyright (C) 2015
+Copyright (C) 2022
 
 Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Fabian Joswig <fabian.joswig@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
