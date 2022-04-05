@@ -63,6 +63,7 @@ struct StaggeredImplParams {
 				    RealD, hi, 
 				    int,   MaxIter, 
 				    RealD, tolerance, 
+				    RealD, mdtolerance, 
 				    int,   degree, 
 				    int,   precision,
 				    int,   BoundsCheckFreq);
@@ -76,11 +77,13 @@ struct StaggeredImplParams {
 				RealD tol      = 1.0e-8, 
                            	int _degree    = 10,
 				int _precision = 64,
-				int _BoundsCheckFreq=20)
+				int _BoundsCheckFreq=20,
+				RealD mdtol    = 1.0e-6)
       : lo(_lo),
 	hi(_hi),
 	MaxIter(_maxit),
 	tolerance(tol),
+        mdtolerance(mdtol),
 	degree(_degree),
         precision(_precision),
         BoundsCheckFreq(_BoundsCheckFreq){};

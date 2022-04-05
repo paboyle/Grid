@@ -59,6 +59,7 @@ NAMESPACE_BEGIN(Grid);
       FermionOperator<Impl> & DenOp;// the basic operator
       FermionField PhiEven; // the pseudo fermion field for this trajectory
       FermionField PhiOdd; // the pseudo fermion field for this trajectory
+      FermionField Noise; // spare noise field for bounds check
 
     public:
 
@@ -70,6 +71,7 @@ NAMESPACE_BEGIN(Grid);
       DenOp(_DenOp), 
       PhiOdd (_NumOp.FermionRedBlackGrid()),
       PhiEven(_NumOp.FermionRedBlackGrid()),
+      Noise(_NumOp.FermionRedBlackGrid()),
       param(p) 
       {
 	AlgRemez remez(param.lo,param.hi,param.precision);
@@ -87,7 +89,11 @@ NAMESPACE_BEGIN(Grid);
 	PowerNegQuarter.Init(remez,param.tolerance,true);
       };
 
-      virtual std::string action_name(){return "OneFlavourEvenOddRatioRationalPseudoFermionAction";}
+      virtual std::string action_name(){
+	std::stringstream sstream;
+	sstream<< "OneFlavourEvenOddRatioRationalPseudoFermionAction det("<< DenOp.Mass() << ") / det("<<NumOp.Mass()<<")";
+	return sstream.str();
+      }
 
       virtual std::string LogParameters(){
 	std::stringstream sstream;
@@ -128,6 +134,7 @@ NAMESPACE_BEGIN(Grid);
 	pickCheckerboard(Even,etaEven,eta);
 	pickCheckerboard(Odd,etaOdd,eta);
 
+	Noise = etaOdd;
 	NumOp.ImportGauge(U);
 	DenOp.ImportGauge(U);
 
@@ -175,9 +182,10 @@ NAMESPACE_BEGIN(Grid);
         grid->Broadcast(0,r);
         if ( (r%param.BoundsCheckFreq)==0 ) { 
 	  FermionField gauss(NumOp.FermionRedBlackGrid());
-	  gauss = PhiOdd;
+	  gauss = Noise;
 	  HighBoundCheck(MdagM,gauss,param.hi);
 	  InverseSqrtBoundsCheck(param.MaxIter,param.tolerance*100,MdagM,gauss,PowerNegHalf);
+	  ChebyBoundsCheck(MdagM,Noise,param.lo,param.hi);
 	}
 
 	//  Phidag VdagV^1/4 MdagM^-1/4  MdagM^-1/4 VdagV^1/4 Phi

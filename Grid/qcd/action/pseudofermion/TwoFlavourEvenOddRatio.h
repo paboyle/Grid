@@ -75,11 +75,15 @@ NAMESPACE_BEGIN(Grid);
           conformable(_NumOp.GaugeRedBlackGrid(), _DenOp.GaugeRedBlackGrid());
         };
 
-      virtual std::string action_name(){return "TwoFlavourEvenOddRatioPseudoFermionAction";}
+      virtual std::string action_name(){
+	std::stringstream sstream;
+	sstream<<"TwoFlavourEvenOddRatioPseudoFermionAction det("<<DenOp.Mass()<<") / det("<<NumOp.Mass()<<")";
+	return sstream.str();
+      }
 
       virtual std::string LogParameters(){
 	std::stringstream sstream;
-	sstream << GridLogMessage << "["<<action_name()<<"] has no parameters" << std::endl;
+	sstream<< GridLogMessage << "["<<action_name()<<"] -- No further parameters "<<std::endl;
 	return sstream.str();
       } 
 

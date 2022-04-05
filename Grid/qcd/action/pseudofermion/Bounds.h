@@ -13,6 +13,31 @@ NAMESPACE_BEGIN(Grid);
       std::cout << GridLogMessage << "Pseudofermion action lamda_max "<<lambda_max<<"( bound "<<hi<<")"<<std::endl;
       assert( (lambda_max < hi) && " High Bounds Check on operator failed" );
     }
+
+     template<class Field> void ChebyBoundsCheck(LinearOperatorBase<Field> &HermOp,
+						 Field &GaussNoise,
+						 RealD lo,RealD hi) 
+    {
+      int orderfilter = 1000;
+      Chebyshev<Field> Cheb(lo,hi,orderfilter);
+
+      GridBase *FermionGrid = GaussNoise.Grid();
+
+      Field X(FermionGrid);
+      Field Z(FermionGrid);
+
+      X=GaussNoise;
+      RealD Nx = norm2(X);
+      Cheb(HermOp,X,Z);
+      RealD Nz = norm2(Z);
+
+      std::cout << "************************* "<<std::endl;
+      std::cout << " noise                    = "<<Nx<<std::endl;
+      std::cout << " Cheb x noise             = "<<Nz<<std::endl;
+      std::cout << " Ratio                    = "<<Nz/Nx<<std::endl;
+      std::cout << "************************* "<<std::endl;
+      assert( ((Nz/Nx)<1.0) && " ChebyBoundsCheck ");
+    }
       
     template<class Field> void InverseSqrtBoundsCheck(int MaxIter,double tol,
 						       LinearOperatorBase<Field> &HermOp,

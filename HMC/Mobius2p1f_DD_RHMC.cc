@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
   MD.trajL   = 1.0;
 
   HMCparameters HMCparams;
-  HMCparams.StartTrajectory  = 8;
+  HMCparams.StartTrajectory  = 17;
   HMCparams.Trajectories     = 200;
   HMCparams.NoMetropolisUntil=  0;
   // "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
@@ -67,8 +67,8 @@ int main(int argc, char **argv) {
   TheHMC.Resources.AddFourDimGrid("gauge"); // use default simd lanes decomposition
 
   CheckpointerParameters CPparams;
-  CPparams.config_prefix = "ckpoint_EODWF_lat";
-  CPparams.rng_prefix    = "ckpoint_EODWF_rng";
+  CPparams.config_prefix = "ckpoint_DDHMC_lat";
+  CPparams.rng_prefix    = "ckpoint_DDHMC_rng";
   CPparams.saveInterval  = 1;
   CPparams.format        = "IEEE64BIG";
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
@@ -85,27 +85,37 @@ int main(int argc, char **argv) {
   //////////////////////////////////////////////
 
   const int Ls      = 16;
+  RealD M5  = 1.8;
+  RealD b   = 1.0;
+  RealD c   = 0.0;
   Real beta         = 2.13;
   Real light_mass   = 0.01;
   Real strange_mass = 0.04;
   Real pv_mass      = 1.0;
-  RealD M5  = 1.8;
-  RealD b   = 1.0;
-  RealD c   = 0.0;
+  std::vector<Real> hasenbusch({ light_mass, 0.04, 0.25, 0.4, 0.7 , pv_mass });
 
   // FIXME:
   // Same in MC and MD
   // Need to mix precision too
+  OneFlavourRationalParams SFRp;
+  SFRp.lo       = 4.0e-3;
+  SFRp.hi       = 30.0;
+  SFRp.MaxIter  = 10000;
+  SFRp.tolerance= 1.0e-8;
+  SFRp.mdtolerance= 1.0e-6;
+  SFRp.degree   = 16;
+  SFRp.precision= 50;
+  SFRp.BoundsCheckFreq=5;
+
   OneFlavourRationalParams OFRp;
-  OFRp.lo       = 4.0e-3;
+  OFRp.lo       = 1.0e-4;
   OFRp.hi       = 30.0;
   OFRp.MaxIter  = 10000;
-  OFRp.tolerance= 1.0e-10;
+  OFRp.tolerance= 1.0e-8;
+  OFRp.mdtolerance= 1.0e-6;
   OFRp.degree   = 16;
   OFRp.precision= 50;
-
-  std::vector<Real> hasenbusch({ 0.01, 0.04, 0.2 , pv_mass });
-  std::vector<bool> dirichlet ({ true, true, true });
+  OFRp.BoundsCheckFreq=5;
 
   auto GridPtr   = TheHMC.Resources.GetCartesian();
   auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
@@ -133,7 +143,8 @@ int main(int argc, char **argv) {
   Block4[1] = Dirichlet[2];
   Block4[2] = Dirichlet[3];
   Block4[3] = Dirichlet[4];
-  TheHMC.Resources.SetMomentumFilter(new DDHMCFilter<WilsonImplR::Field>(Block4));
+  int Width=3;
+  TheHMC.Resources.SetMomentumFilter(new DDHMCFilter<WilsonImplR::Field>(Block4,Width));
 
   //////////////////////////
   // Fermion Grid
@@ -150,7 +161,7 @@ int main(int argc, char **argv) {
   std::vector<Complex> boundary = {1,1,1,-1};
   FermionAction::ImplParams Params(boundary);
 
-  double StoppingCondition = 1e-10;
+  double StoppingCondition = 1e-8;
   double MaxCGIterations = 30000;
   ConjugateGradient<FermionField>  CG(StoppingCondition,MaxCGIterations);
 
@@ -158,8 +169,8 @@ int main(int argc, char **argv) {
   // Collect actions
   ////////////////////////////////////
   ActionLevel<HMCWrapper::Field> Level1(1);
-  ActionLevel<HMCWrapper::Field> Level2(2);
-  ActionLevel<HMCWrapper::Field> Level3(8);
+  ActionLevel<HMCWrapper::Field> Level2(4);
+  ActionLevel<HMCWrapper::Field> Level3(6);
 
   ////////////////////////////////////
   // Strange action
@@ -167,8 +178,17 @@ int main(int argc, char **argv) {
   FermionAction StrangeOp (U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,strange_mass,M5,b,c, Params);
   FermionAction StrangePauliVillarsOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,pv_mass,  M5,b,c, Params);
 
-  OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermion(StrangePauliVillarsOp,StrangeOp,OFRp);
-  //  Level1.push_back(&StrangePseudoFermion);
+  FermionAction StrangeOpDir (U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,strange_mass,M5,b,c, Params);
+  FermionAction StrangePauliVillarsOpDir(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,pv_mass,  M5,b,c, Params);
+  StrangeOpDir.DirichletBlock(Dirichlet);  
+  StrangePauliVillarsOpDir.DirichletBlock(Dirichlet);  
+  
+  OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermionBdy(StrangeOpDir,StrangeOp,SFRp);
+  OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermionLocal(StrangePauliVillarsOpDir,StrangeOpDir,SFRp);
+  OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermionPVBdy(StrangePauliVillarsOp,StrangePauliVillarsOpDir,SFRp);
+  Level1.push_back(&StrangePseudoFermionBdy);
+  Level2.push_back(&StrangePseudoFermionLocal);
+  Level1.push_back(&StrangePseudoFermionPVBdy);
 
   ////////////////////////////////////
   // up down action
@@ -179,37 +199,49 @@ int main(int argc, char **argv) {
   std::vector<int> dirichlet_num;
 
   int n_hasenbusch = hasenbusch.size();
-  light_den.push_back(light_mass);
-  dirichlet_den.push_back(0);
+  light_den.push_back(light_mass);  dirichlet_den.push_back(0);
   for(int h=0;h<n_hasenbusch;h++){
-    light_den.push_back(hasenbusch[h]);
-    light_num.push_back(hasenbusch[h]);
-    dirichlet_num.push_back(1);
-    dirichlet_den.push_back(1);
+    light_den.push_back(hasenbusch[h]); dirichlet_den.push_back(1);
   }
-  light_num.push_back(pv_mass);
-  dirichlet_num.push_back(0);
+
+  for(int h=0;h<n_hasenbusch;h++){
+    light_num.push_back(hasenbusch[h]); dirichlet_num.push_back(1);
+  }
+  light_num.push_back(pv_mass);  dirichlet_num.push_back(0);
 
   std::vector<FermionAction *> Numerators;
   std::vector<FermionAction *> Denominators;
   std::vector<TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> *> Quotients;
+  std::vector<OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> *> Bdys;
   
   for(int h=0;h<n_hasenbusch+1;h++){
-    std::cout << GridLogMessage << " 2f quotient Action  "<< light_num[h]<< " (" << dirichlet_num[h]
-	      <<") / " << light_den[h]<< " (" << dirichlet_den[h]<<")"<< std::endl;
+    std::cout << GridLogMessage
+	      << " 2f quotient Action ";
+    std::cout << "det D("<<light_den[h]<<")";
+    if ( dirichlet_den[h] ) std::cout << "^dirichlet    ";
+    std::cout << "/ det D("<<light_num[h]<<")";
+    if ( dirichlet_num[h] ) std::cout << "^dirichlet    ";
+    std::cout << std::endl;
+    
     Numerators.push_back  (new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, Params));
     Denominators.push_back(new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, Params));
-    Quotients.push_back   (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],CG,CG));
+    if(h!=0) {
+      Quotients.push_back   (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],CG,CG));
+    } else {
+      Bdys.push_back( new OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
+      Bdys.push_back( new OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
+    }
     if ( dirichlet_den[h]==1) Denominators[h]->DirichletBlock(Dirichlet);
     if ( dirichlet_num[h]==1) Numerators[h]->DirichletBlock(Dirichlet);
   }
 
   int nquo=Quotients.size();
-  Level1.push_back(Quotients[0]);
-  Level1.push_back(Quotients[nquo-1]);
-  for(int h=1;h<nquo-1;h++){
+  Level1.push_back(Bdys[0]);
+  Level1.push_back(Bdys[1]);
+  for(int h=0;h<nquo-1;h++){
     Level2.push_back(Quotients[h]);
   }
+  Level1.push_back(Quotients[nquo-1]); // PV dirichlet fix on coarse timestep
 
   /////////////////////////////////////////////////////////////
   // Gauge action
@@ -223,6 +255,7 @@ int main(int argc, char **argv) {
   /////////////////////////////////////////////////////////////
 
   std::cout << GridLogMessage << " Running the HMC "<< std::endl;
+  TheHMC.ReadCommandLine(argc,argv);  // params on CML or from param file
   TheHMC.Run();  // no smearing
 
   Grid_finalize();

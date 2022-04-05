@@ -68,7 +68,7 @@ public:
   ///////////////////////////////////////////////////////////////
   // Support for MADWF tricks
   ///////////////////////////////////////////////////////////////
-  RealD Mass(void) { return mass; };
+  virtual RealD Mass(void) { return mass; };
   void  SetMass(RealD _mass) { 
     mass=_mass; 
     SetCoefficientsInternal(_zolo_hi,_gamma,_b,_c);  // Reset coeffs

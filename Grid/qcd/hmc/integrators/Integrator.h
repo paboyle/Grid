@@ -143,6 +143,7 @@ protected:
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
       double end_force = usecond();
 
+      DumpSliceNorm("force ",force,Nd-1);
       MomFilter->applyFilter(force);
       std::cout << GridLogIntegrator << " update_P : Level [" << level <<"]["<<a <<"] "<<name<< std::endl;
       DumpSliceNorm("force ",force,Nd-1);
