@@ -599,16 +599,22 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
                                                    Current curr_type,
                                                    unsigned int mu)
 {
+  if(curr_type != Current::Vector)
+  {
+    std::cout << GridLogError << "Only the conserved vector current is implemented so far." << std::endl;
+    exit(1);
+  }
+
   Gamma g5(Gamma::Algebra::Gamma5);
   conformable(_grid, q_in_1.Grid());
   conformable(_grid, q_in_2.Grid());
   conformable(_grid, q_out.Grid());
   auto UGrid= this->GaugeGrid();
 
-  PropagatorField tmp_shifted(UGrid); 
-  PropagatorField g5Lg5(UGrid); 
-  PropagatorField R(UGrid); 
-  PropagatorField gmuR(UGrid); 
+  PropagatorField tmp_shifted(UGrid);
+  PropagatorField g5Lg5(UGrid);
+  PropagatorField R(UGrid);
+  PropagatorField gmuR(UGrid);
 
     Gamma::Algebra Gmu [] = {
     Gamma::Algebra::GammaX,
@@ -647,6 +653,12 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                               unsigned int tmax,
 					      ComplexField &lattice_cmplx)
 {
+  if(curr_type != Current::Vector)
+  {
+    std::cout << GridLogError << "Only the conserved vector current is implemented so far." << std::endl;
+    exit(1);
+  }
+
   conformable(_grid, q_in.Grid());
   conformable(_grid, q_out.Grid());
   assert(0);
