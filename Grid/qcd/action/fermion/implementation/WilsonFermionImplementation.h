@@ -659,9 +659,45 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
     exit(1);
   }
 
+  int tshift = (mu == Nd-1) ? 1 : 0;
+  unsigned int LLt    = GridDefaultLatt()[Tp];
   conformable(_grid, q_in.Grid());
   conformable(_grid, q_out.Grid());
-  assert(0);
+  auto UGrid= this->GaugeGrid();
+
+  PropagatorField tmp(UGrid);
+  PropagatorField Utmp(UGrid);
+  PropagatorField L(UGrid);
+  PropagatorField zz (UGrid);
+  zz=Zero();
+  LatticeInteger lcoor(UGrid); LatticeCoordinate(lcoor,Nd-1);
+
+    Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT,
+  };
+  Gamma gmu=Gamma(Gmu[mu]);
+
+  tmp = Cshift(q_in,mu,1);
+  Impl::multLinkField(Utmp,this->Umu,tmp,mu);
+  tmp = ( Utmp*lattice_cmplx - gmu*Utmp*lattice_cmplx ); // Forward hop
+  tmp = where((lcoor>=tmin),tmp,zz); // Mask the time
+  q_out = where((lcoor<=tmax),tmp,zz); // Position of current complicated
+
+  tmp = q_in *lattice_cmplx;
+  tmp = Cshift(tmp,mu,-1);
+  Impl::multLinkField(Utmp,this->Umu,tmp,mu+Nd); // Adjoint link
+  tmp = -( Utmp + gmu*Utmp );
+  // Mask the time
+  if (tmax == LLt - 1 && tshift == 1){ // quick fix to include timeslice 0 if tmax + tshift is over the last timeslice
+    unsigned int t0 = 0;
+    tmp = where(((lcoor==t0) || (lcoor>=tmin+tshift)),tmp,zz);
+  } else {
+    tmp = where((lcoor>=tmin+tshift),tmp,zz);
+  }
+  q_out+= where((lcoor<=tmax+tshift),tmp,zz); // Position of current complicated
 }
 
 NAMESPACE_END(Grid);
