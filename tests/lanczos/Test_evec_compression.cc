@@ -239,6 +239,8 @@ struct Args{
   std::string write_fine_file;
   bool read_fine;
   std::string read_fine_file;
+
+  int basis_size;
   
   Args(){
     blockSize = {2,2,2,2,2};
@@ -263,6 +265,8 @@ struct Args{
 
     write_fine = false;
     read_fine = false;
+
+    basis_size = 100;
   }
 };
     
@@ -293,8 +297,8 @@ WilsonImplD::ImplParams setupParams(){
   return Params;
 }
 
-template<typename ActionType>
-void run(ActionType &action, const std::string &config, const Args &args){
+template<int nbasis, typename ActionType>
+void run_b(ActionType &action, const std::string &config, const Args &args){
   //Fine grids
   GridCartesian         * UGrid     = (GridCartesian*)action.GaugeGrid();
   GridRedBlackCartesian * UrbGrid   = (GridRedBlackCartesian*)action.GaugeRedBlackGrid();
@@ -318,8 +322,6 @@ void run(ActionType &action, const std::string &config, const Args &args){
   GridCartesian         * CoarseGrid4    = SpaceTimeGrid::makeFourDimGrid(coarseLatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * CoarseGrid4rb  = SpaceTimeGrid::makeFourDimRedBlackGrid(CoarseGrid4);
   GridCartesian         * CoarseGrid5    = SpaceTimeGrid::makeFiveDimGrid(cLs,CoarseGrid4);
-  //const int nbasis= 60;
-  const int nbasis= 100;
   typedef vTComplex CComplex; 
   typedef iVector<CComplex,nbasis >           CoarseSiteVector;
   typedef Lattice<CComplex>                   CoarseScalar;
@@ -361,7 +363,7 @@ void run(ActionType &action, const std::string &config, const Args &args){
     }
     RD.close();
   }else{ 
-    int Nstop = fine.Nstop();
+    int Nstop = fine.Nstop(); //==N_true_get
     int Nm = fine.Nm();
     int Nk = fine.Nk();
     RealD resid = fine.stop_rsd;
@@ -384,7 +386,13 @@ void run(ActionType &action, const std::string &config, const Args &args){
 
     int Nconv;
     IRL.calc(evals, evecs,src,Nconv,false);
-
+    if(Nconv < Nstop) assert(0 && "Fine lanczos failed to converge the required number of evecs"); //algorithm doesn't consider this a failure
+    if(Nconv > Nstop){
+      //Yes this potentially throws away some evecs but it is better than having a random number of evecs between Nstop and Nm!
+      evals.resize(Nstop);
+      evecs.resize(Nstop, FrbGrid);
+    }
+    
     if(args.write_fine){
       std::string evals_file = args.write_fine_file + "_evals.xml";
       std::string evecs_file = args.write_fine_file + "_evecs.scidac";
@@ -424,7 +432,28 @@ void run(ActionType &action, const std::string &config, const Args &args){
   //Test the quality of the uncompressed evecs
   assert( compressor.testCompression(SchurOp, smoother, basis, compressed_evecs, evals, fine.stop_rsd, args.coarse_relax_tol) );   
 }
-  
+
+template<typename ActionType>
+void run(ActionType &action, const std::string &config, const Args &args){
+  switch(args.basis_size){
+  case 50:
+    return run_b<50>(action,config,args);
+  case 100:
+    return run_b<100>(action,config,args);
+  case 150:
+    return run_b<150>(action,config,args);
+  case 200:
+    return run_b<200>(action,config,args);
+  case 250:
+    return run_b<250>(action,config,args);
+  default:
+    assert(0 && "Unsupported basis size: allowed values are 50,100,200");
+  }
+}
+
+
+
+
 //Note:  because we rely upon physical properties we must use a "real" gauge configuration
 int main (int argc, char ** argv) {
   Grid_init(&argc,&argv);
@@ -445,6 +474,8 @@ int main (int argc, char ** argv) {
     std::cout << GridLogMessage << "--coarse_relax_tol : Set the relaxation parameter for evaluating the residual of the reconstructed eigenvectors outside of the basis (default 1e5)" << std::endl;
     std::cout << GridLogMessage << "--action : Set the action from 'DWF', 'Mobius'  (default Mobius)" << std::endl;
     std::cout << GridLogMessage << "--mobius_scale : Set the Mobius scale b+c (default 2)" << std::endl;
+    std::cout << GridLogMessage << "--basis_size : Set the basis size from 50,100,150,200,250 (default 100)" << std::endl;
+
     Grid_finalize();
     return 1;
   }
@@ -496,6 +527,9 @@ int main (int argc, char ** argv) {
     }else if(sarg == "--mobius_scale"){
       std::istringstream ss(argv[i+1]); ss >> args.mobius_scale;
       std::cout << GridLogMessage << "Set Mobius scale to " << args.mobius_scale << std::endl;
+    }else if(sarg == "--basis_size"){
+      args.basis_size = std::stoi(argv[i+1]);
+      std::cout << GridLogMessage << "Set basis size to " << args.basis_size << std::endl;
     }
   }
   
