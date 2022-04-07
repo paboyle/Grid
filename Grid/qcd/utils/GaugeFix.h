@@ -1,6 +1,6 @@
 /*************************************************************************************
 
-    grid` physics library, www.github.com/paboyle/Grid 
+    grid` physics library, www.github.com/paboyle/Grid
 
     Copyright (C) 2015
 
@@ -32,7 +32,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 
-template <class Gimpl> 
+template <class Gimpl>
 class FourierAcceleratedGaugeFixer  : public Gimpl {
 public:
   INHERIT_GIMPL_TYPES(Gimpl);
@@ -53,7 +53,7 @@ public:
 	dmuAmu = dmuAmu + A[mu] - Cshift(A[mu],mu,-1);
       }
     }
-  }  
+  }
 
   static void SteepestDescentGaugeFix(GaugeLorentz &Umu,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1) {
     GridBase *grid = Umu.Grid();
@@ -64,11 +64,12 @@ public:
 
     GridBase *grid = Umu.Grid();
 
+    int i;
     Real org_plaq      =WilsonLoops<Gimpl>::avgPlaquette(Umu);
-    Real org_link_trace=WilsonLoops<Gimpl>::linkTrace(Umu); 
+    Real org_link_trace=WilsonLoops<Gimpl>::linkTrace(Umu);
     Real old_trace = org_link_trace;
     Real trG;
-    
+
     xform=1.0;
 
     std::vector<GaugeMat> U(Nd,grid);
@@ -76,20 +77,20 @@ public:
 
     {
       Real plaq      =WilsonLoops<Gimpl>::avgPlaquette(Umu);
-      Real link_trace=WilsonLoops<Gimpl>::linkTrace(Umu); 
+      Real link_trace=WilsonLoops<Gimpl>::linkTrace(Umu);
       if( (orthog>=0) && (orthog<Nd) ){
 	std::cout << GridLogMessage << " Gauge fixing to Coulomb gauge time="<<orthog<< " plaq= "<<plaq<<" link trace = "<<link_trace<<  std::endl;
-      } else { 
+      } else {
 	std::cout << GridLogMessage << " Gauge fixing to Landau gauge plaq= "<<plaq<<" link trace = "<<link_trace<<  std::endl;
       }
     }
-    for(int i=0;i<maxiter;i++){
+    for(i=0;i<maxiter;i++){
 
       for(int mu=0;mu<Nd;mu++) U[mu]= PeekIndex<LorentzIndex>(Umu,mu);
 
-      if ( Fourier==false ) { 
+      if ( Fourier==false ) {
 	trG = SteepestDescentStep(U,xform,alpha,dmuAmu,orthog);
-      } else { 
+      } else {
 	trG = FourierAccelSteepestDescentStep(U,xform,alpha,dmuAmu,orthog);
       }
 
@@ -98,17 +99,17 @@ public:
       //      std::cout << GridLogMessage << "dmuAmu "<< norm2(dmuAmu)<< std::endl;
 
       for(int mu=0;mu<Nd;mu++) PokeIndex<LorentzIndex>(Umu,U[mu],mu);
-      // Monitor progress and convergence test 
+      // Monitor progress and convergence test
       // infrequently to minimise cost overhead
-      if ( i %20 == 0 ) { 
+      if ( i %20 == 0 ) {
 	Real plaq      =WilsonLoops<Gimpl>::avgPlaquette(Umu);
-	Real link_trace=WilsonLoops<Gimpl>::linkTrace(Umu); 
+	Real link_trace=WilsonLoops<Gimpl>::linkTrace(Umu);
 
-	if (Fourier) 
+	if (Fourier)
 	  std::cout << GridLogMessage << "Fourier Iteration "<<i<< " plaq= "<<plaq<< " dmuAmu " << norm2(dmuAmu)<< std::endl;
-	else 
+	else
 	  std::cout << GridLogMessage << " Iteration "<<i<< " plaq= "<<plaq<< " dmuAmu " << norm2(dmuAmu)<< std::endl;
-	
+
 	Real Phi  = 1.0 - old_trace / link_trace ;
 	Real Omega= 1.0 - trG;
 
@@ -122,6 +123,11 @@ public:
 
       }
     }
+  if(i==maxiter-1)
+  {
+    std::cout << GridLogError << "Gauge fixing did not converge in " << maxiter << " iterations." << std::endl;
+    exit(EXIT_FAILURE);
+  }
   };
   static Real SteepestDescentStep(std::vector<GaugeMat> &U,GaugeMat &xform,Real & alpha, GaugeMat & dmuAmu,int orthog) {
     GridBase *grid = U[0].Grid();
@@ -152,7 +158,7 @@ public:
 
     LatticeComplex  Fp(grid);
     LatticeComplex  psq(grid); psq=Zero();
-    LatticeComplex  pmu(grid); 
+    LatticeComplex  pmu(grid);
     LatticeComplex   one(grid); one = Complex(1.0,0.0);
 
     GaugeMat g(grid);
@@ -174,11 +180,11 @@ public:
     Coordinate latt_size = grid->GlobalDimensions();
     Coordinate coor(grid->_ndimension,0);
     for(int mu=0;mu<Nd;mu++) {
-      if ( mu != orthog ) { 
+      if ( mu != orthog ) {
 	Real TwoPiL =  M_PI * 2.0/ latt_size[mu];
 	LatticeCoordinate(pmu,mu);
 	pmu = TwoPiL * pmu ;
-	psq = psq + 4.0*sin(pmu*0.5)*sin(pmu*0.5); 
+	psq = psq + 4.0*sin(pmu*0.5)*sin(pmu*0.5);
       }
     }
 
@@ -192,8 +198,8 @@ public:
 	pokeSite(TComplex(16.0),Fp,coor);
       }
     }
-    
-    dmuAmu_p  = dmuAmu_p * Fp; 
+
+    dmuAmu_p  = dmuAmu_p * Fp;
 
     theFFT.FFT_dim_mask(dmuAmu,dmuAmu_p,mask,FFT::backward);
 
@@ -217,7 +223,7 @@ public:
     DmuAmu(A,dmuAmu,orthog);
     ciadmam = dmuAmu*cialpha;
     SU<Nc>::taExp(ciadmam,g);
-  }  
+  }
 };
 
 NAMESPACE_END(Grid);
