@@ -42,6 +42,13 @@ public:
                              const std::vector<ComplexField > &mom,
                              int orthogdim, double *t_kernel = nullptr, double *t_gsum = nullptr);
   template <typename TensorType> // output: rank 5 tensor, e.g. Eigen::Tensor<ComplexD, 5>
+  static void StagMesonFieldLocalMILC(TensorType &mat,
+                             const FermionField *lhs_wi,
+                             const FermionField *rhs_vj,
+                             std::vector<Gamma::Algebra> gammas,
+                             const std::vector<ComplexField > &mom,
+                             int orthogdim, double *t_kernel = nullptr);
+  template <typename TensorType> // output: rank 5 tensor, e.g. Eigen::Tensor<ComplexD, 5>
   static void StagMesonFieldMILC(TensorType &mat,
                              const FermionField *lhs_wi,
                              const FermionField *rhs_vj,
@@ -1507,12 +1514,12 @@ void A2Autils<FImpl>::DeltaFeq2(int dt_min,int dt_max,
 
 template <class FImpl>
 template <typename TensorType>
-void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
+void A2Autils<FImpl>::StagMesonFieldLocalMILC(TensorType &mat,
                                      const FermionField *lhs_wi,
                                      const FermionField *rhs_vj,
                                      std::vector<Gamma::Algebra> gammas,
                                      const std::vector<ComplexField > &mom,
-                                     int orthogdim, double *t_kernel, double *t_gsum)
+                                     int orthogdim, double *t_kernel)
 {
   typedef decltype(coalescedRead(Scalar_v())) calcScalar;
   typedef decltype(coalescedRead(vobj())) calcSpinor;
@@ -1822,21 +1829,38 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
 
   if (t_kernel) *t_kernel += usecond();
 
+  // Free all Lattice Views
+  for(int p=0;p<sizeL;p++) AcceleratorViewContainerW[p].ViewClose();
+  for(int p=0;p<sizeR;p++) AcceleratorViewContainerV[p].ViewClose();
+  for(int p=0;p<Ngamma;p++) AcceleratorViewContainerStag[p].ViewClose();
+  for(int p=0;p<Nmom;p++) AcceleratorViewContainerMom[p].ViewClose();
+}
+
+template <class FImpl>
+template <typename TensorType>
+void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
+                                     const FermionField *lhs_wi,
+                                     const FermionField *rhs_vj,
+                                     std::vector<Gamma::Algebra> gammas,
+                                     const std::vector<ComplexField > &mom,
+                                     int orthogdim, double *t_kernel, double *t_gsum)
+{
+
+  StagMesonFieldLocalMILC(mat,lhs_wi,rhs_vj,gammas,mom,orthogdim,t_kernel);
+
   // Combine local mat objects from all processors so that it's completely filled in.
   ////////////////////////////////////////////////////////////////////
   // This global sum is taking as much as 50% of time on 16 nodes
   // Vector size is 7 x 16 x 32 x 16 x 16 x sizeof(complex) = 2MB - 60MB depending on volume
   // Healthy size that should suffice
   ////////////////////////////////////////////////////////////////////
+
+  GridBase *grid  = mom[0].Grid();    
+
   if (t_gsum) *t_gsum = -usecond();
-  grid->GlobalSumVector(&mat(0,0,0,0,0),Nmom*Ngamma*Nt*Lblock*Rblock);
+  grid->GlobalSumVector(&mat(0,0,0,0,0),mat.size());
   if (t_gsum) *t_gsum += usecond();
 
-  // Free all Lattice Views
-  for(int p=0;p<sizeL;p++) AcceleratorViewContainerW[p].ViewClose();
-  for(int p=0;p<sizeR;p++) AcceleratorViewContainerV[p].ViewClose();
-  for(int p=0;p<Ngamma;p++) AcceleratorViewContainerStag[p].ViewClose();
-  for(int p=0;p<Nmom;p++) AcceleratorViewContainerMom[p].ViewClose();
 }
 
 // local, taste-nonsignlet staggered mesons
