@@ -32,6 +32,7 @@
 
 #include <Grid/qcd/action/fermion/WilsonCloverTypes.h>
 #include <Grid/qcd/action/fermion/WilsonCloverHelpers.h>
+#include <Grid/qcd/action/fermion/CloverHelpers.h>
 
 NAMESPACE_BEGIN(Grid);
 
@@ -51,7 +52,7 @@ NAMESPACE_BEGIN(Grid);
 // csw_r = csw_t to recover the isotropic version
 //////////////////////////////////////////////////////////////////
 
-template <class Impl>
+template<class Impl, class CloverHelpers>
 class WilsonCloverFermion : public WilsonFermion<Impl>,
                             public WilsonCloverHelpers<Impl>
 {

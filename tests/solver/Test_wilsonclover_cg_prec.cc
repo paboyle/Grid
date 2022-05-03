@@ -71,7 +71,12 @@ int main (int argc, char ** argv)
   RealD mass = -0.1;
   RealD csw_r = 1.0;
   RealD csw_t = 1.0;
+  RealD cF = 1.0;
   WilsonCloverFermionR Dw(Umu, Grid, RBGrid, mass, csw_r, csw_t);
+  CompactWilsonCloverFermionR Dw_compact(Umu, Grid, RBGrid, mass, csw_r, csw_t, 0.0);
+  WilsonExpCloverFermionR Dwe(Umu, Grid, RBGrid, mass, csw_r, csw_t);
+  CompactWilsonExpCloverFermionR Dwe_compact(Umu, Grid, RBGrid, mass, csw_r, csw_t, 0.0);
+
 
   //  HermitianOperator<WilsonFermion,LatticeFermion> HermOp(Dw);
   //  ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
@@ -80,12 +85,28 @@ int main (int argc, char ** argv)
   LatticeFermion    src_o(&RBGrid);
   LatticeFermion result_o(&RBGrid);
   pickCheckerboard(Odd,src_o,src);
-  result_o=Zero();
 
-  SchurDiagMooeeOperator<WilsonCloverFermionR,LatticeFermion> HermOpEO(Dw);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
+
+  std::cout << GridLogMessage << "Testing Wilson Clover" << std::endl;
+  SchurDiagMooeeOperator<WilsonCloverFermionR,LatticeFermion> HermOpEO(Dw);
+  result_o=Zero();
   CG(HermOpEO,src_o,result_o);
-  
+
+  std::cout << GridLogMessage << "Testing Compact Wilson Clover" << std::endl;
+  SchurDiagMooeeOperator<CompactWilsonCloverFermionR,LatticeFermion> HermOpEO_compact(Dw_compact);
+  result_o=Zero();
+  CG(HermOpEO_compact,src_o,result_o);
+
+  std::cout << GridLogMessage << "Testing Wilson Exp Clover" << std::endl;
+  SchurDiagMooeeOperator<WilsonExpCloverFermionR,LatticeFermion> HermOpEO_exp(Dwe);
+  result_o=Zero();
+  CG(HermOpEO_exp,src_o,result_o);
+
+  std::cout << GridLogMessage << "Testing Compact Wilson Exp Clover" << std::endl;
+  SchurDiagMooeeOperator<CompactWilsonExpCloverFermionR,LatticeFermion> HermOpEO_exp_compact(Dwe_compact);
+  result_o=Zero();
+  CG(HermOpEO_exp_compact,src_o,result_o);
 
   Grid_finalize();
 }
