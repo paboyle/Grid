@@ -37,6 +37,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 using namespace std;
 using namespace Grid;
 
+#ifdef HAVE_LIME
+
 template<class Fobj,class CComplex,int nbasis>
 class LocalCoherenceLanczosScidac : public LocalCoherenceLanczos<Fobj,CComplex,nbasis>
 { 
@@ -249,3 +251,11 @@ int main (int argc, char ** argv) {
   Grid_finalize();
 }
 
+#else
+
+int main( void )
+{
+  return 0 ;
+}
+
+#endif // HAVE_LIME_H
