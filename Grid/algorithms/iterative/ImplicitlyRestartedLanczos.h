@@ -206,7 +206,7 @@ repeat
   →AVK =VKHK +fKe†K † Extend to an M = K + P step factorization AVM = VMHM + fMeM
 until convergence
 */
-  void calc(std::vector<RealD>& eval, std::vector<Field>& evec,  const Field& src, int& Nconv, bool reverse=false)
+  void calc(std::vector<RealD>& eval, std::vector<Field>& evec,  const Field& src, int& Nconv, bool reverse=false, int kstart=0)
   {
     GridBase *grid = src.Grid();
     assert(grid == evec[0].Grid());
@@ -266,15 +266,19 @@ until convergence
     int k2 = Nk;
     RealD beta_k;
 
-    Nconv = 0;
+    Nconv = kstart;
   
+    for (int i=0;i<kstart;i++) {
+      lme[i] = 0.0;
+    }
+
     // Set initial vector
-    evec[0] = src;
-    normalise(evec[0]);
+    evec[kstart] = src;
+    normalise(evec[kstart]);
 	
     // Initial Nk steps
     OrthoTime=0.;
-    for(int k=0; k<Nk; ++k) step(eval,lme,evec,f,Nm,k);
+    for(int k=kstart; k<Nk; ++k) step(eval,lme,evec,f,Nm,k);
     std::cout<<GridLogIRL <<"Initial "<< Nk <<"steps done "<<std::endl;
     std::cout<<GridLogIRL <<"Initial steps:OrthoTime "<<OrthoTime<< "seconds"<<std::endl;
 
@@ -329,13 +333,15 @@ until convergence
       //////////////////////////////////
       Qt = Eigen::MatrixXd::Identity(Nm,Nm);
       for(int ip=k2; ip<Nm; ++ip){ 
-	QR_decomp(eval,lme,Nm,Nm,Qt,eval2[ip],k1,Nm);
+	// QR_decomp(eval,lme,Nm,Nm,Qt,eval2[ip],k1,Nm);
+  QR_decomp(eval,lme,Nm,Nm,Qt,eval2[ip],kstart+1,Nm);
       }
       std::cout<<GridLogIRL <<"QR decomposed "<<std::endl;
 
       assert(k2<Nm);      assert(k2<Nm);      assert(k1>0);
 
-      basisRotate(evec,Qt,k1-1,k2+1,0,Nm,Nm); /// big constraint on the basis
+      // basisRotate(evec,Qt,k1-1,k2+1,0,Nm,Nm); /// big constraint on the basis
+      basisRotate(evec,Qt,kstart,k2+1,0,Nm,Nm); /// big constraint on the basis
       std::cout<<GridLogIRL <<"basisRotated  by Qt *"<<k1-1<<","<<k2+1<<")"<<std::endl;
       
       ////////////////////////////////////////////////////
@@ -362,7 +368,7 @@ until convergence
       diagonalize(eval2,lme2,Nk,Nm,Qt,grid);
       std::cout<<GridLogIRL <<" Diagonalized "<<std::endl;
 	  
-      Nconv = 0;
+      Nconv = kstart;
       if (iter >= MinRestart) {
 
 	std::cout << GridLogIRL << "Test convergence: rotate subset of vectors to test convergence " << std::endl;
@@ -408,7 +414,7 @@ until convergence
       Field B(grid); B.Checkerboard() = evec[0].Checkerboard();
       basisRotate(evec,Qt,0,Nk,0,Nk,Nm);	    
       std::cout << GridLogIRL << " Rotated basis"<<std::endl;
-      Nconv=0;
+      Nconv=kstart;
       //////////////////////////////////////////////////////////////////////
       // Full final convergence test; unconditionally applied
       //////////////////////////////////////////////////////////////////////
