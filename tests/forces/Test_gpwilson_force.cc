@@ -64,8 +64,12 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   RealD mass=0.01; 
 
-  const int nu = 3;
-  std::vector<int> twists(Nd,0);  twists[nu] = 1;
+  const int nu = 1;
+  const int Lnu=latt_size[nu];
+
+  std::vector<int> twists(Nd,0);
+  twists[nu] = 1;
+  twists[3]=1;
   GparityWilsonFermionR::ImplParams params;  params.twists = twists;
   GparityWilsonFermionR Wil(U,*UGrid,*UrbGrid,mass,params);
   Wil.M   (phi,Mphi);
