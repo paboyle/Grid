@@ -47,8 +47,6 @@ class CompactWilsonCloverTypes {
 public:
   INHERIT_IMPL_TYPES(Impl);
 
-  static_assert(Nd == 4 && Nc == 3 && Ns == 4 && Impl::Dimension == 3, "Wrong dimensions");
-
   static constexpr int Nred      = Nc * Nhs;        // 6
   static constexpr int Nblock    = Nhs;             // 2
   static constexpr int Ndiagonal = Nred;            // 6
