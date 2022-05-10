@@ -332,7 +332,7 @@ public:
       conformable(Diagonal, Triangle);
 
       long lsites = grid->lSites();
-
+    {
       typedef typename SiteCloverDiagonal::scalar_object scalar_object_diagonal;
       typedef typename SiteCloverTriangle::scalar_object scalar_object_triangle;
       typedef iMatrix<ComplexD,6> mat;
@@ -416,9 +416,10 @@ public:
         pokeLocalSite(diagonal_exp_tmp, diagonalExp_v, lcoor);
         pokeLocalSite(triangle_exp_tmp, triangleExp_v, lcoor);
       });
+    }
 
-    Diagonal = Diagonal * diag_mass;
-    Triangle = Triangle * diag_mass;
+    Diagonal *= diag_mass;
+    Triangle *= diag_mass;
   }
 
 
