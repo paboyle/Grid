@@ -159,7 +159,7 @@ case ${ac_ZMOBIUS} in
 esac
 ############### Nc
 AC_ARG_ENABLE([Nc],
-    [AC_HELP_STRING([--enable-Nc=2|3|4], [enable number of colours])],
+    [AC_HELP_STRING([--enable-Nc=2|3|4|5], [enable number of colours])],
     [ac_Nc=${enable_Nc}], [ac_Nc=3])
 
 case ${ac_Nc} in

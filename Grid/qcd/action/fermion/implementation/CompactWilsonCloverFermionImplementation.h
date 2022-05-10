@@ -65,8 +65,11 @@ CompactWilsonCloverFermion<Impl, CloverHelpers>::CompactWilsonCloverFermion(Gaug
     csw_r /= clover_anisotropy.xi_0;
 
   ImportGauge(_Umu);
-  if (open_boundaries)
+  if (open_boundaries) {
+    this->BoundaryMaskEven.Checkerboard() = Even;
+    this->BoundaryMaskOdd.Checkerboard() = Odd;
     CompactHelpers::SetupMasks(this->BoundaryMask, this->BoundaryMaskEven, this->BoundaryMaskOdd);
+  }
 }
 
 template<class Impl, class CloverHelpers>
