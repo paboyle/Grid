@@ -128,7 +128,7 @@ public:
     std::cout << GridLogMessage << "BlockProject iter: " << j << std::endl;
     blockProject(src_coarse[j],src[j],subspace);
     }
-    //deflation set up for eigen vector batchsize 1 and source batch size equal number of batches
+    //deflation set up for eigen vector batchsize 1 and source batch size equal number of sources
     std::cout << GridLogMessage << "Start ProjectAccum for loop" << std::endl;
     for (int i=0;i<Nevec;i++)
     {
