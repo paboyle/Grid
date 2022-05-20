@@ -59,6 +59,8 @@ CompactWilsonCloverFermion<Impl, CloverHelpers>::CompactWilsonCloverFermion(Gaug
   , BoundaryMask(&Fgrid)
   , BoundaryMaskEven(&Hgrid), BoundaryMaskOdd(&Hgrid)
 {
+  assert(Nd == 4 && Nc == 3 && Ns == 4 && Impl::Dimension == 3);
+
   csw_r *= 0.5;
   csw_t *= 0.5;
   if (clover_anisotropy.isAnisotropic)
