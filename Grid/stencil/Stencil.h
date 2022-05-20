@@ -131,7 +131,6 @@ class CartesianStencilAccelerator {
   int           _checkerboard;
   int           _npoints; // Move to template param?
   int           _osites;
-  int           _dirichlet;
   StencilVector _directions;
   StencilVector _distances;
   StencilVector _comms_send;
@@ -650,16 +649,14 @@ public:
   /// Introduce a block structure and switch off comms on boundaries
   void DirichletBlock(const Coordinate &dirichlet_block)
   {
-    this->_dirichlet = 1;
     for(int ii=0;ii<this->_npoints;ii++){
       int dimension    = this->_directions[ii];
       int displacement = this->_distances[ii];
-      int shift = displacement;
       int gd = _grid->_gdimensions[dimension];
       int fd = _grid->_fdimensions[dimension];
       int pd = _grid->_processors [dimension];
-      int ld = gd/pd;
       int pc = _grid->_processor_coor[dimension];
+      int ld = fd/pd;
       ///////////////////////////////////////////
       // Figure out dirichlet send and receive
       // on this leg of stencil.
@@ -668,7 +665,7 @@ public:
       int block = dirichlet_block[dimension];
       this->_comms_send[ii] = comm_dim;
       this->_comms_recv[ii] = comm_dim;
-      if ( block ) {
+      if ( block && comm_dim ) {
 	assert(abs(displacement) < ld );
       
 	if( displacement > 0 ) {
@@ -677,16 +674,16 @@ public:
 	  // |    |    |
 	  //           noR
 	  // noS
-	  if ( (ld*(pc+1) ) % block == 0 ) this->_comms_recv[ii] = 0;
-	  if ( ( ld*pc ) % block == 0    ) this->_comms_send[ii] = 0;
+	  if ( ( (ld*(pc+1) ) % block ) == 0 ) this->_comms_recv[ii] = 0;
+	  if ( ( (ld*pc     ) % block ) == 0 ) this->_comms_send[ii] = 0;
 	} else {
 	  // High side, low side
 	  // | <--B--->|
 	  // |    |    |
 	  //           noS
 	  // noR
-	  if ( (ld*(pc+1) ) % block == 0 ) this->_comms_send[ii] = 0;
-	  if ( ( ld*pc ) % block    == 0 ) this->_comms_recv[ii] = 0;
+	  if ( ( (ld*(pc+1) ) % block ) == 0 ) this->_comms_send[ii] = 0;
+	  if ( ( (ld*pc     ) % block ) == 0 ) this->_comms_recv[ii] = 0;
 	}
       }
     }
@@ -698,7 +695,6 @@ public:
 		   const std::vector<int> &distances,
 		   Parameters p)
   {
-    this->_dirichlet = 0;
     face_table_computed=0;
     _grid    = grid;
     this->parameters=p;
@@ -714,6 +710,8 @@ public:
     this->_comms_send.resize(npoints); 
     this->_comms_recv.resize(npoints); 
     this->same_node.resize(npoints);
+
+    if ( p.dirichlet.size() ) DirichletBlock(p.dirichlet); // comms send/recv set up
 
     _unified_buffer_size=0;
     surface_list.resize(0);
@@ -1106,6 +1104,7 @@ public:
 	  Gather_plane_simple_table(face_table[face_idx],rhs,send_buf,compress,u_comm_offset,so);
 	face_idx++;
 
+
 	int duplicate = CheckForDuplicate(dimension,sx,comm_proc,(void *)&recv_buf[u_comm_offset],0,bytes,cbmask);
 	if ( (!duplicate) ) { // Force comms for now
 
@@ -1126,7 +1125,7 @@ public:
 			words,Decompressions);
 	}
 	u_comm_offset+=words;
-	}
+      }
     }
     return 0;
   }
@@ -1206,8 +1205,8 @@ public:
 				  face_table[face_idx].size()*sizeof(face_table_host[0]));
 	}
 
-	//	if ( comms_send )
-	Gather_plane_exchange_table(face_table[face_idx],rhs,spointers,dimension,sx,cbmask,compress,permute_type);
+	if ( comms_send )
+	  Gather_plane_exchange_table(face_table[face_idx],rhs,spointers,dimension,sx,cbmask,compress,permute_type);
 	face_idx++;
 
 	//spointers[0] -- low
