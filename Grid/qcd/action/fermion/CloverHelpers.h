@@ -181,6 +181,7 @@ public:
 
   static GaugeLinkField Cmunu(std::vector<GaugeLinkField> &U, GaugeLinkField &lambda, int mu, int nu) {
     assert(0);
+    return lambda;
   }
 
 };
@@ -425,6 +426,7 @@ public:
 
   static GaugeLinkField Cmunu(std::vector<GaugeLinkField> &U, GaugeLinkField &lambda, int mu, int nu) {
     assert(0);
+    return lambda;
   }
 
 };
