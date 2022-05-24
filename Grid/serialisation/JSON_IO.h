@@ -54,7 +54,7 @@ namespace Grid
     void pop(void);
     template <typename U>
     void writeDefault(const std::string &s, const U &x);
-#ifdef __NVCC__
+#if defined(GRID_CUDA) || defined(GRID_HIP)
     void writeDefault(const std::string &s, const Grid::ComplexD &x) 
     { 
       std::complex<double> z(real(x),imag(x));
@@ -101,7 +101,7 @@ namespace Grid
     void readDefault(const std::string &s, std::vector<U> &output);
     template <typename U, typename P>
     void readDefault(const std::string &s, std::pair<U,P> &output);
-#ifdef __NVCC__
+#if defined(GRID_CUDA) || defined(GRID_HIP)
     void readDefault(const std::string &s, ComplexD &output)
     { 
       std::complex<double> z;
