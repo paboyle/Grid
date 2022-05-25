@@ -12,19 +12,21 @@
 #SBATCH --gpu-bind=map_gpu:0,1,2,3,7,6,5,4
 
 DIR=.
-module list
+source sourceme.sh
 export MPIR_CVAR_GPU_EAGER_DEVICE_MEM=0
 export MPICH_GPU_SUPPORT_ENABLED=1
-#export MPICH_SMP_SINGLE_COPY_MODE=XPMEM
-export MPICH_SMP_SINGLE_COPY_MODE=NONE
-#export MPICH_SMP_SINGLE_COPY_MODE=CMA
+export MPICH_SMP_SINGLE_COPY_MODE=XPMEM
 export OMP_NUM_THREADS=1
 
 echo MPICH_SMP_SINGLE_COPY_MODE $MPICH_SMP_SINGLE_COPY_MODE
 
-PARAMS=" --accelerator-threads 16 --grid 32.32.32.256 --mpi 1.1.1.8 --comms-overlap --shm 2048 --shm-mpi 0"
-echo $PARAMS
-srun --gpus-per-task 1 -n8  ./benchmarks/Benchmark_dwf_fp32 $PARAMS
+echo working directory
+pwd
 
+PARAMS=" --accelerator-threads 8 --grid 32.32.32.32 --mpi 1.1.1.1 --comms-sequential --shm 2048 --shm-mpi 0"
+srun --gpus-per-task 1 -n1  ./benchmarks/Benchmark_dwf_fp32 $PARAMS
+
+PARAMS=" --accelerator-threads 8 --grid 64.64.64.32 --mpi 2.2.2.1 --comms-sequential --shm 2048 --shm-mpi 0"
+srun --gpus-per-task 1 -n8  ./benchmarks/Benchmark_dwf_fp32 $PARAMS
 
 

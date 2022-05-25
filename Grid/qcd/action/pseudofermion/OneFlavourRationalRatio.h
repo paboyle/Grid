@@ -75,16 +75,14 @@ NAMESPACE_BEGIN(Grid);
 	remez.generateApprox(param.degree,1,2);
 	PowerHalf.Init(remez,param.tolerance,false);
 	PowerNegHalf.Init(remez,param.tolerance,true);
+	MDPowerNegHalf.Init(remez,param.mdtolerance,true);
 
 	// MdagM^(+- 1/4)
 	std::cout<<GridLogMessage << "Generating degree "<<param.degree<<" for x^(1/4)"<<std::endl;
 	remez.generateApprox(param.degree,1,4);
    	PowerQuarter.Init(remez,param.tolerance,false);
-	PowerNegQuarter.Init(remez,param.tolerance,true);
-
-	// Derive solves different tol
    	MDPowerQuarter.Init(remez,param.mdtolerance,false);
-	MDPowerNegHalf.Init(remez,param.mdtolerance,true);
+	PowerNegQuarter.Init(remez,param.tolerance,true);
       };
 
       virtual std::string action_name(){return "OneFlavourRatioRationalPseudoFermionAction";}

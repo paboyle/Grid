@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
   SFRp.hi       = 30.0;
   SFRp.MaxIter  = 10000;
   SFRp.tolerance= 1.0e-8;
-  SFRp.mdtolerance= 1.0e-6;
+  SFRp.mdtolerance= 1.0e-5;
   SFRp.degree   = 16;
   SFRp.precision= 50;
   SFRp.BoundsCheckFreq=5;
@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
   OFRp.hi       = 30.0;
   OFRp.MaxIter  = 10000;
   OFRp.tolerance= 1.0e-8;
-  OFRp.mdtolerance= 1.0e-6;
+  OFRp.mdtolerance= 1.0e-5;
   OFRp.degree   = 16;
   OFRp.precision= 50;
   OFRp.BoundsCheckFreq=5;
@@ -162,15 +162,17 @@ int main(int argc, char **argv) {
   FermionAction::ImplParams Params(boundary);
 
   double StoppingCondition = 1e-8;
+  double MDStoppingCondition = 1e-6;
   double MaxCGIterations = 30000;
   ConjugateGradient<FermionField>  CG(StoppingCondition,MaxCGIterations);
+  ConjugateGradient<FermionField>  MDCG(MDStoppingCondition,MaxCGIterations);
 
   ////////////////////////////////////
   // Collect actions
   ////////////////////////////////////
   ActionLevel<HMCWrapper::Field> Level1(1);
   ActionLevel<HMCWrapper::Field> Level2(4);
-  ActionLevel<HMCWrapper::Field> Level3(6);
+  ActionLevel<HMCWrapper::Field> Level3(8);
 
   ////////////////////////////////////
   // Strange action
@@ -226,7 +228,7 @@ int main(int argc, char **argv) {
     Numerators.push_back  (new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, Params));
     Denominators.push_back(new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, Params));
     if(h!=0) {
-      Quotients.push_back   (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],CG,CG));
+      Quotients.push_back   (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],MDCG,CG));
     } else {
       Bdys.push_back( new OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
       Bdys.push_back( new OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
@@ -241,7 +243,7 @@ int main(int argc, char **argv) {
   for(int h=0;h<nquo-1;h++){
     Level2.push_back(Quotients[h]);
   }
-  Level1.push_back(Quotients[nquo-1]); // PV dirichlet fix on coarse timestep
+  Level2.push_back(Quotients[nquo-1]);
 
   /////////////////////////////////////////////////////////////
   // Gauge action

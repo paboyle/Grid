@@ -53,6 +53,9 @@ NAMESPACE_BEGIN(Grid);
       MultiShiftFunction PowerQuarter;
       MultiShiftFunction PowerNegQuarter;
 
+      MultiShiftFunction MDPowerNegHalf;
+      MultiShiftFunction MDPowerQuarter;
+
     private:
      
       FermionOperator<Impl> & NumOp;// the basic operator
@@ -81,11 +84,13 @@ NAMESPACE_BEGIN(Grid);
 	remez.generateApprox(param.degree,1,2);
 	PowerHalf.Init(remez,param.tolerance,false);
 	PowerNegHalf.Init(remez,param.tolerance,true);
+	MDPowerNegHalf.Init(remez,param.mdtolerance,true);
 
 	// MdagM^(+- 1/4)
 	std::cout<<GridLogMessage << "Generating degree "<<param.degree<<" for x^(1/4)"<<std::endl;
 	remez.generateApprox(param.degree,1,4);
    	PowerQuarter.Init(remez,param.tolerance,false);
+   	MDPowerQuarter.Init(remez,param.mdtolerance,false);
 	PowerNegQuarter.Init(remez,param.tolerance,true);
       };
 
@@ -226,8 +231,8 @@ NAMESPACE_BEGIN(Grid);
 
       virtual void deriv(const GaugeField &U,GaugeField & dSdU) {
 
-	const int n_f  = PowerNegHalf.poles.size();
-	const int n_pv = PowerQuarter.poles.size();
+	const int n_f  = MDPowerNegHalf.poles.size();
+	const int n_pv = MDPowerQuarter.poles.size();
 
 	std::vector<FermionField> MpvPhi_k     (n_pv,NumOp.FermionRedBlackGrid());
 	std::vector<FermionField> MpvMfMpvPhi_k(n_pv,NumOp.FermionRedBlackGrid());
@@ -246,8 +251,8 @@ NAMESPACE_BEGIN(Grid);
 	SchurDifferentiableOperator<Impl> VdagV(NumOp);
 	SchurDifferentiableOperator<Impl> MdagM(DenOp);
 
-	ConjugateGradientMultiShift<FermionField> msCG_V(param.MaxIter,PowerQuarter);
-	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,PowerNegHalf);
+	ConjugateGradientMultiShift<FermionField> msCG_V(param.MaxIter,MDPowerQuarter);
+	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,MDPowerNegHalf);
 
 	msCG_V(VdagV,PhiOdd,MpvPhi_k,MpvPhi);
 	msCG_M(MdagM,MpvPhi,MfMpvPhi_k,MfMpvPhi);
@@ -266,7 +271,7 @@ NAMESPACE_BEGIN(Grid);
 
 	//(1)
 	for(int k=0;k<n_f;k++){
-	  ak = PowerNegHalf.residues[k];
+	  ak = MDPowerNegHalf.residues[k];
 	  MdagM.Mpc(MfMpvPhi_k[k],Y);
 	  MdagM.MpcDagDeriv(tmp , MfMpvPhi_k[k], Y );  dSdU=dSdU+ak*tmp;
 	  MdagM.MpcDeriv(tmp , Y, MfMpvPhi_k[k] );  dSdU=dSdU+ak*tmp;
@@ -276,7 +281,7 @@ NAMESPACE_BEGIN(Grid);
 	//(3)
 	for(int k=0;k<n_pv;k++){
 
-          ak = PowerQuarter.residues[k];
+          ak = MDPowerQuarter.residues[k];
 	  
 	  VdagV.Mpc(MpvPhi_k[k],Y);
 	  VdagV.MpcDagDeriv(tmp,MpvMfMpvPhi_k[k],Y); dSdU=dSdU+ak*tmp;
