@@ -31,6 +31,7 @@ directory
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include <map>
 
 #include <pwd.h>
@@ -654,7 +655,8 @@ class IldgWriter : public ScidacWriter {
     // Fill ILDG header data struct
     //////////////////////////////////////////////////////
     ildgFormat ildgfmt ;
-    ildgfmt.field     = std::string("su3gauge");
+    const std::string stNC = std::to_string( Nc ) ;
+    ildgfmt.field          = std::string("su"+stNC+"gauge");
 
     if ( format == std::string("IEEE32BIG") ) { 
       ildgfmt.precision = 32;
@@ -871,7 +873,8 @@ class IldgReader : public GridLimeReader {
     } else { 
 
       assert(found_ildgFormat);
-      assert ( ildgFormat_.field == std::string("su3gauge") );
+      const std::string stNC = std::to_string( Nc ) ;
+      assert ( ildgFormat_.field == std::string("su"+stNC+"gauge") );
 
       ///////////////////////////////////////////////////////////////////////////////////////
       // Populate our Grid metadata as best we can
@@ -879,7 +882,7 @@ class IldgReader : public GridLimeReader {
 
       std::ostringstream vers; vers << ildgFormat_.version;
       FieldMetaData_.hdr_version = vers.str();
-      FieldMetaData_.data_type = std::string("4D_SU3_GAUGE_3X3");
+      FieldMetaData_.data_type = std::string("4D_SU"+stNC+"_GAUGE_"+stNC+"x"+stNC);
 
       FieldMetaData_.nd=4;
       FieldMetaData_.dimension.resize(4);
