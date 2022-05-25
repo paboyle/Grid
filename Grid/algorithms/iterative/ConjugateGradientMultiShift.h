@@ -52,7 +52,7 @@ public:
   MultiShiftFunction shifts;
   std::vector<RealD> TrueResidualShift;
 
-  ConjugateGradientMultiShift(Integer maxit,MultiShiftFunction &_shifts) : 
+  ConjugateGradientMultiShift(Integer maxit, const MultiShiftFunction &_shifts) : 
     MaxIterations(maxit),
     shifts(_shifts)
   { 
@@ -182,6 +182,9 @@ public:
     for(int s=0;s<nshift;s++) {
       axpby(psi[s],0.,-bs[s]*alpha[s],src,src);
     }
+
+    std::cout << GridLogIterative << "ConjugateGradientMultiShift: initial rn (|src|^2) =" << rn << " qq (|MdagM src|^2) =" << qq << " d ( dot(src, [MdagM + m_0]src) ) =" << d << " c=" << c << std::endl;
+    
   
   ///////////////////////////////////////
   // Timers

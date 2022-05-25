@@ -71,8 +71,10 @@ int main (int argc, char ** argv)
   RealD mass=0.01; 
   RealD M5=1.8; 
 
-  const int nu = 3;
-  std::vector<int> twists(Nd,0);  twists[nu] = 1;
+  const int nu = 1;
+  std::vector<int> twists(Nd,0);
+  twists[nu] = 1;
+  twists[3] = 1;
   GparityDomainWallFermionR::ImplParams params;  params.twists = twists;
   GparityDomainWallFermionR Ddwf(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,params);
   Ddwf.M   (phi,Mphi);

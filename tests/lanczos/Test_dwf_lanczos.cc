@@ -31,14 +31,38 @@ using namespace std;
 using namespace Grid;
  ;
 
-typedef typename GparityDomainWallFermionR::FermionField FermionField;
+template<typename Action>
+struct Setup{};
 
-RealD AllZero(RealD x){ return 0.;}
+template<>
+struct Setup<GparityMobiusFermionR>{
+  static GparityMobiusFermionR* getAction(LatticeGaugeField &Umu,
+					  GridCartesian* FGrid, GridRedBlackCartesian* FrbGrid, GridCartesian* UGrid, GridRedBlackCartesian* UrbGrid){
+    RealD mass=0.01;
+    RealD M5=1.8;
+    RealD mob_b=1.5;
+    GparityMobiusFermionD ::ImplParams params;
+    std::vector<int> twists({1,1,1,0});
+    params.twists = twists;
+    return new GparityMobiusFermionR(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,mob_b,mob_b-1.,params);
+  }
+};
 
-int main (int argc, char ** argv)
-{
-  Grid_init(&argc,&argv);
+template<>
+struct Setup<DomainWallFermionR>{
+  static DomainWallFermionR* getAction(LatticeGaugeField &Umu,
+					  GridCartesian* FGrid, GridRedBlackCartesian* FrbGrid, GridCartesian* UGrid, GridRedBlackCartesian* UrbGrid){
+    RealD mass=0.01;
+    RealD M5=1.8;
+    return new DomainWallFermionR(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  }
+};
 
+
+
+template<typename Action>
+void run(){
+  typedef typename Action::FermionField FermionField;
   const int Ls=8;
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
@@ -56,24 +80,10 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu(UGrid); 
   SU<Nc>::HotConfiguration(RNG4, Umu);
 
-  std::vector<LatticeColourMatrix> U(4,UGrid);
-  for(int mu=0;mu<Nd;mu++){
-    U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
-  }
-  
-  RealD mass=0.01;
-  RealD M5=1.8;
-  RealD mob_b=1.5;
-//  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  GparityMobiusFermionD ::ImplParams params;
-  std::vector<int> twists({1,1,1,0});
-  params.twists = twists;
-  GparityMobiusFermionR  Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,mob_b,mob_b-1.,params);
-
-//  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
-//  SchurDiagTwoOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
-  SchurDiagTwoOperator<GparityMobiusFermionR,FermionField> HermOp(Ddwf);
-//  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
+  Action *action = Setup<Action>::getAction(Umu,FGrid,FrbGrid,UGrid,UrbGrid);
+ 
+  //MdagMLinearOperator<Action,FermionField> HermOp(Ddwf);
+  SchurDiagTwoOperator<Action,FermionField> HermOp(*action);
 
   const int Nstop = 30;
   const int Nk = 40;
@@ -90,8 +100,7 @@ int main (int argc, char ** argv)
      PlainHermOp<FermionField> Op     (HermOp);
 
   ImplicitlyRestartedLanczos<FermionField> IRL(OpCheby,Op,Nstop,Nk,Nm,resid,MaxIt);
-
-  
+ 
   std::vector<RealD>          eval(Nm);
   FermionField    src(FrbGrid); 
   gaussian(RNG5rb,src);
@@ -103,6 +112,28 @@ int main (int argc, char ** argv)
   int Nconv;
   IRL.calc(eval,evec,src,Nconv);
 
+  delete action;
+}
+  
+int main (int argc, char ** argv)
+{
+  Grid_init(&argc,&argv);
 
+  std::string action = "GparityMobius";
+  for(int i=1;i<argc;i++){
+    if(std::string(argv[i]) == "-action"){
+      action = argv[i+1];
+    }
+  }
+
+  if(action == "GparityMobius"){
+    run<GparityMobiusFermionR>();
+  }else if(action == "DWF"){
+    run<DomainWallFermionR>();
+  }else{
+    std::cout << "Unknown action" << std::endl;
+    exit(1);
+  }
+  
   Grid_finalize();
 }
