@@ -1255,7 +1255,9 @@ public:
 	  }
 	}
 
-	AddMerge(&this->u_recv_buf_p[comm_off],rpointers,reduced_buffer_size,permute_type,Mergers);
+	if ( comms_recv ) {
+	  AddMerge(&this->u_recv_buf_p[comm_off],rpointers,reduced_buffer_size,permute_type,Mergers);
+	}
 
 	u_comm_offset     +=buffer_size;
 
