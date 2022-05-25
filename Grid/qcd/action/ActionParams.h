@@ -37,24 +37,32 @@ NAMESPACE_BEGIN(Grid);
 // These can move into a params header and be given MacroMagic serialisation
 struct GparityWilsonImplParams {
   Coordinate twists;
-  GparityWilsonImplParams() : twists(Nd, 0) {};
+  Coordinate dirichlet; // Blocksize of dirichlet BCs
+  GparityWilsonImplParams() : twists(Nd, 0), dirichlet(Nd, 0) {};
 };
   
 struct WilsonImplParams {
   bool overlapCommsCompute;
+  Coordinate dirichlet; // Blocksize of dirichlet BCs
   AcceleratorVector<Real,Nd> twist_n_2pi_L;
   AcceleratorVector<Complex,Nd> boundary_phases;
   WilsonImplParams()  {
+    dirichlet.resize(Nd,0);
     boundary_phases.resize(Nd, 1.0);
       twist_n_2pi_L.resize(Nd, 0.0);
   };
   WilsonImplParams(const AcceleratorVector<Complex,Nd> phi) : boundary_phases(phi), overlapCommsCompute(false) {
     twist_n_2pi_L.resize(Nd, 0.0);
+    dirichlet.resize(Nd,0);
   }
 };
 
 struct StaggeredImplParams {
-  StaggeredImplParams()  {};
+  Coordinate dirichlet; // Blocksize of dirichlet BCs
+  StaggeredImplParams()
+  {
+    dirichlet.resize(Nd,0);
+  };
 };
   
   struct OneFlavourRationalParams : Serializable {

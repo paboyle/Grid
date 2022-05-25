@@ -131,7 +131,6 @@ class CartesianStencilAccelerator {
   int           _checkerboard;
   int           _npoints; // Move to template param?
   int           _osites;
-  int           _dirichlet;
   StencilVector _directions;
   StencilVector _distances;
   StencilVector _comms_send;
@@ -503,7 +502,6 @@ public:
   }
   void AddCopy(void *from,void * to, Integer bytes)
   {
-    //    std::cout << "Adding CopyReceiveBuffer "<<std::hex<<from<<" "<<to<<std::dec<<" "<<bytes<<std::endl;
     CopyReceiveBuffer obj;
     obj.from_p = from;
     obj.to_p = to;
@@ -517,7 +515,7 @@ public:
       cobj *from=(cobj *)CopyReceiveBuffers[i].from_p;
       cobj *to  =(cobj *)CopyReceiveBuffers[i].to_p;
       Integer words = CopyReceiveBuffers[i].bytes/sizeof(cobj);
-      //    std::cout << "CopyReceiveBuffer "<<std::hex<<from<<" "<<to<<std::dec<<" "<<words*sizeof(cobj)<<std::endl;
+
       accelerator_forNB(j, words, cobj::Nsimd(), {
 	  coalescedWrite(to[j] ,coalescedRead(from [j]));
       });
@@ -543,13 +541,12 @@ public:
 	   &&(CachedTransfers[i].lane       ==lane)
 	   &&(CachedTransfers[i].cb         ==cb)
 	     ){
-	//	std::cout << "Found duplicate plane dir "<<direction<<" plane "<< OrthogPlane<< " simd "<<lane << " relproc "<<DestProc<< " bytes "<<bytes <<std::endl;
+
 	AddCopy(CachedTransfers[i].recv_buf,recv_buf,bytes);
 	return 1;
       }
     }
 
-    //    std::cout << "No duplicate plane dir "<<direction<<" plane "<< OrthogPlane<< " simd "<<lane << " relproc "<<DestProc<<"  bytes "<<bytes<<std::endl;
     CachedTransfers.push_back(obj);
     return 0;
   }
@@ -650,16 +647,14 @@ public:
   /// Introduce a block structure and switch off comms on boundaries
   void DirichletBlock(const Coordinate &dirichlet_block)
   {
-    this->_dirichlet = 1;
     for(int ii=0;ii<this->_npoints;ii++){
       int dimension    = this->_directions[ii];
       int displacement = this->_distances[ii];
-      int shift = displacement;
       int gd = _grid->_gdimensions[dimension];
       int fd = _grid->_fdimensions[dimension];
       int pd = _grid->_processors [dimension];
-      int ld = gd/pd;
       int pc = _grid->_processor_coor[dimension];
+      int ld = fd/pd;
       ///////////////////////////////////////////
       // Figure out dirichlet send and receive
       // on this leg of stencil.
@@ -668,7 +663,7 @@ public:
       int block = dirichlet_block[dimension];
       this->_comms_send[ii] = comm_dim;
       this->_comms_recv[ii] = comm_dim;
-      if ( block ) {
+      if ( block && comm_dim ) {
 	assert(abs(displacement) < ld );
       
 	if( displacement > 0 ) {
@@ -677,16 +672,16 @@ public:
 	  // |    |    |
 	  //           noR
 	  // noS
-	  if ( (ld*(pc+1) ) % block == 0 ) this->_comms_recv[ii] = 0;
-	  if ( ( ld*pc ) % block == 0    ) this->_comms_send[ii] = 0;
+	  if ( ( (ld*(pc+1) ) % block ) == 0 ) this->_comms_recv[ii] = 0;
+	  if ( ( (ld*pc     ) % block ) == 0 ) this->_comms_send[ii] = 0;
 	} else {
 	  // High side, low side
 	  // | <--B--->|
 	  // |    |    |
 	  //           noS
 	  // noR
-	  if ( (ld*(pc+1) ) % block == 0 ) this->_comms_send[ii] = 0;
-	  if ( ( ld*pc ) % block    == 0 ) this->_comms_recv[ii] = 0;
+	  if ( ( (ld*(pc+1) ) % block ) == 0 ) this->_comms_send[ii] = 0;
+	  if ( ( (ld*pc     ) % block ) == 0 ) this->_comms_recv[ii] = 0;
 	}
       }
     }
@@ -698,7 +693,6 @@ public:
 		   const std::vector<int> &distances,
 		   Parameters p)
   {
-    this->_dirichlet = 0;
     face_table_computed=0;
     _grid    = grid;
     this->parameters=p;
@@ -714,6 +708,8 @@ public:
     this->_comms_send.resize(npoints); 
     this->_comms_recv.resize(npoints); 
     this->same_node.resize(npoints);
+
+    if ( p.dirichlet.size() ) DirichletBlock(p.dirichlet); // comms send/recv set up
 
     _unified_buffer_size=0;
     surface_list.resize(0);
@@ -745,9 +741,6 @@ public:
       int comm_dim        = _grid->_processors[dimension] >1 ;
       int splice_dim      = _grid->_simd_layout[dimension]>1 && (comm_dim);
       int rotate_dim      = _grid->_simd_layout[dimension]>2;
-
-      this->_comms_send[ii] = comm_dim;
-      this->_comms_recv[ii] = comm_dim;
 
       assert ( (rotate_dim && comm_dim) == false) ; // Do not think spread out is supported
 
@@ -911,25 +904,30 @@ public:
       }
 
       // Wrap locally dirichlet support case OR node local
-      if ( (offnode==0) || (comms_recv==0)  ) {
+      if ( offnode==0 ) {
 
 	int permute_slice=0;
 	CopyPlane(point,dimension,x,sx,cbmask,permute_slice,wraparound);
-
+	
       } else {
 
+	if ( comms_recv==0 ) {
+
+	  int permute_slice=1;
+	  CopyPlane(point,dimension,x,sx,cbmask,permute_slice,wraparound);
+
+	} else { 
+
+	  ScatterPlane(point,dimension,x,cbmask,_unified_buffer_size,wraparound); // permute/extract/merge is done in comms phase
+
+	}
+
+      }
+      
+      if ( offnode ) {
 	int words = buffer_size;
 	if (cbmask != 0x3) words=words>>1;
-
-	//	int rank           = grid->_processor;
-	//	int recv_from_rank;
-	//	int xmit_to_rank;
-
-	int unified_buffer_offset = _unified_buffer_size;
 	_unified_buffer_size    += words;
-
-	ScatterPlane(point,dimension,x,cbmask,unified_buffer_offset,wraparound); // permute/extract/merge is done in comms phase
-
       }
     }
   }
@@ -1060,8 +1058,6 @@ public:
       int comm_proc = ((x+sshift)/rd)%pd;
       
       if (comm_proc) {
-
-	
 	
 	int words = buffer_size;
 	if (cbmask != 0x3) words=words>>1;
@@ -1069,64 +1065,70 @@ public:
 	int bytes =  words * compress.CommDatumSize();
 
 	int so  = sx*rhs.Grid()->_ostride[dimension]; // base offset for start of plane
-	if ( !face_table_computed ) {
-	  face_table.resize(face_idx+1);
-	  std::vector<std::pair<int,int> >  face_table_host ;
-	  Gather_plane_table_compute ((GridBase *)_grid,dimension,sx,cbmask,u_comm_offset,face_table_host);
-	  face_table[face_idx].resize(face_table_host.size());
-	  acceleratorCopyToDevice(&face_table_host[0],
-				  &face_table[face_idx][0],
-				  face_table[face_idx].size()*sizeof(face_table_host[0]));
-	}
+	int comm_off = u_comm_offset;
 
-	//      	int rank           = _grid->_processor;
 	int recv_from_rank;
 	int xmit_to_rank;
+	cobj *recv_buf;
+	cobj *send_buf;
 	_grid->ShiftedRanks(dimension,comm_proc,xmit_to_rank,recv_from_rank);
 
 	assert (xmit_to_rank   != _grid->ThisRank());
 	assert (recv_from_rank != _grid->ThisRank());
 
-	cobj *recv_buf;
-	if ( compress.DecompressionStep() ) {
-	  recv_buf=u_simd_recv_buf[0];
-	} else {
-	  recv_buf=this->u_recv_buf_p;
+	if( comms_send ) {
+
+	  if ( !face_table_computed ) {
+	    face_table.resize(face_idx+1);
+	    std::vector<std::pair<int,int> >  face_table_host ;
+	    Gather_plane_table_compute ((GridBase *)_grid,dimension,sx,cbmask,comm_off,face_table_host);
+	    face_table[face_idx].resize(face_table_host.size());
+	    acceleratorCopyToDevice(&face_table_host[0],
+				    &face_table[face_idx][0],
+				    face_table[face_idx].size()*sizeof(face_table_host[0]));
+	  }
+
+
+	  if ( compress.DecompressionStep() ) {
+	    recv_buf=u_simd_recv_buf[0];
+	  } else {
+	    recv_buf=this->u_recv_buf_p;
+	  }
+
+	  send_buf = this->u_send_buf_p; // Gather locally, must send
+	
+	  ////////////////////////////////////////////////////////
+	  // Gather locally
+	  ////////////////////////////////////////////////////////
+	  assert(send_buf!=NULL);
+
+	  Gather_plane_simple_table(face_table[face_idx],rhs,send_buf,compress,comm_off,so);
 	}
 
-
-	cobj *send_buf;
-	send_buf = this->u_send_buf_p; // Gather locally, must send
-	
-	////////////////////////////////////////////////////////
-	// Gather locally
-	////////////////////////////////////////////////////////
-	assert(send_buf!=NULL);
-	if ( comms_send ) 
-	  Gather_plane_simple_table(face_table[face_idx],rhs,send_buf,compress,u_comm_offset,so);
-	face_idx++;
-
-	int duplicate = CheckForDuplicate(dimension,sx,comm_proc,(void *)&recv_buf[u_comm_offset],0,bytes,cbmask);
+	int duplicate = CheckForDuplicate(dimension,sx,comm_proc,(void *)&recv_buf[comm_off],0,bytes,cbmask);
 	if ( (!duplicate) ) { // Force comms for now
 
 	  ///////////////////////////////////////////////////////////
 	  // Build a list of things to do after we synchronise GPUs
 	  // Start comms now???
 	  ///////////////////////////////////////////////////////////
-	  AddPacket((void *)&send_buf[u_comm_offset],
-		    (void *)&recv_buf[u_comm_offset],
+	  AddPacket((void *)&send_buf[comm_off],
+		    (void *)&recv_buf[comm_off],
 		    xmit_to_rank, comms_send,
 		    recv_from_rank, comms_recv,
 		    bytes);
 	}
 	
-	if ( compress.DecompressionStep()  ) {
-	  AddDecompress(&this->u_recv_buf_p[u_comm_offset],
-			&recv_buf[u_comm_offset],
+	if ( compress.DecompressionStep()  && comms_recv ) {
+	  AddDecompress(&this->u_recv_buf_p[comm_off],
+			&recv_buf[comm_off],
 			words,Decompressions);
 	}
+	
 	u_comm_offset+=words;
-	}
+	face_idx++;
+
+      }
     }
     return 0;
   }
@@ -1155,7 +1157,6 @@ public:
 
 
     int permute_type=_grid->PermuteType(dimension);
-    //    std::cout << "SimdNew permute type "<<permute_type<<std::endl;
 
     ///////////////////////////////////////////////
     // Simd direction uses an extract/merge pair
@@ -1189,8 +1190,9 @@ public:
 
       if ( any_offnode ) {
 
+	int comm_off = u_comm_offset;
 	for(int i=0;i<maxl;i++){
-	  spointers[i] = (cobj *) &u_simd_send_buf[i][u_comm_offset];
+	  spointers[i] = (cobj *) &u_simd_send_buf[i][comm_off];
 	}
 
 	int sx   = (x+sshift)%rd;
@@ -1199,15 +1201,15 @@ public:
 	  face_table.resize(face_idx+1);
 	  std::vector<std::pair<int,int> >  face_table_host ;
 				
-	  Gather_plane_table_compute ((GridBase *)_grid,dimension,sx,cbmask,u_comm_offset,face_table_host);
+	  Gather_plane_table_compute ((GridBase *)_grid,dimension,sx,cbmask,comm_off,face_table_host);
 	  face_table[face_idx].resize(face_table_host.size());
 	  acceleratorCopyToDevice(&face_table_host[0],
 				  &face_table[face_idx][0],
 				  face_table[face_idx].size()*sizeof(face_table_host[0]));
 	}
 
-	//	if ( comms_send )
-	Gather_plane_exchange_table(face_table[face_idx],rhs,spointers,dimension,sx,cbmask,compress,permute_type);
+	if ( comms_send )
+	  Gather_plane_exchange_table(face_table[face_idx],rhs,spointers,dimension,sx,cbmask,compress,permute_type);
 	face_idx++;
 
 	//spointers[0] -- low
@@ -1226,8 +1228,8 @@ public:
 	  int nbr_plane = nbr_ic;
 	  assert (sx == nbr_ox);
 
-	  auto rp = &u_simd_recv_buf[i        ][u_comm_offset];
-	  auto sp = &u_simd_send_buf[nbr_plane][u_comm_offset];
+	  auto rp = &u_simd_recv_buf[i        ][comm_off];
+	  auto sp = &u_simd_send_buf[nbr_plane][comm_off];
 
 	  if(nbr_proc){
 
@@ -1253,9 +1255,10 @@ public:
 	  }
 	}
 
-	AddMerge(&this->u_recv_buf_p[u_comm_offset],rpointers,reduced_buffer_size,permute_type,Mergers);
+	AddMerge(&this->u_recv_buf_p[comm_off],rpointers,reduced_buffer_size,permute_type,Mergers);
 
 	u_comm_offset     +=buffer_size;
+
       }
     }
     return 0;

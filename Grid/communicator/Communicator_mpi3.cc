@@ -390,16 +390,15 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
       list.push_back(xrq);
       off_node_bytes+=bytes;
     } else {
-    // TODO : make a OMP loop on CPU, call threaded bcopy
       void *shm = (void *) this->ShmBufferTranslate(dest,recv);
       assert(shm!=NULL);
-      //    std::cout <<"acceleratorCopyDeviceToDeviceAsynch"<< std::endl;
       acceleratorCopyDeviceToDeviceAsynch(xmit,shm,bytes);
     }
   }
   
   if ( CommunicatorPolicy == CommunicatorPolicySequential ) {
     this->StencilSendToRecvFromComplete(list,dir);
+    list.resize(0);
   }
 
   return off_node_bytes;

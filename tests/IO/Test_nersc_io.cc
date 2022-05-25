@@ -147,7 +147,7 @@ int main (int argc, char ** argv)
   Complex p  = TensorRemove(Tp);
   std::cout<<GridLogMessage << "calculated plaquettes " <<p*PlaqScale<<std::endl;
 
-  Complex LinkTraceScale(1.0/vol/4.0/3.0);
+  Complex LinkTraceScale(1.0/vol/4.0/(Real)Nc);
   TComplex Tl = sum(LinkTrace);
   Complex l  = TensorRemove(Tl);
   std::cout<<GridLogMessage << "calculated link trace " <<l*LinkTraceScale<<std::endl;
@@ -157,8 +157,10 @@ int main (int argc, char ** argv)
   Complex ll= TensorRemove(TcP);
   std::cout<<GridLogMessage << "coarsened plaquettes sum to " <<ll*PlaqScale<<std::endl;
 
-  std::string clone2x3("./ckpoint_clone2x3.4000");
-  std::string clone3x3("./ckpoint_clone3x3.4000");
+  const string stNc   = to_string( Nc   ) ;
+  const string stNcM1 = to_string( Nc-1 ) ;
+  std::string clone2x3("./ckpoint_clone"+stNcM1+"x"+stNc+".4000");
+  std::string clone3x3("./ckpoint_clone"+stNc+"x"+stNc+".4000");
 
   NerscIO::writeConfiguration(Umu,clone3x3,0,precision32);
   NerscIO::writeConfiguration(Umu,clone2x3,1,precision32);

@@ -125,7 +125,6 @@ public:
     return sumplaq / vol / faces / Nc; // Nd , Nc dependent... FIXME
   }
 
-
   //////////////////////////////////////////////////
   // average over all x,y,z the temporal loop
   //////////////////////////////////////////////////
@@ -165,7 +164,7 @@ public:
 
     double vol = Umu.Grid()->gSites();
 
-    return p.real() / vol / 4.0 / 3.0;
+    return p.real() / vol / (4.0 * Nc ) ;
   };
 
   //////////////////////////////////////////////////

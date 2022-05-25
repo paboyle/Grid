@@ -4,12 +4,13 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: ./lib/qcd/action/fermion/WilsonFermion.cc
 
-Copyright (C) 2015
+Copyright (C) 2022
 
 Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Fabian Joswig <fabian.joswig@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -599,11 +600,47 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
                                                    Current curr_type,
                                                    unsigned int mu)
 {
+  if(curr_type != Current::Vector)
+  {
+    std::cout << GridLogError << "Only the conserved vector current is implemented so far." << std::endl;
+    exit(1);
+  }
+
   Gamma g5(Gamma::Algebra::Gamma5);
   conformable(_grid, q_in_1.Grid());
   conformable(_grid, q_in_2.Grid());
   conformable(_grid, q_out.Grid());
-  assert(0);
+  auto UGrid= this->GaugeGrid();
+
+  PropagatorField tmp_shifted(UGrid);
+  PropagatorField g5Lg5(UGrid);
+  PropagatorField R(UGrid);
+  PropagatorField gmuR(UGrid);
+
+    Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT,
+  };
+  Gamma gmu=Gamma(Gmu[mu]);
+
+  g5Lg5=g5*q_in_1*g5;
+  tmp_shifted=Cshift(q_in_2,mu,1);
+  Impl::multLinkField(R,this->Umu,tmp_shifted,mu);
+  gmuR=gmu*R;
+
+  q_out=adj(g5Lg5)*R;
+  q_out-=adj(g5Lg5)*gmuR;
+
+  tmp_shifted=Cshift(q_in_1,mu,1);
+  Impl::multLinkField(g5Lg5,this->Umu,tmp_shifted,mu);
+  g5Lg5=g5*g5Lg5*g5;
+  R=q_in_2;
+  gmuR=gmu*R;
+
+  q_out-=adj(g5Lg5)*R;
+  q_out-=adj(g5Lg5)*gmuR;
 }
 
 
@@ -617,9 +654,51 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                               unsigned int tmax,
 					      ComplexField &lattice_cmplx)
 {
+  if(curr_type != Current::Vector)
+  {
+    std::cout << GridLogError << "Only the conserved vector current is implemented so far." << std::endl;
+    exit(1);
+  }
+
+  int tshift = (mu == Nd-1) ? 1 : 0;
+  unsigned int LLt    = GridDefaultLatt()[Tp];
   conformable(_grid, q_in.Grid());
   conformable(_grid, q_out.Grid());
-  assert(0);
+  auto UGrid= this->GaugeGrid();
+
+  PropagatorField tmp(UGrid);
+  PropagatorField Utmp(UGrid);
+  PropagatorField L(UGrid);
+  PropagatorField zz (UGrid);
+  zz=Zero();
+  LatticeInteger lcoor(UGrid); LatticeCoordinate(lcoor,Nd-1);
+
+    Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT,
+  };
+  Gamma gmu=Gamma(Gmu[mu]);
+
+  tmp = Cshift(q_in,mu,1);
+  Impl::multLinkField(Utmp,this->Umu,tmp,mu);
+  tmp = ( Utmp*lattice_cmplx - gmu*Utmp*lattice_cmplx ); // Forward hop
+  tmp = where((lcoor>=tmin),tmp,zz); // Mask the time
+  q_out = where((lcoor<=tmax),tmp,zz); // Position of current complicated
+
+  tmp = q_in *lattice_cmplx;
+  tmp = Cshift(tmp,mu,-1);
+  Impl::multLinkField(Utmp,this->Umu,tmp,mu+Nd); // Adjoint link
+  tmp = -( Utmp + gmu*Utmp );
+  // Mask the time
+  if (tmax == LLt - 1 && tshift == 1){ // quick fix to include timeslice 0 if tmax + tshift is over the last timeslice
+    unsigned int t0 = 0;
+    tmp = where(((lcoor==t0) || (lcoor>=tmin+tshift)),tmp,zz);
+  } else {
+    tmp = where((lcoor>=tmin+tshift),tmp,zz);
+  }
+  q_out+= where((lcoor<=tmax+tshift),tmp,zz); // Position of current complicated
 }
 
 NAMESPACE_END(Grid);

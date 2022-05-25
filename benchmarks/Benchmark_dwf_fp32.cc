@@ -249,8 +249,9 @@ void Benchmark(int Ls, Coordinate Dirichlet)
   if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
 
-  DomainWallFermionF Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  Dw.DirichletBlock(Dirichlet);
+  DomainWallFermionF::ImplParams p;
+  p.dirichlet=Dirichlet;
+  DomainWallFermionF Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,p);
   Dw.ImportGauge(Umu);
   
   int ncall =300;
