@@ -34,6 +34,7 @@ using namespace Grid;
 
 int main (int argc, char ** argv)
 {
+#ifdef HAVE_LIME 
   typedef typename DomainWallFermionR::FermionField FermionField; 
   typedef typename DomainWallFermionR::ComplexField ComplexField; 
   typename DomainWallFermionR::ImplParams params; 
@@ -237,4 +238,5 @@ int main (int argc, char ** argv)
   }
 
   Grid_finalize();
+#endif // HAVE_LIME
 }
