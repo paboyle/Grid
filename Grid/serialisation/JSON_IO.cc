@@ -26,7 +26,7 @@
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
-#if (!defined(GRID_CUDA)) && (!defined(GRID_HIP))
+#ifndef GRID_HIP
 
 NAMESPACE_BEGIN(Grid);
 
@@ -82,7 +82,7 @@ void JSONWriter::writeDefault(const std::string &s,	const std::string &x)
   if (s.size())
     ss_ << "\""<< s << "\" : \"" << os.str() << "\" ," ;
   else
-    ss_ << os.str() << " ," ;
+    ss_ << "\""<< os.str() << "\" ," ;
 }
 
 // Reader implementation ///////////////////////////////////////////////////////
