@@ -19,8 +19,8 @@ export MPICH_GPU_EAGER_REGISTER_HOST_MEM=0
 export MPICH_GPU_NO_ASYNC_MEMCPY=0
 #export MPICH_SMP_SINGLE_COPY_MODE=CMA
 
-OPT="--comms-overlap --shm-mpi 1"
-VOL=64.64.32.32
+OPT="--comms-sequential --shm-mpi 1"
+VOL=64.64.64.64
 srun ./benchmarks/Benchmark_dwf_fp32 --mpi 2.2.1.1 --grid $VOL --accelerator-threads 8 --shm 2048 $OPT
 #srun ./benchmarks/Benchmark_dwf_fp32 --mpi 2.1.1.4 --grid $VOL --accelerator-threads 8 --shm 2048 $OPT
 #srun ./benchmarks/Benchmark_dwf_fp32 --mpi 1.1.1.8 --grid $VOL --accelerator-threads 8 --shm 2048 $OPT

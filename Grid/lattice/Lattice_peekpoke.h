@@ -125,6 +125,12 @@ void pokeSite(const sobj &s,Lattice<vobj> &l,const Coordinate &site){
 //////////////////////////////////////////////////////////
 // Peek a scalar object from the SIMD array
 //////////////////////////////////////////////////////////
+template<class vobj>
+typename vobj::scalar_object peekSite(const Lattice<vobj> &l,const Coordinate &site){
+  typename vobj::scalar_object s;
+  peekSite(s,l,site);
+  return s;
+}        
 template<class vobj,class sobj>
 void peekSite(sobj &s,const Lattice<vobj> &l,const Coordinate &site){
         
