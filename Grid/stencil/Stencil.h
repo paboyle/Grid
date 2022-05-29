@@ -665,7 +665,7 @@ public:
       this->_comms_recv[ii] = comm_dim;
       if ( block && comm_dim ) {
 	assert(abs(displacement) < ld );
-      
+	// Quiesce communication across block boundaries
 	if( displacement > 0 ) {
 	  // High side, low side
 	  // | <--B--->|
@@ -730,7 +730,7 @@ public:
       int gd = _grid->_gdimensions[dimension];
       int fd = _grid->_fdimensions[dimension];
       int pd = _grid->_processors [dimension];
-      int ld = gd/pd;
+      //      int ld = gd/pd;
       int rd = _grid->_rdimensions[dimension];
       int pc = _grid->_processor_coor[dimension];
       this->_permute_type[point]=_grid->PermuteType(dimension);
@@ -871,12 +871,14 @@ public:
     for(int x=0;x<rd;x++){
 
       int permute_type=grid->PermuteType(dimension);
+      int permute_slice;
 
       int sx        =  (x+sshift)%rd;
 
       int offnode = 0;
       if ( simd_layout > 1 ) {
 
+	permute_slice=1;
 	for(int i=0;i<Nsimd;i++){
 
 	  int inner_bit = (Nsimd>>(permute_type+1));
@@ -893,6 +895,7 @@ public:
       } else {
 	int comm_proc = ((x+sshift)/rd)%pd;
 	offnode = (comm_proc!= 0);
+	permute_slice=0;
       }
 
       int wraparound=0;
@@ -906,19 +909,18 @@ public:
       // Wrap locally dirichlet support case OR node local
       if ( offnode==0 ) {
 
-	int permute_slice=0;
+	permute_slice=0;
 	CopyPlane(point,dimension,x,sx,cbmask,permute_slice,wraparound);
 	
       } else {
 
-	if ( comms_recv==0 ) {
+	if ( comms_recv ) {
 
-	  int permute_slice=1;
-	  CopyPlane(point,dimension,x,sx,cbmask,permute_slice,wraparound);
+	  ScatterPlane(point,dimension,x,cbmask,_unified_buffer_size,wraparound); // permute/extract/merge is done in comms phase
 
 	} else { 
 
-	  ScatterPlane(point,dimension,x,cbmask,_unified_buffer_size,wraparound); // permute/extract/merge is done in comms phase
+	  CopyPlane(point,dimension,x,sx,cbmask,permute_slice,wraparound);
 
 	}
 
@@ -1208,7 +1210,7 @@ public:
 				  face_table[face_idx].size()*sizeof(face_table_host[0]));
 	}
 
-	if ( comms_send )
+	if ( comms_send || comms_recv )
 	  Gather_plane_exchange_table(face_table[face_idx],rhs,spointers,dimension,sx,cbmask,compress,permute_type);
 	face_idx++;
 
