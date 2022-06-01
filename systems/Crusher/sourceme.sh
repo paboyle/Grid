@@ -1,6 +1,6 @@
 module load PrgEnv-gnu
 module load rocm/5.1.0
-module load cray-mpich/8.1.15
+module load cray-mpich/8.1.16
 module load gmp
 #module load cray-fftw
 module load craype-accel-amd-gfx90a
