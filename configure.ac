@@ -394,11 +394,10 @@ case ${CXXTEST} in
     fi
     ;;
   hipcc)
-#    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
     CXXFLAGS="$CXXFLAGS -fno-strict-aliasing"
     CXXLD=${CXX}
     if test $ac_openmp = yes; then
-       CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
+       CXXFLAGS="$CXXFLAGS -fopenmp"
     fi
     ;;
   dpcpp)
