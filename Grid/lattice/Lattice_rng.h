@@ -424,9 +424,30 @@ public:
     // MT implementation does not implement fast discard even though
     // in principle this is possible
     ////////////////////////////////////////////////
+#if 1
+    thread_for( lidx, _grid->lSites(), {
 
+	int gidx;
+	Coordinate pcoor;
+	Coordinate lcoor;
+	Coordinate gcoor;
+	_grid->LocalIndexToLocalCoor(lidx,lcoor);
+	pcoor=_grid->ThisProcessorCoor();
+	_grid->ProcessorCoorLocalCoorToGlobalCoor(pcoor,lcoor,gcoor);
+
+	int o_idx;
+	int i_idx;
+	int rank;
+	_grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
+	assert(rank == _grid->ThisRank() );
+	int l_idx=generator_idx(o_idx,i_idx);
+	_generators[l_idx] = master_engine;
+	Skip(_generators[l_idx],gidx); // Skip to next RNG sequence
+    });
+#else
     // Everybody loops over global volume.
     thread_for( gidx, _grid->_gsites, {
+
 	// Where is it?
 	int rank;
 	int o_idx;
@@ -443,6 +464,7 @@ public:
 	  Skip(_generators[l_idx],gidx); // Skip to next RNG sequence
 	}
     });
+#endif
 #else 
     ////////////////////////////////////////////////////////////////
     // Machine and thread decomposition dependent seeding is efficient
