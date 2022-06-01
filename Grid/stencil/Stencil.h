@@ -640,7 +640,9 @@ public:
 	}
       }
       if(local == 0) {
-	surface_list.push_back(site);
+	for(int s=0;s<Ls;s++){
+	  surface_list.push_back(site*Ls+s);
+	}
       }
     }
   }
