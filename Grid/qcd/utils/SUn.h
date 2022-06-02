@@ -694,32 +694,32 @@ public:
  * Adjoint rep gauge xform
  */
 
-  template<typename GaugeField,typename GaugeMat>
-  static void GaugeTransform( GaugeField &Umu, GaugeMat &g){
+  template<typename Gimpl>
+  static void GaugeTransform(typename Gimpl::GaugeField &Umu, typename Gimpl::GaugeLinkField &g){
     GridBase *grid = Umu.Grid();
     conformable(grid,g.Grid());
 
-    GaugeMat U(grid);
-    GaugeMat ag(grid); ag = adj(g);
+    typename Gimpl::GaugeLinkField U(grid);
+    typename Gimpl::GaugeLinkField ag(grid); ag = adj(g);
 
     for(int mu=0;mu<Nd;mu++){
       U= PeekIndex<LorentzIndex>(Umu,mu);
-      U = g*U*Cshift(ag, mu, 1);
+      U = g*U*Gimpl::CshiftLink(ag, mu, 1); //BC-aware
       PokeIndex<LorentzIndex>(Umu,U,mu);
     }
   }
-  template<typename GaugeMat>
-  static void GaugeTransform( std::vector<GaugeMat> &U, GaugeMat &g){
+  template<typename Gimpl>
+  static void GaugeTransform( std::vector<typename Gimpl::GaugeLinkField> &U, typename Gimpl::GaugeLinkField &g){
     GridBase *grid = g.Grid();
-    GaugeMat ag(grid); ag = adj(g);
+    typename Gimpl::GaugeLinkField ag(grid); ag = adj(g);
     for(int mu=0;mu<Nd;mu++){
-      U[mu] = g*U[mu]*Cshift(ag, mu, 1);
+      U[mu] = g*U[mu]*Gimpl::CshiftLink(ag, mu, 1); //BC-aware
     }
   }
-  template<typename GaugeField,typename GaugeMat>
-  static void RandomGaugeTransform(GridParallelRNG &pRNG, GaugeField &Umu, GaugeMat &g){
+  template<typename Gimpl>
+  static void RandomGaugeTransform(GridParallelRNG &pRNG, typename Gimpl::GaugeField &Umu, typename Gimpl::GaugeLinkField &g){
     LieRandomize(pRNG,g,1.0);
-    GaugeTransform(Umu,g);
+    GaugeTransform<Gimpl>(Umu,g);
   }
 
   // Projects the algebra components a lattice matrix (of dimension ncol*ncol -1 )
