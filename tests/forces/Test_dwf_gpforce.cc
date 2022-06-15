@@ -71,26 +71,14 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   RealD mass=0.2; //kills the diagonal term
   RealD M5=1.8;
-  //  const int nu = 3;
-  //  std::vector<int> twists(Nd,0); // twists[nu] = 1;
-  //  GparityDomainWallFermionR::ImplParams params;  params.twists = twists;
-  //  GparityDomainWallFermionR Ddwf(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,params);
 
-  //  DomainWallFermionR Dw     (U,     Grid,RBGrid,mass,M5);
-
-  const int nu = 3;
+  const int nu = 0; //gparity direction
   std::vector<int> twists(Nd,0);
   twists[nu] = 1;
+  twists[Nd-1] = 1; //antiperiodic in time
   GparityDomainWallFermionR::ImplParams params;
   params.twists = twists;
-
-  /*
-  params.boundary_phases[0] = 1.0;
-  params.boundary_phases[1] = 1.0;
-  params.boundary_phases[2] = 1.0;
-  params.boundary_phases[3] =- 1.0;
-  */
-  
+ 
   GparityDomainWallFermionR Dw(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,params);
 
   Dw.M   (phi,Mphi);

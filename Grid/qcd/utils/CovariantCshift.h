@@ -88,6 +88,12 @@ namespace PeriodicBC {
     return CovShiftBackward(Link,mu,arg);
   }
 
+  //Boundary-aware C-shift of gauge links / gauge transformation matrices
+  template<class gauge> Lattice<gauge>
+  CshiftLink(const Lattice<gauge> &Link, int mu, int shift)
+  {
+    return Cshift(Link, mu, shift);
+  }
 
 }
 
@@ -158,6 +164,9 @@ namespace ConjugateBC {
     //    std::cout<<"Gparity::CovCshiftBackward mu="<<mu<<std::endl;
     return Cshift(tmp,mu,-1);// moves towards positive mu
   }
+
+  //Out(x) = U^dag_\mu(x-mu)  | x_\mu != 0
+  //       = U^T_\mu(L-1)  | x_\mu == 0
   template<class gauge> Lattice<gauge>
   CovShiftIdentityBackward(const Lattice<gauge> &Link, int mu) {
     GridBase *grid = Link.Grid();
@@ -176,6 +185,9 @@ namespace ConjugateBC {
     return Link;
   }
 
+  //Out(x) = S_\mu(x+\hat\mu)  | x_\mu != L-1
+  //       = S*_\mu(0)  | x_\mu == L-1
+  //Note: While this is used for Staples it is also applicable for shifting gauge links or gauge transformation matrices
   template<class gauge> Lattice<gauge>
   ShiftStaple(const Lattice<gauge> &Link, int mu)
   {
@@ -206,6 +218,35 @@ namespace ConjugateBC {
   {
     auto arg = closure(expr);
     return CovShiftBackward(Link,mu,arg);
+  }
+
+  //Boundary-aware C-shift of gauge links / gauge transformation matrices
+  //shift = 1
+  //Out(x) = U_\mu(x+\hat\mu)  | x_\mu != L-1
+  //       = U*_\mu(0)  | x_\mu == L-1
+  //shift = -1
+  //Out(x) = U_\mu(x-mu)  | x_\mu != 0
+  //       = U*_\mu(L-1)  | x_\mu == 0
+  template<class gauge> Lattice<gauge>
+  CshiftLink(const Lattice<gauge> &Link, int mu, int shift)
+  {
+    GridBase *grid = Link.Grid();
+    int Lmu = grid->GlobalDimensions()[mu] - 1;
+
+    Lattice<iScalar<vInteger>> coor(grid);
+    LatticeCoordinate(coor, mu);
+
+    Lattice<gauge> tmp(grid);
+    if(shift == 1){
+      tmp = Cshift(Link, mu, 1);
+      tmp = where(coor == Lmu, conjugate(tmp), tmp);
+      return tmp;
+    }else if(shift == -1){
+      tmp = Link;
+      tmp = where(coor == Lmu, conjugate(tmp), tmp);
+      return Cshift(tmp, mu, -1);
+    }else assert(0 && "Invalid shift value");
+    return tmp; //shuts up the compiler fussing about the return type
   }
 
 }
