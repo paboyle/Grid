@@ -152,8 +152,13 @@ public:
       LinearCombTimer.Stop();
       LinalgTimer.Stop();
 
-      std::cout << GridLogIterative << "ConjugateGradient: Iteration " << k
+      if ( (k % 500) == 0 ) {
+	std::cout << GridLogMessage << "ConjugateGradient: Iteration " << k
                 << " residual " << sqrt(cp/ssq) << " target " << Tolerance << std::endl;
+      } else { 
+	std::cout << GridLogIterative << "ConjugateGradient: Iteration " << k
+                << " residual " << sqrt(cp/ssq) << " target " << Tolerance << std::endl;
+      }
 
       // Stopping condition
       if (cp <= rsq) {
