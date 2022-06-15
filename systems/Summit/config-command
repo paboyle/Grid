@@ -7,6 +7,7 @@
 	       --enable-setdevice \
 	       --disable-fermion-reps \
 	       --enable-accelerator=cuda \
+	       --disable-accelerator-cshift \
 	       --prefix /ccs/home/paboyle/prefix \
 	       CXX=nvcc \
 	       LDFLAGS=-L/ccs/home/paboyle/prefix/lib/ \
