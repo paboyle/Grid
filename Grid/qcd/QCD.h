@@ -63,6 +63,7 @@ static constexpr int Ngp=2; // gparity index range
 #define ColourIndex  (2)
 #define SpinIndex    (1)
 #define LorentzIndex (0)
+#define GparityFlavourIndex (0)
 
 // Also should make these a named enum type
 static constexpr int DaggerNo=0;
@@ -87,6 +88,8 @@ template<typename T> struct isCoarsened {
 template <typename T> using IfCoarsened    = Invoke<std::enable_if< isCoarsened<T>::value,int> > ;
 template <typename T> using IfNotCoarsened = Invoke<std::enable_if<!isCoarsened<T>::value,int> > ;
 
+const int GparityFlavourTensorIndex = 3; //TensorLevel counts from the bottom!
+
 // ChrisK very keen to add extra space for Gparity doubling.
 //
 // Also add domain wall index, in a way where Wilson operator 
@@ -110,8 +113,10 @@ template<typename vtype> using iHalfSpinColourVector      = iScalar<iVector<iVec
     template<typename vtype> using iSpinColourSpinColourMatrix  = iScalar<iMatrix<iMatrix<iMatrix<iMatrix<vtype, Nc>, Ns>, Nc>, Ns> >;
 
 
+template<typename vtype> using iGparityFlavourVector                = iVector<iScalar<iScalar<vtype> >, Ngp>;
 template<typename vtype> using iGparitySpinColourVector       = iVector<iVector<iVector<vtype, Nc>, Ns>, Ngp >;
 template<typename vtype> using iGparityHalfSpinColourVector   = iVector<iVector<iVector<vtype, Nc>, Nhs>, Ngp >;
+template<typename vtype> using iGparityFlavourMatrix = iMatrix<iScalar<iScalar<vtype> >, Ngp>;
 
 // Spin matrix
 typedef iSpinMatrix<Complex  >          SpinMatrix;
@@ -176,6 +181,16 @@ typedef iDoubleStoredColourMatrix<vComplex > vDoubleStoredColourMatrix;
 typedef iDoubleStoredColourMatrix<vComplexF> vDoubleStoredColourMatrixF;
 typedef iDoubleStoredColourMatrix<vComplexD> vDoubleStoredColourMatrixD;
 
+//G-parity flavour matrix
+typedef iGparityFlavourMatrix<Complex> GparityFlavourMatrix;
+typedef iGparityFlavourMatrix<ComplexF> GparityFlavourMatrixF;
+typedef iGparityFlavourMatrix<ComplexD> GparityFlavourMatrixD;
+
+typedef iGparityFlavourMatrix<vComplex> vGparityFlavourMatrix;
+typedef iGparityFlavourMatrix<vComplexF> vGparityFlavourMatrixF;
+typedef iGparityFlavourMatrix<vComplexD> vGparityFlavourMatrixD;
+
+
 // Spin vector
 typedef iSpinVector<Complex >           SpinVector;
 typedef iSpinVector<ComplexF>           SpinVectorF;
@@ -220,6 +235,16 @@ typedef iHalfSpinColourVector<ComplexD> HalfSpinColourVectorD;
 typedef iHalfSpinColourVector<vComplex > vHalfSpinColourVector;
 typedef iHalfSpinColourVector<vComplexF> vHalfSpinColourVectorF;
 typedef iHalfSpinColourVector<vComplexD> vHalfSpinColourVectorD;
+
+//G-parity flavour vector
+typedef iGparityFlavourVector<Complex >         GparityFlavourVector;
+typedef iGparityFlavourVector<ComplexF>         GparityFlavourVectorF;
+typedef iGparityFlavourVector<ComplexD>         GparityFlavourVectorD;
+
+typedef iGparityFlavourVector<vComplex >         vGparityFlavourVector;
+typedef iGparityFlavourVector<vComplexF>         vGparityFlavourVectorF;
+typedef iGparityFlavourVector<vComplexD>         vGparityFlavourVectorD;
+
     
 // singlets
 typedef iSinglet<Complex >         TComplex;     // FIXME This is painful. Tensor singlet complex type.

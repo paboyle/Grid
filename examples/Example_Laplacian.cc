@@ -325,7 +325,7 @@ int main(int argc, char ** argv)
 
   U_GT = U;
   // Make a random xform to teh gauge field
-  SU<Nc>::RandomGaugeTransform(RNG,U_GT,g); // Unit gauge
+  SU<Nc>::RandomGaugeTransform<PeriodicGimplR>(RNG,U_GT,g); // Unit gauge
 
   Field in_GT(&Grid); 
   Field out_GT(&Grid);
