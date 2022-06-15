@@ -92,6 +92,15 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
     assert(FourDimRedBlackGrid._simd_layout[d]  ==FourDimGrid._simd_layout[d]);
   }
 
+  if ( p.dirichlet.size() ) {
+    Coordinate block = p.dirichlet;
+    assert(block.size()==Nd+1);
+    if ( block[0] || block[1] || block[2] || block[3] || block[4] ){
+      Dirichlet = 1;
+      Block = block;
+    }
+  }
+  
   if (Impl::LsVectorised) { 
 
     int nsimd = Simd::Nsimd();
