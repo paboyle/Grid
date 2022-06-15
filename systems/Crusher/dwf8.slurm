@@ -7,8 +7,9 @@
 #SBATCH -o DWF.%J
 #SBATCH -e DWF.%J
 #SBATCH -N 1
-#SBATCH -n 1
-#SBATCH --gpu-bind=map_gpu:0,1,2,3,7,6,5,4
+#SBATCH -n 8
+##SBATCH --gpu-bind=map_gpu:0,1,2,3,7,6,5,4
+#SBATCH --gpu-bind=map_gpu:0,1,2,3,6,7,4,5
 
 DIR=.
 source setup.sh
@@ -23,5 +24,5 @@ export OMP_NUM_THREADS=16
 
 echo MPICH_SMP_SINGLE_COPY_MODE $MPICH_SMP_SINGLE_COPY_MODE
 
-srun --gpus-per-task 1 -N1 -n1  ./tests/Test_dwf_mixedcg_prec
+srun --gpus-per-task 1 -N1 -n8  ./benchmarks/Benchmark_comms_host_device --mpi 2.2.2.1 --shm-mpi 1 --shm 2048 --comms-sequential --accelerator-threads 8
 
