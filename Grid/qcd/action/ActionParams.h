@@ -37,6 +37,7 @@ NAMESPACE_BEGIN(Grid);
 // These can move into a params header and be given MacroMagic serialisation
 struct GparityWilsonImplParams {
   Coordinate twists;
+                     //mu=Nd-1 is assumed to be the time direction and a twist value of 1 indicates antiperiodic BCs
   GparityWilsonImplParams() : twists(Nd, 0) {};
 };
   
@@ -66,7 +67,8 @@ struct StaggeredImplParams {
 				    RealD, mdtolerance, 
 				    int,   degree, 
 				    int,   precision,
-				    int,   BoundsCheckFreq);
+				    int,   BoundsCheckFreq,
+				    RealD, BoundsCheckTol);
     
   // MaxIter and tolerance, vectors??
     
@@ -78,7 +80,8 @@ struct StaggeredImplParams {
                            	int _degree    = 10,
 				int _precision = 64,
 				int _BoundsCheckFreq=20,
-				RealD mdtol    = 1.0e-6)
+				RealD mdtol    = 1.0e-6,
+				double _BoundsCheckTol=1e-6)
       : lo(_lo),
 	hi(_hi),
 	MaxIter(_maxit),
@@ -86,9 +89,52 @@ struct StaggeredImplParams {
         mdtolerance(mdtol),
 	degree(_degree),
         precision(_precision),
-        BoundsCheckFreq(_BoundsCheckFreq){};
+        BoundsCheckFreq(_BoundsCheckFreq),
+        BoundsCheckTol(_BoundsCheckTol){};
   };
   
+  /*Action parameters for the generalized rational action
+    The approximation is for (M^dag M)^{1/inv_pow}
+    where inv_pow is the denominator of the fractional power.
+    Default inv_pow=2 for square root, making this equivalent to 
+    the OneFlavourRational action
+  */
+    struct RationalActionParams : Serializable {
+    GRID_SERIALIZABLE_CLASS_MEMBERS(RationalActionParams, 
+				    int, inv_pow, 
+				    RealD, lo, //low eigenvalue bound of rational approx
+				    RealD, hi, //high eigenvalue bound of rational approx
+				    int,   MaxIter,  //maximum iterations in msCG
+				    RealD, action_tolerance,  //msCG tolerance in action evaluation
+				    int,   action_degree, //rational approx tolerance in action evaluation
+				    RealD, md_tolerance,  //msCG tolerance in MD integration
+				    int,   md_degree, //rational approx tolerance in MD integration
+				    int,   precision, //precision of floating point arithmetic
+				    int,   BoundsCheckFreq); //frequency the approximation is tested (with Metropolis degree/tolerance); 0 disables the check
+  // constructor 
+  RationalActionParams(int _inv_pow = 2,
+		       RealD _lo      = 0.0, 
+		       RealD _hi      = 1.0, 
+		       int _maxit     = 1000,
+		       RealD _action_tolerance      = 1.0e-8, 
+		       int _action_degree    = 10,
+		       RealD _md_tolerance      = 1.0e-8, 
+		       int _md_degree    = 10,
+		       int _precision = 64,
+		       int _BoundsCheckFreq=20)
+    : inv_pow(_inv_pow), 
+      lo(_lo),
+      hi(_hi),
+      MaxIter(_maxit),
+      action_tolerance(_action_tolerance),
+      action_degree(_action_degree),
+      md_tolerance(_md_tolerance),
+      md_degree(_md_degree),
+      precision(_precision),
+      BoundsCheckFreq(_BoundsCheckFreq){};
+  };
+
+
 NAMESPACE_END(Grid);
 
 #endif

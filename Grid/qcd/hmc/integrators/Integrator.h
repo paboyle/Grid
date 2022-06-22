@@ -334,15 +334,19 @@ public:
   void refresh(Field& U,  GridSerialRNG & sRNG, GridParallelRNG& pRNG) 
   {
     assert(P.Grid() == U.Grid());
-    std::cout << GridLogIntegrator << "Integrator refresh\n";
+    std::cout << GridLogIntegrator << "Integrator refresh" << std::endl;
 
+    std::cout << GridLogIntegrator << "Generating momentum" << std::endl;
     FieldImplementation::generate_momenta(P, sRNG, pRNG);
 
     // Update the smeared fields, can be implemented as observer
     // necessary to keep the fields updated even after a reject
     // of the Metropolis
+    std::cout << GridLogIntegrator << "Updating smeared fields" << std::endl;
     Smearer.set_Field(U);
     // Set the (eventual) representations gauge fields
+
+    std::cout << GridLogIntegrator << "Updating representations" << std::endl;
     Representations.update(U);
 
     // The Smearer is attached to a pointer of the gauge field
