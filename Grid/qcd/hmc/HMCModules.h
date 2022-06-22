@@ -80,7 +80,9 @@ public:
       std::cout << GridLogError << "Seeds not initialized" << std::endl;
       exit(1);
     }
+    std::cout << GridLogMessage << "Reseeding serial RNG with seed vector " << SerialSeeds << std::endl;
     sRNG_.SeedFixedIntegers(SerialSeeds);
+    std::cout << GridLogMessage << "Reseeding parallel RNG with seed vector " << ParallelSeeds << std::endl;
     pRNG_->SeedFixedIntegers(ParallelSeeds);
   }
 };
