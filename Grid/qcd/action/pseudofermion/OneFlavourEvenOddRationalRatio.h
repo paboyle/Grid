@@ -185,7 +185,7 @@ NAMESPACE_BEGIN(Grid);
 	auto grid = NumOp.FermionGrid();
         auto r=rand();
         grid->Broadcast(0,r);
-        if ( (r%param.BoundsCheckFreq)==0 ) { 
+        if ( param.BoundsCheckFreq && ((r%param.BoundsCheckFreq)==0) ) { 
 	  FermionField gauss(NumOp.FermionRedBlackGrid());
 	  gauss = Noise;
 	  HighBoundCheck(MdagM,gauss,param.hi);
