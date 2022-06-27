@@ -44,7 +44,7 @@ public:
 
   using OperatorFunction<Field>::operator();
 
-  RealD   Tolerance;
+  //  RealD   Tolerance;
   Integer MaxIterations;
   Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
   std::vector<int> IterationsToCompleteShift;  // Iterations for this shift
@@ -324,8 +324,8 @@ public:
 
       std::cout << GridLogMessage << "Time Breakdown "<<std::endl;
       std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed()     <<std::endl;
-      std::cout << GridLogMessage << "\tAXPY    " << AXPYTimer.Elapsed()     <<std::endl;
-      std::cout << GridLogMessage << "\tMarix    " << MatrixTimer.Elapsed()     <<std::endl;
+      std::cout << GridLogMessage << "\tAXPY     " << AXPYTimer.Elapsed()     <<std::endl;
+      std::cout << GridLogMessage << "\tMatrix   " << MatrixTimer.Elapsed()     <<std::endl;
       std::cout << GridLogMessage << "\tShift    " << ShiftTimer.Elapsed()     <<std::endl;
 
       IterationsToComplete = k;	
