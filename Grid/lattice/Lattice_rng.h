@@ -428,18 +428,20 @@ public:
     thread_for( lidx, _grid->lSites(), {
 
 	int gidx;
+	int o_idx;
+	int i_idx;
+	int rank;
 	Coordinate pcoor;
 	Coordinate lcoor;
 	Coordinate gcoor;
 	_grid->LocalIndexToLocalCoor(lidx,lcoor);
 	pcoor=_grid->ThisProcessorCoor();
 	_grid->ProcessorCoorLocalCoorToGlobalCoor(pcoor,lcoor,gcoor);
+	_grid->GlobalCoorToGlobalIndex(gcoor,gidx);
 
-	int o_idx;
-	int i_idx;
-	int rank;
 	_grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
 	assert(rank == _grid->ThisRank() );
+	
 	int l_idx=generator_idx(o_idx,i_idx);
 	_generators[l_idx] = master_engine;
 	Skip(_generators[l_idx],gidx); // Skip to next RNG sequence
