@@ -53,7 +53,7 @@ struct DirichletFilter: public MomentumFilterBase<MomentaField>
     LatticeInteger coor(grid); 
     LatCM zz(grid); zz = Zero();
     for(int mu=0;mu<Nd;mu++) {
-      if ( (Block[mu]) && (Block[mu] < grid->GlobalDimensions()[mu] ) ) {
+      if ( (Block[mu]) && (Block[mu] <= grid->GlobalDimensions()[mu] ) ) {
 	// If costly could provide Grid earlier and precompute masks
 	std::cout << GridLogMessage << " Dirichlet in mu="<<mu<<std::endl;
 	LatticeCoordinate(coor,mu);
