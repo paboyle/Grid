@@ -556,16 +556,19 @@ esac
 AC_ARG_ENABLE([setdevice],[AC_HELP_STRING([--enable-setdevice | --disable-setdevice],
               [Set GPU to rank in node with cudaSetDevice or similar])],[ac_SETDEVICE=${enable_SETDEVICE}],[ac_SETDEVICE=no])
 case ${ac_SETDEVICE} in
-    yes);;
-    no)
+    yes)
+	echo ENABLE SET DEVICE
+    ;;
+    *)
      AC_DEFINE([GRID_DEFAULT_GPU],[1],[GRID_DEFAULT_GPU] )
+   	echo DISABLE SET DEVICE
     ;;
 esac
 
 #########################################################
 ######################  Shared memory intranode #########
 #########################################################
-AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmopen|shmget|hugetlbfs|shmnone|nvlink|no],
+AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmopen|shmget|hugetlbfs|shmnone|nvlink|no|none],
               [Select SHM allocation technique])],[ac_SHM=${enable_shm}],[ac_SHM=no])
 
 case ${ac_SHM} in
@@ -585,7 +588,7 @@ case ${ac_SHM} in
      AC_DEFINE([GRID_MPI3_SHMGET],[1],[GRID_MPI3_SHMGET] )
      ;;
 
-     shmnone | no)
+     shmnone | no | none)
      AC_DEFINE([GRID_MPI3_SHM_NONE],[1],[GRID_MPI3_SHM_NONE] )
      ;;
 
