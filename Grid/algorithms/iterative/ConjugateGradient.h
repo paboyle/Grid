@@ -175,13 +175,13 @@ public:
 		  << "\tTrue residual " << true_residual
 		  << "\tTarget " << Tolerance << std::endl;
 
-        std::cout << GridLogIterative << "Time breakdown "<<std::endl;
-	std::cout << GridLogIterative << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
-	std::cout << GridLogIterative << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
-	std::cout << GridLogIterative << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
-	std::cout << GridLogIterative << "\tInner      " << InnerTimer.Elapsed() <<std::endl;
-	std::cout << GridLogIterative << "\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
-	std::cout << GridLogIterative << "\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
+        std::cout << GridLogMessage << "Time breakdown "<<std::endl;
+	std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tInner      " << InnerTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
 
         if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0);
 
