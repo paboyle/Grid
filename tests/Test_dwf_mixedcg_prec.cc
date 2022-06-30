@@ -46,7 +46,7 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  const int Ls=8;
+  const int Ls=12;
 
   std::cout << GridLogMessage << "::::: NB: to enable a quick bit reproducibility check use the --checksums flag. " << std::endl;
 
@@ -94,13 +94,32 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "::::::::::::: Starting mixed CG" << std::endl;
   MixedPrecisionConjugateGradient<LatticeFermionD,LatticeFermionF> mCG(1.0e-8, 10000, 50, FrbGrid_f, HermOpEO_f, HermOpEO);
-  mCG(src_o,result_o);
-
+  double t1,t2,flops;
+  int iters;
+  for(int i=0;i<100;i++){
+    result_o = Zero();
+    t1=usecond();
+    mCG(src_o,result_o);
+    t2=usecond();
+    iters = mCG.TotalInnerIterations; //Number of inner CG iterations
+    flops = 1320.0*2*FGrid->gSites()*iters;
+    std::cout << " SinglePrecision iterations/sec "<< iters/(t2-t1)*1000.*1000.<<std::endl;
+    std::cout << " SinglePrecision GF/s "<< flops/(t2-t1)/1000.<<std::endl;
+  }
   std::cout << GridLogMessage << "::::::::::::: Starting regular CG" << std::endl;
   ConjugateGradient<LatticeFermionD> CG(1.0e-8,10000);
-  CG(HermOpEO,src_o,result_o_2);
-
-  MemoryManager::Print();
+  for(int i=0;i<100;i++){
+    result_o_2 = Zero();
+    t1=usecond();
+    CG(HermOpEO,src_o,result_o_2);
+    t2=usecond();
+    iters = CG.IterationsToComplete;
+    flops = 1320.0*2*FGrid->gSites()*iters;
+    std::cout << " DoublePrecision iterations/sec "<< iters/(t2-t1)*1000.*1000.<<std::endl;
+    std::cout << " DoublePrecision GF/s "<< flops/(t2-t1)/1000.<<std::endl;
+  }
+  
+  //  MemoryManager::Print();
 
   LatticeFermionD diff_o(FrbGrid);
   RealD diff = axpy_norm(diff_o, -1.0, result_o, result_o_2);
