@@ -1,7 +1,6 @@
 ../../configure --enable-comms=mpi-auto \
 --enable-unified=no \
 --enable-shm=nvlink \
---enable-debug \
 --enable-accelerator=hip \
 --enable-gen-simd-width=64 \
 --enable-simd=GPU \
