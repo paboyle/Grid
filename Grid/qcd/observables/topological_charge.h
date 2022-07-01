@@ -99,7 +99,7 @@ public:
 	// using wilson flow by default here
 	WilsonFlow<PeriodicGimplR> WF(Pars.Smearing.steps, Pars.Smearing.step_size, Pars.Smearing.meas_interval);
 	WF.smear_adaptive(Usmear, U, Pars.Smearing.maxTau);
-	Real T0   = WF.energyDensityPlaquette(Usmear);
+	Real T0   = WF.energyDensityPlaquette(Pars.Smearing.maxTau, Usmear);
 	std::cout << GridLogMessage << std::setprecision(std::numeric_limits<Real>::digits10 + 1)
 		  << "T0                : [ " << traj << " ] "<< T0 << std::endl;
       }
