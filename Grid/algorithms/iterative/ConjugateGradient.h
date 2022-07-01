@@ -120,6 +120,9 @@ public:
     SolverTimer.Start();
     int k;
     for (k = 1; k <= MaxIterations; k++) {
+
+      GridStopWatch IterationTimer;
+      IterationTimer.Start();
       c = cp;
 
       MatrixTimer.Start();
@@ -152,12 +155,13 @@ public:
       LinearCombTimer.Stop();
       LinalgTimer.Stop();
 
+      IterationTimer.Stop();
       if ( (k % 500) == 0 ) {
 	std::cout << GridLogMessage << "ConjugateGradient: Iteration " << k
                 << " residual " << sqrt(cp/ssq) << " target " << Tolerance << std::endl;
       } else { 
 	std::cout << GridLogIterative << "ConjugateGradient: Iteration " << k
-                << " residual " << sqrt(cp/ssq) << " target " << Tolerance << std::endl;
+		  << " residual " << sqrt(cp/ssq) << " target " << Tolerance << " took " << IterationTimer.Elapsed() << std::endl;
       }
 
       // Stopping condition
