@@ -148,7 +148,7 @@ If you want to build all the tests at once just use `make tests`.
 - `--enable-mkl[=<path>]`: use Intel MKL for FFT (and LAPACK if enabled) routines. A UNIX prefix containing the library can be specified (optional).
 - `--enable-numa`: enable NUMA first touch optimisation
 - `--enable-simd=<code>`: setup Grid for the SIMD target `<code>` (default: `GEN`). A list of possible SIMD targets is detailed in a section below.
-- `--enable-gen-simd-width=<size>`: select the size (in bytes) of the generic SIMD vector type (default: 32 bytes).
+- `--enable-gen-simd-width=<size>`: select the size (in bytes) of the generic SIMD vector type (default: 64 bytes).
 - `--enable-comms=<comm>`: Use `<comm>` for message passing (default: `none`). A list of possible SIMD targets is detailed in a section below.
 - `--enable-rng={sitmo|ranlux48|mt19937}`: choose the RNG (default: `sitmo `).
 - `--disable-timers`: disable system dependent high-resolution timers.

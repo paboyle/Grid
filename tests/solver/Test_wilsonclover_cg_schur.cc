@@ -60,18 +60,36 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu(&Grid); SU<Nc>::HotConfiguration(pRNG,Umu);
 
   LatticeFermion    src(&Grid); random(pRNG,src);
-  LatticeFermion result(&Grid); result=Zero();
-  LatticeFermion resid(&Grid); 
-
-  RealD mass = -0.1;
-  RealD csw_r = 1.0;
-  RealD csw_t = 1.0;
-  WilsonCloverFermionR Dw(Umu, Grid, RBGrid, mass, csw_r, csw_t);
+  LatticeFermion result(&Grid);
+  LatticeFermion resid(&Grid);
 
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
   SchurRedBlackDiagMooeeSolve<LatticeFermion> SchurSolver(CG);
 
+  RealD mass = -0.1;
+  RealD csw_r = 1.0;
+  RealD csw_t = 1.0;
+  RealD cF = 1.0;
+
+  std::cout << GridLogMessage << "Testing Wilson Clover" << std::endl;
+  WilsonCloverFermionR Dw(Umu, Grid, RBGrid, mass, csw_r, csw_t);
+  result=Zero();
   SchurSolver(Dw,src,result);
+
+  std::cout << GridLogMessage << "Testing Compact Wilson Clover" << std::endl;
+  CompactWilsonCloverFermionR Dw_compact(Umu, Grid, RBGrid, mass, csw_r, csw_t, 0.0);
+  result=Zero();
+  SchurSolver(Dw_compact,src,result);
+
+  std::cout << GridLogMessage << "Testing Wilson Exp Clover" << std::endl;
+  WilsonExpCloverFermionR Dwe(Umu, Grid, RBGrid, mass, csw_r, csw_t);
+  result=Zero();
+  SchurSolver(Dwe,src,result);
+
+  std::cout << GridLogMessage << "Testing Compact Wilson Exp Clover" << std::endl;
+  CompactWilsonExpCloverFermionR Dwe_compact(Umu, Grid, RBGrid, mass, csw_r, csw_t, 0.0);
+  result=Zero();
+  SchurSolver(Dwe_compact,src,result);
   
   Grid_finalize();
 }

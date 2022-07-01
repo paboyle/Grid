@@ -16,7 +16,11 @@
 
 #ifdef __NVCC__
 #pragma push
+#if (__CUDACC_VER_MAJOR__ >= 11) && (__CUDACC_VER_MINOR__ >= 5)
+#pragma nv_diag_suppress declared_but_not_referenced // suppress "function was declared but never referenced warning"
+#else
 #pragma diag_suppress declared_but_not_referenced // suppress "function was declared but never referenced warning"
+#endif
 #endif
 
 #include "pugixml.h"
