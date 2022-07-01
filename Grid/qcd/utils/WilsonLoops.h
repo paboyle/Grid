@@ -215,7 +215,7 @@ public:
 
     double vol = Umu.Grid()->gSites();
 
-    return p.real() / vol / 4.0 / 3.0;
+    return p.real() / vol / (4.0 * Nc ) ;
   };
 
   //////////////////////////////////////////////////

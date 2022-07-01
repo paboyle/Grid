@@ -159,7 +159,7 @@ case ${ac_ZMOBIUS} in
 esac
 ############### Nc
 AC_ARG_ENABLE([Nc],
-    [AC_HELP_STRING([--enable-Nc=2|3|4], [enable number of colours])],
+    [AC_HELP_STRING([--enable-Nc=2|3|4|5], [enable number of colours])],
     [ac_Nc=${enable_Nc}], [ac_Nc=3])
 
 case ${ac_Nc} in
@@ -394,11 +394,10 @@ case ${CXXTEST} in
     fi
     ;;
   hipcc)
-#    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
     CXXFLAGS="$CXXFLAGS -fno-strict-aliasing"
     CXXLD=${CXX}
     if test $ac_openmp = yes; then
-       CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
+       CXXFLAGS="$CXXFLAGS -fopenmp"
     fi
     ;;
   dpcpp)
@@ -557,16 +556,19 @@ esac
 AC_ARG_ENABLE([setdevice],[AC_HELP_STRING([--enable-setdevice | --disable-setdevice],
               [Set GPU to rank in node with cudaSetDevice or similar])],[ac_SETDEVICE=${enable_SETDEVICE}],[ac_SETDEVICE=no])
 case ${ac_SETDEVICE} in
-    yes);;
-    no)
+    yes)
+	echo ENABLE SET DEVICE
+    ;;
+    *)
      AC_DEFINE([GRID_DEFAULT_GPU],[1],[GRID_DEFAULT_GPU] )
+   	echo DISABLE SET DEVICE
     ;;
 esac
 
 #########################################################
 ######################  Shared memory intranode #########
 #########################################################
-AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmopen|shmget|hugetlbfs|shmnone|nvlink|no],
+AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmopen|shmget|hugetlbfs|shmnone|nvlink|no|none],
               [Select SHM allocation technique])],[ac_SHM=${enable_shm}],[ac_SHM=no])
 
 case ${ac_SHM} in
@@ -586,7 +588,7 @@ case ${ac_SHM} in
      AC_DEFINE([GRID_MPI3_SHMGET],[1],[GRID_MPI3_SHMGET] )
      ;;
 
-     shmnone | no)
+     shmnone | no | none)
      AC_DEFINE([GRID_MPI3_SHM_NONE],[1],[GRID_MPI3_SHM_NONE] )
      ;;
 

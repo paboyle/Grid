@@ -209,6 +209,8 @@ public:
 };
 
 
+////////////////////////////////////////////////////////
+
 template<class Impl> class CompactWilsonCloverHelpers {
 public:
 

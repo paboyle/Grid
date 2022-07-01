@@ -66,18 +66,17 @@ CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
   M5Dcalls++;
   M5Dtime-=usecond();
 
-  uint64_t nloop = grid->oSites()/Ls;
+  uint64_t nloop = grid->oSites();
   accelerator_for(sss,nloop,Simd::Nsimd(),{
-    uint64_t ss= sss*Ls;
+    uint64_t s = sss%Ls;
+    uint64_t ss= sss-s;
     typedef decltype(coalescedRead(psi[0])) spinor;
     spinor tmp1, tmp2;
-    for(int s=0;s<Ls;s++){
-      uint64_t idx_u = ss+((s+1)%Ls);
-      uint64_t idx_l = ss+((s+Ls-1)%Ls);
-      spProj5m(tmp1,psi(idx_u));
-      spProj5p(tmp2,psi(idx_l));
-      coalescedWrite(chi[ss+s],pdiag[s]*phi(ss+s)+pupper[s]*tmp1+plower[s]*tmp2);
-    }
+    uint64_t idx_u = ss+((s+1)%Ls);
+    uint64_t idx_l = ss+((s+Ls-1)%Ls);
+    spProj5m(tmp1,psi(idx_u));
+    spProj5p(tmp2,psi(idx_l));
+    coalescedWrite(chi[ss+s],pdiag[s]*phi(ss+s)+pupper[s]*tmp1+plower[s]*tmp2);
   });
   M5Dtime+=usecond();
 }
@@ -108,18 +107,17 @@ CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
   M5Dcalls++;
   M5Dtime-=usecond();
 
-  uint64_t nloop = grid->oSites()/Ls;
+  uint64_t nloop = grid->oSites();
   accelerator_for(sss,nloop,Simd::Nsimd(),{
-    uint64_t ss=sss*Ls;
+    uint64_t s = sss%Ls;
+    uint64_t ss= sss-s;
     typedef decltype(coalescedRead(psi[0])) spinor;
     spinor tmp1,tmp2;
-    for(int s=0;s<Ls;s++){
-      uint64_t idx_u = ss+((s+1)%Ls);
-      uint64_t idx_l = ss+((s+Ls-1)%Ls);
-      spProj5p(tmp1,psi(idx_u));
-      spProj5m(tmp2,psi(idx_l));
-      coalescedWrite(chi[ss+s],pdiag[s]*phi(ss+s)+pupper[s]*tmp1+plower[s]*tmp2);
-    }
+    uint64_t idx_u = ss+((s+1)%Ls);
+    uint64_t idx_l = ss+((s+Ls-1)%Ls);
+    spProj5p(tmp1,psi(idx_u));
+    spProj5m(tmp2,psi(idx_l));
+    coalescedWrite(chi[ss+s],pdiag[s]*phi(ss+s)+pupper[s]*tmp1+plower[s]*tmp2);
   });
   M5Dtime+=usecond();
 }

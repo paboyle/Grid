@@ -2,11 +2,12 @@
 	      --enable-simd=GPU \
 	      --enable-gen-simd-width=32 \
 	      --enable-unified=no \
-	       --enable-shm=nvlink \
+	       --enable-shm=no \
 	       --disable-gparity \
-	       --enable-setdevice \
+	       --disable-setdevice \
 	       --disable-fermion-reps \
 	       --enable-accelerator=cuda \
+	       --enable-accelerator-cshift \
 	       --prefix /ccs/home/paboyle/prefix \
 	       CXX=nvcc \
 	       LDFLAGS=-L/ccs/home/paboyle/prefix/lib/ \

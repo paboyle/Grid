@@ -372,7 +372,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
   double off_node_bytes=0.0;
   int tag;
 
-  if ( dox ) {
+  if ( dor ) {
     if ( (gfrom ==MPI_UNDEFINED) || Stencil_force_mpi ) {
       tag= dir+from*32;
       ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,tag,communicator_halo[commdir],&rrq);
@@ -382,7 +382,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
     }
   }
   
-  if (dor) {
+  if (dox) {
     if ( (gdest == MPI_UNDEFINED) || Stencil_force_mpi ) {
       tag= dir+_processor*32;
       ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,tag,communicator_halo[commdir],&xrq);
@@ -390,16 +390,15 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
       list.push_back(xrq);
       off_node_bytes+=bytes;
     } else {
-    // TODO : make a OMP loop on CPU, call threaded bcopy
       void *shm = (void *) this->ShmBufferTranslate(dest,recv);
       assert(shm!=NULL);
-      //    std::cout <<"acceleratorCopyDeviceToDeviceAsynch"<< std::endl;
       acceleratorCopyDeviceToDeviceAsynch(xmit,shm,bytes);
     }
   }
   
   if ( CommunicatorPolicy == CommunicatorPolicySequential ) {
     this->StencilSendToRecvFromComplete(list,dir);
+    list.resize(0);
   }
 
   return off_node_bytes;

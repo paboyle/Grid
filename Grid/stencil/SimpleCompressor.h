@@ -52,6 +52,11 @@ public:
     return arg;
   }
 };
+class SimpleStencilParams{
+public:
+  Coordinate dirichlet;
+  SimpleStencilParams() {};
+};
 
 NAMESPACE_END(Grid);
 

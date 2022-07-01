@@ -191,9 +191,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage<<"Called warmup"<<std::endl;
     double t0=usecond();
     for(int i=0;i<ncall;i++){
-      __SSC_START;
       Dw.Dhop(src,result,0);
-      __SSC_STOP;
     }
     double t1=usecond();
     FGrid->Barrier();

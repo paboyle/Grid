@@ -39,9 +39,9 @@ NAMESPACE_BEGIN(Grid)
 // C++11 time facilities better?
 inline double usecond(void) {
   struct timeval tv;
-#ifdef TIMERS_ON
+  tv.tv_sec = 0;
+  tv.tv_usec = 0;
   gettimeofday(&tv,NULL);
-#endif
   return 1.0*tv.tv_usec + 1.0e6*tv.tv_sec;
 }
 

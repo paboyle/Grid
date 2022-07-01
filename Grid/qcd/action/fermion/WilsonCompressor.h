@@ -297,7 +297,7 @@ public:
   void ZeroCountersi(void)  {  }
   void Reporti(int calls)  {  }
 
-  std::vector<int> surface_list;
+  //  Vector<int> surface_list;
 
   WilsonStencil(GridBase *grid,
 		int npoints,
@@ -307,10 +307,11 @@ public:
     : CartesianStencil<vobj,cobj,Parameters> (grid,npoints,checkerboard,directions,distances,p) 
   { 
     ZeroCountersi();
-    surface_list.resize(0);
+    //    surface_list.resize(0);
     this->same_node.resize(npoints);
   };
 
+  /*
   void BuildSurfaceList(int Ls,int vol4){
 
     // find same node for SHM
@@ -331,7 +332,8 @@ public:
       }
     }
   }
-
+  */
+  
   template < class compressor>
   void HaloExchangeOpt(const Lattice<vobj> &source,compressor &compress) 
   {

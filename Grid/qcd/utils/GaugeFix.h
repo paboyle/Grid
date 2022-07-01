@@ -72,14 +72,13 @@ public:
 
   //Fix the gauge field Umu
   //0 < alpha < 1 is related to the step size, cf https://arxiv.org/pdf/1405.5812.pdf
-  static void SteepestDescentGaugeFix(GaugeLorentz &Umu, Real alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1) {
+  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1,bool err_on_no_converge=true) {
     GridBase *grid = Umu.Grid();
     GaugeMat xform(grid);
-    SteepestDescentGaugeFix(Umu,xform,alpha,maxiter,Omega_tol,Phi_tol,Fourier,orthog);
+    SteepestDescentGaugeFix(Umu,xform,alpha,maxiter,Omega_tol,Phi_tol,Fourier,orthog,err_on_no_converge);
   }
-
+  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,GaugeMat &xform,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1,bool err_on_no_converge=true) {
   //Fix the gauge field Umu and also return the gauge transformation from the original gauge field, xform
-  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,GaugeMat &xform, Real alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1) {
 
     GridBase *grid = Umu.Grid();
 
@@ -141,7 +140,9 @@ public:
 
       }
     }
-    assert(0 && "Gauge fixing did not converge within the specified number of iterations");
+    std::cout << GridLogError << "Gauge fixing did not converge in " << maxiter << " iterations." << std::endl;
+    if (err_on_no_converge)
+      assert(0 && "Gauge fixing did not converge within the specified number of iterations");
   };
   static Real SteepestDescentStep(std::vector<GaugeMat> &U,GaugeMat &xform, Real alpha, GaugeMat & dmuAmu,int orthog) {
     GridBase *grid = U[0].Grid();

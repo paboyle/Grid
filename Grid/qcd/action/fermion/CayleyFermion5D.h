@@ -68,9 +68,17 @@ public:
   ///////////////////////////////////////////////////////////////
   // Support for MADWF tricks
   ///////////////////////////////////////////////////////////////
-  virtual RealD Mass(void) { return mass; };
+  RealD Mass(void) { return (mass_plus + mass_minus) / 2.0; };
+  RealD MassPlus(void) { return mass_plus; };
+  RealD MassMinus(void) { return mass_minus; };
+
   void  SetMass(RealD _mass) { 
-    mass=_mass; 
+    mass_plus=mass_minus=_mass; 
+    SetCoefficientsInternal(_zolo_hi,_gamma,_b,_c);  // Reset coeffs
+  } ;
+  void  SetMass(RealD _mass_plus, RealD _mass_minus) { 
+    mass_plus=_mass_plus;
+    mass_minus=_mass_minus;
     SetCoefficientsInternal(_zolo_hi,_gamma,_b,_c);  // Reset coeffs
   } ;
   void  P(const FermionField &psi, FermionField &chi);
@@ -108,7 +116,7 @@ public:
   void   MeooeDag5D    (const FermionField &in, FermionField &out);
 
   //    protected:
-  RealD mass;
+  RealD mass_plus, mass_minus;
 
   // Save arguments to SetCoefficientsInternal
   Vector<Coeff_t> _gamma;

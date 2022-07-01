@@ -16,6 +16,7 @@ void     acceleratorThreads(uint32_t t) {accelerator_threads = t;};
 #ifdef GRID_CUDA
 cudaDeviceProp *gpu_props;
 cudaStream_t copyStream;
+cudaStream_t cpuStream;
 void acceleratorInit(void)
 {
   int nDevices = 1;
@@ -98,6 +99,7 @@ void acceleratorInit(void)
 
   cudaSetDevice(device);
   cudaStreamCreate(&copyStream);
+  cudaStreamCreate(&cpuStream);
   const int len=64;
   char busid[len];
   if( rank == world_rank ) { 
@@ -112,6 +114,7 @@ void acceleratorInit(void)
 #ifdef GRID_HIP
 hipDeviceProp_t *gpu_props;
 hipStream_t copyStream;
+hipStream_t cpuStream;
 void acceleratorInit(void)
 {
   int nDevices = 1;
@@ -180,6 +183,7 @@ void acceleratorInit(void)
 #endif
   hipSetDevice(device);
   hipStreamCreate(&copyStream);
+  hipStreamCreate(&cpuStream);
   const int len=64;
   char busid[len];
   if( rank == world_rank ) { 

@@ -183,6 +183,7 @@ extern GridLogger GridLogPerformance;
 extern GridLogger GridLogIterative  ;
 extern GridLogger GridLogIntegrator  ;
 extern GridLogger GridLogHMC;
+extern GridLogger GridLogMemory;
 extern Colours    GridLogColours;
 
 std::string demangle(const char* name) ;
