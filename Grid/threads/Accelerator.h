@@ -190,7 +190,7 @@ void Lambda6Apply(uint64_t num1, uint64_t num2, uint64_t num3,
 
 #define accelerator_barrier(dummy)					\
   {									\
-    cudaStreamSynchronize(cpuStream);					\
+    cudaDeviceSynchronize();						\
     cudaError err = cudaGetLastError();					\
     if ( cudaSuccess != err ) {						\
       printf("accelerator_barrier(): Cuda error %s \n",			\
@@ -362,11 +362,11 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
     dim3 hip_blocks ((num1+nt-1)/nt,num2,1); \
     if(hip_threads.x * hip_threads.y * hip_threads.z <= 64){ \
       hipLaunchKernelGGL(LambdaApply64,hip_blocks,hip_threads,		\
-			 0,cpuStream,					\
+			 0,0/*cpuStream*/,				\
 			 num1,num2,nsimd, lambda);			\
     } else { \
       hipLaunchKernelGGL(LambdaApply,hip_blocks,hip_threads,		\
-			 0,cpuStream,					\
+			 0,0/*cpuStream*/,				\
 			 num1,num2,nsimd, lambda);			\
     } \
   }
