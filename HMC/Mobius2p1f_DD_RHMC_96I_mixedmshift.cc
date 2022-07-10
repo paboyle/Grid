@@ -152,6 +152,7 @@ int main(int argc, char **argv) {
    // Typedefs to simplify notation
   typedef WilsonImplR FermionImplPolicy;
   typedef WilsonImplF FermionImplPolicyF;
+
   typedef MobiusFermionR FermionAction;
   typedef MobiusFermionF FermionActionF;
   typedef typename FermionAction::FermionField FermionField;
@@ -355,10 +356,17 @@ int main(int argc, char **argv) {
   light_num.push_back(pv_mass);  dirichlet_num.push_back(0);
 
   std::vector<FermionAction *> Numerators;
+  std::vector<FermionActionF *> NumeratorsF;
   std::vector<FermionAction *> Denominators;
   std::vector<FermionActionF *> DenominatorsF;
   std::vector<TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> *> Quotients;
+
+#define MIXED_PRECISION
+#ifdef MIXED_PRECISION
+  std::vector<OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF> *> Bdys;
+#else
   std::vector<OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> *> Bdys;
+#endif
   std::vector<MxPCG *> ActionMPCG;
   std::vector<MxPCG *> MPCG;
 
@@ -378,6 +386,7 @@ int main(int argc, char **argv) {
 
     FermionAction::ImplParams ParamsNum(boundary);
     FermionAction::ImplParams ParamsDen(boundary);
+    FermionActionF::ImplParams ParamsNumF(boundary);
     FermionActionF::ImplParams ParamsDenF(boundary);
     
     if ( dirichlet_num[h]==1) ParamsNum.dirichlet = Dirichlet;
@@ -391,6 +400,9 @@ int main(int argc, char **argv) {
 
     ParamsDenF.dirichlet = ParamsDen.dirichlet;
     DenominatorsF.push_back(new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[h],M5,b,c, ParamsDenF));
+
+    ParamsNumF.dirichlet = ParamsNum.dirichlet;
+    NumeratorsF.push_back  (new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_num[h],M5,b,c, ParamsNumF));
 
     LinOpD.push_back(new LinearOperatorD(*Denominators[h]));
     LinOpF.push_back(new LinearOperatorF(*DenominatorsF[h]));
@@ -419,8 +431,15 @@ int main(int argc, char **argv) {
       //      Quotients.push_back (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],MDCG,CG));
       Quotients.push_back (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],*MPCG[h],*ActionMPCG[h],CG));
     } else {
+#ifdef MIXED_PRECISION
+      Bdys.push_back( new OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF>(
+			   *Numerators[h],*Denominators[h],
+			   *NumeratorsF[h],*DenominatorsF[h],
+			   OFRp, 500) );
+#else
       Bdys.push_back( new OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
       Bdys.push_back( new OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
+#endif
     }
   }
 
