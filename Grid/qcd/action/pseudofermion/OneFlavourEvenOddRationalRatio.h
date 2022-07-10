@@ -67,6 +67,36 @@ NAMESPACE_BEGIN(Grid);
       virtual std::string action_name(){return "OneFlavourEvenOddRatioRationalPseudoFermionAction";}      
     };
 
+    template<class Impl,class ImplF>
+    class OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction : public GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<Impl,ImplF> {
+    public:
+      typedef OneFlavourRationalParams Params;
+    private:
+      static RationalActionParams transcribe(const Params &in){
+	RationalActionParams out;
+	out.inv_pow = 2;
+	out.lo = in.lo;
+	out.hi = in.hi;
+	out.MaxIter = in.MaxIter;
+	out.action_tolerance = out.md_tolerance = in.tolerance;
+	out.action_degree = out.md_degree = in.degree;
+	out.precision = in.precision;
+	out.BoundsCheckFreq = in.BoundsCheckFreq;
+	return out;
+      }
+
+    public:
+      OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction(FermionOperator<Impl>  &_NumOp, 
+								 FermionOperator<Impl>  &_DenOp, 
+								 FermionOperator<ImplF>  &_NumOpF, 
+								 FermionOperator<ImplF>  &_DenOpF, 
+								 const Params & p, Integer ReliableUpdateFreq
+							) : 
+	GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<Impl,ImplF>(_NumOp, _DenOp,_NumOpF, _DenOpF, transcribe(p),ReliableUpdateFreq){}
+
+      virtual std::string action_name(){return "OneFlavourEvenOddRatioRationalPseudoFermionAction";}      
+    };
+
 NAMESPACE_END(Grid);
 
 #endif
