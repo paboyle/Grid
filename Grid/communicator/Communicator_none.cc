@@ -104,6 +104,7 @@ int  CartesianCommunicator::RankWorld(void){return 0;}
 void CartesianCommunicator::Barrier(void){}
 void CartesianCommunicator::Broadcast(int root,void* data, int bytes) {}
 void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes) { }
+void CartesianCommunicator::BarrierWorld(void) { }
 int  CartesianCommunicator::RankFromProcessorCoor(Coordinate &coor) {  return 0;}
 void CartesianCommunicator::ProcessorCoorFromRank(int rank, Coordinate &coor){  coor = _processor_coor; }
 void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest)

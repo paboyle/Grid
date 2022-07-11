@@ -443,6 +443,10 @@ int CartesianCommunicator::RankWorld(void){
   MPI_Comm_rank(communicator_world,&r);
   return r;
 }
+void CartesianCommunicator::BarrierWorld(void){
+  int ierr = MPI_Barrier(communicator_world);
+  assert(ierr==0);
+}
 void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
 {
   int ierr= MPI_Bcast(data,
