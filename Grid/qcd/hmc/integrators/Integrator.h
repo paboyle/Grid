@@ -153,7 +153,7 @@ protected:
       Real force_max   = std::sqrt(maxLocalNorm2(force));
       Real impulse_max = force_max * ep * HMC_MOMENTUM_DENOMINATOR;    
 
-      as[level].actions.at(a)->deriv_log(force_abs,force_max);
+      as[level].actions.at(a)->deriv_log(force_abs,force_max,impulse_abs,impulse_max);
       
       std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Force average: " << force_abs <<" "<<name<<std::endl;
       std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Force max    : " << force_max <<" "<<name<<std::endl;
@@ -285,6 +285,8 @@ public:
 		  <<"["<<level<<"]["<< actionID<<"] : "
 		  <<" force max " << as[level].actions.at(actionID)->deriv_max_average()
 		  <<" norm "      << as[level].actions.at(actionID)->deriv_norm_average()
+		  <<" Fdt max  "  << as[level].actions.at(actionID)->Fdt_max_average()
+		  <<" norm "      << as[level].actions.at(actionID)->Fdt_norm_average()
 		  <<" calls "     << as[level].actions.at(actionID)->deriv_num
 		  << std::endl;
       }
