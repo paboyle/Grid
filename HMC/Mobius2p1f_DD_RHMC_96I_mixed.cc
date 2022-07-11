@@ -141,6 +141,10 @@ int main(int argc, char **argv) {
   using namespace Grid;
 
   Grid_init(&argc, &argv);
+
+  CartesianCommunicator::BarrierWorld();
+  std::cout << GridLogMessage << " Clock skew check" <<std::endl;
+  
   int threads = GridThread::GetThreads();
 
    // Typedefs to simplify notation
@@ -183,7 +187,7 @@ int main(int argc, char **argv) {
   CPparams.saveInterval  = 1;
   CPparams.format        = "IEEE64BIG";
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
-
+  std::cout << "loaded NERSC checpointer"<<std::endl;
   RNGModuleParameters RNGpar;
   RNGpar.serial_seeds = "1 2 3 4 5";
   RNGpar.parallel_seeds = "6 7 8 9 10";
@@ -287,6 +291,7 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << " Running the HMC "<< std::endl;
   TheHMC.ReadCommandLine(argc,argv);  // params on CML or from param file
   TheHMC.initializeGaugeFieldAndRNGs(U);
+  std::cout << "loaded NERSC gauge field"<<std::endl;
 
 
   // These lines are unecessary if BC are all periodic
