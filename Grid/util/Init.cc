@@ -356,6 +356,11 @@ void Grid_init(int *argc,char ***argv)
   //////////////////////////////////////////////////////////
   CartesianCommunicator::Init(argc,argv);
 
+  GridLogger::GlobalStopWatch.Stop();
+  CartesianCommunicator::BarrierWorld();
+  GridLogger::GlobalStopWatch.Reset();// Back to zero with synchronised clock
+  GridLogger::GlobalStopWatch.Start();
+
   ////////////////////////////////////
   // Banner after MPI (unless GPU)
   ////////////////////////////////////
