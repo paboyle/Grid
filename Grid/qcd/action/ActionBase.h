@@ -42,6 +42,8 @@ public:
   bool is_smeared = false;
   RealD deriv_norm_sum;
   RealD deriv_max_sum;
+  RealD Fdt_norm_sum;
+  RealD Fdt_max_sum;
   int   deriv_num;
   RealD deriv_us;
   RealD S_us;
@@ -51,12 +53,17 @@ public:
     deriv_num=0;
     deriv_norm_sum = deriv_max_sum=0.0;
   }
-  void  deriv_log(RealD nrm, RealD max) { deriv_max_sum+=max; deriv_norm_sum+=nrm; deriv_num++;}
-  RealD deriv_max_average(void)         { return deriv_max_sum/deriv_num; };
-  RealD deriv_norm_average(void)        { return deriv_norm_sum/deriv_num; };
+  void  deriv_log(RealD nrm, RealD max,RealD Fdt_nrm,RealD Fdt_max) {
+    deriv_max_sum+=max; deriv_norm_sum+=nrm;
+    Fdt_max_sum+=Fdt_max; Fdt_norm_sum+=Fdt_nrm; deriv_num++;
+  }
+  RealD deriv_max_average(void)       { return deriv_max_sum/deriv_num; };
+  RealD deriv_norm_average(void)      { return deriv_norm_sum/deriv_num; };
+  RealD Fdt_max_average(void)         { return Fdt_max_sum/deriv_num; };
+  RealD Fdt_norm_average(void)        { return Fdt_norm_sum/deriv_num; };
   RealD deriv_timer(void)        { return deriv_us; };
-  RealD S_timer(void)            { return deriv_us; };
-  RealD refresh_timer(void)      { return deriv_us; };
+  RealD S_timer(void)            { return S_us; };
+  RealD refresh_timer(void)      { return refresh_us; };
   void deriv_timer_start(void)   { deriv_us-=usecond(); }
   void deriv_timer_stop(void)    { deriv_us+=usecond(); }
   void refresh_timer_start(void) { refresh_us-=usecond(); }

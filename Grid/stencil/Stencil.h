@@ -711,7 +711,9 @@ public:
     this->_comms_recv.resize(npoints); 
     this->same_node.resize(npoints);
 
-    if ( p.dirichlet.size() ) DirichletBlock(p.dirichlet); // comms send/recv set up
+    if ( p.dirichlet.size() ==0 ) p.dirichlet.resize(grid->Nd(),0);
+
+    DirichletBlock(p.dirichlet); // comms send/recv set up
 
     _unified_buffer_size=0;
     surface_list.resize(0);

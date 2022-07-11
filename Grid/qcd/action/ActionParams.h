@@ -39,7 +39,7 @@ struct GparityWilsonImplParams {
   Coordinate twists;
                      //mu=Nd-1 is assumed to be the time direction and a twist value of 1 indicates antiperiodic BCs
   Coordinate dirichlet; // Blocksize of dirichlet BCs
-  GparityWilsonImplParams() : twists(Nd, 0), dirichlet(Nd, 0) {};
+  GparityWilsonImplParams() : twists(Nd, 0) { dirichlet.resize(0); };
 };
   
 struct WilsonImplParams {
@@ -48,13 +48,13 @@ struct WilsonImplParams {
   AcceleratorVector<Real,Nd> twist_n_2pi_L;
   AcceleratorVector<Complex,Nd> boundary_phases;
   WilsonImplParams()  {
-    dirichlet.resize(Nd,0);
+    dirichlet.resize(0);
     boundary_phases.resize(Nd, 1.0);
       twist_n_2pi_L.resize(Nd, 0.0);
   };
   WilsonImplParams(const AcceleratorVector<Complex,Nd> phi) : boundary_phases(phi), overlapCommsCompute(false) {
     twist_n_2pi_L.resize(Nd, 0.0);
-    dirichlet.resize(Nd,0);
+    dirichlet.resize(0);
   }
 };
 
@@ -62,7 +62,7 @@ struct StaggeredImplParams {
   Coordinate dirichlet; // Blocksize of dirichlet BCs
   StaggeredImplParams()
   {
-    dirichlet.resize(Nd,0);
+    dirichlet.resize(0);
   };
 };
   
