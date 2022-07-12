@@ -262,6 +262,7 @@ NAMESPACE_END(Grid);
 NAMESPACE_BEGIN(Grid);
 
 extern cl::sycl::queue *theGridAccelerator;
+extern cl::sycl::queue *theCopyAccelerator;
 
 #ifdef __SYCL_DEVICE_ONLY__
 #define GRID_SIMT
@@ -298,7 +299,7 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
      });	   			              \
     });
 
-#define accelerator_barrier(dummy) theGridAccelerator->wait();
+#define accelerator_barrier(dummy) { printf(" theGridAccelerator::wait()\n"); ; theGridAccelerator->wait(); }
 
 inline void *acceleratorAllocShared(size_t bytes){ return malloc_shared(bytes,*theGridAccelerator);};
 inline void *acceleratorAllocDevice(size_t bytes){ return malloc_device(bytes,*theGridAccelerator);};
@@ -307,10 +308,10 @@ inline void acceleratorFreeDevice(void *ptr){free(ptr,*theGridAccelerator);};
 inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  {
   theGridAccelerator->memcpy(to,from,bytes);
 }
-inline void acceleratorCopySynchronise(void) {  theGridAccelerator->wait(); std::cout<<"acceleratorCopySynchronise() wait "<<std::endl; }
-inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
-inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
-inline void acceleratorMemSet(void *base,int value,size_t bytes) { theGridAccelerator->memset(base,value,bytes); theGridAccelerator->wait();}
+inline void acceleratorCopySynchronise(void) {  theCopyAccelerator->wait(); std::cout<<"acceleratorCopySynchronise() wait "<<std::endl; }
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait();}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait();}
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { theCopyAccelerator->memset(base,value,bytes); theCopyAccelerator->wait();}
 inline int  acceleratorIsCommunicable(void *ptr)
 {
 #if 0
