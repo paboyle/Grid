@@ -305,13 +305,13 @@ inline void *acceleratorAllocShared(size_t bytes){ return malloc_shared(bytes,*t
 inline void *acceleratorAllocDevice(size_t bytes){ return malloc_device(bytes,*theGridAccelerator);};
 inline void acceleratorFreeShared(void *ptr){free(ptr,*theGridAccelerator);};
 inline void acceleratorFreeDevice(void *ptr){free(ptr,*theGridAccelerator);};
-inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  {
-  theGridAccelerator->memcpy(to,from,bytes);
-}
-inline void acceleratorCopySynchronise(void) {  theCopyAccelerator->wait(); std::cout<<"acceleratorCopySynchronise() wait "<<std::endl; }
+
+inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  {  theCopyAccelerator->memcpy(to,from,bytes);}
+inline void acceleratorCopySynchronise(void) {  theCopyAccelerator->wait(); }
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait();}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait();}
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { theCopyAccelerator->memset(base,value,bytes); theCopyAccelerator->wait();}
+
 inline int  acceleratorIsCommunicable(void *ptr)
 {
 #if 0
