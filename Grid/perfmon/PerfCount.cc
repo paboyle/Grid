@@ -27,9 +27,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 /*  END LEGAL */
 
 #include <Grid/GridCore.h>
-#include <Grid/perfmon/PerfCount.h>
 
+#include <Grid/perfmon/Timer.h>
+#include <Grid/perfmon/PerfCount.h>
 NAMESPACE_BEGIN(Grid);
+
+GridTimePoint theProgramStart = GridClock::now();
 
 #define CacheControl(L,O,R) ((PERF_COUNT_HW_CACHE_##L)|(PERF_COUNT_HW_CACHE_OP_##O<<8)| (PERF_COUNT_HW_CACHE_RESULT_##R<<16))
 #define RawConfig(A,B) (A<<8|B)
