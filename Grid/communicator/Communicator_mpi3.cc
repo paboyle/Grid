@@ -396,16 +396,15 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
     }
   }
   
-  if ( CommunicatorPolicy == CommunicatorPolicySequential ) {
-    this->StencilSendToRecvFromComplete(list,dir);
-    list.resize(0);
-  }
-
+  /*  if ( CommunicatorPolicy == CommunicatorPolicySequential ) {
+   *    this->StencilSendToRecvFromComplete(list,dir);
+   *    list.resize(0);
+   *  }
+   */
   return off_node_bytes;
 }
 void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &list,int dir)
 {
-  //   std::cout << "Copy Synchronised\n"<<std::endl;
   acceleratorCopySynchronise();
 
   int nreq=list.size();
