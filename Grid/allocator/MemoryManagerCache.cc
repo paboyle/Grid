@@ -3,8 +3,14 @@
 
 #warning "Using explicit device memory copies"
 NAMESPACE_BEGIN(Grid);
-//#define dprintf(...) printf ( __VA_ARGS__ ); fflush(stdout);
-#define dprintf(...)
+
+#define MAXLINE 512
+static char print_buffer [ MAXLINE ];
+
+#define mprintf(...) snprintf (print_buffer,MAXLINE, __VA_ARGS__ ); std::cout << GridLogMemory << print_buffer;
+//#define dprintf(...) printf (__VA_ARGS__ ); fflush(stdout);
+#define dprintf(...) 
+
 
 
 ////////////////////////////////////////////////////////////
@@ -104,7 +110,7 @@ void MemoryManager::AccDiscard(AcceleratorViewEntry &AccCache)
   ///////////////////////////////////////////////////////////
   assert(AccCache.state!=Empty);
   
-   dprintf("MemoryManager: Discard(%llx) %llx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
+  mprintf("MemoryManager: Discard(%llx) %llx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
   assert(AccCache.accLock==0);
   assert(AccCache.cpuLock==0);
   assert(AccCache.CpuPtr!=(uint64_t)NULL);
@@ -126,7 +132,7 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
   ///////////////////////////////////////////////////////////////////////////
   assert(AccCache.state!=Empty);
   
-  dprintf("MemoryManager: Evict(%llx) %llx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
+  mprintf("MemoryManager: Evict(%llx) %llx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
   assert(AccCache.accLock==0);
   assert(AccCache.cpuLock==0);
   if(AccCache.state==AccDirty) {
@@ -150,7 +156,7 @@ void MemoryManager::Flush(AcceleratorViewEntry &AccCache)
   assert(AccCache.AccPtr!=(uint64_t)NULL);
   assert(AccCache.CpuPtr!=(uint64_t)NULL);
   acceleratorCopyFromDevice((void *)AccCache.AccPtr,(void *)AccCache.CpuPtr,AccCache.bytes);
-  dprintf("MemoryManager: Flush  %llx -> %llx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
+  mprintf("MemoryManager: Flush  %llx -> %llx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   DeviceToHostBytes+=AccCache.bytes;
   DeviceToHostXfer++;
   AccCache.state=Consistent;
@@ -165,7 +171,7 @@ void MemoryManager::Clone(AcceleratorViewEntry &AccCache)
     AccCache.AccPtr=(uint64_t)AcceleratorAllocate(AccCache.bytes);
     DeviceBytes+=AccCache.bytes;
   }
-  dprintf("MemoryManager: Clone %llx <- %llx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
+  mprintf("MemoryManager: Clone %llx <- %llx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   acceleratorCopyToDevice((void *)AccCache.CpuPtr,(void *)AccCache.AccPtr,AccCache.bytes);
   HostToDeviceBytes+=AccCache.bytes;
   HostToDeviceXfer++;
