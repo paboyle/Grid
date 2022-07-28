@@ -290,6 +290,8 @@ public:
   std::vector<Decompress> DecompressionsSHM;
   std::vector<CopyReceiveBuffer> CopyReceiveBuffers ;
   std::vector<CachedTransfer> CachedTransfers;
+  std::vector<CommsRequest_t> MpiReqs;
+  
   ///////////////////////////////////////////////////////////
   // Unified Comms buffers for all directions
   ///////////////////////////////////////////////////////////
@@ -357,9 +359,8 @@ public:
   ////////////////////////////////////////////////////////////////////////
   void CommunicateBegin(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
-    reqs.resize(Packets.size());
     for(int i=0;i<Packets.size();i++){
-      _grid->StencilSendToRecvFromBegin(reqs[i],
+      _grid->StencilSendToRecvFromBegin(MpiReqs,
 					Packets[i].send_buf,
 					Packets[i].to_rank,Packets[i].do_send,
 					Packets[i].recv_buf,
@@ -370,9 +371,7 @@ public:
 
   void CommunicateComplete(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
-    for(int i=0;i<Packets.size();i++){
-      _grid->StencilSendToRecvFromComplete(reqs[i],i);
-    }
+    _grid->StencilSendToRecvFromComplete(MpiReqs,i);
   }
   ////////////////////////////////////////////////////////////////////////
   // Blocking send and receive. Either sequential or parallel.
@@ -499,6 +498,7 @@ public:
     Packets.resize(0);
     CopyReceiveBuffers.resize(0);
     CachedTransfers.resize(0);
+    MpiReqs.resize(0);
   }
   void AddCopy(void *from,void * to, Integer bytes)
   {
@@ -795,7 +795,6 @@ public:
       u_simd_recv_buf[l] = (cobj *)_grid->ShmBufferMalloc(_unified_buffer_size*sizeof(cobj));
       u_simd_send_buf[l] = (cobj *)_grid->ShmBufferMalloc(_unified_buffer_size*sizeof(cobj));
     }
-
     PrecomputeByteOffsets();
   }
 
@@ -1107,7 +1106,6 @@ public:
 	  // Gather locally
 	  ////////////////////////////////////////////////////////
 	  assert(send_buf!=NULL);
-
 	  Gather_plane_simple_table(face_table[face_idx],rhs,send_buf,compress,comm_off,so);
 	}
 
@@ -1214,8 +1212,9 @@ public:
 				  face_table[face_idx].size()*sizeof(face_table_host[0]));
 	}
 
-	if ( comms_send || comms_recv )
+	if ( comms_send || comms_recv ) {
 	  Gather_plane_exchange_table(face_table[face_idx],rhs,spointers,dimension,sx,cbmask,compress,permute_type);
+	}
 	face_idx++;
 
 	//spointers[0] -- low
