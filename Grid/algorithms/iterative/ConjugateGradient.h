@@ -117,6 +117,7 @@ public:
     GridStopWatch MatrixTimer;
     GridStopWatch SolverTimer;
 
+    RealD usecs = -usecond();
     SolverTimer.Start();
     int k;
     for (k = 1; k <= MaxIterations; k++) {
@@ -166,14 +167,16 @@ public:
 
       // Stopping condition
       if (cp <= rsq) {
+	usecs +=usecond();
         SolverTimer.Stop();
         Linop.HermOpAndNorm(psi, mmp, d, qq);
         p = mmp - src;
-
+	GridBase *grid = src.Grid();
+	RealD DwfFlops = (1452. )*grid->gSites()*4*k
+   	               + (8+4+8+4+4)*12*grid->gSites()*k; // CG linear algebra
         RealD srcnorm = std::sqrt(norm2(src));
         RealD resnorm = std::sqrt(norm2(p));
         RealD true_residual = resnorm / srcnorm;
-
         std::cout << GridLogMessage << "ConjugateGradient Converged on iteration " << k 
 		  << "\tComputed residual " << std::sqrt(cp / ssq)
 		  << "\tTrue residual " << true_residual
@@ -186,6 +189,8 @@ public:
 	std::cout << GridLogMessage << "\tInner      " << InnerTimer.Elapsed() <<std::endl;
 	std::cout << GridLogMessage << "\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
 	std::cout << GridLogMessage << "\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
+
+	std::cout << GridLogMessage << "\tMobius flop rate " << DwfFlops/ usecs<< " Gflops " <<std::endl;
 
         if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0);
 
