@@ -248,12 +248,6 @@ inline int  acceleratorIsCommunicable(void *ptr)
 // SyCL acceleration
 //////////////////////////////////////////////
 #ifdef GRID_SYCL
-inline void acceleratorFenceComputeStream(void){ accelerator_barrier();};
-#else
-// Ordering within a stream guaranteed on Nvidia & AMD
-inline void acceleratorFenceComputeStream(void){ };
-#endif
-#ifdef GRID_SYCL
 NAMESPACE_END(Grid);
 #include <CL/sycl.hpp>
 #include <CL/sycl/usm.hpp>
@@ -517,7 +511,16 @@ inline void *acceleratorAllocCpu(size_t bytes){return memalign(GRID_ALLOC_ALIGN,
 inline void acceleratorFreeCpu  (void *ptr){free(ptr);};
 #endif
 
+//////////////////////////////////////////////
+// Fencing needed ONLY for SYCL
+//////////////////////////////////////////////
 
+#ifdef GRID_SYCL
+inline void acceleratorFenceComputeStream(void){ accelerator_barrier();};
+#else
+// Ordering within a stream guaranteed on Nvidia & AMD
+inline void acceleratorFenceComputeStream(void){ };
+#endif
 
 ///////////////////////////////////////////////////
 // Synchronise across local threads for divergence resynch
