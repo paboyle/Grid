@@ -262,7 +262,7 @@ public:
 	autoView( Tnp_v , (*Tnp), AcceleratorWrite);
 	autoView( Tnm_v , (*Tnm), AcceleratorWrite);
 	const int Nsimd = CComplex::Nsimd();
-	accelerator_forNB(ss, FineGrid->oSites(), Nsimd, {
+	accelerator_for(ss, FineGrid->oSites(), Nsimd, {
 	  coalescedWrite(y_v[ss],xscale*y_v(ss)+mscale*Tn_v(ss));
 	  coalescedWrite(Tnp_v[ss],2.0*y_v(ss)-Tnm_v(ss));
         });
