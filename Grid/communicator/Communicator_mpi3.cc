@@ -406,6 +406,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &list,int dir)
 {
   acceleratorCopySynchronise();
+  StencilBarrier();// Synch shared memory on a single nodes
 
   int nreq=list.size();
 
