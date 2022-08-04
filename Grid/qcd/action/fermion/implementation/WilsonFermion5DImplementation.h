@@ -233,10 +233,10 @@ void WilsonFermion5D<Impl>::ImportGauge(const GaugeField &_Umu)
   GaugeField HUmu(_Umu.Grid());
   HUmu = _Umu*(-0.5);
   if ( Dirichlet ) {
-    std::cout << GridLogMessage << " Dirichlet BCs 5d " <<Block<<std::endl;
+    std::cout << GridLogDslash << " Dirichlet BCs 5d " <<Block<<std::endl;
     Coordinate GaugeBlock(Nd);
     for(int d=0;d<Nd;d++) GaugeBlock[d] = Block[d+1];
-    std::cout << GridLogMessage << " Dirichlet BCs 4d " <<GaugeBlock<<std::endl;
+    std::cout << GridLogDslash << " Dirichlet BCs 4d " <<GaugeBlock<<std::endl;
     DirichletFilter<GaugeField> Filter(GaugeBlock);
     Filter.applyFilter(HUmu);
   }
@@ -382,12 +382,14 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
                                          DoubledGaugeField & U,
                                          const FermionField &in, FermionField &out,int dag)
 {
-  DhopTotalTime-=usecond();
+  //  std::cout << GridLogDslash<<"Dhop internal"<<std::endl;
+  DhopTotalTime=-usecond();
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute )
     DhopInternalOverlappedComms(st,lo,U,in,out,dag);
   else 
     DhopInternalSerialComms(st,lo,U,in,out,dag);
   DhopTotalTime+=usecond();
+  //  std::cout << GridLogDslash<<"Dhop took"<<DhopTotalTime<<std::endl;
 }
 
 
@@ -404,53 +406,59 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   /////////////////////////////
   // Start comms  // Gather intranode and extra node differentiated??
   /////////////////////////////
-  DhopFaceTime-=usecond();
+  DhopFaceTime=-usecond();
   st.HaloExchangeOptGather(in,compressor);
   DhopFaceTime+=usecond();
+  //  std::cout << GridLogDslash<< " Dhop Gather end "<< DhopFaceTime<<" us " <<std::endl;
 
-  DhopCommTime -=usecond();
+  DhopCommTime =-usecond();
   std::vector<std::vector<CommsRequest_t> > requests;
   st.CommunicateBegin(requests);
 
   /////////////////////////////
   // Overlap with comms
   /////////////////////////////
-  DhopFaceTime-=usecond();
+  DhopFaceTime=-usecond();
   st.CommsMergeSHM(compressor);// Could do this inside parallel region overlapped with comms
   DhopFaceTime+=usecond();
+  //  std::cout << GridLogDslash<< " Dhop Commsmerge end "<<DhopFaceTime<< " us "<<std::endl;
       
   /////////////////////////////
   // do the compute interior
   /////////////////////////////
   int Opt = WilsonKernelsStatic::Opt; // Why pass this. Kernels should know
-  DhopComputeTime-=usecond();
+  DhopComputeTime=-usecond();
   if (dag == DaggerYes) {
     Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,1,0);
   } else {
     Kernels::DhopKernel   (Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,1,0);
   }
   DhopComputeTime+=usecond();
+  //  std::cout << GridLogDslash<< " Dhop Compute 1 end "<< DhopComputeTime<<" us" <<std::endl;
 
   /////////////////////////////
   // Complete comms
   /////////////////////////////
   st.CommunicateComplete(requests);
   DhopCommTime   +=usecond();
+  //  std::cout << GridLogDslash<< " Dhop Comunicate end "<< DhopCommTime << " us" <<std::endl;
 
   /////////////////////////////
   // do the compute exterior
   /////////////////////////////
-  DhopFaceTime-=usecond();
+  DhopFaceTime=-usecond();
   st.CommsMerge(compressor);
   DhopFaceTime+=usecond();
+  //  std::cout << GridLogDslash<< " Dhop CommsMerge2 end "<<DhopFaceTime << " us "<<std::endl;
 
-  DhopComputeTime2-=usecond();
+  DhopComputeTime2=-usecond();
   if (dag == DaggerYes) {
     Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,0,1);
   } else {
     Kernels::DhopKernel   (Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,0,1);
   }
   DhopComputeTime2+=usecond();
+  //  std::cout << GridLogDslash<< " Dhop Ext end "<<DhopComputeTime2 <<"us  "<<std::endl;
 }
 
 
@@ -463,12 +471,14 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOr
   Compressor compressor(dag);
 
   int LLs = in.Grid()->_rdimensions[0];
-  
-  DhopCommTime-=usecond();
+
+  //  std::cout << GridLogDslash<< " Dhop Halo exchange begine " <<std::endl;
+  DhopCommTime=-usecond();
   st.HaloExchangeOpt(in,compressor);
   DhopCommTime+=usecond();
+  //  std::cout << GridLogDslash<< " Dhop Comms end "<<DhopCommTime<<" us"<<std::endl;
   
-  DhopComputeTime-=usecond();
+  DhopComputeTime=-usecond();
   int Opt = WilsonKernelsStatic::Opt;
   if (dag == DaggerYes) {
     Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out);
@@ -476,6 +486,7 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOr
     Kernels::DhopKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out);
   }
   DhopComputeTime+=usecond();
+  //  std::cout << GridLogDslash<< " Dhop Compute end "<<DhopComputeTime<<" us" <<std::endl;
 }
 
 
