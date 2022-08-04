@@ -332,9 +332,9 @@ int main(int argc, char **argv) {
   OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermionBdy(StrangeOpDir,StrangeOp,SFRp);
   OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermionLocal(StrangePauliVillarsOpDir,StrangeOpDir,SFRp);
   OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermionPVBdy(StrangePauliVillarsOp,StrangePauliVillarsOpDir,SFRp);
-  Level1.push_back(&StrangePseudoFermionBdy);
+  Level1.push_back(&StrangePseudoFermionBdy); // ok
   Level2.push_back(&StrangePseudoFermionLocal);
-  Level1.push_back(&StrangePseudoFermionPVBdy);
+  Level1.push_back(&StrangePseudoFermionPVBdy); //ok
 
   ////////////////////////////////////
   // up down action
@@ -432,6 +432,10 @@ int main(int argc, char **argv) {
       Quotients.push_back (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],*MPCG[h],*ActionMPCG[h],CG));
     } else {
 #ifdef MIXED_PRECISION
+      Bdys.push_back( new OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF>(
+			   *Numerators[h],*Denominators[h],
+			   *NumeratorsF[h],*DenominatorsF[h],
+			   OFRp, 500) );
       Bdys.push_back( new OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF>(
 			   *Numerators[h],*Denominators[h],
 			   *NumeratorsF[h],*DenominatorsF[h],
