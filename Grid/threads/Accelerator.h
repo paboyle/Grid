@@ -370,7 +370,8 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 			 num1,num2,nsimd, lambda);			\
     } \
   }
-
+// Works with MPI if barrier here
+// accelerator_barrier();
 
 template<typename lambda>  __global__
 __launch_bounds__(64,1)
@@ -400,7 +401,7 @@ void LambdaApply(uint64_t numx, uint64_t numy, uint64_t numz, lambda Lambda)
 
 #define accelerator_barrier(dummy)				\
   {								\
-    hipStreamSynchronize(cpuStream);					\
+    hipDeviceSynchronize();					\
     auto err = hipGetLastError();				\
     if ( err != hipSuccess ) {					\
       printf("After hipDeviceSynchronize() : HIP error %s \n", hipGetErrorString( err )); \
@@ -443,7 +444,7 @@ inline void acceleratorMemSet(void *base,int value,size_t bytes) { hipMemset(bas
 
 inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) // Asynch
 {
-  hipMemcpy(to,from,bytes, hipMemcpyDeviceToDevice);
+  hipMemcpyDtoDAsync(to,from,bytes, copyStream);
 }
 inline void acceleratorCopySynchronise(void) { hipStreamSynchronize(copyStream); };
 

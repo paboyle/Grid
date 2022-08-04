@@ -1,6 +1,7 @@
 #include <Grid/GridCore.h>
 
 NAMESPACE_BEGIN(Grid);
+int      world_rank; // Use to control world rank for print guarding
 int      acceleratorAbortOnGpuError=1;
 uint32_t accelerator_threads=2;
 uint32_t acceleratorThreads(void)       {return accelerator_threads;};
@@ -16,7 +17,7 @@ void     acceleratorThreads(uint32_t t) {accelerator_threads = t;};
 #ifdef GRID_CUDA
 cudaDeviceProp *gpu_props;
 cudaStream_t copyStream;
-cudaStream_t cpuStream;
+cudaStream_t computeStream;
 void acceleratorInit(void)
 {
   int nDevices = 1;
@@ -24,7 +25,8 @@ void acceleratorInit(void)
   gpu_props = new cudaDeviceProp[nDevices];
 
   char * localRankStr = NULL;
-  int rank = 0, world_rank=0; 
+  int rank = 0;
+  world_rank=0; 
   if ((localRankStr = getenv(ENV_RANK_OMPI   )) != NULL) { world_rank = atoi(localRankStr);}
   if ((localRankStr = getenv(ENV_RANK_MVAPICH)) != NULL) { world_rank = atoi(localRankStr);}
   if ((localRankStr = getenv(ENV_RANK_SLURM  )) != NULL) { world_rank = atoi(localRankStr);}
@@ -99,7 +101,7 @@ void acceleratorInit(void)
 
   cudaSetDevice(device);
   cudaStreamCreate(&copyStream);
-  cudaStreamCreate(&cpuStream);
+  cudaStreamCreate(&computeStream);
   const int len=64;
   char busid[len];
   if( rank == world_rank ) { 
@@ -114,7 +116,7 @@ void acceleratorInit(void)
 #ifdef GRID_HIP
 hipDeviceProp_t *gpu_props;
 hipStream_t copyStream;
-hipStream_t cpuStream;
+hipStream_t computeStream;
 void acceleratorInit(void)
 {
   int nDevices = 1;
@@ -122,7 +124,8 @@ void acceleratorInit(void)
   gpu_props = new hipDeviceProp_t[nDevices];
 
   char * localRankStr = NULL;
-  int rank = 0, world_rank=0; 
+  int rank = 0;
+  world_rank=0; 
   // We extract the local rank initialization using an environment variable
   if ((localRankStr = getenv(ENV_LOCAL_RANK_OMPI)) != NULL)
   {
@@ -183,7 +186,7 @@ void acceleratorInit(void)
 #endif
   hipSetDevice(device);
   hipStreamCreate(&copyStream);
-  hipStreamCreate(&cpuStream);
+  hipStreamCreate(&computeStream);
   const int len=64;
   char busid[len];
   if( rank == world_rank ) { 
@@ -210,7 +213,8 @@ void acceleratorInit(void)
 #endif
   
   char * localRankStr = NULL;
-  int rank = 0, world_rank=0; 
+  int rank = 0;
+  world_rank=0; 
 
   // We extract the local rank initialization using an environment variable
   if ((localRankStr = getenv(ENV_LOCAL_RANK_OMPI)) != NULL)
