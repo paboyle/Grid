@@ -359,6 +359,7 @@ public:
   ////////////////////////////////////////////////////////////////////////
   void CommunicateBegin(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
+    accelerator_barrier();
     for(int i=0;i<Packets.size();i++){
       _grid->StencilSendToRecvFromBegin(MpiReqs,
 					Packets[i].send_buf,
@@ -371,39 +372,19 @@ public:
 
   void CommunicateComplete(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
-    _grid->StencilSendToRecvFromComplete(MpiReqs,i);
+    _grid->StencilSendToRecvFromComplete(MpiReqs,0);
   }
   ////////////////////////////////////////////////////////////////////////
   // Blocking send and receive. Either sequential or parallel.
   ////////////////////////////////////////////////////////////////////////
   void Communicate(void)
   {
-    if ( CartesianCommunicator::CommunicatorPolicy == CartesianCommunicator::CommunicatorPolicySequential ){
-      /////////////////////////////////////////////////////////
-      // several way threaded on different communicators.
-      // Cannot combine with Dirichlet operators
-      // This scheme is needed on Intel Omnipath for best performance
-      // Deprecate once there are very few omnipath clusters
-      /////////////////////////////////////////////////////////
-      int nthreads = CartesianCommunicator::nCommThreads;
-      int old = GridThread::GetThreads();
-      GridThread::SetThreads(nthreads);
-      thread_for(i,Packets.size(),{
-	  _grid->StencilSendToRecvFrom(Packets[i].send_buf,
-				       Packets[i].to_rank,Packets[i].do_send,
-				       Packets[i].recv_buf,
-				       Packets[i].from_rank,Packets[i].do_recv,
-				       Packets[i].bytes,i);
-      });
-      GridThread::SetThreads(old);
-    } else { 
-      /////////////////////////////////////////////////////////
-      // Concurrent and non-threaded asynch calls to MPI
-      /////////////////////////////////////////////////////////
-      std::vector<std::vector<CommsRequest_t> > reqs;
-      this->CommunicateBegin(reqs);
-      this->CommunicateComplete(reqs);
-    }
+    /////////////////////////////////////////////////////////
+    // Concurrent and non-threaded asynch calls to MPI
+    /////////////////////////////////////////////////////////
+    std::vector<std::vector<CommsRequest_t> > reqs;
+    this->CommunicateBegin(reqs);
+    this->CommunicateComplete(reqs);
   }
 
   template<class compressor> void HaloExchange(const Lattice<vobj> &source,compressor &compress)
@@ -483,7 +464,6 @@ public:
     face_table_computed=1;
     assert(u_comm_offset==_unified_buffer_size);
 
-    accelerator_barrier();
   }
 
   /////////////////////////
