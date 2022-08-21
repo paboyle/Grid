@@ -49,7 +49,7 @@ NAMESPACE_BEGIN(Grid);
     
     typedef Lattice<SiteLink>  LinkField;
     typedef Lattice<SiteField> Field;
-    typedef Field              ComplexField;
+    typedef LinkField          ComplexField;
   };
   
   typedef QedGImpl<vComplex> QedGImplR;
