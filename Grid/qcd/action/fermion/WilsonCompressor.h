@@ -294,11 +294,7 @@ public:
   typedef typename Base::View_type View_type;
   typedef typename Base::StencilVector StencilVector;
 
-  void ZeroCountersi(void)  {  }
-  void Reporti(int calls)  {  }
-
   //  Vector<int> surface_list;
-
   WilsonStencil(GridBase *grid,
 		int npoints,
 		int checkerboard,
@@ -306,7 +302,6 @@ public:
 		const std::vector<int> &distances,Parameters p)  
     : CartesianStencil<vobj,cobj,Parameters> (grid,npoints,checkerboard,directions,distances,p) 
   { 
-    ZeroCountersi();
     //    surface_list.resize(0);
     this->same_node.resize(npoints);
   };
