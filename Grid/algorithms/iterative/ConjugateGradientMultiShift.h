@@ -84,6 +84,7 @@ public:
 
   void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector<Field> &psi)
   {
+    GRID_TRACE("ConjugateGradientMultiShift");
   
     GridBase *grid = src.Grid();
   
