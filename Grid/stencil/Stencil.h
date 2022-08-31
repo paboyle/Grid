@@ -1251,10 +1251,6 @@ public:
     return 0;
   }
 
-  void ZeroCounters(void) { };
-
-  void Report(void) {   };
-
 };
 NAMESPACE_END(Grid);
 
