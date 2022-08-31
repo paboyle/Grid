@@ -63,9 +63,6 @@ CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
 
   // 10 = 3 complex mult + 2 complex add
   // Flops = 10.0*(Nc*Ns) *Ls*vol (/2 for red black counting)
-  M5Dcalls++;
-  M5Dtime-=usecond();
-
   uint64_t nloop = grid->oSites();
   accelerator_for(sss,nloop,Simd::Nsimd(),{
     uint64_t s = sss%Ls;
@@ -78,7 +75,6 @@ CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
     spProj5p(tmp2,psi(idx_l));
     coalescedWrite(chi[ss+s],pdiag[s]*phi(ss+s)+pupper[s]*tmp1+plower[s]*tmp2);
   });
-  M5Dtime+=usecond();
 }
 
 template<class Impl>  
@@ -104,9 +100,6 @@ CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
   int Ls=this->Ls;
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
-  M5Dcalls++;
-  M5Dtime-=usecond();
-
   uint64_t nloop = grid->oSites();
   accelerator_for(sss,nloop,Simd::Nsimd(),{
     uint64_t s = sss%Ls;
@@ -119,7 +112,6 @@ CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
     spProj5m(tmp2,psi(idx_l));
     coalescedWrite(chi[ss+s],pdiag[s]*phi(ss+s)+pupper[s]*tmp1+plower[s]*tmp2);
   });
-  M5Dtime+=usecond();
 }
 
 template<class Impl>
@@ -140,8 +132,6 @@ CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi_i, FermionField &chi
   auto pleem = & leem[0];
   auto pueem = & ueem[0];
 
-  MooeeInvCalls++;
-  MooeeInvTime-=usecond();
   uint64_t nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
     uint64_t ss=sss*Ls;
@@ -178,8 +168,6 @@ CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi_i, FermionField &chi
       coalescedWrite(chi[ss+s],res);
     }
   });
-
-  MooeeInvTime+=usecond();
   
 }
 
@@ -201,10 +189,6 @@ CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi_i, FermionField &chi
   auto pueem = & ueem[0];
 
   assert(psi.Checkerboard() == psi.Checkerboard());
-
-  MooeeInvCalls++;
-  MooeeInvTime-=usecond();
-
 
   uint64_t nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
@@ -242,7 +226,6 @@ CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi_i, FermionField &chi
       coalescedWrite(chi[ss+s],res);
     }
   });
-  MooeeInvTime+=usecond();
 
 }
 
