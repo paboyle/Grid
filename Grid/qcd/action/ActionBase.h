@@ -52,10 +52,13 @@ public:
     deriv_us = S_us = refresh_us = 0.0;
     deriv_num=0;
     deriv_norm_sum = deriv_max_sum=0.0;
+    Fdt_max_sum =  Fdt_norm_sum = 0.0;
   }
   void  deriv_log(RealD nrm, RealD max,RealD Fdt_nrm,RealD Fdt_max) {
-    deriv_max_sum+=max; deriv_norm_sum+=nrm;
-    Fdt_max_sum+=Fdt_max; Fdt_norm_sum+=Fdt_nrm; deriv_num++;
+    deriv_max_sum+=max;
+    deriv_norm_sum+=nrm;
+    Fdt_max_sum+=Fdt_max;
+    Fdt_norm_sum+=Fdt_nrm; deriv_num++;
   }
   RealD deriv_max_average(void)       { return deriv_max_sum/deriv_num; };
   RealD deriv_norm_average(void)      { return deriv_norm_sum/deriv_num; };
@@ -73,6 +76,7 @@ public:
   // Heatbath?
   virtual void refresh(const GaugeField& U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) = 0; // refresh pseudofermions
   virtual RealD S(const GaugeField& U) = 0;                             // evaluate the action
+  virtual RealD Sinitial(const GaugeField& U) { return this->S(U); } ;  // if the refresh computes the action, can cache it. Alternately refreshAndAction() ?
   virtual void deriv(const GaugeField& U, GaugeField& dSdU) = 0;        // evaluate the action derivative
   virtual std::string action_name()    = 0;                             // return the action name
   virtual std::string LogParameters()  = 0;                             // prints action parameters
