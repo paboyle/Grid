@@ -127,6 +127,7 @@ public:
 
   void operator() (LinearOperatorBase<FieldD> &Linop_d, const FieldD &src_d, std::vector<FieldD> &psi_d)
   { 
+    GRID_TRACE("ConjugateGradientMultiShiftMixedPrec");
     GridBase *DoublePrecGrid = src_d.Grid();
 
     ////////////////////////////////////////////////////////////////////////
