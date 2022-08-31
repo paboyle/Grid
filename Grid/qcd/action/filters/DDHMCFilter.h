@@ -91,6 +91,19 @@ struct DDHMCFilter: public MomentumFilterBase<GaugeField>
 	  U_mu = where(mod(coor,B1)==Integer(B1-4),zzz_mu,U_mu); 
 	  PokeIndex<LorentzIndex>(U, U_mu, mu);
 	}
+	if ( Width==4) { 
+	  U    = where(mod(coor,B1)==Integer(B1-4),zzz,U);
+	  U    = where(mod(coor,B1)==Integer(B1-3),zzz,U);
+	  U    = where(mod(coor,B1)==Integer(B1-2),zzz,U);
+	  U    = where(mod(coor,B1)==Integer(B1-1),zzz,U);
+	  U    = where(mod(coor,B1)==Integer(0)   ,zzz,U); 
+	  U    = where(mod(coor,B1)==Integer(1)   ,zzz,U); 
+	  U    = where(mod(coor,B1)==Integer(2)   ,zzz,U); 
+	  U    = where(mod(coor,B1)==Integer(3)   ,zzz,U); 
+	  auto U_mu   = PeekIndex<LorentzIndex>(U,mu);
+	  U_mu = where(mod(coor,B1)==Integer(B1-5),zzz_mu,U_mu); 
+	  PokeIndex<LorentzIndex>(U, U_mu, mu);
+	}
       }
 
     }
