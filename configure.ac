@@ -128,6 +128,26 @@ case ${ac_LAPACK} in
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK]);;
 esac
 
+############### tracing
+AC_ARG_ENABLE([tracing],
+    [AC_HELP_STRING([--enable-tracing=none|nvtx|roctx|timer], [enable tracing])],
+    [ac_TRACING=${enable_tracing}], [ac_TRACING=none])
+
+case ${ac_TRACING} in
+    nvtx)
+        AC_DEFINE([GRID_TRACING_NVTX],[1],[use NVTX])
+	LIBS="${LIBS} -lnvToolsExt64_1"
+	;;
+    roctx)
+        AC_DEFINE([GRID_TRACING_ROCTX],[1],[use ROCTX])
+	LIBS="${LIBS} -lroctx64"
+	;;
+    timer)
+        AC_DEFINE([GRID_TRACING_TIMER],[1],[use TIMER]);;
+    *)
+	AC_DEFINE([GRID_TRACING_NONE],[1],[no tracing]);;
+esac
+
 ############### fermions
 AC_ARG_ENABLE([fermion-reps],
      [AC_HELP_STRING([--enable-fermion-reps=yes|no], [enable extra fermion representation support])],
