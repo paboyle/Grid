@@ -78,21 +78,6 @@ public:
   int Dirichlet;
   Coordinate Block; 
 
-  /********** Deprecate timers **********/
-  void Report(void);
-  void ZeroCounters(void);
-  double DhopCalls;
-  double DhopCommTime;
-  double DhopComputeTime;
-  double DhopComputeTime2;
-  double DhopFaceTime;
-  double DhopTotalTime;
-
-  double DerivCalls;
-  double DerivCommTime;
-  double DerivComputeTime;
-  double DerivDhopComputeTime;
-
   ///////////////////////////////////////////////////////////////
   // Implement the abstract base
   ///////////////////////////////////////////////////////////////
