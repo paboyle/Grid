@@ -488,6 +488,14 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   int words = fd*sizeof(sobj)/sizeof(scalar_type);
   grid->GlobalSumVector(ptr, words);
 }
+template<class vobj> inline
+std::vector<typename vobj::scalar_object> 
+sliceSum(const Lattice<vobj> &Data,int orthogdim)
+{
+  std::vector<typename vobj::scalar_object> result;
+  sliceSum(Data,result,orthogdim);
+  return result;
+}
 
 template<class vobj>
 static void sliceInnerProductVector( std::vector<ComplexD> & result, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int orthogdim) 
