@@ -44,7 +44,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/GridStd.h>
 #include <Grid/threads/Pragmas.h>
 #include <Grid/perfmon/Timer.h>
-#include <Grid/perfmon/PerfCount.h>
+#include <Grid/perfmon/Tracing.h>
+//#include <Grid/perfmon/PerfCount.h>
 #include <Grid/util/Util.h>
 #include <Grid/log/Log.h>
 #include <Grid/allocator/Allocator.h>
