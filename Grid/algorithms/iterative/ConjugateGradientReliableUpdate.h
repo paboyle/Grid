@@ -73,6 +73,7 @@ public:
   }
     
   void operator()(const FieldD &src, FieldD &psi) {
+    GRID_TRACE("ConjugateGradientReliableUpdate");
     LinearOperatorBase<FieldF> *Linop_f_use = &Linop_f;
     bool using_fallback = false;
       
