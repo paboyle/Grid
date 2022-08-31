@@ -58,6 +58,7 @@ public:
 
   void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) {
 
+    GRID_TRACE("ConjugateGradient");
     psi.Checkerboard() = src.Checkerboard();
 
     conformable(psi, src);
