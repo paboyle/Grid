@@ -186,7 +186,6 @@ int main (int argc, char ** argv)
 
   if (1) {
     FGrid->Barrier();
-    Dw.ZeroCounters();
     Dw.Dhop(src,result,0);
     std::cout<<GridLogMessage<<"Called warmup"<<std::endl;
     double t0=usecond();
@@ -231,7 +230,6 @@ int main (int argc, char ** argv)
       exit(-1);
     }
     assert (norm2(err)< 1.0e-4 );
-    Dw.Report();
   }
 
   if (1)
@@ -306,7 +304,6 @@ int main (int argc, char ** argv)
   if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
   std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
   {
-    Dw.ZeroCounters();
     FGrid->Barrier();
     Dw.DhopEO(src_o,r_e,DaggerNo);
     double t0=usecond();
@@ -328,7 +325,6 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "Deo mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "Deo mflop/s per rank   "<< flops/(t1-t0)/NP<<std::endl;
     std::cout<<GridLogMessage << "Deo mflop/s per node   "<< flops/(t1-t0)/NN<<std::endl;
-    Dw.Report();
   }
   Dw.DhopEO(src_o,r_e,DaggerNo);
   Dw.DhopOE(src_e,r_o,DaggerNo);

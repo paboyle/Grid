@@ -103,35 +103,30 @@ int main (int argc, char ** argv)
 #define BENCH_DW(A,...)			\
     Dw. A (__VA_ARGS__);				\
     FGrid->Barrier();				\
-    Dw.CayleyZeroCounters();      \
     t0=usecond();				\
     for(int i=0;i<ncall;i++){			\
       Dw. A (__VA_ARGS__);				\
     }						\
     t1=usecond();				\
     FGrid->Barrier();				\
-    Dw.CayleyReport();					\
     std::cout<<GridLogMessage << "Called " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
     std::cout<<GridLogMessage << "******************"<<std::endl;
 
 #define BENCH_ZDW(A,in,out)			\
     zDw. A (in,out);				\
     FGrid->Barrier();				\
-    zDw.CayleyZeroCounters();      \
     t0=usecond();				\
     for(int i=0;i<ncall;i++){			\
       zDw. A (in,out);				\
     }						\
     t1=usecond();				\
     FGrid->Barrier();				\
-    zDw.CayleyReport();							\
     std::cout<<GridLogMessage << "Called ZDw " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
     std::cout<<GridLogMessage << "******************"<<std::endl;
 
 #define BENCH_DW_SSC(A,in,out)			\
     Dw. A (in,out);				\
     FGrid->Barrier();				\
-    Dw.CayleyZeroCounters();      \
     t0=usecond();				\
     for(int i=0;i<ncall;i++){			\
       __SSC_START ;				\
@@ -140,7 +135,6 @@ int main (int argc, char ** argv)
     }						\
     t1=usecond();				\
     FGrid->Barrier();				\
-    Dw.CayleyReport();					\
     std::cout<<GridLogMessage << "Called " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
     std::cout<<GridLogMessage << "******************"<<std::endl;
 
