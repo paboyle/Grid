@@ -143,9 +143,10 @@ protected:
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
       double end_force = usecond();
 
+      //      DumpSliceNorm("force ",force,Nd-1);
       MomFilter->applyFilter(force);
       std::cout << GridLogIntegrator << " update_P : Level [" << level <<"]["<<a <<"] "<<name<< std::endl;
-      DumpSliceNorm("force ",force,Nd-1);
+      DumpSliceNorm("force filtered ",force,Nd-1);
       
       Real force_abs   = std::sqrt(norm2(force)/U.Grid()->gSites()); //average per-site norm.  nb. norm2(latt) = \sum_x norm2(latt[x]) 
       Real impulse_abs = force_abs * ep * HMC_MOMENTUM_DENOMINATOR;    
@@ -286,7 +287,7 @@ public:
 		  <<" force max " << as[level].actions.at(actionID)->deriv_max_average()
 		  <<" norm "      << as[level].actions.at(actionID)->deriv_norm_average()
 		  <<" Fdt max  "  << as[level].actions.at(actionID)->Fdt_max_average()
-		  <<" norm "      << as[level].actions.at(actionID)->Fdt_norm_average()
+		  <<" Fdt norm "  << as[level].actions.at(actionID)->Fdt_norm_average()
 		  <<" calls "     << as[level].actions.at(actionID)->deriv_num
 		  << std::endl;
       }
