@@ -85,7 +85,12 @@ NAMESPACE_BEGIN(Grid);
 	PowerNegQuarter.Init(remez,param.tolerance,true);
       };
 
-      virtual std::string action_name(){return "OneFlavourRatioRationalPseudoFermionAction";}
+      virtual std::string action_name(){
+	std::stringstream sstream;
+	sstream<<"OneFlavourRatioRationalPseudoFermionAction("
+	       <<DenOp.Mass()<<") / det("<<NumOp.Mass()<<")";
+	return sstream.str();
+      }
       
       virtual std::string LogParameters(){
 	std::stringstream sstream;
