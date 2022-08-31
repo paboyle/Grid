@@ -183,16 +183,6 @@ public:
 		  GridRedBlackCartesian &FourDimRedBlackGrid,
 		  RealD _mass,RealD _M5,const ImplParams &p= ImplParams());
 
-  void CayleyReport(void);
-  void CayleyZeroCounters(void);
-
-  double M5Dflops;
-  double M5Dcalls;
-  double M5Dtime;
-
-  double MooeeInvFlops;
-  double MooeeInvCalls;
-  double MooeeInvTime;
 
 protected:
   virtual void SetCoefficientsZolotarev(RealD zolohi,Approx::zolotarev_data *zdata,RealD b,RealD c);
