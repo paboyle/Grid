@@ -72,20 +72,15 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
   if (SE->_is_local) {						\
     int perm= SE->_permute;					\
     auto tmp = coalescedReadPermute(in[SE->_offset],ptype,perm,lane);	\
-    spProj(chi,tmp);						\
-  } else if ( st.same_node[Dir] ) {				\
-    chi = coalescedRead(buf[SE->_offset],lane);			\
-  }								\
-  acceleratorSynchronise();						\
-  if (SE->_is_local || st.same_node[Dir] ) {			\
-    Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);		\
-    Recon(result, Uchi);					\
-  }								\
+    spProj(chi,tmp);							\
+    Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);			\
+    Recon(result, Uchi);						\
+  }									\
   acceleratorSynchronise();
 
 #define GENERIC_STENCIL_LEG_EXT(Dir,spProj,Recon)		\
   SE = st.GetEntry(ptype, Dir, sF);				\
-  if ((!SE->_is_local) && (!st.same_node[Dir]) ) {		\
+  if (!SE->_is_local ) {		\
     auto chi = coalescedRead(buf[SE->_offset],lane);		\
     Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);		\
     Recon(result, Uchi);					\
