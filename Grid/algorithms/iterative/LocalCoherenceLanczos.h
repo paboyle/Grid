@@ -146,14 +146,21 @@ public:
   LinearOperatorBase<FineField> &_Linop;
   RealD                             _coarse_relax_tol;
   std::vector<FineField>        &_subspace;
+
+  int _largestEvalIdxForReport; //The convergence of the LCL is based on the evals of the coarse grid operator, not those of the underlying fine grid operator
+                                //As a result we do not know what the eval range of the fine operator is until the very end, making tuning the Cheby bounds very difficult
+                                //To work around this issue, every restart we separately reconstruct the fine operator eval for the lowest and highest evec and print these
+                                //out alongside the evals of the coarse operator. To do so we need to know the index of the largest eval (i.e. Nstop-1)
+                                //NOTE: If largestEvalIdxForReport=-1 (default) then this is not performed
   
   ImplicitlyRestartedLanczosSmoothedTester(LinearFunction<CoarseField>   &Poly,
 					   OperatorFunction<FineField>   &smoother,
 					   LinearOperatorBase<FineField> &Linop,
 					   std::vector<FineField>        &subspace,
-					   RealD coarse_relax_tol=5.0e3) 
+					   RealD coarse_relax_tol=5.0e3,
+					   int largestEvalIdxForReport=-1) 
     : _smoother(smoother), _Linop(Linop), _Poly(Poly), _subspace(subspace),
-      _coarse_relax_tol(coarse_relax_tol)  
+      _coarse_relax_tol(coarse_relax_tol), _largestEvalIdxForReport(largestEvalIdxForReport)
   {    };
 
   //evalMaxApprox: approximation of largest eval of the fine Chebyshev operator (suitably wrapped by block projection)
@@ -179,6 +186,12 @@ public:
 	     <<" |H B[i] - eval[i]B[i]|^2 / evalMaxApprox^2 " << std::setw(25) << vv
 	     <<std::endl;
 
+    if(_largestEvalIdxForReport != -1 && (j==0 || j==_largestEvalIdxForReport)){
+      std::cout<<GridLogIRL << "Estimating true eval of fine grid operator for eval idx " << j << std::endl;
+      RealD tmp_eval;
+      ReconstructEval(j,eresid,B,tmp_eval,1.0); //don't use evalMaxApprox of coarse operator! (cf below)
+    }
+    
     int conv=0;
     if( (vv<eresid*eresid) ) conv = 1;
     return conv;
@@ -409,7 +422,7 @@ public:
     //////////////////////////////////////////////////////////////////////////////////////////////////
 
     Chebyshev<FineField>                                           ChebySmooth(cheby_smooth); //lower order Chebyshev of fine operator on fine grid used to smooth regenerated eigenvectors
-    ImplicitlyRestartedLanczosSmoothedTester<Fobj,CComplex,nbasis> ChebySmoothTester(ChebyOp,ChebySmooth,_FineOp,subspace,relax); 
+    ImplicitlyRestartedLanczosSmoothedTester<Fobj,CComplex,nbasis> ChebySmoothTester(ChebyOp,ChebySmooth,_FineOp,subspace,relax,Nstop-1); 
 
     evals_coarse.resize(Nm);
     evec_coarse.resize(Nm,_CoarseGrid);
