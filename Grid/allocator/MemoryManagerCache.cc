@@ -110,7 +110,7 @@ void MemoryManager::AccDiscard(AcceleratorViewEntry &AccCache)
   ///////////////////////////////////////////////////////////
   assert(AccCache.state!=Empty);
   
-  mprintf("MemoryManager: Discard(%llx) %llx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
+  mprintf("MemoryManager: Discard(%lx) %lx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
   assert(AccCache.accLock==0);
   assert(AccCache.cpuLock==0);
   assert(AccCache.CpuPtr!=(uint64_t)NULL);
@@ -118,7 +118,7 @@ void MemoryManager::AccDiscard(AcceleratorViewEntry &AccCache)
     AcceleratorFree((void *)AccCache.AccPtr,AccCache.bytes);
     DeviceBytes   -=AccCache.bytes;
     LRUremove(AccCache);
-    dprintf("MemoryManager: Free(%llx) LRU %lld Total %lld\n",(uint64_t)AccCache.AccPtr,DeviceLRUBytes,DeviceBytes);  
+    dprintf("MemoryManager: Free(%lx) LRU %ld Total %ld\n",(uint64_t)AccCache.AccPtr,DeviceLRUBytes,DeviceBytes);  
   }
   uint64_t CpuPtr = AccCache.CpuPtr;
   EntryErase(CpuPtr);
@@ -132,7 +132,7 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
   ///////////////////////////////////////////////////////////////////////////
   assert(AccCache.state!=Empty);
   
-  mprintf("MemoryManager: Evict(%llx) %llx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
+  mprintf("MemoryManager: Evict(%lx) %lx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
   assert(AccCache.accLock==0);
   assert(AccCache.cpuLock==0);
   if(AccCache.state==AccDirty) {
@@ -143,7 +143,7 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
     AcceleratorFree((void *)AccCache.AccPtr,AccCache.bytes);
     DeviceBytes   -=AccCache.bytes;
     LRUremove(AccCache);
-    dprintf("MemoryManager: Free(%llx) footprint now %lld \n",(uint64_t)AccCache.AccPtr,DeviceBytes);  
+    dprintf("MemoryManager: Free(%lx) footprint now %ld \n",(uint64_t)AccCache.AccPtr,DeviceBytes);  
   }
   uint64_t CpuPtr = AccCache.CpuPtr;
   EntryErase(CpuPtr);
@@ -156,7 +156,7 @@ void MemoryManager::Flush(AcceleratorViewEntry &AccCache)
   assert(AccCache.AccPtr!=(uint64_t)NULL);
   assert(AccCache.CpuPtr!=(uint64_t)NULL);
   acceleratorCopyFromDevice((void *)AccCache.AccPtr,(void *)AccCache.CpuPtr,AccCache.bytes);
-  mprintf("MemoryManager: Flush  %llx -> %llx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
+  mprintf("MemoryManager: Flush  %lx -> %lx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   DeviceToHostBytes+=AccCache.bytes;
   DeviceToHostXfer++;
   AccCache.state=Consistent;
@@ -171,7 +171,7 @@ void MemoryManager::Clone(AcceleratorViewEntry &AccCache)
     AccCache.AccPtr=(uint64_t)AcceleratorAllocate(AccCache.bytes);
     DeviceBytes+=AccCache.bytes;
   }
-  mprintf("MemoryManager: Clone %llx <- %llx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
+  mprintf("MemoryManager: Clone %lx <- %lx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   acceleratorCopyToDevice((void *)AccCache.CpuPtr,(void *)AccCache.AccPtr,AccCache.bytes);
   HostToDeviceBytes+=AccCache.bytes;
   HostToDeviceXfer++;
@@ -247,7 +247,7 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
   assert(AccCache.cpuLock==0);  // Programming error
 
   if(AccCache.state!=Empty) {
-    dprintf("ViewOpen found entry %llx %llx : %lld %lld\n",
+    dprintf("ViewOpen found entry %lx %lx : %ld %ld\n",
 		    (uint64_t)AccCache.CpuPtr,
 		    (uint64_t)CpuPtr,
 		    (uint64_t)AccCache.bytes,
