@@ -7,7 +7,7 @@
 --disable-fermion-reps \
 --with-gmp=$OLCF_GMP_ROOT \
 --with-mpfr=/opt/cray/pe/gcc/mpfr/3.1.4/ \
---disable-gparity \
+--enable-gparity \
 CXX=hipcc MPICXX=mpicxx \
 CXXFLAGS="-fPIC -I{$ROCM_PATH}/include/ -std=c++14 -I${MPICH_DIR}/include " \
  LDFLAGS=" -L${MPICH_DIR}/lib -lmpi -L${CRAY_MPICH_ROOTDIR}/gtl/lib -lmpi_gtl_hsa -lamdhip64 "
