@@ -53,6 +53,7 @@ struct HMCparameters: Serializable {
                                   Integer, Trajectories, /* @brief Number of sweeps in this run */
                                   bool, MetropolisTest,
                                   Integer, NoMetropolisUntil,
+				  bool, PerformRandomShift, /* @brief Randomly shift the gauge configuration at the start of a trajectory */
                                   std::string, StartingType,
                                   IntegratorParameters, MD)
 
@@ -63,6 +64,7 @@ struct HMCparameters: Serializable {
     StartTrajectory   = 0;
     Trajectories      = 10;
     StartingType      = "HotStart";
+    PerformRandomShift = true;
     /////////////////////////////////
   }
 
@@ -83,6 +85,7 @@ struct HMCparameters: Serializable {
     std::cout << GridLogMessage << "[HMC parameters] Start trajectory        : " << StartTrajectory << "\n";
     std::cout << GridLogMessage << "[HMC parameters] Metropolis test (on/off): " << std::boolalpha << MetropolisTest << "\n";
     std::cout << GridLogMessage << "[HMC parameters] Thermalization trajs    : " << NoMetropolisUntil << "\n";
+    std::cout << GridLogMessage << "[HMC parameters] Doing random shift      : " << std::boolalpha << PerformRandomShift << "\n";
     std::cout << GridLogMessage << "[HMC parameters] Starting type           : " << StartingType << "\n";
     MD.print_parameters();
   }
@@ -95,6 +98,7 @@ private:
   const HMCparameters Params;
 
   typedef typename IntegratorType::Field Field;
+  typedef typename IntegratorType::FieldImplementation FieldImplementation;
   typedef std::vector< HmcObservable<Field> * > ObsListType;
 
   //pass these from the resource manager
@@ -138,26 +142,37 @@ private:
 
     GridBase *Grid = U.Grid();
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Mainly for DDHMC perform a random translation of U modulo volume
-    //////////////////////////////////////////////////////////////////////////////////////////////////////
-    std::cout << GridLogMessage << "--------------------------------------------------\n";
-    std::cout << GridLogMessage << "Random shifting gauge field by [";
-    for(int d=0;d<Grid->Nd();d++) {
+    if(Params.PerformRandomShift){
+      //////////////////////////////////////////////////////////////////////////////////////////////////////
+      // Mainly for DDHMC perform a random translation of U modulo volume
+      //////////////////////////////////////////////////////////////////////////////////////////////////////
+      std::cout << GridLogMessage << "--------------------------------------------------\n";
+      std::cout << GridLogMessage << "Random shifting gauge field by [";
 
-      int L = Grid->GlobalDimensions()[d];
+      std::vector<typename FieldImplementation::GaugeLinkField> Umu(Grid->Nd(), U.Grid());
+      for(int mu=0;mu<Grid->Nd();mu++) Umu[mu] = PeekIndex<LorentzIndex>(U, mu);
 
-      RealD rn_uniform;  random(sRNG, rn_uniform);
+      for(int d=0;d<Grid->Nd();d++) {
 
-      int shift = (int) (rn_uniform*L);
+	int L = Grid->GlobalDimensions()[d];
 
-      std::cout << shift;
-      if(d<Grid->Nd()-1) std::cout <<",";
-      else               std::cout <<"]\n";
+	RealD rn_uniform;  random(sRNG, rn_uniform);
+
+	int shift = (int) (rn_uniform*L);
+
+	std::cout << shift;
+	if(d<Grid->Nd()-1) std::cout <<",";
+	else               std::cout <<"]\n";
       
-      U = Cshift(U,d,shift);
+	//shift all fields together in a way that respects the gauge BCs
+	for(int mu=0; mu < Grid->Nd(); mu++)
+	  Umu[mu] = FieldImplementation::CshiftLink(Umu[mu],d,shift);
+      }
+
+      for(int mu=0;mu<Grid->Nd();mu++) PokeIndex<LorentzIndex>(U,Umu[mu],mu);
+      
+      std::cout << GridLogMessage << "--------------------------------------------------\n";
     }
-    std::cout << GridLogMessage << "--------------------------------------------------\n";
 
     TheIntegrator.reset_timer();
     

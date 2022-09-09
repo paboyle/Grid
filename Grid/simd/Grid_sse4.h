@@ -35,7 +35,7 @@ Author: neo <cossu@post.kek.jp>
 */
 // Time-stamp: <2015-06-16 23:27:54 neo>
 //----------------------------------------------------------------------
-
+#include <immintrin.h>
 #include <pmmintrin.h>
 
 NAMESPACE_BEGIN(Grid);

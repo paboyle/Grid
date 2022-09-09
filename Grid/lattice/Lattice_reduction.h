@@ -91,10 +91,7 @@ inline typename vobj::scalar_objectD sumD_cpu(const vobj *arg, Integer osites)
   for(int i=0;i<nthread;i++){
     ssum = ssum+sumarray[i];
   } 
-  
-  typedef typename vobj::scalar_object ssobj;
-  ssobj ret = ssum;
-  return ret;
+  return ssum;
 }
 /*
 Threaded max, don't use for now

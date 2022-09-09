@@ -227,26 +227,38 @@ namespace ConjugateBC {
   //shift = -1
   //Out(x) = U_\mu(x-mu)  | x_\mu != 0
   //       = U*_\mu(L-1)  | x_\mu == 0
+  //shift = 2
+  //Out(x) = U_\mu(x+2\hat\mu)  | x_\mu < L-2
+  //       = U*_\mu(1)  | x_\mu == L-1
+  //       = U*_\mu(0)  | x_\mu == L-2
+  //shift = -2
+  //Out(x) = U_\mu(x-2mu)  | x_\mu > 1
+  //       = U*_\mu(L-2)  | x_\mu == 0
+  //       = U*_\mu(L-1)  | x_\mu == 1
+  //etc
   template<class gauge> Lattice<gauge>
   CshiftLink(const Lattice<gauge> &Link, int mu, int shift)
   {
     GridBase *grid = Link.Grid();
-    int Lmu = grid->GlobalDimensions()[mu] - 1;
+    int Lmu = grid->GlobalDimensions()[mu];
+    assert(abs(shift) < Lmu && "Invalid shift value");
 
     Lattice<iScalar<vInteger>> coor(grid);
     LatticeCoordinate(coor, mu);
 
     Lattice<gauge> tmp(grid);
-    if(shift == 1){
-      tmp = Cshift(Link, mu, 1);
-      tmp = where(coor == Lmu, conjugate(tmp), tmp);
+    if(shift > 0){
+      tmp = Cshift(Link, mu, shift);
+      tmp = where(coor >= Lmu-shift, conjugate(tmp), tmp);
       return tmp;
-    }else if(shift == -1){
+    }else if(shift < 0){
       tmp = Link;
-      tmp = where(coor == Lmu, conjugate(tmp), tmp);
-      return Cshift(tmp, mu, -1);
-    }else assert(0 && "Invalid shift value");
-    return tmp; //shuts up the compiler fussing about the return type
+      tmp = where(coor >= Lmu+shift, conjugate(tmp), tmp);
+      return Cshift(tmp, mu, shift);
+    }
+    
+    //shift == 0
+    return Link;
   }
 
 }
