@@ -115,6 +115,54 @@ NAMESPACE_BEGIN(Grid);
       
     public:
 
+      // allow non-uniform tolerances 
+      void SetTolerances(std::vector<RealD> action_tolerance,std::vector<RealD> md_tolerance)
+      {
+	assert(action_tolerance.size()==ApproxPowerAction.tolerances.size());
+	assert(    md_tolerance.size()==ApproxPowerMD.tolerances.size());
+	
+	// Fix up the tolerances
+	for(int i=0;i<ApproxPowerAction.tolerances.size();i++){
+	  ApproxPowerAction.tolerances[i]       = action_tolerance[i];
+	  ApproxNegPowerAction.tolerances[i]    = action_tolerance[i];
+	  ApproxHalfPowerAction.tolerances[i]   = action_tolerance[i];
+	  ApproxNegHalfPowerAction.tolerances[i]= action_tolerance[i];
+	  ApproxPowerMD.tolerances[i]       = md_tolerance[i];
+	  ApproxNegPowerMD.tolerances[i]    = md_tolerance[i];
+	  ApproxHalfPowerMD.tolerances[i]   = md_tolerance[i];
+	  ApproxNegHalfPowerMD.tolerances[i]= md_tolerance[i];
+	}
+	
+	// Print out - could deprecate
+	for(int i=0;i<ApproxPowerMD.tolerances.size();i++) {
+	  std::cout<<GridLogMessage << " ApproxPowerMD shift["<<i<<"] "
+		   <<" pole    "<<ApproxPowerMD.poles[i]
+		   <<" residue "<<ApproxPowerMD.residues[i]
+		   <<" tol     "<<ApproxPowerMD.tolerances[i]<<std::endl;
+	}
+	/*
+	  for(int i=0;i<ApproxNegPowerMD.tolerances.size();i++) {
+	  std::cout<<GridLogMessage << " ApproxNegPowerMD shift["<<i<<"] "
+		   <<" pole    "<<ApproxNegPowerMD.poles[i]
+		   <<" residue "<<ApproxNegPowerMD.residues[i]
+		   <<" tol     "<<ApproxNegPowerMD.tolerances[i]<<std::endl;
+	}
+	for(int i=0;i<ApproxHalfPowerMD.tolerances.size();i++) {
+	  std::cout<<GridLogMessage << " ApproxHalfPowerMD shift["<<i<<"] "
+		   <<" pole    "<<ApproxHalfPowerMD.poles[i]
+		   <<" residue "<<ApproxHalfPowerMD.residues[i]
+		   <<" tol     "<<ApproxHalfPowerMD.tolerances[i]<<std::endl;
+	}
+	for(int i=0;i<ApproxNegHalfPowerMD.tolerances.size();i++) {
+	  std::cout<<GridLogMessage << " ApproxNegHalfPowerMD shift["<<i<<"] "
+		   <<" pole    "<<ApproxNegHalfPowerMD.poles[i]
+		   <<" residue "<<ApproxNegHalfPowerMD.residues[i]
+		   <<" tol     "<<ApproxNegHalfPowerMD.tolerances[i]<<std::endl;
+	}
+	*/
+	
+      }
+      
       GeneralEvenOddRatioRationalPseudoFermionAction(FermionOperator<Impl>  &_NumOp, 
 						     FermionOperator<Impl>  &_DenOp, 
 						     const Params & p
@@ -149,6 +197,11 @@ NAMESPACE_BEGIN(Grid);
 	    ApproxNegHalfPowerMD.tolerances[i] = ApproxHalfPowerMD.tolerances[i] = param.md_tolerance;
 	}
 
+	std::vector<RealD> action_tolerance(ApproxHalfPowerAction.tolerances.size(),param.action_tolerance);
+	std::vector<RealD> md_tolerance    (ApproxHalfPowerMD.tolerances.size(),param.md_tolerance);
+
+	SetTolerances(action_tolerance, md_tolerance);
+	
 	std::cout<<GridLogMessage << action_name() << " initialize: complete" << std::endl;
       };
 
