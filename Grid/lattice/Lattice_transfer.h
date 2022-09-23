@@ -1080,6 +1080,25 @@ vectorizeFromRevLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
   });
 }
 
+template<class VobjOut, class VobjIn>
+void precisionChangeFast(Lattice<VobjOut> &out, const Lattice<VobjIn> &in)
+{
+  typedef typename VobjOut::scalar_object SobjOut;
+  typedef typename VobjIn::scalar_object SobjIn;
+  conformable(out.Grid(),in.Grid());
+  out.Checkerboard() = in.Checkerboard();
+  int nsimd = out.Grid()->Nsimd();
+  autoView( out_v  , out, AcceleratorWrite);
+  autoView(  in_v ,   in, AcceleratorRead);
+  accelerator_for(idx,out.Grid()->oSites(),nsimd,{
+      auto itmp = coalescedRead(in_v[idx]);
+      auto otmp = coalescedRead(out_v[idx]);
+#ifdef GRID_SIMT
+      otmp=itmp;
+#endif
+      coalescedWrite(out_v[idx],otmp);
+  });
+}
 //Convert a Lattice from one precision to another
 template<class VobjOut, class VobjIn>
 void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in)
