@@ -50,9 +50,9 @@ public:
   RealD refresh_us;
   void  reset_timer(void)        {
     deriv_us = S_us = refresh_us = 0.0;
-    deriv_num=0;
     deriv_norm_sum = deriv_max_sum=0.0;
     Fdt_max_sum =  Fdt_norm_sum = 0.0;
+    deriv_num=0;
   }
   void  deriv_log(RealD nrm, RealD max,RealD Fdt_nrm,RealD Fdt_max) {
     deriv_max_sum+=max;
