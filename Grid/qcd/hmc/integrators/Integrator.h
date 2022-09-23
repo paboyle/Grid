@@ -145,7 +145,7 @@ protected:
 
       //      DumpSliceNorm("force ",force,Nd-1);
       MomFilter->applyFilter(force);
-      std::cout << GridLogIntegrator << " update_P : Level [" << level <<"]["<<a <<"] "<<name<< std::endl;
+      std::cout << GridLogIntegrator << " update_P : Level [" << level <<"]["<<a <<"] "<<name<<" dt "<<ep<<  std::endl;
       DumpSliceNorm("force filtered ",force,Nd-1);
       
       Real force_abs   = std::sqrt(norm2(force)/U.Grid()->gSites()); //average per-site norm.  nb. norm2(latt) = \sum_x norm2(latt[x]) 
@@ -156,6 +156,7 @@ protected:
 
       as[level].actions.at(a)->deriv_log(force_abs,force_max,impulse_abs,impulse_max);
       
+      std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] dt           : " << ep <<" "<<name<<std::endl;
       std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Force average: " << force_abs <<" "<<name<<std::endl;
       std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Force max    : " << force_max <<" "<<name<<std::endl;
       std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Fdt average  : " << impulse_abs <<" "<<name<<std::endl;
