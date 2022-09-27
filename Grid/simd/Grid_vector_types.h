@@ -1055,7 +1055,7 @@ accelerator_inline typename toComplexMapper<Rsimd>::Complexified toComplex(const
 }
 
 
-accelerator_inline void precisionChange(vRealF    *out,vRealD    *in,int nvec)
+accelerator_inline void precisionChange(vRealF    *out,const vRealD    *in,int nvec)
 {
   assert((nvec&0x1)==0);
   for(int m=0;m*2<nvec;m++){
@@ -1063,7 +1063,7 @@ accelerator_inline void precisionChange(vRealF    *out,vRealD    *in,int nvec)
     out[m].v=Optimization::PrecisionChange::DtoS(in[n].v,in[n+1].v);
   }
 }
-accelerator_inline void precisionChange(vRealH    *out,vRealD    *in,int nvec)
+accelerator_inline void precisionChange(vRealH    *out,const vRealD    *in,int nvec)
 {
   assert((nvec&0x3)==0);
   for(int m=0;m*4<nvec;m++){
@@ -1071,7 +1071,7 @@ accelerator_inline void precisionChange(vRealH    *out,vRealD    *in,int nvec)
     out[m].v=Optimization::PrecisionChange::DtoH(in[n].v,in[n+1].v,in[n+2].v,in[n+3].v);
   }
 }
-accelerator_inline void precisionChange(vRealH    *out,vRealF    *in,int nvec)
+accelerator_inline void precisionChange(vRealH    *out,const vRealF    *in,int nvec)
 {
   assert((nvec&0x1)==0);
   for(int m=0;m*2<nvec;m++){
@@ -1079,7 +1079,7 @@ accelerator_inline void precisionChange(vRealH    *out,vRealF    *in,int nvec)
     out[m].v=Optimization::PrecisionChange::StoH(in[n].v,in[n+1].v);
   }
 }
-accelerator_inline void precisionChange(vRealD    *out,vRealF    *in,int nvec)
+accelerator_inline void precisionChange(vRealD    *out,const vRealF    *in,int nvec)
 {
   assert((nvec&0x1)==0);
   for(int m=0;m*2<nvec;m++){
@@ -1095,7 +1095,7 @@ accelerator_inline void precisionChange(vRealD    *out,vRealF    *in,int nvec)
     //  |                                                 ~~~~~~~^
   }
 }
-accelerator_inline void precisionChange(vRealD    *out,vRealH    *in,int nvec)
+accelerator_inline void precisionChange(vRealD    *out,const vRealH    *in,int nvec)
 {
   assert((nvec&0x3)==0);
   for(int m=0;m*4<nvec;m++){
@@ -1103,7 +1103,7 @@ accelerator_inline void precisionChange(vRealD    *out,vRealH    *in,int nvec)
     Optimization::PrecisionChange::HtoD(in[m].v,out[n].v,out[n+1].v,out[n+2].v,out[n+3].v);
   }
 }
-accelerator_inline void precisionChange(vRealF    *out,vRealH    *in,int nvec)
+accelerator_inline void precisionChange(vRealF    *out,const vRealH    *in,int nvec)
 {
   assert((nvec&0x1)==0);
   for(int m=0;m*2<nvec;m++){
@@ -1111,12 +1111,12 @@ accelerator_inline void precisionChange(vRealF    *out,vRealH    *in,int nvec)
     Optimization::PrecisionChange::HtoS(in[m].v,out[n].v,out[n+1].v);
   }
 }
-accelerator_inline void precisionChange(vComplexF *out,vComplexD *in,int nvec){ precisionChange((vRealF *)out,(vRealD *)in,nvec);}
-accelerator_inline void precisionChange(vComplexH *out,vComplexD *in,int nvec){ precisionChange((vRealH *)out,(vRealD *)in,nvec);}
-accelerator_inline void precisionChange(vComplexH *out,vComplexF *in,int nvec){ precisionChange((vRealH *)out,(vRealF *)in,nvec);}
-accelerator_inline void precisionChange(vComplexD *out,vComplexF *in,int nvec){ precisionChange((vRealD *)out,(vRealF *)in,nvec);}
-accelerator_inline void precisionChange(vComplexD *out,vComplexH *in,int nvec){ precisionChange((vRealD *)out,(vRealH *)in,nvec);}
-accelerator_inline void precisionChange(vComplexF *out,vComplexH *in,int nvec){ precisionChange((vRealF *)out,(vRealH *)in,nvec);}
+accelerator_inline void precisionChange(vComplexF *out,const vComplexD *in,int nvec){ precisionChange((vRealF *)out,(vRealD *)in,nvec);}
+accelerator_inline void precisionChange(vComplexH *out,const vComplexD *in,int nvec){ precisionChange((vRealH *)out,(vRealD *)in,nvec);}
+accelerator_inline void precisionChange(vComplexH *out,const vComplexF *in,int nvec){ precisionChange((vRealH *)out,(vRealF *)in,nvec);}
+accelerator_inline void precisionChange(vComplexD *out,const vComplexF *in,int nvec){ precisionChange((vRealD *)out,(vRealF *)in,nvec);}
+accelerator_inline void precisionChange(vComplexD *out,const vComplexH *in,int nvec){ precisionChange((vRealD *)out,(vRealH *)in,nvec);}
+accelerator_inline void precisionChange(vComplexF *out,const vComplexH *in,int nvec){ precisionChange((vRealF *)out,(vRealH *)in,nvec);}
 
 // Check our vector types are of an appropriate size.
 

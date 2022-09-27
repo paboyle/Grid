@@ -224,18 +224,14 @@ accelerator_inline void Gpermute(VectorSIMD &y,const VectorSIMD &b,int perm);
 NAMESPACE_END(Grid);
 
 #include <Grid/simd/Grid_vector_types.h>
+#include <Grid/simd/Grid_doubled_vector.h>
 #include <Grid/simd/Grid_vector_unops.h>
 
 NAMESPACE_BEGIN(Grid);
-// Default precision
-#ifdef GRID_DEFAULT_PRECISION_DOUBLE
+
+// Default precision is wired to double
 typedef vRealD vReal;
 typedef vComplexD vComplex;
-#else
-typedef vRealF vReal;
-typedef vComplexF vComplex;
-#endif
-
  
 inline std::ostream& operator<< (std::ostream& stream, const vComplexF &o){
   int nn=vComplexF::Nsimd();
