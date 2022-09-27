@@ -1,3 +1,11 @@
+======
+DDHMC
+======
+-- Reliable Update CG - DONE
+-- Multishift Mixed Precision - DONE
+-- Pole dependent residual  - DONE
+
+=======
 -- comms threads issue??
 -- Part done: Staggered kernel performance on GPU
 
@@ -8,7 +16,7 @@ General
 - Make representations code take Gimpl
 - Simplify the HMCand remove modules
 - Lattice_arith - are the mult, mac etc.. still needed after ET engine?
-- Lattice_rng - faster local only loop in init
+- Lattice_rng - faster local only loop in init -- DDHMC
 - Audit: accelerate A2Autils -- off critical path for HMC
 
 =========================================================
