@@ -194,11 +194,11 @@ accelerator_inline void convertType(vComplexD2 & out, const ComplexD & in) {
 #endif
 
 accelerator_inline void convertType(vComplexF & out, const vComplexD2 & in) {
-  out.v = Optimization::PrecisionChange::DtoS(in._internal[0].v,in._internal[1].v);
+  precisionChange(out,in);
 }
 
 accelerator_inline void convertType(vComplexD2 & out, const vComplexF & in) {
-  Optimization::PrecisionChange::StoD(in.v,out._internal[0].v,out._internal[1].v);
+  precisionChange(out,in);
 }
 
 template<typename T1,typename T2>
