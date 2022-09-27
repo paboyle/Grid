@@ -126,6 +126,7 @@ typedef iSpinMatrix<ComplexD >          SpinMatrixD;
 typedef iSpinMatrix<vComplex >          vSpinMatrix;
 typedef iSpinMatrix<vComplexF>          vSpinMatrixF;
 typedef iSpinMatrix<vComplexD>          vSpinMatrixD;
+typedef iSpinMatrix<vComplexD2>         vSpinMatrixD2;
 
 // Colour Matrix
 typedef iColourMatrix<Complex  >        ColourMatrix;
@@ -135,6 +136,7 @@ typedef iColourMatrix<ComplexD >        ColourMatrixD;
 typedef iColourMatrix<vComplex >        vColourMatrix;
 typedef iColourMatrix<vComplexF>        vColourMatrixF;
 typedef iColourMatrix<vComplexD>        vColourMatrixD;
+typedef iColourMatrix<vComplexD2>       vColourMatrixD2;
 
 // SpinColour matrix
 typedef iSpinColourMatrix<Complex  >    SpinColourMatrix;
@@ -144,6 +146,7 @@ typedef iSpinColourMatrix<ComplexD >    SpinColourMatrixD;
 typedef iSpinColourMatrix<vComplex >    vSpinColourMatrix;
 typedef iSpinColourMatrix<vComplexF>    vSpinColourMatrixF;
 typedef iSpinColourMatrix<vComplexD>    vSpinColourMatrixD;
+typedef iSpinColourMatrix<vComplexD2>   vSpinColourMatrixD2;
 
 // SpinColourSpinColour matrix
 typedef iSpinColourSpinColourMatrix<Complex  >    SpinColourSpinColourMatrix;
@@ -153,6 +156,7 @@ typedef iSpinColourSpinColourMatrix<ComplexD >    SpinColourSpinColourMatrixD;
 typedef iSpinColourSpinColourMatrix<vComplex >    vSpinColourSpinColourMatrix;
 typedef iSpinColourSpinColourMatrix<vComplexF>    vSpinColourSpinColourMatrixF;
 typedef iSpinColourSpinColourMatrix<vComplexD>    vSpinColourSpinColourMatrixD;
+typedef iSpinColourSpinColourMatrix<vComplexD2>   vSpinColourSpinColourMatrixD2;
 
 // SpinColourSpinColour matrix
 typedef iSpinColourSpinColourMatrix<Complex  >    SpinColourSpinColourMatrix;
@@ -162,33 +166,37 @@ typedef iSpinColourSpinColourMatrix<ComplexD >    SpinColourSpinColourMatrixD;
 typedef iSpinColourSpinColourMatrix<vComplex >    vSpinColourSpinColourMatrix;
 typedef iSpinColourSpinColourMatrix<vComplexF>    vSpinColourSpinColourMatrixF;
 typedef iSpinColourSpinColourMatrix<vComplexD>    vSpinColourSpinColourMatrixD;
+typedef iSpinColourSpinColourMatrix<vComplexD2>   vSpinColourSpinColourMatrixD2;
 
 // LorentzColour
 typedef iLorentzColourMatrix<Complex  > LorentzColourMatrix;
 typedef iLorentzColourMatrix<ComplexF > LorentzColourMatrixF;
 typedef iLorentzColourMatrix<ComplexD > LorentzColourMatrixD;
 
-typedef iLorentzColourMatrix<vComplex > vLorentzColourMatrix;
-typedef iLorentzColourMatrix<vComplexF> vLorentzColourMatrixF;
-typedef iLorentzColourMatrix<vComplexD> vLorentzColourMatrixD;
+typedef iLorentzColourMatrix<vComplex >  vLorentzColourMatrix;
+typedef iLorentzColourMatrix<vComplexF>  vLorentzColourMatrixF;
+typedef iLorentzColourMatrix<vComplexD>  vLorentzColourMatrixD;
+typedef iLorentzColourMatrix<vComplexD2> vLorentzColourMatrixD2;
 
 // DoubleStored gauge field
 typedef iDoubleStoredColourMatrix<Complex  > DoubleStoredColourMatrix;
 typedef iDoubleStoredColourMatrix<ComplexF > DoubleStoredColourMatrixF;
 typedef iDoubleStoredColourMatrix<ComplexD > DoubleStoredColourMatrixD;
 
-typedef iDoubleStoredColourMatrix<vComplex > vDoubleStoredColourMatrix;
-typedef iDoubleStoredColourMatrix<vComplexF> vDoubleStoredColourMatrixF;
-typedef iDoubleStoredColourMatrix<vComplexD> vDoubleStoredColourMatrixD;
+typedef iDoubleStoredColourMatrix<vComplex >  vDoubleStoredColourMatrix;
+typedef iDoubleStoredColourMatrix<vComplexF>  vDoubleStoredColourMatrixF;
+typedef iDoubleStoredColourMatrix<vComplexD>  vDoubleStoredColourMatrixD;
+typedef iDoubleStoredColourMatrix<vComplexD2> vDoubleStoredColourMatrixD2;
 
 //G-parity flavour matrix
 typedef iGparityFlavourMatrix<Complex> GparityFlavourMatrix;
 typedef iGparityFlavourMatrix<ComplexF> GparityFlavourMatrixF;
 typedef iGparityFlavourMatrix<ComplexD> GparityFlavourMatrixD;
 
-typedef iGparityFlavourMatrix<vComplex> vGparityFlavourMatrix;
-typedef iGparityFlavourMatrix<vComplexF> vGparityFlavourMatrixF;
-typedef iGparityFlavourMatrix<vComplexD> vGparityFlavourMatrixD;
+typedef iGparityFlavourMatrix<vComplex>   vGparityFlavourMatrix;
+typedef iGparityFlavourMatrix<vComplexF>  vGparityFlavourMatrixF;
+typedef iGparityFlavourMatrix<vComplexD>  vGparityFlavourMatrixD;
+typedef iGparityFlavourMatrix<vComplexD2> vGparityFlavourMatrixD2;
 
 
 // Spin vector
@@ -199,6 +207,7 @@ typedef iSpinVector<ComplexD>           SpinVectorD;
 typedef iSpinVector<vComplex >           vSpinVector;
 typedef iSpinVector<vComplexF>           vSpinVectorF;
 typedef iSpinVector<vComplexD>           vSpinVectorD;
+typedef iSpinVector<vComplexD2>          vSpinVectorD2;
 
 // Colour vector
 typedef iColourVector<Complex >         ColourVector;
@@ -208,6 +217,7 @@ typedef iColourVector<ComplexD>         ColourVectorD;
 typedef iColourVector<vComplex >         vColourVector;
 typedef iColourVector<vComplexF>         vColourVectorF;
 typedef iColourVector<vComplexD>         vColourVectorD;
+typedef iColourVector<vComplexD2>        vColourVectorD2;
 
 // SpinColourVector
 typedef iSpinColourVector<Complex >     SpinColourVector;
@@ -217,6 +227,7 @@ typedef iSpinColourVector<ComplexD>     SpinColourVectorD;
 typedef iSpinColourVector<vComplex >     vSpinColourVector;
 typedef iSpinColourVector<vComplexF>     vSpinColourVectorF;
 typedef iSpinColourVector<vComplexD>     vSpinColourVectorD;
+typedef iSpinColourVector<vComplexD2>    vSpinColourVectorD2;
 
 // HalfSpin vector
 typedef iHalfSpinVector<Complex >       HalfSpinVector;
@@ -226,15 +237,17 @@ typedef iHalfSpinVector<ComplexD>       HalfSpinVectorD;
 typedef iHalfSpinVector<vComplex >       vHalfSpinVector;
 typedef iHalfSpinVector<vComplexF>       vHalfSpinVectorF;
 typedef iHalfSpinVector<vComplexD>       vHalfSpinVectorD;
+typedef iHalfSpinVector<vComplexD2>      vHalfSpinVectorD2;
 
 // HalfSpinColour vector
 typedef iHalfSpinColourVector<Complex > HalfSpinColourVector;
 typedef iHalfSpinColourVector<ComplexF> HalfSpinColourVectorF;
 typedef iHalfSpinColourVector<ComplexD> HalfSpinColourVectorD;
     
-typedef iHalfSpinColourVector<vComplex > vHalfSpinColourVector;
-typedef iHalfSpinColourVector<vComplexF> vHalfSpinColourVectorF;
-typedef iHalfSpinColourVector<vComplexD> vHalfSpinColourVectorD;
+typedef iHalfSpinColourVector<vComplex >  vHalfSpinColourVector;
+typedef iHalfSpinColourVector<vComplexF>  vHalfSpinColourVectorF;
+typedef iHalfSpinColourVector<vComplexD>  vHalfSpinColourVectorD;
+typedef iHalfSpinColourVector<vComplexD2> vHalfSpinColourVectorD2;
 
 //G-parity flavour vector
 typedef iGparityFlavourVector<Complex >         GparityFlavourVector;
@@ -244,7 +257,7 @@ typedef iGparityFlavourVector<ComplexD>         GparityFlavourVectorD;
 typedef iGparityFlavourVector<vComplex >         vGparityFlavourVector;
 typedef iGparityFlavourVector<vComplexF>         vGparityFlavourVectorF;
 typedef iGparityFlavourVector<vComplexD>         vGparityFlavourVectorD;
-
+typedef iGparityFlavourVector<vComplexD2>        vGparityFlavourVectorD2;
     
 // singlets
 typedef iSinglet<Complex >         TComplex;     // FIXME This is painful. Tensor singlet complex type.
@@ -254,6 +267,7 @@ typedef iSinglet<ComplexD>         TComplexD;    // FIXME This is painful. Tenso
 typedef iSinglet<vComplex >        vTComplex ;   // what if we don't know the tensor structure
 typedef iSinglet<vComplexF>        vTComplexF;   // what if we don't know the tensor structure
 typedef iSinglet<vComplexD>        vTComplexD;   // what if we don't know the tensor structure
+typedef iSinglet<vComplexD2>       vTComplexD2;   // what if we don't know the tensor structure
 
 typedef iSinglet<Real >            TReal;        // Shouldn't need these; can I make it work without?
 typedef iSinglet<RealF>            TRealF;       // Shouldn't need these; can I make it work without?
@@ -271,47 +285,58 @@ typedef iSinglet<Integer >         TInteger;
 typedef Lattice<vColourMatrix>          LatticeColourMatrix;
 typedef Lattice<vColourMatrixF>         LatticeColourMatrixF;
 typedef Lattice<vColourMatrixD>         LatticeColourMatrixD;
+typedef Lattice<vColourMatrixD2>        LatticeColourMatrixD2;
 
 typedef Lattice<vSpinMatrix>            LatticeSpinMatrix;
 typedef Lattice<vSpinMatrixF>           LatticeSpinMatrixF;
 typedef Lattice<vSpinMatrixD>           LatticeSpinMatrixD;
+typedef Lattice<vSpinMatrixD2>          LatticeSpinMatrixD2;
 
 typedef Lattice<vSpinColourMatrix>      LatticeSpinColourMatrix;
 typedef Lattice<vSpinColourMatrixF>     LatticeSpinColourMatrixF;
 typedef Lattice<vSpinColourMatrixD>     LatticeSpinColourMatrixD;
+typedef Lattice<vSpinColourMatrixD2>    LatticeSpinColourMatrixD2;
 
 typedef Lattice<vSpinColourSpinColourMatrix>      LatticeSpinColourSpinColourMatrix;
 typedef Lattice<vSpinColourSpinColourMatrixF>     LatticeSpinColourSpinColourMatrixF;
 typedef Lattice<vSpinColourSpinColourMatrixD>     LatticeSpinColourSpinColourMatrixD;
+typedef Lattice<vSpinColourSpinColourMatrixD2>    LatticeSpinColourSpinColourMatrixD2;
 
-typedef Lattice<vLorentzColourMatrix>  LatticeLorentzColourMatrix;
-typedef Lattice<vLorentzColourMatrixF> LatticeLorentzColourMatrixF;
-typedef Lattice<vLorentzColourMatrixD> LatticeLorentzColourMatrixD;
+typedef Lattice<vLorentzColourMatrix>   LatticeLorentzColourMatrix;
+typedef Lattice<vLorentzColourMatrixF>  LatticeLorentzColourMatrixF;
+typedef Lattice<vLorentzColourMatrixD>  LatticeLorentzColourMatrixD;
+typedef Lattice<vLorentzColourMatrixD2> LatticeLorentzColourMatrixD2;
 
 // DoubleStored gauge field
-typedef Lattice<vDoubleStoredColourMatrix>  LatticeDoubleStoredColourMatrix;
-typedef Lattice<vDoubleStoredColourMatrixF> LatticeDoubleStoredColourMatrixF;
-typedef Lattice<vDoubleStoredColourMatrixD> LatticeDoubleStoredColourMatrixD;
+typedef Lattice<vDoubleStoredColourMatrix>   LatticeDoubleStoredColourMatrix;
+typedef Lattice<vDoubleStoredColourMatrixF>  LatticeDoubleStoredColourMatrixF;
+typedef Lattice<vDoubleStoredColourMatrixD>  LatticeDoubleStoredColourMatrixD;
+typedef Lattice<vDoubleStoredColourMatrixD2> LatticeDoubleStoredColourMatrixD2;
 
 typedef Lattice<vSpinVector>            LatticeSpinVector;
 typedef Lattice<vSpinVectorF>           LatticeSpinVectorF;
 typedef Lattice<vSpinVectorD>           LatticeSpinVectorD;
+typedef Lattice<vSpinVectorD2>          LatticeSpinVectorD2;
 
 typedef Lattice<vColourVector>          LatticeColourVector;
 typedef Lattice<vColourVectorF>         LatticeColourVectorF;
 typedef Lattice<vColourVectorD>         LatticeColourVectorD;
+typedef Lattice<vColourVectorD2>        LatticeColourVectorD2;
 
 typedef Lattice<vSpinColourVector>      LatticeSpinColourVector;
 typedef Lattice<vSpinColourVectorF>     LatticeSpinColourVectorF;
 typedef Lattice<vSpinColourVectorD>     LatticeSpinColourVectorD;
+typedef Lattice<vSpinColourVectorD2>    LatticeSpinColourVectorD2;
 
 typedef Lattice<vHalfSpinVector>        LatticeHalfSpinVector;
 typedef Lattice<vHalfSpinVectorF>       LatticeHalfSpinVectorF;
 typedef Lattice<vHalfSpinVectorD>       LatticeHalfSpinVectorD;
+typedef Lattice<vHalfSpinVectorD2>      LatticeHalfSpinVectorD2;
 
-typedef Lattice<vHalfSpinColourVector>  LatticeHalfSpinColourVector;
-typedef Lattice<vHalfSpinColourVectorF> LatticeHalfSpinColourVectorF;
-typedef Lattice<vHalfSpinColourVectorD> LatticeHalfSpinColourVectorD;
+typedef Lattice<vHalfSpinColourVector>   LatticeHalfSpinColourVector;
+typedef Lattice<vHalfSpinColourVectorF>  LatticeHalfSpinColourVectorF;
+typedef Lattice<vHalfSpinColourVectorD>  LatticeHalfSpinColourVectorD;
+typedef Lattice<vHalfSpinColourVectorD2> LatticeHalfSpinColourVectorD2;
 
 typedef Lattice<vTReal>            LatticeReal;
 typedef Lattice<vTRealF>           LatticeRealF;
@@ -320,6 +345,7 @@ typedef Lattice<vTRealD>           LatticeRealD;
 typedef Lattice<vTComplex>         LatticeComplex;
 typedef Lattice<vTComplexF>        LatticeComplexF;
 typedef Lattice<vTComplexD>        LatticeComplexD;
+typedef Lattice<vTComplexD2>       LatticeComplexD2;
 
 typedef Lattice<vTInteger>         LatticeInteger; // Predicates for "where"
 
@@ -327,37 +353,42 @@ typedef Lattice<vTInteger>         LatticeInteger; // Predicates for "where"
 ///////////////////////////////////////////
 // Physical names for things
 ///////////////////////////////////////////
-typedef LatticeHalfSpinColourVector  LatticeHalfFermion;
-typedef LatticeHalfSpinColourVectorF LatticeHalfFermionF;
-typedef LatticeHalfSpinColourVectorF LatticeHalfFermionD;
+typedef LatticeHalfSpinColourVector   LatticeHalfFermion;
+typedef LatticeHalfSpinColourVectorF  LatticeHalfFermionF;
+typedef LatticeHalfSpinColourVectorD  LatticeHalfFermionD;
+typedef LatticeHalfSpinColourVectorD2 LatticeHalfFermionD2;
 
 typedef LatticeSpinColourVector      LatticeFermion;
 typedef LatticeSpinColourVectorF     LatticeFermionF;
 typedef LatticeSpinColourVectorD     LatticeFermionD;
+typedef LatticeSpinColourVectorD2    LatticeFermionD2;
 
 typedef LatticeSpinColourMatrix                LatticePropagator;
 typedef LatticeSpinColourMatrixF               LatticePropagatorF;
 typedef LatticeSpinColourMatrixD               LatticePropagatorD;
+typedef LatticeSpinColourMatrixD2              LatticePropagatorD2;
 
 typedef LatticeLorentzColourMatrix             LatticeGaugeField;
 typedef LatticeLorentzColourMatrixF            LatticeGaugeFieldF;
 typedef LatticeLorentzColourMatrixD            LatticeGaugeFieldD;
+typedef LatticeLorentzColourMatrixD2           LatticeGaugeFieldD2;
 
 typedef LatticeDoubleStoredColourMatrix        LatticeDoubledGaugeField;
 typedef LatticeDoubleStoredColourMatrixF       LatticeDoubledGaugeFieldF;
 typedef LatticeDoubleStoredColourMatrixD       LatticeDoubledGaugeFieldD;
+typedef LatticeDoubleStoredColourMatrixD2      LatticeDoubledGaugeFieldD2;
 
 template<class GF> using LorentzScalar = Lattice<iScalar<typename GF::vector_object::element> >;
 
-// Uhgg... typing this hurt  ;)
-// (my keyboard got burning hot when I typed this, must be the anti-Fermion)
 typedef Lattice<vColourVector>          LatticeStaggeredFermion;    
 typedef Lattice<vColourVectorF>         LatticeStaggeredFermionF;    
 typedef Lattice<vColourVectorD>         LatticeStaggeredFermionD;    
+typedef Lattice<vColourVectorD2>        LatticeStaggeredFermionD2;    
 
 typedef Lattice<vColourMatrix>          LatticeStaggeredPropagator; 
 typedef Lattice<vColourMatrixF>         LatticeStaggeredPropagatorF; 
 typedef Lattice<vColourMatrixD>         LatticeStaggeredPropagatorD; 
+typedef Lattice<vColourMatrixD2>        LatticeStaggeredPropagatorD2; 
 
 //////////////////////////////////////////////////////////////////////////////
 // Peek and Poke named after physics attributes
