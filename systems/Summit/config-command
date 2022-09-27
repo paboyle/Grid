@@ -3,7 +3,7 @@
 	      --enable-gen-simd-width=32 \
 	      --enable-unified=no \
 	       --enable-shm=no \
-	       --disable-gparity \
+	       --enable-gparity \
 	       --disable-setdevice \
 	       --disable-fermion-reps \
 	       --enable-accelerator=cuda \
