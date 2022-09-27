@@ -156,7 +156,7 @@ int main(int argc, char **argv) {
    // Typedefs to simplify notation
   typedef WilsonImplR FermionImplPolicy;
   typedef WilsonImplF FermionImplPolicyF;
-  typedef MobiusFermionR FermionAction;
+  typedef MobiusFermionD FermionAction;
   typedef MobiusFermionF FermionActionF;
   typedef typename FermionAction::FermionField FermionField;
   typedef typename FermionActionF::FermionField FermionFieldF;
@@ -225,7 +225,7 @@ int main(int argc, char **argv) {
   SFRp.hi       = 90.0;
   SFRp.MaxIter  = 60000;
   SFRp.tolerance= 1.0e-8;
-  SFRp.mdtolerance= 1.0e-6;
+  SFRp.mdtolerance= 1.0e-3;
   SFRp.degree   = 12;
   SFRp.precision= 50;
   SFRp.BoundsCheckFreq=0;
@@ -235,7 +235,7 @@ int main(int argc, char **argv) {
   OFRp.hi       = 90.0;
   OFRp.MaxIter  = 60000;
   OFRp.tolerance= 1.0e-8;
-  OFRp.mdtolerance= 1.0e-6;
+  OFRp.mdtolerance= 1.0e-3;
   //  OFRp.degree   = 20; converges
   //  OFRp.degree   = 16;
   OFRp.degree   = 12;
@@ -274,7 +274,7 @@ int main(int argc, char **argv) {
   Block4[2] = Dirichlet[3];
   Block4[3] = Dirichlet[4];
 
-  int Width=3;
+  int Width=4;
   TheHMC.Resources.SetMomentumFilter(new DDHMCFilter<WilsonImplR::Field>(Block4,Width));
 
   //////////////////////////
@@ -311,7 +311,7 @@ int main(int argc, char **argv) {
   //  double StoppingCondition = 1e-14;
   //  double MDStoppingCondition = 1e-9;
   double StoppingCondition = 1e-10;
-  double MDStoppingCondition = 1e-7;
+  double MDStoppingCondition = 1e-6;
   double MDStoppingConditionLoose = 1e-6;
   double MaxCGIterations = 300000;
   ConjugateGradient<FermionField>  CG(StoppingCondition,MaxCGIterations);

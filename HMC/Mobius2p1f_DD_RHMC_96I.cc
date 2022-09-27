@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
 
    // Typedefs to simplify notation
   typedef WilsonImplR FermionImplPolicy;
-  typedef MobiusFermionR FermionAction;
+  typedef MobiusFermionD FermionAction;
   typedef typename FermionAction::FermionField FermionField;
 
   typedef Grid::XmlReader       Serialiser;
@@ -286,8 +286,8 @@ int main(int argc, char **argv) {
     // ii) Break low bound, how rapidly?
     // iii) Run lanczos
     // iv)  Have CG return spectral range estimate
-    FermionField vec(StrangeOp.FermionRedBlackGrid());
-    FermionField res(StrangeOp.FermionRedBlackGrid());
+    FermionField vec(StrangeOp.FermionDedBlackGrid());
+    FermionField res(StrangeOp.FermionDedBlackGrid());
     vec = 1; // Fill with any old junk
 
     std::cout << "Bounds check on strange operator mass "<< StrangeOp.Mass()<<std::endl;
@@ -327,7 +327,7 @@ int main(int argc, char **argv) {
     
     auto grid4= GridPtr;
     auto rbgrid4= GridRBPtr;
-    auto rbgrid = StrangeOp.FermionRedBlackGrid();
+    auto rbgrid = StrangeOp.FermionDedBlackGrid();
     auto grid = StrangeOp.FermionGrid();
     if(1){
     const int Nstop = 5;

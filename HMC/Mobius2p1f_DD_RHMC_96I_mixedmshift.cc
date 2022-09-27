@@ -128,14 +128,9 @@ template<class FermionOperatorD, class FermionOperatorF, class SchurOperatorD, c
       ////////////////////////////////////////////////////////////////////////////////////
       // Make a mixed precision conjugate gradient
       ////////////////////////////////////////////////////////////////////////////////////
-#if 1
       RealD delta=1.e-4;
       std::cout << GridLogMessage << "Calling reliable update Conjugate Gradient" <<std::endl;
       ConjugateGradientReliableUpdate<FieldD,FieldF> MPCG(Tolerance,MaxInnerIterations*MaxOuterIterations,delta,SinglePrecGrid5,LinOpF,LinOpD);
-#else      
-      std::cout << GridLogMessage << "Calling mixed precision Conjugate Gradient" <<std::endl;
-      MixedPrecisionConjugateGradient<FieldD,FieldF> MPCG(Tolerance,MaxInnerIterations,MaxOuterIterations,SinglePrecGrid5,LinOpF,LinOpD);
-#endif
       MPCG(src,psi);
     }
   };
@@ -153,7 +148,7 @@ int main(int argc, char **argv) {
   typedef WilsonImplR FermionImplPolicy;
   typedef WilsonImplF FermionImplPolicyF;
 
-  typedef MobiusFermionR FermionAction;
+  typedef MobiusFermionD FermionAction;
   typedef MobiusFermionF FermionActionF;
   typedef typename FermionAction::FermionField FermionField;
   typedef typename FermionActionF::FermionField FermionFieldF;
@@ -300,9 +295,13 @@ int main(int argc, char **argv) {
   // These lines are unecessary if BC are all periodic
   std::vector<Complex> boundary = {1,1,1,-1};
   FermionAction::ImplParams Params(boundary);
-  Params.dirichlet=NonDirichlet;
   FermionAction::ImplParams ParamsDir(boundary);
+  FermionActionF::ImplParams ParamsF(boundary);
+  FermionActionF::ImplParams ParamsDirF(boundary);
+  Params.dirichlet=NonDirichlet;
+  ParamsF.dirichlet=NonDirichlet;
   ParamsDir.dirichlet=Dirichlet;
+  ParamsDirF.dirichlet=Dirichlet;
 
   //  double StoppingCondition = 1e-14;
   //  double MDStoppingCondition = 1e-9;
@@ -323,15 +322,34 @@ int main(int argc, char **argv) {
   ////////////////////////////////////
   // Strange action
   ////////////////////////////////////
+
   FermionAction StrangeOp (U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,strange_mass,M5,b,c, Params);
   FermionAction StrangePauliVillarsOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,pv_mass,  M5,b,c, Params);
 
   FermionAction StrangeOpDir (U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,strange_mass,M5,b,c, ParamsDir);
   FermionAction StrangePauliVillarsOpDir(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,pv_mass,  M5,b,c, ParamsDir);
-  
+
+  FermionActionF StrangeOpF (UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,strange_mass,M5,b,c, ParamsF);
+  FermionActionF StrangePauliVillarsOpF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,pv_mass,  M5,b,c, ParamsF);
+
+  FermionActionF StrangeOpDirF (UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,strange_mass,M5,b,c, ParamsDirF);
+  FermionActionF StrangePauliVillarsOpDirF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,pv_mass,  M5,b,c, ParamsDirF);
+
+#if 1  
+  OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF> StrangePseudoFermionBdy(StrangeOpDir,StrangeOp,
+															   StrangeOpDirF,StrangeOpF,
+															   SFRp,500);
+  OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF> StrangePseudoFermionLocal(StrangePauliVillarsOpDir,StrangeOpDir,
+															     StrangePauliVillarsOpDirF,StrangeOpDirF,
+															     SFRp,500);
+  OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF> StrangePseudoFermionPVBdy(StrangePauliVillarsOp,StrangePauliVillarsOpDir,
+															     StrangePauliVillarsOpF,StrangePauliVillarsOpDirF,
+															     SFRp,500);
+#else
   OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermionBdy(StrangeOpDir,StrangeOp,SFRp);
   OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermionLocal(StrangePauliVillarsOpDir,StrangeOpDir,SFRp);
   OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermionPVBdy(StrangePauliVillarsOp,StrangePauliVillarsOpDir,SFRp);
+#endif
   Level1.push_back(&StrangePseudoFermionBdy); // ok
   Level2.push_back(&StrangePseudoFermionLocal);
   Level1.push_back(&StrangePseudoFermionPVBdy); //ok
