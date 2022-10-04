@@ -117,19 +117,19 @@ public:
     typedef decltype(coalescedRead(*in))    sobj;
     typedef decltype(coalescedRead(*out0)) hsobj;
 
-    unsigned int Nsimd = vobj::Nsimd();
+    constexpr unsigned int Nsimd = vobj::Nsimd();
     unsigned int mask = Nsimd >> (type + 1);
     int lane = acceleratorSIMTlane(Nsimd);
     int j0 = lane &(~mask); // inner coor zero
     int j1 = lane |(mask) ; // inner coor one
-    const vobj *vp0 = &in[k];
-    const vobj *vp1 = &in[m];
-    const vobj *vp = (lane&mask) ? vp1:vp0;
-    auto sa = coalescedRead(*vp,j0);
-    auto sb = coalescedRead(*vp,j1);
+    const vobj *vp0 = &in[k];  // out0[j] = merge low bit of type from in[k] and in[m] 
+    const vobj *vp1 = &in[m];  // out1[j] = merge hi  bit of type from in[k] and in[m]
+    const vobj *vp = (lane&mask) ? vp1:vp0;// if my lane has high bit take vp1, low bit take vp0
+    auto sa = coalescedRead(*vp,j0); // lane to read for out 0, NB 50% read coalescing
+    auto sb = coalescedRead(*vp,j1); // lane to read for out 1
     hsobj psa, psb;
-    projector::Proj(psa,sa,mu,dag);
-    projector::Proj(psb,sb,mu,dag);
+    projector::Proj(psa,sa,mu,dag);  // spin project the result0
+    projector::Proj(psb,sb,mu,dag);  // spin project the result1
     coalescedWrite(out0[j],psa);
     coalescedWrite(out1[j],psb);
 #else
