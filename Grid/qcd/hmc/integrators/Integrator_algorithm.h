@@ -92,10 +92,11 @@ NAMESPACE_BEGIN(Grid);
  *  P 1/2                            P 1/2
  */
 
-template <class FieldImplementation, class SmearingPolicy, class RepresentationPolicy = Representations<FundamentalRepresentation> >
-class LeapFrog : public Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy> 
+template <class FieldImplementation_, class SmearingPolicy, class RepresentationPolicy = Representations<FundamentalRepresentation> >
+class LeapFrog : public Integrator<FieldImplementation_, SmearingPolicy, RepresentationPolicy> 
 {
 public:
+  typedef FieldImplementation_ FieldImplementation;
   typedef LeapFrog<FieldImplementation, SmearingPolicy, RepresentationPolicy> Algorithm;
   INHERIT_FIELD_TYPES(FieldImplementation);
 
@@ -135,13 +136,14 @@ public:
   }
 };
 
-template <class FieldImplementation, class SmearingPolicy, class RepresentationPolicy = Representations<FundamentalRepresentation> >
-class MinimumNorm2 : public Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy> 
+template <class FieldImplementation_, class SmearingPolicy, class RepresentationPolicy = Representations<FundamentalRepresentation> >
+class MinimumNorm2 : public Integrator<FieldImplementation_, SmearingPolicy, RepresentationPolicy> 
 {
 private:
   const RealD lambda = 0.1931833275037836;
 
 public:
+  typedef FieldImplementation_ FieldImplementation;
   INHERIT_FIELD_TYPES(FieldImplementation);
 
   MinimumNorm2(GridBase* grid, IntegratorParameters Par, ActionSet<Field, RepresentationPolicy>& Aset, SmearingPolicy& Sm)
@@ -192,8 +194,8 @@ public:
   }
 };
 
-template <class FieldImplementation, class SmearingPolicy, class RepresentationPolicy = Representations<FundamentalRepresentation> >
-class ForceGradient : public Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy> 
+template <class FieldImplementation_, class SmearingPolicy, class RepresentationPolicy = Representations<FundamentalRepresentation> >
+class ForceGradient : public Integrator<FieldImplementation_, SmearingPolicy, RepresentationPolicy> 
 {
 private:
   const RealD lambda = 1.0 / 6.0;
@@ -202,6 +204,7 @@ private:
   const RealD theta = 0.0;
 
 public:
+  typedef FieldImplementation_ FieldImplementation;
   INHERIT_FIELD_TYPES(FieldImplementation);
 
   // Looks like dH scales as dt^4. tested wilson/wilson 2 level.
