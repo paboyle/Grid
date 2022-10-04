@@ -298,14 +298,14 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
      });	   			              \
     });
 
-#define accelerator_barrier(dummy) { printf(" theGridAccelerator::wait()\n");  theGridAccelerator->wait(); }
+#define accelerator_barrier(dummy) { theGridAccelerator->wait(); }
 
 inline void *acceleratorAllocShared(size_t bytes){ return malloc_shared(bytes,*theGridAccelerator);};
 inline void *acceleratorAllocDevice(size_t bytes){ return malloc_device(bytes,*theGridAccelerator);};
 inline void acceleratorFreeShared(void *ptr){free(ptr,*theGridAccelerator);};
 inline void acceleratorFreeDevice(void *ptr){free(ptr,*theGridAccelerator);};
 
-inline void acceleratorCopySynchronise(void) {  printf(" theCopyAccelerator::wait()\n"); theCopyAccelerator->wait(); }
+inline void acceleratorCopySynchronise(void) {  theCopyAccelerator->wait(); }
 inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  {  theCopyAccelerator->memcpy(to,from,bytes);}
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait();}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait();}
