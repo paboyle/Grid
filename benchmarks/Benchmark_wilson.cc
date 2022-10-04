@@ -146,9 +146,9 @@ int main (int argc, char ** argv)
   ref = -0.5*ref;
   RealD mass=0.1;
 
-  typename WilsonFermionR::ImplParams params;
+  typename WilsonFermionD::ImplParams params;
 
-  WilsonFermionR Dw(Umu,Grid,RBGrid,mass,params);
+  WilsonFermionD Dw(Umu,Grid,RBGrid,mass,params);
 
   std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
   int ncall=1000;

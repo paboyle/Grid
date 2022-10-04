@@ -125,7 +125,7 @@ void Benchmark(int Ls, Coordinate Dirichlet)
 
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
-#define DOUBLE
+#define SINGLE
 #ifdef SINGLE
   typedef vComplexF          Simd;
   typedef LatticeFermionF    FermionField;

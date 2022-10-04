@@ -63,10 +63,10 @@ public:
 };
 
 /*! @brief Class for Molecular Dynamics management */
-template <class FieldImplementation, class SmearingPolicy, class RepresentationPolicy>
+template <class FieldImplementation_, class SmearingPolicy, class RepresentationPolicy>
 class Integrator {
 protected:
-
+  typedef FieldImplementation_ FieldImplementation;
   typedef typename FieldImplementation::Field MomentaField;  //for readability
   typedef typename FieldImplementation::Field Field;
 

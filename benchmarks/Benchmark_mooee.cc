@@ -67,17 +67,17 @@ int main (int argc, char ** argv)
     const int ncall=1000;
 
     std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
-    std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionR::Dhop "<<std::endl;
+    std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionD::Dhop "<<std::endl;
     std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
 
     GridParallelRNG RNG5(FGrid); RNG5.SeedFixedIntegers(seeds5);
     LatticeFermion src(FGrid); random(RNG5,src);
     LatticeFermion result(FGrid);
 
-    DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+    DomainWallFermionD Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
     double t0,t1;
     
-    typedef typename DomainWallFermionR::Coeff_t Coeff_t;
+    typedef typename DomainWallFermionD::Coeff_t Coeff_t;
     Vector<Coeff_t> diag = Dw.bs;
     Vector<Coeff_t> upper= Dw.cs;
     Vector<Coeff_t> lower= Dw.cs;

@@ -91,7 +91,6 @@ inline typename vobj::scalar_objectD sumD_cpu(const vobj *arg, Integer osites)
   for(int i=0;i<nthread;i++){
     ssum = ssum+sumarray[i];
   } 
-  
   return ssum;
 }
 /*

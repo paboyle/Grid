@@ -72,12 +72,12 @@ public:
 
   //Fix the gauge field Umu
   //0 < alpha < 1 is related to the step size, cf https://arxiv.org/pdf/1405.5812.pdf
-  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1,bool err_on_no_converge=true) {
+  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,Real alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1,bool err_on_no_converge=true) {
     GridBase *grid = Umu.Grid();
     GaugeMat xform(grid);
     SteepestDescentGaugeFix(Umu,xform,alpha,maxiter,Omega_tol,Phi_tol,Fourier,orthog,err_on_no_converge);
   }
-  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,GaugeMat &xform,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1,bool err_on_no_converge=true) {
+  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,GaugeMat &xform,Real alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1,bool err_on_no_converge=true) {
   //Fix the gauge field Umu and also return the gauge transformation from the original gauge field, xform
 
     GridBase *grid = Umu.Grid();

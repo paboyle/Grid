@@ -67,8 +67,9 @@ NAMESPACE_BEGIN(Grid);
       virtual std::string action_name(){return "OneFlavourEvenOddRatioRationalPseudoFermionAction";}      
     };
 
-    template<class Impl,class ImplF>
-    class OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction : public GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<Impl,ImplF> {
+    template<class Impl,class ImplF,class ImplD2>
+    class OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction
+      : public GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<Impl,ImplF,ImplD2> {
     public:
       typedef OneFlavourRationalParams Params;
     private:
@@ -90,9 +91,11 @@ NAMESPACE_BEGIN(Grid);
 								 FermionOperator<Impl>  &_DenOp, 
 								 FermionOperator<ImplF>  &_NumOpF, 
 								 FermionOperator<ImplF>  &_DenOpF, 
+								 FermionOperator<ImplD2>  &_NumOpD2, 
+								 FermionOperator<ImplD2>  &_DenOpD2, 
 								 const Params & p, Integer ReliableUpdateFreq
 							) : 
-	GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<Impl,ImplF>(_NumOp, _DenOp,_NumOpF, _DenOpF, transcribe(p),ReliableUpdateFreq){}
+	GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<Impl,ImplF,ImplD2>(_NumOp, _DenOp,_NumOpF, _DenOpF,_NumOpD2, _DenOpD2, transcribe(p),ReliableUpdateFreq){}
 
       virtual std::string action_name(){return "OneFlavourEvenOddRatioRationalPseudoFermionAction";}      
     };

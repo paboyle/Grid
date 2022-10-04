@@ -258,6 +258,13 @@ inline std::ostream& operator<< (std::ostream& stream, const vComplexD &o){
   stream<<">";
   return stream;
 }
+inline std::ostream& operator<< (std::ostream& stream, const vComplexD2 &o){
+  stream<<"<";
+  stream<<o.v[0];
+  stream<<o.v[1];
+  stream<<">";
+  return stream;
+}
 
 inline std::ostream& operator<< (std::ostream& stream, const vRealF &o){
   int nn=vRealF::Nsimd();

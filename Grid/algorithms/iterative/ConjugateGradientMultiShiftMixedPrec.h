@@ -154,6 +154,7 @@ public:
     // dynamic sized arrays on stack; 2d is a pain with vector
     RealD  bs[nshift];
     RealD  rsq[nshift];
+    RealD  rsqf[nshift];
     RealD  z[nshift][2];
     int     converged[nshift];
   
@@ -190,6 +191,7 @@ public:
 
     for(int s=0;s<nshift;s++){
       rsq[s] = cp * mresidual[s] * mresidual[s];
+      rsqf[s] =rsq[s];
       std::cout<<GridLogMessage<<"ConjugateGradientMultiShiftMixedPrec: shift "<< s <<" target resid "<<rsq[s]<<std::endl;
       ps_d[s] = src_d;
     }
@@ -198,7 +200,15 @@ public:
     r_d = p_d;
     
     //MdagM+m[0]
+    precisionChangeFast(p_f,p_d);
+
+    Linop_f.HermOpAndNorm(p_f,mmp_f,d,qq); // mmp = MdagM p        d=real(dot(p, mmp)),  qq=norm2(mmp)
+    precisionChangeFast(tmp_d,mmp_f);
     Linop_d.HermOpAndNorm(p_d,mmp_d,d,qq); // mmp = MdagM p        d=real(dot(p, mmp)),  qq=norm2(mmp)
+    tmp_d = tmp_d - mmp_d;
+    std::cout << " Testing operators match "<<norm2(mmp_d)<<" f "<<norm2(mmp_f)<<" diff "<< norm2(tmp_d)<<std::endl;
+    //    assert(norm2(tmp_d)< 1.0e-4);
+
     axpy(mmp_d,mass[0],p_d,mmp_d);
     RealD rn = norm2(p_d);
     d += rn*mass[0];
@@ -274,7 +284,7 @@ public:
     
       bp=b;
       b=-cp/d;
-    
+
       // Toggle the recurrence history
       bs[0] = b;
       iz = 1-iz;
@@ -301,6 +311,7 @@ public:
 
       //Perform reliable update if necessary; otherwise update residual from single-prec mmp
       c = axpy_norm(r_d,b,mmp_d,r_d);
+
       AXPYTimer.Stop();
 
       if(k % ReliableUpdateFreq == 0){
@@ -328,7 +339,7 @@ public:
 	
 	  RealD css  = c * z[s][iz]* z[s][iz];
 	
-	  if(css<rsq[s]){
+	  if(css<rsqf[s]){
 	    if ( ! converged[s] )
 	      std::cout<<GridLogMessage<<"ConjugateGradientMultiShiftMixedPrec k="<<k<<" Shift "<<s<<" has converged"<<std::endl;
 	    converged[s]=1;
