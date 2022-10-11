@@ -677,10 +677,10 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
       Integer idx_t = 0; for(int d=0;d<nd;d++) idx_t+=ist[d]*(Tcoor[d]/rdt[d]);
       Integer odx_f = 0; for(int d=0;d<nd;d++) odx_f+=osf[d]*(Fcoor[d]%rdf[d]);
       Integer odx_t = 0; for(int d=0;d<nd;d++) odx_t+=ost[d]*(Tcoor[d]%rdt[d]);
-      scalar_type * fp = (scalar_type *)&f_v[odx_f];
-      scalar_type * tp = (scalar_type *)&t_v[odx_t];
+      vector_type * fp = (vector_type *)&f_v[odx_f];
+      vector_type * tp = (vector_type *)&t_v[odx_t];
       for(int w=0;w<words;w++){
-	tp[idx_t+w*Nsimd] = fp[idx_f+w*Nsimd];  // FIXME IF RRII layout, type pun no worke
+	tp[w].putlane(fp[w].getlane(idx_f),idx_t);
       }
     }
   });

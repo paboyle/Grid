@@ -4,7 +4,7 @@
 
     Source file: ./lib/simd/Grid_gpu.h
 
-    Copyright (C) 2018
+    Copyright (C) 2021
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
@@ -26,104 +26,68 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 //----------------------------------------------------------------------
-/*! @file Grid_gpu.h
-  @brief Optimization libraries for GPU
-  Use float4, double2 
-*/
+/*! @file Grid_gpu_rrii.h*/
 //----------------------------------------------------------------------
 
+//////////////////////////////
+// fp16
+//////////////////////////////
 #ifdef GRID_CUDA
 #include <cuda_fp16.h>
 #endif
 #ifdef GRID_HIP
 #include <hip/hip_fp16.h>
 #endif
-#if !defined(GRID_CUDA) && !defined(GRID_HIP)
+#if !defined(GRID_HIP) && !defined(GRID_CUDA) 
 namespace Grid {
   typedef struct { uint16_t x;} half;
-  typedef struct { half   x; half   y;} half2;
-  typedef struct { float  x; float  y;} float2;
-  typedef struct { double x; double y;} double2;
 }
 #endif
-
-
 namespace Grid {
+  accelerator_inline float half2float(half h)
+  {
+    float f;
+#if defined(GRID_CUDA) || defined(GRID_HIP)
+    f = __half2float(h);
+#else 
+    Grid_half hh; 
+    hh.x = h.x;
+    f=  sfw_half_to_float(hh);
+#endif
+    return f;
+  }
+  accelerator_inline half float2half(float f)
+  {
+    half h;
+#if defined(GRID_CUDA) || defined(GRID_HIP)
+    h = __float2half(f);
+#else
+    Grid_half hh = sfw_float_to_half(f);
+    h.x = hh.x;
+#endif
+    return h;
+  }
+}
 
-
-
-typedef struct Half2_t { half x; half y; } Half2;
 
 #define COALESCE_GRANULARITY ( GEN_SIMD_WIDTH )
 
-template<class pair>
-class GpuComplex {
-public:
-  pair z;
-  typedef decltype(z.x) Real;
-public: 
-  accelerator_inline GpuComplex() = default;
-  accelerator_inline GpuComplex(Real re,Real im) { z.x=re; z.y=im; };
-  accelerator_inline GpuComplex(const GpuComplex &zz) { z = zz.z;};
-  accelerator_inline Real real(void) const { return z.x; };
-  accelerator_inline Real imag(void) const { return z.y; };
-  accelerator_inline GpuComplex &operator=(const Zero &zz) { z.x = 0; z.y=0; return *this; };
-  accelerator_inline GpuComplex &operator*=(const GpuComplex &r) {
-    *this = (*this) * r;
-    return *this;
-  }
-  accelerator_inline GpuComplex &operator+=(const GpuComplex &r) {
-    *this = (*this) + r;
-    return *this;
-  }
-  accelerator_inline GpuComplex &operator-=(const GpuComplex &r) {
-    *this = (*this) - r;
-    return *this;
-  }
-  friend accelerator_inline  GpuComplex operator+(const GpuComplex &lhs,const GpuComplex &rhs) { 
-    GpuComplex r ; 
-    r.z.x = lhs.z.x + rhs.z.x; 
-    r.z.y = lhs.z.y + rhs.z.y; 
-    return r; 
-  }
-  friend accelerator_inline GpuComplex operator-(const GpuComplex &lhs,const GpuComplex &rhs) { 
-    GpuComplex r ; 
-    r.z.x = lhs.z.x - rhs.z.x; 
-    r.z.y = lhs.z.y - rhs.z.y; 
-    return r; 
-  }
-  friend accelerator_inline GpuComplex operator*(const GpuComplex &lhs,const GpuComplex &rhs) { 
-    GpuComplex r ; 
-    r.z.x= lhs.z.x*rhs.z.x - lhs.z.y*rhs.z.y; // rr-ii
-    r.z.y= lhs.z.x*rhs.z.y + lhs.z.y*rhs.z.x; // ri+ir
-    return r;
-  }
-  friend accelerator_inline GpuComplex real_mult(const GpuComplex &l,const GpuComplex &r) 
-  {
-    GpuComplex ret;
-    ret.z.x = l.z.x*r.z.x;
-    ret.z.y = l.z.x*r.z.y;
-    return ret;
-  }
-  friend std::ostream& operator<< (std::ostream& stream, const GpuComplex o){
-    stream << "("<< o.z.x << ","<< o.z.y <<")";
-    return stream;
-  }
-};
+namespace Grid {
 
+////////////////////////////////////////////////////////////////////////
+// Real vector
+////////////////////////////////////////////////////////////////////////  
 template<int _N, class _datum>
 struct GpuVector {
-  _datum v[_N];
+  _datum rrrr[_N];
   static const int N = _N;
   typedef _datum datum;
 };
-
-
 template<int N,class datum>
 inline accelerator GpuVector<N,datum> operator*(const GpuVector<N,datum> l,const GpuVector<N,datum> r) {
   GpuVector<N,datum> ret;
   for(int i=0;i<N;i++) { 
-    ret.v[i] = l.v[i]*r.v[i];
+    ret.rrrr[i] = l.rrrr[i]*r.rrrr[i];
   }
   return ret;
 }
@@ -131,7 +95,7 @@ template<int N,class datum>
 inline accelerator GpuVector<N,datum> operator-(const GpuVector<N,datum> l,const GpuVector<N,datum> r) {
   GpuVector<N,datum> ret;
   for(int i=0;i<N;i++) { 
-    ret.v[i] = l.v[i]-r.v[i];
+    ret.rrrr[i] = l.rrrr[i]-r.rrrr[i];
   }
   return ret;
 }
@@ -139,7 +103,7 @@ template<int N,class datum>
 inline accelerator GpuVector<N,datum> operator+(const GpuVector<N,datum> l,const GpuVector<N,datum> r) {
   GpuVector<N,datum> ret;
   for(int i=0;i<N;i++) { 
-    ret.v[i] = l.v[i]+r.v[i];
+    ret.rrrr[i] = l.rrrr[i]+r.rrrr[i];
   }
   return ret;
 }
@@ -147,59 +111,77 @@ template<int N,class datum>
 inline accelerator GpuVector<N,datum> operator/(const GpuVector<N,datum> l,const GpuVector<N,datum> r) {
   GpuVector<N,datum> ret;
   for(int i=0;i<N;i++) { 
-    ret.v[i] = l.v[i]/r.v[i];
+    ret.rrrr[i] = l.rrrr[i]/r.rrrr[i];
   }
   return ret;
 }
 
+////////////////////////////////////////////////////////////////////////
+// Complex vector
+////////////////////////////////////////////////////////////////////////  
+template<int _N, class _datum>
+struct GpuComplexVector {
+  _datum rrrr[_N];
+  _datum iiii[_N];
+  static const int N = _N;
+  typedef _datum datum;
+};
+template<int N,class datum>
+inline accelerator GpuComplexVector<N,datum> operator*(const GpuComplexVector<N,datum> l,const GpuComplexVector<N,datum> r) {
+  GpuComplexVector<N,datum> ret;
+  for(int i=0;i<N;i++) { 
+    ret.rrrr[i] = l.rrrr[i]*r.rrrr[i] - l.iiii[i]*r.iiii[i];
+    ret.iiii[i] = l.rrrr[i]*r.iiii[i] + l.iiii[i]*r.rrrr[i];
+  }
+  return ret;
+}
+template<int N,class datum>
+inline accelerator GpuComplexVector<N,datum> operator-(const GpuComplexVector<N,datum> l,const GpuComplexVector<N,datum> r) {
+  GpuComplexVector<N,datum> ret;
+  for(int i=0;i<N;i++) { 
+    ret.rrrr[i] = l.rrrr[i]-r.rrrr[i];
+    ret.iiii[i] = l.iiii[i]-r.iiii[i];
+  }
+  return ret;
+}
+template<int N,class datum>
+inline accelerator GpuComplexVector<N,datum> operator+(const GpuComplexVector<N,datum> l,const GpuComplexVector<N,datum> r) {
+  GpuComplexVector<N,datum> ret;
+  for(int i=0;i<N;i++) { 
+    ret.rrrr[i] = l.rrrr[i]+r.rrrr[i];
+    ret.iiii[i] = l.iiii[i]+r.iiii[i];
+  }
+  return ret;
+}
+template<int N,class datum>
+inline accelerator GpuComplexVector<N,datum> operator/(const GpuComplexVector<N,datum> l,const GpuComplexVector<N,datum> r) {
+  GpuComplexVector<N,datum> ret;
+  for(int i=0;i<N;i++) { 
+    ret.rrrr[i] = l.rrrr[i]/r.rrrr[i];
+    ret.iiii[i] = l.iiii[i]/r.iiii[i];
+  }
+  return ret;
+}
+
+////////////////////////////////
+// SIMD counts
+////////////////////////////////
+
 constexpr int NSIMD_RealH    = COALESCE_GRANULARITY / sizeof(half);
-constexpr int NSIMD_ComplexH = COALESCE_GRANULARITY / sizeof(Half2);
+constexpr int NSIMD_ComplexH = COALESCE_GRANULARITY / sizeof(half);
 constexpr int NSIMD_RealF    = COALESCE_GRANULARITY / sizeof(float);
-constexpr int NSIMD_ComplexF = COALESCE_GRANULARITY / sizeof(float2);
+constexpr int NSIMD_ComplexF = COALESCE_GRANULARITY / sizeof(float);
 constexpr int NSIMD_RealD    = COALESCE_GRANULARITY / sizeof(double);
-constexpr int NSIMD_ComplexD = COALESCE_GRANULARITY / sizeof(double2);
+constexpr int NSIMD_ComplexD = COALESCE_GRANULARITY / sizeof(double);
 constexpr int NSIMD_Integer  = COALESCE_GRANULARITY / sizeof(Integer);
 
-typedef GpuComplex<Half2  > GpuComplexH;
-typedef GpuComplex<float2 > GpuComplexF;
-typedef GpuComplex<double2> GpuComplexD;
-
 typedef GpuVector<NSIMD_RealH   , half        > GpuVectorRH;
-typedef GpuVector<NSIMD_ComplexH, GpuComplexH > GpuVectorCH;
+typedef GpuComplexVector<NSIMD_ComplexH, half > GpuVectorCH;
 typedef GpuVector<NSIMD_RealF,    float       > GpuVectorRF;
-typedef GpuVector<NSIMD_ComplexF, GpuComplexF > GpuVectorCF;
+typedef GpuComplexVector<NSIMD_ComplexF, float> GpuVectorCF;
 typedef GpuVector<NSIMD_RealD,    double      > GpuVectorRD;
-typedef GpuVector<NSIMD_ComplexD, GpuComplexD > GpuVectorCD;
+typedef GpuComplexVector<NSIMD_ComplexD,double> GpuVectorCD;
 typedef GpuVector<NSIMD_Integer,  Integer     > GpuVectorI;
-
-accelerator_inline GpuComplexF timesI(const GpuComplexF &r)     { return(GpuComplexF(-r.imag(),r.real()));}
-accelerator_inline GpuComplexD timesI(const GpuComplexD &r)     { return(GpuComplexD(-r.imag(),r.real()));}
-accelerator_inline GpuComplexF timesMinusI(const GpuComplexF &r){ return(GpuComplexF(r.imag(),-r.real()));}
-accelerator_inline GpuComplexD timesMinusI(const GpuComplexD &r){ return(GpuComplexD(r.imag(),-r.real()));}
-
-accelerator_inline float half2float(half h)
-{
-  float f;
-#if defined(GRID_CUDA) || defined(GRID_HIP)
-  f = __half2float(h);
-#else 
-  Grid_half hh; 
-  hh.x = h.x;
-  f=  sfw_half_to_float(hh);
-#endif
-  return f;
-}
-accelerator_inline half float2half(float f)
-{
-  half h;
-#if defined(GRID_CUDA) || defined(GRID_HIP)
-  h = __float2half(f);
-#else
-  Grid_half hh = sfw_float_to_half(f);
-  h.x = hh.x;
-#endif
-  return h;
-}
 
 namespace Optimization {
 
@@ -208,7 +190,8 @@ namespace Optimization {
     accelerator_inline GpuVectorCF operator()(float a, float b){
       GpuVectorCF ret;
       for(int i=0;i<GpuVectorCF::N;i++){
-	ret.v[i] = typename GpuVectorCF::datum(a,b);
+	ret.rrrr[i] = typename GpuVectorCF::datum(a);
+	ret.iiii[i] = typename GpuVectorCF::datum(b);
       }
       return ret;
     }
@@ -216,7 +199,7 @@ namespace Optimization {
     accelerator_inline GpuVectorRF operator()(float a){
       GpuVectorRF ret;
       for(int i=0;i<GpuVectorRF::N;i++){
-	ret.v[i] = typename GpuVectorRF::datum(a);
+	ret.rrrr[i] = typename GpuVectorRF::datum(a);
       }
       return ret;
     }
@@ -224,7 +207,8 @@ namespace Optimization {
     accelerator_inline GpuVectorCD operator()(double a, double b){
       GpuVectorCD ret;
       for(int i=0;i<GpuVectorCD::N;i++){
-	ret.v[i] = typename GpuVectorCD::datum(a,b);
+	ret.rrrr[i] = typename GpuVectorCD::datum(a);
+	ret.iiii[i] = typename GpuVectorCD::datum(b);
       }
       return ret;
     }
@@ -232,7 +216,7 @@ namespace Optimization {
     accelerator_inline GpuVectorRD operator()(double a){
       GpuVectorRD ret; 
       for(int i=0;i<GpuVectorRD::N;i++){
-	ret.v[i] = typename GpuVectorRD::datum(a);
+	ret.rrrr[i] = typename GpuVectorRD::datum(a);
       }
       return ret;
     }
@@ -240,7 +224,7 @@ namespace Optimization {
     accelerator_inline GpuVectorI operator()(Integer a){
       GpuVectorI ret;
       for(int i=0;i<GpuVectorI::N;i++){
-	ret.v[i] = typename GpuVectorI::datum(a);
+	ret.rrrr[i] = typename GpuVectorI::datum(a);
       }
       return ret;
     }
@@ -252,12 +236,22 @@ namespace Optimization {
       GpuVector<N,datum> *vF = (GpuVector<N,datum> *)Fp;
       *vF = a;
     }
+    template<int N,class datum,class P>
+    accelerator_inline void operator()(GpuComplexVector<N,datum> a, P* Fp){
+      GpuComplexVector<N,datum> *vF = (GpuComplexVector<N,datum> *)Fp;
+      *vF = a;
+    }
   };
 
   struct Vstream{
     template<int N,class datum, class P>
     accelerator_inline void operator()(P* F,GpuVector<N,datum> a){
       GpuVector<N,datum> *vF = (GpuVector<N,datum> *)F;
+      *vF = a;
+    }
+    template<int N,class datum, class P>
+    accelerator_inline void operator()(P* F,GpuComplexVector<N,datum> a){
+      GpuComplexVector<N,datum> *vF = (GpuComplexVector<N,datum> *)F;
       *vF = a;
     }
   };
@@ -268,7 +262,8 @@ namespace Optimization {
       typedef GpuVectorCF vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
-	ret.v[i] = vec::datum(a[i].real(),a[i].imag());
+	ret.rrrr[i] = vec::datum(a[i].real());
+	ret.iiii[i] = vec::datum(a[i].imag());
       }
       return ret;
     }
@@ -277,7 +272,8 @@ namespace Optimization {
       typedef GpuVectorCD vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
-	ret.v[i] = vec::datum(a[i].real(),a[i].imag());
+	ret.rrrr[i] = vec::datum(a[i].real());
+	ret.iiii[i] = vec::datum(a[i].imag());
       }
       return ret;
     }
@@ -286,7 +282,7 @@ namespace Optimization {
       typedef GpuVectorRF vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
-	ret.v[i] = vec::datum(a[i]);
+	ret.rrrr[i] = vec::datum(a[i]);
       }
       return ret;
     }
@@ -295,7 +291,7 @@ namespace Optimization {
       typedef GpuVectorRD vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
-	ret.v[i] = vec::datum(a[i]);
+	ret.rrrr[i] = vec::datum(a[i]);
       }
       return ret;
     }
@@ -304,7 +300,7 @@ namespace Optimization {
       typedef GpuVectorI vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
-	ret.v[i] = vec::datum(a[i]);
+	ret.rrrr[i] = vec::datum(a[i]);
       }
       return ret;
     }
@@ -366,7 +362,8 @@ namespace Optimization {
       typedef GpuVectorCF vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
-	ret.v[i] = real_mult(a.v[i],b.v[i]);
+	ret.rrrr[i] = a.rrrr[i]*b.rrrr[i];
+	ret.iiii[i] = a.rrrr[i]*b.iiii[i];
       }
       return ret;
     }
@@ -374,7 +371,8 @@ namespace Optimization {
       typedef GpuVectorCD vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
-	ret.v[i] = real_mult(a.v[i],b.v[i]);
+	ret.rrrr[i] = a.rrrr[i]*b.rrrr[i];
+	ret.iiii[i] = a.rrrr[i]*b.iiii[i];
       }
       return ret;
     }
@@ -385,7 +383,8 @@ namespace Optimization {
       typedef GpuVectorCF vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
-	ret.v[i] = real_mult(a.v[i],b.v[i]) +c.v[i];
+	ret.rrrr[i] = a.rrrr[i]*b.rrrr[i]+c.rrrr[i];
+	ret.iiii[i] = a.rrrr[i]*b.iiii[i]+c.iiii[i];
       }
       return ret;
     }
@@ -393,7 +392,8 @@ namespace Optimization {
       typedef GpuVectorCD vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
-	ret.v[i] = real_mult(a.v[i],b.v[i]) +c.v[i];
+	ret.rrrr[i] = a.rrrr[i]*b.rrrr[i]+c.rrrr[i];
+	ret.iiii[i] = a.rrrr[i]*b.iiii[i]+c.iiii[i];
       }
       return ret;
     }
@@ -444,20 +444,10 @@ namespace Optimization {
     // Danger -- element wise divide fro complex, not complex div. 
     // See Grid_vector_types.h lines around 735, applied after "toReal"
     accelerator_inline GpuVectorCF operator()(GpuVectorCF a, GpuVectorCF b){
-      GpuVectorCF ret;
-      for(int i=0;i< GpuVectorCF::N;i++){
-	ret.v[i].z.x = a.v[i].z.x / b.v[i].z.x;
-	ret.v[i].z.y = a.v[i].z.y / b.v[i].z.y;
-      }
-      return ret;
+      return a/b;
     }
     accelerator_inline GpuVectorCD operator()(GpuVectorCD a, GpuVectorCD b){
-      GpuVectorCD ret;
-      for(int i=0;i< GpuVectorCD::N;i++){
-	ret.v[i].z.x = a.v[i].z.x / b.v[i].z.x;
-	ret.v[i].z.y = a.v[i].z.y / b.v[i].z.y;
-      }
-      return ret;
+      return a/b;
     }
   };
 
@@ -468,8 +458,8 @@ namespace Optimization {
       typedef GpuVectorCF vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
-	ret.v[i].z.x = in.v[i].z.x;
-	ret.v[i].z.y =-in.v[i].z.y;
+	ret.rrrr[i] = in.rrrr[i];
+	ret.iiii[i] =-in.iiii[i];
       }
       return ret;
     }
@@ -477,8 +467,8 @@ namespace Optimization {
       typedef GpuVectorCD vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
-	ret.v[i].z.x = in.v[i].z.x;
-	ret.v[i].z.y =-in.v[i].z.y;
+	ret.rrrr[i] = in.rrrr[i];
+	ret.iiii[i] =-in.iiii[i];
       }
       return ret;
     }
@@ -490,8 +480,8 @@ namespace Optimization {
       typedef GpuVectorCF vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
-	ret.v[i].z.x = in.v[i].z.y;
-	ret.v[i].z.y =-in.v[i].z.x;
+	ret.rrrr[i] = in.iiii[i];
+	ret.iiii[i] =-in.rrrr[i];
       }
       return ret;
     }
@@ -499,8 +489,8 @@ namespace Optimization {
       typedef GpuVectorCD vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
-	ret.v[i].z.x = in.v[i].z.y;
-	ret.v[i].z.y =-in.v[i].z.x;
+	ret.rrrr[i] = in.iiii[i];
+	ret.iiii[i] =-in.rrrr[i];
       }
       return ret;
     }
@@ -512,8 +502,8 @@ namespace Optimization {
       typedef GpuVectorCF vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
-	ret.v[i].z.x =-in.v[i].z.y;
-	ret.v[i].z.y = in.v[i].z.x;
+	ret.rrrr[i] =-in.iiii[i];
+	ret.iiii[i] = in.rrrr[i];
       }
       return ret;
     }
@@ -521,8 +511,8 @@ namespace Optimization {
       typedef GpuVectorCD vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
-	ret.v[i].z.x =-in.v[i].z.y;
-	ret.v[i].z.y = in.v[i].z.x;
+	ret.rrrr[i] =-in.iiii[i];
+	ret.iiii[i] = in.rrrr[i];
       }
       return ret;
     }
@@ -530,20 +520,32 @@ namespace Optimization {
 
   struct Permute{
 
-    template <int n,typename vec>				       
-    static accelerator_inline vec PermuteN(vec in) {   
+    template <int n,int _N, class _datum >
+    static accelerator_inline GpuVector<_N,_datum> PermuteN(GpuVector<_N,_datum> &in) {   
+      typedef GpuVector<_N,_datum> vec;
       vec out;					
       unsigned int _mask = vec::N >> (n + 1);	
       for(int i=0;i<vec::N;i++) {
-	out.v[i] = in.v[i^_mask];
+	out.rrrr[i] = in.rrrr[i^_mask];
+      }
+      return out;	
+    }
+    template <int n,int _N, class _datum >
+    static accelerator_inline GpuComplexVector<_N,_datum> PermuteN(GpuComplexVector<_N,_datum> &in) {   
+      typedef GpuComplexVector<_N,_datum> vec;
+      vec out;					
+      unsigned int _mask = vec::N >> (n + 1);	
+      for(int i=0;i<vec::N;i++) {
+	out.rrrr[i] = in.rrrr[i^_mask];
+	out.iiii[i] = in.iiii[i^_mask];
       }
       return out;	
     }
     
-    template <typename vec>  static accelerator_inline vec Permute0(vec in) { return PermuteN<0,vec>(in);  }
-    template <typename vec>  static accelerator_inline vec Permute1(vec in) { return PermuteN<1,vec>(in);  }
-    template <typename vec>  static accelerator_inline vec Permute2(vec in) { return PermuteN<2,vec>(in);  }
-    template <typename vec>  static accelerator_inline vec Permute3(vec in) { return PermuteN<3,vec>(in);  }
+    template <typename vec>  static accelerator_inline vec Permute0(vec in) { return PermuteN<0,vec::N,typename vec::datum>(in);  }
+    template <typename vec>  static accelerator_inline vec Permute1(vec in) { return PermuteN<1,vec::N,typename vec::datum>(in);  }
+    template <typename vec>  static accelerator_inline vec Permute2(vec in) { return PermuteN<2,vec::N,typename vec::datum>(in);  }
+    template <typename vec>  static accelerator_inline vec Permute3(vec in) { return PermuteN<3,vec::N,typename vec::datum>(in);  }
     
   };
   
@@ -556,36 +558,36 @@ namespace Optimization {
       int N = GpuVectorCF::N;
       GpuVectorCH h;
       for(int i=0;i<N;i++) {
-        h.v[i  ].z.x = float2half(a.v[i].z.x);
-        h.v[i  ].z.y = float2half(a.v[i].z.y);
-	h.v[i+N].z.x = float2half(b.v[i].z.x);
-	h.v[i+N].z.y = float2half(b.v[i].z.y);
+        h.rrrr[i  ] = float2half(a.rrrr[i]);
+        h.iiii[i  ] = float2half(a.iiii[i]);
+	h.rrrr[i+N] = float2half(b.rrrr[i]);
+	h.iiii[i+N] = float2half(b.iiii[i]);
       }
       return h;
     }
     static accelerator_inline void  HtoS (GpuVectorCH h,GpuVectorCF &sa,GpuVectorCF &sb) {
       int N = GpuVectorCF::N;
       for(int i=0;i<N;i++) {
-	sa.v[i].z.x = half2float(h.v[i  ].z.x);
-	sa.v[i].z.y = half2float(h.v[i  ].z.y);
-	sb.v[i].z.x = half2float(h.v[i+N].z.x);
-	sb.v[i].z.y = half2float(h.v[i+N].z.y);
+	sa.rrrr[i] = half2float(h.rrrr[i  ]);
+	sa.iiii[i] = half2float(h.iiii[i  ]);
+	sb.rrrr[i] = half2float(h.rrrr[i+N]);
+	sb.iiii[i] = half2float(h.iiii[i+N]);
       }
     }
     static accelerator_inline GpuVectorRH StoH (GpuVectorRF a,GpuVectorRF b) {
       int N = GpuVectorRF::N;
       GpuVectorRH h;
       for(int i=0;i<N;i++) {
-        h.v[i  ] = float2half(a.v[i]);
-	h.v[i+N] = float2half(b.v[i]);
+        h.rrrr[i  ] = float2half(a.rrrr[i]);
+	h.rrrr[i+N] = float2half(b.rrrr[i]);
       }
       return h;
     }
     static accelerator_inline void  HtoS (GpuVectorRH h,GpuVectorRF &sa,GpuVectorRF &sb) {
       int N = GpuVectorRF::N;
       for(int i=0;i<N;i++) {
-	sa.v[i] = half2float(h.v[i  ]);
-	sb.v[i] = half2float(h.v[i+N]);
+	sa.rrrr[i] = half2float(h.rrrr[i  ]);
+	sb.rrrr[i] = half2float(h.rrrr[i+N]);
       }
     }
 
@@ -596,10 +598,10 @@ namespace Optimization {
       int N = GpuVectorCD::N;
       GpuVectorCF h;
       for(int i=0;i<N;i++) {
-        h.v[i  ].z.x = a.v[i].z.x;
-        h.v[i  ].z.y = a.v[i].z.y;
-	h.v[i+N].z.x = b.v[i].z.x;
-	h.v[i+N].z.y = b.v[i].z.y;
+        h.rrrr[i  ] = a.rrrr[i];
+        h.iiii[i  ] = a.iiii[i];
+	h.rrrr[i+N] = b.rrrr[i];
+	h.iiii[i+N] = b.iiii[i];
       }
       return h;
     }
@@ -607,10 +609,10 @@ namespace Optimization {
     static accelerator_inline void  StoD (GpuVectorCF h,GpuVectorCD &sa,GpuVectorCD &sb) {
       int N = GpuVectorCD::N;
       for(int i=0;i<N;i++) {
-	sa.v[i].z.x = h.v[i  ].z.x;
-	sa.v[i].z.y = h.v[i  ].z.y;
-	sb.v[i].z.x = h.v[i+N].z.x;
-	sb.v[i].z.y = h.v[i+N].z.y;
+	sa.rrrr[i] = h.rrrr[i  ];
+	sa.iiii[i] = h.iiii[i  ];
+	sb.rrrr[i] = h.rrrr[i+N];
+	sb.iiii[i] = h.iiii[i+N];
       }
     }
 
@@ -618,8 +620,8 @@ namespace Optimization {
       int N = GpuVectorRD::N;
       GpuVectorRF h;
       for(int i=0;i<N;i++) {
-        h.v[i  ] = a.v[i];
-	h.v[i+N] = b.v[i];
+        h.rrrr[i  ] = a.rrrr[i];
+	h.rrrr[i+N] = b.rrrr[i];
       }
       return h;
     }
@@ -627,8 +629,8 @@ namespace Optimization {
     static accelerator_inline void  StoD (GpuVectorRF h,GpuVectorRD &sa,GpuVectorRD &sb) {
       int N = GpuVectorRD::N;
       for(int i=0;i<N;i++) {
-	sa.v[i] = h.v[i  ];
-	sb.v[i] = h.v[i+N];
+	sa.rrrr[i] = h.rrrr[i  ];
+	sb.rrrr[i] = h.rrrr[i+N];
       }
     }
 
@@ -663,33 +665,67 @@ namespace Optimization {
 
 struct Exchange{
 
-  template <typename vec,int n>
-  static accelerator_inline void ExchangeN(vec &out1,vec &out2,vec &in1,vec &in2){
+  template <int n,int _N, class _datum >
+  static accelerator_inline void ExchangeN(GpuVector<_N,_datum> &out1,
+					   GpuVector<_N,_datum> &out2,
+					   GpuVector<_N,_datum> &in1,
+					   GpuVector<_N,_datum> &in2 )
+  {   
+    typedef GpuVector<_N,_datum> vec;
     unsigned int mask = vec::N >> (n + 1);
     for(int i=0;i<vec::N;i++) {
       int j1 = i&(~mask);
-      if  ( (i&mask) == 0 ) { out1.v[i]=in1.v[j1];}
-      else                  { out1.v[i]=in2.v[j1];}
+      if  ( (i&mask) == 0 ) { out1.rrrr[i]=in1.rrrr[j1];}
+      else                  { out1.rrrr[i]=in2.rrrr[j1];}
       int j2 = i|mask;
-      if  ( (i&mask) == 0 ) { out2.v[i]=in1.v[j2];}
-      else                  { out2.v[i]=in2.v[j2];}
+      if  ( (i&mask) == 0 ) { out2.rrrr[i]=in1.rrrr[j2];}
+      else                  { out2.rrrr[i]=in2.rrrr[j2];}
+    }      
+  }
+  template <int n,int _N, class _datum >
+  static accelerator_inline void ExchangeN(GpuComplexVector<_N,_datum> &out1,
+					   GpuComplexVector<_N,_datum> &out2,
+					   GpuComplexVector<_N,_datum> &in1,
+					   GpuComplexVector<_N,_datum> &in2 )
+  {   
+    typedef GpuComplexVector<_N,_datum> vec;
+    unsigned int mask = vec::N >> (n + 1);
+    for(int i=0;i<vec::N;i++) {
+      int j1 = i&(~mask);
+      if  ( (i&mask) == 0 ) {
+	out1.rrrr[i]=in1.rrrr[j1];
+	out1.iiii[i]=in1.iiii[j1];
+      }
+      else                  {
+	out1.rrrr[i]=in2.rrrr[j1];
+	out1.iiii[i]=in2.iiii[j1];
+      }
+      int j2 = i|mask;
+      if  ( (i&mask) == 0 ) {
+	out2.rrrr[i]=in1.rrrr[j2];
+	out2.iiii[i]=in1.iiii[j2];
+      }
+      else                  {
+	out2.rrrr[i]=in2.rrrr[j2];
+	out2.iiii[i]=in2.iiii[j2];
+      }
     }      
   }
   template <typename vec>
   static accelerator_inline void Exchange0(vec &out1,vec &out2,vec &in1,vec &in2){
-    ExchangeN<vec,0>(out1,out2,in1,in2);
+    ExchangeN<0>(out1,out2,in1,in2);
   };
   template <typename vec>
   static accelerator_inline void Exchange1(vec &out1,vec &out2,vec &in1,vec &in2){
-    ExchangeN<vec,1>(out1,out2,in1,in2);
+    ExchangeN<1>(out1,out2,in1,in2);
   };
   template <typename vec>
   static accelerator_inline void Exchange2(vec &out1,vec &out2,vec &in1,vec &in2){
-    ExchangeN<vec,2>(out1,out2,in1,in2);
+    ExchangeN<2>(out1,out2,in1,in2);
   };
   template <typename vec>
   static accelerator_inline void Exchange3(vec &out1,vec &out2,vec &in1,vec &in2){
-    ExchangeN<vec,3>(out1,out2,in1,in2);
+    ExchangeN<3>(out1,out2,in1,in2);
   };
 
 };
@@ -700,11 +736,25 @@ struct Rotate{
     return rotate(in, n);
   }
     
-  template <typename vec>
-  static accelerator_inline vec rotate_template(vec in, int n){
+  template <int _N, class _datum >
+  static accelerator_inline GpuComplexVector<_N,_datum> rotate_template(GpuComplexVector<_N,_datum> &in, int n)
+  {
+    typedef GpuComplexVector<_N,_datum> vec;
     vec out;
     for(int i=0;i<vec::N;i++){
-      out.v[i] = in.v[(i + n)%vec::N];
+      out.rrrr[i] = in.rrrr[(i + n)%vec::N];
+      out.iiii[i] = in.iiii[(i + n)%vec::N];
+    }
+    return out;
+  }
+
+  template <int _N, class _datum >
+  static accelerator_inline GpuVector<_N,_datum> rotate_template(GpuVector<_N,_datum> &in, int n)
+  {
+    typedef GpuVector<_N,_datum> vec;
+    vec out;
+    for(int i=0;i<vec::N;i++){
+      out.rrrr[i] = in.rrrr[(i + n)%vec::N];
     }
     return out;
   }
@@ -736,24 +786,22 @@ struct Rotate{
   accelerator_inline Grid::ComplexF 
   Reduce<Grid::ComplexF, GpuVectorCF>::operator()(GpuVectorCF in)
   {
-    GpuComplexF greduce = in.v[0];
+    Grid::ComplexF greduce(in.rrrr[0],in.iiii[0]);
     for(int i=1;i<GpuVectorCF::N;i++) {
-      greduce = greduce+in.v[i];
+      greduce = greduce+Grid::ComplexF(in.rrrr[i],in.iiii[i]);
     }
-    Grid::ComplexF ret(greduce.z.x,greduce.z.y);
-    return ret;
+    return greduce;
   }
 
   template<>
   accelerator_inline Grid::ComplexD
   Reduce<Grid::ComplexD, GpuVectorCD>::operator()(GpuVectorCD in)
   {
-    GpuComplexD greduce = in.v[0];
+    Grid::ComplexD greduce(in.rrrr[0],in.iiii[0]);
     for(int i=1;i<GpuVectorCD::N;i++) {
-      greduce = greduce+in.v[i];
+      greduce = greduce+ Grid::ComplexD(in.rrrr[i],in.iiii[i]);
     }
-    Grid::ComplexD ret(greduce.z.x,greduce.z.y);
-    return ret;
+    return greduce;
   }
 
   // Real
@@ -761,9 +809,9 @@ struct Rotate{
   accelerator_inline Grid::RealF 
   Reduce<RealF, GpuVectorRF>::operator()(GpuVectorRF in)
   {
-    RealF ret = in.v[0];
+    RealF ret = in.rrrr[0];
     for(int i=1;i<GpuVectorRF::N;i++) {
-      ret = ret+in.v[i];
+      ret = ret+in.rrrr[i];
     }
     return ret;
   }
@@ -772,9 +820,9 @@ struct Rotate{
   accelerator_inline Grid::RealD 
   Reduce<RealD, GpuVectorRD>::operator()(GpuVectorRD in)
   {
-    RealD ret = in.v[0];
+    RealD ret = in.rrrr[0];
     for(int i=1;i<GpuVectorRD::N;i++) {
-      ret = ret+in.v[i];
+      ret = ret+in.rrrr[i];
     }
     return ret;
   }
@@ -783,9 +831,9 @@ struct Rotate{
   accelerator_inline Integer
   Reduce<Integer, GpuVectorI>::operator()(GpuVectorI in)
   {
-    Integer ret = in.v[0];
+    Integer ret = in.rrrr[0];
     for(int i=1;i<GpuVectorI::N;i++) {
-      ret = ret+in.v[i];
+      ret = ret+in.rrrr[i];
     }
     return ret;
   }

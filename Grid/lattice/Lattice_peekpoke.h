@@ -96,9 +96,6 @@ void pokeSite(const sobj &s,Lattice<vobj> &l,const Coordinate &site){
 
   GridBase *grid=l.Grid();
 
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-
   int Nsimd = grid->Nsimd();
 
   assert( l.Checkerboard()== l.Grid()->CheckerBoard(site));
@@ -135,9 +132,6 @@ template<class vobj,class sobj>
 void peekSite(sobj &s,const Lattice<vobj> &l,const Coordinate &site){
         
   GridBase *grid=l.Grid();
-
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
 
   int Nsimd = grid->Nsimd();
 
@@ -179,11 +173,11 @@ inline void peekLocalSite(sobj &s,const LatticeView<vobj> &l,Coordinate &site)
   idx= grid->iIndex(site);
   odx= grid->oIndex(site);
   
-  scalar_type * vp = (scalar_type *)&l[odx];
+  const vector_type *vp = (const vector_type *) &l[odx];
   scalar_type * pt = (scalar_type *)&s;
       
   for(int w=0;w<words;w++){
-    pt[w] = vp[idx+w*Nsimd];
+    pt[w] = getlane(vp[w],idx);
   }
       
   return;
@@ -216,10 +210,10 @@ inline void pokeLocalSite(const sobj &s,LatticeView<vobj> &l,Coordinate &site)
   idx= grid->iIndex(site);
   odx= grid->oIndex(site);
 
-  scalar_type * vp = (scalar_type *)&l[odx];
+  vector_type * vp = (vector_type *)&l[odx];
   scalar_type * pt = (scalar_type *)&s;
   for(int w=0;w<words;w++){
-    vp[idx+w*Nsimd] = pt[w];
+    putlane(vp[w],pt[w],idx);
   }
   return;
 };

@@ -216,7 +216,6 @@ class CartesianStencil : public CartesianStencilAccelerator<vobj,cobj,Parameters
 public:
 
   typedef typename cobj::vector_type vector_type;
-  typedef typename cobj::scalar_type scalar_type;
   typedef typename cobj::scalar_object scalar_object;
   typedef const CartesianStencilView<vobj,cobj,Parameters> View_type;
   typedef typename View_type::StencilVector StencilVector;
@@ -1014,7 +1013,6 @@ public:
   int Gather(const Lattice<vobj> &rhs,int dimension,int shift,int cbmask,compressor & compress,int &face_idx, int point)
   {
     typedef typename cobj::vector_type vector_type;
-    typedef typename cobj::scalar_type scalar_type;
 
     int comms_send   = this->_comms_send[point] ;
     int comms_recv   = this->_comms_recv[point] ;

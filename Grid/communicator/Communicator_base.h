@@ -131,7 +131,7 @@ public:
   template<class obj> void GlobalSum(obj &o){
     typedef typename obj::scalar_type scalar_type;
     int words = sizeof(obj)/sizeof(scalar_type);
-    scalar_type * ptr = (scalar_type *)& o;
+    scalar_type * ptr = (scalar_type *)& o; // Safe alias 
     GlobalSumVector(ptr,words);
   }
   

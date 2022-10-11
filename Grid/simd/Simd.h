@@ -69,6 +69,7 @@ typedef RealF  Real;
 typedef thrust::complex<RealF> ComplexF;
 typedef thrust::complex<RealD> ComplexD;
 typedef thrust::complex<Real>  Complex;
+typedef thrust::complex<uint16_t>  ComplexH;
 template<class T> using complex = thrust::complex<T>;
 
 accelerator_inline ComplexD pow(const ComplexD& r,RealD y){ return(thrust::pow(r,(double)y)); }
@@ -77,6 +78,7 @@ accelerator_inline ComplexF pow(const ComplexF& r,RealF y){ return(thrust::pow(r
 typedef std::complex<RealF> ComplexF;
 typedef std::complex<RealD> ComplexD;
 typedef std::complex<Real>  Complex;
+typedef std::complex<uint16_t>  ComplexH; // Hack
 template<class T> using complex = std::complex<T>;
 
 accelerator_inline ComplexD pow(const ComplexD& r,RealD y){ return(std::pow(r,y)); }

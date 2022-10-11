@@ -1,5 +1,5 @@
 /*************************************************************************************
-n
+
     Grid physics library, www.github.com/paboyle/Grid 
 
     Source file: ./lib/tensors/Tensor_extract_merge.h
@@ -62,8 +62,18 @@ void extract(const vobj &vec,ExtractBuffer<sobj> &extracted)
   const int words=sizeof(vobj)/sizeof(vector_type);
   const int Nsimd=vector_type::Nsimd();
   const int Nextr=extracted.size();
+  vector_type * vp = (vector_type *)&vec;
   const int s=Nsimd/Nextr;
   sobj_scalar_type *sp = (sobj_scalar_type *) &extracted[0];
+  sobj_scalar_type stmp;
+  for(int w=0;w<words;w++){
+    for(int i=0;i<Nextr;i++){
+      stmp = vp[w].getlane(i*s);
+      sp[i*words+w] =stmp;
+      //      memcpy((char *)&sp[i*words+w],(char *)&stmp,sizeof(stmp));
+    }
+  }
+  /*
   scalar_type *vp = (scalar_type *)&vec;
   scalar_type      vtmp;
   sobj_scalar_type stmp;
@@ -74,6 +84,8 @@ void extract(const vobj &vec,ExtractBuffer<sobj> &extracted)
       memcpy((char *)&sp[i*words+w],(char *)&stmp,sizeof(stmp));
     }
   }
+  */
+  
   return;
 }
 
@@ -93,7 +105,7 @@ void   merge(vobj &vec,ExtractBuffer<sobj> &extracted)
   const int s=Nsimd/Nextr;
 
   sobj_scalar_type *sp = (sobj_scalar_type *)&extracted[0];
-  scalar_type *vp = (scalar_type *)&vec;
+  vector_type *vp = (vector_type *)&vec;
   scalar_type      vtmp;
   sobj_scalar_type stmp;
   for(int w=0;w<words;w++){
@@ -101,7 +113,8 @@ void   merge(vobj &vec,ExtractBuffer<sobj> &extracted)
       for(int ii=0;ii<s;ii++){
 	memcpy((char *)&stmp,(char *)&sp[i*words+w],sizeof(stmp));
 	vtmp = stmp;
-	memcpy((char *)&vp[w*Nsimd+i*s+ii],(char *)&vtmp,sizeof(vtmp));
+	vp[w].putlane(vtmp,i*s+ii);
+	//	memcpy((char *)&vp[w*Nsimd+i*s+ii],(char *)&vtmp,sizeof(vtmp));
       }
     }
   }
@@ -124,9 +137,9 @@ typename vobj::scalar_object extractLane(int lane, const vobj & __restrict__ vec
 
   scalar_object extracted;
   pointer __restrict__  sp = (pointer)&extracted; // Type pun
-  pointer __restrict__  vp = (pointer)&vec;
+  vector_type *vp = (vector_type *)&vec;
   for(int w=0;w<words;w++){
-    sp[w]=vp[w*Nsimd+lane];
+    sp[w]=vp[w].getlane(lane);
   }
   return extracted;
 }
@@ -143,9 +156,9 @@ void insertLane(int lane, vobj & __restrict__ vec,const typename vobj::scalar_ob
   constexpr int Nsimd=vector_type::Nsimd();
 
   pointer __restrict__ sp = (pointer)&extracted;
-  pointer __restrict__ vp = (pointer)&vec;
+  vector_type *vp = (vector_type *)&vec;
   for(int w=0;w<words;w++){
-    vp[w*Nsimd+lane]=sp[w];
+    vp[w].putlane(sp[w],lane);
   }
 }
 
@@ -164,15 +177,13 @@ void extract(const vobj &vec,const ExtractPointerArray<sobj> &extracted, int off
   const int Nextr=extracted.size();
   const int s = Nsimd/Nextr;
 
-  scalar_type * vp = (scalar_type *)&vec;
+  vector_type * vp = (vector_type *)&vec;
   scalar_type      vtmp;
   sobj_scalar_type stmp;
   for(int w=0;w<words;w++){
     for(int i=0;i<Nextr;i++){
       sobj_scalar_type * pointer = (sobj_scalar_type *)& extracted[i][offset];
-      memcpy((char *)&vtmp,(char *)&vp[w*Nsimd+i*s],sizeof(vtmp));
-      stmp = vtmp;
-      memcpy((char *)&pointer[w],(char *)&stmp,sizeof(stmp)); // may do a precision conversion
+      pointer[w] = vp[w].getlane(i*s);
     }
   }
 }
@@ -192,21 +203,19 @@ void merge(vobj &vec,const ExtractPointerArray<sobj> &extracted, int offset)
   const int Nextr=extracted.size();
   const int s = Nsimd/Nextr;
 
-  scalar_type * vp = (scalar_type *)&vec;
+  vector_type * vp = (vector_type *)&vec;
   scalar_type      vtmp;
   sobj_scalar_type stmp;
   for(int w=0;w<words;w++){
     for(int i=0;i<Nextr;i++){
       sobj_scalar_type * pointer = (sobj_scalar_type *)& extracted[i][offset];
       for(int ii=0;ii<s;ii++){
-	memcpy((char *)&stmp,(char *)&pointer[w],sizeof(stmp));
-	vtmp=stmp;
-	memcpy((char *)&vp[w*Nsimd+i*s+ii],(char *)&vtmp,sizeof(vtmp));
+	vtmp=pointer[w];
+	vp[w].putlane(vtmp,i*s+ii);
       }
     }
   }
 }
-
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -239,12 +248,12 @@ void copyLane(vobjOut & __restrict__ vecOut, int lane_out, const vobjIn & __rest
   iscalar_type itmp;
   oscalar_type otmp;
 
-  opointer __restrict__  op = (opointer)&vecOut;
-  ipointer __restrict__  ip = (ipointer)&vecIn;
+  ovector_type * __restrict__ op = (ovector_type *)&vecOut;
+  ivector_type * __restrict__ ip = (ivector_type *)&vecIn;
   for(int w=0;w<owords;w++){
-    memcpy( (char*)&itmp, (char*)(ip + lane_in + iNsimd*w), sizeof(iscalar_type) );
+    itmp = ip[iNsimd*w].getlane(lane_in);
     otmp = itmp; //potential precision change
-    memcpy( (char*)(op + lane_out + oNsimd*w), (char*)&otmp, sizeof(oscalar_type) );
+    op[oNsimd*w].putlane(otmp,lane_out);
   }
 }
 
