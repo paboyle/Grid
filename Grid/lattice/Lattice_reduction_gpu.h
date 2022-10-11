@@ -250,8 +250,6 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
 template <class vobj>
 inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites)
 {
-  typedef typename vobj::vector_type  vector;
-  typedef typename vobj::scalar_typeD scalarD;
   typedef typename vobj::scalar_objectD sobj;
   sobj ret;
   

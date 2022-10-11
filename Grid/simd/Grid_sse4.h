@@ -273,27 +273,25 @@ struct Conj{
 
 struct TimesMinusI{
   //Complex single
-  inline __m128 operator()(__m128 in, __m128 ret){
+  inline __m128 operator()(__m128 in){
     __m128 tmp =_mm_addsub_ps(_mm_setzero_ps(),in); // r,-i
     return _mm_shuffle_ps(tmp,tmp,_MM_SELECT_FOUR_FOUR(2,3,0,1));
   }
   //Complex double
-  inline __m128d operator()(__m128d in, __m128d ret){
+  inline __m128d operator()(__m128d in){
     __m128d tmp =_mm_addsub_pd(_mm_setzero_pd(),in); // r,-i
     return _mm_shuffle_pd(tmp,tmp,0x1);
   }
-
-
 };
 
 struct TimesI{
   //Complex single
-  inline __m128 operator()(__m128 in, __m128 ret){
+  inline __m128 operator()(__m128 in){
     __m128 tmp =_mm_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
     return _mm_addsub_ps(_mm_setzero_ps(),tmp); // r,-i
   }
   //Complex double
-  inline __m128d operator()(__m128d in, __m128d ret){
+  inline __m128d operator()(__m128d in){
     __m128d tmp = _mm_shuffle_pd(in,in,0x1);
     return _mm_addsub_pd(_mm_setzero_pd(),tmp); // r,-i
   }

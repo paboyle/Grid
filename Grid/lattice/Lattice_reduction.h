@@ -219,7 +219,6 @@ template<class vobj> inline RealD maxLocalNorm2(const Lattice<vobj> &arg)
 template<class vobj>
 inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right)
 {
-  typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_typeD vector_type;
   ComplexD  nrm;
   
@@ -296,7 +295,6 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   conformable(z,x);
   conformable(x,y);
 
-  typedef typename vobj::scalar_type scalar_type;
   //  typedef typename vobj::vector_typeD vector_type;
   RealD  nrm;
   
@@ -341,7 +339,6 @@ innerProductNorm(ComplexD& ip, RealD &nrm, const Lattice<vobj> &left,const Latti
 {
   conformable(left,right);
 
-  typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_typeD vector_type;
   Vector<ComplexD> tmp(2);
 
@@ -597,7 +594,8 @@ static void sliceNorm (std::vector<RealD> &sn,const Lattice<vobj> &rhs,int Ortho
 template<class vobj>
 static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice<vobj> &X,const Lattice<vobj> &Y,
 			    int orthogdim,RealD scale=1.0) 
-{    
+{
+  // perhaps easier to just promote A to a field and use regular madd
   typedef typename vobj::scalar_object sobj;
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
@@ -628,8 +626,7 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
     for(int l=0;l<Nsimd;l++){
       grid->iCoorFromIindex(icoor,l);
       int ldx =r+icoor[orthogdim]*rd;
-      scalar_type *as =(scalar_type *)&av;
-      as[l] = scalar_type(a[ldx])*zscale;
+      av.putlane(scalar_type(a[ldx])*zscale,l);
     }
 
     tensor_reduced at; at=av;
@@ -669,7 +666,6 @@ template<class vobj>
 static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<vobj> &X,const Lattice<vobj> &Y,int Orthog,RealD scale=1.0) 
 {    
   typedef typename vobj::scalar_object sobj;
-  typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   int Nblock = X.Grid()->GlobalDimensions()[Orthog];
@@ -723,7 +719,6 @@ template<class vobj>
 static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<vobj> &X,int Orthog,RealD scale=1.0) 
 {    
   typedef typename vobj::scalar_object sobj;
-  typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   int Nblock = X.Grid()->GlobalDimensions()[Orthog];
@@ -777,7 +772,6 @@ template<class vobj>
 static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int Orthog) 
 {
   typedef typename vobj::scalar_object sobj;
-  typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
   
   GridBase *FullGrid  = lhs.Grid();
