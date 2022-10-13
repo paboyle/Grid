@@ -61,9 +61,13 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
     auto tmp = coalescedReadPermute(in[SE->_offset],ptype,perm,lane);	\
     spProj(chi,tmp);						\
   } else {							\
-    chi = coalescedRead(buf[SE->_offset],lane);			\
+    int s = sF %sU ;						\
+    chi = Zero();						\
+    if ( (s==0)||(s==Ls-1)) {					\
+      chi = coalescedRead(buf[SE->_offset],lane);		\
+    }								\
   }								\
-  acceleratorSynchronise();						\
+  acceleratorSynchronise();					\
   Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);		\
   Recon(result, Uchi);
 
@@ -80,11 +84,14 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
 
 #define GENERIC_STENCIL_LEG_EXT(Dir,spProj,Recon)		\
   SE = st.GetEntry(ptype, Dir, sF);				\
-  if (!SE->_is_local ) {		\
-    auto chi = coalescedRead(buf[SE->_offset],lane);		\
-    Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);		\
-    Recon(result, Uchi);					\
-    nmu++;							\
+  if (!SE->_is_local ) {					\
+    int s = sF %sU ;						\
+    if ( (s==0)||(s==Ls-1)) {					\
+      auto chi = coalescedRead(buf[SE->_offset],lane);		\
+      Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);		\
+      Recon(result, Uchi);					\
+      nmu++;							\
+    }								\
   }								\
   acceleratorSynchronise();
 
@@ -111,7 +118,7 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
   ////////////////////////////////////////////////////////////////////
 template <class Impl> accelerator_inline
 void WilsonKernels<Impl>::GenericDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U,
-					     SiteHalfSpinor *buf, int sF,
+					     SiteHalfSpinor *buf, int Ls, int sF,
 					     int sU, const FermionFieldView &in, FermionFieldView &out)
 {
   typedef decltype(coalescedRead(buf[0]))   calcHalfSpinor;
@@ -137,7 +144,7 @@ void WilsonKernels<Impl>::GenericDhopSiteDag(StencilView &st, DoubledGaugeFieldV
 
 template <class Impl> accelerator_inline
 void WilsonKernels<Impl>::GenericDhopSite(StencilView &st, DoubledGaugeFieldView &U,
-					  SiteHalfSpinor *buf, int sF,
+					  SiteHalfSpinor *buf, int Ls, int sF,
 					  int sU, const FermionFieldView &in, FermionFieldView &out)
 {
   typedef decltype(coalescedRead(buf[0])) calcHalfSpinor;
@@ -166,7 +173,7 @@ void WilsonKernels<Impl>::GenericDhopSite(StencilView &st, DoubledGaugeFieldView
   ////////////////////////////////////////////////////////////////////
 template <class Impl> accelerator_inline
 void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U,
-						SiteHalfSpinor *buf, int sF,
+						SiteHalfSpinor *buf, int Ls, int sF,
 						int sU, const FermionFieldView &in, FermionFieldView &out)
 {
   typedef decltype(coalescedRead(buf[0])) calcHalfSpinor;
@@ -194,8 +201,8 @@ void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilView &st,  DoubledGaugeFi
 
 template <class Impl> accelerator_inline
 void WilsonKernels<Impl>::GenericDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U,
-							 SiteHalfSpinor *buf, int sF,
-							 int sU, const FermionFieldView &in, FermionFieldView &out)
+					     SiteHalfSpinor *buf, int Ls, int sF,
+					     int sU, const FermionFieldView &in, FermionFieldView &out)
 {
   typedef decltype(coalescedRead(buf[0])) calcHalfSpinor;
   typedef decltype(coalescedRead(in[0]))  calcSpinor;
@@ -224,7 +231,7 @@ void WilsonKernels<Impl>::GenericDhopSiteInt(StencilView &st,  DoubledGaugeField
 ////////////////////////////////////////////////////////////////////
 template <class Impl> accelerator_inline
 void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U,
-						SiteHalfSpinor *buf, int sF,
+						SiteHalfSpinor *buf, int Ls, int sF,
 						int sU, const FermionFieldView &in, FermionFieldView &out)
 {
   typedef decltype(coalescedRead(buf[0])) calcHalfSpinor;
@@ -255,7 +262,7 @@ void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilView &st,  DoubledGaugeFi
 
 template <class Impl> accelerator_inline
 void WilsonKernels<Impl>::GenericDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U,
-					     SiteHalfSpinor *buf, int sF,
+					     SiteHalfSpinor *buf, int Ls, int sF,
 					     int sU, const FermionFieldView &in, FermionFieldView &out)
 {
   typedef decltype(coalescedRead(buf[0])) calcHalfSpinor;
@@ -420,6 +427,15 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
       WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,in_v,out_v);		\
   });
 
+#define KERNEL_CALLG(A)						\
+  const uint64_t    NN = Nsite*Ls;					\
+  accelerator_forNB( ss, NN, Simd::Nsimd(), {				\
+      int sF = ss;							\
+      int sU = ss/Ls;							\
+      WilsonKernels<Impl>::A(st_v,U_v,buf,Ls,sF,sU,in_v,out_v);		\
+    });									\
+ accelerator_barrier();
+
 #define KERNEL_CALL(A) KERNEL_CALLNB(A); accelerator_barrier();
 
 #define KERNEL_CALL_EXT(A)						\
@@ -450,7 +466,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
     autoView(st_v , st,AcceleratorRead);
 
    if( interior && exterior ) {
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSite); return;}
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALLG(GenericDhopSite); return;}
 #ifdef SYCL_HACK     
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteSycl);    return; }
 #else
@@ -460,13 +476,13 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSite);    return;}
 #endif
    } else if( interior ) {
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALLNB(GenericDhopSiteInt); return;}
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALLG(GenericDhopSiteInt); return;}
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALLNB(HandDhopSiteInt);    return;}
 #ifndef GRID_CUDA
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteInt);    return;}
 #endif
    } else if( exterior ) {
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteExt); return;}
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALLG(GenericDhopSiteExt); return;}
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteExt);    return;}
 #ifndef GRID_CUDA
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteExt);    return;}
@@ -485,21 +501,21 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
     autoView(st_v ,st,AcceleratorRead);
 
    if( interior && exterior ) {
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteDag); return;}
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALLG(GenericDhopSiteDag); return;}
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteDag);    return;}
 #ifndef GRID_CUDA
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDag);     return;}
 #endif
      acceleratorFenceComputeStream();
    } else if( interior ) {
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteDagInt); return;}
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALLG(GenericDhopSiteDagInt); return;}
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteDagInt);    return;}
 #ifndef GRID_CUDA
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDagInt);     return;}
 #endif
    } else if( exterior ) {
      acceleratorFenceComputeStream();
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteDagExt); return;}
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALLG(GenericDhopSiteDagExt); return;}
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteDagExt);    return;}
 #ifndef GRID_CUDA
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDagExt);     return;}
