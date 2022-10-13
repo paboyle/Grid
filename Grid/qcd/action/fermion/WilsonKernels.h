@@ -90,22 +90,22 @@ private:
       
   // Specialised variants
   static accelerator void GenericDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-					  int Ls, int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
   static accelerator void GenericDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-					     int Ls, int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+						    int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
   static accelerator void GenericDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-					     int Ls, int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+						    int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
   static accelerator void GenericDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-						int Ls, int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+						int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
   static accelerator void GenericDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-					     int Ls, int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
   static accelerator void GenericDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-						int Ls, int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+						       int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
 
   static void AsmDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 			  int sF, int sU, int Ls, int Nsite, const FermionFieldView &in,FermionFieldView &out);
