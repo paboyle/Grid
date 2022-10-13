@@ -1,4 +1,4 @@
-AC_PREREQ([2.71])
+AC_PREREQ([2.69])
 AC_INIT([Grid],[0.7.0],[https://github.com/paboyle/Grid],[Grid])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST

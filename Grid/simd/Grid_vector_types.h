@@ -148,23 +148,6 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
   #endif
 #endif
 
-/*
-#ifdef A64FXVLA
-#pragma message("building A64FX VLA")
-#if defined(ARMCLANGCOMPAT)
-  #pragma message("applying data types patch")
-#endif
-#include <arm_sve.h>
-#include "Grid_a64fx-2.h"
-#endif
-
-#ifdef A64FXVLS
-#pragma message("building A64FX VLS")
-#include <arm_sve.h>
-#include "Grid_a64fx-fixedsize.h"
-#endif
-*/
-
 #ifdef SSE4
 #include "Grid_sse4.h"
 #endif
@@ -1146,42 +1129,6 @@ static_assert(sizeof(SIMD_Ftype) == sizeof(SIMD_Dtype), "SIMD vector lengths inc
 static_assert(sizeof(SIMD_Ftype) == sizeof(SIMD_Itype), "SIMD vector lengths incorrect");
 #endif
 #endif
-
-/////////////////////////////////////////
-// Some traits to recognise the types
-/////////////////////////////////////////
-template <typename T>
-struct is_simd : public std::false_type {};
-template <> struct is_simd<vRealF>     : public std::true_type {};
-template <> struct is_simd<vRealD>     : public std::true_type {};
-template <> struct is_simd<vRealH>     : public std::true_type {};
-template <> struct is_simd<vComplexF>  : public std::true_type {};
-template <> struct is_simd<vComplexD>  : public std::true_type {};
-template <> struct is_simd<vComplexH>  : public std::true_type {};
-template <> struct is_simd<vInteger>   : public std::true_type {};
-
-template <typename T> using IfSimd    = Invoke<std::enable_if<is_simd<T>::value, int> >;
-template <typename T> using IfNotSimd = Invoke<std::enable_if<!is_simd<T>::value, unsigned> >;
-
-///////////////////////////////////////////////
-// Convenience insert / extract with complex support
-///////////////////////////////////////////////
-template <class S, class V>
-accelerator_inline S getlane(const Grid_simd<S, V> &in,int lane) {
-  return in.getlane(lane);
-}
-template <class S, class V>
-accelerator_inline void putlane(Grid_simd<S, V> &vec,const S &_S, int lane){
-  vec.putlane(_S,lane);
-}
-template <class S,IfNotSimd<S> = 0 >
-accelerator_inline S getlane(const S &in,int lane) {
-  return in;
-}
-template <class S,IfNotSimd<S> = 0 >
-accelerator_inline void putlane(S &vec,const S &_S, int lane){
-  vec = _S;
-}
 
 
 NAMESPACE_END(Grid);

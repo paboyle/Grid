@@ -59,7 +59,7 @@ NAMESPACE_BEGIN(Grid);
 
       typedef RationalActionParams Params;
       Params param;
-
+      RealD  RefreshAction;
       //For action evaluation
       MultiShiftFunction ApproxPowerAction   ;  //rational approx for X^{1/inv_pow}
       MultiShiftFunction ApproxNegPowerAction;  //rational approx for X^{-1/inv_pow}
@@ -270,12 +270,18 @@ NAMESPACE_BEGIN(Grid);
 	assert(NumOp.ConstEE() == 1);
 	assert(DenOp.ConstEE() == 1);
 	PhiEven = Zero();
-	std::cout<<GridLogMessage << action_name() << " refresh: starting" << std::endl;
+
+	RefreshAction = norm2( etaOdd );
+        std::cout<<GridLogMessage << action_name() << " refresh: action is " << RefreshAction << std::endl;
       };
 
       //////////////////////////////////////////////////////
       // S_f = chi^dag* P(V^dag*V)/Q(V^dag*V)* N(M^dag*M)/D(M^dag*M)* P(V^dag*V)/Q(V^dag*V)* chi       
       //////////////////////////////////////////////////////
+      virtual RealD Sinitial(const GaugeField &U) {
+	return RefreshAction;
+      }
+
       virtual RealD S(const GaugeField &U) {
 	std::cout<<GridLogMessage << action_name() << " compute action: starting" << std::endl;
 	ImportGauge(U);

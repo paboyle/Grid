@@ -50,6 +50,8 @@ NAMESPACE_BEGIN(Grid);
       FermionField PhiOdd;   // the pseudo fermion field for this trajectory
       FermionField PhiEven;  // the pseudo fermion field for this trajectory
 
+      RealD RefreshAction;
+      
     public:
       TwoFlavourEvenOddRatioPseudoFermionAction(FermionOperator<Impl>  &_NumOp, 
                                                 FermionOperator<Impl>  &_DenOp, 
@@ -132,6 +134,9 @@ NAMESPACE_BEGIN(Grid);
         // Even det factors
         DenOp.MooeeDag(etaEven,tmp);
         NumOp.MooeeInvDag(tmp,PhiEven);
+
+	RefreshAction = norm2(etaEven)+norm2(etaOdd);
+	std::cout << " refresh " <<action_name()<< " action "<<RefreshAction<<std::endl;
       };
 
       //////////////////////////////////////////////////////

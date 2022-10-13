@@ -419,6 +419,48 @@ public:
     return H;
   }
 
+  struct _Sinitial {
+    template <class FieldType, class Repr>
+    void operator()(std::vector<Action<FieldType>*> repr_set, Repr& Rep, int level, RealD& H) {
+      
+      for (int a = 0; a < repr_set.size(); ++a) {
+        RealD Hterm = repr_set.at(a)->Sinitial(Rep.U);
+        std::cout << GridLogMessage << "Sinitial Level " << level << " term " << a << " H Hirep = " << Hterm << std::endl;
+        H += Hterm;
+
+      }
+    }
+  } Sinitial_hireps{};
+
+  RealD Sinitial(Field& U) 
+  {  // here also U not used
+
+    std::cout << GridLogIntegrator << "Integrator initial action\n";
+
+    RealD H = - FieldImplementation::FieldSquareNorm(P)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
+
+    RealD Hterm;
+
+    // Actions
+    for (int level = 0; level < as.size(); ++level) {
+      for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+        // get gauge field from the SmearingPolicy and
+        // based on the boolean is_smeared in actionID
+        Field& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
+        std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] action eval " << std::endl;
+	        as[level].actions.at(actionID)->S_timer_start();
+        Hterm = as[level].actions.at(actionID)->Sinitial(Us);
+   	        as[level].actions.at(actionID)->S_timer_stop();
+        std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] H = " << Hterm << std::endl;
+        H += Hterm;
+      }
+      as[level].apply(Sinitial_hireps, Representations, level, H);
+    }
+
+    return H;
+  }
+
+  
   void integrate(Field& U) 
   {
     // reset the clocks

@@ -189,7 +189,7 @@ private:
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     std::cout << GridLogMessage << "--------------------------------------------------\n";
     std::cout << GridLogMessage << "Compute initial action";
-    RealD H0 = TheIntegrator.S(U);  
+    RealD H0 = TheIntegrator.Sinitial(U);  
     std::cout << GridLogMessage << "--------------------------------------------------\n";
 
     std::streamsize current_precision = std::cout.precision();
