@@ -305,6 +305,7 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeFie
   GridBase* grid = _Umu.Grid();
   typename Impl::GaugeLinkField Bx(grid), By(grid), Bz(grid), Ex(grid), Ey(grid), Ez(grid);
   CloverField TmpOriginal(grid);
+  CloverField TmpInverse(grid);
 
   // Compute the field strength terms mu>nu
   double t2 = usecond();
@@ -326,14 +327,14 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeFie
   TmpOriginal += Helpers::fillCloverZT(Ez) * csw_t;
   // Handle mass term based on clover policy
   CloverHelpers::MassTerm(TmpOriginal, this->diag_mass);
-  
+
   // Convert the data layout of the clover term
   double t4 = usecond();
-  CompactHelpers::ConvertLayout(TmpOriginal, Diagonal, Triangle);
+  CloverHelpers::Exponentiate_Clover(TmpOriginal, TmpInverse, csw_t, this->diag_mass);
 
   // Exponentiate the clover (nothing happens in case of the standard clover)
   double t5 = usecond();
-  CloverHelpers::Exponentiate_Clover(Diagonal, Triangle, csw_t, this->diag_mass);
+  CompactHelpers::ConvertLayout(TmpOriginal, Diagonal, Triangle);
 
   // Possible modify the boundary values
   double t6 = usecond();
@@ -341,7 +342,9 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeFie
 
   // Invert the Clover term (explicit inversion needed for the improvement in case of open boundary conditions)
   double t7 = usecond();
-  CompactHelpers::Invert(Diagonal, Triangle, DiagonalInv, TriangleInv);
+  //CompactHelpers::Invert(Diagonal, Triangle, DiagonalInv, TriangleInv);
+  CompactHelpers::ConvertLayout(TmpInverse, DiagonalInv, TriangleInv);
+  //if(open_boundaries) handle differently!
 
   // Fill the remaining clover fields
   double t8 = usecond();
