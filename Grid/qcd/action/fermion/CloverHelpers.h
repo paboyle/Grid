@@ -208,8 +208,18 @@ public:
     Clover += diag_mass;
   }
 
-  static void Exponentiate_Clover(CloverField& Clover, CloverField& CloverInv, RealD csw_t, RealD diag_mass) {
+  static void ExponentiateClover(CloverField& Clover, CloverField& CloverInv, RealD csw_t, RealD diag_mass) {
     // Do nothing
+  }
+
+  static void InvertClover(CloverField& InvClover,
+                            const CloverDiagonalField& diagonal,
+                            const CloverTriangleField& triangle,
+                            CloverDiagonalField&       diagonalInv,
+                            CloverTriangleField&       triangleInv,
+                            bool open_boundaries) {
+
+    CompactHelpers::Invert(diagonal, triangle, diagonalInv, triangleInv);
   }
 
   // TODO: implement Cmunu for better performances with compact layout, but don't do it
@@ -267,7 +277,7 @@ public:
   static int getNMAX(Lattice<iImplClover<vComplexD>> &t, RealD R) {return getNMAX(1e-12,R);}
   static int getNMAX(Lattice<iImplClover<vComplexF>> &t, RealD R) {return getNMAX(1e-6,R);}
 
-  static void Exponentiate_Clover(CloverField& Clover, CloverField& CloverInv, RealD csw_t, RealD diag_mass) {
+  static void ExponentiateClover(CloverField& Clover, CloverField& CloverInv, RealD csw_t, RealD diag_mass) {
 
     GridBase* grid = Clover.Grid();
     CloverField ExpClover(grid);
@@ -302,7 +312,24 @@ public:
 
     CloverInv = ExpClover * (1.0/diag_mass);
 
+  }
+
+  static void InvertClover(CloverField& InvClover,
+                            const CloverDiagonalField& diagonal,
+                            const CloverTriangleField& triangle,
+                            CloverDiagonalField&       diagonalInv,
+                            CloverTriangleField&       triangleInv,
+                            bool open_boundaries) {
+
+    if (open_boundaries)
+    {
+      CompactHelpers::Invert(diagonal, triangle, diagonalInv, triangleInv);
     }
+    else
+    {
+      CompactHelpers::ConvertLayout(InvClover, diagonalInv, triangleInv);
+    }
+  }
 
   static GaugeLinkField Cmunu(std::vector<GaugeLinkField> &U, GaugeLinkField &lambda, int mu, int nu) {
     assert(0);

@@ -330,7 +330,7 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeFie
 
   // Convert the data layout of the clover term
   double t4 = usecond();
-  CloverHelpers::Exponentiate_Clover(TmpOriginal, TmpInverse, csw_t, this->diag_mass);
+  CloverHelpers::ExponentiateClover(TmpOriginal, TmpInverse, csw_t, this->diag_mass);
 
   // Exponentiate the clover (nothing happens in case of the standard clover)
   double t5 = usecond();
@@ -342,9 +342,7 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeFie
 
   // Invert the Clover term (explicit inversion needed for the improvement in case of open boundary conditions)
   double t7 = usecond();
-  //CompactHelpers::Invert(Diagonal, Triangle, DiagonalInv, TriangleInv);
-  CompactHelpers::ConvertLayout(TmpInverse, DiagonalInv, TriangleInv);
-  //if(open_boundaries) handle differently!
+  CloverHelpers::InvertClover(TmpInverse, Diagonal, Triangle, DiagonalInv, TriangleInv, open_boundaries);
 
   // Fill the remaining clover fields
   double t8 = usecond();
