@@ -336,7 +336,7 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeFie
   double t5 = usecond();
   CompactHelpers::ConvertLayout(TmpOriginal, Diagonal, Triangle);
 
-  // Possible modify the boundary values
+  // Modify the clover term at the temporal boundaries in case of open boundary conditions
   double t6 = usecond();
   if(open_boundaries) CompactHelpers::ModifyBoundaries(Diagonal, Triangle, csw_t, cF, this->diag_mass);
 
@@ -366,10 +366,10 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeFie
   std::cout << GridLogDebug << "allocations =                " << (t2 - t1) / 1e6 << std::endl;
   std::cout << GridLogDebug << "field strength =             " << (t3 - t2) / 1e6 << std::endl;
   std::cout << GridLogDebug << "fill clover =                " << (t4 - t3) / 1e6 << std::endl;
-  std::cout << GridLogDebug << "exponentiation =             " << (t5 - t4) / 1e6 << std::endl;
-  std::cout << GridLogDebug << "convert =                    " << (t6 - t5) / 1e6 << std::endl;
-  std::cout << GridLogDebug << "boundaries =                 " << (t7 - t6) / 1e6 << std::endl;
-  std::cout << GridLogDebug << "inversions =                 " << (t8 - t7) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "exponentiate clover =        " << (t5 - t4) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "convert layout =             " << (t6 - t5) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "modify boundaries =          " << (t7 - t6) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "invert clover =              " << (t8 - t7) / 1e6 << std::endl;
   std::cout << GridLogDebug << "pick cbs =                   " << (t9 - t8) / 1e6 << std::endl;
   std::cout << GridLogDebug << "total =                      " << (t9 - t0) / 1e6 << std::endl;
 }
