@@ -340,7 +340,10 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeFie
   double t6 = usecond();
   if(open_boundaries) CompactHelpers::ModifyBoundaries(Diagonal, Triangle, csw_t, cF, this->diag_mass);
 
-  // Invert the Clover term (explicit inversion needed for the improvement in case of open boundary conditions)
+  // Invert the Clover term
+  // In case of the exponential clover with (anti-)periodic boundary conditions exp(-Clover) saved
+  // in TmpInverse can be used. In all other cases the clover term has to be explictly inverted.
+  // TODO: For now this inversion is explictly done on the CPU
   double t7 = usecond();
   CloverHelpers::InvertClover(TmpInverse, Diagonal, Triangle, DiagonalInv, TriangleInv, open_boundaries);
 
