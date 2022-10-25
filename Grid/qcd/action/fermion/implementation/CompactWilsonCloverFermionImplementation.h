@@ -325,14 +325,14 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeFie
   TmpOriginal += Helpers::fillCloverXT(Ex) * csw_t;
   TmpOriginal += Helpers::fillCloverYT(Ey) * csw_t;
   TmpOriginal += Helpers::fillCloverZT(Ez) * csw_t;
-  // Handle mass term based on clover policy
-  CloverHelpers::MassTerm(TmpOriginal, this->diag_mass);
+
+  // Instantiate the clover term
+  // - In case of the standard clover the mass term is added
+  // - In case of the exponential clover the clover term is exponentiated
+  double t4 = usecond();
+  CloverHelpers::InstantiateClover(TmpOriginal, TmpInverse, csw_t, this->diag_mass);
 
   // Convert the data layout of the clover term
-  double t4 = usecond();
-  CloverHelpers::ExponentiateClover(TmpOriginal, TmpInverse, csw_t, this->diag_mass);
-
-  // Exponentiate the clover (nothing happens in case of the standard clover)
   double t5 = usecond();
   CompactHelpers::ConvertLayout(TmpOriginal, Diagonal, Triangle);
 

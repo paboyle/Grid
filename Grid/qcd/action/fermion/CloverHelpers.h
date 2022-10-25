@@ -204,12 +204,8 @@ public:
   typedef WilsonCloverHelpers<Impl> Helpers;
   typedef CompactWilsonCloverHelpers<Impl> CompactHelpers;
 
-  static void MassTerm(CloverField& Clover, RealD diag_mass) {
+  static void InstantiateClover(CloverField& Clover, CloverField& CloverInv, RealD csw_t, RealD diag_mass) {
     Clover += diag_mass;
-  }
-
-  static void ExponentiateClover(CloverField& Clover, CloverField& CloverInv, RealD csw_t, RealD diag_mass) {
-    // Do nothing
   }
 
   static void InvertClover(CloverField& InvClover,
@@ -244,11 +240,6 @@ public:
   template <typename vtype> using iImplClover = iScalar<iMatrix<iMatrix<vtype, Impl::Dimension>, Ns>>;
   typedef CompactWilsonCloverHelpers<Impl> CompactHelpers;
 
-  static void MassTerm(CloverField& Clover, RealD diag_mass) {
-    // do nothing!
-    // mass term is multiplied to exp(Clover) below
-  }
-
   // Can this be avoided?
   static void IdentityTimesC(const CloverField& in, RealD c) {
     int DimRep = Impl::Dimension;
@@ -277,7 +268,7 @@ public:
   static int getNMAX(Lattice<iImplClover<vComplexD>> &t, RealD R) {return getNMAX(1e-12,R);}
   static int getNMAX(Lattice<iImplClover<vComplexF>> &t, RealD R) {return getNMAX(1e-6,R);}
 
-  static void ExponentiateClover(CloverField& Clover, CloverField& CloverInv, RealD csw_t, RealD diag_mass) {
+  static void InstantiateClover(CloverField& Clover, CloverField& CloverInv, RealD csw_t, RealD diag_mass) {
 
     GridBase* grid = Clover.Grid();
     CloverField ExpClover(grid);
