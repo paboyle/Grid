@@ -208,10 +208,7 @@ public:
     Clover += diag_mass;
   }
 
-  static void Exponentiate_Clover(CloverDiagonalField& Diagonal,
-                          CloverTriangleField& Triangle,
-                          RealD csw_t, RealD diag_mass) {
-
+  static void Exponentiate_Clover(CloverField& Clover, CloverField& CloverInv, RealD csw_t, RealD diag_mass) {
     // Do nothing
   }
 
