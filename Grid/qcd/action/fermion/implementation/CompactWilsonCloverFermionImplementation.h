@@ -366,7 +366,7 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeFie
   std::cout << GridLogDebug << "allocations =                " << (t2 - t1) / 1e6 << std::endl;
   std::cout << GridLogDebug << "field strength =             " << (t3 - t2) / 1e6 << std::endl;
   std::cout << GridLogDebug << "fill clover =                " << (t4 - t3) / 1e6 << std::endl;
-  std::cout << GridLogDebug << "exponentiate clover =        " << (t5 - t4) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "instantiate clover =         " << (t5 - t4) / 1e6 << std::endl;
   std::cout << GridLogDebug << "convert layout =             " << (t6 - t5) / 1e6 << std::endl;
   std::cout << GridLogDebug << "modify boundaries =          " << (t7 - t6) / 1e6 << std::endl;
   std::cout << GridLogDebug << "invert clover =              " << (t8 - t7) / 1e6 << std::endl;
