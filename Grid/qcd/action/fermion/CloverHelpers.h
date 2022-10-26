@@ -213,7 +213,7 @@ public:
                             const CloverTriangleField& triangle,
                             CloverDiagonalField&       diagonalInv,
                             CloverTriangleField&       triangleInv,
-                            bool open_boundaries) {
+                            bool fixedBoundaries) {
 
     CompactHelpers::Invert(diagonal, triangle, diagonalInv, triangleInv);
   }
@@ -310,9 +310,9 @@ public:
                             const CloverTriangleField& triangle,
                             CloverDiagonalField&       diagonalInv,
                             CloverTriangleField&       triangleInv,
-                            bool open_boundaries) {
+                            bool fixedBoundaries) {
 
-    if (open_boundaries)
+    if (fixedBoundaries)
     {
       CompactHelpers::Invert(diagonal, triangle, diagonalInv, triangleInv);
     }
