@@ -2,7 +2,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/sw/crusher/spack-envs/base/opt/cray-sle
 module load emacs 
 #module load gperftools
 module load PrgEnv-gnu
-module load rocm/5.2.0
+module load rocm/5.3.0
 module load cray-mpich/8.1.16
 #module load cray-mpich/8.1.17
 module load gmp
