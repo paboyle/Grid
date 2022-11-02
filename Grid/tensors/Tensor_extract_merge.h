@@ -130,7 +130,7 @@ typename vobj::scalar_object extractLane(int lane, const vobj & __restrict__ vec
   typedef typename vobj::scalar_object scalar_object;
   typedef typename vobj::vector_type   vector_type;
   typedef typename ExtractTypeMap<scalar_type>::extract_type extract_type;
-  typedef extract_type * pointer;
+  typedef scalar_type * pointer;
 
   constexpr int words=sizeof(vobj)/sizeof(vector_type);
   constexpr int Nsimd=vector_type::Nsimd();
@@ -150,7 +150,7 @@ void insertLane(int lane, vobj & __restrict__ vec,const typename vobj::scalar_ob
   typedef typename vobj::vector_type vector_type;
   typedef typename vector_type::scalar_type scalar_type;
   typedef typename ExtractTypeMap<scalar_type>::extract_type extract_type;
-  typedef extract_type * pointer;
+  typedef scalar_type * pointer;
 
   constexpr int words=sizeof(vobj)/sizeof(vector_type);
   constexpr int Nsimd=vector_type::Nsimd();
