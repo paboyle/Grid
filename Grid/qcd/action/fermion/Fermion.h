@@ -47,6 +47,7 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 ////////////////////////////////////////////
 // Fermion operators / actions
 ////////////////////////////////////////////
+#include <Grid/qcd/action/fermion/DWFSlow.h>       // Slow DWF
 
 #include <Grid/qcd/action/fermion/WilsonFermion.h>       // 4d wilson like
 NAMESPACE_CHECK(Wilson);
