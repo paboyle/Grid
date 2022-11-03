@@ -29,19 +29,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
-
-template<class d>
-struct scal {
-  d internal;
-};
-
-    Gamma::Algebra Gmu [] = {
-        Gamma::Algebra::GammaX,
-        Gamma::Algebra::GammaY,
-        Gamma::Algebra::GammaZ,
-        Gamma::Algebra::GammaT
-    };
 
 template<class What> 
 void  TestWhat(What & Ddwf,
@@ -88,7 +75,12 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"**************************************************************"<<std::endl;
   std::cout<<GridLogMessage <<"DomainWallFermion vectorised test"<<std::endl;
   std::cout<<GridLogMessage<<"**************************************************************"<<std::endl;
-  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  std::vector<Complex> boundary = {1,1,1,-1};
+  DomainWallFermionD::ImplParams Params(boundary);
+  Coordinate Dirichlet({0,8,8,16,32});
+  Params.dirichlet=Dirichlet;
+
+  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,Params);
   TestWhat<DomainWallFermionD>(Ddwf,FGrid,FrbGrid,UGrid,mass,M5,&RNG4,&RNG5);
 
   RealD b=1.5;// Scale factor b+c=2, b-c=1
