@@ -148,12 +148,21 @@ void WilsonFermion5D<Impl>::ImportGauge(const GaugeField &_Umu)
   GaugeField HUmu(_Umu.Grid());
   HUmu = _Umu*(-0.5);
   if ( Dirichlet ) {
-    std::cout << GridLogDslash << " Dirichlet BCs 5d " <<Block<<std::endl;
+    std:: cout << GridLogMessage << "Checking block size multiple of rank boundaries for Dirichlet"<<std::endl;
+    for(int d=0;d<Nd;d++) {
+      int GaugeBlock = Block[d+1];
+      int ldim=GaugeGrid()->LocalDimensions()[d];
+      if (GaugeBlock) assert( (GaugeBlock%ldim)==0);
+    }
+  }
+  if ( Dirichlet && (!this->Params.partialDirichlet) ) {
+    std::cout << GridLogMessage << " Dirichlet filtering gauge field BCs block " <<Block<<std::endl;
     Coordinate GaugeBlock(Nd);
     for(int d=0;d<Nd;d++) GaugeBlock[d] = Block[d+1];
-    std::cout << GridLogDslash << " Dirichlet BCs 4d " <<GaugeBlock<<std::endl;
     DirichletFilter<GaugeField> Filter(GaugeBlock);
     Filter.applyFilter(HUmu);
+  } else {
+    std::cout << GridLogMessage << " Dirichlet "<< Dirichlet << " not filtered gauge field" <<std::endl;
   }
   Impl::DoubleStore(GaugeGrid(),Umu,HUmu);
   pickCheckerboard(Even,UmuEven,Umu);
