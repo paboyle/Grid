@@ -412,7 +412,7 @@ int main (int argc, char ** argv)
 	    }
             int tid = omp_get_thread_num();
 	    tbytes= Grid.StencilSendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,1,
-					       (void *)&rbuf[dir][0], recv_from_rank,1, bytes,bytes,tid);
+					       (void *)&rbuf[dir][0], recv_from_rank,1, bytes,tid);
 
 	    thread_critical { dbytes+=tbytes; }
 	  }
