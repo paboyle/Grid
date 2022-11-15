@@ -155,7 +155,7 @@ public:
 				    int xmit_to_rank,int do_xmit,
 				    void *recv,
 				    int recv_from_rank,int do_recv,
-				    int bytes,int dir);
+				    int xbytes,int rbytes,int dir);
   
   
   void StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int i);
