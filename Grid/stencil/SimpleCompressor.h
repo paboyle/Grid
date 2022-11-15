@@ -73,7 +73,7 @@ public:
     auto vp0= &mm.vpointers[0][0];
     auto vp1= &mm.vpointers[1][0];
     auto type= mm.type;
-    accelerator_forNB(o,mm.buffer_size/2,vobj::Nsimd(),{
+    accelerator_forNB(o,mm.buffer_size/2,Merger::Nsimd(),{
 	decompress.Exchange(mp[2*o],mp[2*o+1],vp0[o],vp1[o],type);
     });
   }

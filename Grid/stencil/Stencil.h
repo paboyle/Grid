@@ -245,6 +245,7 @@ public:
     Integer rbytes;
   };
   struct Merge {
+    static constexpr int Nsimd = vobj::Nsimd();
     cobj * mpointer;
     Vector<scalar_object *> rpointers;
     Vector<cobj *> vpointers;
@@ -254,6 +255,7 @@ public:
     Coordinate dims;
   };
   struct Decompress {
+    static constexpr int Nsimd = vobj::Nsimd();
     cobj * kernel_p;
     cobj * mpi_p;
     Integer buffer_size;
