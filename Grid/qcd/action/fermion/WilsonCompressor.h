@@ -141,7 +141,7 @@ public:
     auto vp1= &mm.vpointers[1][0];
     auto type= mm.type;
     int nnum = num/Ls;
-    accelerator_forNB(o,num,vobj::Nsimd(),{
+    accelerator_forNB(o,num,Merger::Nsimd,{
 
 	int  s=o%Ls;
 	int hxyz=o/Ls; // xyzt related component
