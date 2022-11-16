@@ -82,8 +82,8 @@ int main (int argc, char** argv)
   RealD mf = 0.01;
   RealD mb = 1.0;
   RealD M5 = 1.8;
-  MobiusEOFAFermionR Lop(U, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, mf, mb, 0.0, -1, M5, b, c);
-  MobiusEOFAFermionR Rop(U, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, mf, mb, -1.0, 1, M5, b, c);
+  MobiusEOFAFermionD Lop(U, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, mf, mb, 0.0, -1, M5, b, c);
+  MobiusEOFAFermionD Rop(U, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, mf, mb, -1.0, 1, M5, b, c);
   OneFlavourRationalParams Params(0.95, 100.0, 5000, 1.0e-12, 12);
   ConjugateGradient<LatticeFermion> CG(1.0e-12, 5000);
   ExactOneFlavourRatioPseudoFermionAction<WilsonImplR> Meofa(Lop, Rop, CG, CG, CG, CG, CG, Params, false);

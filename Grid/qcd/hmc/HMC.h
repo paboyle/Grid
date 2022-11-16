@@ -143,6 +143,7 @@ private:
     GridBase *Grid = U.Grid();
 
     if(Params.PerformRandomShift){
+#if 0
       //////////////////////////////////////////////////////////////////////////////////////////////////////
       // Mainly for DDHMC perform a random translation of U modulo volume
       //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -167,11 +168,11 @@ private:
 	//shift all fields together in a way that respects the gauge BCs
 	for(int mu=0; mu < Grid->Nd(); mu++)
 	  Umu[mu] = FieldImplementation::CshiftLink(Umu[mu],d,shift);
-      }
 
-      for(int mu=0;mu<Grid->Nd();mu++) PokeIndex<LorentzIndex>(U,Umu[mu],mu);
-      
+	for(int mu=0;mu<Grid->Nd();mu++) PokeIndex<LorentzIndex>(U,Umu[mu],mu);
+      }
       std::cout << GridLogMessage << "--------------------------------------------------\n";
+#endif	
     }
 
     TheIntegrator.reset_timer();

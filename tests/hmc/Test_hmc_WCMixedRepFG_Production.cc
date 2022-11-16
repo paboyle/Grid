@@ -84,11 +84,11 @@ int main(int argc, char **argv) {
   typedef GenericHMCRunnerHirep<TheRepresentations, MinimumNorm2> HMCWrapper;
 
   typedef WilsonImplR FundImplPolicy;
-  typedef WilsonCloverFermionR FundFermionAction; 
+  typedef WilsonCloverFermionD FundFermionAction; 
   typedef typename FundFermionAction::FermionField FundFermionField;
 
   typedef WilsonTwoIndexAntiSymmetricImplR ASymmImplPolicy; 
-  typedef WilsonCloverTwoIndexAntiSymmetricFermionR ASymmFermionAction; 
+  typedef WilsonCloverTwoIndexAntiSymmetricFermionD ASymmFermionAction; 
   typedef typename ASymmFermionAction::FermionField ASymmFermionField;
 
   typedef Grid::XmlReader Serialiser;

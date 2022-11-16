@@ -47,7 +47,7 @@ int main (int argc, char ** argv)
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
-  typedef typename GparityDomainWallFermionR::FermionField FermionField;
+  typedef typename GparityDomainWallFermionD::FermionField FermionField;
 
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
@@ -76,10 +76,10 @@ int main (int argc, char ** argv)
   std::vector<int> twists(Nd,0);
   twists[nu] = 1;
   twists[Nd-1] = 1; //antiperiodic in time
-  GparityDomainWallFermionR::ImplParams params;
+  GparityDomainWallFermionD::ImplParams params;
   params.twists = twists;
  
-  GparityDomainWallFermionR Dw(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,params);
+  GparityDomainWallFermionD Dw(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,params);
 
   Dw.M   (phi,Mphi);
 

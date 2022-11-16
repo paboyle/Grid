@@ -51,9 +51,9 @@ int main(int argc, char **argv) {
   typedef GenericHMCRunnerHirep<TheRepresentations, MinimumNorm2> HMCWrapper;
 
   typedef WilsonAdjImplR AdjImplPolicy; // gauge field implemetation for the pseudofermions
-  typedef WilsonAdjFermionR AdjFermionAction; // type of lattice fermions (Wilson, DW, ...)
+  typedef WilsonAdjFermionD AdjFermionAction; // type of lattice fermions (Wilson, DW, ...)
   typedef WilsonTwoIndexSymmetricImplR SymmImplPolicy; 
-  typedef WilsonTwoIndexSymmetricFermionR SymmFermionAction; 
+  typedef WilsonTwoIndexSymmetricFermionD SymmFermionAction; 
 
 
   typedef typename AdjFermionAction::FermionField AdjFermionField;

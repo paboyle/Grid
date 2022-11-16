@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
    // Typedefs to simplify notation
   typedef GenericHMCRunnerHirep<TheRepresentations, MinimumNorm2> HMCWrapper;
   typedef WilsonAdjImplR FermionImplPolicy; // gauge field implemetation for the pseudofermions
-  typedef WilsonAdjFermionR FermionAction; // type of lattice fermions (Wilson, DW, ...)
+  typedef WilsonAdjFermionD FermionAction; // type of lattice fermions (Wilson, DW, ...)
   typedef typename FermionAction::FermionField FermionField;
 
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

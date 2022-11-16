@@ -59,7 +59,7 @@ void copy2fTo1fFermionField(FermionField1f &out, const FermionField2f &in, int g
   LatticeInteger xcoor_1f(out.Grid()); //5d lattice integer
   LatticeCoordinate(xcoor_1f,gpdir);
 
-  int L = dim_2f[gpdir];
+  Integer L = dim_2f[gpdir];
 
   out = where(xcoor_1f < L, f0_fullgrid_dbl, f1_fullgrid_dbl);
 }
@@ -76,7 +76,7 @@ void copy2fTo1fGaugeField(LatticeGaugeField &out, const LatticeGaugeField &in, i
   LatticeInteger xcoor_1f(out.Grid());
   LatticeCoordinate(xcoor_1f,gpdir);
 
-  int L = dim_2f[gpdir];
+  Integer L = dim_2f[gpdir];
   
   out = where(xcoor_1f < L, U_dbl, Uconj_dbl);
 }
@@ -140,11 +140,11 @@ int main(int argc, char **argv) {
   copy2fTo1fGaugeField(Umu_1f, Umu_2f, mu);  
 
   typedef GparityWilsonImplR FermionImplPolicy2f;
-  typedef GparityDomainWallFermionR FermionAction2f;
+  typedef GparityDomainWallFermionD FermionAction2f;
   typedef typename FermionAction2f::FermionField FermionField2f;
   
   typedef WilsonImplR FermionImplPolicy1f;
-  typedef DomainWallFermionR FermionAction1f;
+  typedef DomainWallFermionD FermionAction1f;
   typedef typename FermionAction1f::FermionField FermionField1f;
 
   std::cout << "Generating eta 2f" << std::endl;

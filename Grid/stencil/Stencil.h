@@ -698,7 +698,7 @@ public:
 		   int checkerboard,
 		   const std::vector<int> &directions,
 		   const std::vector<int> &distances,
-		   Parameters p)
+		   Parameters p=Parameters())
   {
     face_table_computed=0;
     _grid    = grid;

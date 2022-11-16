@@ -81,7 +81,7 @@ int main(int argc, char **argv)
   // Typedefs to simplify notation
   typedef GenericHMCRunnerHirep<TheRepresentations, MinimumNorm2> HMCWrapper; // Uses the default minimum norm
   typedef WilsonAdjImplR FermionImplPolicy; // gauge field implemetation for the pseudofermions
-  typedef WilsonCloverAdjFermionR FermionAction; // type of lattice fermions (Wilson, DW, ...)
+  typedef WilsonCloverAdjFermionD FermionAction; // type of lattice fermions (Wilson, DW, ...)
   typedef typename FermionAction::FermionField FermionField;
   typedef Grid::XmlReader Serialiser;
 

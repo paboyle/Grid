@@ -60,9 +60,9 @@ int main (int argc, char ** argv)
   pRNG4.SeedFixedIntegers(seeds);
   pRNG5.SeedFixedIntegers(seeds);
 
-  typedef typename ImprovedStaggeredFermion5DR::FermionField FermionField; 
-  typedef typename ImprovedStaggeredFermion5DR::ComplexField ComplexField; 
-  typename ImprovedStaggeredFermion5DR::ImplParams params; 
+  typedef typename ImprovedStaggeredFermion5DD::FermionField FermionField; 
+  typedef typename ImprovedStaggeredFermion5DD::ComplexField ComplexField; 
+  typename ImprovedStaggeredFermion5DD::ImplParams params; 
 
   FermionField src   (FGrid);
 
@@ -148,7 +148,7 @@ int main (int argc, char ** argv)
     }
   }
 
-  ImprovedStaggeredFermion5DR Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,c1,c2,u0,params);
+  ImprovedStaggeredFermion5DD Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,c1,c2,u0,params);
 
   std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
   std::cout<<GridLogMessage<<"= Testing Dhop against cshift implementation         "<<std::endl;
@@ -288,7 +288,7 @@ int main (int argc, char ** argv)
   pickCheckerboard(Even,phi_e,phi);
   pickCheckerboard(Odd ,phi_o,phi);
 
-  SchurDiagMooeeOperator<ImprovedStaggeredFermion5DR,FermionField> HermOpEO(Ds);
+  SchurDiagMooeeOperator<ImprovedStaggeredFermion5DD,FermionField> HermOpEO(Ds);
   HermOpEO.MpcDagMpc(chi_e,dchi_e);
   HermOpEO.MpcDagMpc(chi_o,dchi_o);
 

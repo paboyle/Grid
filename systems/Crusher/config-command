@@ -4,11 +4,10 @@
 --enable-accelerator=hip \
 --enable-gen-simd-width=64 \
 --enable-simd=GPU \
---disable-fermion-reps \
 --with-gmp=$OLCF_GMP_ROOT \
 --with-fftw=$FFTW_DIR/.. \
 --with-mpfr=/opt/cray/pe/gcc/mpfr/3.1.4/ \
---enable-gparity \
+--disable-gparity \
 CXX=hipcc MPICXX=mpicxx \
 CXXFLAGS="-fPIC -I{$ROCM_PATH}/include/ -std=c++14 -I${MPICH_DIR}/include -L/lib64 " \
  LDFLAGS="-L/lib64 -L/opt/rocm-5.2.0/lib/ -L${MPICH_DIR}/lib -lmpi -L${CRAY_MPICH_ROOTDIR}/gtl/lib -lmpi_gtl_hsa -lamdhip64 "
