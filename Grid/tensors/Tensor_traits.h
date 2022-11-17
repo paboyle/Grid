@@ -143,7 +143,7 @@ NAMESPACE_BEGIN(Grid);
     typedef ComplexD DoublePrecision2;
   };
 
-#ifdef GRID_CUDA
+#if defined(GRID_CUDA) || defined(GRID_HIP)  
   template<> struct GridTypeMapper<std::complex<float> > : public GridTypeMapper_Base {
     typedef std::complex<float> scalar_type;
     typedef std::complex<double> scalar_typeD;

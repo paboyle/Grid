@@ -33,6 +33,7 @@ directory
 
 
 
+#ifdef ENABLE_FERMION_REPS
 
 int main(int argc, char **argv) {
 #ifndef GRID_CUDA
@@ -138,3 +139,6 @@ int main(int argc, char **argv) {
 } // main
 
 
+#else
+int main(int argc, char **argv){}
+#endif

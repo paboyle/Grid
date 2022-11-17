@@ -31,9 +31,10 @@ directory
 /*  END LEGAL */
 #include "Grid/Grid.h"
 
+#ifdef ENABLE_FERMION_REPS
+
 int main(int argc, char **argv) {
   using namespace Grid;
-   ;
 
   // Here change the allowed (higher) representations
   typedef Representations< FundamentalRepresentation, AdjointRepresentation > TheRepresentations;
@@ -127,3 +128,6 @@ int main(int argc, char **argv) {
 
 } // main
 
+#else
+int main(int argc, char **argv){}
+#endif

@@ -52,6 +52,16 @@
 
 NAMESPACE_BEGIN(Grid);
 
+// These can move into a params header and be given MacroMagic serialisation
+struct DefaultImplParams {
+  Coordinate dirichlet; // Blocksize of dirichlet BCs
+  int  partialDirichlet;
+  DefaultImplParams()  {
+    dirichlet.resize(0);
+    partialDirichlet=0;
+  };
+};
+
 ///////////////////////////////////////////////////////////////////
 // Gather for when there *is* need to SIMD split with compression
 ///////////////////////////////////////////////////////////////////

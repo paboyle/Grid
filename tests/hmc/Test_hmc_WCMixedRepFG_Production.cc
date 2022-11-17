@@ -32,6 +32,7 @@ directory
 #include "Grid/Grid.h"
 
 
+#ifdef ENABLE_FERMION_REPS
 namespace Grid{
   struct FermionParameters: Serializable {
     GRID_SERIALIZABLE_CLASS_MEMBERS(FermionParameters,
@@ -222,3 +223,6 @@ int main(int argc, char **argv) {
   Grid_finalize();
 
 } // main
+#else
+int main(int argc, char **argv){}
+#endif

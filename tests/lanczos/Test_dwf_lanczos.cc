@@ -35,8 +35,8 @@ template<typename Action>
 struct Setup{};
 
 template<>
-struct Setup<GparityMobiusFermionR>{
-  static GparityMobiusFermionR* getAction(LatticeGaugeField &Umu,
+struct Setup<GparityMobiusFermionD>{
+  static GparityMobiusFermionD* getAction(LatticeGaugeField &Umu,
 					  GridCartesian* FGrid, GridRedBlackCartesian* FrbGrid, GridCartesian* UGrid, GridRedBlackCartesian* UrbGrid){
     RealD mass=0.01;
     RealD M5=1.8;
@@ -44,17 +44,17 @@ struct Setup<GparityMobiusFermionR>{
     GparityMobiusFermionD ::ImplParams params;
     std::vector<int> twists({1,1,1,0});
     params.twists = twists;
-    return new GparityMobiusFermionR(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,mob_b,mob_b-1.,params);
+    return new GparityMobiusFermionD(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,mob_b,mob_b-1.,params);
   }
 };
 
 template<>
-struct Setup<DomainWallFermionR>{
-  static DomainWallFermionR* getAction(LatticeGaugeField &Umu,
+struct Setup<DomainWallFermionD>{
+  static DomainWallFermionD* getAction(LatticeGaugeField &Umu,
 					  GridCartesian* FGrid, GridRedBlackCartesian* FrbGrid, GridCartesian* UGrid, GridRedBlackCartesian* UrbGrid){
     RealD mass=0.01;
     RealD M5=1.8;
-    return new DomainWallFermionR(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+    return new DomainWallFermionD(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   }
 };
 
@@ -127,9 +127,9 @@ int main (int argc, char ** argv)
   }
 
   if(action == "GparityMobius"){
-    run<GparityMobiusFermionR>();
+    run<GparityMobiusFermionD>();
   }else if(action == "DWF"){
-    run<DomainWallFermionR>();
+    run<DomainWallFermionD>();
   }else{
     std::cout << "Unknown action" << std::endl;
     exit(1);
