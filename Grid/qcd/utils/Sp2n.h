@@ -5,21 +5,16 @@
 NAMESPACE_BEGIN(Grid);
 
 // Sp(2N)
-// ncolour = N
+// ncolour = 2N
 
-// need to be careful with n and 2n
-// I am defining the Sp class for Sp(2n) to be such that the template variable ncolour
-// is n inside 2n and the typedef at the end of the file should eliminate possible confusion.
-
-// the other routines, like projectOnSp2n, N will be the dimension of the actual number of colors for consistency with the sun routines
 
 template <int ncolour>
 class Sp {
 public:
-    static const int Dimension = ncolour*2;
-    static const int AlgebraDimension = ncolour*(2*ncolour +1);
-    static int su2subgroups(void) { return (ncolour * (ncolour - 1)) / 2; }
-    static const int nnsp = ncolour;
+    static const int nsp = ncolour/2;
+    static const int Dimension = ncolour;
+    static const int AlgebraDimension = nsp*(2*nsp +1);
+    static int su2subgroups(void) { return (nsp * (nsp - 1)) / 2; }
     
     
     template <typename vtype>
@@ -65,20 +60,17 @@ public:
     //     there are 6 types named a,b,c,d and w,z
     //     abcd are N(N-1)/2 each while wz are N each
     
-    
-    
-    
-    template <class cplx>
+ template <class cplx>
     static void generator(int lieIndex, iSp2nMatrix<cplx> &ta) {
         // map lie index into type of generators: diagonal, abcd type, wz type
 
         int diagIndex;
         int aIndex, bIndex, cIndex, dIndex;
         int wIndex, zIndex; // a,b,c,d are N(N-1)/2 and w,z are N
-        int mod = ncolour * (ncolour-1) * 0.5;
-        int offdiag = 2*ncolour*ncolour; // number of generators not in the cartan subalgebra
+        int mod = nsp * (nsp-1) * 0.5;
+        int offdiag = 2*nsp*nsp; // number of generators not in the cartan subalgebra
         int wmod = 4*mod;
-        int zmod = wmod+ncolour;
+        int zmod = wmod+nsp;
         if (lieIndex >= offdiag) {
             diagIndex = lieIndex - offdiag; // 0, ... ,N-1
             //std::cout << GridLogMessage << "diag type " << std::endl;
@@ -136,7 +128,7 @@ public:
         RealD nrm = 1.0 / 2;
 
         ta()()(diagIndex,diagIndex) = nrm;
-        ta()()(diagIndex+ncolour,diagIndex+ncolour) = -nrm;
+        ta()()(diagIndex+nsp,diagIndex+nsp) = -nrm;
     }
     
     template <class cplx>
@@ -152,8 +144,8 @@ public:
         su2SubGroupIndex(i1, i2, aIndex);
         ta()()(i1,i2) = 1;
         ta()()(i2,i1) = 1;
-        ta()()(i1+ncolour,i2+ncolour) = -1;
-        ta()()(i2+ncolour,i1+ncolour) = -1;
+        ta()()(i1+nsp,i2+nsp) = -1;
+        ta()()(i2+nsp,i1+nsp) = -1;
 
         ta = ta * nrm;
     }
@@ -174,8 +166,8 @@ public:
 
         ta()()(i1,i2) = i;
         ta()()(i2,i1) = -i;
-        ta()()(i1+ncolour,i2+ncolour) = i;
-        ta()()(i2+ncolour,i1+ncolour) = -i;
+        ta()()(i1+nsp,i2+nsp) = i;
+        ta()()(i2+nsp,i1+nsp) = -i;
 
         ta = ta * nrm;
     }
@@ -191,10 +183,10 @@ public:
         RealD nrm = 1 / (2 * std::sqrt(2) );
         su2SubGroupIndex(i1, i2, cIndex);
         
-        ta()()(i1,i2+ncolour) = 1;
-        ta()()(i2,i1+ncolour) = 1;
-        ta()()(i1+ncolour,i2) = 1;
-        ta()()(i2+ncolour,i1) = 1;
+        ta()()(i1,i2+nsp) = 1;
+        ta()()(i2,i1+nsp) = 1;
+        ta()()(i1+nsp,i2) = 1;
+        ta()()(i2+nsp,i1) = 1;
 
         ta = ta * nrm;
     }
@@ -210,10 +202,10 @@ public:
         RealD nrm = 1 / (2 * std::sqrt(2)  );
         su2SubGroupIndex(i1, i2, dIndex);
 
-        ta()()(i1,i2+ncolour) = i;
-        ta()()(i2,i1+ncolour) = i;
-        ta()()(i1+ncolour,i2) = -i;
-        ta()()(i2+ncolour,i1) = -i;
+        ta()()(i1,i2+nsp) = i;
+        ta()()(i2,i1+nsp) = i;
+        ta()()(i1+nsp,i2) = -i;
+        ta()()(i2+nsp,i1) = -i;
 
         ta = ta * nrm;
     }
@@ -226,8 +218,8 @@ public:
          ta = Zero();
          RealD nrm = 1.0 / 2; //check
 
-         ta()()(wIndex,wIndex+ncolour) = 1;
-         ta()()(wIndex+ncolour,wIndex) = 1;
+         ta()()(wIndex,wIndex+nsp) = 1;
+         ta()()(wIndex+nsp,wIndex) = 1;
          
          ta = ta * nrm;
      }
@@ -240,8 +232,8 @@ public:
          ta = Zero();
          RealD nrm = 1.0 / 2; //check
          cplx i(0.0, 1.0);
-         ta()()(zIndex,zIndex+ncolour) = i;
-         ta()()(zIndex+ncolour,zIndex) = -i;
+         ta()()(zIndex,zIndex+nsp) = i;
+         ta()()(zIndex+nsp,zIndex) = -i;
          
          ta = ta * nrm;
      }
@@ -251,11 +243,11 @@ public:
     // Map a su2 subgroup number to the pair of rows that are non zero
     ////////////////////////////////////////////////////////////////////////
     static void su2SubGroupIndex(int &i1, int &i2, int su2_index) {
-      assert((su2_index >= 0) && (su2_index < (ncolour * (ncolour - 1)) / 2));
+      assert((su2_index >= 0) && (su2_index < (nsp * (nsp - 1)) / 2));
 
       int spare = su2_index;
-      for (i1 = 0; spare >= (ncolour - 1 - i1); i1++) {
-        spare = spare - (ncolour - 1 - i1);  // remove the Nc-1-i1 terms
+      for (i1 = 0; spare >= (nsp - 1 - i1); i1++) {
+        spare = spare - (nsp - 1 - i1);  // remove the Nc-1-i1 terms
       }
       i2 = i1 + 1 + spare;
     }
@@ -268,7 +260,7 @@ public:
         for (int gen = 0; gen < AlgebraDimension; gen++) {
             Matrix ta;
             generator(gen, ta);
-            std::cout << GridLogMessage << "Nc (2n) = " << 2*ncolour << std::endl;
+            std::cout << GridLogMessage << "Nc = " << ncolour << std::endl;
             std::cout << GridLogMessage << " t_" << gen << std::endl;
             std::cout << GridLogMessage << ta << std::endl;
         }
@@ -464,10 +456,17 @@ public:
         ColourMatrix Omega;
         Omega = Zero();
         
-        for (int i = 0; i < ncolour; i++)
+        std::cout << GridLogMessage << "I am a ColourMatrix" << std::endl;
+        
+        //for (int i = 0; i < ncolour; i++)         wrong?!
+        //{
+        //    Omega()()(i, 2*ncolour-1-i) = 1.;
+        //    Omega()()(2*ncolour-1-i, i) = -1;
+        //}
+        for (int i = 0; i < nsp; i++)
         {
-            Omega()()(i, 2*ncolour-1-i) = 1.;
-            Omega()()(2*ncolour-1-i, i) = -1;
+            Omega()()(i, nsp+i) = 1.;
+            Omega()()(nsp+i, i) = -1;
         }
 
         auto diff = Omega - (in * Omega * transpose(in) );
@@ -498,6 +497,8 @@ public:
         Omega = Zero();
         identity = 1.;
         
+        std::cout << GridLogMessage << "I am a GaugeField " << std::endl;
+        
         U = PeekIndex<LorentzIndex>(in,1);
         
         OmegaInvariance(U);
@@ -516,10 +517,12 @@ public:
            Omega = Zero();
            identity = 1.;
            
-           for (int i = 0; i < ncolour; i++)
+           std::cout << GridLogMessage << "I am a LatticeColourMatrix " << std::endl;
+           
+           for (int i = 0; i < nsp; i++)
            {
-               Omega()()(i, ncolour+i) = 1.;
-               Omega()()(ncolour+i, i) = -1;
+               Omega()()(i, nsp+i) = 1.;
+               Omega()()(nsp+i, i) = -1;
            }
            
            std::cout << GridLogMessage << "Omega = " << Omega()() << std::endl;
@@ -568,10 +571,10 @@ public:
    }
  }
 
-typedef Sp<1> Sp2;
-typedef Sp<2> Sp4;
-typedef Sp<3> Sp6;
-typedef Sp<4> Sp8;
+typedef Sp<2> Sp2;
+typedef Sp<4> Sp4;
+typedef Sp<6> Sp6;
+typedef Sp<8> Sp8;
 
 NAMESPACE_END(Grid);
 #endif
