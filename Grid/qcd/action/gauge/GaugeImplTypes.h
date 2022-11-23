@@ -126,8 +126,8 @@ public:
     {
         if (isSp2n == true)
         {
-            const int nSp = Nrepresentation/2;
-            Sp<nSp>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
+            //const int nSp = Nrepresentation/2;
+            Sp<Nrepresentation>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
         } else
         {
         
@@ -148,18 +148,18 @@ public:
         if (isSp2n == true)
         {
             P = Ta(P);
-            const int nsp = Nc / 2;
+            //const int nsp = Nc / 2;
 
-            Sp<nsp>::iSp2nMatrix<Complex> gen;
+            Sp<Nc>::iSp2nMatrix<Complex> gen;
             
 
             auto Psum = P;
 
             Psum = Zero();
             
-            for (int a = 0; a < Sp<nsp>::AlgebraDimension; a++)
+            for (int a = 0; a < Sp<Nrepresentation>::AlgebraDimension; a++)
             {
-                Sp<nsp>::generator(a, gen);
+                Sp<Nrepresentation>::generator(a, gen);
 
                 auto coeff = 2. * trace(P * gen);
                 Psum += coeff * gen;
@@ -223,8 +223,8 @@ public:
   {
       if (isSp2n == true)
       {
-          const int nSp = Nrepresentation/2;
-          Sp<nSp>::HotConfiguration(pRNG, U);
+          //const int nSp = Nrepresentation/2;
+          Sp<Nrepresentation>::HotConfiguration(pRNG, U);
       } else
       {
           Group::HotConfiguration(pRNG, U);
@@ -235,8 +235,8 @@ public:
   {
       if (isSp2n == true)
     {
-        const int nSp = Nrepresentation/2;
-        Sp<nSp>::TepidConfiguration(pRNG, U);
+        //const int nSp = Nrepresentation/2;
+        Sp<Nrepresentation>::TepidConfiguration(pRNG, U);
     } else
     {
         Group::TepidConfiguration(pRNG, U);
@@ -248,8 +248,8 @@ public:
   {
       if (isSp2n == true)
       {
-          const int nSp = Nrepresentation/2;
-          Sp<nSp>::ColdConfiguration(pRNG, U);
+          //const int nSp = Nrepresentation/2;
+          Sp<Nrepresentation>::ColdConfiguration(pRNG, U);
       } else
       {
           Group::ColdConfiguration(pRNG, U);
