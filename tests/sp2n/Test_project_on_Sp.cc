@@ -20,8 +20,7 @@ int main (int argc, char **argv)
     LatticeColourMatrixD aux(&Grid);
     LatticeColourMatrixD identity(&Grid);
     
-    //const int nsp = Nc / 2;
-    const int nsp = Sp<Nc>::nsp;
+    const int nsp = Nc / 2;
     
     identity = 1.0;
     RealD epsilon = 0.01;
@@ -48,7 +47,7 @@ int main (int argc, char **argv)
     {
         std::cout << GridLogMessage << "This matrix should not leave Omega invariant, expect a warning" << std::endl;
     }
-    Sp<Nc>::OmegaInvariance(U);
+    Sp<nsp>::OmegaInvariance(U);
     std::cout <<GridLogMessage << std::endl;
     
     U = U + epsilon*identity;
@@ -79,7 +78,7 @@ int main (int argc, char **argv)
     
     // actual sp2n check
     std::cout << GridLogMessage << "Checking invariance after projection "<< std::endl;
-    Sp<Nc>::OmegaInvariance(U);
+    Sp<nsp>::OmegaInvariance(U);
     
     // checks on elements
     

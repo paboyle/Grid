@@ -21,7 +21,7 @@ int main (int argc, char **argv)
     
     double vol = Umu.Grid()->gSites();
 
-    const int nsp = Sp<Nc>::nsp;
+    const int nsp = Nc / 2;
     identity = 1.;
     Cidentity = 1.;
     
@@ -34,8 +34,8 @@ int main (int argc, char **argv)
     std::cout << GridLogMessage << "-------" << std::endl;
     std::cout << GridLogMessage << "Checking Cold Configuration " << std::endl;
     std::cout << GridLogMessage << std::endl;
-    Sp<Nc>::ColdConfiguration(pRNG,Umu);
-    Sp<Nc>::OmegaInvariance(Umu);
+    Sp<nsp>::ColdConfiguration(pRNG,Umu);
+    Sp<nsp>::OmegaInvariance(Umu);
     std::cout << GridLogMessage << std::endl;
 
     Umu = Umu - identity;
@@ -47,8 +47,8 @@ int main (int argc, char **argv)
     std::cout << GridLogMessage << "-------" << std::endl;
     std::cout << GridLogMessage << "Checking Hot Configuration" << std::endl;
     std::cout << GridLogMessage << std::endl;
-    Sp<Nc>::HotConfiguration(pRNG,Umu);
-    Sp<Nc>::OmegaInvariance(Umu);
+    Sp<nsp>::HotConfiguration(pRNG,Umu);
+    Sp<nsp>::OmegaInvariance(Umu);
     std::cout << GridLogMessage << std::endl;
     U = PeekIndex<LorentzIndex>(Umu,1);
     std::cout << GridLogMessage << "Checking unitarity " << std::endl;
@@ -62,8 +62,8 @@ int main (int argc, char **argv)
     std::cout << GridLogMessage << "-------" << std::endl;
     std::cout << GridLogMessage << "Checking Tepid Configuration" << std::endl;
     std::cout << GridLogMessage << std::endl;
-    Sp<Nc>::TepidConfiguration(pRNG,Umu);
-    Sp<Nc>::OmegaInvariance(Umu);
+    Sp<nsp>::TepidConfiguration(pRNG,Umu);
+    Sp<nsp>::OmegaInvariance(Umu);
     std::cout << GridLogMessage << std::endl;
     U = PeekIndex<LorentzIndex>(Umu,1);
     std::cout << GridLogMessage << "Checking unitarity " << std::endl;
@@ -85,7 +85,7 @@ int main (int argc, char **argv)
     Complex i(0., 1.);
     
     
-    Sp<Nc>::HotConfiguration(pRNG,Umu);
+    Sp<nsp>::HotConfiguration(pRNG,Umu);
     U = PeekIndex<LorentzIndex>(Umu,0);
     for (int c1 = 0; c1 < nsp; c1++) //check on W
     {
@@ -123,7 +123,7 @@ int main (int argc, char **argv)
     
     std::cout << GridLogMessage << "Hot start ok " << std::endl;
     
-    Sp<Nc>::HotConfiguration(pRNG,Umu);
+    Sp<nsp>::HotConfiguration(pRNG,Umu);
     U = PeekIndex<LorentzIndex>(Umu,0);
     for (int c1 = 0; c1 < nsp; c1++) //check on W
     {
