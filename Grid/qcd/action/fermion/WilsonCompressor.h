@@ -61,6 +61,7 @@ public:
 	if(s==0)    compress.Compress(buffer[off+i    ],rhs_v[so+table_v[idx].second]);
 	if(s==Ls-1) compress.Compress(buffer[off+i+vol],rhs_v[so+table_v[idx].second]);
     });
+    rhs_v.ViewClose();
   }
   template<class decompressor,class Decompression>
   static void DecompressFace(decompressor decompress,Decompression &dd)
@@ -171,6 +172,7 @@ public:
 					 compressor &compress,
 					 int off,int so,int partial)
   {
+    //    std::cout << " face gather simple DWF partial "<<partial <<std::endl;
     if(partial) FaceGatherPartialDWF::Gather_plane_simple(table,rhs,buffer,compress,off,so,partial);
     else        FaceGatherSimple::Gather_plane_simple(table,rhs,buffer,compress,off,so,partial);
   }
@@ -179,6 +181,7 @@ public:
 				    Vector<cobj *> pointers,int dimension,int plane,int cbmask,
 				    compressor &compress,int type,int partial)
   {
+    //    std::cout << " face gather exch DWF partial "<<partial <<std::endl;
     if(partial) FaceGatherPartialDWF::Gather_plane_exchange(table,rhs,pointers,dimension, plane,cbmask,compress,type,partial);
     else        FaceGatherSimple::Gather_plane_exchange    (table,rhs,pointers,dimension, plane,cbmask,compress,type,partial);
   }
@@ -186,6 +189,7 @@ public:
   static void MergeFace(decompressor decompress,Merger &mm)
   {
     int partial = mm.partial;
+    //    std::cout << " merge DWF partial "<<partial <<std::endl;
     if ( partial ) FaceGatherPartialDWF::MergeFace(decompress,mm);
     else           FaceGatherSimple::MergeFace(decompress,mm);
   }
@@ -194,6 +198,7 @@ public:
   static void DecompressFace(decompressor decompress,Decompression &dd)
   {
     int partial = dd.partial;
+    //    std::cout << " decompress DWF partial "<<partial <<std::endl;
     if ( partial ) FaceGatherPartialDWF::DecompressFace(decompress,dd);
     else           FaceGatherSimple::DecompressFace(decompress,dd);
   }
