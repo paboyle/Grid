@@ -8,9 +8,8 @@ NAMESPACE_BEGIN(Grid);
 static char print_buffer [ MAXLINE ];
 
 #define mprintf(...) snprintf (print_buffer,MAXLINE, __VA_ARGS__ ); std::cout << GridLogMemory << print_buffer;
-//#define dprintf(...) printf (__VA_ARGS__ ); fflush(stdout);
-#define dprintf(...) 
-
+#define dprintf(...) snprintf (print_buffer,MAXLINE, __VA_ARGS__ ); std::cout << GridLogMemory << print_buffer;
+//#define dprintf(...) 
 
 
 ////////////////////////////////////////////////////////////
@@ -132,9 +131,11 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
   ///////////////////////////////////////////////////////////////////////////
   assert(AccCache.state!=Empty);
   
-  mprintf("MemoryManager: Evict(%lx) %lx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
-  assert(AccCache.accLock==0);
-  assert(AccCache.cpuLock==0);
+  mprintf("MemoryManager: Evict cpu %lx acc %lx cpuLock %ld accLock %ld\n",
+	  (uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr,
+	  (uint64_t)AccCache.cpuLock,(uint64_t)AccCache.accLock); 
+  if (AccCache.accLock!=0) return;
+  if (AccCache.cpuLock!=0) return;
   if(AccCache.state==AccDirty) {
     Flush(AccCache);
   }
@@ -197,6 +198,7 @@ void MemoryManager::CpuDiscard(AcceleratorViewEntry &AccCache)
 void MemoryManager::ViewClose(void* Ptr,ViewMode mode)
 {
   if( (mode==AcceleratorRead)||(mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard) ){
+    dprintf("AcceleratorViewClose %lx\n",(uint64_t)Ptr);
     AcceleratorViewClose((uint64_t)Ptr);
   } else if( (mode==CpuRead)||(mode==CpuWrite)){
     CpuViewClose((uint64_t)Ptr);
@@ -208,6 +210,7 @@ void *MemoryManager::ViewOpen(void* _CpuPtr,size_t bytes,ViewMode mode,ViewAdvis
 {
   uint64_t CpuPtr = (uint64_t)_CpuPtr;
   if( (mode==AcceleratorRead)||(mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard) ){
+    dprintf("AcceleratorViewOpen %lx\n",(uint64_t)CpuPtr);
     return (void *) AcceleratorViewOpen(CpuPtr,bytes,mode,hint);
   } else if( (mode==CpuRead)||(mode==CpuWrite)){
     return (void *)CpuViewOpen(CpuPtr,bytes,mode,hint);
@@ -247,11 +250,12 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
   assert(AccCache.cpuLock==0);  // Programming error
 
   if(AccCache.state!=Empty) {
-    dprintf("ViewOpen found entry %lx %lx : %ld %ld\n",
+    dprintf("ViewOpen found entry %lx %lx : %ld %ld accLock %ld\n",
 		    (uint64_t)AccCache.CpuPtr,
 		    (uint64_t)CpuPtr,
 		    (uint64_t)AccCache.bytes,
-		    (uint64_t)bytes);
+	            (uint64_t)bytes,
+		    (uint64_t)AccCache.accLock);
     assert(AccCache.CpuPtr == CpuPtr);
     assert(AccCache.bytes  ==bytes);
   }
@@ -286,6 +290,7 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
       AccCache.state  = Consistent; // Empty + AccRead => Consistent
     }
     AccCache.accLock= 1;
+    dprintf("Copied Empty entry into device accLock= %d\n",AccCache.accLock);
   } else if(AccCache.state==CpuDirty ){
     if(mode==AcceleratorWriteDiscard) {
       CpuDiscard(AccCache);
@@ -298,21 +303,21 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
       AccCache.state  = Consistent; // CpuDirty + AccRead => Consistent
     }
     AccCache.accLock++;
-    dprintf("Copied CpuDirty entry into device accLock %d\n",AccCache.accLock);
+    dprintf("CpuDirty entry into device ++accLock= %d\n",AccCache.accLock);
   } else if(AccCache.state==Consistent) {
     if((mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard))
       AccCache.state  = AccDirty;   // Consistent + AcceleratorWrite=> AccDirty
     else
       AccCache.state  = Consistent; // Consistent + AccRead => Consistent
     AccCache.accLock++;
-    dprintf("Consistent entry into device accLock %d\n",AccCache.accLock);
+    dprintf("Consistent entry into device ++accLock= %d\n",AccCache.accLock);
   } else if(AccCache.state==AccDirty) {
     if((mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard))
       AccCache.state  = AccDirty; // AccDirty + AcceleratorWrite=> AccDirty
     else
       AccCache.state  = AccDirty; // AccDirty + AccRead => AccDirty
     AccCache.accLock++;
-    dprintf("AccDirty entry into device accLock %d\n",AccCache.accLock);
+    dprintf("AccDirty entry ++accLock= %d\n",AccCache.accLock);
   } else {
     assert(0);
   }
@@ -320,6 +325,7 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
   // If view is opened on device remove from LRU
   if(AccCache.LRU_valid==1){
     // must possibly remove from LRU as now locked on GPU
+    dprintf("AccCache entry removed from LRU \n");
     LRUremove(AccCache);
   }
 
@@ -340,10 +346,12 @@ void MemoryManager::AcceleratorViewClose(uint64_t CpuPtr)
   assert(AccCache.accLock>0);
 
   AccCache.accLock--;
-
   // Move to LRU queue if not locked and close on device
   if(AccCache.accLock==0) {
+    dprintf("AccleratorViewClose %lx AccLock decremented to %ld move to LRU queue\n",(uint64_t)CpuPtr,(uint64_t)AccCache.accLock);
     LRUinsert(AccCache);
+  } else {
+    dprintf("AccleratorViewClose %lx AccLock decremented to %ld\n",(uint64_t)CpuPtr,(uint64_t)AccCache.accLock);
   }
 }
 void MemoryManager::CpuViewClose(uint64_t CpuPtr)
@@ -477,6 +485,29 @@ int   MemoryManager::isOpen   (void* _CpuPtr)
     return AccCache.cpuLock+AccCache.accLock;
   } else { 
     return 0;
+  }
+}
+void MemoryManager::Audit(std::string s)
+{
+  for(auto it=AccViewTable.begin();it!=AccViewTable.end();it++){
+    auto &AccCache = it->second;
+    
+    std::string str;
+    if ( AccCache.state==Empty    ) str = std::string("Empty");
+    if ( AccCache.state==CpuDirty ) str = std::string("CpuDirty");
+    if ( AccCache.state==AccDirty ) str = std::string("AccDirty");
+    if ( AccCache.state==Consistent)str = std::string("Consistent");
+
+    if ( AccCache.cpuLock || AccCache.accLock ) { 
+      std::cout << GridLogError << s<< "\n\t 0x"<<std::hex<<AccCache.CpuPtr<<std::dec
+		<< "\t0x"<<std::hex<<AccCache.AccPtr<<std::dec<<"\t" <<str
+		<< "\t cpuLock  " << AccCache.cpuLock
+		<< "\t accLock  " << AccCache.accLock
+		<< "\t LRUvalid " << AccCache.LRU_valid<<std::endl;
+    }
+
+    assert( AccCache.cpuLock== 0 ) ;
+    assert( AccCache.accLock== 0 ) ;
   }
 }
 
