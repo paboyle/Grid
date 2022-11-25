@@ -28,7 +28,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-			   /*  END LEGAL */
+/*  END LEGAL */
 #ifndef QCD_UTIL_SUN_H
 #define QCD_UTIL_SUN_H
 
@@ -36,7 +36,7 @@ NAMESPACE_BEGIN(Grid);
 
 template <int ncolour>
 class SU {
-public:
+ public:
   static const int Dimension = ncolour;
   static const int AdjointDimension = ncolour * ncolour - 1;
   static int su2subgroups(void) { return (ncolour * (ncolour - 1)) / 2; }
@@ -47,7 +47,7 @@ public:
   using iSU2Matrix = iScalar<iScalar<iMatrix<vtype, 2> > >;
   template <typename vtype>
   using iSUnAlgebraVector =
-    iScalar<iScalar<iVector<vtype, AdjointDimension> > >;
+      iScalar<iScalar<iVector<vtype, AdjointDimension> > >;
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Types can be accessed as SU<2>::Matrix , SU<2>::vSUnMatrix,
@@ -159,7 +159,7 @@ public:
     else
       generatorSigmaX(su2Index, ta);
   }
-  
+
   template <class cplx>
   static void generatorSigmaY(int su2Index, iSUnMatrix<cplx> &ta) {
     ta = Zero();
@@ -169,7 +169,7 @@ public:
     ta()()(i2, i1) = 1.0;
     ta = ta * 0.5;
   }
-  
+
   template <class cplx>
   static void generatorSigmaX(int su2Index, iSUnMatrix<cplx> &ta) {
     ta = Zero();
@@ -193,8 +193,6 @@ public:
     RealD nrm = 1.0 / std::sqrt(2.0 * k * (k + 1));
     ta = ta * nrm;
   }
-
-
 
   ////////////////////////////////////////////////////////////////////////
   // Map a su2 subgroup number to the pair of rows that are non zero
@@ -223,11 +221,10 @@ public:
     int i0, i1;
     su2SubGroupIndex(i0, i1, su2_index);
 
-    autoView( subgroup_v , subgroup,AcceleratorWrite);
-    autoView( source_v   , source,AcceleratorRead);
-    autoView( Determinant_v , Determinant,AcceleratorWrite);
+    autoView(subgroup_v, subgroup, AcceleratorWrite);
+    autoView(source_v, source, AcceleratorRead);
+    autoView(Determinant_v, Determinant, AcceleratorWrite);
     accelerator_for(ss, grid->oSites(), 1, {
-
       subgroup_v[ss]()()(0, 0) = source_v[ss]()()(i0, i0);
       subgroup_v[ss]()()(0, 1) = source_v[ss]()()(i0, i1);
       subgroup_v[ss]()()(1, 0) = source_v[ss]()()(i1, i0);
@@ -241,7 +238,7 @@ public:
 
       // this should be purely real
       Determinant_v[ss] =
-	Sigma()()(0, 0) * Sigma()()(1, 1) - Sigma()()(0, 1) * Sigma()()(1, 0);
+          Sigma()()(0, 0) * Sigma()()(1, 1) - Sigma()()(0, 1) * Sigma()()(1, 0);
     });
   }
 
@@ -257,16 +254,14 @@ public:
     su2SubGroupIndex(i0, i1, su2_index);
 
     dest = 1.0;  // start out with identity
-    autoView( dest_v , dest, AcceleratorWrite);
-    autoView( subgroup_v, subgroup, AcceleratorRead);
-    accelerator_for(ss, grid->oSites(),1,
-    {
+    autoView(dest_v, dest, AcceleratorWrite);
+    autoView(subgroup_v, subgroup, AcceleratorRead);
+    accelerator_for(ss, grid->oSites(), 1, {
       dest_v[ss]()()(i0, i0) = subgroup_v[ss]()()(0, 0);
       dest_v[ss]()()(i0, i1) = subgroup_v[ss]()()(0, 1);
       dest_v[ss]()()(i1, i0) = subgroup_v[ss]()()(1, 0);
       dest_v[ss]()()(i1, i1) = subgroup_v[ss]()()(1, 1);
     });
-
   }
 
   ///////////////////////////////////////////////
@@ -279,12 +274,12 @@ public:
   // in action.
   //
   ///////////////////////////////////////////////
-  static void SubGroupHeatBath(GridSerialRNG &sRNG, GridParallelRNG &pRNG,
-			       RealD beta,  // coeff multiplying staple in action (with no 1/Nc)
-			       LatticeMatrix &link,
-			       const LatticeMatrix &barestaple,  // multiplied by action coeffs so th
-			       int su2_subgroup, int nheatbath, LatticeInteger &wheremask) 
-  {
+  static void SubGroupHeatBath(
+      GridSerialRNG &sRNG, GridParallelRNG &pRNG,
+      RealD beta,  // coeff multiplying staple in action (with no 1/Nc)
+      LatticeMatrix &link,
+      const LatticeMatrix &barestaple,  // multiplied by action coeffs so th
+      int su2_subgroup, int nheatbath, LatticeInteger &wheremask) {
     GridBase *grid = link.Grid();
 
     const RealD twopi = 2.0 * M_PI;
@@ -297,7 +292,8 @@ public:
     V = link * staple;
 
     // Subgroup manipulation in the lie algebra space
-    LatticeSU2Matrix u(grid);  // Kennedy pendleton "u" real projected normalised Sigma
+    LatticeSU2Matrix u(
+        grid);  // Kennedy pendleton "u" real projected normalised Sigma
     LatticeSU2Matrix uinv(grid);
     LatticeSU2Matrix ua(grid);  // a in pauli form
     LatticeSU2Matrix b(grid);   // rotated matrix after hb
@@ -390,7 +386,7 @@ public:
 
     xi = 0.5 * sqrt(udet);  // 4xi^2 = Det [ Sig - Sig^dag  + 1 Tr Sigdag]
     u = 0.5 * u *
-      pow(xi, -1.0);  //  u   = 1/2xi [ Sig - Sig^dag  + 1 Tr Sigdag]
+        pow(xi, -1.0);  //  u   = 1/2xi [ Sig - Sig^dag  + 1 Tr Sigdag]
 
     // Debug test for sanity
     uinv = adj(u);
@@ -405,29 +401,24 @@ public:
       r) )
       = da0 r/2 sin theta dr dtheta dphi delta( (sqrt(1-a0^) - r) )
 
-      Action factor Q(h) dh  = e^-S[h]  dh =  e^{  xi Tr uh} dh    // beta enters
-      through xi
-      =  e^{2 xi (h.u)} dh
-      =  e^{2 xi h0u0}.e^{2 xi h1u1}.e^{2 xi
-      h2u2}.e^{2 xi h3u3} dh
+      Action factor Q(h) dh  = e^-S[h]  dh =  e^{  xi Tr uh} dh    // beta
+      enters through xi =  e^{2 xi (h.u)} dh =  e^{2 xi h0u0}.e^{2 xi h1u1}.e^{2
+      xi h2u2}.e^{2 xi h3u3} dh
 
       Therefore for each site, take xi for that site
       i) generate  |a0|<1 with dist
       (1-a0^2)^0.5 e^{2 xi a0 } da0
 
-      Take alpha = 2 xi  = 2 xi [ recall 2 beta/Nc unmod staple norm]; hence 2.0/Nc
-      factor in Chroma ]
-      A. Generate two uniformly distributed pseudo-random numbers R and R', R'',
-      R''' in the unit interval;
-      B. Set X = -(ln R)/alpha, X' =-(ln R')/alpha;
-      C. Set C = cos^2(2pi R"), with R" another uniform random number in [0,1] ;
-      D. Set A = XC;
-      E. Let d  = X'+A;
+      Take alpha = 2 xi  = 2 xi [ recall 2 beta/Nc unmod staple norm];
+      hence 2.0/Nc factor in Chroma ] A. Generate two uniformly distributed
+      pseudo-random numbers R and R', R'', R''' in the unit interval; B. Set X =
+      -(ln R)/alpha, X' =-(ln R')/alpha; C. Set C = cos^2(2pi R"), with R"
+      another uniform random number in [0,1] ; D. Set A = XC; E. Let d  = X'+A;
       F. If R'''^2 :> 1 - 0.5 d,  go back to A;
       G. Set a0 = 1 - d;
 
-      Note that in step D setting B ~ X - A and using B in place of A in step E will
-      generate a second independent a 0 value.
+      Note that in step D setting B ~ X - A and using B in place of A in step E
+      will generate a second independent a 0 value.
     */
 
     /////////////////////////////////////////////////////////
@@ -449,7 +440,7 @@ public:
     LatticeReal alpha(grid);
 
     //    std::cout<<GridLogMessage<<"xi "<<xi <<std::endl;
-    xi = 2.0 *xi;
+    xi = 2.0 * xi;
     alpha = toReal(xi);
 
     do {
@@ -522,7 +513,7 @@ public:
     a[2] = a123mag * sin_theta * sin(phi);
     a[3] = a123mag * cos_theta;
 
-    ua = toComplex(a[0]) * ident  + toComplex(a[1]) * pauli1 +
+    ua = toComplex(a[0]) * ident + toComplex(a[1]) * pauli1 +
          toComplex(a[2]) * pauli2 + toComplex(a[3]) * pauli3;
 
     b = 1.0;
@@ -568,8 +559,6 @@ public:
     }
   }
 
-
-
   static void testGenerators(void) {
     Matrix ta;
     Matrix tb;
@@ -610,8 +599,8 @@ public:
 
   // reunitarise??
   template <typename LatticeMatrixType>
-  static void LieRandomize(GridParallelRNG &pRNG, LatticeMatrixType &out, double scale = 1.0) 
-  {
+  static void LieRandomize(GridParallelRNG &pRNG, LatticeMatrixType &out,
+                           double scale = 1.0) {
     GridBase *grid = out.Grid();
 
     typedef typename LatticeMatrixType::vector_type vector_type;
@@ -620,7 +609,8 @@ public:
     typedef iSinglet<vector_type> vTComplexType;
 
     typedef Lattice<vTComplexType> LatticeComplexType;
-    typedef typename GridTypeMapper<typename LatticeMatrixType::vector_object>::scalar_object MatrixType;
+    typedef typename GridTypeMapper<
+        typename LatticeMatrixType::vector_object>::scalar_object MatrixType;
 
     LatticeComplexType ca(grid);
     LatticeMatrixType lie(grid);
@@ -642,7 +632,6 @@ public:
       la = ci * ca * ta;
 
       lie = lie + la;  // e^{i la ta}
-
     }
     taExp(lie, out);
   }
@@ -681,57 +670,61 @@ public:
       out += la;
     }
   }
-/*
- * Fundamental rep gauge xform
- */
-  template<typename Fundamental,typename GaugeMat>
-  static void GaugeTransformFundamental( Fundamental &ferm, GaugeMat &g){
+  /*
+   * Fundamental rep gauge xform
+   */
+  template <typename Fundamental, typename GaugeMat>
+  static void GaugeTransformFundamental(Fundamental &ferm, GaugeMat &g) {
     GridBase *grid = ferm._grid;
-    conformable(grid,g._grid);
-    ferm = g*ferm;
+    conformable(grid, g._grid);
+    ferm = g * ferm;
   }
-/*
- * Adjoint rep gauge xform
- */
+  /*
+   * Adjoint rep gauge xform
+   */
 
-  template<typename GaugeField,typename GaugeMat>
-  static void GaugeTransform( GaugeField &Umu, GaugeMat &g){
+  template <typename GaugeField, typename GaugeMat>
+  static void GaugeTransform(GaugeField &Umu, GaugeMat &g) {
     GridBase *grid = Umu.Grid();
-    conformable(grid,g.Grid());
+    conformable(grid, g.Grid());
 
     GaugeMat U(grid);
-    GaugeMat ag(grid); ag = adj(g);
+    GaugeMat ag(grid);
+    ag = adj(g);
 
-    for(int mu=0;mu<Nd;mu++){
-      U= PeekIndex<LorentzIndex>(Umu,mu);
-      U = g*U*Cshift(ag, mu, 1);
-      PokeIndex<LorentzIndex>(Umu,U,mu);
+    for (int mu = 0; mu < Nd; mu++) {
+      U = PeekIndex<LorentzIndex>(Umu, mu);
+      U = g * U * Cshift(ag, mu, 1);
+      PokeIndex<LorentzIndex>(Umu, U, mu);
     }
   }
-  template<typename GaugeMat>
-  static void GaugeTransform( std::vector<GaugeMat> &U, GaugeMat &g){
+  template <typename GaugeMat>
+  static void GaugeTransform(std::vector<GaugeMat> &U, GaugeMat &g) {
     GridBase *grid = g.Grid();
-    GaugeMat ag(grid); ag = adj(g);
-    for(int mu=0;mu<Nd;mu++){
-      U[mu] = g*U[mu]*Cshift(ag, mu, 1);
+    GaugeMat ag(grid);
+    ag = adj(g);
+    for (int mu = 0; mu < Nd; mu++) {
+      U[mu] = g * U[mu] * Cshift(ag, mu, 1);
     }
   }
-  template<typename GaugeField,typename GaugeMat>
-  static void RandomGaugeTransform(GridParallelRNG &pRNG, GaugeField &Umu, GaugeMat &g){
-    LieRandomize(pRNG,g,1.0);
-    GaugeTransform(Umu,g);
+  template <typename GaugeField, typename GaugeMat>
+  static void RandomGaugeTransform(GridParallelRNG &pRNG, GaugeField &Umu,
+                                   GaugeMat &g) {
+    LieRandomize(pRNG, g, 1.0);
+    GaugeTransform(Umu, g);
   }
 
-  // Projects the algebra components a lattice matrix (of dimension ncol*ncol -1 )
-  // inverse operation: FundamentalLieAlgebraMatrix
-  static void projectOnAlgebra(LatticeAlgebraVector &h_out, const LatticeMatrix &in, Real scale = 1.0) {
+  // Projects the algebra components a lattice matrix (of dimension ncol*ncol -1
+  // ) inverse operation: FundamentalLieAlgebraMatrix
+  static void projectOnAlgebra(LatticeAlgebraVector &h_out,
+                               const LatticeMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
     h_out = Zero();
     Matrix Ta;
 
     for (int a = 0; a < AdjointDimension; a++) {
       generator(a, Ta);
-      pokeColour(h_out, - 2.0 * (trace(timesI(Ta) * in)) * scale, a);
+      pokeColour(h_out, -2.0 * (trace(timesI(Ta) * in)) * scale, a);
     }
   }
 
@@ -747,37 +740,37 @@ public:
       PokeIndex<LorentzIndex>(out, Umu, mu);
     }
   }
-  template<typename GaugeField>
-  static void TepidConfiguration(GridParallelRNG &pRNG,GaugeField &out){
+  template <typename GaugeField>
+  static void TepidConfiguration(GridParallelRNG &pRNG, GaugeField &out) {
     typedef typename GaugeField::vector_type vector_type;
     typedef iSUnMatrix<vector_type> vMatrixType;
     typedef Lattice<vMatrixType> LatticeMatrixType;
 
     LatticeMatrixType Umu(out.Grid());
-    for(int mu=0;mu<Nd;mu++){
-      LieRandomize(pRNG,Umu,0.01);
-      PokeIndex<LorentzIndex>(out,Umu,mu);
+    for (int mu = 0; mu < Nd; mu++) {
+      LieRandomize(pRNG, Umu, 0.01);
+      PokeIndex<LorentzIndex>(out, Umu, mu);
     }
   }
-  template<typename GaugeField>
-  static void ColdConfiguration(GaugeField &out){
+  template <typename GaugeField>
+  static void ColdConfiguration(GaugeField &out) {
     typedef typename GaugeField::vector_type vector_type;
     typedef iSUnMatrix<vector_type> vMatrixType;
     typedef Lattice<vMatrixType> LatticeMatrixType;
 
     LatticeMatrixType Umu(out.Grid());
-    Umu=1.0;
-    for(int mu=0;mu<Nd;mu++){
-      PokeIndex<LorentzIndex>(out,Umu,mu);
+    Umu = 1.0;
+    for (int mu = 0; mu < Nd; mu++) {
+      PokeIndex<LorentzIndex>(out, Umu, mu);
     }
   }
-  template<typename GaugeField>
-  static void ColdConfiguration(GridParallelRNG &pRNG,GaugeField &out){
+  template <typename GaugeField>
+  static void ColdConfiguration(GridParallelRNG &pRNG, GaugeField &out) {
     ColdConfiguration(out);
   }
 
-  template<typename LatticeMatrixType>
-  static void taProj( const LatticeMatrixType &in,  LatticeMatrixType &out){
+  template <typename LatticeMatrixType>
+  static void taProj(const LatticeMatrixType &in, LatticeMatrixType &out) {
     out = Ta(in);
   }
   template <typename LatticeMatrixType>
@@ -799,85 +792,88 @@ public:
   }
 };
 
-template<int N>
-LatticeComplexD Determinant(const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu)
-{
-  GridBase *grid=Umu.Grid();
+template <int N>
+LatticeComplexD Determinant(
+    const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
+  GridBase *grid = Umu.Grid();
   auto lvol = grid->lSites();
   LatticeComplexD ret(grid);
 
-  autoView(Umu_v,Umu,CpuRead);
-  autoView(ret_v,ret,CpuWrite);
-  thread_for(site,lvol,{
-    Eigen::MatrixXcd EigenU = Eigen::MatrixXcd::Zero(N,N);
+  autoView(Umu_v, Umu, CpuRead);
+  autoView(ret_v, ret, CpuWrite);
+  thread_for(site, lvol, {
+    Eigen::MatrixXcd EigenU = Eigen::MatrixXcd::Zero(N, N);
     Coordinate lcoor;
     grid->LocalIndexToLocalCoor(site, lcoor);
     iScalar<iScalar<iMatrix<ComplexD, N> > > Us;
     peekLocalSite(Us, Umu_v, lcoor);
-    for(int i=0;i<N;i++){
-      for(int j=0;j<N;j++){
-	EigenU(i,j) = Us()()(i,j);
-      }}
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        EigenU(i, j) = Us()()(i, j);
+      }
+    }
     ComplexD det = EigenU.determinant();
-    pokeLocalSite(det,ret_v,lcoor);
+    pokeLocalSite(det, ret_v, lcoor);
   });
   return ret;
 }
-template<int N>
-static void ProjectSUn(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu)
-{
-  Umu      = ProjectOnGroup(Umu);
+template <int N>
+static void ProjectSUn(
+    Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
+  Umu = ProjectOnGroup(Umu);
   auto det = Determinant(Umu);
 
   det = conjugate(det);
 
-  for(int i=0;i<N;i++){
-    auto element = PeekIndex<ColourIndex>(Umu,N-1,i);
+  for (int i = 0; i < N; i++) {
+    auto element = PeekIndex<ColourIndex>(Umu, N - 1, i);
     element = element * det;
-    PokeIndex<ColourIndex>(Umu,element,Nc-1,i);
+    PokeIndex<ColourIndex>(Umu, element, Nc - 1, i);
   }
 }
-template<int N>
-static void ProjectSUn(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >,Nd> > &U)
-{
-  GridBase *grid=U.Grid();
+template <int N>
+static void ProjectSUn(
+    Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
+  GridBase *grid = U.Grid();
   // Reunitarise
-  for(int mu=0;mu<Nd;mu++){
-    auto Umu = PeekIndex<LorentzIndex>(U,mu);
-    Umu      = ProjectOnGroup(Umu);
+  for (int mu = 0; mu < Nd; mu++) {
+    auto Umu = PeekIndex<LorentzIndex>(U, mu);
+    Umu = ProjectOnGroup(Umu);
     ProjectSUn(Umu);
-    PokeIndex<LorentzIndex>(U,Umu,mu);
+    PokeIndex<LorentzIndex>(U, Umu, mu);
   }
 }
 // Explicit specialisation for SU(3).
 // Explicit specialisation for SU(3).
-static void
-ProjectSU3 (Lattice<iScalar<iScalar<iMatrix<vComplexD, 3> > > > &Umu)
-{
-  GridBase *grid=Umu.Grid();
-  const int x=0;
-  const int y=1;
-  const int z=2;
+static void ProjectSU3(
+    Lattice<iScalar<iScalar<iMatrix<vComplexD, 3> > > > &Umu) {
+  GridBase *grid = Umu.Grid();
+  const int x = 0;
+  const int y = 1;
+  const int z = 2;
   // Reunitarise
   Umu = ProjectOnGroup(Umu);
-  autoView(Umu_v,Umu,CpuWrite);
-  thread_for(ss,grid->oSites(),{
-      auto cm = Umu_v[ss];
-      cm()()(2,x) = adj(cm()()(0,y)*cm()()(1,z)-cm()()(0,z)*cm()()(1,y)); //x= yz-zy
-      cm()()(2,y) = adj(cm()()(0,z)*cm()()(1,x)-cm()()(0,x)*cm()()(1,z)); //y= zx-xz
-      cm()()(2,z) = adj(cm()()(0,x)*cm()()(1,y)-cm()()(0,y)*cm()()(1,x)); //z= xy-yx
-      Umu_v[ss]=cm;
+  autoView(Umu_v, Umu, CpuWrite);
+  thread_for(ss, grid->oSites(), {
+    auto cm = Umu_v[ss];
+    cm()()(2, x) = adj(cm()()(0, y) * cm()()(1, z) -
+                       cm()()(0, z) * cm()()(1, y));  // x= yz-zy
+    cm()()(2, y) = adj(cm()()(0, z) * cm()()(1, x) -
+                       cm()()(0, x) * cm()()(1, z));  // y= zx-xz
+    cm()()(2, z) = adj(cm()()(0, x) * cm()()(1, y) -
+                       cm()()(0, y) * cm()()(1, x));  // z= xy-yx
+    Umu_v[ss] = cm;
   });
 }
-static void ProjectSU3(Lattice<iVector<iScalar<iMatrix<vComplexD, 3> >,Nd> > &U)
-{
-  GridBase *grid=U.Grid();
+static void ProjectSU3(
+    Lattice<iVector<iScalar<iMatrix<vComplexD, 3> >, Nd> > &U) {
+  GridBase *grid = U.Grid();
   // Reunitarise
-  for(int mu=0;mu<Nd;mu++){
-    auto Umu = PeekIndex<LorentzIndex>(U,mu);
-    Umu      = ProjectOnGroup(Umu);
+  for (int mu = 0; mu < Nd; mu++) {
+    auto Umu = PeekIndex<LorentzIndex>(U, mu);
+    Umu = ProjectOnGroup(Umu);
     ProjectSU3(Umu);
-    PokeIndex<LorentzIndex>(U,Umu,mu);
+    PokeIndex<LorentzIndex>(U, Umu, mu);
   }
 }
 
@@ -885,7 +881,6 @@ typedef SU<2> SU2;
 typedef SU<3> SU3;
 typedef SU<4> SU4;
 typedef SU<5> SU5;
-
 
 typedef SU<Nc> FundamentalMatrices;
 
