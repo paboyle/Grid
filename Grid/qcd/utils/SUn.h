@@ -33,9 +33,18 @@ directory
 #define QCD_UTIL_SUN_H
 
 NAMESPACE_BEGIN(Grid);
+namespace GroupName {
+class SU {};
+}  // namespace GroupName
+
+template <int ncolour, class group_name = GroupName::SU>
+class GaugeGroup;
 
 template <int ncolour>
-class SU {
+using SU = GaugeGroup<ncolour, GroupName::SU>;
+
+template <int ncolour, class group_name>
+class GaugeGroup {
  public:
   static const int Dimension = ncolour;
   static const int AdjointDimension = ncolour * ncolour - 1;
