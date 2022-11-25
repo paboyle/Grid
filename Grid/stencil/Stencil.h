@@ -203,7 +203,7 @@ class CartesianStencilAccelerator {
 template<class vobj,class cobj,class Parameters>
 class CartesianStencilView : public CartesianStencilAccelerator<vobj,cobj,Parameters>
 {
- private:
+public:
   int *closed;
   StencilEntry *cpu_ptr;
   ViewMode      mode;
@@ -676,6 +676,8 @@ public:
       int block = dirichlet_block[dimension];
       this->_comms_send[ii] = comm_dim;
       this->_comms_recv[ii] = comm_dim;
+      this->_comms_partial_send[ii] = 0;
+      this->_comms_partial_recv[ii] = 0;
       if ( block && comm_dim ) {
 	assert(abs(displacement) < ld );
 	// Quiesce communication across block boundaries
@@ -1131,6 +1133,7 @@ public:
 	send_buf = this->u_send_buf_p; // Gather locally, must send
 	assert(send_buf!=NULL);
 
+	//	std::cout << " GatherPlaneSimple partial send "<< comms_partial_send<<std::endl;
 	compressor::Gather_plane_simple(face_table[face_idx],rhs,send_buf,compress,comm_off,so,comms_partial_send);
 
         int duplicate = CheckForDuplicate(dimension,sx,comm_proc,(void *)&recv_buf[comm_off],0,xbytes,rbytes,cbmask);
