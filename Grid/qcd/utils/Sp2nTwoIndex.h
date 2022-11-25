@@ -33,11 +33,11 @@ NAMESPACE_BEGIN(Grid);
 //inline Real delta(int a, int b) { return (a == b) ? 1.0 : 0.0; }
 
 template <int ncolour, TwoIndexSymmetry S>
-class Sp_TwoIndex : public Sp<Config_nsp> {
+class Sp_TwoIndex : public Sp<ncolour> {
 public:
   static const int nsp = ncolour/2;
   static const int Dimension = nsp * (ncolour + S) - 1 ;
-  static const int NumGenerators = Sp<nsp>::AlgebraDimension;
+  static const int NumGenerators = Sp<ncolour>::AlgebraDimension;
 
   template <typename vtype>
   using iSp2nTwoIndexMatrix = iScalar<iScalar<iMatrix<vtype, Dimension> > >;
@@ -175,21 +175,21 @@ public:
 
   template <class cplx>
   static void generator(int Index, iSp2nTwoIndexMatrix<cplx> &i2indTa) {
-    Vector<typename Sp<nsp>::template iSp2nMatrix<cplx> > ta(
+    Vector<typename Sp<ncolour>::template iSp2nMatrix<cplx> > ta(
 								NumGenerators);
-    Vector<typename Sp<nsp>::template iSp2nMatrix<cplx> > eij(Dimension);
-    typename Sp<nsp>::template iSp2nMatrix<cplx> tmp;
+    Vector<typename Sp<ncolour>::template iSp2nMatrix<cplx> > eij(Dimension);
+    typename Sp<ncolour>::template iSp2nMatrix<cplx> tmp;
     i2indTa = Zero();
     
     for (int a = 0; a < NumGenerators; a++)
-      Sp<nsp>::generator(a, ta[a]);
+      Sp<ncolour>::generator(a, ta[a]);
     
     for (int a = 0; a < Dimension; a++) base(a, eij[a]);
 
     for (int a = 0; a < Dimension; a++) {
       tmp = transpose(ta[Index]) * adj(eij[a]) + adj(eij[a]) * ta[Index];
       for (int b = 0; b < Dimension; b++) {
-        typename Sp<nsp>::template iSp2nMatrix<cplx> tmp1 =
+        typename Sp<ncolour>::template iSp2nMatrix<cplx> tmp1 =
 	  tmp * eij[b]; 
         Complex iTr = TensorRemove(timesI(trace(tmp1)));
         i2indTa()()(a, b) = iTr;
@@ -245,7 +245,7 @@ public:
   }
 
   static void TwoIndexLieAlgebraMatrix(
-				       const typename Sp<nsp>::LatticeAlgebraVector &h,
+				       const typename Sp<ncolour>::LatticeAlgebraVector &h,
 				       LatticeTwoIndexMatrix &out, Real scale = 1.0) {
     conformable(h, out);
     GridBase *grid = out.Grid();
@@ -264,7 +264,7 @@ public:
   // Projects the algebra components 
   // of a lattice matrix ( of dimension ncol*ncol -1 )
   static void projectOnAlgebra(
-			       typename Sp<nsp>::LatticeAlgebraVector &h_out,
+			       typename Sp<ncolour>::LatticeAlgebraVector &h_out,
 			       const LatticeTwoIndexMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
     h_out = Zero();
@@ -280,7 +280,7 @@ public:
 
   // a projector that keeps the generators stored to avoid the overhead of
   // recomputing them
-  static void projector(typename Sp<nsp>::LatticeAlgebraVector &h_out,
+  static void projector(typename Sp<ncolour>::LatticeAlgebraVector &h_out,
                         const LatticeTwoIndexMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
     // to store the generators

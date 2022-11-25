@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
   CheckpointerParameters CPparams;
   CPparams.config_prefix = "ckpoint_lat";
   CPparams.rng_prefix = "ckpoint_rng";
-  CPparams.saveInterval = 5;
+  CPparams.saveInterval = 100;
   CPparams.format = "IEEE64BIG";
     
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
   typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
   TheHMC.Resources.AddObservable<PlaqObs>();
     
-  RealD beta = 2.25 ;
+  RealD beta = 7.2 ;
     
   SymplWilsonGaugeActionR Waction(beta);
     
@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
     SpFundamentalRepresentation::LatticeField U(GridPtr);
     //LatticeGaugeField U(GridPtr);
     
-  RealD mass = -0.95;
+  RealD mass = -0.76;
 
   FermionAction FermOp(U, *GridPtr, *GridRBPtr, mass);
     
@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
     TheHMC.TheAction.push_back(Level1);
     TheHMC.TheAction.push_back(Level2);
     
-    TheHMC.Parameters.MD.MDsteps = 20;
+    TheHMC.Parameters.MD.MDsteps = 36;
     TheHMC.Parameters.MD.trajL   = 1.0;
     
     TheHMC.ReadCommandLine(argc, argv);

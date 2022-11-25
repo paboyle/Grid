@@ -14,12 +14,12 @@ template <int ncolour>
 class SpFundamentalRep {
 public:
   static const int Dimension = ncolour;
-  static const int nSp = ncolour/2;
+  //static const int nSp = ncolour/2;
   static const bool isFundamental = true;
 
   // typdef to be used by the Representations class in HMC to get the
   // types for the higher representation fields
-  typedef typename Sp<nSp>::LatticeMatrix LatticeMatrix;
+  typedef typename Sp<ncolour>::LatticeMatrix LatticeMatrix;
   typedef LatticeGaugeField LatticeField;
   
   explicit SpFundamentalRep(GridBase* grid) {} //do nothing

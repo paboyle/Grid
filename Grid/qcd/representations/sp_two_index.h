@@ -29,7 +29,7 @@ public:
   typedef typename Sp_TwoIndex<ncolour, S>::LatticeTwoIndexField LatticeField;
   static const int Dimension = (ncolour * (ncolour + S) / 2) - 1;
   static const bool isFundamental = false;
-  static const int nsp = Nc / 2;
+  //static const int nsp = Nc / 2;
   LatticeField U;
 
   explicit SpTwoIndexRep(GridBase *grid) : U(grid) {}
@@ -43,7 +43,7 @@ public:
     U = Zero();
     LatticeColourMatrix tmp(Uin.Grid());
 
-    Vector<typename Sp<nsp>::Matrix> eij(Dimension);
+    Vector<typename Sp<ncolour>::Matrix> eij(Dimension);
 
     for (int a = 0; a < Dimension; a++)
       Sp_TwoIndex<ncolour, S>::base(a, eij[a]);
@@ -71,7 +71,7 @@ public:
 
       out_mu = Zero();
 
-      typename Sp<nsp>::LatticeAlgebraVector h(in.Grid());
+      typename Sp<ncolour>::LatticeAlgebraVector h(in.Grid());
       projectOnAlgebra(h, in_mu, double(Nc + 2 * S));  // factor T(r)/T(fund)
       FundamentalLieAlgebraMatrix(h, out_mu);          // apply scale only once
       pokeLorentz(out, out_mu, mu);                     // should be 2 for sp4 as. ok
@@ -80,15 +80,15 @@ public:
   }
 
 private:
-  void projectOnAlgebra(typename Sp<nsp>::LatticeAlgebraVector &h_out,
+  void projectOnAlgebra(typename Sp<ncolour>::LatticeAlgebraVector &h_out,
                         const LatticeMatrix &in, Real scale = 1.0) const {
     Sp_TwoIndex<ncolour, S>::projectOnAlgebra(h_out, in, scale);
   }
 
   void FundamentalLieAlgebraMatrix(
-				   typename Sp<nsp>::LatticeAlgebraVector &h,
-				   typename Sp<nsp>::LatticeMatrix &out, Real scale = 1.0) const {
-    Sp<nsp>::FundamentalLieAlgebraMatrix(h, out, scale);
+				   typename Sp<ncolour>::LatticeAlgebraVector &h,
+				   typename Sp<ncolour>::LatticeMatrix &out, Real scale = 1.0) const {
+    Sp<ncolour>::FundamentalLieAlgebraMatrix(h, out, scale);
   }
 };
 

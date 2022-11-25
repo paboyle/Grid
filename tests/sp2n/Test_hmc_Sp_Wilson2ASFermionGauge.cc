@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
   CheckpointerParameters CPparams;
   CPparams.config_prefix = "ckpoint_lat";
   CPparams.rng_prefix = "ckpoint_rng";
-  CPparams.saveInterval = 5;
+  CPparams.saveInterval = 100;
   CPparams.format = "IEEE64BIG";
     
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
    SpTwoIndexAntiSymmetricRepresentation::LatticeField U(GridPtr);
     //LatticeGaugeField U(GridPtr);
     
-  RealD mass = -0.85;
+  RealD mass = -0.115;
   
 
   std::vector<Complex> boundary = {-1,-1,-1,-1};
