@@ -32,7 +32,7 @@ directory
 
 #include <Grid/qcd/utils/CovariantCshift.h>
 
-#include <Grid/qcd/utils/SUn.h>
+#include <Grid/qcd/utils/GaugeGroup.h>
 #include <Grid/qcd/utils/SUnAdjoint.h>
 #include <Grid/qcd/utils/SUnTwoIndex.h>
 
