@@ -132,9 +132,16 @@ protected:
 
       Field& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
       double start_force = usecond();
+
+      std::cout << GridLogMessage << "AuditForce["<<level<<"]["<<a<<"] before"<<std::endl;
+      AUDIT();
+      
       as[level].actions.at(a)->deriv_timer_start();
       as[level].actions.at(a)->deriv(Us, force);  // deriv should NOT include Ta
       as[level].actions.at(a)->deriv_timer_stop();
+
+      std::cout << GridLogMessage << "AuditForce["<<level<<"]["<<a<<"] after"<<std::endl;
+      AUDIT();
 
       std::cout << GridLogIntegrator << "Smearing (on/off): " << as[level].actions.at(a)->is_smeared << std::endl;
       auto name = as[level].actions.at(a)->action_name();
@@ -284,7 +291,7 @@ public:
       for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
 	std::cout << GridLogMessage 
 		  << as[level].actions.at(actionID)->action_name()
-		  <<"["<<level<<"]["<< actionID<<"] : "
+		  <<"["<<level<<"]["<< actionID<<"] :\n\t\t "
 		  <<" force max " << as[level].actions.at(actionID)->deriv_max_average()
 		  <<" norm "      << as[level].actions.at(actionID)->deriv_norm_average()
 		  <<" Fdt max  "  << as[level].actions.at(actionID)->Fdt_max_average()
@@ -364,9 +371,14 @@ public:
         std::cout << GridLogMessage << "refresh [" << level << "][" << actionID << "] "<<name << std::endl;
 
         Field& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
+
+	std::cout << GridLogMessage << "AuditRefresh["<<level<<"]["<<actionID<<"] before"<<std::endl;
+	AUDIT();
 	as[level].actions.at(actionID)->refresh_timer_start();
         as[level].actions.at(actionID)->refresh(Us, sRNG, pRNG);
 	as[level].actions.at(actionID)->refresh_timer_stop();
+	std::cout << GridLogMessage << "AuditRefresh["<<level<<"]["<<actionID<<"] after"<<std::endl;
+	AUDIT();
       }
 
       // Refresh the higher representation actions
@@ -403,6 +415,7 @@ public:
     // Actions
     for (int level = 0; level < as.size(); ++level) {
       for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+	AUDIT();
         // get gauge field from the SmearingPolicy and
         // based on the boolean is_smeared in actionID
         Field& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
@@ -412,6 +425,7 @@ public:
    	        as[level].actions.at(actionID)->S_timer_stop();
         std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] H = " << Hterm << std::endl;
         H += Hterm;
+	AUDIT();
       }
       as[level].apply(S_hireps, Representations, level, H);
     }
@@ -424,7 +438,9 @@ public:
     void operator()(std::vector<Action<FieldType>*> repr_set, Repr& Rep, int level, RealD& H) {
       
       for (int a = 0; a < repr_set.size(); ++a) {
+	AUDIT();
         RealD Hterm = repr_set.at(a)->Sinitial(Rep.U);
+	AUDIT();
         std::cout << GridLogMessage << "Sinitial Level " << level << " term " << a << " H Hirep = " << Hterm << std::endl;
         H += Hterm;
 
@@ -449,8 +465,10 @@ public:
         Field& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
         std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] action eval " << std::endl;
 	        as[level].actions.at(actionID)->S_timer_start();
+	AUDIT();
         Hterm = as[level].actions.at(actionID)->Sinitial(Us);
    	        as[level].actions.at(actionID)->S_timer_stop();
+	AUDIT();
         std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] H = " << Hterm << std::endl;
         H += Hterm;
       }
@@ -463,6 +481,7 @@ public:
   
   void integrate(Field& U) 
   {
+    AUDIT();
     // reset the clocks
     t_U = 0;
     for (int level = 0; level < as.size(); ++level) {
@@ -480,8 +499,10 @@ public:
       assert(fabs(t_U - t_P[level]) < 1.0e-6);  // must be the same
       std::cout << GridLogIntegrator << " times[" << level << "]= " << t_P[level] << " " << t_U << std::endl;
     }
+    AUDIT();
 
     FieldImplementation::Project(U);
+    AUDIT();
 
     // and that we indeed got to the end of the trajectory
     assert(fabs(t_U - Params.trajL) < 1.0e-6);

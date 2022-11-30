@@ -279,6 +279,7 @@ NAMESPACE_BEGIN(Grid);
       // S_f = chi^dag* P(V^dag*V)/Q(V^dag*V)* N(M^dag*M)/D(M^dag*M)* P(V^dag*V)/Q(V^dag*V)* chi       
       //////////////////////////////////////////////////////
       virtual RealD Sinitial(const GaugeField &U) {
+	std::cout << GridLogMessage << "Returning stored two flavour refresh action "<<RefreshAction<<std::endl;
 	return RefreshAction;
       }
 

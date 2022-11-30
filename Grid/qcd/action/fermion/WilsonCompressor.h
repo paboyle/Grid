@@ -36,10 +36,12 @@ NAMESPACE_BEGIN(Grid);
 // Wilson compressor will need FaceGather policies for:
 // Periodic, Dirichlet, and partial Dirichlet for DWF
 ///////////////////////////////////////////////////////////////
+const int dwf_compressor_depth=2;
 class FaceGatherPartialDWF
 {
 public:
-  static int PartialCompressionFactor(GridBase *grid) {return grid->_fdimensions[0]/2;};
+  //  static int PartialCompressionFactor(GridBase *grid) {return grid->_fdimensions[0]/(2*dwf_compressor_depth);};
+  static int PartialCompressionFactor(GridBase *grid) {return 1;}
   //  static int PartialCompressionFactor(GridBase *grid) { return 1;}
   template<class vobj,class cobj,class compressor>
   static void Gather_plane_simple (commVector<std::pair<int,int> >& table,
@@ -52,14 +54,17 @@ public:
     //  Shrinks local and remote comms buffers
     GridBase *Grid = rhs.Grid();
     int Ls = Grid->_rdimensions[0];
+    //    int depth=dwf_compressor_depth;
+    int depth=Ls/2;
     std::pair<int,int> *table_v = & table[0];
     auto rhs_v = rhs.View(AcceleratorRead);
     int vol=table.size()/Ls;
     accelerator_forNB( idx,table.size(), vobj::Nsimd(), {
 	Integer i=idx/Ls;
 	Integer s=idx%Ls;
-	if(s==0)    compress.Compress(buffer[off+i    ],rhs_v[so+table_v[idx].second]);
-	if(s==Ls-1) compress.Compress(buffer[off+i+vol],rhs_v[so+table_v[idx].second]);
+	Integer sc=depth+s-(Ls-depth);
+	if(s<depth)     compress.Compress(buffer[off+i+s*vol],rhs_v[so+table_v[idx].second]);
+	if(s>=Ls-depth) compress.Compress(buffer[off+i+sc*vol],rhs_v[so+table_v[idx].second]);
     });
     rhs_v.ViewClose();
   }
@@ -67,6 +72,8 @@ public:
   static void DecompressFace(decompressor decompress,Decompression &dd)
   {
     auto Ls = dd.dims[0];
+    //    int depth=dwf_compressor_depth;
+    int depth=Ls/2;
     // Just pass in the Grid
     auto kp = dd.kernel_p;
     auto mp = dd.mpi_p;
@@ -75,11 +82,12 @@ public:
     accelerator_forNB(o,size,1,{
 	int idx=o/Ls;
 	int   s=o%Ls;
-	if ( s == 0 ) {
-	  int oo=idx;
+	if ( s < depth ) {
+	  int oo=s*vol+idx;
 	  kp[o]=mp[oo];
-	} else if ( s == Ls-1 ) {
-	  int oo=vol+idx; 
+	} else if ( s >= Ls-depth ) {
+	  int sc = depth + s - (Ls-depth);
+	  int oo=sc*vol+idx; 
 	  kp[o]=mp[oo];
 	} else {
 	  kp[o] = Zero();//fill rest with zero if partial dirichlet
@@ -98,7 +106,9 @@ public:
   {
     GridBase *Grid = rhs.Grid();
     int Ls = Grid->_rdimensions[0];
-
+    //    int depth=dwf_compressor_depth;
+    int depth = Ls/2;
+    
     // insertion of zeroes...
     assert( (table.size()&0x1)==0);
     int num=table.size()/2;
@@ -113,7 +123,7 @@ public:
 	//  Reorders both local and remote comms buffers
 	//  
 	int s  = j % Ls;
-	int sp1 = (s+1)%Ls;  // peri incremented s slice
+	int sp1 = (s+depth)%Ls;  // peri incremented s slice
 	
 	int hxyz= j/Ls;
 
@@ -136,6 +146,8 @@ public:
   static void MergeFace(decompressor decompress,Merger &mm)
   {
     auto Ls = mm.dims[0];
+    int depth = Ls/2;
+    //    int depth=dwf_compressor_depth;
     int  num= mm.buffer_size/2; // relate vol and Ls to buffer size
     auto mp = &mm.mpointer[0];
     auto vp0= &mm.vpointers[0][0]; // First arg is exchange first
@@ -149,7 +161,7 @@ public:
 	int xyz0=hxyz*2;
 	int xyz1=hxyz*2+1;
 
-	int sp = (s+1)%Ls; 
+	int sp = (s+depth)%Ls; 
 	int jj= hxyz + sp*nnum ; // 0,1,2,3 -> Ls-1 slice , 0-slice, 1-slice ....
 
 	int oo0= s+xyz0*Ls;
@@ -163,7 +175,8 @@ public:
 class FaceGatherDWFMixedBCs
 {
 public:
-  static int PartialCompressionFactor(GridBase *grid) {return grid->_fdimensions[0]/2;};
+  //  static int PartialCompressionFactor(GridBase *grid) {return grid->_fdimensions[0]/(2*dwf_compressor_depth);};
+  static int PartialCompressionFactor(GridBase *grid) {return 1;}
   
   template<class vobj,class cobj,class compressor>
   static void Gather_plane_simple (commVector<std::pair<int,int> >& table,

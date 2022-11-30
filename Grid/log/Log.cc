@@ -79,6 +79,7 @@ void GridLogConfigure(std::vector<std::string> &logstreams) {
   GridLogWarning.Active(0);
   GridLogMessage.Active(1); // at least the messages should be always on
   GridLogMemory.Active(0); 
+  GridLogTracing.Active(0); 
   GridLogIterative.Active(0);
   GridLogDebug.Active(0);
   GridLogPerformance.Active(0);

@@ -88,6 +88,7 @@ int main (int argc, char ** argv)
   // Node level
   //////////////////////
   for(int d=0;d<Nd;d++) CommDim[d]= (mpi[d]/shm[d])>1 ? 1 : 0;
+  //  for(int d=0;d<Nd;d++) CommDim[d]= 1;
   Dirichlet[0] = 0;
   Dirichlet[1] = CommDim[0]*latt4[0]/mpi[0] * shm[0];
   Dirichlet[2] = CommDim[1]*latt4[1]/mpi[1] * shm[1];
@@ -222,7 +223,7 @@ void Benchmark(int Ls, Coordinate Dirichlet, int partial)
   {
     ref = Zero();
     for(int mu=0;mu<Nd;mu++){
-
+      int depth=dwf_compressor_depth;
       tmp = Cshift(src,mu+1,1);
       {
 	autoView( tmp_v  , tmp  , CpuWrite);
@@ -230,7 +231,7 @@ void Benchmark(int Ls, Coordinate Dirichlet, int partial)
 	autoView( Ucopy_v, Ucopy[mu]  , CpuRead);
 	for(int ss=0;ss<U[mu].Grid()->oSites();ss++){
 	  for(int s=0;s<Ls;s++){
-	    if ( (s==0) || (s==Ls-1)){
+	    if ( (s<depth) || (s>=Ls-depth)){
 	      tmp_v[Ls*ss+s] = Ucopy_v[ss]*tmp_v[Ls*ss+s];
 	    } else {
 	      tmp_v[Ls*ss+s] = U_v[ss]*tmp_v[Ls*ss+s];
@@ -246,7 +247,7 @@ void Benchmark(int Ls, Coordinate Dirichlet, int partial)
 	autoView( src_v, src    , CpuRead);
 	for(int ss=0;ss<U[mu].Grid()->oSites();ss++){
 	  for(int s=0;s<Ls;s++){
-	    if ( (s==0) || (s==Ls-1) ){
+	    if ( (s<depth) || (s>=Ls-depth)){
 	      tmp_v[Ls*ss+s] = adj(Ucopy_v[ss])*src_v[Ls*ss+s];
 	    } else {
 	      tmp_v[Ls*ss+s] = adj(U_v[ss])*src_v[Ls*ss+s];
@@ -342,6 +343,7 @@ void Benchmark(int Ls, Coordinate Dirichlet, int partial)
     ref = Zero();
     for(int mu=0;mu<Nd;mu++){
 
+      int depth=dwf_compressor_depth;
       tmp = Cshift(src,mu+1,1);
       {
 	autoView( tmp_v  , tmp  , CpuWrite);
@@ -349,7 +351,7 @@ void Benchmark(int Ls, Coordinate Dirichlet, int partial)
 	autoView( Ucopy_v, Ucopy[mu]  , CpuRead);
 	for(int ss=0;ss<U[mu].Grid()->oSites();ss++){
 	  for(int s=0;s<Ls;s++){
-	    if ( (s==0) || (s==Ls-1)){
+	    if ( (s<depth) || (s>=Ls-depth)){
 	      tmp_v[Ls*ss+s] = Ucopy_v[ss]*tmp_v[Ls*ss+s];
 	    } else {
 	      tmp_v[Ls*ss+s] = U_v[ss]*tmp_v[Ls*ss+s];
@@ -365,7 +367,7 @@ void Benchmark(int Ls, Coordinate Dirichlet, int partial)
 	autoView( src_v, src    , CpuRead);
 	for(int ss=0;ss<U[mu].Grid()->oSites();ss++){
 	  for(int s=0;s<Ls;s++){
-	    if ( (s==0) || (s==Ls-1) ){
+	    if ( (s<depth) || (s>=Ls-depth)){
 	      tmp_v[Ls*ss+s] = adj(Ucopy_v[ss])*src_v[Ls*ss+s];
 	    } else {
 	      tmp_v[Ls*ss+s] = adj(U_v[ss])*src_v[Ls*ss+s];

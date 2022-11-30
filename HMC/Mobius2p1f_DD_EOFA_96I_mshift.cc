@@ -179,8 +179,11 @@ int main(int argc, char **argv) {
   MD.name    = std::string("Force Gradient");
   //typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;
   // MD.name    = std::string("MinimumNorm2");
-  //  MD.MDsteps =  4;
-  MD.MDsteps =  4;
+  // TrajL = 2
+  // 4/2 => 0.6 dH
+  // 3/3 => ?? dH
+  //MD.MDsteps =  4;
+  MD.MDsteps =  3;
   MD.trajL   = 0.5;
 
   HMCparameters HMCparams;
@@ -223,7 +226,7 @@ int main(int argc, char **argv) {
   Real light_mass   = 7.8e-4;
   Real strange_mass = 0.0362;
   Real pv_mass      = 1.0;
-  std::vector<Real> hasenbusch({ light_mass, 3.8e-3, 0.0145, 0.045, 0.108, 0.25, 0.51 , pv_mass });
+  std::vector<Real> hasenbusch({ light_mass, 0.005, 0.0145, 0.045, 0.108, 0.25, 0.51 , pv_mass });
   //  std::vector<Real> hasenbusch({ light_mass, 0.0145, 0.045, 0.108, 0.25, 0.51 , 0.75 , pv_mass });
 
 
@@ -327,6 +330,8 @@ int main(int argc, char **argv) {
   ParamsF.dirichlet=NonDirichlet;
   ParamsDir.dirichlet=Dirichlet;
   ParamsDirF.dirichlet=Dirichlet;
+  ParamsDir.partialDirichlet=1;
+  ParamsDirF.partialDirichlet=1;
 
   //  double StoppingCondition = 1e-14;
   //  double MDStoppingCondition = 1e-9;
@@ -342,8 +347,8 @@ int main(int argc, char **argv) {
   // Collect actions
   ////////////////////////////////////
   ActionLevel<HMCWrapper::Field> Level1(1);
-  ActionLevel<HMCWrapper::Field> Level2(2);
-  ActionLevel<HMCWrapper::Field> Level3(30);
+  ActionLevel<HMCWrapper::Field> Level2(3);
+  ActionLevel<HMCWrapper::Field> Level3(15);
 
   ////////////////////////////////////
   // Strange action
@@ -474,13 +479,21 @@ int main(int argc, char **argv) {
     if ( dirichlet_den[h]==1) ParamsDen.dirichlet = Dirichlet;
     else                      ParamsDen.dirichlet = NonDirichlet;
 
+    if ( dirichlet_num[h]==1) ParamsNum.partialDirichlet = 1;
+    else                      ParamsNum.partialDirichlet = 0;
+
+    if ( dirichlet_den[h]==1) ParamsDen.partialDirichlet = 1;
+    else                      ParamsDen.partialDirichlet = 0;
+    
     Numerators.push_back  (new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, ParamsNum));
     Denominators.push_back(new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, ParamsDen));
 
     ParamsDenF.dirichlet = ParamsDen.dirichlet;
+    ParamsDenF.partialDirichlet = ParamsDen.partialDirichlet;
     DenominatorsF.push_back(new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[h],M5,b,c, ParamsDenF));
 
     ParamsNumF.dirichlet = ParamsNum.dirichlet;
+    ParamsNumF.partialDirichlet = ParamsNum.partialDirichlet;
     NumeratorsF.push_back  (new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_num[h],M5,b,c, ParamsNumF));
 
     LinOpD.push_back(new LinearOperatorD(*Denominators[h]));
@@ -516,9 +529,11 @@ int main(int argc, char **argv) {
       FermionActionD2::ImplParams ParamsNumD2(boundary);
 
       ParamsDenD2.dirichlet = ParamsDen.dirichlet;
+      ParamsDenD2.partialDirichlet = ParamsDen.partialDirichlet;
       DenominatorsD2.push_back(new FermionActionD2(UD2,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[h],M5,b,c, ParamsDenD2));
 
       ParamsNumD2.dirichlet = ParamsNum.dirichlet;
+      ParamsNumD2.partialDirichlet = ParamsNum.partialDirichlet;
       NumeratorsD2.push_back  (new FermionActionD2(UD2,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_num[h],M5,b,c, ParamsNumD2));
     
       Bdys.push_back( new OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2>(
@@ -543,7 +558,8 @@ int main(int argc, char **argv) {
   int nquo=Quotients.size();
   Level1.push_back(Bdys[0]);
   Level1.push_back(Bdys[1]);
-  for(int h=0;h<nquo-1;h++){
+  Level2.push_back(Quotients[0]);
+  for(int h=1;h<nquo-1;h++){
     Level2.push_back(Quotients[h]);
   }
   Level2.push_back(Quotients[nquo-1]);
