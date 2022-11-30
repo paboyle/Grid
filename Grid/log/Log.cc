@@ -65,29 +65,40 @@ GridLogger GridLogSolver (1, "Solver", GridLogColours, "NORMAL");
 GridLogger GridLogError  (1, "Error" , GridLogColours, "RED");
 GridLogger GridLogWarning(1, "Warning", GridLogColours, "YELLOW");
 GridLogger GridLogMessage(1, "Message", GridLogColours, "NORMAL");
+GridLogger GridLogMemory (1, "Memory", GridLogColours, "NORMAL");
+GridLogger GridLogTracing(1, "Tracing", GridLogColours, "NORMAL");
 GridLogger GridLogDebug  (1, "Debug", GridLogColours, "PURPLE");
 GridLogger GridLogPerformance(1, "Performance", GridLogColours, "GREEN");
+GridLogger GridLogDslash     (1, "Dslash", GridLogColours, "BLUE");
 GridLogger GridLogIterative  (1, "Iterative", GridLogColours, "BLUE");
 GridLogger GridLogIntegrator (1, "Integrator", GridLogColours, "BLUE");
+GridLogger GridLogHMC (1, "HMC", GridLogColours, "BLUE");
 
 void GridLogConfigure(std::vector<std::string> &logstreams) {
-  GridLogError.Active(0);
+  GridLogError.Active(1);
   GridLogWarning.Active(0);
   GridLogMessage.Active(1); // at least the messages should be always on
+  GridLogMemory.Active(0); 
+  GridLogTracing.Active(0); 
   GridLogIterative.Active(0);
   GridLogDebug.Active(0);
   GridLogPerformance.Active(0);
+  GridLogDslash.Active(0);
   GridLogIntegrator.Active(1);
   GridLogColours.Active(0);
+  GridLogHMC.Active(1);
 
   for (int i = 0; i < logstreams.size(); i++) {
-    if (logstreams[i] == std::string("Error"))       GridLogError.Active(1);
+    if (logstreams[i] == std::string("Tracing"))     GridLogTracing.Active(1);
+    if (logstreams[i] == std::string("Memory"))      GridLogMemory.Active(1);
     if (logstreams[i] == std::string("Warning"))     GridLogWarning.Active(1);
     if (logstreams[i] == std::string("NoMessage"))   GridLogMessage.Active(0);
     if (logstreams[i] == std::string("Iterative"))   GridLogIterative.Active(1);
     if (logstreams[i] == std::string("Debug"))       GridLogDebug.Active(1);
     if (logstreams[i] == std::string("Performance")) GridLogPerformance.Active(1);
-    if (logstreams[i] == std::string("Integrator"))  GridLogIntegrator.Active(1);
+    if (logstreams[i] == std::string("Dslash"))      GridLogDslash.Active(1);
+    if (logstreams[i] == std::string("NoIntegrator"))GridLogIntegrator.Active(0);
+    if (logstreams[i] == std::string("NoHMC"))       GridLogHMC.Active(0);
     if (logstreams[i] == std::string("Colours"))     GridLogColours.Active(1);
   }
 }
