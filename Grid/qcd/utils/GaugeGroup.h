@@ -143,8 +143,8 @@ class GaugeGroup {
   typedef Lattice<vSU2MatrixF> LatticeSU2MatrixF;
   typedef Lattice<vSU2MatrixD> LatticeSU2MatrixD;
 
-#include "Grid/qcd/utils/SUn_impl.h"
-#include "Grid/qcd/utils/Sp2n_impl.h"
+#include "Grid/qcd/utils/SUn.h"
+#include "Grid/qcd/utils/Sp2n.h"
 
  public:
   template <class cplx>
