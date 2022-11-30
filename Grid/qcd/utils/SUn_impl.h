@@ -57,7 +57,7 @@ static int su2subgroups(GroupName::SU) { return (ncolour * (ncolour - 1)) / 2; }
 //
 ////////////////////////////////////////////////////////////////////////
 template <class cplx>
-static void generator(int lieIndex, iSUnMatrix<cplx> &ta, GroupName::SU) {
+static void generator(int lieIndex, iGroupMatrix<cplx> &ta, GroupName::SU) {
   // map lie index to which type of generator
   int diagIndex;
   int su2Index;
@@ -77,7 +77,7 @@ static void generator(int lieIndex, iSUnMatrix<cplx> &ta, GroupName::SU) {
 }
 
 template <class cplx, ONLY_IF_SU>
-static void generatorSigmaY(int su2Index, iSUnMatrix<cplx> &ta) {
+static void generatorSigmaY(int su2Index, iGroupMatrix<cplx> &ta) {
   ta = Zero();
   int i1, i2;
   su2SubGroupIndex(i1, i2, su2Index);
@@ -87,7 +87,7 @@ static void generatorSigmaY(int su2Index, iSUnMatrix<cplx> &ta) {
 }
 
 template <class cplx, ONLY_IF_SU>
-static void generatorSigmaX(int su2Index, iSUnMatrix<cplx> &ta) {
+static void generatorSigmaX(int su2Index, iGroupMatrix<cplx> &ta) {
   ta = Zero();
   cplx i(0.0, 1.0);
   int i1, i2;
@@ -98,7 +98,7 @@ static void generatorSigmaX(int su2Index, iSUnMatrix<cplx> &ta) {
 }
 
 template <class cplx, ONLY_IF_SU>
-static void generatorDiagonal(int diagIndex, iSUnMatrix<cplx> &ta) {
+static void generatorDiagonal(int diagIndex, iGroupMatrix<cplx> &ta) {
   // diag ({1, 1, ..., 1}(k-times), -k, 0, 0, ...)
   ta = Zero();
   int k = diagIndex + 1;                  // diagIndex starts from 0
@@ -130,7 +130,7 @@ public:
 template <class vcplx, ONLY_IF_SU>
 static void su2Extract(Lattice<iSinglet<vcplx> > &Determinant,
                        Lattice<iSU2Matrix<vcplx> > &subgroup,
-                       const Lattice<iSUnMatrix<vcplx> > &source,
+                       const Lattice<iGroupMatrix<vcplx> > &source,
                        int su2_index) {
   GridBase *grid(source.Grid());
   conformable(subgroup, source);
@@ -164,7 +164,7 @@ static void su2Extract(Lattice<iSinglet<vcplx> > &Determinant,
 //////////////////////////////////////////////////////////////////////////////////////////
 template <class vcplx, ONLY_IF_SU>
 static void su2Insert(const Lattice<iSU2Matrix<vcplx> > &subgroup,
-                      Lattice<iSUnMatrix<vcplx> > &dest, int su2_index) {
+                      Lattice<iGroupMatrix<vcplx> > &dest, int su2_index) {
   GridBase *grid(dest.Grid());
   conformable(subgroup, dest);
   int i0, i1;

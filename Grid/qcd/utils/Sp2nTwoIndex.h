@@ -175,10 +175,10 @@ public:
 
   template <class cplx>
   static void generator(int Index, iSp2nTwoIndexMatrix<cplx> &i2indTa) {
-    Vector<typename Sp<ncolour>::template iSp2nMatrix<cplx> > ta(
+    Vector<iSp2nMatrix<cplx> > ta(
 								NumGenerators);
-    Vector<typename Sp<ncolour>::template iSp2nMatrix<cplx> > eij(Dimension);
-    typename Sp<ncolour>::template iSp2nMatrix<cplx> tmp;
+    Vector<iSp2nMatrix<cplx> > eij(Dimension);
+    iSp2nMatrix<cplx> tmp;
     i2indTa = Zero();
     
     for (int a = 0; a < NumGenerators; a++)
@@ -189,7 +189,7 @@ public:
     for (int a = 0; a < Dimension; a++) {
       tmp = transpose(ta[Index]) * adj(eij[a]) + adj(eij[a]) * ta[Index];
       for (int b = 0; b < Dimension; b++) {
-        typename Sp<ncolour>::template iSp2nMatrix<cplx> tmp1 =
+        iSp2nMatrix<cplx> tmp1 =
 	  tmp * eij[b]; 
         Complex iTr = TensorRemove(timesI(trace(tmp1)));
         i2indTa()()(a, b) = iTr;

@@ -13,7 +13,7 @@ static int su2subgroups(GroupName::Sp) { return (ncolour/2 * (ncolour/2 - 1)) / 
 //     abcd are N(N-1)/2 each while wz are N each
 
 template <class cplx, ONLY_IF_Sp>
-static void generator(int lieIndex, iSp2nMatrix<cplx> &ta, GroupName::Sp) {
+static void generator(int lieIndex, iGroupMatrix<cplx> &ta, GroupName::Sp) {
   // map lie index into type of generators: diagonal, abcd type, wz type
 
   const int nsp = ncolour/2;
@@ -76,7 +76,7 @@ static void generator(int lieIndex, iSp2nMatrix<cplx> &ta, GroupName::Sp) {
 }  // end of generator
 
 template <class cplx, ONLY_IF_Sp>
-static void generatorDiagtype(int diagIndex, iSp2nMatrix<cplx> &ta) {
+static void generatorDiagtype(int diagIndex, iGroupMatrix<cplx> &ta) {
   // ta(i,i) = - ta(i+N,i+N) = 1/2 for each i index of the cartan subalgebra
 
   const int nsp=ncolour/2;
@@ -88,7 +88,7 @@ static void generatorDiagtype(int diagIndex, iSp2nMatrix<cplx> &ta) {
 }
 
 template <class cplx, ONLY_IF_Sp>
-static void generatorAtype(int aIndex, iSp2nMatrix<cplx> &ta) {
+static void generatorAtype(int aIndex, iGroupMatrix<cplx> &ta) {
   // ta(i,j) = ta(j,i) = -ta(i+N,j+N) = -ta(j+N,i+N) = 1 / 2 sqrt(2)
   // with i<j and i=0,...,N-2
   // follows that j=i+1, ... , N
@@ -107,7 +107,7 @@ static void generatorAtype(int aIndex, iSp2nMatrix<cplx> &ta) {
 }
 
 template <class cplx, ONLY_IF_Sp>
-static void generatorBtype(int bIndex, iSp2nMatrix<cplx> &ta) {
+static void generatorBtype(int bIndex, iGroupMatrix<cplx> &ta) {
   // ta(i,j) = -ta(j,i) = ta(i+N,j+N) = -ta(j+N,i+N) = i / 1/ 2 sqrt(2)
   // with i<j and i=0,...,N-2
   // follows that j=i+1, ... , N-1
@@ -128,7 +128,7 @@ static void generatorBtype(int bIndex, iSp2nMatrix<cplx> &ta) {
 }
 
 template <class cplx, ONLY_IF_Sp>
-static void generatorCtype(int cIndex, iSp2nMatrix<cplx> &ta) {
+static void generatorCtype(int cIndex, iGroupMatrix<cplx> &ta) {
   // ta(i,j+N) = ta(j,i+N) = ta(i+N,j) = ta(j+N,i) = 1 / 2 sqrt(2)
 
   const int nsp=ncolour/2;
@@ -146,7 +146,7 @@ static void generatorCtype(int cIndex, iSp2nMatrix<cplx> &ta) {
 }
 
 template <class cplx, ONLY_IF_Sp>
-static void generatorDtype(int dIndex, iSp2nMatrix<cplx> &ta) {
+static void generatorDtype(int dIndex, iGroupMatrix<cplx> &ta) {
   // ta(i,j+N) = ta(j,i+N) = -ta(i+N,j) = -ta(j+N,i) = i /  2 sqrt(2)
 
   const int nsp=ncolour/2;
@@ -165,7 +165,7 @@ static void generatorDtype(int dIndex, iSp2nMatrix<cplx> &ta) {
 }
 
 template <class cplx, ONLY_IF_Sp>
-static void generatorWtype(int wIndex, iSp2nMatrix<cplx> &ta) {
+static void generatorWtype(int wIndex, iGroupMatrix<cplx> &ta) {
   // ta(i,i+N) =  ta(i+N,i) = 1/2
 
   const int nsp=ncolour/2;
@@ -179,7 +179,7 @@ static void generatorWtype(int wIndex, iSp2nMatrix<cplx> &ta) {
 }
 
 template <class cplx, ONLY_IF_Sp>
-static void generatorZtype(int zIndex, iSp2nMatrix<cplx> &ta) {
+static void generatorZtype(int zIndex, iGroupMatrix<cplx> &ta) {
   // ta(i,i+N) = - ta(i+N,i) = i/2
 
   const int nsp=ncolour/2;
@@ -277,7 +277,7 @@ static void OmegaInvariance(ColourMatrix &in) {
 template <typename GaugeField, ONLY_IF_Sp>
 static void OmegaInvariance(GaugeField &in) {
   typedef typename GaugeField::vector_type vector_type;
-  typedef iSp2nMatrix<vector_type> vMatrixType;
+  typedef iGroupMatrix<vector_type> vMatrixType;
   typedef Lattice<vMatrixType> LatticeMatrixType;
 
   LatticeMatrixType U(in.Grid());

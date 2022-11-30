@@ -99,14 +99,6 @@ class GaugeGroup {
   template <typename vtype>
   using iAlgebraVector = iScalar<iScalar<iVector<vtype, AdjointDimension> > >;
   static int su2subgroups(void) { return su2subgroups(group_name()); }
-  template <typename vtype>
-  using iSUnMatrix = iGroupMatrix<vtype>;
-  template <typename vtype>
-  using iSUnAlgebraVector = iAlgebraVector<vtype>;
-  template <typename vtype>
-  using iSp2nMatrix = iGroupMatrix<vtype>;
-  template <typename vtype>
-  using iSp2nAlgebraVector = iAlgebraVector<vtype>;
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Types can be accessed as SU<2>::Matrix , SU<2>::vSUnMatrix,
@@ -156,7 +148,7 @@ class GaugeGroup {
 
  public:
   template <class cplx>
-  static void generator(int lieIndex, iSp2nMatrix<cplx> &ta) {
+  static void generator(int lieIndex, iGroupMatrix<cplx> &ta) {
     return generator(lieIndex, ta, group_name());
   }
 
