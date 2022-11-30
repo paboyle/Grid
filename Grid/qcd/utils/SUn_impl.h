@@ -6,6 +6,8 @@
 //
 // around it.
 
+template<ONLY_IF_SU>
+  static int su2subgroups(void) { return (ncolour * (ncolour - 1)) / 2; }
 template <typename vtype, ONLY_IF_SU>
 using iSUnMatrix = iGroupMatrix<vtype>;
 template <typename vtype, ONLY_IF_SU>

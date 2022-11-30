@@ -33,12 +33,19 @@ directory
 #define QCD_UTIL_SUN_H
 
 #define ONLY_IF_SU                  \
-  typename dummy_name = group_name, \
-           typename = std::enable_if_t<is_su<dummy_name>::value>
+  typename \
+    typename std::enable_if_t<is_su<group_name>::value, dummy_name> ,\
+    dummy_name = group_name, 
+
+#define ONLY_IF_Sp                  \
+  typename \
+    typename std::enable_if_t<is_sp<group_name>::value, dummy_name> ,\
+    dummy_name =group_name, 
 
 NAMESPACE_BEGIN(Grid);
 namespace GroupName {
 class SU {};
+class Sp {};
 }  // namespace GroupName
 
 template <typename group_name>
@@ -51,18 +58,44 @@ struct is_su<GroupName::SU> {
   static const bool value = true;
 };
 
+template <typename group_name>
+struct is_sp {
+  static const bool value = false;
+};
+
+template <>
+struct is_sp<GroupName::Sp> {
+  static const bool value = true;
+};
+
+template<typename group_name>
+constexpr int compute_adjoint_dimension(int ncolour);
+
+template<>
+constexpr int compute_adjoint_dimension<GroupName::SU>(int ncolour) { return ncolour * ncolour - 1;}
+
+template<>
+constexpr int compute_adjoint_dimension<GroupName::Sp>(int ncolour) { return ncolour/2*(ncolour+1);}
+
+
 template <int ncolour, class group_name = GroupName::SU>
 class GaugeGroup;
 
 template <int ncolour>
 using SU = GaugeGroup<ncolour, GroupName::SU>;
 
+template <int ncolour>
+using Sp = GaugeGroup<ncolour, GroupName::Sp>;
+
 template <int ncolour, class group_name>
 class GaugeGroup {
  public:
   static const int Dimension = ncolour;
-  static const int AdjointDimension = ncolour * ncolour - 1;
-  static int su2subgroups(void) { return (ncolour * (ncolour - 1)) / 2; }
+  static const int AdjointDimension = compute_adjoint_dimension<group_name>(ncolour);
+  static const int AlgebraDimension = compute_adjoint_dimension<group_name>(ncolour);
+  // Don't know how to only enable this for Sp:
+  static const int nsp = ncolour/2;
+
 
   template <typename vtype>
   using iSU2Matrix = iScalar<iScalar<iMatrix<vtype, 2> > >;
@@ -115,6 +148,7 @@ class GaugeGroup {
   typedef Lattice<vSU2MatrixD> LatticeSU2MatrixD;
 
 #include "Grid/qcd/utils/SUn_impl.h"
+#include "Grid/qcd/utils/Sp2n_impl.h"
 
   static void printGenerators(void) {
     for (int gen = 0; gen < AdjointDimension; gen++) {
