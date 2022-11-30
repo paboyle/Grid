@@ -4,9 +4,11 @@
 
     Source file: ./tests/Test_dwf_block_lanczos.cc
 
-    Copyright (C) 2015
+    Copyright (C) 2022
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Yong-Chull Jang <ypj@quark.phy.bnl.gov>
+Author: Chulwoo Jung <chulwoo@bnl.gov>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

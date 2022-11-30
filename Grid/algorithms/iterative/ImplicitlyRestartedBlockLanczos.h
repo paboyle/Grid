@@ -7,9 +7,8 @@
     Copyright (C) 2015
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: Chulwoo Jung
 Author: Yong-Chull Jang <ypj@quark.phy.bnl.gov> 
-Author: Guido Cossu
+Author: Chulwoo Jung <chulwoo@bnl.gov>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -185,10 +184,6 @@ public:
   {
     RealD nn = norm2(v);
     nn = sqrt(nn);
-#if 0
-    if(if_print && nn < 1e20)
-    Glog<<"normalize: "<<nn<<std::endl;
-#endif
     v = v * (1.0/nn);
     return nn;
   }
@@ -227,19 +222,7 @@ public:
     for(int j=0; j<k; ++j){
     for(int i=0; i<_Nu; ++i){
       ip = innerProduct(evec[j],w[i]); 
-#if 0
-      if(if_print) 
-      if( norm(ip)/norm2(w[i]) > 1e-14)
-      Glog<<"orthogonalize before: "<<i<<" "<<j<<" of "<<k<<" "<< ip <<std::endl;
-#endif
       w[i] = w[i] - ip * evec[j];
-#if 0
-      if(if_print) {
-        ip = innerProduct(evec[j],w[i]); 
-        if( norm(ip)/norm2(w[i]) > 1e-14)
-          Glog<<"orthogonalize after: "<<i<<" "<<j<<" of "<<k<<" "<< ip <<std::endl;
-      }
-#endif
     }}
     for(int i=0; i<_Nu; ++i)
     assert(normalize(w[i],if_print) !=0);
@@ -265,14 +248,6 @@ public:
 //    Glog << "nBatch, Nevec_acc, R, Nu = " 
 //         << Nbatch << "," << Nevec_acc << "," << R << "," << Nu << std::endl;
     
-#if 0 // a trivial test
-    for (int col=0; col<Nu; ++col) {
-      for (size_t row=0; row<sites*12; ++row) {
-        w_acc[col*sites*12+row].x = 1.0;
-        w_acc[col*sites*12+row].y = 0.0;
-      }
-    }
-#else 
     for (int col=0; col<Nu; ++col) {
 //      auto w_v = w[col].View();
       autoView( w_v,w[col], AcceleratorWrite);
@@ -282,7 +257,6 @@ public:
         w_acc[col*sites*12+row] = z[row];
       }
     }
-#endif
     cublasHandle_t handle;
     cublasStatus_t stat;
     
@@ -291,14 +265,6 @@ public:
     Glog << "cuBLAS Zgemm"<< std::endl;
     
     for (int b=0; b<Nbatch; ++b) {
-#if 0 // a trivial test
-      for (int col=0; col<Nevec_acc; ++col) {
-        for (size_t row=0; row<sites*12; ++row) {
-          evec_acc[col*sites*12+row].x = 1.0;
-          evec_acc[col*sites*12+row].y = 0.0;
-        }
-      }
-#else 
       for (int col=0; col<Nevec_acc; ++col) {
 //        auto evec_v = evec[b*Nevec_acc+col].View();
         autoView( evec_v,evec[b*Nevec_acc+col], AcceleratorWrite);
@@ -308,7 +274,6 @@ public:
           evec_acc[col*sites*12+row] = z[row];
         }
       }
-#endif 
       CUDA_COMPLEX alpha = MAKE_CUDA_COMPLEX(1.0,0.0);
       CUDA_COMPLEX beta = MAKE_CUDA_COMPLEX(0.0,0.0);
       stat = CUDA_GEMM(handle, CUBLAS_OP_C, CUBLAS_OP_N, Nevec_acc, Nu, 12*sites,
@@ -319,19 +284,6 @@ public:
       //Glog << stat << std::endl;
       
       grid->GlobalSumVector((CUDA_FLOAT*)c_acc,2*Nu*Nevec_acc);
-#if 0      
-      for (int i=0; i<Nu; ++i) {
-        for (size_t j=0; j<Nevec_acc; ++j) {
-          CUDA_COMPLEX z = c_acc[i*Nevec_acc+j];
-          MyComplex ip(z.x,z.y);
-          if (do_print) {
-            Glog << "<evec,w>[" << j << "," << i << "] = " 
-                 << z.x << " + i " << z.y << std::endl;
-          }
-          w[i] = w[i] - ip * evec[b*Nevec_acc+j];
-        }
-      }
-#else
       alpha = MAKE_CUDA_COMPLEX(-1.0,0.0);
       beta = MAKE_CUDA_COMPLEX(1.0,0.0);
       stat = CUDA_GEMM(handle, CUBLAS_OP_N, CUBLAS_OP_N, 12*sites, Nu, Nevec_acc,
@@ -340,9 +292,7 @@ public:
                          &beta, 
                          w_acc, 12*sites);
       //Glog << stat << std::endl;
-#endif
     }
-#if 1    
     for (int col=0; col<Nu; ++col) {
 //      auto w_v = w[col].View();
       autoView( w_v,w[col], AcceleratorWrite);
@@ -351,7 +301,6 @@ public:
         z[row] = w_acc[col*sites*12+row];
       }
     }
-#endif
     for (int i=0; i<Nu; ++i) {
       assert(normalize(w[i],do_print)!=0);
     }
@@ -367,56 +316,6 @@ public:
 #endif
   }
 
-
-#if 0
-void innerProductD (std::vector<ComplexD> &inner, std::vector<Field>& lhs, int llhs, std::vector<Field>& rhs, int lrhs)
-{
-  typedef typename Field:vector_object vobj;
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_typeD vector_type;
-  GridBase *grid = lhs[0]._grid;
-  assert(grid == rhs[0]._grid;
-  const int pad = 8;
-  int total = llhs*lrhs;
-  assert(inner.size()==total);
-  int sum_size=grid->SumArraySize();
-
-//  std::vector<ComplexD> inner(total);
-  Vector<ComplexD> sumarray(sum_size*pad*total);
-
-  parallel_for(int thr=0;thr<sum_size;thr++){
-    int nwork, mywork, myoff;
-    GridThread::GetWork(grid->oSites(),thr,mywork,myoff);
-    
-    std::vector< decltype(innerProductD(lhs[0]._odata[0],rhs[0]._odata[0])) > vinner(total,zero); // private to thread; sub summation
-    for(int ss=myoff;ss<mywork+myoff; ss++){
-    for(int i=0; i<llhs; ++i){
-    for(int j=0; j<lrhs; ++j){
-      vinner[i*k+j] += innerProductD(lhs[i]._odata[ss],rhs[j]._odata[ss]);
-    }}
-    }
-    // All threads sum across SIMD; reduce serial work at end
-    // one write per cacheline with streaming store
-    for(int i=0; i<total; ++i){
-    ComplexD tmp = Reduce(TensorRemove(vinner[i])) ;
-    vstream(sumarray[(i*sum_size+thr)*pad],tmp);
-    }
-  }
-  
-for( int i =0;i<total;i++){
-  inner[i]=0.0;
-  for(int j=0;j<sum_size;j++){
-    inner[i] += sumarray[(i*sum_size+j)*pad];
-  } 
-}
-  for( int i =0;i<total;i++){
-    ComplexD tmp=inner[i];
-    evec[0]._grid->GlobalSum(tmp);
-    inner[i]=tmp;
-  }
-//  return inner;
-}
-#endif
 
   
   void orthogonalize_blockhead(Field& w, std::vector<Field>& evec, int k, int Nu)
@@ -839,14 +738,6 @@ cudaStat = cudaMallocManaged((void **)&evec_acc, Nevec_acc*sites*12*sizeof(CUDA_
       Glog << fname + " CONVERGED ; Summary :\n";
       // Sort convered eigenpairs.
       std::vector<Field>  Btmp(Nstop,grid); // waste of space replicating
-#if 0
-      for(int i=0; i<Nconv; ++i) Btmp[i]=0;
-      for(int i=0; i<Nconv; ++i)
-      for(int k = 0; k<Nr; ++k){
-         Btmp[i].Checkerboard() = evec[k].Checkerboard();
-         Btmp[i] += evec[k]*Qt(k,i);
-      }
-#endif
 
       for(int i=0; i<Nstop; ++i){
 	  Btmp[i]=0.;
@@ -1021,25 +912,6 @@ if(split_test){
       }
     }
     Glog << "LinAlg done "<< std::endl;
-#if 0    
-    Glog << "Gram Schmidt "<< std::endl;
-    // re-orthogonalization for numerical stability
-    if (b>0) {
-      for (int u=0; u<Nu; ++u) {
-        orthogonalize(w[u],evec,R);
-      }
-      for (int u=1; u<Nu; ++u) {
-        orthogonalize(w[u],w,u);
-      }
-    }
-    //if (b>0) {
-    //  orthogonalize_blockhead(w[0],evec,b,Nu);
-    //  for (int u=1; u<Nu; ++u) {
-    //    orthogonalize(w[u],w,u);
-    //  }
-    //}
-    Glog << "Gram Schmidt done "<< std::endl;
-#endif
 
     if (b < Nm/Nu-1) {
       for (int u=0; u<Nu; ++u) {
@@ -1118,7 +990,6 @@ if(split_test){
     }
     //std::cout << BlockTriDiag << std::endl;
 //#ifdef USE_LAPACK
-#if 1
   const int size = Nm;
   MKL_INT NN = Nk;
 //  double evals_tmp[NN];
@@ -1189,20 +1060,6 @@ if(split_test){
       grid->GlobalSumVector((double*)evec_tmp,2*NN*NN);
     }
   } 
-  // Safer to sort instead of just reversing it, 
-  // but the document of the routine says evals are sorted in increasing order. 
-  // qr gives evals in decreasing order.
-//  for(int i=0;i<NN;i++){
-//    lmd [NN-1-i]=evals_tmp[i];
-//    for(int j=0;j<NN;j++){
-//      Qt((NN-1-i),j)=evec_tmp[i][j];
-//    }
-//  }
-
-//  MKL_Complex16 *eval_tmp = malloc(NN*sizeof(MKL_Complex16));
-//  MKL_Complex16 *evec_tmp = malloc(NN*NN*sizeof(MKL_Complex16));
-//  MKL_Complex16 *DD = malloc(NN*NN*sizeof(MKL_Complex16));
-#endif
     for (int i = 0; i < Nk; i++) 
       eval[Nk-1-i] = evals_tmp[i];
     for (int i = 0; i < Nk; i++) {
