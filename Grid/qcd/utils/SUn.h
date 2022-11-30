@@ -418,5 +418,37 @@ typedef SU<5> SU5;
 
 typedef SU<Nc> FundamentalMatrices;
 
+template <int N>
+static void ProjectSp2n(
+    Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
+  Umu = ProjectOnSpGroup(Umu);
+  auto det = Determinant(Umu);  // ok ?
+
+  det = conjugate(det);
+
+  for (int i = 0; i < N; i++) {
+    auto element = PeekIndex<ColourIndex>(Umu, N - 1, i);
+    element = element * det;
+    PokeIndex<ColourIndex>(Umu, element, Nc - 1, i);
+  }
+}
+template <int N>
+static void ProjectSp2n(
+    Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
+  GridBase *grid = U.Grid();
+  for (int mu = 0; mu < Nd; mu++) {
+    auto Umu = PeekIndex<LorentzIndex>(U, mu);
+    Umu = ProjectOnSpGroup(Umu);
+    ProjectSp2n(Umu);
+    PokeIndex<LorentzIndex>(U, Umu, mu);
+  }
+}
+
+typedef Sp<2> Sp2;
+typedef Sp<4> Sp4;
+typedef Sp<6> Sp6;
+typedef Sp<8> Sp8;
+
+
 NAMESPACE_END(Grid);
 #endif

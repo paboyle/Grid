@@ -1,8 +1,4 @@
-
-
-
 #include <Grid/Grid.h>
-#include <Grid/qcd/utils/Sp2n.h>
 
 using namespace Grid;
 
