@@ -1,6 +1,6 @@
 
 private:
-static int su2subgroups(GroupName::Sp) { return (nsp * (nsp - 1)) / 2; }
+static int su2subgroups(GroupName::Sp) { return (ncolour/2 * (ncolour/2 - 1)) / 2; }
 
 // Sp(2N) has N(2N+1) = 2N^2+N generators
 //
@@ -16,14 +16,15 @@ template <class cplx, ONLY_IF_Sp>
 static void generator(int lieIndex, iSp2nMatrix<cplx> &ta, GroupName::Sp) {
   // map lie index into type of generators: diagonal, abcd type, wz type
 
+  const int nsp = ncolour/2;
   int diagIndex;
   int aIndex, bIndex, cIndex, dIndex;
   int wIndex, zIndex;  // a,b,c,d are N(N-1)/2 and w,z are N
-  int mod = nsp * (nsp - 1) * 0.5;
-  int offdiag =
+  const int mod = nsp * (nsp - 1) * 0.5;
+  const int offdiag =
       2 * nsp * nsp;  // number of generators not in the cartan subalgebra
-  int wmod = 4 * mod;
-  int zmod = wmod + nsp;
+  const int wmod = 4 * mod;
+  const int zmod = wmod + nsp;
   if (lieIndex >= offdiag) {
     diagIndex = lieIndex - offdiag;  // 0, ... ,N-1
     // std::cout << GridLogMessage << "diag type " << std::endl;
@@ -78,6 +79,7 @@ template <class cplx, ONLY_IF_Sp>
 static void generatorDiagtype(int diagIndex, iSp2nMatrix<cplx> &ta) {
   // ta(i,i) = - ta(i+N,i+N) = 1/2 for each i index of the cartan subalgebra
 
+  const int nsp=ncolour/2;
   ta = Zero();
   RealD nrm = 1.0 / 2;
 
@@ -91,6 +93,7 @@ static void generatorAtype(int aIndex, iSp2nMatrix<cplx> &ta) {
   // with i<j and i=0,...,N-2
   // follows that j=i+1, ... , N
   int i1, i2;
+  const int nsp=ncolour/2;
   ta = Zero();
   RealD nrm = 1 / (2 * std::sqrt(2));
 
@@ -109,6 +112,7 @@ static void generatorBtype(int bIndex, iSp2nMatrix<cplx> &ta) {
   // with i<j and i=0,...,N-2
   // follows that j=i+1, ... , N-1
 
+  const int nsp=ncolour/2;
   int i1, i2;
   ta = Zero();
   cplx i(0.0, 1.0);
@@ -127,6 +131,7 @@ template <class cplx, ONLY_IF_Sp>
 static void generatorCtype(int cIndex, iSp2nMatrix<cplx> &ta) {
   // ta(i,j+N) = ta(j,i+N) = ta(i+N,j) = ta(j+N,i) = 1 / 2 sqrt(2)
 
+  const int nsp=ncolour/2;
   int i1, i2;
   ta = Zero();
   RealD nrm = 1 / (2 * std::sqrt(2));
@@ -144,6 +149,7 @@ template <class cplx, ONLY_IF_Sp>
 static void generatorDtype(int dIndex, iSp2nMatrix<cplx> &ta) {
   // ta(i,j+N) = ta(j,i+N) = -ta(i+N,j) = -ta(j+N,i) = i /  2 sqrt(2)
 
+  const int nsp=ncolour/2;
   int i1, i2;
   ta = Zero();
   cplx i(0.0, 1.0);
@@ -162,6 +168,7 @@ template <class cplx, ONLY_IF_Sp>
 static void generatorWtype(int wIndex, iSp2nMatrix<cplx> &ta) {
   // ta(i,i+N) =  ta(i+N,i) = 1/2
 
+  const int nsp=ncolour/2;
   ta = Zero();
   RealD nrm = 1.0 / 2;  // check
 
@@ -175,6 +182,7 @@ template <class cplx, ONLY_IF_Sp>
 static void generatorZtype(int zIndex, iSp2nMatrix<cplx> &ta) {
   // ta(i,i+N) = - ta(i+N,i) = i/2
 
+  const int nsp=ncolour/2;
   ta = Zero();
   RealD nrm = 1.0 / 2;  // check
   cplx i(0.0, 1.0);
@@ -189,6 +197,7 @@ static void generatorZtype(int zIndex, iSp2nMatrix<cplx> &ta) {
 ////////////////////////////////////////////////////////////////////////
 template <ONLY_IF_Sp>
 static void su2SubGroupIndex(int &i1, int &i2, int su2_index, GroupName::Sp) {
+  const int nsp=ncolour/2;
   assert((su2_index >= 0) && (su2_index < (nsp * (nsp - 1)) / 2));
 
   int spare = su2_index;
@@ -239,6 +248,7 @@ template <ONLY_IF_Sp>
 static void OmegaInvariance(ColourMatrix &in) {
   ColourMatrix Omega;
   Omega = Zero();
+  const int nsp=ncolour/2;
 
   std::cout << GridLogMessage << "I am a ColourMatrix" << std::endl;
 
@@ -289,6 +299,7 @@ static void OmegaInvariance(GaugeField &in) {
 
 template <ONLY_IF_Sp>
 static void OmegaInvariance(LatticeColourMatrixD &in) {
+  const int nsp=ncolour/2;
   LatticeColourMatrixD OmegaLatt(in.Grid());
   LatticeColourMatrixD identity(in.Grid());
   RealD vol = in.Grid()->gSites();

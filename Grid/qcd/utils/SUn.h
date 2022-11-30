@@ -91,8 +91,6 @@ class GaugeGroup {
       compute_adjoint_dimension<group_name>(ncolour);
   static const int AlgebraDimension =
       compute_adjoint_dimension<group_name>(ncolour);
-  // Don't know how to only enable this for Sp:
-  static const int nsp = ncolour / 2;
 
   template <typename vtype>
   using iSU2Matrix = iScalar<iScalar<iMatrix<vtype, 2> > >;
