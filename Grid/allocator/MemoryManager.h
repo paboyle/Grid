@@ -36,6 +36,11 @@ NAMESPACE_BEGIN(Grid);
 
 #define GRID_ALLOC_SMALL_LIMIT (4096)
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define FILE_LINE __FILE__ ":" TOSTRING(__LINE__)
+#define AUDIT(a) MemoryManager::Audit(FILE_LINE)
+
 /*Pinning pages is costly*/
 ////////////////////////////////////////////////////////////////////////////
 // Advise the LatticeAccelerator class
@@ -94,6 +99,7 @@ private:
 
   static void PrintBytes(void);
  public:
+  static void Audit(std::string s);
   static void Init(void);
   static void InitMessage(void);
   static void *AcceleratorAllocate(size_t bytes);
