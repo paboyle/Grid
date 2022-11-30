@@ -32,15 +32,17 @@ directory
 #ifndef QCD_UTIL_SUN_H
 #define QCD_UTIL_SUN_H
 
-#define ONLY_IF_SU                  \
-  typename \
-    typename std::enable_if_t<is_su<group_name>::value, dummy_name> ,\
-    dummy_name = group_name, 
+#define ONLY_IF_SU                                                       \
+  typename dummy_name = group_name,                                      \
+           typename = std::enable_if_t <                                 \
+                          std::is_same<dummy_name, group_name>::value && \
+                      is_su<dummy_name>::value >
 
-#define ONLY_IF_Sp                  \
-  typename \
-    typename std::enable_if_t<is_sp<group_name>::value, dummy_name> ,\
-    dummy_name =group_name, 
+#define ONLY_IF_Sp                                                       \
+  typename dummy_name = group_name,                                      \
+           typename = std::enable_if_t <                                 \
+                          std::is_same<dummy_name, group_name>::value && \
+                      is_sp<dummy_name>::value >
 
 NAMESPACE_BEGIN(Grid);
 namespace GroupName {
@@ -68,15 +70,18 @@ struct is_sp<GroupName::Sp> {
   static const bool value = true;
 };
 
-template<typename group_name>
+template <typename group_name>
 constexpr int compute_adjoint_dimension(int ncolour);
 
-template<>
-constexpr int compute_adjoint_dimension<GroupName::SU>(int ncolour) { return ncolour * ncolour - 1;}
+template <>
+constexpr int compute_adjoint_dimension<GroupName::SU>(int ncolour) {
+  return ncolour * ncolour - 1;
+}
 
-template<>
-constexpr int compute_adjoint_dimension<GroupName::Sp>(int ncolour) { return ncolour/2*(ncolour+1);}
-
+template <>
+constexpr int compute_adjoint_dimension<GroupName::Sp>(int ncolour) {
+  return ncolour / 2 * (ncolour + 1);
+}
 
 template <int ncolour, class group_name = GroupName::SU>
 class GaugeGroup;
@@ -91,11 +96,12 @@ template <int ncolour, class group_name>
 class GaugeGroup {
  public:
   static const int Dimension = ncolour;
-  static const int AdjointDimension = compute_adjoint_dimension<group_name>(ncolour);
-  static const int AlgebraDimension = compute_adjoint_dimension<group_name>(ncolour);
+  static const int AdjointDimension =
+      compute_adjoint_dimension<group_name>(ncolour);
+  static const int AlgebraDimension =
+      compute_adjoint_dimension<group_name>(ncolour);
   // Don't know how to only enable this for Sp:
-  static const int nsp = ncolour/2;
-
+  static const int nsp = ncolour / 2;
 
   template <typename vtype>
   using iSU2Matrix = iScalar<iScalar<iMatrix<vtype, 2> > >;
@@ -103,6 +109,15 @@ class GaugeGroup {
   using iGroupMatrix = iScalar<iScalar<iMatrix<vtype, ncolour> > >;
   template <typename vtype>
   using iAlgebraVector = iScalar<iScalar<iVector<vtype, AdjointDimension> > >;
+  static int su2subgroups(void) { return su2subgroups(group_name()); }
+  template <typename vtype>
+  using iSUnMatrix = iGroupMatrix<vtype>;
+  template <typename vtype>
+  using iSUnAlgebraVector = iAlgebraVector<vtype>;
+  template <typename vtype>
+  using iSp2nMatrix = iGroupMatrix<vtype>;
+  template <typename vtype>
+  using iSp2nAlgebraVector = iAlgebraVector<vtype>;
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Types can be accessed as SU<2>::Matrix , SU<2>::vSUnMatrix,
@@ -149,6 +164,17 @@ class GaugeGroup {
 
 #include "Grid/qcd/utils/SUn_impl.h"
 #include "Grid/qcd/utils/Sp2n_impl.h"
+
+  template <class cplx>
+  static void generator(int lieIndex, iSp2nMatrix<cplx> &ta) {
+    return generator(lieIndex, ta, group_name());
+  }
+
+  static void su2SubGroupIndex(int &i1, int &i2, int su2_index) {
+    return su2SubGroupIndex(i1, i2, su2_index, group_name());
+  }
+
+  static void testGenerators(void) { testGenerators(group_name()); }
 
   static void printGenerators(void) {
     for (int gen = 0; gen < AdjointDimension; gen++) {

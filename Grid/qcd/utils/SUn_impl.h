@@ -6,12 +6,7 @@
 //
 // around it.
 
-template<ONLY_IF_SU>
-  static int su2subgroups(void) { return (ncolour * (ncolour - 1)) / 2; }
-template <typename vtype, ONLY_IF_SU>
-using iSUnMatrix = iGroupMatrix<vtype>;
-template <typename vtype, ONLY_IF_SU>
-using iSUnAlgebraVector = iAlgebraVector<vtype>;
+static int su2subgroups(GroupName::SU) { return (ncolour * (ncolour - 1)) / 2; }
 ////////////////////////////////////////////////////////////////////////
 // There are N^2-1 generators for SU(N).
 //
@@ -60,8 +55,8 @@ using iSUnAlgebraVector = iAlgebraVector<vtype>;
 //   (      -2)
 //
 ////////////////////////////////////////////////////////////////////////
-template <class cplx, ONLY_IF_SU>
-static void generator(int lieIndex, iSUnMatrix<cplx> &ta) {
+template <class cplx>
+static void generator(int lieIndex, iSUnMatrix<cplx> &ta, GroupName::SU) {
   // map lie index to which type of generator
   int diagIndex;
   int su2Index;
@@ -117,8 +112,7 @@ static void generatorDiagonal(int diagIndex, iSUnMatrix<cplx> &ta) {
 ////////////////////////////////////////////////////////////////////////
 // Map a su2 subgroup number to the pair of rows that are non zero
 ////////////////////////////////////////////////////////////////////////
-template <ONLY_IF_SU>
-static void su2SubGroupIndex(int &i1, int &i2, int su2_index) {
+static void su2SubGroupIndex(int &i1, int &i2, int su2_index, GroupName::SU) {
   assert((su2_index >= 0) && (su2_index < (ncolour * (ncolour - 1)) / 2));
 
   int spare = su2_index;
@@ -471,7 +465,7 @@ static void SubGroupHeatBath(
 }
 
 template <ONLY_IF_SU>
-static void testGenerators(void) {
+static void testGenerators(GroupName::SU) {
   Matrix ta;
   Matrix tb;
   std::cout << GridLogMessage
