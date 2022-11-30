@@ -463,7 +463,7 @@ void FermToProp(typename Fimpl::PropagatorField &p, const typename Fimpl::Fermio
       for(int cc = 0; cc < Fimpl::Dimension; ++cc) {
 	p_v[idx]()(ss,s)(cc,c) = f_v[idx]()(ss)(cc); // Propagator sink index is LEFT, suitable for left mult by gauge link (e.g.)
       }}
-  );
+    });
 #else
   for(int j = 0; j < Ns; ++j)
     {
@@ -491,7 +491,7 @@ void PropToFerm(typename Fimpl::FermionField &f, const typename Fimpl::Propagato
       for(int cc = 0; cc < Fimpl::Dimension; ++cc) {
 	f_v[idx]()(ss)(cc) = p_v[idx]()(ss,s)(cc,c); // LEFT index is copied across for s,c right index
       }}
-  );
+    });
 #else
   for(int j = 0; j < Ns; ++j)
     {
