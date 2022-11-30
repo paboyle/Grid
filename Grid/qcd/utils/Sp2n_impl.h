@@ -1,4 +1,5 @@
 
+private:
 static int su2subgroups(GroupName::Sp) { return (nsp * (nsp - 1)) / 2; }
 
 // Sp(2N) has N(2N+1) = 2N^2+N generators
@@ -233,6 +234,7 @@ static void testGenerators(GroupName::Sp) {
   }
 }
 
+public:
 template <ONLY_IF_Sp>
 static void OmegaInvariance(ColourMatrix &in) {
   ColourMatrix Omega;

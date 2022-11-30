@@ -156,6 +156,7 @@ class GaugeGroup {
 #include "Grid/qcd/utils/SUn_impl.h"
 #include "Grid/qcd/utils/Sp2n_impl.h"
 
+ public:
   template <class cplx>
   static void generator(int lieIndex, iSp2nMatrix<cplx> &ta) {
     return generator(lieIndex, ta, group_name());
