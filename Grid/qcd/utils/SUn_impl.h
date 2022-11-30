@@ -282,11 +282,11 @@ static void SubGroupHeatBath(
 
   SU2Matrix ident = Complex(1.0);
   SU2Matrix pauli1;
-  SU<2>::generator(0, pauli1);
+  GaugeGroup<2, GroupName::SU>::generator(0, pauli1);
   SU2Matrix pauli2;
-  SU<2>::generator(1, pauli2);
+  GaugeGroup<2, GroupName::SU>::generator(1, pauli2);
   SU2Matrix pauli3;
-  SU<2>::generator(2, pauli3);
+  GaugeGroup<2, GroupName::SU>::generator(2, pauli3);
   pauli1 = timesI(pauli1) * 2.0;
   pauli2 = timesI(pauli2) * 2.0;
   pauli3 = timesI(pauli3) * 2.0;

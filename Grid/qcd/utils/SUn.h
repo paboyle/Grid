@@ -83,15 +83,6 @@ constexpr int compute_adjoint_dimension<GroupName::Sp>(int ncolour) {
   return ncolour / 2 * (ncolour + 1);
 }
 
-template <int ncolour, class group_name = GroupName::SU>
-class GaugeGroup;
-
-template <int ncolour>
-using SU = GaugeGroup<ncolour, GroupName::SU>;
-
-template <int ncolour>
-using Sp = GaugeGroup<ncolour, GroupName::Sp>;
-
 template <int ncolour, class group_name>
 class GaugeGroup {
  public:
@@ -422,6 +413,12 @@ static void ProjectSU3(
     PokeIndex<LorentzIndex>(U, Umu, mu);
   }
 }
+
+template <int ncolour>
+using SU = GaugeGroup<ncolour, GroupName::SU>;
+
+template <int ncolour>
+using Sp = GaugeGroup<ncolour, GroupName::Sp>;
 
 typedef SU<2> SU2;
 typedef SU<3> SU3;
