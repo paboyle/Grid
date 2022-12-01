@@ -97,8 +97,8 @@ private:
   static void *Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim,uint64_t &cbytes) ;
   static void *Lookup(size_t bytes,AllocationCacheEntry *entries,int ncache,uint64_t &cbytes) ;
 
-  static void PrintBytes(void);
  public:
+  static void PrintBytes(void);
   static void Audit(std::string s);
   static void Init(void);
   static void InitMessage(void);
@@ -119,6 +119,8 @@ private:
   static uint64_t     DeviceToHostBytes;
   static uint64_t     HostToDeviceXfer;
   static uint64_t     DeviceToHostXfer;
+  static uint64_t     DeviceEvictions;
+  static uint64_t     DeviceDestroy;
  
  private:
 #ifndef GRID_UVM
@@ -176,6 +178,7 @@ private:
 
  public:
   static void Print(void);
+  static void PrintAll(void);
   static void PrintState( void* CpuPtr);
   static int   isOpen   (void* CpuPtr);
   static void  ViewClose(void* CpuPtr,ViewMode mode);
