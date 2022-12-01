@@ -150,7 +150,7 @@ public:
             P = Ta(P);
             //const int nsp = Nc / 2;
 
-            Sp<Nc>::iSp2nMatrix<Complex> gen;
+            Sp<Nc>::iGroupMatrix<Complex> gen;
             
 
             auto Psum = P;

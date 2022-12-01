@@ -21,7 +21,7 @@ int main (int argc, char **argv)
     
     double vol = Umu.Grid()->gSites();
 
-    const int nsp = Sp<Nc>::nsp;
+    const int nsp = Nc/2;
     identity = 1.;
     Cidentity = 1.;
     

@@ -20,8 +20,7 @@ int main (int argc, char **argv)
     LatticeColourMatrixD aux(&Grid);
     LatticeColourMatrixD identity(&Grid);
     
-    //const int nsp = Nc / 2;
-    const int nsp = Sp<Nc>::nsp;
+    const int nsp = Nc / 2;
     
     identity = 1.0;
     RealD epsilon = 0.01;
