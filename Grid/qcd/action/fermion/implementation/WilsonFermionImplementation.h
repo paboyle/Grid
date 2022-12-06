@@ -600,6 +600,7 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
                                                    Current curr_type,
                                                    unsigned int mu)
 {
+  #ifndef GRID_HIP
   if(curr_type != Current::Vector)
   {
     std::cout << GridLogError << "Only the conserved vector current is implemented so far." << std::endl;
@@ -641,6 +642,9 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
 
   q_out-=adj(g5Lg5)*R;
   q_out-=adj(g5Lg5)*gmuR;
+  #else
+    assert(0);
+  #endif
 }
 
 

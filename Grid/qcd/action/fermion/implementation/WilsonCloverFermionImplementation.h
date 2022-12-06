@@ -139,15 +139,53 @@ void WilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeField &_Um
   // Separate the even and odd parts
   pickCheckerboard(Even, CloverTermEven, CloverTerm);
   pickCheckerboard(Odd, CloverTermOdd, CloverTerm);
-
+  #ifndef GRID_HIP
   pickCheckerboard(Even, CloverTermDagEven, adj(CloverTerm));
   pickCheckerboard(Odd, CloverTermDagOdd, adj(CloverTerm));
+  #else
+  CloverField adjtmp(grid);
+  autoView( src_v, CloverTerm, AcceleratorRead);
+  autoView( ret_v, adjtmp, AcceleratorWrite);
 
+  adjtmp.Checkerboard()=CloverTerm.Checkerboard();
+  accelerator_for( ss, src_v.size(), 1, {
+	for(int spn = 0; spn < Ns; spn++)
+	{
+		for(int tpn = 0; tpn < Ns; tpn++)
+		{
+			auto cm = coalescedRead(src_v[ss]()(spn,tpn));
+			auto adjcm = adj(cm);
+			coalescedWrite(ret_v[ss]()(tpn,spn),adjcm);
+		}
+	}
+  });
+  pickCheckerboard(Even, CloverTermDagEven, adjtmp);
+  pickCheckerboard(Odd, CloverTermDagOdd, adjtmp);
+  #endif
   pickCheckerboard(Even, CloverTermInvEven, CloverTermInv);
   pickCheckerboard(Odd, CloverTermInvOdd, CloverTermInv);
-
+  #ifndef GRID_HIP
   pickCheckerboard(Even, CloverTermInvDagEven, adj(CloverTermInv));
   pickCheckerboard(Odd, CloverTermInvDagOdd, adj(CloverTermInv));
+  #else
+  autoView( CInv_v, CloverTermInv, AcceleratorRead);
+
+  adjtmp.Checkerboard()=CloverTermInv.Checkerboard();
+  accelerator_for( ss, CInv_v.size(), 1, {
+	for(int spn = 0; spn < Ns; spn++)
+	{
+		for(int tpn = 0; tpn < Ns; tpn++)
+		{
+			auto cm = coalescedRead(CInv_v[ss]()(spn,tpn));
+			auto adjcm = adj(cm);
+			coalescedWrite(ret_v[ss]()(tpn,spn),adjcm);
+		}
+	}
+  });
+  pickCheckerboard(Even, CloverTermInvDagEven, adjtmp);
+  pickCheckerboard(Odd, CloverTermInvDagOdd, adjtmp);
+  #endif
+
   double t6 = usecond();
 
   std::cout << GridLogDebug << "WilsonCloverFermion::ImportGauge timings:" << std::endl;

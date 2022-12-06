@@ -171,23 +171,122 @@ public:
   }
 
   inline void InsertForce4D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
+    #ifdef GRID_HIP
+    {
+      const int Nsimd = SiteSpinor::Nsimd();
+
+      autoView( Btilde_v , Btilde, AcceleratorRead);
+      autoView( A_v , A, AcceleratorRead);
+      autoView( mat_v , mat, AcceleratorWrite);
+
+      accelerator_for(sss,mat.Grid()->oSites(),Nsimd,{
+
+          for(int ic = 0; ic < Dimension; ic++)
+          {
+            for(int jc = 0; jc < Dimension; jc++)
+            {
+              typedef decltype(outerProduct(coalescedRead(Btilde_v[sss]()(0)(ic)),coalescedRead(A_v[sss]()(0)(jc)) ) ) tmpType;
+              tmpType tmpentry;
+              zeroit(tmpentry);
+              for(int spn=0;spn<Ns;spn++){ //sum over spin
+                auto bb = coalescedRead(Btilde_v[sss]()(spn)(ic) ); //color vector
+                auto aa = coalescedRead(A_v[sss]()(spn)(jc) );
+                auto op = outerProduct(bb,aa);
+                tmpentry = tmpentry + op;
+              }
+            coalescedWrite(mat_v[sss](mu)()(ic,jc), tmpentry);
+          }
+        }
+        });
+    }
+    #else
     GaugeLinkField link(mat.Grid());
     link = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); 
     PokeIndex<LorentzIndex>(mat,link,mu);
+    #endif
   }   
       
     inline void outerProductImpl(PropagatorField &mat, const FermionField &B, const FermionField &A){
-      mat = outerProduct(B,A); 
+      #ifdef GRID_HIP
+      {
+        const int Nsimd = SiteSpinor::Nsimd();
+        autoView( B_v , B, AcceleratorRead);
+        autoView( A_v , A, AcceleratorRead);
+        autoView( mat_v , mat, AcceleratorWrite);
+
+        accelerator_for(sss,mat.Grid()->oSites(),Nsimd,{
+        for(int spn=0;spn<Ns;spn++){ //loop over spin
+          for(int tpn=0;tpn<Ns;tpn++){ //loop over spin
+            for(int ic = 0; ic < Dimension; ic++)
+            {
+              for(int jc = 0; jc < Dimension; jc++)
+              {
+                auto bb  = coalescedRead(B_v[sss]()(spn)(ic) ); //color entry
+                auto aa  = coalescedRead(A_v[sss]()(tpn)(jc) );
+                auto tmp = outerProduct(bb,aa);
+                coalescedWrite(mat_v[sss]()(spn,tpn)(ic,jc), tmp);
+              }
+            }
+          }
+        }
+        });
+      }
+      #else
+      mat = outerProduct(B,A);
+      #endif
     }  
 
     inline void TraceSpinImpl(GaugeLinkField &mat, PropagatorField&P) {
+      #ifdef GRID_HIP
+      {
+        autoView( mat_v , mat, AcceleratorWrite);
+        autoView( P_v , P, AcceleratorRead);
+        const int Nsimd = SiteSpinor::Nsimd();
+        accelerator_for(sss,mat.Grid()->oSites(),Nsimd,{
+        for(int ic = 0; ic < Dimension; ic++)
+        {
+          for(int jc = 0; jc < Dimension; jc++)
+          {
+              typedef decltype(coalescedRead(P_v[sss]()(0,0)(ic,jc))) tmpType;
+              tmpType tmpentry;
+              zeroit(tmpentry);
+              for(int spn=0;spn<Ns;spn++){ //loop over spin
+                auto bb = coalescedRead(P_v[sss]()(spn,spn)(ic,jc) ); //color entry
+                tmpentry = tmpentry + bb;
+              }
+              coalescedWrite(mat_v[sss]()()(ic,jc), tmpentry);
+          }
+        }
+        });
+      }
+      #else
       mat = TraceIndex<SpinIndex>(P); 
+      #endif
     }
       
     inline void extractLinkField(std::vector<GaugeLinkField> &mat, DoubledGaugeField &Uds)
     {
       for (int mu = 0; mu < Nd; mu++)
+      {
+      #ifndef GRID_HIP
       mat[mu] = PeekIndex<LorentzIndex>(Uds, mu);
+      #else
+	    {
+		   autoView( mat_v, mat[mu], AcceleratorWrite);
+		   autoView( U_v, Uds, AcceleratorRead);
+		   accelerator_for(ss, mat_v.size(), 1, {
+			 for(int ic = 0; ic < Dimension; ic++)
+			 {
+				for(int jc = 0; jc < Dimension; jc++)
+				{
+				 auto tmp = coalescedRead(U_v[ss](mu)()(ic,jc));
+				 coalescedWrite(mat_v[ss]()()(ic,jc),tmp);
+        }
+			 }
+		   });
+	    }
+	    #endif
+      }
     }
 
   inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu)
@@ -212,6 +311,37 @@ public:
 	});
     }
     PokeIndex<LorentzIndex>(mat,tmp,mu);
+    #else
+    #ifdef GRID_HIP
+    {
+      const int Nsimd = SiteSpinor::Nsimd();
+      autoView( Btilde_v , Btilde, AcceleratorRead);
+      autoView( Atilde_v , Atilde, AcceleratorRead);
+      accelerator_for(sss,mat.Grid()->oSites(),Nsimd,{
+      int sU=sss;
+
+        for(int ic = 0; ic < Dimension; ic++)
+        {
+          for(int jc = 0; jc < Dimension; jc++)
+          {
+            typedef decltype(outerProduct(coalescedRead(Btilde_v[sU]()(0)(ic)),coalescedRead(Atilde_v[sU]()(0)(jc)) ) ) tmpType;
+            tmpType tmpentry;
+            zeroit(tmpentry);
+            for(int s=0;s<Ls;s++){
+              int sF = s+Ls*sU;
+              for(int spn=0;spn<Ns;spn++){ //sum over spin
+                auto bb = coalescedRead(Btilde_v[sF]()(spn)(ic) ); //color entry
+                auto aa = coalescedRead(Atilde_v[sF]()(spn)(jc) );
+                auto op = outerProduct(bb,aa);
+                tmpentry = tmpentry + op;
+            }
+          }
+          coalescedWrite(mat_v[sU](mu)()(ic,jc), tmpentry);
+        }
+      }
+
+      });
+      }
 #else
     {
       const int Nsimd = SiteSpinor::Nsimd();
@@ -234,6 +364,7 @@ public:
   	  coalescedWrite(mat_v[sU](mu)(), sum);
       });
     }
+#endif
 #endif    
   }
 };
