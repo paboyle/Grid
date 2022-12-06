@@ -456,9 +456,9 @@ template <class Fimpl>
 void FermToProp(typename Fimpl::PropagatorField &p, const typename Fimpl::FermionField &f, const int s, const int c)
 {
 #ifdef FAST_FERM_TO_PROP
-  autoView(p_v,p,AcceleratorWrite);
-  autoView(f_v,f,AcceleratorRead);
-  accelerator_for(idx,p_v.oSites(),1,{
+  autoView(p_v,p,CpuWrite);
+  autoView(f_v,f,CpuRead);
+  thread_for(idx,p_v.oSites(),{
       for(int ss = 0; ss < Ns; ++ss) {
       for(int cc = 0; cc < Fimpl::Dimension; ++cc) {
 	p_v[idx]()(ss,s)(cc,c) = f_v[idx]()(ss)(cc); // Propagator sink index is LEFT, suitable for left mult by gauge link (e.g.)
@@ -484,9 +484,9 @@ template <class Fimpl>
 void PropToFerm(typename Fimpl::FermionField &f, const typename Fimpl::PropagatorField &p, const int s, const int c)
 {
 #ifdef FAST_FERM_TO_PROP
-  autoView(p_v,p,AcceleratorRead);
-  autoView(f_v,f,AcceleratorWrite);
-  accelerator_for(idx,p_v.oSites(),1,{
+  autoView(p_v,p,CpuRead);
+  autoView(f_v,f,CpuWrite);
+  thread_for(idx,p_v.oSites(),{
       for(int ss = 0; ss < Ns; ++ss) {
       for(int cc = 0; cc < Fimpl::Dimension; ++cc) {
 	f_v[idx]()(ss)(cc) = p_v[idx]()(ss,s)(cc,c); // LEFT index is copied across for s,c right index
