@@ -484,8 +484,8 @@ template <class Fimpl>
 void PropToFerm(typename Fimpl::FermionField &f, const typename Fimpl::PropagatorField &p, const int s, const int c)
 {
 #ifdef FAST_FERM_TO_PROP
-  autoView(p_v,p,AcceleratorWrite);
-  autoView(f_v,f,AcceleratorRead);
+  autoView(p_v,p,AcceleratorRead);
+  autoView(f_v,f,AcceleratorWrite);
   accelerator_for(idx,p_v.oSites(),1,{
       for(int ss = 0; ss < Ns; ++ss) {
       for(int cc = 0; cc < Fimpl::Dimension; ++cc) {
