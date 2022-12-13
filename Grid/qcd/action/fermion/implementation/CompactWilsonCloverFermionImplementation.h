@@ -48,7 +48,7 @@ CompactWilsonCloverFermion<Impl, CloverHelpers>::CompactWilsonCloverFermion(Gaug
   , csw_r(_csw_r)
   , csw_t(_csw_t)
   , cF(_cF)
-  , open_boundaries(impl_p.boundary_phases[Nd-1] == 0.0)
+  , fixedBoundaries(impl_p.boundary_phases[Nd-1] == 0.0)
   , Diagonal(&Fgrid),        Triangle(&Fgrid)
   , DiagonalEven(&Hgrid),    TriangleEven(&Hgrid)
   , DiagonalOdd(&Hgrid),     TriangleOdd(&Hgrid)
@@ -67,7 +67,7 @@ CompactWilsonCloverFermion<Impl, CloverHelpers>::CompactWilsonCloverFermion(Gaug
     csw_r /= clover_anisotropy.xi_0;
 
   ImportGauge(_Umu);
-  if (open_boundaries) {
+  if (fixedBoundaries) {
     this->BoundaryMaskEven.Checkerboard() = Even;
     this->BoundaryMaskOdd.Checkerboard() = Odd;
     CompactHelpers::SetupMasks(this->BoundaryMask, this->BoundaryMaskEven, this->BoundaryMaskOdd);
@@ -77,31 +77,31 @@ CompactWilsonCloverFermion<Impl, CloverHelpers>::CompactWilsonCloverFermion(Gaug
 template<class Impl, class CloverHelpers>
 void CompactWilsonCloverFermion<Impl, CloverHelpers>::Dhop(const FermionField& in, FermionField& out, int dag) {
   WilsonBase::Dhop(in, out, dag);
-  if(open_boundaries) ApplyBoundaryMask(out);
+  if(fixedBoundaries) ApplyBoundaryMask(out);
 }
 
 template<class Impl, class CloverHelpers>
 void CompactWilsonCloverFermion<Impl, CloverHelpers>::DhopOE(const FermionField& in, FermionField& out, int dag) {
   WilsonBase::DhopOE(in, out, dag);
-  if(open_boundaries) ApplyBoundaryMask(out);
+  if(fixedBoundaries) ApplyBoundaryMask(out);
 }
 
 template<class Impl, class CloverHelpers>
 void CompactWilsonCloverFermion<Impl, CloverHelpers>::DhopEO(const FermionField& in, FermionField& out, int dag) {
   WilsonBase::DhopEO(in, out, dag);
-  if(open_boundaries) ApplyBoundaryMask(out);
+  if(fixedBoundaries) ApplyBoundaryMask(out);
 }
 
 template<class Impl, class CloverHelpers>
 void CompactWilsonCloverFermion<Impl, CloverHelpers>::DhopDir(const FermionField& in, FermionField& out, int dir, int disp) {
   WilsonBase::DhopDir(in, out, dir, disp);
-  if(this->open_boundaries) ApplyBoundaryMask(out);
+  if(this->fixedBoundaries) ApplyBoundaryMask(out);
 }
 
 template<class Impl, class CloverHelpers>
 void CompactWilsonCloverFermion<Impl, CloverHelpers>::DhopDirAll(const FermionField& in, std::vector<FermionField>& out) {
   WilsonBase::DhopDirAll(in, out);
-  if(this->open_boundaries) {
+  if(this->fixedBoundaries) {
     for(auto& o : out) ApplyBoundaryMask(o);
   }
 }
@@ -112,7 +112,7 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::M(const FermionField& in, 
   WilsonBase::Dhop(in, out, DaggerNo); // call base to save applying bc
   Mooee(in, Tmp);
   axpy(out, 1.0, out, Tmp);
-  if(open_boundaries) ApplyBoundaryMask(out);
+  if(fixedBoundaries) ApplyBoundaryMask(out);
 }
 
 template<class Impl, class CloverHelpers>
@@ -121,19 +121,19 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::Mdag(const FermionField& i
   WilsonBase::Dhop(in, out, DaggerYes);  // call base to save applying bc
   MooeeDag(in, Tmp);
   axpy(out, 1.0, out, Tmp);
-  if(open_boundaries) ApplyBoundaryMask(out);
+  if(fixedBoundaries) ApplyBoundaryMask(out);
 }
 
 template<class Impl, class CloverHelpers>
 void CompactWilsonCloverFermion<Impl, CloverHelpers>::Meooe(const FermionField& in, FermionField& out) {
   WilsonBase::Meooe(in, out);
-  if(open_boundaries) ApplyBoundaryMask(out);
+  if(fixedBoundaries) ApplyBoundaryMask(out);
 }
 
 template<class Impl, class CloverHelpers>
 void CompactWilsonCloverFermion<Impl, CloverHelpers>::MeooeDag(const FermionField& in, FermionField& out) {
   WilsonBase::MeooeDag(in, out);
-  if(open_boundaries) ApplyBoundaryMask(out);
+  if(fixedBoundaries) ApplyBoundaryMask(out);
 }
 
 template<class Impl, class CloverHelpers>
@@ -147,7 +147,7 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::Mooee(const FermionField& 
   } else {
     MooeeInternal(in, out, Diagonal, Triangle);
   }
-  if(open_boundaries) ApplyBoundaryMask(out);
+  if(fixedBoundaries) ApplyBoundaryMask(out);
 }
 
 template<class Impl, class CloverHelpers>
@@ -166,7 +166,7 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::MooeeInv(const FermionFiel
   } else {
     MooeeInternal(in, out, DiagonalInv, TriangleInv);
   }
-  if(open_boundaries) ApplyBoundaryMask(out);
+  if(fixedBoundaries) ApplyBoundaryMask(out);
 }
 
 template<class Impl, class CloverHelpers>
@@ -186,7 +186,7 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::MdirAll(const FermionField
 
 template<class Impl, class CloverHelpers>
 void CompactWilsonCloverFermion<Impl, CloverHelpers>::MDeriv(GaugeField& force, const FermionField& X, const FermionField& Y, int dag) {
-  assert(!open_boundaries); // TODO check for changes required for open bc
+  assert(!fixedBoundaries); // TODO check for changes required for open bc
 
   // NOTE: code copied from original clover term
   conformable(X.Grid(), Y.Grid());
@@ -305,6 +305,7 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeFie
   GridBase* grid = _Umu.Grid();
   typename Impl::GaugeLinkField Bx(grid), By(grid), Bz(grid), Ex(grid), Ey(grid), Ez(grid);
   CloverField TmpOriginal(grid);
+  CloverField TmpInverse(grid);
 
   // Compute the field strength terms mu>nu
   double t2 = usecond();
@@ -324,24 +325,27 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeFie
   TmpOriginal += Helpers::fillCloverXT(Ex) * csw_t;
   TmpOriginal += Helpers::fillCloverYT(Ey) * csw_t;
   TmpOriginal += Helpers::fillCloverZT(Ez) * csw_t;
-  // Handle mass term based on clover policy
-  CloverHelpers::MassTerm(TmpOriginal, this->diag_mass);
-  
-  // Convert the data layout of the clover term
+
+  // Instantiate the clover term
+  // - In case of the standard clover the mass term is added
+  // - In case of the exponential clover the clover term is exponentiated
   double t4 = usecond();
+  CloverHelpers::InstantiateClover(TmpOriginal, TmpInverse, csw_t, this->diag_mass);
+
+  // Convert the data layout of the clover term
+  double t5 = usecond();
   CompactHelpers::ConvertLayout(TmpOriginal, Diagonal, Triangle);
 
-  // Exponentiate the clover (nothing happens in case of the standard clover)
-  double t5 = usecond();
-  CloverHelpers::Exponentiate_Clover(Diagonal, Triangle, csw_t, this->diag_mass);
-
-  // Possible modify the boundary values
+  // Modify the clover term at the temporal boundaries in case of open boundary conditions
   double t6 = usecond();
-  if(open_boundaries) CompactHelpers::ModifyBoundaries(Diagonal, Triangle, csw_t, cF, this->diag_mass);
+  if(fixedBoundaries) CompactHelpers::ModifyBoundaries(Diagonal, Triangle, csw_t, cF, this->diag_mass);
 
-  // Invert the Clover term (explicit inversion needed for the improvement in case of open boundary conditions)
+  // Invert the Clover term
+  // In case of the exponential clover with (anti-)periodic boundary conditions exp(-Clover) saved
+  // in TmpInverse can be used. In all other cases the clover term has to be explictly inverted.
+  // TODO: For now this inversion is explictly done on the CPU
   double t7 = usecond();
-  CompactHelpers::Invert(Diagonal, Triangle, DiagonalInv, TriangleInv);
+  CloverHelpers::InvertClover(TmpInverse, Diagonal, Triangle, DiagonalInv, TriangleInv, fixedBoundaries);
 
   // Fill the remaining clover fields
   double t8 = usecond();
@@ -362,10 +366,10 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::ImportGauge(const GaugeFie
   std::cout << GridLogDebug << "allocations =                " << (t2 - t1) / 1e6 << std::endl;
   std::cout << GridLogDebug << "field strength =             " << (t3 - t2) / 1e6 << std::endl;
   std::cout << GridLogDebug << "fill clover =                " << (t4 - t3) / 1e6 << std::endl;
-  std::cout << GridLogDebug << "convert =                    " << (t5 - t4) / 1e6 << std::endl;
-  std::cout << GridLogDebug << "exponentiation =             " << (t6 - t5) / 1e6 << std::endl;
-  std::cout << GridLogDebug << "boundaries =                 " << (t7 - t6) / 1e6 << std::endl;
-  std::cout << GridLogDebug << "inversions =                 " << (t8 - t7) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "instantiate clover =         " << (t5 - t4) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "convert layout =             " << (t6 - t5) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "modify boundaries =          " << (t7 - t6) / 1e6 << std::endl;
+  std::cout << GridLogDebug << "invert clover =              " << (t8 - t7) / 1e6 << std::endl;
   std::cout << GridLogDebug << "pick cbs =                   " << (t9 - t8) / 1e6 << std::endl;
   std::cout << GridLogDebug << "total =                      " << (t9 - t0) / 1e6 << std::endl;
 }

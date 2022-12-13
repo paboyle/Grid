@@ -6,7 +6,7 @@
 
 source /nfs/site/home/paboylex/ATS/GridNew/Grid/systems/PVC-nightly/setup.sh
 
-export NT=16
+export NT=8
 
 export I_MPI_OFFLOAD=1
 export I_MPI_OFFLOAD_TOPOLIB=level_zero
@@ -21,7 +21,7 @@ export I_MPI_OFFLOAD_CELL=tile
 export EnableImplicitScaling=0
 export EnableWalkerPartition=0
 export ZE_AFFINITY_MASK=0.0
-mpiexec -launcher ssh -n 1 -host localhost  ./Benchmark_dwf_fp32 --mpi 1.1.1.1 --grid 32.32.32.32 --accelerator-threads $NT --comms-sequential --shm-mpi 1 --cacheblocking 8.8.8.8
+mpiexec -launcher ssh -n 1 -host localhost  ./Benchmark_dwf_fp32 --mpi 1.1.1.1 --grid 32.32.32.32 --accelerator-threads $NT --comms-sequential --shm-mpi 1 --device-mem 32768
 
 export ZE_AFFINITY_MASK=0
 export I_MPI_OFFLOAD_CELL=device
