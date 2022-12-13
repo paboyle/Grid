@@ -205,15 +205,18 @@ public:
   typedef WilsonCloverHelpers<Impl> Helpers;
   typedef CompactWilsonCloverHelpers<Impl> CompactHelpers;
 
-  static void MassTerm(CloverField& Clover, RealD diag_mass) {
+  static void InstantiateClover(CloverField& Clover, CloverField& CloverInv, RealD csw_t, RealD diag_mass) {
     Clover += diag_mass;
   }
 
-  static void Exponentiate_Clover(CloverDiagonalField& Diagonal,
-                          CloverTriangleField& Triangle,
-                          RealD csw_t, RealD diag_mass) {
+  static void InvertClover(CloverField& InvClover,
+                            const CloverDiagonalField& diagonal,
+                            const CloverTriangleField& triangle,
+                            CloverDiagonalField&       diagonalInv,
+                            CloverTriangleField&       triangleInv,
+                            bool fixedBoundaries) {
 
-    // Do nothing
+    CompactHelpers::Invert(diagonal, triangle, diagonalInv, triangleInv);
   }
 
   // TODO: implement Cmunu for better performances with compact layout, but don't do it
@@ -238,9 +241,17 @@ public:
   template <typename vtype> using iImplClover = iScalar<iMatrix<iMatrix<vtype, Impl::Dimension>, Ns>>;
   typedef CompactWilsonCloverHelpers<Impl> CompactHelpers;
 
-  static void MassTerm(CloverField& Clover, RealD diag_mass) {
-    // do nothing!
-    // mass term is multiplied to exp(Clover) below
+  // Can this be avoided?
+  static void IdentityTimesC(const CloverField& in, RealD c) {
+    int DimRep = Impl::Dimension;
+
+    autoView(in_v, in, AcceleratorWrite);
+
+    accelerator_for(ss, in.Grid()->oSites(), 1, {
+      for (int sa=0; sa<Ns; sa++)
+        for (int ca=0; ca<DimRep; ca++)
+          in_v[ss]()(sa,sa)(ca,ca) = c;
+    });
   }
 
   static int getNMAX(RealD prec, RealD R) {
@@ -255,175 +266,62 @@ public:
     return NMAX;
   }
 
-  static int getNMAX(Lattice<iImplCloverDiagonal<vComplexD>> &t, RealD R) {return getNMAX(1e-12,R);}
-  static int getNMAX(Lattice<iImplCloverDiagonal<vComplexF>> &t, RealD R) {return getNMAX(1e-6,R);}
+  static int getNMAX(Lattice<iImplClover<vComplexD>> &t, RealD R) {return getNMAX(1e-12,R);}
+  static int getNMAX(Lattice<iImplClover<vComplexF>> &t, RealD R) {return getNMAX(1e-6,R);}
 
-  static void ExponentiateHermitean6by6(const iMatrix<ComplexD,6> &arg, const RealD& alpha, const std::vector<RealD>& cN, const int Niter, iMatrix<ComplexD,6>& dest){
+  static void InstantiateClover(CloverField& Clover, CloverField& CloverInv, RealD csw_t, RealD diag_mass) {
 
-  	  typedef iMatrix<ComplexD,6> mat;
+    GridBase* grid = Clover.Grid();
+    CloverField ExpClover(grid);
 
-  	  RealD qn[6];
-  	  RealD qnold[6];
-  	  RealD p[5];
-  	  RealD trA2, trA3, trA4;
+    int NMAX = getNMAX(Clover, 3.*csw_t/diag_mass);
 
-  	  mat A2, A3, A4, A5;
-  	  A2 = alpha * alpha * arg * arg;
-  	  A3 = alpha * arg * A2;
-  	  A4 = A2 * A2;
-  	  A5 = A2 * A3;
+    Clover *= (1.0/diag_mass);
 
-  	  trA2 = toReal( trace(A2) );
-  	  trA3 = toReal( trace(A3) );
-  	  trA4 = toReal( trace(A4));
-
-  	  p[0] = toReal( trace(A3 * A3)) / 6.0 - 0.125 * trA4 * trA2 - trA3 * trA3 / 18.0 + trA2 * trA2 * trA2/ 48.0;
-  	  p[1] = toReal( trace(A5)) / 5.0 - trA3 * trA2 / 6.0;
-  	  p[2] = toReal( trace(A4)) / 4.0 - 0.125 * trA2 * trA2;
-  	  p[3] = trA3 / 3.0;
-  	  p[4] = 0.5 * trA2;
-
-  	  qnold[0] = cN[Niter];
-  	  qnold[1] = 0.0;
-  	  qnold[2] = 0.0;
-  	  qnold[3] = 0.0;
-  	  qnold[4] = 0.0;
-  	  qnold[5] = 0.0;
-
-  	  for(int i = Niter-1; i >= 0; i--)
-  	  {
-  	   qn[0] = p[0] * qnold[5] + cN[i];
-  	   qn[1] = p[1] * qnold[5] + qnold[0];
-  	   qn[2] = p[2] * qnold[5] + qnold[1];
-  	   qn[3] = p[3] * qnold[5] + qnold[2];
-  	   qn[4] = p[4] * qnold[5] + qnold[3];
-  	   qn[5] = qnold[4];
-
-  	   qnold[0] = qn[0];
-  	   qnold[1] = qn[1];
-  	   qnold[2] = qn[2];
-  	   qnold[3] = qn[3];
-  	   qnold[4] = qn[4];
-  	   qnold[5] = qn[5];
-  	  }
-
-  	  mat unit(1.0);
-
-  	  dest = (qn[0] * unit + qn[1] * alpha * arg + qn[2] * A2 + qn[3] * A3 + qn[4] * A4 + qn[5] * A5);
-
-    }
-
-  static void Exponentiate_Clover(CloverDiagonalField& Diagonal, CloverTriangleField& Triangle, RealD csw_t, RealD diag_mass) {
-
-    GridBase* grid = Diagonal.Grid();
-    int NMAX = getNMAX(Diagonal, 3.*csw_t/diag_mass);
-
-    //
-    // Implementation completely in Daniel's layout
-    //
-
-    // Taylor expansion with Cayley-Hamilton recursion
-    // underlying Horner scheme as above
+    // Taylor expansion, slow but generic
+    // Horner scheme: a0 + a1 x + a2 x^2 + .. = a0 + x (a1 + x(...))
+    // qN = cN
+    // qn = cn + qn+1 X
     std::vector<RealD> cn(NMAX+1);
     cn[0] = 1.0;
-    for (int i=1; i<=NMAX; i++){
+    for (int i=1; i<=NMAX; i++)
       cn[i] = cn[i-1] / RealD(i);
-    }
 
-      // Taken over from Daniel's implementation
-      conformable(Diagonal, Triangle);
+    ExpClover = Zero();
+    IdentityTimesC(ExpClover, cn[NMAX]);
+    for (int i=NMAX-1; i>=0; i--)
+      ExpClover = ExpClover * Clover + cn[i];
 
-      long lsites = grid->lSites();
-    {
-      typedef typename SiteCloverDiagonal::scalar_object scalar_object_diagonal;
-      typedef typename SiteCloverTriangle::scalar_object scalar_object_triangle;
-      typedef iMatrix<ComplexD,6> mat;
+    // prepare inverse
+    CloverInv = (-1.0)*Clover;
 
-      autoView(diagonal_v,  Diagonal,  CpuRead);
-      autoView(triangle_v,  Triangle,  CpuRead);
-      autoView(diagonalExp_v, Diagonal, CpuWrite);
-      autoView(triangleExp_v, Triangle, CpuWrite);
+    Clover = ExpClover * diag_mass;
 
-      thread_for(site, lsites, { // NOTE: Not on GPU because of (peek/poke)LocalSite
+    ExpClover = Zero();
+    IdentityTimesC(ExpClover, cn[NMAX]);
+    for (int i=NMAX-1; i>=0; i--)
+      ExpClover = ExpClover * CloverInv + cn[i];
 
-    	  mat srcCloverOpUL(0.0); // upper left block
-    	  mat srcCloverOpLR(0.0); // lower right block
-    	  mat ExpCloverOp;
+    CloverInv = ExpClover * (1.0/diag_mass);
 
-        scalar_object_diagonal diagonal_tmp     = Zero();
-        scalar_object_diagonal diagonal_exp_tmp = Zero();
-        scalar_object_triangle triangle_tmp     = Zero();
-        scalar_object_triangle triangle_exp_tmp = Zero();
-
-        Coordinate lcoor;
-        grid->LocalIndexToLocalCoor(site, lcoor);
-
-        peekLocalSite(diagonal_tmp, diagonal_v, lcoor);
-        peekLocalSite(triangle_tmp, triangle_v, lcoor);
-
-        int block;
-        block = 0;
-        for(int i = 0; i < 6; i++){
-        	for(int j = 0; j < 6; j++){
-        		if (i == j){
-        			srcCloverOpUL(i,j) = static_cast<ComplexD>(TensorRemove(diagonal_tmp()(block)(i)));
-        		}
-        		else{
-        			srcCloverOpUL(i,j) = static_cast<ComplexD>(TensorRemove(CompactHelpers::triangle_elem(triangle_tmp, block, i, j)));
-        		}
-        	}
-        }
-        block = 1;
-        for(int i = 0; i < 6; i++){
-          	for(int j = 0; j < 6; j++){
-           		if (i == j){
-           			srcCloverOpLR(i,j) = static_cast<ComplexD>(TensorRemove(diagonal_tmp()(block)(i)));
-           		}
-           		else{
-           			srcCloverOpLR(i,j) = static_cast<ComplexD>(TensorRemove(CompactHelpers::triangle_elem(triangle_tmp, block, i, j)));
-           		}
-            }
-        }
-
-        // exp(Clover)
-
-        ExponentiateHermitean6by6(srcCloverOpUL,1.0/diag_mass,cn,NMAX,ExpCloverOp);
-
-        block = 0;
-        for(int i = 0; i < 6; i++){
-        	for(int j = 0; j < 6; j++){
-            	if (i == j){
-            		diagonal_exp_tmp()(block)(i) = ExpCloverOp(i,j);
-            	}
-            	else if(i < j){
-            		triangle_exp_tmp()(block)(CompactHelpers::triangle_index(i, j)) = ExpCloverOp(i,j);
-            	}
-           	}
-        }
-
-        ExponentiateHermitean6by6(srcCloverOpLR,1.0/diag_mass,cn,NMAX,ExpCloverOp);
-
-        block = 1;
-        for(int i = 0; i < 6; i++){
-        	for(int j = 0; j < 6; j++){
-              	if (i == j){
-              		diagonal_exp_tmp()(block)(i) = ExpCloverOp(i,j);
-               	}
-               	else if(i < j){
-               		triangle_exp_tmp()(block)(CompactHelpers::triangle_index(i, j)) = ExpCloverOp(i,j);
-               	}
-            }
-        }
-
-        pokeLocalSite(diagonal_exp_tmp, diagonalExp_v, lcoor);
-        pokeLocalSite(triangle_exp_tmp, triangleExp_v, lcoor);
-      });
-    }
-
-    Diagonal *= diag_mass;
-    Triangle *= diag_mass;
   }
 
+  static void InvertClover(CloverField& InvClover,
+                            const CloverDiagonalField& diagonal,
+                            const CloverTriangleField& triangle,
+                            CloverDiagonalField&       diagonalInv,
+                            CloverTriangleField&       triangleInv,
+                            bool fixedBoundaries) {
+
+    if (fixedBoundaries)
+    {
+      CompactHelpers::Invert(diagonal, triangle, diagonalInv, triangleInv);
+    }
+    else
+    {
+      CompactHelpers::ConvertLayout(InvClover, diagonalInv, triangleInv);
+    }
+  }
 
   static GaugeLinkField Cmunu(std::vector<GaugeLinkField> &U, GaugeLinkField &lambda, int mu, int nu) {
     assert(0);

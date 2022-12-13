@@ -320,7 +320,7 @@ public:
     typedef decltype(coalescedRead(in0))    sobj;
     typedef decltype(coalescedRead(out0)) hsobj;
 
-    unsigned int Nsimd = vobj::Nsimd();
+    constexpr unsigned int Nsimd = vobj::Nsimd();
     unsigned int mask = Nsimd >> (type + 1);
     int lane = acceleratorSIMTlane(Nsimd);
     int j0 = lane &(~mask); // inner coor zero
