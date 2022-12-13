@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
   // MD.name    = std::string("MinimumNorm2");
   // TrajL = 2
   // 4/2 => 0.6 dH
-  // 3/3 => ?? dH
+  // 3/3 => 0.8 dH .. depth 3, slower
   //MD.MDsteps =  4;
   MD.MDsteps =  3;
   MD.trajL   = 0.5;
@@ -223,12 +223,14 @@ int main(int argc, char **argv) {
   RealD c   = 0.5;
   Real beta         = 2.13;
   //  Real light_mass   = 5.4e-4;
-  Real light_mass   = 7.8e-4;
+  Real light_mass     = 7.8e-4;
+  Real light_mass_dir = 0.01;
   Real strange_mass = 0.0362;
   Real pv_mass      = 1.0;
-  std::vector<Real> hasenbusch({ light_mass, 0.005, 0.0145, 0.045, 0.108, 0.25, 0.51 , pv_mass });
+  std::vector<Real> hasenbusch({ 0.01, 0.045, 0.108, 0.25, 0.51 , pv_mass });
+  //  std::vector<Real> hasenbusch({ light_mass, 0.01, 0.045, 0.108, 0.25, 0.51 , pv_mass });
+  //  std::vector<Real> hasenbusch({ light_mass, 0.005, 0.0145, 0.045, 0.108, 0.25, 0.51 , pv_mass }); // Updated
   //  std::vector<Real> hasenbusch({ light_mass, 0.0145, 0.045, 0.108, 0.25, 0.51 , 0.75 , pv_mass });
-
 
   OneFlavourRationalParams OFRp; // Up/down
   OFRp.lo       = 4.0e-5;
@@ -238,18 +240,24 @@ int main(int argc, char **argv) {
   OFRp.mdtolerance= 1.0e-3;
   //  OFRp.degree   = 20; converges
   //  OFRp.degree   = 16;
-  OFRp.degree   = 12;
+  OFRp.degree   = 18;
   OFRp.precision= 80;
   OFRp.BoundsCheckFreq=0;
   std::vector<RealD> ActionTolByPole({
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
-      1.0e-8,1.0e-8,1.0e-8,1.0e-8
+      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
+      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
+      1.0e-8,1.0e-8
     });
   std::vector<RealD> MDTolByPole({
-      1.0e-6,3.0e-7,1.0e-7,1.0e-7,
+      1.0e-5,5.0e-6,1.0e-6,1.0e-7, // soften convergence more more
+      //      1.0e-6,3.0e-7,1.0e-7,1.0e-7,
+      //      3.0e-6,1.0e-6,1.0e-7,1.0e-7, // soften convergence
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
-      1.0e-8,1.0e-8,1.0e-8,1.0e-8
+      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
+      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
+      1.0e-8,1.0e-8
     });
 
   auto GridPtr   = TheHMC.Resources.GetCartesian();
@@ -540,12 +548,12 @@ int main(int argc, char **argv) {
 			   *Numerators[h],*Denominators[h],
 			   *NumeratorsF[h],*DenominatorsF[h],
 			   *NumeratorsD2[h],*DenominatorsD2[h],
-			   OFRp, 200) );
+			   OFRp, 400) );
       Bdys.push_back( new OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2>(
 			   *Numerators[h],*Denominators[h],
 			   *NumeratorsF[h],*DenominatorsF[h],
 			   *NumeratorsD2[h],*DenominatorsD2[h],
-			   OFRp, 200) );
+			   OFRp, 400) );
 #else
       Bdys.push_back( new OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
       Bdys.push_back( new OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
