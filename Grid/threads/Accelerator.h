@@ -26,8 +26,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#pragma once
 
+#ifndef ACCELERATOR_H
+#define ACCELERATOR_H
+
+#pragma once
 #include <string.h>
 
 #ifdef HAVE_MALLOC_MALLOC_H
@@ -471,7 +474,70 @@ inline void acceleratorCopySynchronise(void) { hipStreamSynchronize(copyStream);
 
 #undef GRID_SIMT
 
+//OpenMP Target Offloading
+#ifdef OMPTARGET
+#define THREAD_LIMIT acceleratorThreads()
 
+#define accelerator
+#define accelerator_inline strong_inline
+#ifdef THREAD_LIMIT
+#define accelerator_for(i,num,nsimd, ... ) \
+	_Pragma("omp target teams distribute parallel for thread_limit(THREAD_LIMIT)") \
+	for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ; 
+#define accelerator_forNB(i,num,nsimd, ... ) \
+	_Pragma("omp target teams distribute parallel for thread_limit(THREAD_LIMIT) nowait") \
+        for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define accelerator_barrier(dummy) _Pragma("omp barrier") 
+#define accelerator_for2d(iter1, num1, iter2, num2, nsimd, ... ) \
+	_Pragma("omp target teams distribute parallel for thread_limit(THREAD_LIMIT) collapse(2)") \
+        for ( uint64_t iter1=0;iter1<num1;iter1++) \
+	for ( uint64_t iter2=0;iter2<num2;iter2++) { __VA_ARGS__ } ;
+#else
+#define accelerator_for(i,num,nsimd, ... ) \
+        _Pragma("omp target teams distribute parallel for") \
+        for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define accelerator_forNB(i,num,nsimd, ... ) \
+        _Pragma("omp target teams distribute parallel for nowait") \
+        for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define accelerator_barrier(dummy) _Pragma("omp barrier")
+#define accelerator_for2d(iter1, num1, iter2, num2, nsimd, ... ) \
+        _Pragma("omp target teams distribute parallel for collapse(2)") \
+        for ( uint64_t iter1=0;iter1<num1;iter1++) \
+        for ( uint64_t iter2=0;iter2<num2;iter2++) { __VA_ARGS__ } ;
+#endif
+
+accelerator_inline int acceleratorSIMTlane(int Nsimd) { return 0; } // CUDA specific
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  {;}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){;}
+inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  { memcpy(to,from,bytes);}
+inline void acceleratorCopySynchronize(void) {;};
+
+inline int  acceleratorIsCommunicable(void *ptr){ return 1; }
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { memset(base,value,bytes);}
+#ifdef OMPTARGET_MANAGED 
+#include <cuda_runtime_api.h>
+inline void *acceleratorAllocShared(size_t bytes)
+{
+  void *ptr=NULL;
+  auto err = cudaMallocManaged((void **)&ptr,bytes);
+  if( err != cudaSuccess ) {
+    ptr = (void *) NULL;
+    printf(" cudaMallocManaged failed for %d %s \n",bytes,cudaGetErrorString(err));
+  }
+  return ptr;
+};
+inline void acceleratorFreeShared(void *ptr){cudaFree(ptr);};
+inline void *acceleratorAllocDevice(size_t bytes){return memalign(GRID_ALLOC_ALIGN,bytes);};
+inline void acceleratorFreeDevice(void *ptr){free(ptr);};
+#else
+inline void *acceleratorAllocShared(size_t bytes){return memalign(GRID_ALLOC_ALIGN,bytes);};
+inline void *acceleratorAllocDevice(size_t bytes){return memalign(GRID_ALLOC_ALIGN,bytes);};
+inline void acceleratorFreeShared(void *ptr){free(ptr);};
+inline void acceleratorFreeDevice(void *ptr){free(ptr);};
+#endif
+
+//OpenMP CPU threads
+#else
 
 #define accelerator 
 #define accelerator_inline strong_inline
@@ -499,6 +565,7 @@ inline void *acceleratorAllocShared(size_t bytes){return memalign(GRID_ALLOC_ALI
 inline void *acceleratorAllocDevice(size_t bytes){return memalign(GRID_ALLOC_ALIGN,bytes);};
 inline void acceleratorFreeShared(void *ptr){free(ptr);};
 inline void acceleratorFreeDevice(void *ptr){free(ptr);};
+#endif
 #endif
 
 #endif // CPU target
@@ -566,3 +633,5 @@ accelerator_inline void acceleratorFence(void)
 }
 
 NAMESPACE_END(Grid);
+#endif
+
