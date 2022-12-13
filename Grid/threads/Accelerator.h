@@ -26,11 +26,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
+
+#ifndef ACCELERATOR_H
+#define ACCELERATOR_H
+
 #pragma once
-
-//#ifndef ACCELERATOR_H
-//#define ACCELERATOR_H
-
 #include <string.h>
 
 #ifdef HAVE_MALLOC_MALLOC_H
@@ -437,22 +437,35 @@ inline void acceleratorMemSet(void *base,int value,size_t bytes) { hipMemset(bas
 
 //OpenMP Target Offloading
 #ifdef OMPTARGET
-
-//uint32_t gpu_threads=acceleratorThreads();
+#define THREAD_LIMIT acceleratorThreads()
 
 #define accelerator
 #define accelerator_inline strong_inline
+#ifdef THREAD_LIMIT
 #define accelerator_for(i,num,nsimd, ... ) \
-	_Pragma("omp target teams distribute parallel for") \
+	_Pragma("omp target teams distribute parallel for thread_limit(THREAD_LIMIT)") \
 	for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ; 
 #define accelerator_forNB(i,num,nsimd, ... ) \
-	_Pragma("omp target teams distribute parallel for nowait") \
+	_Pragma("omp target teams distribute parallel for thread_limit(THREAD_LIMIT) nowait") \
         for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
 #define accelerator_barrier(dummy) _Pragma("omp barrier") 
 #define accelerator_for2d(iter1, num1, iter2, num2, nsimd, ... ) \
-	_Pragma("omp target teams distribute parallel for collapse(2)") \
+	_Pragma("omp target teams distribute parallel for thread_limit(THREAD_LIMIT) collapse(2)") \
         for ( uint64_t iter1=0;iter1<num1;iter1++) \
 	for ( uint64_t iter2=0;iter2<num2;iter2++) { __VA_ARGS__ } ;
+#else
+#define accelerator_for(i,num,nsimd, ... ) \
+        _Pragma("omp target teams distribute parallel for") \
+        for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define accelerator_forNB(i,num,nsimd, ... ) \
+        _Pragma("omp target teams distribute parallel for nowait") \
+        for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define accelerator_barrier(dummy) _Pragma("omp barrier")
+#define accelerator_for2d(iter1, num1, iter2, num2, nsimd, ... ) \
+        _Pragma("omp target teams distribute parallel for collapse(2)") \
+        for ( uint64_t iter1=0;iter1<num1;iter1++) \
+        for ( uint64_t iter2=0;iter2<num2;iter2++) { __VA_ARGS__ } ;
+#endif
 
 accelerator_inline int acceleratorSIMTlane(int Nsimd) { return 0; } // CUDA specific
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  {;}
@@ -577,5 +590,5 @@ accelerator_inline void acceleratorFence(void)
 }
 
 NAMESPACE_END(Grid);
-//#endif
+#endif
 
