@@ -1,5 +1,4 @@
     /*************************************************************************************
-
     grid` physics library, www.github.com/paboyle/Grid 
 
     Source file: ./tests/Test_cshift.cc
@@ -29,7 +28,14 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid.h>
 
 using namespace Grid;
- ;
+
+Gamma::Algebra Gmu [] = {
+  Gamma::Algebra::GammaX,
+  Gamma::Algebra::GammaY,
+  Gamma::Algebra::GammaZ,
+  Gamma::Algebra::GammaT,
+  Gamma::Algebra::Gamma5
+};
 
 int main (int argc, char ** argv)
 {
@@ -49,22 +55,7 @@ int main (int argc, char ** argv)
   GridCartesian         GRID(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian RBGRID(&GRID);
 
-  LatticeComplexD     one(&GRID);
-  LatticeComplexD      zz(&GRID);
-  LatticeComplexD       C(&GRID);
-  LatticeComplexD  Ctilde(&GRID);
-  LatticeComplexD  Cref  (&GRID);
-  LatticeComplexD  Csav  (&GRID);
   LatticeComplexD    coor(&GRID);
-
-  LatticeSpinMatrixD    S(&GRID);
-  LatticeSpinMatrixD    Stilde(&GRID);
-  
-  Coordinate p({1,3,2,3});
-
-  one = ComplexD(1.0,0.0);
-  zz  = ComplexD(0.0,0.0);
-
   ComplexD ci(0.0,1.0);
 
   std::vector<int> seeds({1,2,3,4});
@@ -73,7 +64,6 @@ int main (int argc, char ** argv)
   pRNG.SeedFixedIntegers(seeds);
 
   LatticeGaugeFieldD Umu(&GRID);
-
   SU<Nc>::ColdConfiguration(pRNG,Umu); // Unit gauge
 
   ////////////////////////////////////////////////////
@@ -81,17 +71,78 @@ int main (int argc, char ** argv)
   ////////////////////////////////////////////////////
   {
     LatticeFermionD    src(&GRID); gaussian(pRNG,src);
+    LatticeFermionD    src_p(&GRID);
     LatticeFermionD    tmp(&GRID);
     LatticeFermionD    ref(&GRID);
+    LatticeFermionD    result(&GRID);
     
-    RealD mass=0.01;
+    RealD mass=0.1;
     WilsonFermionD Dw(Umu,GRID,RBGRID,mass);
     
-    Dw.M(src,tmp);
+    Dw.M(src,ref);
+    std::cout << "Norm src "<<norm2(src)<<std::endl;
+    std::cout << "Norm Dw x src "<<norm2(ref)<<std::endl;
+    {
+      FFT theFFT(&GRID);
 
+      ////////////////
+      // operator in Fourier space
+      ////////////////
+      tmp =ref;
+      theFFT.FFT_all_dim(result,tmp,FFT::forward);
+      std::cout<<"FFT[ Dw x src ]  "<< norm2(result)<<std::endl;    
+
+      tmp = src;
+      theFFT.FFT_all_dim(src_p,tmp,FFT::forward);
+      std::cout<<"FFT[ src      ]  "<< norm2(src_p)<<std::endl;
+      
+      /////////////////////////////////////////////////////////////////
+      // work out the predicted FT from Fourier
+      /////////////////////////////////////////////////////////////////
+      auto FGrid = &GRID;
+      LatticeFermionD    Kinetic(FGrid); Kinetic = Zero();
+      LatticeComplexD    kmu(FGrid); 
+      LatticeInteger     scoor(FGrid); 
+      LatticeComplexD    sk (FGrid); sk = Zero();
+      LatticeComplexD    sk2(FGrid); sk2= Zero();
+      LatticeComplexD    W(FGrid); W= Zero();
+      LatticeComplexD    one(FGrid); one =ComplexD(1.0,0.0);
+      ComplexD ci(0.0,1.0);
+    
+      for(int mu=0;mu<Nd;mu++) {
+	
+	RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+
+	LatticeCoordinate(kmu,mu);
+
+	kmu = TwoPiL * kmu;
+      
+	sk2 = sk2 + 2.0*sin(kmu*0.5)*sin(kmu*0.5);
+	sk  = sk  +     sin(kmu)    *sin(kmu); 
+      
+	// -1/2 Dw ->  1/2 gmu (eip - emip) = i sinp gmu
+	Kinetic = Kinetic + sin(kmu)*ci*(Gamma(Gmu[mu])*src_p);
+	
+      }
+    
+      W = mass + sk2; 
+      Kinetic = Kinetic + W * src_p;
+    
+      std::cout<<"Momentum space src         "<< norm2(src_p)<<std::endl;
+      std::cout<<"Momentum space Dw x src    "<< norm2(Kinetic)<<std::endl;
+      std::cout<<"FT[Coordinate space Dw]    "<< norm2(result)<<std::endl;
+    
+      result = result - Kinetic;
+      std::cout<<"diff "<< norm2(result)<<std::endl;
+      
+    }
+
+    std::cout << " =======================================" <<std::endl;
+    std::cout << " Checking FourierFreePropagator x Dw = 1" <<std::endl;
+    std::cout << " =======================================" <<std::endl;
     std::cout << "Dw src = " <<norm2(src)<<std::endl;
     std::cout << "Dw tmp = " <<norm2(tmp)<<std::endl;
-    
+    Dw.M(src,tmp);
     Dw.FreePropagator(tmp,ref,mass);
 
     std::cout << "Dw ref = " <<norm2(ref)<<std::endl;
@@ -122,7 +173,7 @@ int main (int argc, char ** argv)
     ferm()(0)(0) = ComplexD(1.0);
     pokeSite(ferm,src,point);
 
-    RealD mass=0.01;
+    RealD mass=0.1;
     WilsonFermionD Dw(Umu,GRID,RBGRID,mass);
 
     // Momentum space prop
