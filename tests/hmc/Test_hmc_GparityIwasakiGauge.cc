@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
   typedef ConjugateHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
 
   typedef GparityWilsonImplR FermionImplPolicy;
-  typedef GparityDomainWallFermionR FermionAction;
+  typedef GparityDomainWallFermionD FermionAction;
   typedef typename FermionAction::FermionField FermionField;
 
 

@@ -77,8 +77,8 @@ int main(int argc, char** argv)
   LatticeGaugeField Umu(UGrid);
   SU<Nc>::HotConfiguration(RNG4, Umu);
 
-  DomainWallEOFAFermionR Lop(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf,  mf, mpv,  0.0, -1, M5);
-  DomainWallEOFAFermionR Rop(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mpv, mf, mpv, -1.0,  1, M5);
+  DomainWallEOFAFermionD Lop(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf,  mf, mpv,  0.0, -1, M5);
+  DomainWallEOFAFermionD Rop(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mpv, mf, mpv, -1.0,  1, M5);
 
   // Construct the action and test the heatbath (zero initial guess)
   {

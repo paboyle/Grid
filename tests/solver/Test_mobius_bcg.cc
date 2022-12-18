@@ -33,9 +33,9 @@ using namespace Grid;
 
 int main (int argc, char ** argv)
 {
-  typedef typename MobiusFermionR::FermionField FermionField; 
-  typedef typename MobiusFermionR::ComplexField ComplexField; 
-  typename MobiusFermionR::ImplParams params; 
+  typedef typename MobiusFermionD::FermionField FermionField; 
+  typedef typename MobiusFermionD::ComplexField ComplexField; 
+  typename MobiusFermionD::ImplParams params; 
 
   const int Ls=12;
 
@@ -158,15 +158,15 @@ int main (int argc, char ** argv)
   RealD mobius_factor=32./12.;
   RealD mobius_b=0.5*(mobius_factor+1.);
   RealD mobius_c=0.5*(mobius_factor-1.);
-  MobiusFermionR Dchk(Umu,*FGrid,*FrbGrid,*UGrid,*rbGrid,mass,M5,mobius_b,mobius_c,params);
-  MobiusFermionR Ddwf(s_Umu,*SFGrid,*SFrbGrid,*SGrid,*SrbGrid,mass,M5,mobius_b,mobius_c,params);
+  MobiusFermionD Dchk(Umu,*FGrid,*FrbGrid,*UGrid,*rbGrid,mass,M5,mobius_b,mobius_c,params);
+  MobiusFermionD Ddwf(s_Umu,*SFGrid,*SFrbGrid,*SGrid,*SrbGrid,mass,M5,mobius_b,mobius_c,params);
 
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   std::cout << GridLogMessage << " Calling DWF CG "<<std::endl;
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
 
-  MdagMLinearOperator<MobiusFermionR,FermionField> HermOp(Ddwf);
-  MdagMLinearOperator<MobiusFermionR,FermionField> HermOpCk(Dchk);
+  MdagMLinearOperator<MobiusFermionD,FermionField> HermOp(Ddwf);
+  MdagMLinearOperator<MobiusFermionD,FermionField> HermOpCk(Dchk);
   ConjugateGradient<FermionField> CG((stp),100000);
   s_res = Zero();
 

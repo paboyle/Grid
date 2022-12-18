@@ -47,9 +47,9 @@ struct scal {
 
 int main (int argc, char ** argv)
 {
-  typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
-  typedef typename ImprovedStaggeredFermionR::ComplexField ComplexField; 
-  typename ImprovedStaggeredFermionR::ImplParams params; 
+  typedef typename ImprovedStaggeredFermionD::FermionField FermionField; 
+  typedef typename ImprovedStaggeredFermionD::ComplexField ComplexField; 
+  typename ImprovedStaggeredFermionD::ImplParams params; 
 
   Grid_init(&argc,&argv);
 
@@ -76,9 +76,9 @@ int main (int argc, char ** argv)
   RealD c1=9.0/8.0;
   RealD c2=-1.0/24.0;
   RealD u0=1.0;
-  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0);
+  ImprovedStaggeredFermionD Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0);
 
-  MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> HermOp(Ds);
+  MdagMLinearOperator<ImprovedStaggeredFermionD,FermionField> HermOp(Ds);
   ConjugateGradient<FermionField> CG(1.0e-6,10000);
   CG(HermOp,src,result);
 

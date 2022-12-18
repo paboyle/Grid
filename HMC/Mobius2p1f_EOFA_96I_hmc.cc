@@ -224,51 +224,20 @@ int main(int argc, char **argv) {
   Real beta         = 2.13;
   //  Real light_mass   = 5.4e-4;
   Real light_mass     = 7.8e-4;
-  Real light_mass_dir = 0.01;
   Real strange_mass = 0.0362;
   Real pv_mass      = 1.0;
-  std::vector<Real> hasenbusch({ 0.01, 0.045, 0.108, 0.25, 0.51 , pv_mass });
+  //  std::vector<Real> hasenbusch({ 0.01, 0.045, 0.108, 0.25, 0.51 , pv_mass });
   //  std::vector<Real> hasenbusch({ light_mass, 0.01, 0.045, 0.108, 0.25, 0.51 , pv_mass });
-  //  std::vector<Real> hasenbusch({ light_mass, 0.005, 0.0145, 0.045, 0.108, 0.25, 0.51 , pv_mass }); // Updated
+  std::vector<Real> hasenbusch({ light_mass, 0.005, 0.0145, 0.045, 0.108, 0.25, 0.51 , pv_mass }); // Updated
   //  std::vector<Real> hasenbusch({ light_mass, 0.0145, 0.045, 0.108, 0.25, 0.51 , 0.75 , pv_mass });
-
-  OneFlavourRationalParams OFRp; // Up/down
-  OFRp.lo       = 4.0e-5;
-  OFRp.hi       = 90.0;
-  OFRp.MaxIter  = 60000;
-  OFRp.tolerance= 1.0e-5;
-  OFRp.mdtolerance= 1.0e-3;
-  //  OFRp.degree   = 20; converges
-  //  OFRp.degree   = 16;
-  OFRp.degree   = 18;
-  OFRp.precision= 80;
-  OFRp.BoundsCheckFreq=0;
-  std::vector<RealD> ActionTolByPole({
-      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
-      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
-      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
-      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
-      1.0e-8,1.0e-8
-    });
-  std::vector<RealD> MDTolByPole({
-      1.0e-5,5.0e-6,1.0e-6,1.0e-7, // soften convergence more more
-      //      1.0e-6,3.0e-7,1.0e-7,1.0e-7,
-      //      3.0e-6,1.0e-6,1.0e-7,1.0e-7, // soften convergence
-      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
-      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
-      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
-      1.0e-8,1.0e-8
-    });
 
   auto GridPtr   = TheHMC.Resources.GetCartesian();
   auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
 
   typedef SchurDiagMooeeOperator<FermionActionF,FermionFieldF> LinearOperatorF;
   typedef SchurDiagMooeeOperator<FermionAction ,FermionField > LinearOperatorD;
-  typedef SchurDiagMooeeOperator<FermionActionD2,FermionFieldD2 > LinearOperatorD2;
   typedef SchurDiagMooeeOperator<FermionEOFAActionF,FermionFieldF> LinearOperatorEOFAF;
   typedef SchurDiagMooeeOperator<FermionEOFAAction ,FermionField > LinearOperatorEOFAD;
-  typedef SchurDiagMooeeOperator<FermionEOFAActionD2,FermionFieldD2 > LinearOperatorEOFAD2;
   typedef MixedPrecisionConjugateGradientOperatorFunction<MobiusFermionD,MobiusFermionF,LinearOperatorD,LinearOperatorF> MxPCG;
   typedef MixedPrecisionConjugateGradientOperatorFunction<MobiusEOFAFermionD,MobiusEOFAFermionF,LinearOperatorEOFAD,LinearOperatorEOFAF> MxPCG_EOFA;
 
@@ -285,24 +254,6 @@ int main(int argc, char **argv) {
   for(int d=0;d<Nd;d++) CommDim[d]= (mpi[d]/shm[d])>1 ? 1 : 0;
 
   Coordinate NonDirichlet(Nd+1,0);
-  Coordinate Dirichlet(Nd+1,0);
-  Dirichlet[1] = CommDim[0]*latt4[0]/mpi[0] * shm[0];
-  Dirichlet[2] = CommDim[1]*latt4[1]/mpi[1] * shm[1];
-  Dirichlet[3] = CommDim[2]*latt4[2]/mpi[2] * shm[2];
-  Dirichlet[4] = CommDim[3]*latt4[3]/mpi[3] * shm[3];
-  //Dirichlet[1] = 0;
-  //Dirichlet[2] = 0;
-  //Dirichlet[3] = 0;
-
-  // 
-  Coordinate Block4(Nd);
-  Block4[0] = Dirichlet[1];
-  Block4[1] = Dirichlet[2];
-  Block4[2] = Dirichlet[3];
-  Block4[3] = Dirichlet[4];
-
-  int Width=4;
-  TheHMC.Resources.SetMomentumFilter(new DDHMCFilter<WilsonImplD::Field>(Block4,Width));
 
   //////////////////////////
   // Fermion Grids
@@ -331,15 +282,9 @@ int main(int argc, char **argv) {
   // These lines are unecessary if BC are all periodic
   std::vector<Complex> boundary = {1,1,1,-1};
   FermionAction::ImplParams Params(boundary);
-  FermionAction::ImplParams ParamsDir(boundary);
   FermionActionF::ImplParams ParamsF(boundary);
-  FermionActionF::ImplParams ParamsDirF(boundary);
   Params.dirichlet=NonDirichlet;
   ParamsF.dirichlet=NonDirichlet;
-  ParamsDir.dirichlet=Dirichlet;
-  ParamsDirF.dirichlet=Dirichlet;
-  ParamsDir.partialDirichlet=1;
-  ParamsDirF.partialDirichlet=1;
 
   //  double StoppingCondition = 1e-14;
   //  double MDStoppingCondition = 1e-9;
@@ -437,11 +382,11 @@ int main(int argc, char **argv) {
   int n_hasenbusch = hasenbusch.size();
   light_den.push_back(light_mass);  dirichlet_den.push_back(0);
   for(int h=0;h<n_hasenbusch;h++){
-    light_den.push_back(hasenbusch[h]); dirichlet_den.push_back(1);
+    light_den.push_back(hasenbusch[h]); dirichlet_den.push_back(0);
   }
 
   for(int h=0;h<n_hasenbusch;h++){
-    light_num.push_back(hasenbusch[h]); dirichlet_num.push_back(1);
+    light_num.push_back(hasenbusch[h]); dirichlet_num.push_back(0);
   }
   light_num.push_back(pv_mass);  dirichlet_num.push_back(0);
 
@@ -481,17 +426,11 @@ int main(int argc, char **argv) {
     FermionActionF::ImplParams ParamsDenF(boundary);
     FermionActionF::ImplParams ParamsNumF(boundary);
     
-    if ( dirichlet_num[h]==1) ParamsNum.dirichlet = Dirichlet;
-    else                      ParamsNum.dirichlet = NonDirichlet;
+    ParamsNum.dirichlet = NonDirichlet;
+    ParamsDen.dirichlet = NonDirichlet;
 
-    if ( dirichlet_den[h]==1) ParamsDen.dirichlet = Dirichlet;
-    else                      ParamsDen.dirichlet = NonDirichlet;
-
-    if ( dirichlet_num[h]==1) ParamsNum.partialDirichlet = 1;
-    else                      ParamsNum.partialDirichlet = 0;
-
-    if ( dirichlet_den[h]==1) ParamsDen.partialDirichlet = 1;
-    else                      ParamsDen.partialDirichlet = 0;
+    ParamsNum.partialDirichlet = 0;
+    ParamsDen.partialDirichlet = 0;
     
     Numerators.push_back  (new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, ParamsNum));
     Denominators.push_back(new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, ParamsDen));
@@ -527,50 +466,12 @@ int main(int argc, char **argv) {
 				   *LinOpF[h], *LinOpD[h]) );
 
     
-    if(h!=0) {
-      //      Quotients.push_back (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],MDCG,CG));
-      Quotients.push_back (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],*MPCG[h],*ActionMPCG[h],CG));
-    } else {
-#ifdef MIXED_PRECISION
-      // Use the D2 data types and make them use same grid as single
-      FermionActionD2::ImplParams ParamsDenD2(boundary);
-      FermionActionD2::ImplParams ParamsNumD2(boundary);
-
-      ParamsDenD2.dirichlet = ParamsDen.dirichlet;
-      ParamsDenD2.partialDirichlet = ParamsDen.partialDirichlet;
-      DenominatorsD2.push_back(new FermionActionD2(UD2,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[h],M5,b,c, ParamsDenD2));
-
-      ParamsNumD2.dirichlet = ParamsNum.dirichlet;
-      ParamsNumD2.partialDirichlet = ParamsNum.partialDirichlet;
-      NumeratorsD2.push_back  (new FermionActionD2(UD2,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_num[h],M5,b,c, ParamsNumD2));
-    
-      Bdys.push_back( new OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2>(
-			   *Numerators[h],*Denominators[h],
-			   *NumeratorsF[h],*DenominatorsF[h],
-			   *NumeratorsD2[h],*DenominatorsD2[h],
-			   OFRp, 400) );
-      Bdys.push_back( new OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2>(
-			   *Numerators[h],*Denominators[h],
-			   *NumeratorsF[h],*DenominatorsF[h],
-			   *NumeratorsD2[h],*DenominatorsD2[h],
-			   OFRp, 400) );
-#else
-      Bdys.push_back( new OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
-      Bdys.push_back( new OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
-#endif
-    }
-  }
-  for(int h=0;h<Bdys.size();h++){
-    Bdys[h]->SetTolerances(ActionTolByPole,MDTolByPole);
+    Quotients.push_back (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],*MPCG[h],*ActionMPCG[h],CG));
   }
   int nquo=Quotients.size();
-  Level1.push_back(Bdys[0]);
-  Level1.push_back(Bdys[1]);
-  Level2.push_back(Quotients[0]);
-  for(int h=1;h<nquo-1;h++){
+  for(int h=0;h<nquo;h++){
     Level2.push_back(Quotients[h]);
   }
-  Level2.push_back(Quotients[nquo-1]);
 
   /////////////////////////////////////////////////////////////
   // Gauge action

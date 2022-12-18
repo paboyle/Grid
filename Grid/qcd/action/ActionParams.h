@@ -34,7 +34,7 @@ directory
 
 NAMESPACE_BEGIN(Grid);
 
-// These can move into a params header and be given MacroMagic serialisation
+
 struct GparityWilsonImplParams {
   Coordinate twists;
                      //mu=Nd-1 is assumed to be the time direction and a twist value of 1 indicates antiperiodic BCs
