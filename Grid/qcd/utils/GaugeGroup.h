@@ -32,15 +32,17 @@ directory
 #ifndef QCD_UTIL_SUN_H
 #define QCD_UTIL_SUN_H
 
+// Important detail: nvcc requires all template parameters to have names.
+// This is the only reason why the second template parameter has a name.
 #define ONLY_IF_SU                                                       \
   typename dummy_name = group_name,                                      \
-           typename = std::enable_if_t <                                 \
+           typename named_dummy = std::enable_if_t <                                 \
                           std::is_same<dummy_name, group_name>::value && \
                       is_su<dummy_name>::value >
 
 #define ONLY_IF_Sp                                                       \
   typename dummy_name = group_name,                                      \
-           typename = std::enable_if_t <                                 \
+           typename named_dummy = std::enable_if_t <                                 \
                           std::is_same<dummy_name, group_name>::value && \
                       is_sp<dummy_name>::value >
 
