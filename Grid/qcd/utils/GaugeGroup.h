@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./lib/qcd/utils/SUn.h
+Source file: ./lib/qcd/utils/GaugeGroup.h
 
 Copyright (C) 2015
 
@@ -145,8 +145,8 @@ class GaugeGroup {
   typedef Lattice<vSU2MatrixF> LatticeSU2MatrixF;
   typedef Lattice<vSU2MatrixD> LatticeSU2MatrixD;
 
-#include "Grid/qcd/utils/SUn.h"
-#include "Grid/qcd/utils/Sp2n.h"
+#include "Grid/qcd/utils/SUn.impl"
+#include "Grid/qcd/utils/Sp2n.impl"
 
  public:
   template <class cplx>

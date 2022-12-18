@@ -5,6 +5,9 @@
 // class GaugeGroup {
 //
 // around it.
+//
+// Please note that the unconventional file extension makes sure that it
+// doesn't get found by the scripts/filelist during bootstrapping.
 
 private:
 static int su2subgroups(GroupName::SU) { return (ncolour * (ncolour - 1)) / 2; }
