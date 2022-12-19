@@ -1,3 +1,13 @@
+// This file is #included into the body of the class template definition of
+// GaugeGroup. So, image there to be
+//
+// template <int ncolour, class group_name>
+// class GaugeGroup {
+//
+// around it.
+//
+// Please note that the unconventional file extension makes sure that it
+// doesn't get found by the scripts/filelist during bootstrapping.
 
 private:
 static int su2subgroups(GroupName::Sp) { return (ncolour/2 * (ncolour/2 - 1)) / 2; }

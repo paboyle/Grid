@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./lib/qcd/utils/SUn.h
+Source file: ./lib/qcd/utils/GaugeGroup.h
 
 Copyright (C) 2015
 
@@ -32,15 +32,17 @@ directory
 #ifndef QCD_UTIL_SUN_H
 #define QCD_UTIL_SUN_H
 
+// Important detail: nvcc requires all template parameters to have names.
+// This is the only reason why the second template parameter has a name.
 #define ONLY_IF_SU                                                       \
   typename dummy_name = group_name,                                      \
-           typename = std::enable_if_t <                                 \
+           typename named_dummy = std::enable_if_t <                                 \
                           std::is_same<dummy_name, group_name>::value && \
                       is_su<dummy_name>::value >
 
 #define ONLY_IF_Sp                                                       \
   typename dummy_name = group_name,                                      \
-           typename = std::enable_if_t <                                 \
+           typename named_dummy = std::enable_if_t <                                 \
                           std::is_same<dummy_name, group_name>::value && \
                       is_sp<dummy_name>::value >
 
@@ -143,8 +145,8 @@ class GaugeGroup {
   typedef Lattice<vSU2MatrixF> LatticeSU2MatrixF;
   typedef Lattice<vSU2MatrixD> LatticeSU2MatrixD;
 
-#include "Grid/qcd/utils/SUn.h"
-#include "Grid/qcd/utils/Sp2n.h"
+#include "Grid/qcd/utils/SUn.impl"
+#include "Grid/qcd/utils/Sp2n.impl"
 
  public:
   template <class cplx>
