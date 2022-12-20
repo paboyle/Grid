@@ -85,7 +85,8 @@ public:
     T = Zero();
     autoView(T_v,T,AcceleratorWrite);
     autoView(F_v,F,AcceleratorRead);
-    accelerator_for(i, T.Grid()->oSites(),CloverField::vector_type::Nsimd(),
+    int osites=T.Grid()->oSites();
+    accelerator_for(i, osites,CloverField::vector_type::Nsimd(),
     {
       coalescedWrite(T_v[i]()(0, 1), coalescedRead(timesMinusI(F_v[i]()())));
       coalescedWrite(T_v[i]()(1, 0), coalescedRead(timesMinusI(F_v[i]()())));
@@ -103,7 +104,8 @@ public:
     
     autoView(T_v, T,AcceleratorWrite);
     autoView(F_v, F,AcceleratorRead);
-    accelerator_for(i, T.Grid()->oSites(),CloverField::vector_type::Nsimd(),
+    int osites=T.Grid()->oSites();
+    accelerator_for(i, osites,CloverField::vector_type::Nsimd(),
     {
       coalescedWrite(T_v[i]()(0, 1), coalescedRead(-F_v[i]()()));
       coalescedWrite(T_v[i]()(1, 0), coalescedRead(F_v[i]()()));
@@ -121,7 +123,8 @@ public:
 
     autoView(T_v,T,AcceleratorWrite);
     autoView(F_v,F,AcceleratorRead);
-    accelerator_for(i, T.Grid()->oSites(),CloverField::vector_type::Nsimd(),
+    int osites=T.Grid()->oSites();
+    accelerator_for(i, osites,CloverField::vector_type::Nsimd(),
     {
       coalescedWrite(T_v[i]()(0, 0), coalescedRead(timesMinusI(F_v[i]()())));
       coalescedWrite(T_v[i]()(1, 1), coalescedRead(timesI(F_v[i]()())));
@@ -139,7 +142,8 @@ public:
 
     autoView( T_v , T, AcceleratorWrite);
     autoView( F_v , F, AcceleratorRead);
-    accelerator_for(i, T.Grid()->oSites(),CloverField::vector_type::Nsimd(),
+    int osites=T.Grid()->oSites();
+    accelerator_for(i, osites,CloverField::vector_type::Nsimd(),
     {
       coalescedWrite(T_v[i]()(0, 1), coalescedRead(timesI(F_v[i]()())));
       coalescedWrite(T_v[i]()(1, 0), coalescedRead(timesI(F_v[i]()())));
@@ -157,7 +161,8 @@ public:
     
     autoView( T_v ,T,AcceleratorWrite);
     autoView( F_v ,F,AcceleratorRead);
-    accelerator_for(i, T.Grid()->oSites(),CloverField::vector_type::Nsimd(),
+    int osites=T.Grid()->oSites();
+    accelerator_for(i, osites,CloverField::vector_type::Nsimd(),
     {
       coalescedWrite(T_v[i]()(0, 1), coalescedRead(-(F_v[i]()())));
       coalescedWrite(T_v[i]()(1, 0), coalescedRead((F_v[i]()())));
@@ -176,7 +181,8 @@ public:
 
     autoView( T_v , T,AcceleratorWrite);
     autoView( F_v , F,AcceleratorRead);
-    accelerator_for(i, T.Grid()->oSites(),CloverField::vector_type::Nsimd(),
+    int osites=T.Grid()->oSites();
+    accelerator_for(i, osites,CloverField::vector_type::Nsimd(),
     {
       coalescedWrite(T_v[i]()(0, 0), coalescedRead(timesI(F_v[i]()())));
       coalescedWrite(T_v[i]()(1, 1), coalescedRead(timesMinusI(F_v[i]()())));
@@ -200,7 +206,8 @@ public:
     autoView(phi_v, phi, AcceleratorRead);
     autoView(C_v,   C,   AcceleratorRead);
     typedef decltype(coalescedRead(out_v[0])) calcSpinor;
-    accelerator_for(sss,out.Grid()->oSites(),Nsimd,{
+    int osites=out.Grid()->oSites();
+    accelerator_for(sss,osites,Nsimd,{
       calcSpinor tmp;
       multClover(tmp,C_v[sss],phi_v(sss));
       coalescedWrite(out_v[sss],tmp);
@@ -610,7 +617,8 @@ public:
     autoView(triangle_v, triangle, AcceleratorWrite);
 
     // NOTE: this function cannot be 'private' since nvcc forbids this for kernels
-    accelerator_for(ss, full.Grid()->oSites(), 1, {
+    int osites=full.Grid()->oSites();
+    accelerator_for(ss, osites, 1, {
       for(int s_row = 0; s_row < Ns; s_row++) {
         for(int s_col = 0; s_col < Ns; s_col++) {
           if(abs(s_row - s_col) > 1 || s_row + s_col == 3) continue;
@@ -650,7 +658,8 @@ public:
     autoView(full_v,     full,     AcceleratorWrite);
 
     // NOTE: this function cannot be 'private' since nvcc forbids this for kernels
-    accelerator_for(ss, full.Grid()->oSites(), 1, {
+    int osites=full.Grid()->oSites();
+    accelerator_for(ss, osites, 1, {
       for(int s_row = 0; s_row < Ns; s_row++) {
         for(int s_col = 0; s_col < Ns; s_col++) {
           if(abs(s_row - s_col) > 1 || s_row + s_col == 3) continue;

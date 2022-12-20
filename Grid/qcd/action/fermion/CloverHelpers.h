@@ -120,8 +120,8 @@ public:
     int DimRep = Impl::Dimension;
 
     autoView(in_v, in, AcceleratorWrite);
-
-    accelerator_for(ss, in.Grid()->oSites(), 1, {
+    int osites=in.Grid()->oSites();
+    accelerator_for(ss, osites, 1, {
       for (int sa=0; sa<Ns; sa++)
         for (int ca=0; ca<DimRep; ca++)
           in_v[ss]()(sa,sa)(ca,ca) = c;
@@ -245,8 +245,8 @@ public:
     int DimRep = Impl::Dimension;
 
     autoView(in_v, in, AcceleratorWrite);
-
-    accelerator_for(ss, in.Grid()->oSites(), 1, {
+    int osites=in.Grid()->oSites();
+    accelerator_for(ss, osites, 1, {
       for (int sa=0; sa<Ns; sa++)
         for (int ca=0; ca<DimRep; ca++)
           in_v[ss]()(sa,sa)(ca,ca) = c;
