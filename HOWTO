@@ -1,5 +1,5 @@
 1. on Cori GPU, load necessary modules
-sh ./load_cgpu_modules.sh 
+source ./load_cgpu_modules.sh 
 
 2. run bootstrap scrip
 ./bootstrap.sh
