@@ -1,0 +1,11 @@
+1. Load necessary modules
+sh ./load_cgpu_modules.sh 
+
+2. run bootstrap scrip
+./bootstrap.sh
+
+3. run configure script
+sh config-command
+
+4. compile 
+make -j8
