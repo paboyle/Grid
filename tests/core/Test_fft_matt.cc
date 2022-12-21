@@ -206,6 +206,65 @@ int main (int argc, char ** argv)
     DumpSliceNorm("Slice Norm Solution ",result,Nd-1);
   }
 
+  ////////////////////////////////////////////////////
+  //Gauge invariance test
+  ////////////////////////////////////////////////////
+  {
+    std::cout<<"****************************************"<<std::endl;
+    std::cout << "Gauge invariance test \n";
+    std::cout<<"****************************************"<<std::endl;
+    LatticeGaugeField     U_GT(&GRID); // Gauge transformed field
+    LatticeColourMatrix   g(&GRID);    // local Gauge xform matrix
+    U_GT = Umu;
+    // Make a random xform to teh gauge field
+    SU<Nc>::RandomGaugeTransform(pRNG,U_GT,g); // Unit gauge
+
+    LatticeFermionD    src(&GRID);
+    LatticeFermionD    tmp(&GRID);
+    LatticeFermionD    ref(&GRID);
+    LatticeFermionD    diff(&GRID);
+
+    // could loop over colors
+    src=Zero();
+    Coordinate point(4,0); // 0,0,0,0
+    SpinColourVectorD ferm;
+    ferm=Zero();
+    ferm()(0)(0) = ComplexD(1.0);
+    pokeSite(ferm,src,point);
+
+    RealD mass=0.1;
+    WilsonFermionD Dw(U_GT,GRID,RBGRID,mass);
+
+    // Momentum space prop
+    std::cout << " Solving by FFT and Feynman rules" <<std::endl;
+    Dw.FreePropagator(src,ref,mass) ;
+
+    Gamma G5(Gamma::Algebra::Gamma5);
+
+    LatticeFermionD    result(&GRID); 
+    const int sdir=0;
+    
+    ////////////////////////////////////////////////////////////////////////
+    // Conjugate gradient on normal equations system
+    ////////////////////////////////////////////////////////////////////////
+    std::cout << " Solving by Conjugate Gradient (CGNE)" <<std::endl;
+    Dw.Mdag(src,tmp);
+    src=tmp;
+    MdagMLinearOperator<WilsonFermionD,LatticeFermionD> HermOp(Dw);
+    ConjugateGradient<LatticeFermionD> CG(1.0e-10,10000);
+    CG(HermOp,src,result);
+    
+    ////////////////////////////////////////////////////////////////////////
+    std::cout << " Taking difference" <<std::endl;
+    std::cout << "Dw result "<<norm2(result)<<std::endl;
+    std::cout << "Dw ref     "<<norm2(ref)<<std::endl;
+    
+    diff = ref - result;
+    std::cout << "result - ref     "<<norm2(diff)<<std::endl;
+
+    DumpSliceNorm("Slice Norm Solution ",result,Nd-1);
+  }
+  
   
   Grid_finalize();
 }
