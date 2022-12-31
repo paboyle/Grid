@@ -31,6 +31,7 @@
 
 #include <Grid/qcd/action/fermion/WilsonCloverTypes.h>
 #include <Grid/qcd/action/fermion/WilsonCloverHelpers.h>
+#include <Grid/qcd/action/fermion/CloverHelpers.h>
 
 NAMESPACE_BEGIN(Grid);
 
@@ -85,7 +86,7 @@ NAMESPACE_BEGIN(Grid);
 //           + (2 * 1 + 4 * 1/2) triangle parts = 4 triangle parts =  60 complex words per site
 //                                                                 =  84 complex words per site
 
-template<class Impl>
+template<class Impl, class CloverHelpers>
 class CompactWilsonCloverFermion : public WilsonFermion<Impl>,
                                    public WilsonCloverHelpers<Impl>,
                                    public CompactWilsonCloverHelpers<Impl> {
@@ -224,7 +225,7 @@ public:
   RealD csw_t;
   RealD cF;
 
-  bool open_boundaries;
+  bool fixedBoundaries;
 
   CloverDiagonalField Diagonal,    DiagonalEven,    DiagonalOdd;
   CloverDiagonalField DiagonalInv, DiagonalInvEven, DiagonalInvOdd;

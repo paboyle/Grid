@@ -27,6 +27,7 @@
     /*  END LEGAL */
 extern "C" {
 #include <openssl/sha.h>
+#include <openssl/evp.h>
 }
 #ifdef USE_IPP
 #include "ipp.h"
@@ -70,10 +71,8 @@ public:
   static inline std::vector<unsigned char> sha256(const void *data,size_t bytes)
   {
     std::vector<unsigned char> hash(SHA256_DIGEST_LENGTH);
-    SHA256_CTX sha256;
-    SHA256_Init  (&sha256);
-    SHA256_Update(&sha256, data,bytes);
-    SHA256_Final (&hash[0], &sha256);
+    auto digest = EVP_get_digestbyname("SHA256");
+    EVP_Digest(data, bytes, &hash[0], NULL, digest, NULL);
     return hash;
   }
   static inline std::vector<int> sha256_seeds(const std::string &s)

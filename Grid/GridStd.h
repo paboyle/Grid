@@ -16,6 +16,7 @@
 #include <functional>
 #include <stdio.h>
 #include <stdlib.h>
+#include <strings.h>
 #include <stdio.h>
 #include <signal.h>
 #include <ctime>

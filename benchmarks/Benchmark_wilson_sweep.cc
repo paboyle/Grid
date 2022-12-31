@@ -44,6 +44,13 @@ void bench_wilson (
 		   double const     volume,
 		   int const           dag );
 
+void bench_wilson_eo (
+       LatticeFermion &    src,
+       LatticeFermion & result,
+       WilsonFermionR &     Dw,
+       double const     volume,
+       int const           dag );
+
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
@@ -110,8 +117,8 @@ int main (int argc, char ** argv)
 	  bench_wilson(src,result,Dw,volume,DaggerYes);
 	  std::cout << "\t";
     // EO
-	  bench_wilson(src,result,Dw,volume,DaggerNo);
-	  bench_wilson(src,result,Dw,volume,DaggerYes);
+    bench_wilson_eo(src_o,result_e,Dw,volume,DaggerNo);
+    bench_wilson_eo(src_o,result_e,Dw,volume,DaggerYes);
 	  std::cout << std::endl;
 	}
     }

@@ -138,7 +138,8 @@ public:
         stream << std::setw(log.topWidth);
       }
       stream << log.topName << log.background()<< " : ";
-      stream << log.colour() <<  std::left;
+      //      stream << log.colour() <<  std::left;
+      stream <<  std::left;
       if (log.chanWidth > 0)
       {
         stream << std::setw(log.chanWidth);
@@ -153,9 +154,9 @@ public:
 	stream << log.evidence()
 	       << now	       << log.background() << " : " ;
       }
-      stream << log.colour();
+      //      stream << log.colour();
+      stream <<  std::right;
       stream.flags(f);
-
       return stream;
     } else { 
       return devnull;
@@ -180,8 +181,12 @@ extern GridLogger GridLogWarning;
 extern GridLogger GridLogMessage;
 extern GridLogger GridLogDebug  ;
 extern GridLogger GridLogPerformance;
+extern GridLogger GridLogDslash;
 extern GridLogger GridLogIterative  ;
 extern GridLogger GridLogIntegrator  ;
+extern GridLogger GridLogHMC;
+extern GridLogger GridLogMemory;
+extern GridLogger GridLogTracing;
 extern Colours    GridLogColours;
 
 std::string demangle(const char* name) ;

@@ -392,9 +392,9 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
     acceleratorCopyDeviceToDeviceAsynch(xmit,shm,bytes);
   }
 
-  if ( CommunicatorPolicy == CommunicatorPolicySequential ) {
-    this->StencilSendToRecvFromComplete(list,dir);
-  }
+  //  if ( CommunicatorPolicy == CommunicatorPolicySequential ) {
+  //    this->StencilSendToRecvFromComplete(list,dir);
+  //  }
 
   return off_node_bytes;
 }

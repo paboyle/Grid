@@ -6,8 +6,8 @@
 
     Copyright (C) 2015
 
-
     Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+    Author: Jamie Hudspith <renwick.james.hudspth@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -182,8 +182,8 @@ class GaugeStatistics
 public:
   void operator()(Lattice<vLorentzColourMatrixD> & data,FieldMetaData &header)
   {
-    header.link_trace=WilsonLoops<Impl>::linkTrace(data);
-    header.plaquette =WilsonLoops<Impl>::avgPlaquette(data);
+    header.link_trace = WilsonLoops<Impl>::linkTrace(data);
+    header.plaquette  = WilsonLoops<Impl>::avgPlaquette(data);
   }
 };
 typedef GaugeStatistics<PeriodicGimplD> PeriodicGaugeStatistics;
@@ -203,20 +203,24 @@ template<> inline void PrepareMetaData<vLorentzColourMatrixD>(Lattice<vLorentzCo
 //////////////////////////////////////////////////////////////////////
 inline void reconstruct3(LorentzColourMatrix & cm)
 {
-  const int x=0;
-  const int y=1;
-  const int z=2;
+  assert( Nc < 4 && Nc > 1 ) ;
   for(int mu=0;mu<Nd;mu++){
-    cm(mu)()(2,x) = adj(cm(mu)()(0,y)*cm(mu)()(1,z)-cm(mu)()(0,z)*cm(mu)()(1,y)); //x= yz-zy
-    cm(mu)()(2,y) = adj(cm(mu)()(0,z)*cm(mu)()(1,x)-cm(mu)()(0,x)*cm(mu)()(1,z)); //y= zx-xz
-    cm(mu)()(2,z) = adj(cm(mu)()(0,x)*cm(mu)()(1,y)-cm(mu)()(0,y)*cm(mu)()(1,x)); //z= xy-yx
+    #if Nc == 2
+      cm(mu)()(1,0) = -adj(cm(mu)()(0,y)) ;
+      cm(mu)()(1,1) =  adj(cm(mu)()(0,x)) ;
+    #else
+      const int x=0 , y=1 , z=2 ; // a little disinenuous labelling
+      cm(mu)()(2,x) = adj(cm(mu)()(0,y)*cm(mu)()(1,z)-cm(mu)()(0,z)*cm(mu)()(1,y)); //x= yz-zy
+      cm(mu)()(2,y) = adj(cm(mu)()(0,z)*cm(mu)()(1,x)-cm(mu)()(0,x)*cm(mu)()(1,z)); //y= zx-xz
+      cm(mu)()(2,z) = adj(cm(mu)()(0,x)*cm(mu)()(1,y)-cm(mu)()(0,y)*cm(mu)()(1,x)); //z= xy-yx
+    #endif
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Some data types for intermediate storage
 ////////////////////////////////////////////////////////////////////////////////
-template<typename vtype> using iLorentzColour2x3 = iVector<iVector<iVector<vtype, Nc>, 2>, Nd >;
+template<typename vtype> using iLorentzColour2x3 = iVector<iVector<iVector<vtype, Nc>, Nc-1>, Nd >;
 
 typedef iLorentzColour2x3<Complex>  LorentzColour2x3;
 typedef iLorentzColour2x3<ComplexF> LorentzColour2x3F;
@@ -278,7 +282,6 @@ struct GaugeSimpleMunger{
 
 template <class fobj, class sobj>
 struct GaugeSimpleUnmunger {
-
   void operator()(sobj &in, fobj &out) {
     for (int mu = 0; mu < Nd; mu++) {
       for (int i = 0; i < Nc; i++) {
@@ -317,8 +320,8 @@ template<class fobj,class sobj>
 struct Gauge3x2munger{
   void operator() (fobj &in,sobj &out){
     for(int mu=0;mu<Nd;mu++){
-      for(int i=0;i<2;i++){
-	for(int j=0;j<3;j++){
+      for(int i=0;i<Nc-1;i++){
+	for(int j=0;j<Nc;j++){
 	  out(mu)()(i,j) = in(mu)(i)(j);
 	}}
     }
@@ -330,8 +333,8 @@ template<class fobj,class sobj>
 struct Gauge3x2unmunger{
   void operator() (sobj &in,fobj &out){
     for(int mu=0;mu<Nd;mu++){
-      for(int i=0;i<2;i++){
-	for(int j=0;j<3;j++){
+      for(int i=0;i<Nc-1;i++){
+	for(int j=0;j<Nc;j++){
 	  out(mu)(i)(j) = in(mu)()(i,j);
 	}}
     }
