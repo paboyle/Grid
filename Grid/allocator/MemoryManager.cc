@@ -40,7 +40,7 @@ void MemoryManager::PrintBytes(void)
 //////////////////////////////////////////////////////////////////////
 MemoryManager::AllocationCacheEntry MemoryManager::Entries[MemoryManager::NallocType][MemoryManager::NallocCacheMax];
 int MemoryManager::Victim[MemoryManager::NallocType];
-int MemoryManager::Ncache[MemoryManager::NallocType] = { 2, 8, 2, 8, 2, 8 };
+int MemoryManager::Ncache[MemoryManager::NallocType] = { 2, 8, 8, 16, 8, 16 };
 uint64_t MemoryManager::CacheBytes[MemoryManager::NallocType];
 //////////////////////////////////////////////////////////////////////
 // Actual allocation and deallocation utils

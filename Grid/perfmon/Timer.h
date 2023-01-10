@@ -35,23 +35,23 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid)
 
-// Dress the output; use std::chrono
-// C++11 time facilities better?
-inline double usecond(void) {
-  struct timeval tv;
-#ifdef TIMERS_ON
-  gettimeofday(&tv,NULL);
-#endif
-  return 1.0*tv.tv_usec + 1.0e6*tv.tv_sec;
-}
-
-typedef  std::chrono::system_clock          GridClock;
+//typedef  std::chrono::system_clock          GridClock;
+typedef  std::chrono::high_resolution_clock   GridClock;
 typedef  std::chrono::time_point<GridClock> GridTimePoint;
 
 typedef  std::chrono::seconds               GridSecs;
 typedef  std::chrono::milliseconds          GridMillisecs;
 typedef  std::chrono::microseconds          GridUsecs;
 typedef  std::chrono::microseconds          GridTime;
+
+extern GridTimePoint theProgramStart;
+// Dress the output; use std::chrono
+// C++11 time facilities better?
+inline double usecond(void) {
+  auto usecs = std::chrono::duration_cast<GridUsecs>(GridClock::now()-theProgramStart); 
+  return 1.0*usecs.count();
+}
+
 
 inline std::ostream& operator<< (std::ostream & stream, const GridSecs & time)
 {

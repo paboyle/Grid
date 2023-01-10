@@ -30,6 +30,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_PERFCOUNT_H
 #define GRID_PERFCOUNT_H
 
+
+#ifndef __SSC_START
+#define __SSC_START
+#define __SSC_STOP
+#endif
+
 #include <sys/time.h>
 #include <ctime>
 #include <chrono>
@@ -72,16 +78,8 @@ static long perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
 inline uint64_t cyclecount(void){ 
   return 0;
 }
-#define __SSC_MARK(mark) __asm__ __volatile__ ("movl %0, %%ebx; .byte 0x64, 0x67, 0x90 " ::"i"(mark):"%ebx")
-#define __SSC_STOP  __SSC_MARK(0x110)
-#define __SSC_START __SSC_MARK(0x111)
-
 
 #else
-
-#define __SSC_MARK(mark) 
-#define __SSC_STOP  
-#define __SSC_START 
 
 /*
  * cycle counters arch dependent
