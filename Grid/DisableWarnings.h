@@ -45,7 +45,7 @@ directory
  //disables nvcc specific warning in json.hpp
 #pragma clang diagnostic ignored "-Wdeprecated-register"
 
-#if (__CUDACC_VER_MAJOR__ >= 11) && (__CUDACC_VER_MINOR__ >= 5)
+#ifdef __NVCC_DIAG_PRAGMA_SUPPORT__
  //disables nvcc specific warning in json.hpp
 #pragma nv_diag_suppress unsigned_compare_with_zero
 #pragma nv_diag_suppress cast_to_qualified_type
