@@ -224,8 +224,7 @@ public:
     // 2/(Nc +/- 2) for the normalization of the trace in the two index rep
     for (int a = 0; a < ncolour * ncolour - 1; a++) {
       generator(a, i2indTa);
-      auto tmp = real(trace(i2indTa * in)) * coefficient;
-      pokeColour(h_out, tmp, a);
+      pokeColour(h_out, real(trace(i2indTa * in)) * coefficient, a);
     }
   }
 
