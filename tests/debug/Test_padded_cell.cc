@@ -65,7 +65,6 @@ int main (int argc, char ** argv)
   for (int mu = 0; mu < Nd; mu++) {
     U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
   }
-  WilsonLoops<PeriodicGimplR>::traceDirPlaquette(trplaq,U,0,1);
 
   std::cout << GridLogMessage << " Average plaquette "<<plaq<<std::endl;
 
@@ -119,10 +118,10 @@ int main (int argc, char ** argv)
   GridBase *GhostGrid = Ughost.Grid();
   LatticeComplex gplaq(GhostGrid); 
   
+  std::vector<Coordinate> shifts;
   for(int mu=0;mu<Nd;mu++){
     for(int nu=mu+1;nu<Nd;nu++){
   
-      std::vector<Coordinate> shifts;
       //    Umu(x) Unu(x+mu) Umu^dag(x+nu) Unu^dag(x)
       Coordinate shift_0(Nd,0);
       Coordinate shift_mu(Nd,0); shift_mu[mu]=1;
@@ -131,26 +130,30 @@ int main (int argc, char ** argv)
       shifts.push_back(shift_mu);
       shifts.push_back(shift_nu);
       shifts.push_back(shift_0);
-      GeneralLocalStencil gStencil(GhostGrid,shifts);
+    }
+  }
+  GeneralLocalStencil gStencil(GhostGrid,shifts);
 
-      gplaq=Zero();
-      WilsonLoops<PeriodicGimplR>::traceDirPlaquette(trplaq,U,mu,nu);
+  gplaq=Zero();
+  {
+    autoView( gp_v , gplaq, CpuWrite);
+    autoView( t_v , trplaq, CpuRead);
+    autoView( U_v , Ughost, CpuRead);
+    for(int ss=0;ss<gp_v.size();ss++){
+      int s=0;
+      for(int mu=0;mu<Nd;mu++){
+	for(int nu=mu+1;nu<Nd;nu++){
 
-      {
-	autoView( gp_v , gplaq, CpuWrite);
-	autoView( t_v , trplaq, CpuRead);
-	autoView( U_v , Ughost, CpuRead);
-	for(int ss=0;ss<gp_v.size();ss++){
-	  auto SE0 = gStencil.GetEntry(0,ss);
-	  auto SE1 = gStencil.GetEntry(1,ss);
-	  auto SE2 = gStencil.GetEntry(2,ss);
-	  auto SE3 = gStencil.GetEntry(3,ss);
-	  
+	  auto SE0 = gStencil.GetEntry(s+0,ss);
+	  auto SE1 = gStencil.GetEntry(s+1,ss);
+	  auto SE2 = gStencil.GetEntry(s+2,ss);
+	  auto SE3 = gStencil.GetEntry(s+3,ss);
+	
 	  int o0 = SE0->_offset;
 	  int o1 = SE1->_offset;
 	  int o2 = SE2->_offset;
 	  int o3 = SE3->_offset;
-
+	  
 	  auto U0 = U_v[o0](mu);
 	  auto U1 = U_v[o1](nu);
 	  auto U2 = adj(U_v[o2](mu));
@@ -160,27 +163,22 @@ int main (int argc, char ** argv)
 	  gpermute(U1,SE1->_permute);
 	  gpermute(U2,SE2->_permute);
 	  gpermute(U3,SE3->_permute);
-
-	  gp_v[ss]() = trace( U0*U1*U2*U3 );
 	  
+	  gp_v[ss]() =gp_v[ss]() + trace( U0*U1*U2*U3 );
+	  s=s+4;
 	}
       }
-      cplaq = Ghost.Extract(gplaq);
-      std::cout << "["<<mu<<"]["<<nu<<"] cplaq = "<< norm2(cplaq)<<std::endl;
-      std::cout << "["<<mu<<"]["<<nu<<"] trplaq= "<< norm2(trplaq)<<std::endl;
-      //      std::cout << " cplaq " <<cplaq<<std::endl;
-      //      std::cout << " ref   " <<trplaq<<std::endl;
-      trplaq = cplaq - trplaq;
-      //      std::cout << "["<<mu<<"]["<<nu<<"] diff= "<< trplaq<<std::endl;
-      std::cout << "["<<mu<<"]["<<nu<<"] diff = "<< norm2(trplaq)<<std::endl;
-    }}
-
+    }
+  }
+  cplaq = Ghost.Extract(gplaq);
   RealD vol = cplaq.Grid()->gSites();
   RealD faces = (Nd * (Nd-1))/2;
   auto p = TensorRemove(sum(cplaq));
   auto result = p.real()/vol/faces/Nc;
 
   std::cout << GridLogMessage << " Average plaquette via padded cell "<<result<<std::endl;
+  std::cout << GridLogMessage << " Diff "<<result-plaq<<std::endl;
   
+  assert(fabs(result-plaq)<1.0e-8);
   Grid_finalize();
 }
