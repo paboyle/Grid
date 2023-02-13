@@ -133,8 +133,7 @@ public:
 
     for (int a = 0; a < Dimension; a++) {
       generator(a, iTa);
-      LatticeComplex tmp = real(trace(iTa * in)) * coefficient;
-      pokeColour(h_out, tmp, a);
+      pokeColour(h_out, real(trace(iTa * in)) * coefficient, a);
     }
   }
 
