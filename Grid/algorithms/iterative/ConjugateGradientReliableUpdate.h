@@ -48,7 +48,7 @@ public:
   LinearOperatorBase<FieldF> &Linop_f;
   LinearOperatorBase<FieldD> &Linop_d;
   GridBase* SinglePrecGrid;
-  RealD Delta; //reliable update parameter
+  RealD Delta; //reliable update parameter. A reliable update is performed when the residual drops by a factor of Delta relative to its value at the last update
 
   //Optional ability to switch to a different linear operator once the tolerance reaches a certain point. Useful for single/half -> single/single
   LinearOperatorBase<FieldF> *Linop_fallback;
@@ -65,7 +65,9 @@ public:
       ErrorOnNoConverge(err_on_no_conv),
       DoFinalCleanup(true),
       Linop_fallback(NULL)
-  {};
+  {
+    assert(Delta > 0. && Delta < 1. && "Expect  0 < Delta < 1");
+  };
 
   void setFallbackLinop(LinearOperatorBase<FieldF> &_Linop_fallback, const RealD _fallback_transition_tol){
     Linop_fallback = &_Linop_fallback;
@@ -116,9 +118,12 @@ public:
     }
 
     //Single prec initialization
+    precisionChangeWorkspace pc_wk_sp_to_dp(src.Grid(), SinglePrecGrid);
+    precisionChangeWorkspace pc_wk_dp_to_sp(SinglePrecGrid, src.Grid());
+    
     FieldF r_f(SinglePrecGrid);
     r_f.Checkerboard() = r.Checkerboard();
-    precisionChange(r_f, r);
+    precisionChange(r_f, r, pc_wk_dp_to_sp);
 
     FieldF psi_f(r_f);
     psi_f = Zero();
@@ -134,7 +139,8 @@ public:
     GridStopWatch LinalgTimer;
     GridStopWatch MatrixTimer;
     GridStopWatch SolverTimer;
-
+    GridStopWatch PrecChangeTimer;
+    
     SolverTimer.Start();
     int k = 0;
     int l = 0;
@@ -173,7 +179,9 @@ public:
       // Stopping condition
       if (cp <= rsq) {
 	//Although not written in the paper, I assume that I have to add on the final solution
-	precisionChange(mmp, psi_f);
+	PrecChangeTimer.Start();
+	precisionChange(mmp, psi_f, pc_wk_sp_to_dp);
+	PrecChangeTimer.Stop();
 	psi = psi + mmp;
 	
 	
@@ -194,7 +202,10 @@ public:
 	std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
 	std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
 	std::cout << GridLogMessage << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tPrecChange " << PrecChangeTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tPrecChange avg time " << PrecChangeTimer.Elapsed()/(2*l+1) <<std::endl;
 
+	
 	IterationsToComplete = k;	
 	ReliableUpdatesPerformed = l;
 	  
@@ -214,14 +225,21 @@ public:
       else if(cp < Delta * MaxResidSinceLastRelUp) { //reliable update
 	std::cout << GridLogMessage << "ConjugateGradientReliableUpdate "
 		  << cp << "(residual) < " << Delta << "(Delta) * " << MaxResidSinceLastRelUp << "(MaxResidSinceLastRelUp) on iteration " << k << " : performing reliable update\n";
-	precisionChange(mmp, psi_f);
+	PrecChangeTimer.Start();
+	precisionChange(mmp, psi_f, pc_wk_sp_to_dp);
+	PrecChangeTimer.Stop();
 	psi = psi + mmp;
 
+	MatrixTimer.Start();
 	Linop_d.HermOpAndNorm(psi, mmp, d, qq);
+	MatrixTimer.Stop();
+	
 	r = src - mmp;
 
 	psi_f = Zero();
-	precisionChange(r_f, r);
+	PrecChangeTimer.Start();
+	precisionChange(r_f, r, pc_wk_dp_to_sp);
+	PrecChangeTimer.Stop();
 	cp = norm2(r);
 	MaxResidSinceLastRelUp = cp;
 
