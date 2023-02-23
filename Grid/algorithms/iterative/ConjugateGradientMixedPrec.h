@@ -108,7 +108,10 @@ NAMESPACE_BEGIN(Grid);
     GridStopWatch PrecChangeTimer;
     
     Integer &outer_iter = TotalOuterIterations; //so it will be equal to the final iteration count
-      
+
+    precisionChangeWorkspace pc_wk_sp_to_dp(DoublePrecGrid, SinglePrecGrid);
+    precisionChangeWorkspace pc_wk_dp_to_sp(SinglePrecGrid, DoublePrecGrid);
+    
     for(outer_iter = 0; outer_iter < MaxOuterIterations; outer_iter++){
       //Compute double precision rsd and also new RHS vector.
       Linop_d.HermOp(sol_d, tmp_d);
@@ -123,7 +126,7 @@ NAMESPACE_BEGIN(Grid);
       while(norm * inner_tol * inner_tol < stop) inner_tol *= 2;  // inner_tol = sqrt(stop/norm) ??
 
       PrecChangeTimer.Start();
-      precisionChange(src_f, src_d);
+      precisionChange(src_f, src_d, pc_wk_dp_to_sp);
       PrecChangeTimer.Stop();
       
       sol_f = Zero();
@@ -142,7 +145,7 @@ NAMESPACE_BEGIN(Grid);
       
       //Convert sol back to double and add to double prec solution
       PrecChangeTimer.Start();
-      precisionChange(tmp_d, sol_f);
+      precisionChange(tmp_d, sol_f, pc_wk_sp_to_dp);
       PrecChangeTimer.Stop();
       
       axpy(sol_d, 1.0, tmp_d, sol_d);
