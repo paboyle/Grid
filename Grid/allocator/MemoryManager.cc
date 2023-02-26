@@ -35,6 +35,8 @@ void MemoryManager::PrintBytes(void)
   
 }
 
+uint64_t MemoryManager::DeviceCacheBytes() { return CacheBytes[Acc] + CacheBytes[AccSmall]; }
+
 //////////////////////////////////////////////////////////////////////
 // Data tables for recently freed pooiniter caches
 //////////////////////////////////////////////////////////////////////
@@ -190,7 +192,9 @@ void MemoryManager::InitMessage(void) {
   
   std::cout << GridLogMessage<< "MemoryManager::Init() setting up"<<std::endl;
 #ifdef ALLOCATION_CACHE
-  std::cout << GridLogMessage<< "MemoryManager::Init() cache pool for recent allocations: SMALL "<<Ncache[CpuSmall]<<" LARGE "<<Ncache[Cpu]<<std::endl;
+  std::cout << GridLogMessage<< "MemoryManager::Init() cache pool for recent host   allocations: SMALL "<<Ncache[CpuSmall]<<" LARGE "<<Ncache[Cpu]<<std::endl;
+  std::cout << GridLogMessage<< "MemoryManager::Init() cache pool for recent device allocations: SMALL "<<Ncache[AccSmall]<<" LARGE "<<Ncache[Acc]<<std::endl;
+  std::cout << GridLogMessage<< "MemoryManager::Init() cache pool for recent shared allocations: SMALL "<<Ncache[SharedSmall]<<" LARGE "<<Ncache[Shared]<<std::endl;
 #endif
   
 #ifdef GRID_UVM

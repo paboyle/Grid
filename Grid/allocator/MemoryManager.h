@@ -121,7 +121,9 @@ private:
   static uint64_t     DeviceToHostXfer;
   static uint64_t     DeviceEvictions;
   static uint64_t     DeviceDestroy;
- 
+  
+  static uint64_t     DeviceCacheBytes();
+
  private:
 #ifndef GRID_UVM
   //////////////////////////////////////////////////////////////////////
