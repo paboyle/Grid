@@ -294,6 +294,8 @@ inline void batchBlockProject(std::vector<Lattice<iVector<CComplex,nbasis>>> &co
                                const VLattice &Basis)
 {
   int NBatch = fineData.size();
+  assert(coarseData.size() == NBatch);
+
   GridBase * fine  = fineData[0].Grid();
   GridBase * coarse= coarseData[0].Grid();
 
@@ -622,7 +624,9 @@ inline void batchBlockPromote(const std::vector<Lattice<iVector<CComplex,nbasis>
                                std::vector<Lattice<vobj>> &fineData,
                                const VLattice &Basis)
 {
-  int NBatch = fineData.size();
+  int NBatch = coarseData.size();
+  assert(fineData.size() == NBatch);
+
   GridBase * fine   = fineData[0].Grid();
   GridBase * coarse = coarseData[0].Grid();
   for (int k=0; k<NBatch; k++)
