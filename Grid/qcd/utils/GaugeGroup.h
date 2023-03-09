@@ -170,118 +170,40 @@ class GaugeGroup {
     }
   }
 
-  // reunitarise??
   template <typename LatticeMatrixType>
   static void LieRandomize(GridParallelRNG &pRNG, LatticeMatrixType &out,
                            double scale = 1.0) {
-    GridBase *grid = out.Grid();
-
-    typedef typename LatticeMatrixType::vector_type vector_type;
-    typedef typename LatticeMatrixType::scalar_type scalar_type;
-
-    typedef iSinglet<vector_type> vTComplexType;
-
-    typedef Lattice<vTComplexType> LatticeComplexType;
-    typedef typename GridTypeMapper<
-        typename LatticeMatrixType::vector_object>::scalar_object MatrixType;
-
-    LatticeComplexType ca(grid);
-    LatticeMatrixType lie(grid);
-    LatticeMatrixType la(grid);
-    ComplexD ci(0.0, scale);
-    //    ComplexD cone(1.0, 0.0);
-    MatrixType ta;
-
-    lie = Zero();
-
-    for (int a = 0; a < AdjointDimension; a++) {
-      random(pRNG, ca);
-
-      ca = (ca + conjugate(ca)) * 0.5;
-      ca = ca - 0.5;
-
-      generator(a, ta);
-
-      la = ci * ca * ta;
-
-      lie = lie + la;  // e^{i la ta}
-    }
-    taExp(lie, out);
+    LieRandomize(pRNG, out, group_name(), scale);
   }
 
   static void GaussianFundamentalLieAlgebraMatrix(GridParallelRNG &pRNG,
                                                   LatticeMatrix &out,
                                                   Real scale = 1.0) {
-    GridBase *grid = out.Grid();
-    LatticeReal ca(grid);
-    LatticeMatrix la(grid);
-    Complex ci(0.0, scale);
-    Matrix ta;
-
-    out = Zero();
-    for (int a = 0; a < AdjointDimension; a++) {
-      gaussian(pRNG, ca);
-      generator(a, ta);
-      la = toComplex(ca) * ta;
-      out += la;
-    }
-    out *= ci;
+      GaussianFundamentalLieAlgebraMatrix(pRNG, out, group_name(), scale);
   }
 
   static void FundamentalLieAlgebraMatrix(const LatticeAlgebraVector &h,
                                           LatticeMatrix &out,
                                           Real scale = 1.0) {
-    conformable(h, out);
-    GridBase *grid = out.Grid();
-    LatticeMatrix la(grid);
-    Matrix ta;
-
-    out = Zero();
-    for (int a = 0; a < AdjointDimension; a++) {
-      generator(a, ta);
-      la = peekColour(h, a) * timesI(ta) * scale;
-      out += la;
-    }
+      FundamentalLieAlgebraMatrix(h, out, group_name(), scale);
   }
 
   // Projects the algebra components a lattice matrix (of dimension ncol*ncol -1
   // ) inverse operation: FundamentalLieAlgebraMatrix
   static void projectOnAlgebra(LatticeAlgebraVector &h_out,
                                const LatticeMatrix &in, Real scale = 1.0) {
-    conformable(h_out, in);
-    h_out = Zero();
-    Matrix Ta;
-
-    for (int a = 0; a < AdjointDimension; a++) {
-      generator(a, Ta);
-      pokeColour(h_out, -2.0 * (trace(timesI(Ta) * in)) * scale, a);
-    }
+      projectOnAlgebra(h_out, in, group_name(), scale);
   }
 
   template <typename GaugeField>
   static void HotConfiguration(GridParallelRNG &pRNG, GaugeField &out) {
-    typedef typename GaugeField::vector_type vector_type;
-    typedef iGroupMatrix<vector_type> vMatrixType;
-    typedef Lattice<vMatrixType> LatticeMatrixType;
-
-    LatticeMatrixType Umu(out.Grid());
-    for (int mu = 0; mu < Nd; mu++) {
-      LieRandomize(pRNG, Umu, 1.0);
-      PokeIndex<LorentzIndex>(out, Umu, mu);
-    }
+      HotConfiguration(pRNG, out, group_name());
   }
   template <typename GaugeField>
   static void TepidConfiguration(GridParallelRNG &pRNG, GaugeField &out) {
-    typedef typename GaugeField::vector_type vector_type;
-    typedef iGroupMatrix<vector_type> vMatrixType;
-    typedef Lattice<vMatrixType> LatticeMatrixType;
-
-    LatticeMatrixType Umu(out.Grid());
-    for (int mu = 0; mu < Nd; mu++) {
-      LieRandomize(pRNG, Umu, 0.01);
-      PokeIndex<LorentzIndex>(out, Umu, mu);
-    }
+      TepidConfiguration(pRNG, out, group_name());
   }
+    
   template <typename GaugeField>
   static void ColdConfiguration(GaugeField &out) {
     typedef typename GaugeField::vector_type vector_type;
@@ -294,6 +216,7 @@ class GaugeGroup {
       PokeIndex<LorentzIndex>(out, Umu, mu);
     }
   }
+    
   template <typename GaugeField>
   static void ColdConfiguration(GridParallelRNG &pRNG, GaugeField &out) {
     ColdConfiguration(out);
@@ -303,6 +226,7 @@ class GaugeGroup {
   static void taProj(const LatticeMatrixType &in, LatticeMatrixType &out) {
     out = Ta(in);
   }
+    
   template <typename LatticeMatrixType>
   static void taExp(const LatticeMatrixType &x, LatticeMatrixType &ex) {
     typedef typename LatticeMatrixType::scalar_type ComplexType;
