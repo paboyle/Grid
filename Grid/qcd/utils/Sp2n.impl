@@ -366,6 +366,47 @@ static void TepidConfiguration(GridParallelRNG &pRNG, GaugeField &out, GroupName
   }
 }
 
+template <int N>
+static void ProjectOnGaugeGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu, GroupName::Sp) {
+  Umu = ProjectOnSpGroup(Umu);
+ }
+
+template <int N>
+static void ProjectOnGaugeGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U, GroupName::Sp) {
+  GridBase *grid = U.Grid();
+  // Reunitarise
+  for (int mu = 0; mu < Nd; mu++) {
+    auto Umu = PeekIndex<LorentzIndex>(U, mu);
+    Umu = ProjectOnSpGroup(Umu);
+  }
+}
+
+template <int N>
+static void ProjectGn(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu, GroupName::Sp) {
+  Umu = ProjectOnSpGroup(Umu);
+  auto det = Determinant(Umu);
+
+  det = conjugate(det);
+
+  for (int i = 0; i < N; i++) {
+    auto element = PeekIndex<ColourIndex>(Umu, N - 1, i);
+    element = element * det;
+    PokeIndex<ColourIndex>(Umu, element, Nc - 1, i);
+  }
+}
+
+template <int N>
+static void ProjectGn(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U, GroupName::Sp) {
+  GridBase *grid = U.Grid();
+  // Reunitarise
+  for (int mu = 0; mu < Nd; mu++) {
+    auto Umu = PeekIndex<LorentzIndex>(U, mu);
+    Umu = ProjectOnSpGroup(Umu);
+    ProjectSUn(Umu);
+    PokeIndex<LorentzIndex>(U, Umu, mu);
+  }
+}
+
 public:
 template <ONLY_IF_Sp>
 static void OmegaInvariance(ColourMatrix &in) {

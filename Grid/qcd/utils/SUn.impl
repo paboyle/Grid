@@ -621,6 +621,47 @@ static void projectOnAlgebra(LatticeAlgebraVector &h_out,
   }
 }
 
+template <int N>
+static void ProjectOnGaugeGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu, GroupName::SU) {
+  Umu = ProjectOnGroup(Umu);
+ }
+
+template <int N>
+static void ProjectOnGaugeGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U, GroupName::SU) {
+  GridBase *grid = U.Grid();
+  // Reunitarise
+  for (int mu = 0; mu < Nd; mu++) {
+    auto Umu = PeekIndex<LorentzIndex>(U, mu);
+    Umu = ProjectOnGroup(Umu);
+  }
+}
+
+template <int N>
+static void ProjectGn(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu, GroupName::SU) {
+  Umu = ProjectOnGroup(Umu);
+  auto det = Determinant(Umu);
+
+  det = conjugate(det);
+
+  for (int i = 0; i < N; i++) {
+    auto element = PeekIndex<ColourIndex>(Umu, N - 1, i);
+    element = element * det;
+    PokeIndex<ColourIndex>(Umu, element, Nc - 1, i);
+  }
+}
+
+template <int N>
+static void ProjectGn(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U, GroupName::SU) {
+  GridBase *grid = U.Grid();
+  // Reunitarise
+  for (int mu = 0; mu < Nd; mu++) {
+    auto Umu = PeekIndex<LorentzIndex>(U, mu);
+    Umu = ProjectOnGroup(Umu);
+    ProjectSUn(Umu);
+    PokeIndex<LorentzIndex>(U, Umu, mu);
+  }
+}
+
 /*
  * Fundamental rep gauge xform
  */

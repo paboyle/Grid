@@ -244,6 +244,29 @@ class GaugeGroup {
       ex = ex + xn * nfac;     // x2/2!, x3/3!....
     }
   }
+    
+  template <int N>        // reunitarise, resimplectify...
+  static void ProjectOnGaugeGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
+      ProjectOnGaugeGroup(U, group_name());
+  }
+       
+  template <int N>        // reunitarise, resimplectify...
+  static void ProjectOnGaugeGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
+      ProjectOnGaugeGroup(Umu, group_name());
+  }
+    
+    
+  template <int N>        // reunitarise, resimplectify... previously ProjectSUn
+  static void ProjectGn(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
+      ProjectGn(Umu, group_name());
+  }
+
+  template <int N>        // reunitarise, resimplectify... previously ProjectSUn
+  static void ProjectGn(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
+      ProjectGn(U, group_name());
+      
+  }
+
 };
 
 template <int N>
@@ -271,6 +294,8 @@ LatticeComplexD Determinant(
   });
   return ret;
 }
+
+
 template <int N>
 static void ProjectSUn(
     Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
@@ -285,6 +310,7 @@ static void ProjectSUn(
     PokeIndex<ColourIndex>(Umu, element, Nc - 1, i);
   }
 }
+
 template <int N>
 static void ProjectSUn(
     Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
@@ -297,6 +323,7 @@ static void ProjectSUn(
     PokeIndex<LorentzIndex>(U, Umu, mu);
   }
 }
+
 // Explicit specialisation for SU(3).
 // Explicit specialisation for SU(3).
 static void ProjectSU3(
