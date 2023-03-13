@@ -26,6 +26,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+#if Nc==3
 #include <Grid/Grid.h>
 
 using namespace std;
@@ -143,3 +144,4 @@ int main (int argc, char ** argv)
 
 
 
+#endif

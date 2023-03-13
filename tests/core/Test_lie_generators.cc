@@ -28,6 +28,7 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
+#if Nc==3
 #include <Grid/Grid.h>
 
 #include <Grid/qcd/utils/CovariantCshift.h>
@@ -530,3 +531,4 @@ int main(int argc, char** argv) {
   
   Grid_finalize();
 }
+#endif
