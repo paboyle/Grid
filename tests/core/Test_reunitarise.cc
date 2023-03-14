@@ -26,7 +26,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#if Nc==3
+
 #include <Grid/Grid.h>
 
 using namespace std;
@@ -36,7 +36,7 @@ using namespace Grid;
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
-
+    
   std::vector<int> latt({8,8,8,8});
   GridCartesian * grid = SpaceTimeGrid::makeFourDimGrid(latt, 
 							GridDefaultSimd(Nd,vComplexD::Nsimd()),
@@ -123,14 +123,14 @@ int main (int argc, char ** argv)
   std::cout << "Determinant defect before projection " <<norm2(detU)<<std::endl;
   tmp = U*adj(U) - ident;
   std::cout << "Unitarity check before projection    " << norm2(tmp)<<std::endl; 
-  
+  #if Nc==3
   ProjectSU3(U);
   detU= Determinant(U) ;
   detU= detU -1.0;
   std::cout << "Determinant ProjectSU3 defect " <<norm2(detU)<<std::endl;
   tmp = U*adj(U) - ident;
   std::cout << "Unitarity check after projection    " << norm2(tmp)<<std::endl; 
-
+  #endif
   ProjectSUn(UU);
   detUU= Determinant(UU);
   detUU= detUU -1.0;
@@ -144,4 +144,4 @@ int main (int argc, char ** argv)
 
 
 
-#endif
+
