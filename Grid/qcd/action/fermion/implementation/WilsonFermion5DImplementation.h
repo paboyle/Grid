@@ -63,6 +63,10 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   _tmp(&FiveDimRedBlackGrid),
   Dirichlet(0)
 {
+  Stencil.lo     = &Lebesgue;
+  StencilEven.lo = &LebesgueEvenOdd;
+  StencilOdd.lo  = &LebesgueEvenOdd;
+  
   // some assertions
   assert(FiveDimGrid._ndimension==5);
   assert(FourDimGrid._ndimension==4);

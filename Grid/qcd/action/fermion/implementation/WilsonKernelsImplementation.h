@@ -433,7 +433,8 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
     });									
 
 #define ASM_CALL(A)							\
-  thread_for( ss, Nsite, {						\
+  thread_for( sss, Nsite, {						\
+    int ss = st.lo->Reorder(sss);					\
     int sU = ss;							\
     int sF = ss*Ls;							\
     WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,Ls,1,in_v,out_v);		\

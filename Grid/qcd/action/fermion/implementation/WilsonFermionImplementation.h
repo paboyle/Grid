@@ -60,6 +60,9 @@ WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
       _tmp(&Hgrid),
       anisotropyCoeff(anis)
 {
+  Stencil.lo     = &Lebesgue;
+  StencilEven.lo = &LebesgueEvenOdd;
+  StencilOdd.lo  = &LebesgueEvenOdd;
   // Allocate the required comms buffer
   ImportGauge(_Umu);
   if  (anisotropyCoeff.isAnisotropic){
