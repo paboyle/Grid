@@ -11,5 +11,5 @@ INSTALL=/nfs/site/home/azusayax/install
 	--enable-unified=yes \
 	CXX=mpicxx \
 	LDFLAGS="-fsycl-device-code-split=per_kernel -fsycl-device-lib=all -lze_loader -L$INSTALL/lib" \
-	CXXFLAGS="-cxx=dpcpp -fsycl-unnamed-lambda -fsycl -no-fma -I$INSTALL/include -Wtautological-constant-compare"
+	CXXFLAGS="-cxx=icpx -fsycl-unnamed-lambda -fsycl -I$INSTALL/include -Wno-tautological-constant-compare"
 
