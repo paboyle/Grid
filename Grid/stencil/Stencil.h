@@ -387,7 +387,7 @@ public:
 
     void *shm = (void *) _grid->ShmBufferTranslate(recv_from_rank,this->u_recv_buf_p);
 
-    if ( (shm==NULL) ) return 0;
+    if ( shm==NULL ) return 0;
     return 1;
   }
 #endif
