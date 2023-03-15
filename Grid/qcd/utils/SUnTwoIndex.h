@@ -126,10 +126,10 @@ public:
 
   template <class cplx>
   static void generator(int Index, iSUnTwoIndexMatrix<cplx> &i2indTa) {
-    Vector<typename SU<ncolour>::template iSUnMatrix<cplx> > ta(
+    Vector<iSUnMatrix<cplx> > ta(
 								ncolour * ncolour - 1);
-    Vector<typename SU<ncolour>::template iSUnMatrix<cplx> > eij(Dimension);
-    typename SU<ncolour>::template iSUnMatrix<cplx> tmp;
+    Vector<iSUnMatrix<cplx> > eij(Dimension);
+    iSUnMatrix<cplx> tmp;
     i2indTa = Zero();
     
     for (int a = 0; a < ncolour * ncolour - 1; a++)
@@ -140,7 +140,7 @@ public:
     for (int a = 0; a < Dimension; a++) {
       tmp = transpose(ta[Index]) * adj(eij[a]) + adj(eij[a]) * ta[Index];
       for (int b = 0; b < Dimension; b++) {
-        typename SU<ncolour>::template iSUnMatrix<cplx> tmp1 =
+        iSUnMatrix<cplx> tmp1 =
 	  tmp * eij[b]; 
         Complex iTr = TensorRemove(timesI(trace(tmp1)));
         i2indTa()()(a, b) = iTr;
