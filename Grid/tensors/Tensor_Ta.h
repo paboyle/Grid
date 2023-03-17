@@ -66,88 +66,6 @@ template<class vtype,int N> accelerator_inline iMatrix<vtype,N> Ta(const iMatrix
   return ret;
 }
 
-// for sp2n can't do something as simple as Ta
-
-template<class vtype> accelerator_inline iScalar<vtype> ProjectSp2nAlgebra(const iScalar<vtype>&r)
-{
-  iScalar<vtype> ret;
-  ret._internal = ProjectSp2nAlgebra(r._internal);
-  return ret;
-}
-template<class vtype,int N> accelerator_inline iVector<vtype,N> ProjectSp2nAlgebra(const iVector<vtype,N>&r)
-{
-  iVector<vtype,N> ret;
-  for(int i=0;i<N;i++){
-    ret._internal[i] = ProjectSp2nAlgebra(r._internal[i]);
-  }
-  return ret;
-}
-template<class vtype,int N> accelerator_inline iMatrix<vtype,N> ProjectSp2nAlgebra(const iMatrix<vtype,N> &arg)
-{
-  iMatrix<vtype,N> ret;
-    // following HiRep's suN_utils.c does a sort of Gram-Schmidt
-    vtype nrm;
-    vtype inner;
-    vtype tmp;
-    
-    for(int c1=0;c1<N/2;c1++)
-    {
-        
-        for (int b=0; b<c1; b++)                  // remove the b-rows from U_c1
-        {
-            decltype(ret._internal[b][b]*ret._internal[b][b]) pr;
-            decltype(ret._internal[b][b]*ret._internal[b][b]) prn;
-            zeroit(pr);
-            zeroit(prn);
-            
-            for(int c=0; c<N; c++)
-            {
-                pr += conjugate(ret._internal[c1][c])*ret._internal[b][c];        // <U_c1 | U_b >
-                prn += conjugate(ret._internal[c1][c])*ret._internal[b+N/2][c];   // <U_c1 | U_{b+N} >
-            }
-         
-
-            for(int c=0; c<N; c++)
-            {
-                ret._internal[c1][c] -= (conjugate(pr) * ret._internal[b][c] + conjugate(prn) * ret._internal[b+N/2][c] );    //  U_c1 -= (  <U_c1 | U_b > U_b + <U_c1 | U_{b+N} > U_{b+N}  )
-            }
-        }
-      
-        zeroit(inner);
-        for(int c2=0;c2<N;c2++)
-        {
-            inner += innerProduct(ret._internal[c1][c2],ret._internal[c1][c2]);
-        }
-        
-        nrm = sqrt(inner);
-        nrm = 1.0/nrm;
-        for(int c2=0;c2<N;c2++)
-        {
-            ret._internal[c1][c2]*= nrm;
-        }
-        
-
-        for(int c2=0;c2<N/2;c2++)
-        {
-            tmp = conjugate(ret._internal[c1][c2]);       // (up-left)* of the old matrix
-            ret._internal[c1+N/2][c2+N/2] = -tmp;          // down right in the new matrix = -(up-left)* of the old matrix
-        }
-           
-        for(int c2=N/2;c2<N;c2++)
-        {
-            tmp = conjugate(ret._internal[c1][c2]);   // (up-right)* of the old
-            ret._internal[c1+N/2][c2-N/2] = tmp;     // down left in the new matrix = (up-right)* of the old
-        }
-      
-        
-    }
-    
-  
-  return ret;
-}
-
-
-
 
 /////////////////////////////////////////////// 
 // ProjectOnGroup function for scalar, vector, matrix 
@@ -219,6 +137,8 @@ accelerator_inline iMatrix<vtype,N> ProjectOnGroup(const iMatrix<vtype,N> &arg)
 
 // re-do for sp2n
 
+// Ta cannot be defined here for Sp2n because I need the generators from the Sp class
+// It is defined in gauge impl types
 
 template<class vtype> accelerator_inline iScalar<vtype> ProjectOnSpGroup(const iScalar<vtype>&r)
 {
