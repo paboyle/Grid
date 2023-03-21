@@ -4,11 +4,14 @@ NAMESPACE_BEGIN(Grid);
 
 /*Allocation types, saying which pointer cache should be used*/
 #define Cpu      (0)
-#define CpuSmall (1)
-#define Acc      (2)
-#define AccSmall (3)
-#define Shared   (4)
-#define SharedSmall (5)
+#define CpuHuge  (1)
+#define CpuSmall (2)
+#define Acc      (3)
+#define AccHuge  (4)
+#define AccSmall (5)
+#define Shared   (6)
+#define SharedHuge  (7)
+#define SharedSmall (8)
 #undef GRID_MM_VERBOSE 
 uint64_t total_shared;
 uint64_t total_device;
@@ -35,12 +38,14 @@ void MemoryManager::PrintBytes(void)
   
 }
 
+uint64_t MemoryManager::DeviceCacheBytes() { return CacheBytes[Acc] + CacheBytes[AccHuge] + CacheBytes[AccSmall]; }
+
 //////////////////////////////////////////////////////////////////////
 // Data tables for recently freed pooiniter caches
 //////////////////////////////////////////////////////////////////////
 MemoryManager::AllocationCacheEntry MemoryManager::Entries[MemoryManager::NallocType][MemoryManager::NallocCacheMax];
 int MemoryManager::Victim[MemoryManager::NallocType];
-int MemoryManager::Ncache[MemoryManager::NallocType] = { 2, 8, 8, 16, 8, 16 };
+int MemoryManager::Ncache[MemoryManager::NallocType] = { 2, 0, 8, 8, 0, 16, 8, 0, 16 };
 uint64_t MemoryManager::CacheBytes[MemoryManager::NallocType];
 //////////////////////////////////////////////////////////////////////
 // Actual allocation and deallocation utils
@@ -170,6 +175,16 @@ void MemoryManager::Init(void)
     }
   }
 
+  str= getenv("GRID_ALLOC_NCACHE_HUGE");
+  if ( str ) {
+    Nc = atoi(str);
+    if ( (Nc>=0) && (Nc < NallocCacheMax)) {
+      Ncache[CpuHuge]=Nc;
+      Ncache[AccHuge]=Nc;
+      Ncache[SharedHuge]=Nc;
+    }
+  }
+
   str= getenv("GRID_ALLOC_NCACHE_SMALL");
   if ( str ) {
     Nc = atoi(str);
@@ -190,7 +205,9 @@ void MemoryManager::InitMessage(void) {
   
   std::cout << GridLogMessage<< "MemoryManager::Init() setting up"<<std::endl;
 #ifdef ALLOCATION_CACHE
-  std::cout << GridLogMessage<< "MemoryManager::Init() cache pool for recent allocations: SMALL "<<Ncache[CpuSmall]<<" LARGE "<<Ncache[Cpu]<<std::endl;
+  std::cout << GridLogMessage<< "MemoryManager::Init() cache pool for recent host   allocations: SMALL "<<Ncache[CpuSmall]<<" LARGE "<<Ncache[Cpu]<<" HUGE "<<Ncache[CpuHuge]<<std::endl;
+  std::cout << GridLogMessage<< "MemoryManager::Init() cache pool for recent device allocations: SMALL "<<Ncache[AccSmall]<<" LARGE "<<Ncache[Acc]<<" Huge "<<Ncache[AccHuge]<<std::endl;
+  std::cout << GridLogMessage<< "MemoryManager::Init() cache pool for recent shared allocations: SMALL "<<Ncache[SharedSmall]<<" LARGE "<<Ncache[Shared]<<" Huge "<<Ncache[SharedHuge]<<std::endl;
 #endif
   
 #ifdef GRID_UVM
@@ -222,8 +239,11 @@ void MemoryManager::InitMessage(void) {
 void *MemoryManager::Insert(void *ptr,size_t bytes,int type) 
 {
 #ifdef ALLOCATION_CACHE
-  bool small = (bytes < GRID_ALLOC_SMALL_LIMIT);
-  int cache = type + small;
+  int cache;
+  if      (bytes < GRID_ALLOC_SMALL_LIMIT) cache = type + 2;
+  else if (bytes >= GRID_ALLOC_HUGE_LIMIT) cache = type + 1;
+  else                                     cache = type;
+
   return Insert(ptr,bytes,Entries[cache],Ncache[cache],Victim[cache],CacheBytes[cache]);  
 #else
   return ptr;
@@ -232,10 +252,11 @@ void *MemoryManager::Insert(void *ptr,size_t bytes,int type)
 
 void *MemoryManager::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim, uint64_t &cacheBytes) 
 {
-  assert(ncache>0);
 #ifdef GRID_OMP
   assert(omp_in_parallel()==0);
 #endif 
+
+  if (ncache == 0) return ptr;
 
   void * ret = NULL;
   int v = -1;
@@ -271,8 +292,11 @@ void *MemoryManager::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries
 void *MemoryManager::Lookup(size_t bytes,int type)
 {
 #ifdef ALLOCATION_CACHE
-  bool small = (bytes < GRID_ALLOC_SMALL_LIMIT);
-  int cache = type+small;
+  int cache;
+  if      (bytes < GRID_ALLOC_SMALL_LIMIT) cache = type + 2;
+  else if (bytes >= GRID_ALLOC_HUGE_LIMIT) cache = type + 1;
+  else                                     cache = type;
+
   return Lookup(bytes,Entries[cache],Ncache[cache],CacheBytes[cache]);
 #else
   return NULL;
@@ -281,7 +305,6 @@ void *MemoryManager::Lookup(size_t bytes,int type)
 
 void *MemoryManager::Lookup(size_t bytes,AllocationCacheEntry *entries,int ncache,uint64_t & cacheBytes) 
 {
-  assert(ncache>0);
 #ifdef GRID_OMP
   assert(omp_in_parallel()==0);
 #endif 

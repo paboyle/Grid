@@ -35,6 +35,7 @@ NAMESPACE_BEGIN(Grid);
 // Move control to configure.ac and Config.h?
 
 #define GRID_ALLOC_SMALL_LIMIT (4096)
+#define GRID_ALLOC_HUGE_LIMIT  (2147483648)
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -83,7 +84,7 @@ private:
   } AllocationCacheEntry;
 
   static const int NallocCacheMax=128; 
-  static const int NallocType=6;
+  static const int NallocType=9;
   static AllocationCacheEntry Entries[NallocType][NallocCacheMax];
   static int Victim[NallocType];
   static int Ncache[NallocType];
@@ -121,7 +122,9 @@ private:
   static uint64_t     DeviceToHostXfer;
   static uint64_t     DeviceEvictions;
   static uint64_t     DeviceDestroy;
- 
+  
+  static uint64_t     DeviceCacheBytes();
+
  private:
 #ifndef GRID_UVM
   //////////////////////////////////////////////////////////////////////
