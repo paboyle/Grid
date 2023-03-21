@@ -36,7 +36,7 @@ public:
   }
   template<class vobj,class cobj,class compressor>
   static void Gather_plane_exchange(commVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
-				    Vector<cobj *> pointers,int dimension,int plane,int cbmask,
+				    std::vector<cobj *> pointers,int dimension,int plane,int cbmask,
 				    compressor &compress,int type,int partial)
   {
     assert( (table.size()&0x1)==0);
