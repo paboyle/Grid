@@ -36,7 +36,7 @@ NAMESPACE_BEGIN(Grid);
 // Wilson compressor will need FaceGather policies for:
 // Periodic, Dirichlet, and partial Dirichlet for DWF
 ///////////////////////////////////////////////////////////////
-const int dwf_compressor_depth=1;
+const int dwf_compressor_depth=2;
 #define DWF_COMPRESS
 class FaceGatherPartialDWF
 {
@@ -110,7 +110,7 @@ public:
   ////////////////////////////////////////////////////////////////////////////////////////////
   template<class vobj,class cobj,class compressor>
   static void Gather_plane_exchange(commVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
-				    Vector<cobj *> pointers,int dimension,int plane,int cbmask,
+				    std::vector<cobj *> pointers,int dimension,int plane,int cbmask,
 				    compressor &compress,int type,int partial)
   {
     GridBase *Grid = rhs.Grid();
@@ -209,7 +209,7 @@ public:
   }
   template<class vobj,class cobj,class compressor>
   static void Gather_plane_exchange(commVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
-				    Vector<cobj *> pointers,int dimension,int plane,int cbmask,
+				    std::vector<cobj *> pointers,int dimension,int plane,int cbmask,
 				    compressor &compress,int type,int partial)
   {
     //    std::cout << " face gather exch DWF partial "<<partial <<std::endl;
