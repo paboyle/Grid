@@ -120,6 +120,12 @@ void Gather_plane_exchange_table(commVector<std::pair<int,int> >& table,
 }
 */
 
+void DslashResetCounts(void);
+void DslashGetCounts(uint64_t &dirichlet,uint64_t &partial,uint64_t &full);
+void DslashLogFull(void);
+void DslashLogPartial(void);
+void DslashLogDirichlet(void);
+
 struct StencilEntry {
 #ifdef GRID_CUDA
   uint64_t _byte_offset;       // 8 bytes
@@ -312,6 +318,7 @@ public:
 
   int face_table_computed;
   int partialDirichlet;
+  int fullDirichlet;
   std::vector<commVector<std::pair<int,int> > > face_table ;
   Vector<int> surface_list;
 
@@ -408,6 +415,9 @@ public:
   void CommunicateComplete(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
     _grid->StencilSendToRecvFromComplete(MpiReqs,0);
+    if   ( this->partialDirichlet ) DslashLogPartial();
+    else if ( this->fullDirichlet ) DslashLogDirichlet();
+    else DslashLogFull();
   }
   ////////////////////////////////////////////////////////////////////////
   // Blocking send and receive. Either sequential or parallel.
@@ -736,6 +746,10 @@ public:
     if ( p.dirichlet.size() ==0 ) p.dirichlet.resize(grid->Nd(),0);
     partialDirichlet = p.partialDirichlet;
     DirichletBlock(p.dirichlet); // comms send/recv set up
+    fullDirichlet=0;
+    for(int d=0;d<p.dirichlet.size();d++){
+      if (p.dirichlet[d]) fullDirichlet=1;
+    }
 
     _unified_buffer_size=0;
     surface_list.resize(0);
