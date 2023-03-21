@@ -81,6 +81,7 @@ public:
   using OperatorFunction<FieldD>::operator();
 
   RealD   Tolerance;
+  Integer MaxIterationsMshift;
   Integer MaxIterations;
   Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
   std::vector<int> IterationsToCompleteShift;  // Iterations for this shift
@@ -95,9 +96,9 @@ public:
 
   ConjugateGradientMultiShiftMixedPrec(Integer maxit, const MultiShiftFunction &_shifts,
 				       GridBase* _SinglePrecGrid, LinearOperatorBase<FieldF> &_Linop_f,
-				       int _ReliableUpdateFreq
-				       ) : 
-    MaxIterations(maxit),  shifts(_shifts), SinglePrecGrid(_SinglePrecGrid), Linop_f(_Linop_f), ReliableUpdateFreq(_ReliableUpdateFreq)
+				       int _ReliableUpdateFreq) : 
+    MaxIterationsMshift(maxit),  shifts(_shifts), SinglePrecGrid(_SinglePrecGrid), Linop_f(_Linop_f), ReliableUpdateFreq(_ReliableUpdateFreq),
+    MaxIterations(20000)
   { 
     verbose=1;
     IterationsToCompleteShift.resize(_shifts.order);
@@ -244,7 +245,7 @@ public:
     // Iteration loop
     int k;
   
-    for (k=1;k<=MaxIterations;k++){    
+    for (k=1;k<=MaxIterationsMshift;k++){    
 
       a = c /cp;
       AXPYTimer.Start();
@@ -350,12 +351,17 @@ public:
 	}
       }
 
-      if ( all_converged ){
+      if ( all_converged || k == MaxIterationsMshift-1){
 
 	SolverTimer.Stop();
-	std::cout<<GridLogMessage<< "ConjugateGradientMultiShiftMixedPrec: All shifts have converged iteration "<<k<<std::endl;
-	std::cout<<GridLogMessage<< "ConjugateGradientMultiShiftMixedPrec: Checking solutions"<<std::endl;
-      
+
+	if ( all_converged ){
+	  std::cout<<GridLogMessage<< "ConjugateGradientMultiShiftMixedPrec: All shifts have converged iteration "<<k<<std::endl;
+	  std::cout<<GridLogMessage<< "ConjugateGradientMultiShiftMixedPrec: Checking solutions"<<std::endl;
+	} else {
+	  std::cout<<GridLogMessage<< "ConjugateGradientMultiShiftMixedPrec: Not all shifts have converged iteration "<<k<<std::endl;
+	}
+	
 	// Check answers 
 	for(int s=0; s < nshift; s++) { 
 	  Linop_d.HermOpAndNorm(psi_d[s],mmp_d,d,qq);
@@ -396,12 +402,10 @@ public:
 
 	return;
       }
-
    
     }
-    // ugly hack
     std::cout<<GridLogMessage<<"CG multi shift did not converge"<<std::endl;
-    //  assert(0);
+    assert(0);
   }
 
 };

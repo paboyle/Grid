@@ -300,9 +300,9 @@ public:
 
 protected:
   GridBase *                        _grid;
-
 public:
   GridBase *Grid(void) const { return _grid; }
+  LebesgueOrder *lo;
 
   ////////////////////////////////////////////////////////////////////////
   // Needed to conveniently communicate gparity parameters into GPU memory
@@ -348,6 +348,7 @@ public:
   ////////////////////////////////////////
   // Stencil query
   ////////////////////////////////////////
+#ifdef SHM_FAST_PATH
   inline int SameNode(int point) {
 
     int dimension    = this->_directions[point];
@@ -367,7 +368,40 @@ public:
     if ( displacement == 0 ) return 1;
     return 0;
   }
+#else
+  // fancy calculation for shm code
+  inline int SameNode(int point) {
 
+    int dimension    = this->_directions[point];
+    int displacement = this->_distances[point];
+
+    int pd              = _grid->_processors[dimension];
+    int fd              = _grid->_fdimensions[dimension];
+    int ld              = _grid->_ldimensions[dimension];
+    int rd              = _grid->_rdimensions[dimension];
+    int simd_layout     = _grid->_simd_layout[dimension];
+    int comm_dim        = _grid->_processors[dimension] >1 ;
+ 
+    int recv_from_rank;
+    int xmit_to_rank;
+
+    if ( ! comm_dim ) return 1;
+
+    int nbr_proc;
+    if (displacement>0) nbr_proc = 1;
+    else                nbr_proc = pd-1;
+
+    // FIXME  this logic needs to be sorted for three link term
+    //    assert( (displacement==1) || (displacement==-1));
+    // Present hack only works for >= 4^4 subvol per node
+    _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank);
+
+    void *shm = (void *) _grid->ShmBufferTranslate(recv_from_rank,this->u_recv_buf_p);
+
+    if ( shm==NULL ) return 0;
+    return 1;
+  }
+#endif
   //////////////////////////////////////////
   // Comms packet queue for asynch thread
   // Use OpenMP Tasks for cleaner ???
@@ -1075,7 +1109,7 @@ public:
     int comms_recv   = this->_comms_recv[point];
     int comms_partial_send   = this->_comms_partial_send[point] ;
     int comms_partial_recv   = this->_comms_partial_recv[point] ;
-
+    
     assert(rhs.Grid()==_grid);
     //	  conformable(_grid,rhs.Grid());
 
@@ -1146,11 +1180,32 @@ public:
 	  recv_buf=this->u_recv_buf_p;
 	}
 
+	// potential SHM fast path for intranode
+	int shm_send=0;
+	int shm_recv=0;
+#ifdef SHM_FAST_PATH
+	// Put directly in place if we can
+	send_buf = (cobj *)_grid->ShmBufferTranslate(xmit_to_rank,recv_buf);
+	if ( (send_buf==NULL) ) {
+	  shm_send=0;
+	  send_buf = this->u_send_buf_p;
+	} else {
+	  shm_send=1;
+	}
+	void *test_ptr = _grid->ShmBufferTranslate(recv_from_rank,recv_buf);
+	if ( test_ptr != NULL ) shm_recv = 1;
+	//	static int printed;
+	//	if (!printed){
+	  //	  std::cout << " GATHER FAST PATH SHM "<<shm_send<< " "<<shm_recv<<std::endl;
+	//	  printed = 1;
+	//	}
+#else
 	////////////////////////////////////////////////////////
 	// Gather locally
 	////////////////////////////////////////////////////////
 	send_buf = this->u_send_buf_p; // Gather locally, must send
 	assert(send_buf!=NULL);
+#endif
 
 	//	std::cout << " GatherPlaneSimple partial send "<< comms_partial_send<<std::endl;
 	compressor::Gather_plane_simple(face_table[face_idx],rhs,send_buf,compress,comm_off,so,comms_partial_send);
@@ -1162,10 +1217,13 @@ public:
 	  // Build a list of things to do after we synchronise GPUs
 	  // Start comms now???
 	  ///////////////////////////////////////////////////////////
+	  int do_send = (comms_send|comms_partial_send) && (!shm_send );
+	  int do_recv = (comms_send|comms_partial_send) && (!shm_recv );
+	  
 	  AddPacket((void *)&send_buf[comm_off],
 		    (void *)&recv_buf[comm_off],
-		    xmit_to_rank, comms_send|comms_partial_send,
-		    recv_from_rank, comms_recv|comms_partial_recv,
+		    xmit_to_rank, do_send,
+		    recv_from_rank, do_recv,
 		    xbytes,rbytes);
 	}
 
@@ -1307,19 +1365,47 @@ public:
 
 	    int recv_from_rank;
 	    int xmit_to_rank;
-
+	    int shm_send=0;
+	    int shm_recv=0;
 	    _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank);
-
+#ifdef SHM_FAST_PATH
+  #warning STENCIL SHM FAST PATH SELECTED
+	    // shm == receive pointer         if offnode
+	    // shm == Translate[send pointer] if on node -- my view of his send pointer
+	    cobj *shm = (cobj *) _grid->ShmBufferTranslate(recv_from_rank,sp);
+	    if (shm==NULL) {
+	      shm = rp;
+	      // we found a packet that comes from MPI and contributes to this shift.
+	      // is_same_node is only used in the WilsonStencil, and gets set for this point in the stencil.
+	      // Kernel will add the exterior_terms except if is_same_node.
+	      // leg of stencil
+	      shm_recv=0;
+	    } else {
+	      shm_recv=1;
+	    }
+	    rpointers[i] = shm;
+	    // Test send side
+	    void *test_ptr = (void *) _grid->ShmBufferTranslate(xmit_to_rank,sp);
+	    if ( test_ptr != NULL ) shm_send = 1;
+	    //	    static int printed;
+	    //	    if (!printed){
+	    //	      std::cout << " GATHERSIMD FAST PATH SHM "<<shm_send<< " "<<shm_recv<<std::endl;
+	    //	      printed = 1;
+	    //	    }
+#else
 	    rpointers[i] = rp;
+#endif
 	    
 	    int duplicate = CheckForDuplicate(dimension,sx,nbr_proc,(void *)rp,i,xbytes,rbytes,cbmask);
 	    if ( !duplicate  ) { 
 	      if ( (bytes != rbytes) && (rbytes!=0) ){
 		acceleratorMemSet(rp,0,bytes); // Zero prefill comms buffer to zero
 	      }
+	      int do_send = (comms_send|comms_partial_send) && (!shm_send );
+	      int do_recv = (comms_send|comms_partial_send) && (!shm_recv );
 	      AddPacket((void *)sp,(void *)rp,
-			xmit_to_rank,comms_send|comms_partial_send,
-			recv_from_rank,comms_recv|comms_partial_recv,
+			xmit_to_rank,do_send,
+			recv_from_rank,do_send,
 			xbytes,rbytes);
 	    }
 
@@ -1329,7 +1415,7 @@ public:
 
 	  }
 	}
-
+	// rpointer may be doing a remote read in the gather over SHM
 	if ( comms_recv|comms_partial_recv ) {
 	  AddMerge(&this->u_recv_buf_p[comm_off],rpointers,reduced_buffer_size,permute_type,Mergers);
 	}

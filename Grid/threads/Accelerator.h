@@ -248,17 +248,23 @@ inline int  acceleratorIsCommunicable(void *ptr)
 //////////////////////////////////////////////
 // SyCL acceleration
 //////////////////////////////////////////////
-#ifdef GRID_SYCL
-NAMESPACE_END(Grid);
-#include <CL/sycl.hpp>
-#include <CL/sycl/usm.hpp>
 
+#ifdef GRID_SYCL
 #define GRID_SYCL_LEVEL_ZERO_IPC
 
-#ifdef GRID_SYCL_LEVEL_ZERO_IPC
+NAMESPACE_END(Grid);
+#if 0
+#include <CL/sycl.hpp>
+#include <CL/sycl/usm.hpp>
 #include <level_zero/ze_api.h>
 #include <CL/sycl/backend/level_zero.hpp>
+#else
+#include <sycl/CL/sycl.hpp>
+#include <sycl/usm.hpp>
+#include <level_zero/ze_api.h>
+#include <sycl/ext/oneapi/backend/level_zero.hpp>
 #endif
+
 NAMESPACE_BEGIN(Grid);
 
 extern cl::sycl::queue *theGridAccelerator;

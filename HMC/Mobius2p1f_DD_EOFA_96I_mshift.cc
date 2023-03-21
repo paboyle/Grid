@@ -232,29 +232,32 @@ int main(int argc, char **argv) {
   //  std::vector<Real> hasenbusch({ light_mass, 0.005, 0.0145, 0.045, 0.108, 0.25, 0.51 , pv_mass }); // Updated
   //  std::vector<Real> hasenbusch({ light_mass, 0.0145, 0.045, 0.108, 0.25, 0.51 , 0.75 , pv_mass });
 
-  OneFlavourRationalParams OFRp; // Up/down
-  OFRp.lo       = 4.0e-5;
+  int SP_iters=10000;
+  
+  RationalActionParams OFRp; // Up/down
+  OFRp.lo       = 6.0e-5;
   OFRp.hi       = 90.0;
-  OFRp.MaxIter  = 60000;
-  OFRp.tolerance= 1.0e-5;
-  OFRp.mdtolerance= 1.0e-3;
+  OFRp.inv_pow  = 2;
+  OFRp.MaxIter  = SP_iters; // get most shifts by 2000, stop sharing space
+  OFRp.action_tolerance= 1.0e-8;
+  OFRp.action_degree   = 18;
+  OFRp.md_tolerance= 1.0e-5;
+  OFRp.md_degree   = 14;
   //  OFRp.degree   = 20; converges
   //  OFRp.degree   = 16;
-  OFRp.degree   = 18;
   OFRp.precision= 80;
   OFRp.BoundsCheckFreq=0;
   std::vector<RealD> ActionTolByPole({
-      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
+      1.0e-7,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8
     });
   std::vector<RealD> MDTolByPole({
-      1.0e-5,5.0e-6,1.0e-6,1.0e-7, // soften convergence more more
+      1.6e-5,5.0e-6,1.0e-6,3.0e-7, // soften convergence more more
       //      1.0e-6,3.0e-7,1.0e-7,1.0e-7,
       //      3.0e-6,1.0e-6,1.0e-7,1.0e-7, // soften convergence
-      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8
@@ -340,6 +343,7 @@ int main(int argc, char **argv) {
   ParamsDirF.dirichlet=Dirichlet;
   ParamsDir.partialDirichlet=1;
   ParamsDirF.partialDirichlet=1;
+  std::cout << GridLogMessage<< "Partial Dirichlet depth is "<<dwf_compressor_depth<<std::endl;
 
   //  double StoppingCondition = 1e-14;
   //  double MDStoppingCondition = 1e-9;
@@ -457,9 +461,9 @@ int main(int argc, char **argv) {
   
 #define MIXED_PRECISION
 #ifdef MIXED_PRECISION
-  std::vector<OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2> *> Bdys;
+  std::vector<GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2> *> Bdys;
 #else
-  std::vector<OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> *> Bdys;
+  std::vector<GeneralEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> *> Bdys;
 #endif
 
   typedef SchurDiagMooeeOperator<FermionActionF,FermionFieldF> LinearOperatorF;
@@ -544,19 +548,19 @@ int main(int argc, char **argv) {
       ParamsNumD2.partialDirichlet = ParamsNum.partialDirichlet;
       NumeratorsD2.push_back  (new FermionActionD2(UD2,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_num[h],M5,b,c, ParamsNumD2));
     
-      Bdys.push_back( new OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2>(
+      Bdys.push_back( new GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2>(
 			   *Numerators[h],*Denominators[h],
 			   *NumeratorsF[h],*DenominatorsF[h],
 			   *NumeratorsD2[h],*DenominatorsD2[h],
-			   OFRp, 400) );
-      Bdys.push_back( new OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2>(
+			   OFRp, SP_iters) );
+      Bdys.push_back( new GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2>(
 			   *Numerators[h],*Denominators[h],
 			   *NumeratorsF[h],*DenominatorsF[h],
 			   *NumeratorsD2[h],*DenominatorsD2[h],
-			   OFRp, 400) );
+			   OFRp, SP_iters) );
 #else
-      Bdys.push_back( new OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
-      Bdys.push_back( new OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
+      Bdys.push_back( new GeneralEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
+      Bdys.push_back( new GeneralEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
 #endif
     }
   }

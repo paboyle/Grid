@@ -646,6 +646,14 @@ case ${ac_SHM_FORCE_MPI} in
       ;;
      *) ;;
 esac
+############### force MPI in SMP
+AC_ARG_ENABLE([shm-fast-path],[AS_HELP_STRING([--enable-shm-fast-path],[Allow kernels to remote copy over intranode])],[ac_SHM_FAST_PATH=${enable_shm_fast_path}],[ac_SHM_FAST_PATH=no])
+case ${ac_SHM_FAST_PATH} in
+     yes)
+        AC_DEFINE([SHM_FAST_PATH],[1],[SHM_FAST_PATH] )
+      ;;
+     *) ;;
+esac
 
 ############### communication type selection
 AC_ARG_ENABLE([comms-threads],[AS_HELP_STRING([--enable-comms-threads | --disable-comms-threads],[Use multiple threads in MPI calls])],[ac_COMMS_THREADS=${enable_comms_threads}],[ac_COMMS_THREADS=yes])

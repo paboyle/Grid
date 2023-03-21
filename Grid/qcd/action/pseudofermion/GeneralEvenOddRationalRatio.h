@@ -127,6 +127,8 @@ NAMESPACE_BEGIN(Grid);
 	  ApproxNegPowerAction.tolerances[i]    = action_tolerance[i];
 	  ApproxHalfPowerAction.tolerances[i]   = action_tolerance[i];
 	  ApproxNegHalfPowerAction.tolerances[i]= action_tolerance[i];
+	}
+	for(int i=0;i<ApproxPowerMD.tolerances.size();i++){
 	  ApproxPowerMD.tolerances[i]       = md_tolerance[i];
 	  ApproxNegPowerMD.tolerances[i]    = md_tolerance[i];
 	  ApproxHalfPowerMD.tolerances[i]   = md_tolerance[i];
