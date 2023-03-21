@@ -1,4 +1,4 @@
-INSTALL=/nfs/site/home/azusayax/install
+INSTALL=/nfs/site/home/paboylx/prereqs/
 ../../configure \
 	--enable-simd=GPU \
 	--enable-gen-simd-width=64 \
@@ -8,8 +8,8 @@ INSTALL=/nfs/site/home/azusayax/install
 	--disable-fermion-reps \
 	--enable-shm=nvlink \
 	--enable-accelerator=sycl \
-	--enable-unified=yes \
+	--enable-unified=no \
 	CXX=mpicxx \
 	LDFLAGS="-fsycl-device-code-split=per_kernel -fsycl-device-lib=all -lze_loader -L$INSTALL/lib" \
-	CXXFLAGS="-cxx=icpx -fsycl-unnamed-lambda -fsycl -I$INSTALL/include -Wno-tautological-constant-compare"
+	CXXFLAGS="-cxx=icpx -fsycl-unnamed-lambda -fsycl -Wno-tautological-constant-compare -I$INSTALL/include"
 

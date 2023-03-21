@@ -21,7 +21,7 @@ export I_MPI_OFFLOAD_CELL=tile
 export EnableImplicitScaling=0
 export EnableWalkerPartition=0
 export ZE_AFFINITY_MASK=0.0
-mpiexec -launcher ssh -n 1 -host localhost  ./Benchmark_dwf_fp32 --mpi 1.1.1.1 --grid 32.32.32.32 --accelerator-threads $NT --comms-sequential --shm-mpi 1 --cacheblocking 8.8.8.8
+mpiexec -launcher ssh -n 1 -host localhost  ./Benchmark_dwf_fp32 --mpi 1.1.1.1 --grid 32.32.32.32 --accelerator-threads $NT --comms-sequential --shm-mpi 0
 
 export ZE_AFFINITY_MASK=0
 export I_MPI_OFFLOAD_CELL=device

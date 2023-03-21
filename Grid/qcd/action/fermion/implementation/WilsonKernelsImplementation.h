@@ -439,6 +439,17 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
     int sF = ss*Ls;							\
     WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,Ls,1,in_v,out_v);		\
   });
+#define ASM_CALL_SLICE(A)						\
+  auto grid = in.Grid() ;						\
+  int nt = grid->LocalDimensions()[4];					\
+  int nxyz = Nsite/nt ;							\
+  for(int t=0;t<nt;t++){						\
+  thread_for( sss, nxyz, {						\
+    int ss = t*nxyz+sss;						\
+    int sU = ss;							\
+    int sF = ss*Ls;							\
+    WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,Ls,1,in_v,out_v);		\
+    });}
 
 template <class Impl>
 void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,

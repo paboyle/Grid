@@ -20,7 +20,7 @@ export I_MPI_OFFLOAD_CELL=tile
 export EnableImplicitScaling=0
 export EnableWalkerPartition=0
 
-mpiexec -launcher ssh -n 1 -host localhost  ./wrap.sh ./Benchmark_dwf_fp32 --mpi 1.1.1.1 --grid 32.32.32.32 --accelerator-threads $NT --comms-sequential --shm-mpi 1 > 1tile.log
+#mpiexec -launcher ssh -n 1 -host localhost  ./wrap.sh ./Benchmark_dwf_fp32 --mpi 1.1.1.1 --grid 32.32.32.32 --accelerator-threads $NT --comms-sequential --shm-mpi 0 > 1tile.log
 
-mpiexec -launcher ssh -n 2 -host localhost  ./wrap.sh ./Benchmark_dwf_fp32 --mpi 2.1.1.1 --grid 64.32.32.32 --accelerator-threads $NT --comms-sequential --shm-mpi 1 > 2tile.log
+mpiexec -launcher ssh -n 2 -host localhost  ./wrap.sh ./Benchmark_dwf_fp32 --mpi 2.1.1.1 --grid 64.32.32.32 --accelerator-threads $NT --comms-sequential --shm-mpi 0
 

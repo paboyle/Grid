@@ -358,7 +358,7 @@ public:
     return 0;
   }
 #else
-  // 
+  // fancy calculation for shm code
   inline int SameNode(int point) {
 
     int dimension    = this->_directions[point];
@@ -378,7 +378,7 @@ public:
 
     int nbr_proc;
     if (displacement>0) nbr_proc = 1;
-    else                 nbr_proc = pd-1;
+    else                nbr_proc = pd-1;
 
     // FIXME  this logic needs to be sorted for three link term
     //    assert( (displacement==1) || (displacement==-1));
