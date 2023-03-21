@@ -13,7 +13,7 @@ uint64_t  MemoryManager::DeviceToHostBytes;
 uint64_t  MemoryManager::HostToDeviceXfer;
 uint64_t  MemoryManager::DeviceToHostXfer;
 
-void  MemoryManager::Audit(void){};
+void  MemoryManager::Audit(std::string s){};
 void  MemoryManager::ViewClose(void* AccPtr,ViewMode mode){};
 void *MemoryManager::ViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint){ return CpuPtr; };
 int   MemoryManager::isOpen   (void* CpuPtr) { return 0;}
