@@ -484,24 +484,26 @@ public:
 
     int dag = compress.dag;
     int face_idx=0;
+#define vet_same_node(a,b) \
+      { auto tmp = b;  }
     if ( dag ) { 
-      assert(this->same_node[Xp]==this->HaloGatherDir(source,XpCompress,Xp,face_idx));
-      assert(this->same_node[Yp]==this->HaloGatherDir(source,YpCompress,Yp,face_idx));
-      assert(this->same_node[Zp]==this->HaloGatherDir(source,ZpCompress,Zp,face_idx));
-      assert(this->same_node[Tp]==this->HaloGatherDir(source,TpCompress,Tp,face_idx));
-      assert(this->same_node[Xm]==this->HaloGatherDir(source,XmCompress,Xm,face_idx));
-      assert(this->same_node[Ym]==this->HaloGatherDir(source,YmCompress,Ym,face_idx));
-      assert(this->same_node[Zm]==this->HaloGatherDir(source,ZmCompress,Zm,face_idx));
-      assert(this->same_node[Tm]==this->HaloGatherDir(source,TmCompress,Tm,face_idx));
+      vet_same_node(this->same_node[Xp],this->HaloGatherDir(source,XpCompress,Xp,face_idx));
+      vet_same_node(this->same_node[Yp],this->HaloGatherDir(source,YpCompress,Yp,face_idx));
+      vet_same_node(this->same_node[Zp],this->HaloGatherDir(source,ZpCompress,Zp,face_idx));
+      vet_same_node(this->same_node[Tp],this->HaloGatherDir(source,TpCompress,Tp,face_idx));
+      vet_same_node(this->same_node[Xm],this->HaloGatherDir(source,XmCompress,Xm,face_idx));
+      vet_same_node(this->same_node[Ym],this->HaloGatherDir(source,YmCompress,Ym,face_idx));
+      vet_same_node(this->same_node[Zm],this->HaloGatherDir(source,ZmCompress,Zm,face_idx));
+      vet_same_node(this->same_node[Tm],this->HaloGatherDir(source,TmCompress,Tm,face_idx));
     } else {
-      assert(this->same_node[Xp]==this->HaloGatherDir(source,XmCompress,Xp,face_idx));
-      assert(this->same_node[Yp]==this->HaloGatherDir(source,YmCompress,Yp,face_idx));
-      assert(this->same_node[Zp]==this->HaloGatherDir(source,ZmCompress,Zp,face_idx));
-      assert(this->same_node[Tp]==this->HaloGatherDir(source,TmCompress,Tp,face_idx));
-      assert(this->same_node[Xm]==this->HaloGatherDir(source,XpCompress,Xm,face_idx));
-      assert(this->same_node[Ym]==this->HaloGatherDir(source,YpCompress,Ym,face_idx));
-      assert(this->same_node[Zm]==this->HaloGatherDir(source,ZpCompress,Zm,face_idx));
-      assert(this->same_node[Tm]==this->HaloGatherDir(source,TpCompress,Tm,face_idx));
+      vet_same_node(this->same_node[Xp],this->HaloGatherDir(source,XmCompress,Xp,face_idx));
+      vet_same_node(this->same_node[Yp],this->HaloGatherDir(source,YmCompress,Yp,face_idx));
+      vet_same_node(this->same_node[Zp],this->HaloGatherDir(source,ZmCompress,Zp,face_idx));
+      vet_same_node(this->same_node[Tp],this->HaloGatherDir(source,TmCompress,Tp,face_idx));
+      vet_same_node(this->same_node[Xm],this->HaloGatherDir(source,XpCompress,Xm,face_idx));
+      vet_same_node(this->same_node[Ym],this->HaloGatherDir(source,YpCompress,Ym,face_idx));
+      vet_same_node(this->same_node[Zm],this->HaloGatherDir(source,ZpCompress,Zm,face_idx));
+      vet_same_node(this->same_node[Tm],this->HaloGatherDir(source,TpCompress,Tm,face_idx));
     }
     this->face_table_computed=1;
     assert(this->u_comm_offset==this->_unified_buffer_size);

@@ -1,5 +1,6 @@
 export https_proxy=http://proxy-chain.intel.com:911
-export LD_LIBRARY_PATH=/nfs/site/home/azusayax/install/lib:$LD_LIBRARY_PATH
+#export LD_LIBRARY_PATH=/nfs/site/home/azusayax/install/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$HOME/prereqs/lib/:$LD_LIBRARY_PATH
 
 module load intel-release
 source /opt/intel/oneapi/PVC_setup.sh

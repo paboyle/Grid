@@ -1,4 +1,4 @@
-INSTALL=/nfs/site/home/azusayax/install
+INSTALL=/nfs/site/home/paboylx/prereqs/
 ../../configure \
 	--enable-simd=GPU \
 	--enable-gen-simd-width=64 \
