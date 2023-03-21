@@ -91,11 +91,14 @@ void Gather_plane_simple_table (commVector<std::pair<int,int> >& table,const Lat
 ///////////////////////////////////////////////////////////////////
 template<class cobj,class vobj,class compressor>
 void Gather_plane_exchange_table(const Lattice<vobj> &rhs,
-				 commVector<cobj *> pointers,int dimension,int plane,int cbmask,compressor &compress,int type) __attribute__((noinline));
+				 commVector<cobj *> pointers,
+				 int dimension,int plane,
+				 int cbmask,compressor &compress,int type) __attribute__((noinline));
 
 template<class cobj,class vobj,class compressor>
-void Gather_plane_exchange_table(commVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
-				 Vector<cobj *> pointers,int dimension,int plane,int cbmask,
+void Gather_plane_exchange_table(commVector<std::pair<int,int> >& table,
+				 const Lattice<vobj> &rhs,
+				 std::vector<cobj *> &pointers,int dimension,int plane,int cbmask,
 				 compressor &compress,int type)
 {
   assert( (table.size()&0x1)==0);
@@ -103,14 +106,15 @@ void Gather_plane_exchange_table(commVector<std::pair<int,int> >& table,const La
   int so  = plane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane
 
   auto rhs_v = rhs.View(AcceleratorRead);
+  auto rhs_p = &rhs_v[0];
   auto p0=&pointers[0][0];
   auto p1=&pointers[1][0];
   auto tp=&table[0];
   accelerator_forNB(j, num, vobj::Nsimd(), {
-      compress.CompressExchange(p0,p1, &rhs_v[0], j,
-			      so+tp[2*j  ].second,
-			      so+tp[2*j+1].second,
-			      type);
+      compress.CompressExchange(p0,p1, rhs_p, j,
+				so+tp[2*j  ].second,
+				so+tp[2*j+1].second,
+				type);
   });
   rhs_v.ViewClose();
 }
@@ -257,8 +261,8 @@ public:
   struct Merge {
     static constexpr int Nsimd = vobj::Nsimd();
     cobj * mpointer;
-    Vector<scalar_object *> rpointers;
-    Vector<cobj *> vpointers;
+    //    std::vector<scalar_object *> rpointers;
+    std::vector<cobj *> vpointers;
     Integer buffer_size;
     Integer type;
     Integer partial; // partial dirichlet BCs
@@ -432,6 +436,7 @@ public:
 					Packets[i].from_rank,Packets[i].do_recv,
 					Packets[i].xbytes,Packets[i].rbytes,i);
     }
+    _grid->StencilBarrier();// Synch shared memory on a single nodes
   }
 
   void CommunicateComplete(std::vector<std::vector<CommsRequest_t> > &reqs)
@@ -625,7 +630,7 @@ public:
     d.buffer_size = buffer_size;
     dv.push_back(d);
   }
-  void AddMerge(cobj *merge_p,Vector<cobj *> &rpointers,Integer buffer_size,Integer type,std::vector<Merge> &mv) {
+  void AddMerge(cobj *merge_p,std::vector<cobj *> &rpointers,Integer buffer_size,Integer type,std::vector<Merge> &mv) {
     Merge m;
     m.partial  = this->partialDirichlet;
     m.dims     = _grid->_fdimensions;
@@ -1268,8 +1273,8 @@ public:
     
     assert(bytes*simd_layout == reduced_buffer_size*datum_bytes);
 
-    Vector<cobj *> rpointers(maxl);
-    Vector<cobj *> spointers(maxl);
+    std::vector<cobj *> rpointers(maxl);
+    std::vector<cobj *> spointers(maxl);
 
     ///////////////////////////////////////////
     // Work out what to send where

@@ -225,7 +225,7 @@ public:
   RealD csw_t;
   RealD cF;
 
-  bool open_boundaries;
+  bool fixedBoundaries;
 
   CloverDiagonalField Diagonal,    DiagonalEven,    DiagonalOdd;
   CloverDiagonalField DiagonalInv, DiagonalInvEven, DiagonalInvOdd;

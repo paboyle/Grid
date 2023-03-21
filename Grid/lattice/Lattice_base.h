@@ -248,7 +248,7 @@ public:
   ///////////////////////////////////////////
   // user defined constructor
   ///////////////////////////////////////////
-  Lattice(GridBase *grid,ViewMode mode=AcceleratorWriteDiscard) { 
+  Lattice(GridBase *grid,ViewMode mode=AcceleratorWrite) { 
     this->_grid = grid;
     resize(this->_grid->oSites());
     assert((((uint64_t)&this->_odata[0])&0xF) ==0);
@@ -291,8 +291,8 @@ public:
     typename std::enable_if<!std::is_same<robj,vobj>::value,int>::type i=0;
     conformable(*this,r);
     this->checkerboard = r.Checkerboard();
-    auto me =   View(AcceleratorWriteDiscard);
     auto him= r.View(AcceleratorRead);
+    auto me =   View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       coalescedWrite(me[ss],him(ss));
     });
@@ -306,8 +306,8 @@ public:
   inline Lattice<vobj> & operator = (const Lattice<vobj> & r){
     this->checkerboard = r.Checkerboard();
     conformable(*this,r);
-    auto me =   View(AcceleratorWriteDiscard);
     auto him= r.View(AcceleratorRead);
+    auto me =   View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       coalescedWrite(me[ss],him(ss));
     });
