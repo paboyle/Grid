@@ -28,6 +28,8 @@ uint64_t  MemoryManager::HostToDeviceBytes;
 uint64_t  MemoryManager::DeviceToHostBytes;
 uint64_t  MemoryManager::HostToDeviceXfer;
 uint64_t  MemoryManager::DeviceToHostXfer;
+uint64_t  MemoryManager::DeviceEvictions;
+uint64_t  MemoryManager::DeviceDestroy;
 
 ////////////////////////////////////
 // Priority ordering for unlocked entries
@@ -115,8 +117,10 @@ void MemoryManager::AccDiscard(AcceleratorViewEntry &AccCache)
   assert(AccCache.CpuPtr!=(uint64_t)NULL);
   if(AccCache.AccPtr) {
     AcceleratorFree((void *)AccCache.AccPtr,AccCache.bytes);
+    DeviceDestroy++;
     DeviceBytes   -=AccCache.bytes;
     LRUremove(AccCache);
+    AccCache.AccPtr=(uint64_t) NULL;
     dprintf("MemoryManager: Free(%lx) LRU %ld Total %ld\n",(uint64_t)AccCache.AccPtr,DeviceLRUBytes,DeviceBytes);  
   }
   uint64_t CpuPtr = AccCache.CpuPtr;
@@ -126,8 +130,14 @@ void MemoryManager::AccDiscard(AcceleratorViewEntry &AccCache)
 void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
 {
   ///////////////////////////////////////////////////////////////////////////
-  // Make CPU consistent, remove from Accelerator, remove entry
-  // Cannot be locked. If allocated must be in LRU pool.
+  // Make CPU consistent, remove from Accelerator, remove from LRU, LEAVE CPU only entry
+  // Cannot be acclocked. If allocated must be in LRU pool.
+  //
+  // Nov 2022... Felix issue: Allocating two CpuPtrs, can have an entry in LRU-q with CPUlock.
+  //                          and require to evict the AccPtr copy. Eviction was a mistake in CpuViewOpen
+  //                          but there is a weakness where CpuLock entries are attempted for erase
+  //                          Take these OUT LRU queue when CPU locked?
+  //                          Cannot take out the table as cpuLock data is important.
   ///////////////////////////////////////////////////////////////////////////
   assert(AccCache.state!=Empty);
   
@@ -139,15 +149,17 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
   if(AccCache.state==AccDirty) {
     Flush(AccCache);
   }
-  assert(AccCache.CpuPtr!=(uint64_t)NULL);
   if(AccCache.AccPtr) {
     AcceleratorFree((void *)AccCache.AccPtr,AccCache.bytes);
-    DeviceBytes   -=AccCache.bytes;
     LRUremove(AccCache);
+    AccCache.AccPtr=(uint64_t)NULL;
+    AccCache.state=CpuDirty; // CPU primary now
+    DeviceBytes   -=AccCache.bytes;
     dprintf("MemoryManager: Free(%lx) footprint now %ld \n",(uint64_t)AccCache.AccPtr,DeviceBytes);  
   }
-  uint64_t CpuPtr = AccCache.CpuPtr;
-  EntryErase(CpuPtr);
+  //  uint64_t CpuPtr = AccCache.CpuPtr;
+  DeviceEvictions++;
+  //  EntryErase(CpuPtr);
 }
 void MemoryManager::Flush(AcceleratorViewEntry &AccCache)
 {
@@ -221,13 +233,16 @@ void *MemoryManager::ViewOpen(void* _CpuPtr,size_t bytes,ViewMode mode,ViewAdvis
 }
 void  MemoryManager::EvictVictims(uint64_t bytes)
 {
+  assert(bytes<DeviceMaxBytes);
   while(bytes+DeviceLRUBytes > DeviceMaxBytes){
     if ( DeviceLRUBytes > 0){
       assert(LRU.size()>0);
-      uint64_t victim = LRU.back();
+      uint64_t victim = LRU.back(); // From the LRU
       auto AccCacheIterator = EntryLookup(victim);
       auto & AccCache = AccCacheIterator->second;
       Evict(AccCache);
+    } else {
+      return;
     }
   }
 }
@@ -322,7 +337,8 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
     assert(0);
   }
 
-  // If view is opened on device remove from LRU
+  assert(AccCache.accLock>0);
+  // If view is opened on device must remove from LRU
   if(AccCache.LRU_valid==1){
     // must possibly remove from LRU as now locked on GPU
     dprintf("AccCache entry removed from LRU \n");
@@ -388,9 +404,10 @@ uint64_t MemoryManager::CpuViewOpen(uint64_t CpuPtr,size_t bytes,ViewMode mode,V
   auto AccCacheIterator = EntryLookup(CpuPtr);
   auto & AccCache = AccCacheIterator->second;
 
-  if (!AccCache.AccPtr) {
-     EvictVictims(bytes);
-  }
+  // CPU doesn't need to free space
+  //  if (!AccCache.AccPtr) {
+  //    EvictVictims(bytes);
+  //  }
 
   assert((mode==CpuRead)||(mode==CpuWrite));
   assert(AccCache.accLock==0);  // Programming error
@@ -444,20 +461,28 @@ void  MemoryManager::NotifyDeletion(void *_ptr)
 void  MemoryManager::Print(void)
 {
   PrintBytes();
-  std::cout << GridLogDebug << "--------------------------------------------" << std::endl;
-  std::cout << GridLogDebug << "Memory Manager                             " << std::endl;
-  std::cout << GridLogDebug << "--------------------------------------------" << std::endl;
-  std::cout << GridLogDebug << DeviceBytes   << " bytes allocated on device " << std::endl;
-  std::cout << GridLogDebug << DeviceLRUBytes<< " bytes evictable on device " << std::endl;
-  std::cout << GridLogDebug << DeviceMaxBytes<< " bytes max on device       " << std::endl;
-  std::cout << GridLogDebug << HostToDeviceXfer << " transfers        to   device " << std::endl;
-  std::cout << GridLogDebug << DeviceToHostXfer << " transfers        from device " << std::endl;
-  std::cout << GridLogDebug << HostToDeviceBytes<< " bytes transfered to   device " << std::endl;
-  std::cout << GridLogDebug << DeviceToHostBytes<< " bytes transfered from device " << std::endl;
-  std::cout << GridLogDebug << AccViewTable.size()<< " vectors " << LRU.size()<<" evictable"<< std::endl;
-  std::cout << GridLogDebug << "--------------------------------------------" << std::endl;
-  std::cout << GridLogDebug << "CpuAddr\t\tAccAddr\t\tState\t\tcpuLock\taccLock\tLRU_valid "<<std::endl;
-  std::cout << GridLogDebug << "--------------------------------------------" << std::endl;
+  std::cout << GridLogMessage << "--------------------------------------------" << std::endl;
+  std::cout << GridLogMessage << "Memory Manager                             " << std::endl;
+  std::cout << GridLogMessage << "--------------------------------------------" << std::endl;
+  std::cout << GridLogMessage << DeviceBytes   << " bytes allocated on device " << std::endl;
+  std::cout << GridLogMessage << DeviceLRUBytes<< " bytes evictable on device " << std::endl;
+  std::cout << GridLogMessage << DeviceMaxBytes<< " bytes max on device       " << std::endl;
+  std::cout << GridLogMessage << HostToDeviceXfer << " transfers        to   device " << std::endl;
+  std::cout << GridLogMessage << DeviceToHostXfer << " transfers        from device " << std::endl;
+  std::cout << GridLogMessage << HostToDeviceBytes<< " bytes transfered to   device " << std::endl;
+  std::cout << GridLogMessage << DeviceToHostBytes<< " bytes transfered from device " << std::endl;
+  std::cout << GridLogMessage << DeviceEvictions  << " Evictions from device " << std::endl;
+  std::cout << GridLogMessage << DeviceDestroy    << " Destroyed vectors on device " << std::endl;
+  std::cout << GridLogMessage << AccViewTable.size()<< " vectors " << LRU.size()<<" evictable"<< std::endl;
+  std::cout << GridLogMessage << "--------------------------------------------" << std::endl;
+}
+void  MemoryManager::PrintAll(void)
+{
+  Print();
+  std::cout << GridLogMessage << std::endl;
+  std::cout << GridLogMessage << "--------------------------------------------" << std::endl;
+  std::cout << GridLogMessage << "CpuAddr\t\tAccAddr\t\tState\t\tcpuLock\taccLock\tLRU_valid "<<std::endl;
+  std::cout << GridLogMessage << "--------------------------------------------" << std::endl;
   for(auto it=AccViewTable.begin();it!=AccViewTable.end();it++){
     auto &AccCache = it->second;
     
@@ -467,13 +492,13 @@ void  MemoryManager::Print(void)
     if ( AccCache.state==AccDirty ) str = std::string("AccDirty");
     if ( AccCache.state==Consistent)str = std::string("Consistent");
 
-    std::cout << GridLogDebug << "0x"<<std::hex<<AccCache.CpuPtr<<std::dec
+    std::cout << GridLogMessage << "0x"<<std::hex<<AccCache.CpuPtr<<std::dec
 	      << "\t0x"<<std::hex<<AccCache.AccPtr<<std::dec<<"\t" <<str
 	      << "\t" << AccCache.cpuLock
 	      << "\t" << AccCache.accLock
 	      << "\t" << AccCache.LRU_valid<<std::endl;
   }
-  std::cout << GridLogDebug << "--------------------------------------------" << std::endl;
+  std::cout << GridLogMessage << "--------------------------------------------" << std::endl;
 
 };
 int   MemoryManager::isOpen   (void* _CpuPtr) 
@@ -489,6 +514,25 @@ int   MemoryManager::isOpen   (void* _CpuPtr)
 }
 void MemoryManager::Audit(std::string s)
 {
+  uint64_t CpuBytes=0;
+  uint64_t AccBytes=0;
+  uint64_t LruBytes1=0;
+  uint64_t LruBytes2=0;
+  uint64_t LruCnt=0;
+  uint64_t LockedBytes=0;
+  
+  std::cout << " Memory Manager::Audit() from "<<s<<std::endl;
+  for(auto it=LRU.begin();it!=LRU.end();it++){
+    uint64_t cpuPtr = *it;
+    assert(EntryPresent(cpuPtr));
+    auto AccCacheIterator = EntryLookup(cpuPtr);
+    auto & AccCache = AccCacheIterator->second;
+    LruBytes2+=AccCache.bytes;
+    assert(AccCache.LRU_valid==1);
+    assert(AccCache.LRU_entry==it);
+  }
+  std::cout << " Memory Manager::Audit() LRU queue matches table entries "<<std::endl;
+
   for(auto it=AccViewTable.begin();it!=AccViewTable.end();it++){
     auto &AccCache = it->second;
     
@@ -498,7 +542,14 @@ void MemoryManager::Audit(std::string s)
     if ( AccCache.state==AccDirty ) str = std::string("AccDirty");
     if ( AccCache.state==Consistent)str = std::string("Consistent");
 
-    if ( AccCache.cpuLock || AccCache.accLock ) { 
+    CpuBytes+=AccCache.bytes;
+    if( AccCache.AccPtr )    AccBytes+=AccCache.bytes;
+    if( AccCache.LRU_valid ) LruBytes1+=AccCache.bytes;
+    if( AccCache.LRU_valid ) LruCnt++;
+    
+    if ( AccCache.cpuLock || AccCache.accLock ) {
+      assert(AccCache.LRU_valid==0);
+
       std::cout << GridLogError << s<< "\n\t 0x"<<std::hex<<AccCache.CpuPtr<<std::dec
 		<< "\t0x"<<std::hex<<AccCache.AccPtr<<std::dec<<"\t" <<str
 		<< "\t cpuLock  " << AccCache.cpuLock
@@ -509,6 +560,15 @@ void MemoryManager::Audit(std::string s)
     assert( AccCache.cpuLock== 0 ) ;
     assert( AccCache.accLock== 0 ) ;
   }
+  std::cout << " Memory Manager::Audit() no locked table entries "<<std::endl;
+  assert(LruBytes1==LruBytes2);
+  assert(LruBytes1==DeviceLRUBytes);
+  std::cout << " Memory Manager::Audit() evictable bytes matches sum over table "<<std::endl;
+  assert(AccBytes==DeviceBytes);
+  std::cout << " Memory Manager::Audit() device bytes matches sum over table "<<std::endl;
+  assert(LruCnt == LRU.size());
+  std::cout << " Memory Manager::Audit() LRU entry count matches "<<std::endl;
+
 }
 
 void MemoryManager::PrintState(void* _CpuPtr)
@@ -526,8 +586,8 @@ void MemoryManager::PrintState(void* _CpuPtr)
     if ( AccCache.state==EvictNext) str = std::string("EvictNext");
 
     std::cout << GridLogMessage << "CpuAddr\t\tAccAddr\t\tState\t\tcpuLock\taccLock\tLRU_valid "<<std::endl;
-    std::cout << GridLogMessage << "0x"<<std::hex<<AccCache.CpuPtr<<std::dec
-    << "\t0x"<<std::hex<<AccCache.AccPtr<<std::dec<<"\t" <<str
+    std::cout << GridLogMessage << "\tx"<<std::hex<<AccCache.CpuPtr<<std::dec
+    << "\tx"<<std::hex<<AccCache.AccPtr<<std::dec<<"\t" <<str
     << "\t" << AccCache.cpuLock
     << "\t" << AccCache.accLock
     << "\t" << AccCache.LRU_valid<<std::endl;

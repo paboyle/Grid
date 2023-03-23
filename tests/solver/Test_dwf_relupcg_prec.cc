@@ -2,10 +2,11 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_dwf_cg_prec.cc
+    Source file: ./tests/solver/Test_dwf_relupcg_prec.cc
 
     Copyright (C) 2015
 
+Author: Christopher Kelly <ckelly@bnl.gov>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
@@ -30,25 +31,20 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 using namespace std;
 using namespace Grid;
 
-template<class d>
-struct scal {
-  d internal;
-};
-
-  Gamma::Algebra Gmu [] = {
-    Gamma::Algebra::GammaX,
-    Gamma::Algebra::GammaY,
-    Gamma::Algebra::GammaZ,
-    Gamma::Algebra::GammaT
-  };
-
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
+  double relup_delta = 0.2;
+  for(int i=1;i<argc-1;i++){
+    std::string sarg = argv[i];
+    if(sarg == "--relup_delta"){
+      std::stringstream ss; ss << argv[i+1]; ss >> relup_delta;
+      std::cout << GridLogMessage << "Set reliable update Delta to " << relup_delta << std::endl;
+    }
+  }   
+  
   const int Ls=12;
-
-  std::cout << GridLogMessage << "::::: NB: to enable a quick bit reproducibility check use the --checksums flag. " << std::endl;
 
   { 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexD::Nsimd()),GridDefaultMpi());
@@ -93,23 +89,29 @@ int main (int argc, char ** argv)
   SchurDiagMooeeOperator<DomainWallFermionF,LatticeFermionF> HermOpEO_f(Ddwf_f);
 
   std::cout << GridLogMessage << "::::::::::::: Starting mixed CG" << std::endl;
-  MixedPrecisionConjugateGradient<LatticeFermionD,LatticeFermionF> mCG(1.0e-8, 10000, 50, FrbGrid_f, HermOpEO_f, HermOpEO);
+  ConjugateGradientReliableUpdate<LatticeFermionD,LatticeFermionF> mCG(1e-8, 10000, relup_delta, FrbGrid_f, HermOpEO_f, HermOpEO);
   double t1,t2,flops;
   double MdagMsiteflops = 1452; // Mobius (real coeffs)
   // CG overhead: 8 inner product, 4+8 axpy_norm, 4+4 linear comb (2 of)
   double CGsiteflops = (8+4+8+4+4)*Nc*Ns ;
   std:: cout << " MdagM site flops = "<< 4*MdagMsiteflops<<std::endl;
   std:: cout << " CG    site flops = "<< CGsiteflops <<std::endl;
-  int iters;
+  int iters, iters_cleanup, relups, tot_iters;
   for(int i=0;i<10;i++){
     result_o = Zero();
     t1=usecond();
     mCG(src_o,result_o);
     t2=usecond();
-    iters = mCG.TotalInnerIterations; //Number of inner CG iterations
-    flops = MdagMsiteflops*4*FrbGrid->gSites()*iters;
-    flops+= CGsiteflops*FrbGrid->gSites()*iters;
-    std::cout << " SinglePrecision iterations/sec "<< iters/(t2-t1)*1000.*1000.<<std::endl;
+    iters = mCG.IterationsToComplete; //Number of single prec CG iterations
+    iters_cleanup = mCG.IterationsToCleanup;
+    relups = mCG.ReliableUpdatesPerformed;
+    tot_iters  = iters + iters_cleanup + relups; //relup cost MdagM application in double
+    
+    flops = MdagMsiteflops*4*FrbGrid->gSites()*tot_iters;
+    flops+= CGsiteflops*FrbGrid->gSites()*tot_iters;
+    std::cout << " SinglePrecision single prec iterations/sec "<< iters/(t2-t1)*1000.*1000.<<std::endl;
+    std::cout << " SinglePrecision double prec cleanup iterations/sec "<< iters_cleanup/(t2-t1)*1000.*1000.<<std::endl;
+    std::cout << " SinglePrecision reliable updates/sec "<< relups/(t2-t1)*1000.*1000.<<std::endl;
     std::cout << " SinglePrecision GF/s "<< flops/(t2-t1)/1000.<<std::endl;
   }
   std::cout << GridLogMessage << "::::::::::::: Starting regular CG" << std::endl;
@@ -133,32 +135,6 @@ int main (int argc, char ** argv)
   RealD diff = axpy_norm(diff_o, -1.0, result_o, result_o_2);
 
   std::cout << GridLogMessage << "::::::::::::: Diff between mixed and regular CG: " << diff << std::endl;
-
-  #ifdef HAVE_LIME
-  if( GridCmdOptionExists(argv,argv+argc,"--checksums") ){
-  
-  std::string file1("./Propagator1");
-  emptyUserRecord record;
-  uint32_t nersc_csum;
-  uint32_t scidac_csuma;
-  uint32_t scidac_csumb;
-  typedef SpinColourVectorD   FermionD;
-  typedef vSpinColourVectorD vFermionD;
-
-  BinarySimpleMunger<FermionD,FermionD> munge;
-  std::string format = getFormatString<vFermionD>();
-  
-  BinaryIO::writeLatticeObject<vFermionD,FermionD>(result_o,file1,munge, 0, format,
-						   nersc_csum,scidac_csuma,scidac_csumb);
-
-  std::cout << GridLogMessage << " Mixed checksums "<<std::hex << scidac_csuma << " "<<scidac_csumb<<std::endl;
-
-  BinaryIO::writeLatticeObject<vFermionD,FermionD>(result_o_2,file1,munge, 0, format,
-						   nersc_csum,scidac_csuma,scidac_csumb);
-
-  std::cout << GridLogMessage << " CG checksums "<<std::hex << scidac_csuma << " "<<scidac_csumb<<std::endl;
-  }
-  #endif
   }
   
   MemoryManager::Print();

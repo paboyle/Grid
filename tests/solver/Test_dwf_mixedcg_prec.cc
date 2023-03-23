@@ -27,20 +27,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
-using namespace std;
+//using namespace std;
 using namespace Grid;
-
-template<class d>
-struct scal {
-  d internal;
-};
-
-  Gamma::Algebra Gmu [] = {
-    Gamma::Algebra::GammaX,
-    Gamma::Algebra::GammaY,
-    Gamma::Algebra::GammaZ,
-    Gamma::Algebra::GammaT
-  };
 
 int main (int argc, char ** argv)
 {
@@ -50,7 +38,6 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "::::: NB: to enable a quick bit reproducibility check use the --checksums flag. " << std::endl;
 
-  { 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexD::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
@@ -100,67 +87,35 @@ int main (int argc, char ** argv)
   double CGsiteflops = (8+4+8+4+4)*Nc*Ns ;
   std:: cout << " MdagM site flops = "<< 4*MdagMsiteflops<<std::endl;
   std:: cout << " CG    site flops = "<< CGsiteflops <<std::endl;
-  int iters;
-  for(int i=0;i<10;i++){
-    result_o = Zero();
-    t1=usecond();
-    mCG(src_o,result_o);
-    t2=usecond();
-    iters = mCG.TotalInnerIterations; //Number of inner CG iterations
-    flops = MdagMsiteflops*4*FrbGrid->gSites()*iters;
-    flops+= CGsiteflops*FrbGrid->gSites()*iters;
-    std::cout << " SinglePrecision iterations/sec "<< iters/(t2-t1)*1000.*1000.<<std::endl;
-    std::cout << " SinglePrecision GF/s "<< flops/(t2-t1)/1000.<<std::endl;
-  }
+
+  result_o = Zero();
+  t1=usecond();
+  mCG(src_o,result_o);
+  t2=usecond();
+  int iters = mCG.TotalInnerIterations; //Number of inner CG iterations
+  flops = MdagMsiteflops*4*FrbGrid->gSites()*iters;
+  flops+= CGsiteflops*FrbGrid->gSites()*iters;
+  std::cout << " SinglePrecision iterations/sec "<< iters/(t2-t1)*1000.*1000.<<std::endl;
+  std::cout << " SinglePrecision GF/s "<< flops/(t2-t1)/1000.<<std::endl;
+
   std::cout << GridLogMessage << "::::::::::::: Starting regular CG" << std::endl;
   ConjugateGradient<LatticeFermionD> CG(1.0e-8,10000);
-  for(int i=0;i<1;i++){
-    result_o_2 = Zero();
-    t1=usecond();
-    CG(HermOpEO,src_o,result_o_2);
-    t2=usecond();
-    iters = CG.IterationsToComplete;
-    flops = MdagMsiteflops*4*FrbGrid->gSites()*iters; 
-    flops+= CGsiteflops*FrbGrid->gSites()*iters;
-    
-    std::cout << " DoublePrecision iterations/sec "<< iters/(t2-t1)*1000.*1000.<<std::endl;
-    std::cout << " DoublePrecision GF/s "<< flops/(t2-t1)/1000.<<std::endl;
-  }
+  result_o_2 = Zero();
+  t1=usecond();
+  CG(HermOpEO,src_o,result_o_2);
+  t2=usecond();
+  iters = CG.IterationsToComplete;
+  flops = MdagMsiteflops*4*FrbGrid->gSites()*iters; 
+  flops+= CGsiteflops*FrbGrid->gSites()*iters;
   
-  //  MemoryManager::Print();
+  std::cout << " DoublePrecision iterations/sec "<< iters/(t2-t1)*1000.*1000.<<std::endl;
+  std::cout << " DoublePrecision GF/s "<< flops/(t2-t1)/1000.<<std::endl;
 
   LatticeFermionD diff_o(FrbGrid);
   RealD diff = axpy_norm(diff_o, -1.0, result_o, result_o_2);
 
   std::cout << GridLogMessage << "::::::::::::: Diff between mixed and regular CG: " << diff << std::endl;
 
-  #ifdef HAVE_LIME
-  if( GridCmdOptionExists(argv,argv+argc,"--checksums") ){
-  
-  std::string file1("./Propagator1");
-  emptyUserRecord record;
-  uint32_t nersc_csum;
-  uint32_t scidac_csuma;
-  uint32_t scidac_csumb;
-  typedef SpinColourVectorD   FermionD;
-  typedef vSpinColourVectorD vFermionD;
-
-  BinarySimpleMunger<FermionD,FermionD> munge;
-  std::string format = getFormatString<vFermionD>();
-  
-  BinaryIO::writeLatticeObject<vFermionD,FermionD>(result_o,file1,munge, 0, format,
-						   nersc_csum,scidac_csuma,scidac_csumb);
-
-  std::cout << GridLogMessage << " Mixed checksums "<<std::hex << scidac_csuma << " "<<scidac_csumb<<std::endl;
-
-  BinaryIO::writeLatticeObject<vFermionD,FermionD>(result_o_2,file1,munge, 0, format,
-						   nersc_csum,scidac_csuma,scidac_csumb);
-
-  std::cout << GridLogMessage << " CG checksums "<<std::hex << scidac_csuma << " "<<scidac_csumb<<std::endl;
-  }
-  #endif
-  }
-  
   MemoryManager::Print();
 
   Grid_finalize();

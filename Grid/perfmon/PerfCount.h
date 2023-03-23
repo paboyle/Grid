@@ -30,6 +30,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_PERFCOUNT_H
 #define GRID_PERFCOUNT_H
 
+
+#ifndef __SSC_START
+#define __SSC_START
+#define __SSC_STOP
+#endif
+
 #include <sys/time.h>
 #include <ctime>
 #include <chrono>

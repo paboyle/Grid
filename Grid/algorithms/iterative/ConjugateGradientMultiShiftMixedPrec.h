@@ -131,6 +131,9 @@ public:
     GRID_TRACE("ConjugateGradientMultiShiftMixedPrec");
     GridBase *DoublePrecGrid = src_d.Grid();
 
+    precisionChangeWorkspace pc_wk_s_to_d(DoublePrecGrid,SinglePrecGrid);
+    precisionChangeWorkspace pc_wk_d_to_s(SinglePrecGrid,DoublePrecGrid);
+    
     ////////////////////////////////////////////////////////////////////////
     // Convenience references to the info stored in "MultiShiftFunction"
     ////////////////////////////////////////////////////////////////////////
@@ -201,10 +204,10 @@ public:
     r_d = p_d;
     
     //MdagM+m[0]
-    precisionChangeFast(p_f,p_d);
+    precisionChange(p_f, p_d, pc_wk_d_to_s);
 
     Linop_f.HermOpAndNorm(p_f,mmp_f,d,qq); // mmp = MdagM p        d=real(dot(p, mmp)),  qq=norm2(mmp)
-    precisionChangeFast(tmp_d,mmp_f);
+    precisionChange(tmp_d, mmp_f, pc_wk_s_to_d);
     Linop_d.HermOpAndNorm(p_d,mmp_d,d,qq); // mmp = MdagM p        d=real(dot(p, mmp)),  qq=norm2(mmp)
     tmp_d = tmp_d - mmp_d;
     std::cout << " Testing operators match "<<norm2(mmp_d)<<" f "<<norm2(mmp_f)<<" diff "<< norm2(tmp_d)<<std::endl;
@@ -264,7 +267,7 @@ public:
       AXPYTimer.Stop();
 
       PrecChangeTimer.Start();
-      precisionChangeFast(p_f, p_d); //get back single prec search direction for linop
+      precisionChange(p_f, p_d, pc_wk_d_to_s); //get back single prec search direction for linop
       PrecChangeTimer.Stop();
 
       cp=c;
@@ -273,7 +276,7 @@ public:
       MatrixTimer.Stop();  
 
       PrecChangeTimer.Start();
-      precisionChangeFast(mmp_d, mmp_f); // From Float to Double
+      precisionChange(mmp_d, mmp_f, pc_wk_s_to_d); // From Float to Double
       PrecChangeTimer.Stop();
 
       AXPYTimer.Start();

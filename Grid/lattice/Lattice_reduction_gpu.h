@@ -211,13 +211,28 @@ inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osi
   assert(ok);
 
   Integer smemSize = numThreads * sizeof(sobj);
-
-  Vector<sobj> buffer(numBlocks);
+  // UVM seems to be buggy under later CUDA drivers
+  // This fails on A100 and driver 5.30.02 / CUDA 12.1
+  // Fails with multiple NVCC versions back to 11.4,
+  // which worked with earlier drivers.
+  // Not sure which driver had first fail and this bears checking
+  // Is awkward as must install multiple driver versions
+#undef UVM_BLOCK_BUFFER  
+#ifndef UVM_BLOCK_BUFFER  
+  commVector<sobj> buffer(numBlocks);
   sobj *buffer_v = &buffer[0];
-  
+  sobj result;
   reduceKernel<<< numBlocks, numThreads, smemSize >>>(lat, buffer_v, size);
   accelerator_barrier();
-  auto result = buffer_v[0];
+  acceleratorCopyFromDevice(buffer_v,&result,sizeof(result));
+#else
+  Vector<sobj> buffer(numBlocks);
+  sobj *buffer_v = &buffer[0];
+  sobj result;
+  reduceKernel<<< numBlocks, numThreads, smemSize >>>(lat, buffer_v, size);
+  accelerator_barrier();
+  result = *buffer_v;
+#endif
   return result;
 }
 
