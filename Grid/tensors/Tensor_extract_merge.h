@@ -226,7 +226,7 @@ template<class vobjOut, class vobjIn>
 accelerator_inline 
 void copyLane(vobjOut & __restrict__ vecOut, int lane_out, const vobjIn & __restrict__ vecIn, int lane_in)
 {
-  static_assert( std::is_same<typename vobjOut::DoublePrecision, typename vobjIn::DoublePrecision>::value == 1, "copyLane: tensor types must be the same" ); //if tensor types are same the DoublePrecision type must be the same
+  static_assert( std::is_same<typename vobjOut::scalar_typeD, typename vobjIn::scalar_typeD>::value == 1, "copyLane: tensor types must be the same" ); //if tensor types are same the DoublePrecision type must be the same
 
   typedef typename vobjOut::vector_type ovector_type;  
   typedef typename vobjIn::vector_type ivector_type;  
@@ -251,9 +251,9 @@ void copyLane(vobjOut & __restrict__ vecOut, int lane_out, const vobjIn & __rest
   ovector_type * __restrict__ op = (ovector_type *)&vecOut;
   ivector_type * __restrict__ ip = (ivector_type *)&vecIn;
   for(int w=0;w<owords;w++){
-    itmp = ip[iNsimd*w].getlane(lane_in);
+    itmp = ip[w].getlane(lane_in);
     otmp = itmp; //potential precision change
-    op[oNsimd*w].putlane(otmp,lane_out);
+    op[w].putlane(otmp,lane_out);
   }
 }
 
