@@ -245,7 +245,7 @@ public:
   ///////////////////////////////////////////
   // user defined constructor
   ///////////////////////////////////////////
-  Lattice(GridBase *grid,ViewMode mode=AcceleratorWrite) { 
+  Lattice(GridBase *grid,ViewMode mode=AcceleratorWriteDiscard) { 
     this->_grid = grid;
     resize(this->_grid->oSites());
     assert((((uint64_t)&this->_odata[0])&0xF) ==0);
