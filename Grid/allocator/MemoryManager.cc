@@ -39,6 +39,7 @@ void MemoryManager::PrintBytes(void)
 }
 
 uint64_t MemoryManager::DeviceCacheBytes() { return CacheBytes[Acc] + CacheBytes[AccHuge] + CacheBytes[AccSmall]; }
+uint64_t MemoryManager::HostCacheBytes()   { return CacheBytes[Cpu] + CacheBytes[CpuHuge] + CacheBytes[CpuSmall]; }
 
 //////////////////////////////////////////////////////////////////////
 // Data tables for recently freed pooiniter caches
