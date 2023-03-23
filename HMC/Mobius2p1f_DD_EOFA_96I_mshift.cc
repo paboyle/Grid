@@ -164,11 +164,6 @@ int main(int argc, char **argv) {
   typedef MobiusEOFAFermionF FermionEOFAActionF;
   typedef typename FermionActionF::FermionField FermionFieldF;
 
-  typedef WilsonImplD2 FermionImplPolicyD2;
-  typedef MobiusFermionD2 FermionActionD2;
-  typedef MobiusEOFAFermionD2 FermionEOFAActionD2;
-  typedef typename FermionActionD2::FermionField FermionFieldD2;
-
   typedef Grid::XmlReader       Serialiser;
 
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -268,10 +263,8 @@ int main(int argc, char **argv) {
 
   typedef SchurDiagMooeeOperator<FermionActionF,FermionFieldF> LinearOperatorF;
   typedef SchurDiagMooeeOperator<FermionAction ,FermionField > LinearOperatorD;
-  typedef SchurDiagMooeeOperator<FermionActionD2,FermionFieldD2 > LinearOperatorD2;
   typedef SchurDiagMooeeOperator<FermionEOFAActionF,FermionFieldF> LinearOperatorEOFAF;
   typedef SchurDiagMooeeOperator<FermionEOFAAction ,FermionField > LinearOperatorEOFAD;
-  typedef SchurDiagMooeeOperator<FermionEOFAActionD2,FermionFieldD2 > LinearOperatorEOFAD2;
   typedef MixedPrecisionConjugateGradientOperatorFunction<MobiusFermionD,MobiusFermionF,LinearOperatorD,LinearOperatorF> MxPCG;
   typedef MixedPrecisionConjugateGradientOperatorFunction<MobiusEOFAFermionD,MobiusEOFAFermionF,LinearOperatorEOFAD,LinearOperatorEOFAF> MxPCG_EOFA;
 
@@ -324,7 +317,6 @@ int main(int argc, char **argv) {
   // temporarily need a gauge field
   LatticeGaugeFieldD  U(GridPtr); U=Zero();
   LatticeGaugeFieldF  UF(GridPtrF); UF=Zero();
-  LatticeGaugeFieldD2 UD2(GridPtrF); UD2=Zero();
 
   std::cout << GridLogMessage << " Running the HMC "<< std::endl;
   TheHMC.ReadCommandLine(argc,argv);  // params on CML or from param file
@@ -428,7 +420,7 @@ int main(int argc, char **argv) {
 	 ActionCGL, ActionCGR,
 	 DerivativeCGL, DerivativeCGR,
 	 SFRp, true);
-  //  Level2.push_back(&EOFA);
+  Level2.push_back(&EOFA);
 
   ////////////////////////////////////
   // up down action
@@ -453,15 +445,13 @@ int main(int argc, char **argv) {
   std::vector<FermionAction *> Denominators;
   std::vector<FermionActionF *> NumeratorsF;
   std::vector<FermionActionF *> DenominatorsF;
-  std::vector<FermionActionD2 *> NumeratorsD2;
-  std::vector<FermionActionD2 *> DenominatorsD2;
   std::vector<TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> *> Quotients;
   std::vector<MxPCG *> ActionMPCG;
   std::vector<MxPCG *> MPCG;
   
 #define MIXED_PRECISION
 #ifdef MIXED_PRECISION
-  std::vector<GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2> *> Bdys;
+  std::vector<GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicy> *> Bdys;
 #else
   std::vector<GeneralEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> *> Bdys;
 #endif
@@ -536,27 +526,15 @@ int main(int argc, char **argv) {
       Quotients.push_back (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],*MPCG[h],*ActionMPCG[h],CG));
     } else {
 #ifdef MIXED_PRECISION
-      // Use the D2 data types and make them use same grid as single
-      FermionActionD2::ImplParams ParamsDenD2(boundary);
-      FermionActionD2::ImplParams ParamsNumD2(boundary);
-
-      ParamsDenD2.dirichlet = ParamsDen.dirichlet;
-      ParamsDenD2.partialDirichlet = ParamsDen.partialDirichlet;
-      DenominatorsD2.push_back(new FermionActionD2(UD2,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[h],M5,b,c, ParamsDenD2));
-
-      ParamsNumD2.dirichlet = ParamsNum.dirichlet;
-      ParamsNumD2.partialDirichlet = ParamsNum.partialDirichlet;
-      NumeratorsD2.push_back  (new FermionActionD2(UD2,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_num[h],M5,b,c, ParamsNumD2));
-    
-      Bdys.push_back( new GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2>(
+      Bdys.push_back( new GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicy>(
 			   *Numerators[h],*Denominators[h],
 			   *NumeratorsF[h],*DenominatorsF[h],
-			   *NumeratorsD2[h],*DenominatorsD2[h],
+			   *Numerators[h],*Denominators[h],
 			   OFRp, SP_iters) );
-      Bdys.push_back( new GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2>(
+      Bdys.push_back( new GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicy>(
 			   *Numerators[h],*Denominators[h],
 			   *NumeratorsF[h],*DenominatorsF[h],
-			   *NumeratorsD2[h],*DenominatorsD2[h],
+			   *Numerators[h],*Denominators[h],
 			   OFRp, SP_iters) );
 #else
       Bdys.push_back( new GeneralEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
