@@ -217,19 +217,19 @@ inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osi
   // which worked with earlier drivers.
   // Not sure which driver had first fail and this bears checking
   // Is awkward as must install multiple driver versions
-#undef UVM_BLOCK_BUFFER  
+#undef  UVM_BLOCK_BUFFER  
 #ifndef UVM_BLOCK_BUFFER  
   commVector<sobj> buffer(numBlocks);
   sobj *buffer_v = &buffer[0];
   sobj result;
-  reduceKernel<<< numBlocks, numThreads, smemSize >>>(lat, buffer_v, size);
+  reduceKernel<<< numBlocks, numThreads, smemSize, computeStream >>>(lat, buffer_v, size);
   accelerator_barrier();
   acceleratorCopyFromDevice(buffer_v,&result,sizeof(result));
 #else
   Vector<sobj> buffer(numBlocks);
   sobj *buffer_v = &buffer[0];
   sobj result;
-  reduceKernel<<< numBlocks, numThreads, smemSize >>>(lat, buffer_v, size);
+  reduceKernel<<< numBlocks, numThreads, smemSize, computeStream >>>(lat, buffer_v, size);
   accelerator_barrier();
   result = *buffer_v;
 #endif
