@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
 
    // Typedefs to simplify notation
   typedef WilsonImplR FermionImplPolicy;
-  typedef MobiusFermionR FermionAction;
+  typedef MobiusFermionD FermionAction;
   typedef typename FermionAction::FermionField FermionField;
 
   typedef Grid::XmlReader       Serialiser;
@@ -299,6 +299,7 @@ int main(int argc, char **argv) {
     //    MDCG(SdagS,vec,res);
 
 
+    vec = 1; // Fill with any old junk
     std::cout << "Bounds check on light quark operator mass "<< Denominators[0]->Mass() <<std::endl;
     SchurDifferentiableOperator<FermionImplPolicy> UdagU(*Denominators[0]);
     HighBoundCheck(UdagU,vec,OFRp.hi);
@@ -308,14 +309,16 @@ int main(int argc, char **argv) {
     //    MDCG(UdagU,vec,res);
 
 
+    vec = 1; // Fill with any old junk
     std::cout << "Bounds check on strange dirichlet operator mass "<< StrangeOpDir.Mass()<<std::endl;
     SchurDifferentiableOperator<FermionImplPolicy> SddagSd(StrangeOpDir);
-    HighBoundCheck(SddagSd,vec,OFRp.hi);
-    ChebyBoundsCheck(SddagSd,vec,OFRp.lo,OFRp.hi);
+    HighBoundCheck(SddagSd,vec,SFRp.hi);
+    ChebyBoundsCheck(SddagSd,vec,SFRp.lo,SFRp.hi);
     std::cout << "strange dirichlet inversion"<<std::endl;
     res=Zero();
     //    MDCG(SddagSd,vec,res);
 
+    vec = 1; // Fill with any old junk
     std::cout << "Bounds check on light dirichlet operator mass "<< Numerators[0]->Mass()<<std::endl;
     SchurDifferentiableOperator<FermionImplPolicy> UddagUd(*Numerators[0]);
     HighBoundCheck(UddagUd,vec,OFRp.hi);
@@ -337,7 +340,7 @@ int main(int argc, char **argv) {
     const int MaxIt= 10000;
     int Nconv;
     RealD resid = 1.0e-5;
-    if(0)
+    if(1)
     {
       int order = 501;
       RealD bound = 5.0e-4;

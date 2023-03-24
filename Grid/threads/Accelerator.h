@@ -250,19 +250,25 @@ inline int  acceleratorIsCommunicable(void *ptr)
 //////////////////////////////////////////////
 
 #ifdef GRID_SYCL
-NAMESPACE_END(Grid);
-#include <CL/sycl.hpp>
-#include <CL/sycl/usm.hpp>
-
 #define GRID_SYCL_LEVEL_ZERO_IPC
 
-#ifdef GRID_SYCL_LEVEL_ZERO_IPC
+NAMESPACE_END(Grid);
+#if 0
+#include <CL/sycl.hpp>
+#include <CL/sycl/usm.hpp>
 #include <level_zero/ze_api.h>
 #include <CL/sycl/backend/level_zero.hpp>
+#else
+#include <sycl/CL/sycl.hpp>
+#include <sycl/usm.hpp>
+#include <level_zero/ze_api.h>
+#include <sycl/ext/oneapi/backend/level_zero.hpp>
 #endif
+
 NAMESPACE_BEGIN(Grid);
 
 extern cl::sycl::queue *theGridAccelerator;
+extern cl::sycl::queue *theCopyAccelerator;
 
 #ifdef __SYCL_DEVICE_ONLY__
 #define GRID_SIMT
@@ -290,7 +296,7 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
       cgh.parallel_for(					\
       cl::sycl::nd_range<3>(global,local), \
       [=] (cl::sycl::nd_item<3> item) /*mutable*/     \
-      [[intel::reqd_sub_group_size(8)]]	      \
+      [[intel::reqd_sub_group_size(16)]]	      \
       {						      \
       auto iter1    = item.get_global_id(0);	      \
       auto iter2    = item.get_global_id(1);	      \
@@ -299,19 +305,19 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
      });	   			              \
     });
 
-#define accelerator_barrier(dummy) theGridAccelerator->wait();
+#define accelerator_barrier(dummy) { theGridAccelerator->wait(); }
 
 inline void *acceleratorAllocShared(size_t bytes){ return malloc_shared(bytes,*theGridAccelerator);};
 inline void *acceleratorAllocDevice(size_t bytes){ return malloc_device(bytes,*theGridAccelerator);};
 inline void acceleratorFreeShared(void *ptr){free(ptr,*theGridAccelerator);};
 inline void acceleratorFreeDevice(void *ptr){free(ptr,*theGridAccelerator);};
-inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  {
-  theGridAccelerator->memcpy(to,from,bytes);
-}
-inline void acceleratorCopySynchronise(void) {  theGridAccelerator->wait(); std::cout<<"acceleratorCopySynchronise() wait "<<std::endl; }
-inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
-inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
-inline void acceleratorMemSet(void *base,int value,size_t bytes) { theGridAccelerator->memset(base,value,bytes); theGridAccelerator->wait();}
+
+inline void acceleratorCopySynchronise(void) {  theCopyAccelerator->wait(); }
+inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  {  theCopyAccelerator->memcpy(to,from,bytes);}
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait();}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait();}
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { theCopyAccelerator->memset(base,value,bytes); theCopyAccelerator->wait();}
+
 inline int  acceleratorIsCommunicable(void *ptr)
 {
 #if 0
@@ -514,7 +520,16 @@ inline void *acceleratorAllocCpu(size_t bytes){return memalign(GRID_ALLOC_ALIGN,
 inline void acceleratorFreeCpu  (void *ptr){free(ptr);};
 #endif
 
+//////////////////////////////////////////////
+// Fencing needed ONLY for SYCL
+//////////////////////////////////////////////
 
+#ifdef GRID_SYCL
+inline void acceleratorFenceComputeStream(void){ accelerator_barrier();};
+#else
+// Ordering within a stream guaranteed on Nvidia & AMD
+inline void acceleratorFenceComputeStream(void){ };
+#endif
 
 ///////////////////////////////////////////////////
 // Synchronise across local threads for divergence resynch

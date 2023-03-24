@@ -35,9 +35,9 @@ using namespace Grid;
 
 int main (int argc, char ** argv)
 {
-  typedef typename DomainWallFermionR::FermionField FermionField; 
-  typedef typename DomainWallFermionR::ComplexField ComplexField; 
-  typename DomainWallFermionR::ImplParams params; 
+  typedef typename DomainWallFermionD::FermionField FermionField; 
+  typedef typename DomainWallFermionD::ComplexField ComplexField; 
+  typename DomainWallFermionD::ImplParams params; 
 
   const int Ls=16;
 
@@ -106,13 +106,13 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Building the solvers"<<std::endl;
   RealD mass=0.01;
   RealD M5=1.8;
-  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*rbGrid,mass,M5,params);
+  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*rbGrid,mass,M5,params);
 
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   std::cout << GridLogMessage << " Calling DWF CG "<<std::endl;
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
 
-  MdagMLinearOperator<DomainWallFermionR,FermionField> HermOp(Ddwf);
+  MdagMLinearOperator<DomainWallFermionD,FermionField> HermOp(Ddwf);
   ConjugateGradient<FermionField> CG((stp),100000);
 
   for(int rhs=0;rhs<1;rhs++){

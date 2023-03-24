@@ -123,18 +123,35 @@ void Benchmark(int Ls, Coordinate Dirichlet)
 
   long unsigned int single_site_flops = 8*Nc*(7+16*Nc);
 
-  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
+  std::vector<int> seeds4({1,2,3,4});
+  std::vector<int> seeds5({5,6,7,8});
+#define SINGLE
+#ifdef SINGLE
+  typedef vComplexF          Simd;
+  typedef LatticeFermionF    FermionField;
+  typedef LatticeGaugeFieldF GaugeField;
+  typedef LatticeColourMatrixF ColourMatrixField;
+  typedef DomainWallFermionF FermionAction;
+#endif
+#ifdef DOUBLE
+  typedef vComplexD          Simd;
+  typedef LatticeFermionD    FermionField;
+  typedef LatticeGaugeFieldD GaugeField;
+  typedef LatticeColourMatrixD ColourMatrixField;
+  typedef DomainWallFermionD FermionAction;
+#endif
+#ifdef DOUBLE2
+  typedef vComplexD2          Simd;
+  typedef LatticeFermionD2    FermionField;
+  typedef LatticeGaugeFieldD2 GaugeField;
+  typedef LatticeColourMatrixD2 ColourMatrixField;
+  typedef DomainWallFermionD2 FermionAction;
+#endif
+  
+  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,Simd::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
-
-  GridCartesian         * sUGrid   = SpaceTimeGrid::makeFourDimDWFGrid(GridDefaultLatt(),GridDefaultMpi());
-  GridRedBlackCartesian * sUrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(sUGrid);
-  GridCartesian         * sFGrid   = SpaceTimeGrid::makeFiveDimDWFGrid(Ls,UGrid);
-  GridRedBlackCartesian * sFrbGrid = SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(Ls,UGrid);
-
-  std::vector<int> seeds4({1,2,3,4});
-  std::vector<int> seeds5({5,6,7,8});
 
   std::cout << GridLogMessage << "Initialising 4d RNG" << std::endl;
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedUniqueString(std::string("The 4D RNG"));
@@ -142,7 +159,8 @@ void Benchmark(int Ls, Coordinate Dirichlet)
   std::cout << GridLogMessage << "Initialising 5d RNG" << std::endl;
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedUniqueString(std::string("The 5D RNG"));
 
-  LatticeFermionF src   (FGrid); random(RNG5,src);
+ 
+  FermionField src   (FGrid); random(RNG5,src);
 #if 0
   src = Zero();
   {
@@ -158,14 +176,14 @@ void Benchmark(int Ls, Coordinate Dirichlet)
   src = src*N2;
 #endif
 
-  LatticeFermionF result(FGrid); result=Zero();
-  LatticeFermionF    ref(FGrid);    ref=Zero();
-  LatticeFermionF    tmp(FGrid);
-  LatticeFermionF    err(FGrid);
+  FermionField result(FGrid); result=Zero();
+  FermionField    ref(FGrid);    ref=Zero();
+  FermionField    tmp(FGrid);
+  FermionField    err(FGrid);
 
   std::cout << GridLogMessage << "Drawing gauge field" << std::endl;
-  LatticeGaugeFieldF Umu(UGrid);
-  LatticeGaugeFieldF UmuCopy(UGrid);
+  GaugeField Umu(UGrid);
+  GaugeField UmuCopy(UGrid);
   SU<Nc>::HotConfiguration(RNG4,Umu);
   UmuCopy=Umu;
   std::cout << GridLogMessage << "Random gauge initialised " << std::endl;
@@ -179,13 +197,13 @@ void Benchmark(int Ls, Coordinate Dirichlet)
   std::cout << GridLogMessage << "Applying BCs for Dirichlet Block5 " << Dirichlet << std::endl;
   std::cout << GridLogMessage << "Applying BCs for Dirichlet Block4 " << Block << std::endl;
 
-  DirichletFilter<LatticeGaugeFieldF> Filter(Block);
+  DirichletFilter<GaugeField> Filter(Block);
   Filter.applyFilter(Umu);
   
   ////////////////////////////////////
   // Naive wilson implementation
   ////////////////////////////////////
-  std::vector<LatticeColourMatrixF> U(4,UGrid);
+  std::vector<ColourMatrixField> U(4,UGrid);
   for(int mu=0;mu<Nd;mu++){
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
   }
@@ -236,10 +254,8 @@ void Benchmark(int Ls, Coordinate Dirichlet)
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
   std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionR::Dhop                  "<<std::endl;
-  std::cout << GridLogMessage<< "* Vectorising space-time by "<<vComplexF::Nsimd()<<std::endl;
-  std::cout << GridLogMessage<< "* VComplexF size is "<<sizeof(vComplexF)<< " B"<<std::endl;
-  if ( sizeof(RealF)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
-  if ( sizeof(RealF)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
+  std::cout << GridLogMessage<< "* Vectorising space-time by "<<Simd::Nsimd()<<std::endl;
+  std::cout << GridLogMessage<< "* VComplex size is "<<sizeof(Simd)<< " B"<<std::endl;
 #ifdef GRID_OMP
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute ) std::cout << GridLogMessage<< "* Using Overlapped Comms/Compute" <<std::endl;
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute) std::cout << GridLogMessage<< "* Using sequential comms compute" <<std::endl;
@@ -249,13 +265,14 @@ void Benchmark(int Ls, Coordinate Dirichlet)
   if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
 
-  DomainWallFermionF::ImplParams p;
+  FermionAction::ImplParams p;
   p.dirichlet=Dirichlet;
-  DomainWallFermionF Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,p);
+  FermionAction Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,p);
   Dw.ImportGauge(Umu);
   
   int ncall =300;
-
+  RealD n2e;
+  
   if (1) {
     FGrid->Barrier();
     Dw.Dhop(src,result,0);
@@ -270,8 +287,8 @@ void Benchmark(int Ls, Coordinate Dirichlet)
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=single_site_flops*volume*ncall;
 
-    auto nsimd = vComplex::Nsimd();
-    auto simdwidth = sizeof(vComplex);
+    auto nsimd = Simd::Nsimd();
+    auto simdwidth = sizeof(Simd);
 
     // RF: Nd Wilson * Ls, Nd gauge * Ls, Nc colors
     double data_rf = volume * ((2*Nd+1)*Nd*Nc + 2*Nd*Nc*Nc) * simdwidth / nsimd * ncall / (1024.*1024.*1024.);
@@ -283,17 +300,16 @@ void Benchmark(int Ls, Coordinate Dirichlet)
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NN<<std::endl;
-    //    std::cout<<GridLogMessage << "RF  GiB/s (base 2) =   "<< 1000000. * data_rf/((t1-t0))<<std::endl;
-    //    std::cout<<GridLogMessage << "mem GiB/s (base 2) =   "<< 1000000. * data_mem/((t1-t0))<<std::endl;
     err = ref-result;
-    std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
+    n2e = norm2(err);
+    std::cout<<GridLogMessage << "norm diff   "<< n2e<< "  Line "<<__LINE__ <<std::endl;
 
-    if(( norm2(err)>1.0e-4) ) {
+    if(( n2e>1.0e-4) ) {
       std::cout<<GridLogMessage << "WRONG RESULT" << std::endl;
       FGrid->Barrier();
       exit(-1);
     }
-    assert (norm2(err)< 1.0e-4 );
+    assert (n2e< 1.0e-4 );
   }
 
   if (1)
@@ -348,14 +364,16 @@ void Benchmark(int Ls, Coordinate Dirichlet)
   std::cout<<GridLogMessage << "norm dag result "<< norm2(result)<<std::endl;
   std::cout<<GridLogMessage << "norm dag ref    "<< norm2(ref)<<std::endl;
   err = ref-result;
-  std::cout<<GridLogMessage << "norm dag diff   "<< norm2(err)<<std::endl;
-  assert((norm2(err)<1.0e-4));
+  n2e= norm2(err);
+  std::cout<<GridLogMessage << "norm dag diff   "<< n2e<< "  Line "<<__LINE__ <<std::endl;
+
+  assert((n2e)<1.0e-4);
   
-  LatticeFermionF src_e (FrbGrid);
-  LatticeFermionF src_o (FrbGrid);
-  LatticeFermionF r_e   (FrbGrid);
-  LatticeFermionF r_o   (FrbGrid);
-  LatticeFermionF r_eo  (FGrid);
+  FermionField src_e (FrbGrid);
+  FermionField src_o (FrbGrid);
+  FermionField r_e   (FrbGrid);
+  FermionField r_o   (FrbGrid);
+  FermionField r_eo  (FGrid);
 
   std::cout<<GridLogMessage << "Calling Deo and Doe and //assert Deo+Doe == Dunprec"<<std::endl;
   pickCheckerboard(Even,src_e,src);
@@ -367,10 +385,8 @@ void Benchmark(int Ls, Coordinate Dirichlet)
 
   // S-direction is INNERMOST and takes no part in the parity.
   std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
-  std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionF::DhopEO                "<<std::endl;
-  std::cout << GridLogMessage<< "* Vectorising space-time by "<<vComplexF::Nsimd()<<std::endl;
-  if ( sizeof(RealF)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
-  if ( sizeof(RealF)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
+  std::cout << GridLogMessage<< "* Benchmarking DomainWallFermion::DhopEO                "<<std::endl;
+  std::cout << GridLogMessage<< "* Vectorising space-time by "<<Simd::Nsimd()<<std::endl;
 #ifdef GRID_OMP
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute ) std::cout << GridLogMessage<< "* Using Overlapped Comms/Compute" <<std::endl;
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute) std::cout << GridLogMessage<< "* Using sequential comms compute" <<std::endl;
@@ -384,13 +400,7 @@ void Benchmark(int Ls, Coordinate Dirichlet)
     Dw.DhopEO(src_o,r_e,DaggerNo);
     double t0=usecond();
     for(int i=0;i<ncall;i++){
-#ifdef CUDA_PROFILE
-      if(i==10) cudaProfilerStart();
-#endif
       Dw.DhopEO(src_o,r_e,DaggerNo);
-#ifdef CUDA_PROFILE
-      if(i==20) cudaProfilerStop();
-#endif
     }
     double t1=usecond();
     FGrid->Barrier();
@@ -414,8 +424,9 @@ void Benchmark(int Ls, Coordinate Dirichlet)
   setCheckerboard(r_eo,r_e);
 
   err = r_eo-result;
-  std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-  assert(norm2(err)<1.0e-4);
+  n2e= norm2(err);
+  std::cout<<GridLogMessage << "norm diff   "<< n2e<< "  Line "<<__LINE__ <<std::endl;
+  assert(n2e<1.0e-4);
 
   pickCheckerboard(Even,src_e,err);
   pickCheckerboard(Odd,src_o,err);

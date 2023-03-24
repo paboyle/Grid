@@ -110,11 +110,10 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
 #ifdef GPU_VEC
 #include "Grid_gpu_vec.h"
 #endif
-/*
-#ifdef GEN
-#include "Grid_generic.h"
+
+#ifdef GPU_RRII
+#include "Grid_gpu_rrii.h"
 #endif
-*/
 
 #ifdef GEN
   #if defined(A64FX) || defined(A64FXFIXEDSIZE) // breakout A64FX SVE ACLE here
@@ -131,7 +130,6 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
       #include "Grid_a64fx-fixedsize.h"
     #endif
   #else
-    //#pragma message("building GEN") // generic
     #include "Grid_generic.h"
   #endif
 #endif
@@ -149,23 +147,6 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
     #include "Grid_a64fx-2.h"
   #endif
 #endif
-
-/*
-#ifdef A64FXVLA
-#pragma message("building A64FX VLA")
-#if defined(ARMCLANGCOMPAT)
-  #pragma message("applying data types patch")
-#endif
-#include <arm_sve.h>
-#include "Grid_a64fx-2.h"
-#endif
-
-#ifdef A64FXVLS
-#pragma message("building A64FX VLS")
-#include <arm_sve.h>
-#include "Grid_a64fx-fixedsize.h"
-#endif
-*/
 
 #ifdef SSE4
 #include "Grid_sse4.h"
@@ -270,12 +251,14 @@ public:
   typedef Vector_type vector_type;
   typedef Scalar_type scalar_type;
 
+  /*
   typedef union conv_t_union {
     Vector_type v;
     Scalar_type s[sizeof(Vector_type) / sizeof(Scalar_type)];
     accelerator_inline conv_t_union(){};
   } conv_t;
-
+  */
+  
   Vector_type v;
 
   static accelerator_inline constexpr int Nsimd(void) {
@@ -555,15 +538,13 @@ public:
   template <class functor>
   friend accelerator_inline Grid_simd SimdApply(const functor &func, const Grid_simd &v) {
     Grid_simd ret;
-    Grid_simd::conv_t conv;
     Grid_simd::scalar_type s;
 
-    conv.v = v.v;
     for (int i = 0; i < Nsimd(); i++) {
-      s = conv.s[i];
-      conv.s[i] = func(s);
+      s = v.getlane(i);
+      s = func(s);
+      ret.putlane(s,i);
     }
-    ret.v = conv.v;
     return ret;
   }
   template <class functor>
@@ -571,18 +552,14 @@ public:
                                          const Grid_simd &x,
                                          const Grid_simd &y) {
     Grid_simd ret;
-    Grid_simd::conv_t cx;
-    Grid_simd::conv_t cy;
     Grid_simd::scalar_type sx,sy;
 
-    cx.v = x.v;
-    cy.v = y.v;
     for (int i = 0; i < Nsimd(); i++) {
-      sx = cx.s[i];
-      sy = cy.s[i];
-      cx.s[i] = func(sx,sy);
+      sx = x.getlane(i);
+      sy = y.getlane(i);
+      sx = func(sx,sy);
+      ret.putlane(sx,i);
     }
-    ret.v = cx.v;
     return ret;
   }
   ///////////////////////
@@ -645,14 +622,35 @@ public:
   ///////////////////////////////
   // Getting single lanes
   ///////////////////////////////
-  accelerator_inline Scalar_type getlane(int lane) {
+#ifdef GPU_RRII
+  template <class S = Scalar_type,IfComplex<S> = 0>
+  accelerator_inline Scalar_type getlane(int lane) const {
+    return Scalar_type(v.rrrr[lane],v.iiii[lane]);
+  }
+  template <class S = Scalar_type,IfComplex<S> = 0>
+  accelerator_inline void putlane(const Scalar_type &_S, int lane){
+    v.rrrr[lane] = real(_S);
+    v.iiii[lane] = imag(_S);
+  }
+  template <class S = Scalar_type,IfNotComplex<S> = 0>
+  accelerator_inline Scalar_type getlane(int lane) const {
+    return ((S*)&v)[lane];
+  }
+  template <class S = Scalar_type,IfNotComplex<S> = 0>
+  accelerator_inline void putlane(const S &_S, int lane){
+    ((Scalar_type*)&v)[lane] = _S;
+  }
+#else // Can pun to an array of complex
+  accelerator_inline Scalar_type getlane(int lane) const {
     return ((Scalar_type*)&v)[lane];
   }
-
   accelerator_inline void putlane(const Scalar_type &S, int lane){
     ((Scalar_type*)&v)[lane] = S;
   }
+#endif
+
 };  // end of Grid_simd class definition
+
 
 ///////////////////////////////
 // Define available types
@@ -663,7 +661,7 @@ typedef Grid_simd<double , SIMD_Dtype> vRealD;
 typedef Grid_simd<Integer, SIMD_Itype> vInteger;
 typedef Grid_simd<uint16_t,SIMD_Htype> vRealH;
 
-#ifdef GPU_VEC
+#if defined(GPU_VEC) || defined(GPU_RRII)
 typedef Grid_simd<complex<uint16_t>, SIMD_CHtype> vComplexH;
 typedef Grid_simd<complex<float>   , SIMD_CFtype> vComplexF;
 typedef Grid_simd<complex<double>  , SIMD_CDtype> vComplexD;
@@ -762,6 +760,7 @@ accelerator_inline void vsplat(Grid_simd<S, V> &ret, NotEnableIf<is_complex<S>, 
   ret.v = unary<V>(a, VsplatSIMD());
 }
 //////////////////////////
+
 
 ///////////////////////////////////////////////
 // Initialise to 1,0,i for the correct types
@@ -907,34 +906,6 @@ accelerator_inline Grid_simd<S, V> fxmac(Grid_simd<S, V> a, Grid_simd<S, V> b, G
 // ----------------------------------------------
 
 
-// Distinguish between complex types and others
-template <class S, class V, IfComplex<S> = 0>
-accelerator_inline Grid_simd<S, V> operator/(Grid_simd<S, V> a, Grid_simd<S, V> b) {
-  typedef Grid_simd<S, V> simd;
-
-  simd ret;
-  simd den;
-  typename simd::conv_t conv;
-
-  ret = a * conjugate(b) ;
-  den = b * conjugate(b) ;
-
-  // duplicates real part
-  auto real_den  = toReal(den);
-  simd zden;
-  memcpy((void *)&zden.v,(void *)&real_den.v,sizeof(zden));
-  ret.v=binary<V>(ret.v, zden.v, DivSIMD());
-  return ret;
-};
-
-// Real/Integer types
-template <class S, class V, IfNotComplex<S> = 0>
-accelerator_inline Grid_simd<S, V> operator/(Grid_simd<S, V> a, Grid_simd<S, V> b) {
-  Grid_simd<S, V> ret;
-  ret.v = binary<V>(a.v, b.v, DivSIMD());
-  return ret;
-};
-
 ///////////////////////
 // Conjugate
 ///////////////////////
@@ -959,36 +930,64 @@ accelerator_inline Grid_simd<S, V> adj(const Grid_simd<S, V> &in) {
 ///////////////////////
 template <class S, class V, IfComplex<S> = 0>
 accelerator_inline void timesMinusI(Grid_simd<S, V> &ret, const Grid_simd<S, V> &in) {
-  ret.v = binary<V>(in.v, ret.v, TimesMinusISIMD());
+  ret.v = unary<V>(in.v, TimesMinusISIMD());
 }
 template <class S, class V, IfComplex<S> = 0>
 accelerator_inline Grid_simd<S, V> timesMinusI(const Grid_simd<S, V> &in) {
   Grid_simd<S, V> ret;
-  timesMinusI(ret, in);
+  ret.v=unary<V>(in.v, TimesMinusISIMD());
   return ret;
 }
 template <class S, class V, IfNotComplex<S> = 0>
 accelerator_inline Grid_simd<S, V> timesMinusI(const Grid_simd<S, V> &in) {
   return in;
 }
-
 ///////////////////////
 // timesI
 ///////////////////////
 template <class S, class V, IfComplex<S> = 0>
 accelerator_inline void timesI(Grid_simd<S, V> &ret, const Grid_simd<S, V> &in) {
-  ret.v = binary<V>(in.v, ret.v, TimesISIMD());
+  ret.v = unary<V>(in.v, TimesISIMD());
 }
 template <class S, class V, IfComplex<S> = 0>
 accelerator_inline Grid_simd<S, V> timesI(const Grid_simd<S, V> &in) {
   Grid_simd<S, V> ret;
-  timesI(ret, in);
+  ret.v= unary<V>(in.v, TimesISIMD());
   return ret;
 }
 template <class S, class V, IfNotComplex<S> = 0>
 accelerator_inline Grid_simd<S, V> timesI(const Grid_simd<S, V> &in) {
   return in;
 }
+
+
+// Distinguish between complex types and others
+template <class S, class V, IfComplex<S> = 0>
+accelerator_inline Grid_simd<S, V> operator/(Grid_simd<S, V> a, Grid_simd<S, V> b) {
+  typedef Grid_simd<S, V> simd;
+
+  simd ret;
+  simd den;
+
+  ret = a * conjugate(b) ;
+  den = b * conjugate(b) ;
+
+  // duplicates real part
+  auto real_den  = toReal(den);
+  simd zden;
+  memcpy((void *)&zden.v,(void *)&real_den.v,sizeof(zden));
+  ret.v=binary<V>(ret.v, zden.v, DivSIMD());
+  return ret;
+};
+
+// Real/Integer types
+template <class S, class V, IfNotComplex<S> = 0>
+accelerator_inline Grid_simd<S, V> operator/(Grid_simd<S, V> a, Grid_simd<S, V> b) {
+  Grid_simd<S, V> ret;
+  ret.v = binary<V>(a.v, b.v, DivSIMD());
+  return ret;
+};
+
 
 /////////////////////
 // Inner, outer
@@ -1021,12 +1020,12 @@ template <class Csimd>  // must be a real arg
 accelerator_inline typename toRealMapper<Csimd>::Realified toReal(const Csimd &in) {
   typedef typename toRealMapper<Csimd>::Realified Rsimd;
   Rsimd ret;
-  typename Rsimd::conv_t conv;
-  memcpy((void *)&conv.v,(void *)&in.v,sizeof(conv.v));
+  int j=0;
   for (int i = 0; i < Rsimd::Nsimd(); i += 2) {
-    conv.s[i + 1] = conv.s[i];  // duplicate (r,r);(r,r);(r,r); etc...
+    auto s = real(in.getlane(j++));
+    ret.putlane(s,i);
+    ret.putlane(s,i+1);
   }
-  memcpy((void *)&ret.v,(void *)&conv.v,sizeof(ret.v));
   return ret;
 }
 
@@ -1039,23 +1038,24 @@ template <class Rsimd>  // must be a real arg
 accelerator_inline typename toComplexMapper<Rsimd>::Complexified toComplex(const Rsimd &in) {
 
   typedef typename toComplexMapper<Rsimd>::Complexified   Csimd;
-  typename Rsimd::conv_t conv;  // address as real
-
-  conv.v = in.v;
+  typedef typename Csimd::scalar_type scalar_type;
+  int j=0;
+  Csimd ret;
   for (int i = 0; i < Rsimd::Nsimd(); i += 2) {
-    assert(conv.s[i + 1] == conv.s[i]);
+    auto rr = in.getlane(i);
+    auto ri = in.getlane(i+1);
+    assert(rr==ri);
     // trap any cases where real was not duplicated
     // indicating the SIMD grids of real and imag assignment did not correctly
     // match
-    conv.s[i + 1] = 0.0;  // zero imaginary parts
+    scalar_type s(rr,0.0);
+    ret.putlane(s,j++);
   }
-  Csimd ret;
-  memcpy((void *)&ret.v,(void *)&conv.v,sizeof(ret.v));
   return ret;
 }
 
 
-accelerator_inline void precisionChange(vRealF    *out,vRealD    *in,int nvec)
+accelerator_inline void precisionChange(vRealF    *out,const vRealD    *in,int nvec)
 {
   assert((nvec&0x1)==0);
   for(int m=0;m*2<nvec;m++){
@@ -1063,7 +1063,7 @@ accelerator_inline void precisionChange(vRealF    *out,vRealD    *in,int nvec)
     out[m].v=Optimization::PrecisionChange::DtoS(in[n].v,in[n+1].v);
   }
 }
-accelerator_inline void precisionChange(vRealH    *out,vRealD    *in,int nvec)
+accelerator_inline void precisionChange(vRealH    *out,const vRealD    *in,int nvec)
 {
   assert((nvec&0x3)==0);
   for(int m=0;m*4<nvec;m++){
@@ -1071,7 +1071,7 @@ accelerator_inline void precisionChange(vRealH    *out,vRealD    *in,int nvec)
     out[m].v=Optimization::PrecisionChange::DtoH(in[n].v,in[n+1].v,in[n+2].v,in[n+3].v);
   }
 }
-accelerator_inline void precisionChange(vRealH    *out,vRealF    *in,int nvec)
+accelerator_inline void precisionChange(vRealH    *out,const vRealF    *in,int nvec)
 {
   assert((nvec&0x1)==0);
   for(int m=0;m*2<nvec;m++){
@@ -1079,7 +1079,7 @@ accelerator_inline void precisionChange(vRealH    *out,vRealF    *in,int nvec)
     out[m].v=Optimization::PrecisionChange::StoH(in[n].v,in[n+1].v);
   }
 }
-accelerator_inline void precisionChange(vRealD    *out,vRealF    *in,int nvec)
+accelerator_inline void precisionChange(vRealD    *out,const vRealF    *in,int nvec)
 {
   assert((nvec&0x1)==0);
   for(int m=0;m*2<nvec;m++){
@@ -1095,7 +1095,7 @@ accelerator_inline void precisionChange(vRealD    *out,vRealF    *in,int nvec)
     //  |                                                 ~~~~~~~^
   }
 }
-accelerator_inline void precisionChange(vRealD    *out,vRealH    *in,int nvec)
+accelerator_inline void precisionChange(vRealD    *out,const vRealH    *in,int nvec)
 {
   assert((nvec&0x3)==0);
   for(int m=0;m*4<nvec;m++){
@@ -1103,7 +1103,7 @@ accelerator_inline void precisionChange(vRealD    *out,vRealH    *in,int nvec)
     Optimization::PrecisionChange::HtoD(in[m].v,out[n].v,out[n+1].v,out[n+2].v,out[n+3].v);
   }
 }
-accelerator_inline void precisionChange(vRealF    *out,vRealH    *in,int nvec)
+accelerator_inline void precisionChange(vRealF    *out,const vRealH    *in,int nvec)
 {
   assert((nvec&0x1)==0);
   for(int m=0;m*2<nvec;m++){
@@ -1111,12 +1111,12 @@ accelerator_inline void precisionChange(vRealF    *out,vRealH    *in,int nvec)
     Optimization::PrecisionChange::HtoS(in[m].v,out[n].v,out[n+1].v);
   }
 }
-accelerator_inline void precisionChange(vComplexF *out,vComplexD *in,int nvec){ precisionChange((vRealF *)out,(vRealD *)in,nvec);}
-accelerator_inline void precisionChange(vComplexH *out,vComplexD *in,int nvec){ precisionChange((vRealH *)out,(vRealD *)in,nvec);}
-accelerator_inline void precisionChange(vComplexH *out,vComplexF *in,int nvec){ precisionChange((vRealH *)out,(vRealF *)in,nvec);}
-accelerator_inline void precisionChange(vComplexD *out,vComplexF *in,int nvec){ precisionChange((vRealD *)out,(vRealF *)in,nvec);}
-accelerator_inline void precisionChange(vComplexD *out,vComplexH *in,int nvec){ precisionChange((vRealD *)out,(vRealH *)in,nvec);}
-accelerator_inline void precisionChange(vComplexF *out,vComplexH *in,int nvec){ precisionChange((vRealF *)out,(vRealH *)in,nvec);}
+accelerator_inline void precisionChange(vComplexF *out,const vComplexD *in,int nvec){ precisionChange((vRealF *)out,(vRealD *)in,nvec);}
+accelerator_inline void precisionChange(vComplexH *out,const vComplexD *in,int nvec){ precisionChange((vRealH *)out,(vRealD *)in,nvec);}
+accelerator_inline void precisionChange(vComplexH *out,const vComplexF *in,int nvec){ precisionChange((vRealH *)out,(vRealF *)in,nvec);}
+accelerator_inline void precisionChange(vComplexD *out,const vComplexF *in,int nvec){ precisionChange((vRealD *)out,(vRealF *)in,nvec);}
+accelerator_inline void precisionChange(vComplexD *out,const vComplexH *in,int nvec){ precisionChange((vRealD *)out,(vRealH *)in,nvec);}
+accelerator_inline void precisionChange(vComplexF *out,const vComplexH *in,int nvec){ precisionChange((vRealF *)out,(vRealH *)in,nvec);}
 
 // Check our vector types are of an appropriate size.
 
@@ -1130,21 +1130,6 @@ static_assert(sizeof(SIMD_Ftype) == sizeof(SIMD_Itype), "SIMD vector lengths inc
 #endif
 #endif
 
-/////////////////////////////////////////
-// Some traits to recognise the types
-/////////////////////////////////////////
-template <typename T>
-struct is_simd : public std::false_type {};
-template <> struct is_simd<vRealF>     : public std::true_type {};
-template <> struct is_simd<vRealD>     : public std::true_type {};
-template <> struct is_simd<vRealH>     : public std::true_type {};
-template <> struct is_simd<vComplexF>  : public std::true_type {};
-template <> struct is_simd<vComplexD>  : public std::true_type {};
-template <> struct is_simd<vComplexH>  : public std::true_type {};
-template <> struct is_simd<vInteger>   : public std::true_type {};
-
-template <typename T> using IfSimd    = Invoke<std::enable_if<is_simd<T>::value, int> >;
-template <typename T> using IfNotSimd = Invoke<std::enable_if<!is_simd<T>::value, unsigned> >;
 
 NAMESPACE_END(Grid);
 

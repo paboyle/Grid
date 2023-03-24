@@ -433,11 +433,23 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
     });									
 
 #define ASM_CALL(A)							\
-  thread_for( ss, Nsite, {						\
+  thread_for( sss, Nsite, {						\
+    int ss = st.lo->Reorder(sss);					\
     int sU = ss;							\
     int sF = ss*Ls;							\
     WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,Ls,1,in_v,out_v);		\
   });
+#define ASM_CALL_SLICE(A)						\
+  auto grid = in.Grid() ;						\
+  int nt = grid->LocalDimensions()[4];					\
+  int nxyz = Nsite/nt ;							\
+  for(int t=0;t<nt;t++){						\
+  thread_for( sss, nxyz, {						\
+    int ss = t*nxyz+sss;						\
+    int sU = ss;							\
+    int sF = ss*Ls;							\
+    WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,Ls,1,in_v,out_v);		\
+    });}
 
 template <class Impl>
 void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
@@ -490,6 +502,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
 #ifndef GRID_CUDA
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDag);     return;}
 #endif
+     acceleratorFenceComputeStream();
    } else if( interior ) {
      if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteDagInt); return;}
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteDagInt);    return;}
@@ -497,11 +510,13 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDagInt);     return;}
 #endif
    } else if( exterior ) {
+     acceleratorFenceComputeStream();
      if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteDagExt); return;}
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteDagExt);    return;}
 #ifndef GRID_CUDA
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDagExt);     return;}
 #endif
+     acceleratorFenceComputeStream();
    }
    assert(0 && " Kernel optimisation case not covered ");
   }

@@ -526,6 +526,7 @@ public:
       (*this)(Linop,in[k],out[k]);
     }
   };
+  virtual ~OperatorFunction(){};
 };
 
 template<class Field> class LinearFunction {

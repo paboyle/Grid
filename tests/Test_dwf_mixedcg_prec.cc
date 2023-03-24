@@ -101,7 +101,7 @@ int main (int argc, char ** argv)
   std:: cout << " MdagM site flops = "<< 4*MdagMsiteflops<<std::endl;
   std:: cout << " CG    site flops = "<< CGsiteflops <<std::endl;
   int iters;
-  for(int i=0;i<200;i++){
+  for(int i=0;i<10;i++){
     result_o = Zero();
     t1=usecond();
     mCG(src_o,result_o);

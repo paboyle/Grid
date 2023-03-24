@@ -230,7 +230,8 @@ public:
     // Presently 4 force evals, and should have 3, so 1.33x too expensive.
     // could reduce this with sloppy CG to perhaps 1.15x too expensive
     // even without prediction.
-    this->update_P(Pfg, Ufg, level, 1.0);
+    this->update_P(Pfg, Ufg, level, fg_dt);
+    Pfg = Pfg*(1.0/fg_dt);
     this->update_U(Pfg, Ufg, fg_dt);
     this->update_P(Ufg, level, ep);
   }

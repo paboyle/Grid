@@ -262,7 +262,7 @@ public:
 	autoView( Tnp_v , (*Tnp), AcceleratorWrite);
 	autoView( Tnm_v , (*Tnm), AcceleratorWrite);
 	const int Nsimd = CComplex::Nsimd();
-	accelerator_forNB(ss, FineGrid->oSites(), Nsimd, {
+	accelerator_for(ss, FineGrid->oSites(), Nsimd, {
 	  coalescedWrite(y_v[ss],xscale*y_v(ss)+mscale*Tn_v(ss));
 	  coalescedWrite(Tnp_v[ss],2.0*y_v(ss)-Tnm_v(ss));
         });
@@ -324,9 +324,9 @@ public:
   GridBase*        _cbgrid;
   int hermitian;
 
-  CartesianStencil<siteVector,siteVector,int> Stencil; 
-  CartesianStencil<siteVector,siteVector,int> StencilEven;
-  CartesianStencil<siteVector,siteVector,int> StencilOdd;
+  CartesianStencil<siteVector,siteVector,DefaultImplParams> Stencil; 
+  CartesianStencil<siteVector,siteVector,DefaultImplParams> StencilEven;
+  CartesianStencil<siteVector,siteVector,DefaultImplParams> StencilOdd;
 
   std::vector<CoarseMatrix> A;
   std::vector<CoarseMatrix> Aeven;
@@ -631,7 +631,7 @@ public:
     assert(Aself != nullptr);
   }
 
-  void DselfInternal(CartesianStencil<siteVector,siteVector,int> &st, CoarseMatrix &a,
+  void DselfInternal(CartesianStencil<siteVector,siteVector,DefaultImplParams> &st, CoarseMatrix &a,
                        const CoarseVector &in, CoarseVector &out, int dag) {
     int point = geom.npoint-1;
     autoView( out_v, out, AcceleratorWrite);
@@ -694,7 +694,7 @@ public:
     }
   }
 
-  void DhopInternal(CartesianStencil<siteVector,siteVector,int> &st, std::vector<CoarseMatrix> &a,
+  void DhopInternal(CartesianStencil<siteVector,siteVector,DefaultImplParams> &st, std::vector<CoarseMatrix> &a,
                     const CoarseVector &in, CoarseVector &out, int dag) {
     SimpleCompressor<siteVector> compressor;
 
@@ -784,9 +784,9 @@ public:
     _cbgrid(new GridRedBlackCartesian(&CoarseGrid)),
     geom(CoarseGrid._ndimension),
     hermitian(hermitian_),
-    Stencil(&CoarseGrid,geom.npoint,Even,geom.directions,geom.displacements,0),
-    StencilEven(_cbgrid,geom.npoint,Even,geom.directions,geom.displacements,0),
-    StencilOdd(_cbgrid,geom.npoint,Odd,geom.directions,geom.displacements,0),
+    Stencil(&CoarseGrid,geom.npoint,Even,geom.directions,geom.displacements),
+    StencilEven(_cbgrid,geom.npoint,Even,geom.directions,geom.displacements),
+    StencilOdd(_cbgrid,geom.npoint,Odd,geom.directions,geom.displacements),
     A(geom.npoint,&CoarseGrid),
     Aeven(geom.npoint,_cbgrid),
     Aodd(geom.npoint,_cbgrid),
@@ -804,9 +804,9 @@ public:
     _cbgrid(&CoarseRBGrid),
     geom(CoarseGrid._ndimension),
     hermitian(hermitian_),
-    Stencil(&CoarseGrid,geom.npoint,Even,geom.directions,geom.displacements,0),
-    StencilEven(&CoarseRBGrid,geom.npoint,Even,geom.directions,geom.displacements,0),
-    StencilOdd(&CoarseRBGrid,geom.npoint,Odd,geom.directions,geom.displacements,0),
+    Stencil(&CoarseGrid,geom.npoint,Even,geom.directions,geom.displacements),
+    StencilEven(&CoarseRBGrid,geom.npoint,Even,geom.directions,geom.displacements),
+    StencilOdd(&CoarseRBGrid,geom.npoint,Odd,geom.directions,geom.displacements),
     A(geom.npoint,&CoarseGrid),
     Aeven(geom.npoint,&CoarseRBGrid),
     Aodd(geom.npoint,&CoarseRBGrid),

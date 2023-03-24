@@ -194,11 +194,11 @@ accelerator_inline void convertType(vComplexD2 & out, const ComplexD & in) {
 #endif
 
 accelerator_inline void convertType(vComplexF & out, const vComplexD2 & in) {
-  out.v = Optimization::PrecisionChange::DtoS(in._internal[0].v,in._internal[1].v);
+  precisionChange(out,in);
 }
 
 accelerator_inline void convertType(vComplexD2 & out, const vComplexF & in) {
-  Optimization::PrecisionChange::StoD(in.v,out._internal[0].v,out._internal[1].v);
+  precisionChange(out,in);
 }
 
 template<typename T1,typename T2>
@@ -677,10 +677,10 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
       Integer idx_t = 0; for(int d=0;d<nd;d++) idx_t+=ist[d]*(Tcoor[d]/rdt[d]);
       Integer odx_f = 0; for(int d=0;d<nd;d++) odx_f+=osf[d]*(Fcoor[d]%rdf[d]);
       Integer odx_t = 0; for(int d=0;d<nd;d++) odx_t+=ost[d]*(Tcoor[d]%rdt[d]);
-      scalar_type * fp = (scalar_type *)&f_v[odx_f];
-      scalar_type * tp = (scalar_type *)&t_v[odx_t];
+      vector_type * fp = (vector_type *)&f_v[odx_f];
+      vector_type * tp = (vector_type *)&t_v[odx_t];
       for(int w=0;w<words;w++){
-	tp[idx_t+w*Nsimd] = fp[idx_f+w*Nsimd];  // FIXME IF RRII layout, type pun no worke
+	tp[w].putlane(fp[w].getlane(idx_f),idx_t);
       }
     }
   });
@@ -1080,9 +1080,27 @@ vectorizeFromRevLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
   });
 }
 
-//Convert a Lattice from one precision to another
+//Very fast precision change. Requires in/out objects to reside on same Grid (e.g. by using double2 for the double-precision field)
 template<class VobjOut, class VobjIn>
-void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in)
+void precisionChangeFast(Lattice<VobjOut> &out, const Lattice<VobjIn> &in)
+{
+  typedef typename VobjOut::vector_type Vout;
+  typedef typename VobjIn::vector_type Vin;
+  const int N = sizeof(VobjOut)/sizeof(Vout);
+  conformable(out.Grid(),in.Grid());
+  out.Checkerboard() = in.Checkerboard();
+  int nsimd = out.Grid()->Nsimd();
+  autoView( out_v  , out, AcceleratorWrite);
+  autoView(  in_v ,   in, AcceleratorRead);
+  accelerator_for(idx,out.Grid()->oSites(),1,{
+      Vout *vout = (Vout *)&out_v[idx];
+      Vin  *vin  = (Vin  *)&in_v[idx];
+      precisionChange(vout,vin,N);
+  });
+}
+//Convert a Lattice from one precision to another (original, slow implementation)
+template<class VobjOut, class VobjIn>
+void precisionChangeOrig(Lattice<VobjOut> &out, const Lattice<VobjIn> &in)
 {
   assert(out.Grid()->Nd() == in.Grid()->Nd());
   for(int d=0;d<out.Grid()->Nd();d++){
@@ -1097,7 +1115,7 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in)
 
   int ndim = out.Grid()->Nd();
   int out_nsimd = out_grid->Nsimd();
-    
+  int in_nsimd = in_grid->Nsimd();
   std::vector<Coordinate > out_icoor(out_nsimd);
       
   for(int lane=0; lane < out_nsimd; lane++){
@@ -1127,6 +1145,128 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in)
     merge(out_v[out_oidx], ptrs, 0);
   });
 }
+
+//The workspace for a precision change operation allowing for the reuse of the mapping to save time on subsequent calls
+class precisionChangeWorkspace{
+  std::pair<Integer,Integer>* fmap_device; //device pointer
+  //maintain grids for checking
+  GridBase* _out_grid;
+  GridBase* _in_grid;
+public:
+  precisionChangeWorkspace(GridBase *out_grid, GridBase *in_grid): _out_grid(out_grid), _in_grid(in_grid){
+    //Build a map between the sites and lanes of the output field and the input field as we cannot use the Grids on the device
+    assert(out_grid->Nd() == in_grid->Nd());
+    for(int d=0;d<out_grid->Nd();d++){
+      assert(out_grid->FullDimensions()[d] == in_grid->FullDimensions()[d]);
+    }
+    int Nsimd_out = out_grid->Nsimd();
+
+    std::vector<Coordinate> out_icorrs(out_grid->Nsimd()); //reuse these
+    for(int lane=0; lane < out_grid->Nsimd(); lane++)
+      out_grid->iCoorFromIindex(out_icorrs[lane], lane);
+  
+    std::vector<std::pair<Integer,Integer> > fmap_host(out_grid->lSites()); //lsites = osites*Nsimd
+    thread_for(out_oidx,out_grid->oSites(),{
+	Coordinate out_ocorr; 
+	out_grid->oCoorFromOindex(out_ocorr, out_oidx);
+      
+	Coordinate lcorr; //the local coordinate (common to both in and out as full coordinate)
+	for(int out_lane=0; out_lane < Nsimd_out; out_lane++){
+	  out_grid->InOutCoorToLocalCoor(out_ocorr, out_icorrs[out_lane], lcorr);
+	
+	  //int in_oidx = in_grid->oIndex(lcorr), in_lane = in_grid->iIndex(lcorr);
+	  //Note oIndex and OcorrFromOindex (and same for iIndex) are not inverse for checkerboarded lattice, the former coordinates being defined on the full lattice and the latter on the reduced lattice
+	  //Until this is fixed we need to circumvent the problem locally. Here I will use the coordinates defined on the reduced lattice for simplicity
+	  int in_oidx = 0, in_lane = 0;
+	  for(int d=0;d<in_grid->_ndimension;d++){
+	    in_oidx += in_grid->_ostride[d] * ( lcorr[d] % in_grid->_rdimensions[d] );
+	    in_lane += in_grid->_istride[d] * ( lcorr[d] / in_grid->_rdimensions[d] );
+	  }
+	  fmap_host[out_lane + Nsimd_out*out_oidx] = std::pair<Integer,Integer>( in_oidx, in_lane );
+	}
+      });
+
+    //Copy the map to the device (if we had a way to tell if an accelerator is in use we could avoid this copy for CPU-only machines)
+    size_t fmap_bytes = out_grid->lSites() * sizeof(std::pair<Integer,Integer>);
+    fmap_device = (std::pair<Integer,Integer>*)acceleratorAllocDevice(fmap_bytes);
+    acceleratorCopyToDevice(fmap_host.data(), fmap_device, fmap_bytes); 
+  }
+
+  //Prevent moving or copying
+  precisionChangeWorkspace(const precisionChangeWorkspace &r) = delete;
+  precisionChangeWorkspace(precisionChangeWorkspace &&r) = delete;
+  precisionChangeWorkspace &operator=(const precisionChangeWorkspace &r) = delete;
+  precisionChangeWorkspace &operator=(precisionChangeWorkspace &&r) = delete;
+  
+  std::pair<Integer,Integer> const* getMap() const{ return fmap_device; }
+
+  void checkGrids(GridBase* out, GridBase* in) const{
+    conformable(out, _out_grid);
+    conformable(in, _in_grid);
+  }
+  
+  ~precisionChangeWorkspace(){
+    acceleratorFreeDevice(fmap_device);
+  }
+};
+
+
+//We would like to use precisionChangeFast when possible. However usage of this requires the Grids to be the same (runtime check)
+//*and* the precisionChange(VobjOut::vector_type, VobjIn, int) function to be defined for the types; this requires an extra compile-time check which we do using some SFINAE trickery
+template<class VobjOut, class VobjIn>
+auto _precisionChangeFastWrap(Lattice<VobjOut> &out, const Lattice<VobjIn> &in, int dummy)->decltype( precisionChange( ((typename VobjOut::vector_type*)0), ((typename VobjIn::vector_type*)0), 1), int()){
+  if(out.Grid() == in.Grid()){
+    precisionChangeFast(out,in);
+    return 1;
+  }else{
+    return 0;
+  }
+}
+template<class VobjOut, class VobjIn>
+int _precisionChangeFastWrap(Lattice<VobjOut> &out, const Lattice<VobjIn> &in, long dummy){ //note long here is intentional; it means the above is preferred if available
+  return 0;
+}
+
+
+//Convert a lattice of one precision to another. Much faster than original implementation but requires a pregenerated workspace
+//which contains the mapping data.
+template<class VobjOut, class VobjIn>
+void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in, const precisionChangeWorkspace &workspace){
+  if(_precisionChangeFastWrap(out,in,0)) return;
+  
+  static_assert( std::is_same<typename VobjOut::scalar_typeD, typename VobjIn::scalar_typeD>::value == 1, "precisionChange: tensor types must be the same" ); //if tensor types are same the DoublePrecision type must be the same
+
+  out.Checkerboard() = in.Checkerboard();
+  constexpr int Nsimd_out = VobjOut::Nsimd();
+
+  workspace.checkGrids(out.Grid(),in.Grid());
+  std::pair<Integer,Integer> const* fmap_device = workspace.getMap();
+
+  //Do the copy/precision change
+  autoView( out_v , out, AcceleratorWrite);
+  autoView( in_v , in, AcceleratorRead);
+
+  accelerator_for(out_oidx, out.Grid()->oSites(), 1,{
+      std::pair<Integer,Integer> const* fmap_osite = fmap_device + out_oidx*Nsimd_out;
+      for(int out_lane=0; out_lane < Nsimd_out; out_lane++){      
+	int in_oidx = fmap_osite[out_lane].first;
+	int in_lane = fmap_osite[out_lane].second;
+	copyLane(out_v[out_oidx], out_lane, in_v[in_oidx], in_lane);
+      }
+    });
+}
+
+//Convert a Lattice from one precision to another. Much faster than original implementation but slower than precisionChangeFast
+//or precisionChange called with pregenerated workspace, as it needs to internally generate the workspace on the host and copy to device
+template<class VobjOut, class VobjIn>
+void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
+  if(_precisionChangeFastWrap(out,in,0)) return;   
+  precisionChangeWorkspace workspace(out.Grid(), in.Grid());
+  precisionChange(out, in, workspace);
+}
+
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Communicate between grids

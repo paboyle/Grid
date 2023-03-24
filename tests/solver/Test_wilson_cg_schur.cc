@@ -64,7 +64,7 @@ int main (int argc, char ** argv)
   LatticeFermion resid(&Grid); 
 
   RealD mass=0.5;
-  WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
+  WilsonFermionD Dw(Umu,Grid,RBGrid,mass);
 
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
   SchurRedBlackDiagMooeeSolve<LatticeFermion> SchurSolver(CG);

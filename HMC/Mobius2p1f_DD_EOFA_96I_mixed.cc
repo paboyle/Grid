@@ -147,29 +147,40 @@ int main(int argc, char **argv) {
   using namespace Grid;
 
   Grid_init(&argc, &argv);
+
+  CartesianCommunicator::BarrierWorld();
+  std::cout << GridLogMessage << " Clock skew check" <<std::endl;
+  
   int threads = GridThread::GetThreads();
 
    // Typedefs to simplify notation
   typedef WilsonImplR FermionImplPolicy;
   typedef WilsonImplF FermionImplPolicyF;
-
-  typedef MobiusFermionR FermionAction;
+  typedef MobiusFermionD FermionAction;
   typedef MobiusFermionF FermionActionF;
+  typedef MobiusEOFAFermionD FermionEOFAAction;
+  typedef MobiusEOFAFermionF FermionEOFAActionF;
   typedef typename FermionAction::FermionField FermionField;
   typedef typename FermionActionF::FermionField FermionFieldF;
 
+  typedef WilsonImplD2 FermionImplPolicyD2;
+  typedef MobiusFermionD2 FermionActionD2;
+  typedef MobiusEOFAFermionD2 FermionEOFAActionD2;
+  typedef typename FermionActionD2::FermionField FermionFieldD2;
+  
   typedef Grid::XmlReader       Serialiser;
 
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   IntegratorParameters MD;
   //  typedef GenericHMCRunner<LeapFrog> HMCWrapper;
   //  MD.name    = std::string("Leap Frog");
-  //  typedef GenericHMCRunner<ForceGradient> HMCWrapper;
-  //  MD.name    = std::string("Force Gradient");
-  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;
-  MD.name    = std::string("MinimumNorm2");
-  MD.MDsteps =  6;
-  MD.trajL   = 1.0;
+  typedef GenericHMCRunner<ForceGradient> HMCWrapper;
+  MD.name    = std::string("Force Gradient");
+  //typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;
+  // MD.name    = std::string("MinimumNorm2");
+  //  MD.MDsteps =  4;
+  MD.MDsteps =  4;
+  MD.trajL   = 0.5;
 
   HMCparameters HMCparams;
   HMCparams.StartTrajectory  = 1077;
@@ -190,7 +201,7 @@ int main(int argc, char **argv) {
   CPparams.saveInterval  = 1;
   CPparams.format        = "IEEE64BIG";
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
-
+  std::cout << "loaded NERSC checpointer"<<std::endl;
   RNGModuleParameters RNGpar;
   RNGpar.serial_seeds = "1 2 3 4 5";
   RNGpar.parallel_seeds = "6 7 8 9 10";
@@ -206,45 +217,46 @@ int main(int argc, char **argv) {
   RealD M5  = 1.8;
   RealD b   = 1.5;
   RealD c   = 0.5;
-  Real beta         = 2.31;
+  Real beta         = 2.13;
   //  Real light_mass   = 5.4e-4;
   Real light_mass   = 7.8e-4;
-  Real strange_mass = 0.02132;
+  Real strange_mass = 0.0362;
   Real pv_mass      = 1.0;
   //  std::vector<Real> hasenbusch({ light_mass, 3.8e-3, 0.0145, 0.045, 0.108, 0.25, 0.51 , pv_mass });
-  std::vector<Real> hasenbusch({ light_mass, 5e-3, 0.0145, 0.045, 0.108, 0.25, 0.51 , pv_mass });
+  std::vector<Real> hasenbusch({ light_mass, 5e-3, 0.0145, 0.045, 0.108, 0.25, 0.51 , 0.75 , pv_mass });
 
-  // FIXME:
-  // Same in MC and MD
-  // Need to mix precision too
-  OneFlavourRationalParams SFRp; // Strange
-  SFRp.lo       = 4.0e-3;
-  SFRp.hi       = 90.0;
-  SFRp.MaxIter  = 60000;
-  SFRp.tolerance= 1.0e-8;
-  SFRp.mdtolerance= 1.0e-6;
-  SFRp.degree   = 12;
-  SFRp.precision= 50;
-  SFRp.BoundsCheckFreq=0;
 
   OneFlavourRationalParams OFRp; // Up/down
   OFRp.lo       = 2.0e-5;
   OFRp.hi       = 90.0;
   OFRp.MaxIter  = 60000;
-  OFRp.tolerance= 1.0e-8;
-  OFRp.mdtolerance= 1.0e-6;
+  OFRp.tolerance= 1.0e-5;
+  OFRp.mdtolerance= 1.0e-3;
   //  OFRp.degree   = 20; converges
   //  OFRp.degree   = 16;
   OFRp.degree   = 12;
   OFRp.precision= 80;
   OFRp.BoundsCheckFreq=0;
+  std::vector<RealD> ActionTolByPole({
+      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
+      1.0e-10,1.0e-10,1.0e-10,1.0e-10,
+      1.0e-10,1.0e-10,1.0e-10,1.0e-10
+    });
+  std::vector<RealD> MDTolByPole({
+      3.0e-5,1.0e-5,3.0e-6,1.0e-6,
+      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
+      1.0e-10,1.0e-10,1.0e-10,1.0e-10
+    });
 
   auto GridPtr   = TheHMC.Resources.GetCartesian();
   auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
 
   typedef SchurDiagMooeeOperator<FermionActionF,FermionFieldF> LinearOperatorF;
   typedef SchurDiagMooeeOperator<FermionAction ,FermionField > LinearOperatorD;
+  typedef SchurDiagMooeeOperator<FermionEOFAActionF,FermionFieldF> LinearOperatorEOFAF;
+  typedef SchurDiagMooeeOperator<FermionEOFAAction ,FermionField > LinearOperatorEOFAD;
   typedef MixedPrecisionConjugateGradientOperatorFunction<MobiusFermionD,MobiusFermionF,LinearOperatorD,LinearOperatorF> MxPCG;
+  typedef MixedPrecisionConjugateGradientOperatorFunction<MobiusEOFAFermionD,MobiusEOFAFermionF,LinearOperatorEOFAD,LinearOperatorEOFAF> MxPCG_EOFA;
 
   ////////////////////////////////////////////////////////////////
   // Domain decomposed
@@ -295,6 +307,7 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << " Running the HMC "<< std::endl;
   TheHMC.ReadCommandLine(argc,argv);  // params on CML or from param file
   TheHMC.initializeGaugeFieldAndRNGs(U);
+  std::cout << "loaded NERSC gauge field"<<std::endl;
 
 
   // These lines are unecessary if BC are all periodic
@@ -306,9 +319,10 @@ int main(int argc, char **argv) {
 
   //  double StoppingCondition = 1e-14;
   //  double MDStoppingCondition = 1e-9;
-  double StoppingCondition = 1e-10;
+  double StoppingCondition = 1e-8;
   double MDStoppingCondition = 1e-7;
-  double MDStoppingConditionLoose = 1e-6;
+  double MDStoppingConditionLoose = 1e-7;
+  double MDStoppingConditionStrange = 1e-7;
   double MaxCGIterations = 300000;
   ConjugateGradient<FermionField>  CG(StoppingCondition,MaxCGIterations);
   ConjugateGradient<FermionField>  MDCG(MDStoppingCondition,MaxCGIterations);
@@ -317,8 +331,8 @@ int main(int argc, char **argv) {
   // Collect actions
   ////////////////////////////////////
   ActionLevel<HMCWrapper::Field> Level1(1);
-  ActionLevel<HMCWrapper::Field> Level2(4);
-  ActionLevel<HMCWrapper::Field> Level3(8);
+  ActionLevel<HMCWrapper::Field> Level2(2);
+  ActionLevel<HMCWrapper::Field> Level3(30);
 
   ////////////////////////////////////
   // Strange action
@@ -326,15 +340,67 @@ int main(int argc, char **argv) {
   FermionAction StrangeOp (U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,strange_mass,M5,b,c, Params);
   FermionAction StrangePauliVillarsOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,pv_mass,  M5,b,c, Params);
 
-  FermionAction StrangeOpDir (U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,strange_mass,M5,b,c, ParamsDir);
-  FermionAction StrangePauliVillarsOpDir(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,pv_mass,  M5,b,c, ParamsDir);
+  // Probably dominates the force - back to EOFA.
+  OneFlavourRationalParams SFRp;
+  SFRp.lo       = 0.1;
+  SFRp.hi       = 25.0;
+  SFRp.MaxIter  = 10000;
+  SFRp.tolerance= 1.0e-5;
+  SFRp.mdtolerance= 2.0e-4;
+  SFRp.degree   = 14;
+  SFRp.precision= 50;
   
-  OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermionBdy(StrangeOpDir,StrangeOp,SFRp);
-  OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermionLocal(StrangePauliVillarsOpDir,StrangeOpDir,SFRp);
-  OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermionPVBdy(StrangePauliVillarsOp,StrangePauliVillarsOpDir,SFRp);
-  Level1.push_back(&StrangePseudoFermionBdy); // ok
-  Level2.push_back(&StrangePseudoFermionLocal);
-  Level1.push_back(&StrangePseudoFermionPVBdy); //ok
+  MobiusEOFAFermionD Strange_Op_L (U , *FGrid , *FrbGrid , *GridPtr , *GridRBPtr , strange_mass, strange_mass, pv_mass, 0.0, -1, M5, b, c);
+  MobiusEOFAFermionF Strange_Op_LF(UF, *FGridF, *FrbGridF, *GridPtrF, *GridRBPtrF, strange_mass, strange_mass, pv_mass, 0.0, -1, M5, b, c);
+  MobiusEOFAFermionD Strange_Op_R (U , *FGrid , *FrbGrid , *GridPtr , *GridRBPtr , pv_mass, strange_mass,      pv_mass, -1.0, 1, M5, b, c);
+  MobiusEOFAFermionF Strange_Op_RF(UF, *FGridF, *FrbGridF, *GridPtrF, *GridRBPtrF, pv_mass, strange_mass,      pv_mass, -1.0, 1, M5, b, c);
+  ConjugateGradient<FermionField>      ActionCG(StoppingCondition,MaxCGIterations);
+  ConjugateGradient<FermionField>  DerivativeCG(MDStoppingCondition,MaxCGIterations);
+  LinearOperatorEOFAD Strange_LinOp_L (Strange_Op_L);
+  LinearOperatorEOFAD Strange_LinOp_R (Strange_Op_R);
+  LinearOperatorEOFAF Strange_LinOp_LF(Strange_Op_LF);
+  LinearOperatorEOFAF Strange_LinOp_RF(Strange_Op_RF);
+
+  const int MX_inner = 1000;
+  MxPCG_EOFA ActionCGL(StoppingCondition,
+		       MX_inner,
+		       MaxCGIterations,
+		       GridPtrF,
+		       FrbGridF,
+		       Strange_Op_LF,Strange_Op_L,
+		       Strange_LinOp_LF,Strange_LinOp_L);
+
+  MxPCG_EOFA DerivativeCGL(MDStoppingConditionStrange,
+			   MX_inner,
+			   MaxCGIterations,
+			   GridPtrF,
+			   FrbGridF,
+			   Strange_Op_LF,Strange_Op_L,
+			   Strange_LinOp_LF,Strange_LinOp_L);
+  
+  MxPCG_EOFA ActionCGR(StoppingCondition,
+		       MX_inner,
+		       MaxCGIterations,
+		       GridPtrF,
+		       FrbGridF,
+		       Strange_Op_RF,Strange_Op_R,
+		       Strange_LinOp_RF,Strange_LinOp_R);
+  
+  MxPCG_EOFA DerivativeCGR(MDStoppingConditionStrange,
+			   MX_inner,
+			   MaxCGIterations,
+			   GridPtrF,
+			   FrbGridF,
+			   Strange_Op_RF,Strange_Op_R,
+			   Strange_LinOp_RF,Strange_LinOp_R);
+
+  ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> 
+    EOFA(Strange_Op_L, Strange_Op_R, 
+	 ActionCG, 
+	 ActionCGL, ActionCGR,
+	 DerivativeCGL, DerivativeCGR,
+	 SFRp, true);
+  //  Level2.push_back(&EOFA);
 
   ////////////////////////////////////
   // up down action
@@ -356,17 +422,10 @@ int main(int argc, char **argv) {
   light_num.push_back(pv_mass);  dirichlet_num.push_back(0);
 
   std::vector<FermionAction *> Numerators;
-  std::vector<FermionActionF *> NumeratorsF;
   std::vector<FermionAction *> Denominators;
   std::vector<FermionActionF *> DenominatorsF;
   std::vector<TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> *> Quotients;
-
-#define MIXED_PRECISION
-#ifdef MIXED_PRECISION
-  std::vector<OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF> *> Bdys;
-#else
   std::vector<OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> *> Bdys;
-#endif
   std::vector<MxPCG *> ActionMPCG;
   std::vector<MxPCG *> MPCG;
 
@@ -386,7 +445,6 @@ int main(int argc, char **argv) {
 
     FermionAction::ImplParams ParamsNum(boundary);
     FermionAction::ImplParams ParamsDen(boundary);
-    FermionActionF::ImplParams ParamsNumF(boundary);
     FermionActionF::ImplParams ParamsDenF(boundary);
     
     if ( dirichlet_num[h]==1) ParamsNum.dirichlet = Dirichlet;
@@ -400,9 +458,6 @@ int main(int argc, char **argv) {
 
     ParamsDenF.dirichlet = ParamsDen.dirichlet;
     DenominatorsF.push_back(new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[h],M5,b,c, ParamsDenF));
-
-    ParamsNumF.dirichlet = ParamsNum.dirichlet;
-    NumeratorsF.push_back  (new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_num[h],M5,b,c, ParamsNumF));
 
     LinOpD.push_back(new LinearOperatorD(*Denominators[h]));
     LinOpF.push_back(new LinearOperatorF(*DenominatorsF[h]));
@@ -431,25 +486,16 @@ int main(int argc, char **argv) {
       //      Quotients.push_back (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],MDCG,CG));
       Quotients.push_back (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],*MPCG[h],*ActionMPCG[h],CG));
     } else {
-#ifdef MIXED_PRECISION
-      Bdys.push_back( new OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF>(
-			   *Numerators[h],*Denominators[h],
-			   *NumeratorsF[h],*DenominatorsF[h],
-			   OFRp, 500) );
-      Bdys.push_back( new OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF>(
-			   *Numerators[h],*Denominators[h],
-			   *NumeratorsF[h],*DenominatorsF[h],
-			   OFRp, 500) );
-#else
       Bdys.push_back( new OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
       Bdys.push_back( new OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
-#endif
     }
   }
-
+  for(int h=0;h<Bdys.size();h++){
+    Bdys[h]->SetTolerances(ActionTolByPole,MDTolByPole);
+  }
   int nquo=Quotients.size();
-  Level1.push_back(Bdys[0]);
-  Level1.push_back(Bdys[1]);
+  Level2.push_back(Bdys[0]);
+  Level2.push_back(Bdys[1]);
   for(int h=0;h<nquo-1;h++){
     Level2.push_back(Quotients[h]);
   }

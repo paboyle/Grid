@@ -51,6 +51,8 @@ struct Setup<GparityMobiusFermionF>{
 template<>
 struct Setup<DomainWallFermionF>{
   static DomainWallFermionF* getAction(LatticeGaugeFieldF &Umu,
+struct Setup<DomainWallFermionD>{
+  static DomainWallFermionD* getAction(LatticeGaugeField &Umu,
 					  GridCartesian* FGrid, GridRedBlackCartesian* FrbGrid, GridCartesian* UGrid, GridRedBlackCartesian* UrbGrid){
     RealD mass=0.00054;
     RealD M5=1.8;

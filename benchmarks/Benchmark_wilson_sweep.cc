@@ -40,21 +40,21 @@ Gamma::Algebra Gmu [] = {
 void bench_wilson (
 		   LatticeFermion &    src,
 		   LatticeFermion & result,
-		   WilsonFermionR &     Dw,
+		   WilsonFermionD &     Dw,
 		   double const     volume,
 		   int const           dag );
 
 void bench_wilson_eo (
        LatticeFermion &    src,
        LatticeFermion & result,
-       WilsonFermionR &     Dw,
+       WilsonFermionD &     Dw,
        double const     volume,
        int const           dag );
 
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
-  typename WilsonFermionR::ImplParams params;
+  typename WilsonFermionD::ImplParams params;
 
   Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();
@@ -66,7 +66,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
   std::cout << GridLogMessage<< "* Number of colours "<< Nc <<std::endl;
-  std::cout << GridLogMessage<< "* Benchmarking WilsonFermionR::Dhop                  "<<std::endl;
+  std::cout << GridLogMessage<< "* Benchmarking WilsonFermionD::Dhop                  "<<std::endl;
   std::cout << GridLogMessage<< "* Vectorising space-time by "<<vComplex::Nsimd()<<std::endl;
   if ( sizeof(Real)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
   if ( sizeof(Real)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
@@ -110,7 +110,7 @@ int main (int argc, char ** argv)
 
 	  double volume = std::accumulate(latt_size.begin(),latt_size.end(),1,std::multiplies<int>());
 
-	  WilsonFermionR Dw(Umu,Grid,RBGrid,mass,params);
+	  WilsonFermionD Dw(Umu,Grid,RBGrid,mass,params);
       
     // Full operator      
 	  bench_wilson(src,result,Dw,volume,DaggerNo);
@@ -130,7 +130,7 @@ int main (int argc, char ** argv)
 void bench_wilson (
 		   LatticeFermion &    src,
 		   LatticeFermion & result,
-		   WilsonFermionR &     Dw,
+		   WilsonFermionD &     Dw,
 		   double const     volume,
 		   int const           dag )
 {
@@ -149,7 +149,7 @@ void bench_wilson (
 void bench_wilson_eo (
 		   LatticeFermion &    src,
 		   LatticeFermion & result,
-		   WilsonFermionR &     Dw,
+		   WilsonFermionD &     Dw,
 		   double const     volume,
 		   int const           dag )
 {

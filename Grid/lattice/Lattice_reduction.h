@@ -28,6 +28,9 @@ Author: Christoph Lehner <christoph@lhnr.de>
 #if defined(GRID_CUDA)||defined(GRID_HIP)
 #include <Grid/lattice/Lattice_reduction_gpu.h>
 #endif
+#if defined(GRID_SYCL)
+#include <Grid/lattice/Lattice_reduction_sycl.h>
+#endif
 
 NAMESPACE_BEGIN(Grid);
 
@@ -124,7 +127,7 @@ inline Double max(const Double *arg, Integer osites)
 template<class vobj>
 inline typename vobj::scalar_object sum(const vobj *arg, Integer osites)
 {
-#if defined(GRID_CUDA)||defined(GRID_HIP)
+#if defined(GRID_CUDA)||defined(GRID_HIP)||defined(GRID_SYCL)
   return sum_gpu(arg,osites);
 #else
   return sum_cpu(arg,osites);
@@ -133,7 +136,7 @@ inline typename vobj::scalar_object sum(const vobj *arg, Integer osites)
 template<class vobj>
 inline typename vobj::scalar_objectD sumD(const vobj *arg, Integer osites)
 {
-#if defined(GRID_CUDA)||defined(GRID_HIP)
+#if defined(GRID_CUDA)||defined(GRID_HIP)||defined(GRID_SYCL)
   return sumD_gpu(arg,osites);
 #else
   return sumD_cpu(arg,osites);
@@ -142,7 +145,7 @@ inline typename vobj::scalar_objectD sumD(const vobj *arg, Integer osites)
 template<class vobj>
 inline typename vobj::scalar_objectD sumD_large(const vobj *arg, Integer osites)
 {
-#if defined(GRID_CUDA)||defined(GRID_HIP)
+#if defined(GRID_CUDA)||defined(GRID_HIP)||defined(GRID_SYCL)
   return sumD_gpu_large(arg,osites);
 #else
   return sumD_cpu(arg,osites);
@@ -152,13 +155,13 @@ inline typename vobj::scalar_objectD sumD_large(const vobj *arg, Integer osites)
 template<class vobj>
 inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
 {
-#if defined(GRID_CUDA)||defined(GRID_HIP)
-  autoView( arg_v, arg, AcceleratorRead);
   Integer osites = arg.Grid()->oSites();
-  auto ssum= sum_gpu(&arg_v[0],osites);
+#if defined(GRID_CUDA)||defined(GRID_HIP)||defined(GRID_SYCL)
+  typename vobj::scalar_object ssum;
+  autoView( arg_v, arg, AcceleratorRead);
+  ssum= sum_gpu(&arg_v[0],osites);
 #else
   autoView(arg_v, arg, CpuRead);
-  Integer osites = arg.Grid()->oSites();
   auto ssum= sum_cpu(&arg_v[0],osites);
 #endif  
   arg.Grid()->GlobalSum(ssum);
@@ -168,7 +171,7 @@ inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
 template<class vobj>
 inline typename vobj::scalar_object sum_large(const Lattice<vobj> &arg)
 {
-#if defined(GRID_CUDA)||defined(GRID_HIP)
+#if defined(GRID_CUDA)||defined(GRID_HIP)||defined(GRID_SYCL)
   autoView( arg_v, arg, AcceleratorRead);
   Integer osites = arg.Grid()->oSites();
   auto ssum= sum_gpu_large(&arg_v[0],osites);
@@ -219,7 +222,6 @@ template<class vobj> inline RealD maxLocalNorm2(const Lattice<vobj> &arg)
 template<class vobj>
 inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right)
 {
-  typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_typeD vector_type;
   ComplexD  nrm;
   
@@ -233,11 +235,10 @@ inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &
   typedef decltype(innerProductD(vobj(),vobj())) inner_t;
   Vector<inner_t> inner_tmp(sites);
   auto inner_tmp_v = &inner_tmp[0];
-    
   {
     autoView( left_v , left, AcceleratorRead);
     autoView( right_v,right, AcceleratorRead);
-
+    // This code could read coalesce
     // GPU - SIMT lane compliance...
     accelerator_for( ss, sites, nsimd,{
 	auto x_l = left_v(ss);
@@ -296,7 +297,6 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   conformable(z,x);
   conformable(x,y);
 
-  typedef typename vobj::scalar_type scalar_type;
   //  typedef typename vobj::vector_typeD vector_type;
   RealD  nrm;
   
@@ -341,7 +341,6 @@ innerProductNorm(ComplexD& ip, RealD &nrm, const Lattice<vobj> &left,const Latti
 {
   conformable(left,right);
 
-  typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_typeD vector_type;
   Vector<ComplexD> tmp(2);
 
@@ -597,7 +596,8 @@ static void sliceNorm (std::vector<RealD> &sn,const Lattice<vobj> &rhs,int Ortho
 template<class vobj>
 static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice<vobj> &X,const Lattice<vobj> &Y,
 			    int orthogdim,RealD scale=1.0) 
-{    
+{
+  // perhaps easier to just promote A to a field and use regular madd
   typedef typename vobj::scalar_object sobj;
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
@@ -628,8 +628,7 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
     for(int l=0;l<Nsimd;l++){
       grid->iCoorFromIindex(icoor,l);
       int ldx =r+icoor[orthogdim]*rd;
-      scalar_type *as =(scalar_type *)&av;
-      as[l] = scalar_type(a[ldx])*zscale;
+      av.putlane(scalar_type(a[ldx])*zscale,l);
     }
 
     tensor_reduced at; at=av;
@@ -669,7 +668,6 @@ template<class vobj>
 static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<vobj> &X,const Lattice<vobj> &Y,int Orthog,RealD scale=1.0) 
 {    
   typedef typename vobj::scalar_object sobj;
-  typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   int Nblock = X.Grid()->GlobalDimensions()[Orthog];
@@ -723,7 +721,6 @@ template<class vobj>
 static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<vobj> &X,int Orthog,RealD scale=1.0) 
 {    
   typedef typename vobj::scalar_object sobj;
-  typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   int Nblock = X.Grid()->GlobalDimensions()[Orthog];
@@ -777,7 +774,6 @@ template<class vobj>
 static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int Orthog) 
 {
   typedef typename vobj::scalar_object sobj;
-  typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
   
   GridBase *FullGrid  = lhs.Grid();

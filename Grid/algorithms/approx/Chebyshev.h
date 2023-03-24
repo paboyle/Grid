@@ -258,26 +258,12 @@ public:
     for(int n=2;n<order;n++){
 
       Linop.HermOp(*Tn,y);
-#if 0
-      auto y_v = y.View();
-      auto Tn_v = Tn->View();
-      auto Tnp_v = Tnp->View();
-      auto Tnm_v = Tnm->View();
-      constexpr int Nsimd = vector_type::Nsimd();
-      accelerator_forNB(ss, in.Grid()->oSites(), Nsimd, {
-	  coalescedWrite(y_v[ss],xscale*y_v(ss)+mscale*Tn_v(ss));
-	  coalescedWrite(Tnp_v[ss],2.0*y_v(ss)-Tnm_v(ss));
-      });
-      if ( Coeffs[n] != 0.0) {
-	axpy(out,Coeffs[n],*Tnp,out);
-      }
-#else
       axpby(y,xscale,mscale,y,(*Tn));
       axpby(*Tnp,2.0,-1.0,y,(*Tnm));
       if ( Coeffs[n] != 0.0) {
 	axpy(out,Coeffs[n],*Tnp,out);
       }
-#endif
+
       // Cycle pointers to avoid copies
       Field *swizzle = Tnm;
       Tnm    =Tn;

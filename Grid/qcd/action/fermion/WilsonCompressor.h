@@ -32,17 +32,218 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
+///////////////////////////////////////////////////////////////
+// Wilson compressor will need FaceGather policies for:
+// Periodic, Dirichlet, and partial Dirichlet for DWF
+///////////////////////////////////////////////////////////////
+const int dwf_compressor_depth=2;
+#define DWF_COMPRESS
+class FaceGatherPartialDWF
+{
+public:
+#ifdef DWF_COMPRESS
+  static int PartialCompressionFactor(GridBase *grid) {return grid->_fdimensions[0]/(2*dwf_compressor_depth);};
+#else
+  static int PartialCompressionFactor(GridBase *grid) { return 1;}
+#endif
+  template<class vobj,class cobj,class compressor>
+  static void Gather_plane_simple (commVector<std::pair<int,int> >& table,
+				   const Lattice<vobj> &rhs,
+				   cobj *buffer,
+				   compressor &compress,
+				   int off,int so,int partial)
+  {
+    //DWF only hack: If a direction that is OFF node we use Partial Dirichlet
+    //  Shrinks local and remote comms buffers
+    GridBase *Grid = rhs.Grid();
+    int Ls = Grid->_rdimensions[0];
+#ifdef DWF_COMPRESS
+    int depth=dwf_compressor_depth;
+#else 
+    int depth=Ls/2;
+#endif
+    std::pair<int,int> *table_v = & table[0];
+    auto rhs_v = rhs.View(AcceleratorRead);
+    int vol=table.size()/Ls;
+    accelerator_forNB( idx,table.size(), vobj::Nsimd(), {
+	Integer i=idx/Ls;
+	Integer s=idx%Ls;
+	Integer sc=depth+s-(Ls-depth);
+	if(s<depth)     compress.Compress(buffer[off+i+s*vol],rhs_v[so+table_v[idx].second]);
+	if(s>=Ls-depth) compress.Compress(buffer[off+i+sc*vol],rhs_v[so+table_v[idx].second]);
+    });
+    rhs_v.ViewClose();
+  }
+  template<class decompressor,class Decompression>
+  static void DecompressFace(decompressor decompress,Decompression &dd)
+  {
+    auto Ls = dd.dims[0];
+#ifdef DWF_COMPRESS
+    int depth=dwf_compressor_depth;
+#else
+    int depth=Ls/2;
+#endif    
+    // Just pass in the Grid
+    auto kp = dd.kernel_p;
+    auto mp = dd.mpi_p;
+    int size= dd.buffer_size;
+    int vol= size/Ls;
+    accelerator_forNB(o,size,1,{
+	int idx=o/Ls;
+	int   s=o%Ls;
+	if ( s < depth ) {
+	  int oo=s*vol+idx;
+	  kp[o]=mp[oo];
+	} else if ( s >= Ls-depth ) {
+	  int sc = depth + s - (Ls-depth);
+	  int oo=sc*vol+idx; 
+	  kp[o]=mp[oo];
+	} else {
+	  kp[o] = Zero();//fill rest with zero if partial dirichlet
+	}
+    });
+  }
+  ////////////////////////////////////////////////////////////////////////////////////////////
+  // Need to gather *interior portions* for ALL s-slices in simd directions
+  // Do the gather as need to treat SIMD lanes differently, and insert zeroes on receive side
+  // Reorder the fifth dim to be s=Ls-1 , s=0, s=1,...,Ls-2.
+  ////////////////////////////////////////////////////////////////////////////////////////////
+  template<class vobj,class cobj,class compressor>
+  static void Gather_plane_exchange(commVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
+				    std::vector<cobj *> pointers,int dimension,int plane,int cbmask,
+				    compressor &compress,int type,int partial)
+  {
+    GridBase *Grid = rhs.Grid();
+    int Ls = Grid->_rdimensions[0];
+#ifdef DWF_COMPRESS
+    int depth=dwf_compressor_depth;
+#else
+    int depth = Ls/2;
+#endif
+    
+    // insertion of zeroes...
+    assert( (table.size()&0x1)==0);
+    int num=table.size()/2;
+    int so  = plane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane
+    
+    auto rhs_v = rhs.View(AcceleratorRead);
+    auto p0=&pointers[0][0];
+    auto p1=&pointers[1][0];
+    auto tp=&table[0];
+    int nnum=num/Ls;
+    accelerator_forNB(j, num, vobj::Nsimd(), {
+	//  Reorders both local and remote comms buffers
+	//  
+	int s  = j % Ls;
+	int sp1 = (s+depth)%Ls;  // peri incremented s slice
+	
+	int hxyz= j/Ls;
+
+	int xyz0= hxyz*2; // xyzt part of coor
+	int xyz1= hxyz*2+1;
+	
+	int jj= hxyz + sp1*nnum ; // 0,1,2,3 -> Ls-1 slice , 0-slice, 1-slice ....
+	
+	int kk0= xyz0*Ls + s ; // s=0 goes to s=1
+	int kk1= xyz1*Ls + s ; // s=Ls-1 -> s=0
+	compress.CompressExchange(p0[jj],p1[jj],
+				  rhs_v[so+tp[kk0 ].second], // Same s, consecutive xyz sites
+				  rhs_v[so+tp[kk1 ].second], 
+				  type);
+    });
+    rhs_v.ViewClose();
+  }
+  // Merge routine is for SIMD faces
+  template<class decompressor,class Merger>
+  static void MergeFace(decompressor decompress,Merger &mm)
+  {
+    auto Ls = mm.dims[0];
+#ifdef DWF_COMPRESS
+    int depth=dwf_compressor_depth;
+#else
+    int depth = Ls/2;
+#endif
+    int  num= mm.buffer_size/2; // relate vol and Ls to buffer size
+    auto mp = &mm.mpointer[0];
+    auto vp0= &mm.vpointers[0][0]; // First arg is exchange first
+    auto vp1= &mm.vpointers[1][0];
+    auto type= mm.type;
+    int nnum = num/Ls;
+    accelerator_forNB(o,num,Merger::Nsimd,{
+
+	int  s=o%Ls;
+	int hxyz=o/Ls; // xyzt related component
+	int xyz0=hxyz*2;
+	int xyz1=hxyz*2+1;
+
+	int sp = (s+depth)%Ls; 
+	int jj= hxyz + sp*nnum ; // 0,1,2,3 -> Ls-1 slice , 0-slice, 1-slice ....
+
+	int oo0= s+xyz0*Ls;
+	int oo1= s+xyz1*Ls;
+
+	// same ss0, ss1 pair goes to new layout
+	decompress.Exchange(mp[oo0],mp[oo1],vp0[jj],vp1[jj],type);
+      });
+  }
+};
+class FaceGatherDWFMixedBCs
+{
+public:
+#ifdef DWF_COMPRESS
+  static int PartialCompressionFactor(GridBase *grid) {return grid->_fdimensions[0]/(2*dwf_compressor_depth);};
+#else 
+  static int PartialCompressionFactor(GridBase *grid) {return 1;}
+#endif
+  
+  template<class vobj,class cobj,class compressor>
+  static void Gather_plane_simple (commVector<std::pair<int,int> >& table,
+					 const Lattice<vobj> &rhs,
+					 cobj *buffer,
+					 compressor &compress,
+					 int off,int so,int partial)
+  {
+    //    std::cout << " face gather simple DWF partial "<<partial <<std::endl;
+    if(partial) FaceGatherPartialDWF::Gather_plane_simple(table,rhs,buffer,compress,off,so,partial);
+    else        FaceGatherSimple::Gather_plane_simple(table,rhs,buffer,compress,off,so,partial);
+  }
+  template<class vobj,class cobj,class compressor>
+  static void Gather_plane_exchange(commVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
+				    std::vector<cobj *> pointers,int dimension,int plane,int cbmask,
+				    compressor &compress,int type,int partial)
+  {
+    //    std::cout << " face gather exch DWF partial "<<partial <<std::endl;
+    if(partial) FaceGatherPartialDWF::Gather_plane_exchange(table,rhs,pointers,dimension, plane,cbmask,compress,type,partial);
+    else        FaceGatherSimple::Gather_plane_exchange    (table,rhs,pointers,dimension, plane,cbmask,compress,type,partial);
+  }
+  template<class decompressor,class Merger>
+  static void MergeFace(decompressor decompress,Merger &mm)
+  {
+    int partial = mm.partial;
+    //    std::cout << " merge DWF partial "<<partial <<std::endl;
+    if ( partial ) FaceGatherPartialDWF::MergeFace(decompress,mm);
+    else           FaceGatherSimple::MergeFace(decompress,mm);
+  }
+
+  template<class decompressor,class Decompression>
+  static void DecompressFace(decompressor decompress,Decompression &dd)
+  {
+    int partial = dd.partial;
+    //    std::cout << " decompress DWF partial "<<partial <<std::endl;
+    if ( partial ) FaceGatherPartialDWF::DecompressFace(decompress,dd);
+    else           FaceGatherSimple::DecompressFace(decompress,dd);
+  }
+};
+
 /////////////////////////////////////////////////////////////////////////////////////////////
-// optimised versions supporting half precision too
+// optimised versions supporting half precision too??? Deprecate
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-template<class _HCspinor,class _Hspinor,class _Spinor, class projector,typename SFINAE = void >
-class WilsonCompressorTemplate;
 
-
+//Could make FaceGather a template param, but then behaviour is runtime not compile time
 template<class _HCspinor,class _Hspinor,class _Spinor, class projector>
-class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
-				typename std::enable_if<std::is_same<_HCspinor,_Hspinor>::value>::type >
+class WilsonCompressorTemplate  : public FaceGatherDWFMixedBCs
+//  : public FaceGatherSimple
 {
 public:
   
@@ -79,171 +280,80 @@ public:
   /*****************************************************/
   /* Exchange includes precision change if mpi data is not same */
   /*****************************************************/
-  accelerator_inline void Exchange(SiteHalfSpinor *mp,
-				   const SiteHalfSpinor * __restrict__ vp0,
-				   const SiteHalfSpinor * __restrict__ vp1,
-				   Integer type,Integer o) const {
+  accelerator_inline void Exchange(SiteHalfSpinor &mp0,
+				   SiteHalfSpinor &mp1,
+				   const SiteHalfSpinor & vp0,
+				   const SiteHalfSpinor & vp1,
+				   Integer type) const {
 #ifdef GRID_SIMT
-    exchangeSIMT(mp[2*o],mp[2*o+1],vp0[o],vp1[o],type);
+    exchangeSIMT(mp0,mp1,vp0,vp1,type);
 #else
     SiteHalfSpinor tmp1;
     SiteHalfSpinor tmp2;
-    exchange(tmp1,tmp2,vp0[o],vp1[o],type);
-    vstream(mp[2*o  ],tmp1);
-    vstream(mp[2*o+1],tmp2);
+    exchange(tmp1,tmp2,vp0,vp1,type);
+    vstream(mp0,tmp1);
+    vstream(mp1,tmp2);
 #endif
   }
-
+  
 
   /*****************************************************/
   /* Have a decompression step if mpi data is not same */
   /*****************************************************/
-  accelerator_inline void Decompress(SiteHalfSpinor * __restrict__ out,
-				     SiteHalfSpinor * __restrict__ in, Integer o) const {    
-    assert(0);
+  accelerator_inline void Decompress(SiteHalfSpinor &out,
+				     SiteHalfSpinor &in) const {    
+    out = in;
   }
 
   /*****************************************************/
   /* Compress Exchange                                 */
   /*****************************************************/
-  accelerator_inline void CompressExchange(SiteHalfSpinor * __restrict__ out0,
-					   SiteHalfSpinor * __restrict__ out1,
-					   const SiteSpinor * __restrict__ in,
-					   Integer j,Integer k, Integer m,Integer type) const
+  accelerator_inline void CompressExchange(SiteHalfSpinor &out0,
+					   SiteHalfSpinor &out1,
+					   const SiteSpinor &in0,
+					   const SiteSpinor &in1,
+					   Integer type) const
   {
 #ifdef GRID_SIMT
     typedef SiteSpinor vobj;
     typedef SiteHalfSpinor hvobj;
-    typedef decltype(coalescedRead(*in))    sobj;
-    typedef decltype(coalescedRead(*out0)) hsobj;
+    typedef decltype(coalescedRead(in0))    sobj;
+    typedef decltype(coalescedRead(out0)) hsobj;
 
-    unsigned int Nsimd = vobj::Nsimd();
+    constexpr unsigned int Nsimd = vobj::Nsimd();
     unsigned int mask = Nsimd >> (type + 1);
     int lane = acceleratorSIMTlane(Nsimd);
     int j0 = lane &(~mask); // inner coor zero
     int j1 = lane |(mask) ; // inner coor one
-    const vobj *vp0 = &in[k];
-    const vobj *vp1 = &in[m];
+    const vobj *vp0 = &in0;
+    const vobj *vp1 = &in1;
     const vobj *vp = (lane&mask) ? vp1:vp0;
     auto sa = coalescedRead(*vp,j0);
     auto sb = coalescedRead(*vp,j1);
     hsobj psa, psb;
     projector::Proj(psa,sa,mu,dag);
     projector::Proj(psb,sb,mu,dag);
-    coalescedWrite(out0[j],psa);
-    coalescedWrite(out1[j],psb);
+    coalescedWrite(out0,psa);
+    coalescedWrite(out1,psb);
 #else
     SiteHalfSpinor temp1, temp2;
     SiteHalfSpinor temp3, temp4;
-    projector::Proj(temp1,in[k],mu,dag);
-    projector::Proj(temp2,in[m],mu,dag);
+    projector::Proj(temp1,in0,mu,dag);
+    projector::Proj(temp2,in1,mu,dag);
     exchange(temp3,temp4,temp1,temp2,type);
-    vstream(out0[j],temp3);
-    vstream(out1[j],temp4);
+    vstream(out0,temp3);
+    vstream(out1,temp4);
 #endif
   }
 
   /*****************************************************/
   /* Pass the info to the stencil */
   /*****************************************************/
-  accelerator_inline bool DecompressionStep(void) const { return false; }
+  accelerator_inline bool DecompressionStep(void) const {
+    return false;
+  }
 
 };
-
-#if 0
-template<class _HCspinor,class _Hspinor,class _Spinor, class projector>
-class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
-				typename std::enable_if<!std::is_same<_HCspinor,_Hspinor>::value>::type >
-{
-public:
-  
-  int mu,dag;  
-
-  void Point(int p) { mu=p; };
-
-  WilsonCompressorTemplate(int _dag=0){
-    dag = _dag;
-  }
-
-  typedef _Spinor         SiteSpinor;
-  typedef _Hspinor     SiteHalfSpinor;
-  typedef _HCspinor SiteHalfCommSpinor;
-  typedef typename SiteHalfCommSpinor::vector_type vComplexLow;
-  typedef typename SiteHalfSpinor::vector_type     vComplexHigh;
-  constexpr static int Nw=sizeof(SiteHalfSpinor)/sizeof(vComplexHigh);
-
-  accelerator_inline int CommDatumSize(void) const {
-    return sizeof(SiteHalfCommSpinor);
-  }
-
-  /*****************************************************/
-  /* Compress includes precision change if mpi data is not same */
-  /*****************************************************/
-  accelerator_inline void Compress(SiteHalfSpinor &buf,const SiteSpinor &in) const {
-    SiteHalfSpinor hsp;
-    SiteHalfCommSpinor *hbuf = (SiteHalfCommSpinor *)buf;
-    projector::Proj(hsp,in,mu,dag);
-    precisionChange((vComplexLow *)&hbuf[o],(vComplexHigh *)&hsp,Nw);
-  }
-  accelerator_inline void Compress(SiteHalfSpinor &buf,const SiteSpinor &in) const {
-#ifdef GRID_SIMT
-    typedef decltype(coalescedRead(buf)) sobj;
-    sobj sp;
-    auto sin = coalescedRead(in);
-    projector::Proj(sp,sin,mu,dag);
-    coalescedWrite(buf,sp);
-#else
-    projector::Proj(buf,in,mu,dag);
-#endif
-  }
-
-  /*****************************************************/
-  /* Exchange includes precision change if mpi data is not same */
-  /*****************************************************/
-  accelerator_inline void Exchange(SiteHalfSpinor *mp,
-                       SiteHalfSpinor *vp0,
-                       SiteHalfSpinor *vp1,
-		       Integer type,Integer o) const {
-    SiteHalfSpinor vt0,vt1;
-    SiteHalfCommSpinor *vpp0 = (SiteHalfCommSpinor *)vp0;
-    SiteHalfCommSpinor *vpp1 = (SiteHalfCommSpinor *)vp1;
-    precisionChange((vComplexHigh *)&vt0,(vComplexLow *)&vpp0[o],Nw);
-    precisionChange((vComplexHigh *)&vt1,(vComplexLow *)&vpp1[o],Nw);
-    exchange(mp[2*o],mp[2*o+1],vt0,vt1,type);
-  }
-
-  /*****************************************************/
-  /* Have a decompression step if mpi data is not same */
-  /*****************************************************/
-  accelerator_inline void Decompress(SiteHalfSpinor *out, SiteHalfSpinor *in, Integer o) const {
-    SiteHalfCommSpinor *hin=(SiteHalfCommSpinor *)in;
-    precisionChange((vComplexHigh *)&out[o],(vComplexLow *)&hin[o],Nw);
-  }
-
-  /*****************************************************/
-  /* Compress Exchange                                 */
-  /*****************************************************/
-  accelerator_inline void CompressExchange(SiteHalfSpinor *out0,
-			       SiteHalfSpinor *out1,
-			       const SiteSpinor *in,
-			       Integer j,Integer k, Integer m,Integer type) const {
-    SiteHalfSpinor temp1, temp2,temp3,temp4;
-    SiteHalfCommSpinor *hout0 = (SiteHalfCommSpinor *)out0;
-    SiteHalfCommSpinor *hout1 = (SiteHalfCommSpinor *)out1;
-    projector::Proj(temp1,in[k],mu,dag);
-    projector::Proj(temp2,in[m],mu,dag);
-    exchange(temp3,temp4,temp1,temp2,type);
-    precisionChange((vComplexLow *)&hout0[j],(vComplexHigh *)&temp3,Nw);
-    precisionChange((vComplexLow *)&hout1[j],(vComplexHigh *)&temp4,Nw);
-  }
-
-  /*****************************************************/
-  /* Pass the info to the stencil */
-  /*****************************************************/
-  accelerator_inline bool DecompressionStep(void) const { return true; }
-
-};
-#endif
 
 #define DECLARE_PROJ(Projector,Compressor,spProj)			\
   class Projector {							\
@@ -374,24 +484,26 @@ public:
 
     int dag = compress.dag;
     int face_idx=0;
+#define vet_same_node(a,b) \
+      { auto tmp = b;  }
     if ( dag ) { 
-      assert(this->same_node[Xp]==this->HaloGatherDir(source,XpCompress,Xp,face_idx));
-      assert(this->same_node[Yp]==this->HaloGatherDir(source,YpCompress,Yp,face_idx));
-      assert(this->same_node[Zp]==this->HaloGatherDir(source,ZpCompress,Zp,face_idx));
-      assert(this->same_node[Tp]==this->HaloGatherDir(source,TpCompress,Tp,face_idx));
-      assert(this->same_node[Xm]==this->HaloGatherDir(source,XmCompress,Xm,face_idx));
-      assert(this->same_node[Ym]==this->HaloGatherDir(source,YmCompress,Ym,face_idx));
-      assert(this->same_node[Zm]==this->HaloGatherDir(source,ZmCompress,Zm,face_idx));
-      assert(this->same_node[Tm]==this->HaloGatherDir(source,TmCompress,Tm,face_idx));
+      vet_same_node(this->same_node[Xp],this->HaloGatherDir(source,XpCompress,Xp,face_idx));
+      vet_same_node(this->same_node[Yp],this->HaloGatherDir(source,YpCompress,Yp,face_idx));
+      vet_same_node(this->same_node[Zp],this->HaloGatherDir(source,ZpCompress,Zp,face_idx));
+      vet_same_node(this->same_node[Tp],this->HaloGatherDir(source,TpCompress,Tp,face_idx));
+      vet_same_node(this->same_node[Xm],this->HaloGatherDir(source,XmCompress,Xm,face_idx));
+      vet_same_node(this->same_node[Ym],this->HaloGatherDir(source,YmCompress,Ym,face_idx));
+      vet_same_node(this->same_node[Zm],this->HaloGatherDir(source,ZmCompress,Zm,face_idx));
+      vet_same_node(this->same_node[Tm],this->HaloGatherDir(source,TmCompress,Tm,face_idx));
     } else {
-      assert(this->same_node[Xp]==this->HaloGatherDir(source,XmCompress,Xp,face_idx));
-      assert(this->same_node[Yp]==this->HaloGatherDir(source,YmCompress,Yp,face_idx));
-      assert(this->same_node[Zp]==this->HaloGatherDir(source,ZmCompress,Zp,face_idx));
-      assert(this->same_node[Tp]==this->HaloGatherDir(source,TmCompress,Tp,face_idx));
-      assert(this->same_node[Xm]==this->HaloGatherDir(source,XpCompress,Xm,face_idx));
-      assert(this->same_node[Ym]==this->HaloGatherDir(source,YpCompress,Ym,face_idx));
-      assert(this->same_node[Zm]==this->HaloGatherDir(source,ZpCompress,Zm,face_idx));
-      assert(this->same_node[Tm]==this->HaloGatherDir(source,TpCompress,Tm,face_idx));
+      vet_same_node(this->same_node[Xp],this->HaloGatherDir(source,XmCompress,Xp,face_idx));
+      vet_same_node(this->same_node[Yp],this->HaloGatherDir(source,YmCompress,Yp,face_idx));
+      vet_same_node(this->same_node[Zp],this->HaloGatherDir(source,ZmCompress,Zp,face_idx));
+      vet_same_node(this->same_node[Tp],this->HaloGatherDir(source,TmCompress,Tp,face_idx));
+      vet_same_node(this->same_node[Xm],this->HaloGatherDir(source,XpCompress,Xm,face_idx));
+      vet_same_node(this->same_node[Ym],this->HaloGatherDir(source,YpCompress,Ym,face_idx));
+      vet_same_node(this->same_node[Zm],this->HaloGatherDir(source,ZpCompress,Zm,face_idx));
+      vet_same_node(this->same_node[Tm],this->HaloGatherDir(source,TpCompress,Tm,face_idx));
     }
     this->face_table_computed=1;
     assert(this->u_comm_offset==this->_unified_buffer_size);

@@ -75,8 +75,8 @@ int main (int argc, char ** argv)
   RealD M5=1.8;
 
   {
-    OverlapWilsonContFracTanhFermionR Dcf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
-    HermitianLinearOperator<OverlapWilsonContFracTanhFermionR,LatticeFermion> HermIndefOp(Dcf);
+    OverlapWilsonContFracTanhFermionD Dcf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+    HermitianLinearOperator<OverlapWilsonContFracTanhFermionD,LatticeFermion> HermIndefOp(Dcf);
 
     HermIndefOp.Op(src,ref);
     HermIndefOp.OpDiag(src,result);
@@ -92,8 +92,8 @@ int main (int argc, char ** argv)
   }
 
   {
-    OverlapWilsonPartialFractionTanhFermionR Dpf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
-    HermitianLinearOperator<OverlapWilsonPartialFractionTanhFermionR,LatticeFermion> HermIndefOp(Dpf);
+    OverlapWilsonPartialFractionTanhFermionD Dpf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+    HermitianLinearOperator<OverlapWilsonPartialFractionTanhFermionD,LatticeFermion> HermIndefOp(Dpf);
     
     HermIndefOp.Op(src,ref);
     HermIndefOp.OpDiag(src,result);

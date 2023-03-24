@@ -1,4 +1,7 @@
 #pragma once
+
+NAMESPACE_BEGIN(Grid);
+
 #ifdef GRID_TRACING_NVTX
 #include <nvToolsExt.h>
 class GridTracer {
@@ -64,3 +67,4 @@ inline void traceStop(int ID) {  }
 #else
 #define GRID_TRACE(name) GridTracer uniq_name_using_macros##__COUNTER__(name);
 #endif
+NAMESPACE_END(Grid);

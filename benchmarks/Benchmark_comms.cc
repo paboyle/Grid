@@ -220,7 +220,7 @@ int main (int argc, char ** argv)
 					      xmit_to_rank,1,
 					      (void *)&rbuf[mu][0],
 					      recv_from_rank,1,
-					      bytes,mu);
+					      bytes,bytes,mu);
 	
 	    comm_proc = mpi_layout[mu]-1;
 	  
@@ -231,7 +231,7 @@ int main (int argc, char ** argv)
 					      xmit_to_rank,1,
 					      (void *)&rbuf[mu+4][0],
 					      recv_from_rank,1,
-					      bytes,mu+4);
+					      bytes,bytes,mu+4);
 	  
 	  }
 	}
@@ -312,7 +312,7 @@ int main (int argc, char ** argv)
 					      xmit_to_rank,1,
 					      (void *)&rbuf[mu][0],
 					      recv_from_rank,1,
-					      bytes,mu);
+					      bytes,bytes,mu);
 	    Grid.StencilSendToRecvFromComplete(requests,mu);
 	    requests.resize(0);
 
@@ -325,7 +325,7 @@ int main (int argc, char ** argv)
 					      xmit_to_rank,1,
 					      (void *)&rbuf[mu+4][0],
 					      recv_from_rank,1,
-					      bytes,mu+4);
+					      bytes,bytes,mu+4);
 	    Grid.StencilSendToRecvFromComplete(requests,mu+4);
 	    requests.resize(0);
 	  

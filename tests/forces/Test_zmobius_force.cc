@@ -81,7 +81,7 @@ int main (int argc, char ** argv)
   omegas.push_back( std::complex<double>(0.0686324988446592,0.0550658530827402) );
   omegas.push_back( std::complex<double>(0.0686324988446592,-0.0550658530827402) );
 
-  ZMobiusFermionR Ddwf(U, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, omegas,b,c);
+  ZMobiusFermionD Ddwf(U, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, omegas,b,c);
 
   Ddwf.M   (phi,Mphi);
 

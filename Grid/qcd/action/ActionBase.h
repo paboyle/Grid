@@ -50,19 +50,23 @@ public:
   RealD refresh_us;
   void  reset_timer(void)        {
     deriv_us = S_us = refresh_us = 0.0;
-    deriv_num=0;
     deriv_norm_sum = deriv_max_sum=0.0;
     Fdt_max_sum =  Fdt_norm_sum = 0.0;
+    deriv_num=0;
   }
   void  deriv_log(RealD nrm, RealD max,RealD Fdt_nrm,RealD Fdt_max) {
-    deriv_max_sum+=max;
+    if ( max > deriv_max_sum ) {
+      deriv_max_sum=max;
+    }
     deriv_norm_sum+=nrm;
-    Fdt_max_sum+=Fdt_max;
+    if ( Fdt_max > Fdt_max_sum ) {
+      Fdt_max_sum=Fdt_max;
+    }
     Fdt_norm_sum+=Fdt_nrm; deriv_num++;
   }
-  RealD deriv_max_average(void)       { return deriv_max_sum/deriv_num; };
+  RealD deriv_max_average(void)       { return deriv_max_sum; };
   RealD deriv_norm_average(void)      { return deriv_norm_sum/deriv_num; };
-  RealD Fdt_max_average(void)         { return Fdt_max_sum/deriv_num; };
+  RealD Fdt_max_average(void)         { return Fdt_max_sum; };
   RealD Fdt_norm_average(void)        { return Fdt_norm_sum/deriv_num; };
   RealD deriv_timer(void)        { return deriv_us; };
   RealD S_timer(void)            { return S_us; };

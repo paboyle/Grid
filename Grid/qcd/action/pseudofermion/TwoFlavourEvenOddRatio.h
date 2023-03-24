@@ -38,7 +38,7 @@ NAMESPACE_BEGIN(Grid);
     class TwoFlavourEvenOddRatioPseudoFermionAction : public Action<typename Impl::GaugeField> {
     public:
       INHERIT_IMPL_TYPES(Impl);
-
+      
     private:
       FermionOperator<Impl> & NumOp;// the basic operator
       FermionOperator<Impl> & DenOp;// the basic operator
@@ -50,6 +50,8 @@ NAMESPACE_BEGIN(Grid);
       FermionField PhiOdd;   // the pseudo fermion field for this trajectory
       FermionField PhiEven;  // the pseudo fermion field for this trajectory
 
+      RealD RefreshAction;
+      
     public:
       TwoFlavourEvenOddRatioPseudoFermionAction(FermionOperator<Impl>  &_NumOp, 
                                                 FermionOperator<Impl>  &_DenOp, 
@@ -110,33 +112,60 @@ NAMESPACE_BEGIN(Grid);
         // NumOp == V
         // DenOp == M
         //
+    AUDIT();
         FermionField etaOdd (NumOp.FermionRedBlackGrid());
         FermionField etaEven(NumOp.FermionRedBlackGrid());
         FermionField tmp    (NumOp.FermionRedBlackGrid());
 
+    AUDIT();
         pickCheckerboard(Even,etaEven,eta);
+    AUDIT();
         pickCheckerboard(Odd,etaOdd,eta);
 
+    AUDIT();
         NumOp.ImportGauge(U);
+    AUDIT();
         DenOp.ImportGauge(U);
+	std::cout << " TwoFlavourRefresh:  Imported gauge "<<std::endl;
+    AUDIT();
 
         SchurDifferentiableOperator<Impl> Mpc(DenOp);
+    AUDIT();
         SchurDifferentiableOperator<Impl> Vpc(NumOp);
+    AUDIT();
 
+	std::cout << " TwoFlavourRefresh: Diff ops "<<std::endl;
+    AUDIT();
         // Odd det factors
         Mpc.MpcDag(etaOdd,PhiOdd);
+    AUDIT();
+	std::cout << " TwoFlavourRefresh: MpcDag "<<std::endl;
         tmp=Zero();
+    AUDIT();
+	std::cout << " TwoFlavourRefresh: Zero() guess "<<std::endl;
+    AUDIT();
         HeatbathSolver(Vpc,PhiOdd,tmp);
+    AUDIT();
+	std::cout << " TwoFlavourRefresh: Heatbath solver "<<std::endl;
         Vpc.Mpc(tmp,PhiOdd);            
+	std::cout << " TwoFlavourRefresh: Mpc "<<std::endl;
 
         // Even det factors
         DenOp.MooeeDag(etaEven,tmp);
         NumOp.MooeeInvDag(tmp,PhiEven);
+	std::cout << " TwoFlavourRefresh: Mee "<<std::endl;
+
+	RefreshAction = norm2(etaEven)+norm2(etaOdd);
+	std::cout << " refresh " <<action_name()<< " action "<<RefreshAction<<std::endl;
       };
 
       //////////////////////////////////////////////////////
       // S = phi^dag V (Mdag M)^-1 Vdag phi
       //////////////////////////////////////////////////////
+      virtual RealD Sinitial(const GaugeField &U) {
+	std::cout << GridLogMessage << "Returning stored two flavour refresh action "<<RefreshAction<<std::endl;
+	return RefreshAction;
+      }
       virtual RealD S(const GaugeField &U) {
 
         NumOp.ImportGauge(U);

@@ -387,8 +387,8 @@ int main (int argc, char ** argv)
 
   int nmass = masses.size();
 
-  typedef MobiusFermionR FermionActionR;
-  std::vector<FermionActionR *> FermActs;
+  typedef MobiusFermionD FermionActionD;
+  std::vector<FermionActionD *> FermActs;
   
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"DomainWallFermion action"<<std::endl;
@@ -396,10 +396,10 @@ int main (int argc, char ** argv)
 
   for(auto mass: masses) {
     std::vector<Complex> boundary = {1,1,1,-1};
-    FermionActionR::ImplParams Params(boundary);
+    FermionActionD::ImplParams Params(boundary);
     RealD b=1.5;
     RealD c=0.5;
-    FermActs.push_back(new FermionActionR(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c));
+    FermActs.push_back(new FermionActionD(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c));
   }
 
   LatticePropagator point_source(UGrid);

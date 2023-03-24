@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
 
    // Typedefs to simplify notation
   typedef WilsonImplR FermionImplPolicy;
-  typedef MobiusFermionR FermionAction;
+  typedef MobiusFermionD FermionAction;
   typedef typename FermionAction::FermionField FermionField;
 
   typedef Grid::XmlReader       Serialiser;

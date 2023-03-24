@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
 
    // Typedefs to simplify notation
   typedef WilsonImplR FermionImplPolicy;
-  typedef MobiusFermionR FermionAction;
+  typedef MobiusFermionD FermionAction;
   typedef typename FermionAction::FermionField FermionField;
 
   typedef Grid::XmlReader       Serialiser;
@@ -148,14 +148,14 @@ int main(int argc, char **argv) {
   // Level1.push_back(&StrangePseudoFermion);
   
   // DJM: setup for EOFA ratio (Shamir)
-  // DomainWallEOFAFermionR Strange_Op_L(U, *FGrid, *FrbGrid, *GridPtr, *GridRBPtr, strange_mass, strange_mass, pv_mass, 0.0, -1, M5);
-  // DomainWallEOFAFermionR Strange_Op_R(U, *FGrid, *FrbGrid, *GridPtr, *GridRBPtr, pv_mass, strange_mass, pv_mass, -1.0, 1, M5);
+  // DomainWallEOFAFermionD Strange_Op_L(U, *FGrid, *FrbGrid, *GridPtr, *GridRBPtr, strange_mass, strange_mass, pv_mass, 0.0, -1, M5);
+  // DomainWallEOFAFermionD Strange_Op_R(U, *FGrid, *FrbGrid, *GridPtr, *GridRBPtr, pv_mass, strange_mass, pv_mass, -1.0, 1, M5);
   // ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> EOFA(Strange_Op_L, Strange_Op_R, CG, OFRp, true);
   // Level1.push_back(&EOFA);
 
   // DJM: setup for EOFA ratio (Mobius)
-  MobiusEOFAFermionR Strange_Op_L(U, *FGrid, *FrbGrid, *GridPtr, *GridRBPtr, strange_mass, strange_mass, pv_mass, 0.0, -1, M5, b, c);
-  MobiusEOFAFermionR Strange_Op_R(U, *FGrid, *FrbGrid, *GridPtr, *GridRBPtr, pv_mass, strange_mass, pv_mass, -1.0, 1, M5, b, c);
+  MobiusEOFAFermionD Strange_Op_L(U, *FGrid, *FrbGrid, *GridPtr, *GridRBPtr, strange_mass, strange_mass, pv_mass, 0.0, -1, M5, b, c);
+  MobiusEOFAFermionD Strange_Op_R(U, *FGrid, *FrbGrid, *GridPtr, *GridRBPtr, pv_mass, strange_mass, pv_mass, -1.0, 1, M5, b, c);
   ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> EOFA(Strange_Op_L, Strange_Op_R, CG, OFRp, true);
   Level1.push_back(&EOFA);
 

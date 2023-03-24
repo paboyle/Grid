@@ -416,10 +416,10 @@ int main (int argc, char ** argv)
 
   int nmass = masses.size();
 
-  typedef DomainWallFermionR FermionActionR;
-  //  typedef MobiusFermionR FermionActionR;
-  std::vector<FermionActionR *> FermActs;
-  std::vector<DomainWallFermionR *> DWFActs;
+  typedef DomainWallFermionD FermionActionD;
+  //  typedef MobiusFermionD FermionActionD;
+  std::vector<FermionActionD *> FermActs;
+  std::vector<DomainWallFermionD *> DWFActs;
   
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"DomainWallFermion action"<<std::endl;
@@ -427,13 +427,13 @@ int main (int argc, char ** argv)
 
   for(auto mass: masses) {
     std::vector<Complex> boundary = {1,1,1,-1};
-    FermionActionR::ImplParams Params(boundary);
+    FermionActionD::ImplParams Params(boundary);
     RealD b=1.5;
     RealD c=0.5;
     std::cout<<GridLogMessage <<"Making DomainWallFermion action"<<std::endl;
-    //    DWFActs.push_back(new DomainWallFermionR(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5));
-    FermActs.push_back(new FermionActionR(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,Params));
-    //    FermActs.push_back(new FermionActionR(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass+0.001,M5,b,c));
+    //    DWFActs.push_back(new DomainWallFermionD(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5));
+    FermActs.push_back(new FermionActionD(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,Params));
+    //    FermActs.push_back(new FermionActionD(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass+0.001,M5,b,c));
     std::cout<<GridLogMessage <<"Made DomainWallFermion action"<<std::endl;
   }
 

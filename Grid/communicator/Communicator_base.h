@@ -131,7 +131,7 @@ public:
   template<class obj> void GlobalSum(obj &o){
     typedef typename obj::scalar_type scalar_type;
     int words = sizeof(obj)/sizeof(scalar_type);
-    scalar_type * ptr = (scalar_type *)& o;
+    scalar_type * ptr = (scalar_type *)& o; // Safe alias 
     GlobalSumVector(ptr,words);
   }
   
@@ -155,7 +155,7 @@ public:
 				    int xmit_to_rank,int do_xmit,
 				    void *recv,
 				    int recv_from_rank,int do_recv,
-				    int bytes,int dir);
+				    int xbytes,int rbytes,int dir);
   
   
   void StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int i);

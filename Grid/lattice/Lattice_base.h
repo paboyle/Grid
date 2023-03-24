@@ -291,8 +291,8 @@ public:
     typename std::enable_if<!std::is_same<robj,vobj>::value,int>::type i=0;
     conformable(*this,r);
     this->checkerboard = r.Checkerboard();
-    auto me =   View(AcceleratorWriteDiscard);
     auto him= r.View(AcceleratorRead);
+    auto me =   View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       coalescedWrite(me[ss],him(ss));
     });
@@ -306,8 +306,8 @@ public:
   inline Lattice<vobj> & operator = (const Lattice<vobj> & r){
     this->checkerboard = r.Checkerboard();
     conformable(*this,r);
-    auto me =   View(AcceleratorWriteDiscard);
     auto him= r.View(AcceleratorRead);
+    auto me =   View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       coalescedWrite(me[ss],him(ss));
     });

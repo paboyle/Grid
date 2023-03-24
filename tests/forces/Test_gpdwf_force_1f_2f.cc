@@ -70,8 +70,8 @@ void convertFermion1f_from_2f(FermionField1f &out_1f, const FermionField2f &in_2
 
   int nuoff = is_4d ? 0 : 1;   //s in 0 direction
 
-  int L_2f = FGrid_2f->FullDimensions()[nu+nuoff];
-  int L_1f = FGrid_1f->FullDimensions()[nu+nuoff];
+  Integer L_2f = FGrid_2f->FullDimensions()[nu+nuoff];
+  Integer L_1f = FGrid_1f->FullDimensions()[nu+nuoff];
   assert(L_1f == 2 * L_2f);
   
   auto in_f0_2fgrid = PeekIndex<GparityFlavourIndex>(in_2f,0); //flavor 0 on 2f Grid
