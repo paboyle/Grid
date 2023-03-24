@@ -164,11 +164,6 @@ int main(int argc, char **argv) {
   typedef MobiusEOFAFermionF FermionEOFAActionF;
   typedef typename FermionActionF::FermionField FermionFieldF;
 
-  typedef WilsonImplD2 FermionImplPolicyD2;
-  typedef MobiusFermionD2 FermionActionD2;
-  typedef MobiusEOFAFermionD2 FermionEOFAActionD2;
-  typedef typename FermionActionD2::FermionField FermionFieldD2;
-
   typedef Grid::XmlReader       Serialiser;
 
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -232,29 +227,32 @@ int main(int argc, char **argv) {
   //  std::vector<Real> hasenbusch({ light_mass, 0.005, 0.0145, 0.045, 0.108, 0.25, 0.51 , pv_mass }); // Updated
   //  std::vector<Real> hasenbusch({ light_mass, 0.0145, 0.045, 0.108, 0.25, 0.51 , 0.75 , pv_mass });
 
-  OneFlavourRationalParams OFRp; // Up/down
-  OFRp.lo       = 4.0e-5;
+  int SP_iters=10000;
+  
+  RationalActionParams OFRp; // Up/down
+  OFRp.lo       = 6.0e-5;
   OFRp.hi       = 90.0;
-  OFRp.MaxIter  = 60000;
-  OFRp.tolerance= 1.0e-5;
-  OFRp.mdtolerance= 1.0e-3;
+  OFRp.inv_pow  = 2;
+  OFRp.MaxIter  = SP_iters; // get most shifts by 2000, stop sharing space
+  OFRp.action_tolerance= 1.0e-8;
+  OFRp.action_degree   = 18;
+  OFRp.md_tolerance= 1.0e-5;
+  OFRp.md_degree   = 14;
   //  OFRp.degree   = 20; converges
   //  OFRp.degree   = 16;
-  OFRp.degree   = 18;
   OFRp.precision= 80;
   OFRp.BoundsCheckFreq=0;
   std::vector<RealD> ActionTolByPole({
-      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
+      1.0e-7,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8
     });
   std::vector<RealD> MDTolByPole({
-      1.0e-5,5.0e-6,1.0e-6,1.0e-7, // soften convergence more more
+      1.6e-5,5.0e-6,1.0e-6,3.0e-7, // soften convergence more more
       //      1.0e-6,3.0e-7,1.0e-7,1.0e-7,
       //      3.0e-6,1.0e-6,1.0e-7,1.0e-7, // soften convergence
-      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8
@@ -265,10 +263,8 @@ int main(int argc, char **argv) {
 
   typedef SchurDiagMooeeOperator<FermionActionF,FermionFieldF> LinearOperatorF;
   typedef SchurDiagMooeeOperator<FermionAction ,FermionField > LinearOperatorD;
-  typedef SchurDiagMooeeOperator<FermionActionD2,FermionFieldD2 > LinearOperatorD2;
   typedef SchurDiagMooeeOperator<FermionEOFAActionF,FermionFieldF> LinearOperatorEOFAF;
   typedef SchurDiagMooeeOperator<FermionEOFAAction ,FermionField > LinearOperatorEOFAD;
-  typedef SchurDiagMooeeOperator<FermionEOFAActionD2,FermionFieldD2 > LinearOperatorEOFAD2;
   typedef MixedPrecisionConjugateGradientOperatorFunction<MobiusFermionD,MobiusFermionF,LinearOperatorD,LinearOperatorF> MxPCG;
   typedef MixedPrecisionConjugateGradientOperatorFunction<MobiusEOFAFermionD,MobiusEOFAFermionF,LinearOperatorEOFAD,LinearOperatorEOFAF> MxPCG_EOFA;
 
@@ -321,7 +317,6 @@ int main(int argc, char **argv) {
   // temporarily need a gauge field
   LatticeGaugeFieldD  U(GridPtr); U=Zero();
   LatticeGaugeFieldF  UF(GridPtrF); UF=Zero();
-  LatticeGaugeFieldD2 UD2(GridPtrF); UD2=Zero();
 
   std::cout << GridLogMessage << " Running the HMC "<< std::endl;
   TheHMC.ReadCommandLine(argc,argv);  // params on CML or from param file
@@ -340,6 +335,7 @@ int main(int argc, char **argv) {
   ParamsDirF.dirichlet=Dirichlet;
   ParamsDir.partialDirichlet=1;
   ParamsDirF.partialDirichlet=1;
+  std::cout << GridLogMessage<< "Partial Dirichlet depth is "<<dwf_compressor_depth<<std::endl;
 
   //  double StoppingCondition = 1e-14;
   //  double MDStoppingCondition = 1e-9;
@@ -424,7 +420,7 @@ int main(int argc, char **argv) {
 	 ActionCGL, ActionCGR,
 	 DerivativeCGL, DerivativeCGR,
 	 SFRp, true);
-  //  Level2.push_back(&EOFA);
+  Level2.push_back(&EOFA);
 
   ////////////////////////////////////
   // up down action
@@ -449,17 +445,15 @@ int main(int argc, char **argv) {
   std::vector<FermionAction *> Denominators;
   std::vector<FermionActionF *> NumeratorsF;
   std::vector<FermionActionF *> DenominatorsF;
-  std::vector<FermionActionD2 *> NumeratorsD2;
-  std::vector<FermionActionD2 *> DenominatorsD2;
   std::vector<TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> *> Quotients;
   std::vector<MxPCG *> ActionMPCG;
   std::vector<MxPCG *> MPCG;
   
 #define MIXED_PRECISION
 #ifdef MIXED_PRECISION
-  std::vector<OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2> *> Bdys;
+  std::vector<GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicy> *> Bdys;
 #else
-  std::vector<OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> *> Bdys;
+  std::vector<GeneralEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> *> Bdys;
 #endif
 
   typedef SchurDiagMooeeOperator<FermionActionF,FermionFieldF> LinearOperatorF;
@@ -532,31 +526,19 @@ int main(int argc, char **argv) {
       Quotients.push_back (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],*MPCG[h],*ActionMPCG[h],CG));
     } else {
 #ifdef MIXED_PRECISION
-      // Use the D2 data types and make them use same grid as single
-      FermionActionD2::ImplParams ParamsDenD2(boundary);
-      FermionActionD2::ImplParams ParamsNumD2(boundary);
-
-      ParamsDenD2.dirichlet = ParamsDen.dirichlet;
-      ParamsDenD2.partialDirichlet = ParamsDen.partialDirichlet;
-      DenominatorsD2.push_back(new FermionActionD2(UD2,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[h],M5,b,c, ParamsDenD2));
-
-      ParamsNumD2.dirichlet = ParamsNum.dirichlet;
-      ParamsNumD2.partialDirichlet = ParamsNum.partialDirichlet;
-      NumeratorsD2.push_back  (new FermionActionD2(UD2,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_num[h],M5,b,c, ParamsNumD2));
-    
-      Bdys.push_back( new OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2>(
+      Bdys.push_back( new GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicy>(
 			   *Numerators[h],*Denominators[h],
 			   *NumeratorsF[h],*DenominatorsF[h],
-			   *NumeratorsD2[h],*DenominatorsD2[h],
-			   OFRp, 400) );
-      Bdys.push_back( new OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2>(
+			   *Numerators[h],*Denominators[h],
+			   OFRp, SP_iters) );
+      Bdys.push_back( new GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicy>(
 			   *Numerators[h],*Denominators[h],
 			   *NumeratorsF[h],*DenominatorsF[h],
-			   *NumeratorsD2[h],*DenominatorsD2[h],
-			   OFRp, 400) );
+			   *Numerators[h],*Denominators[h],
+			   OFRp, SP_iters) );
 #else
-      Bdys.push_back( new OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
-      Bdys.push_back( new OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
+      Bdys.push_back( new GeneralEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
+      Bdys.push_back( new GeneralEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
 #endif
     }
   }

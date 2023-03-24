@@ -36,7 +36,7 @@ NAMESPACE_BEGIN(Grid);
 // Wilson compressor will need FaceGather policies for:
 // Periodic, Dirichlet, and partial Dirichlet for DWF
 ///////////////////////////////////////////////////////////////
-const int dwf_compressor_depth=1;
+const int dwf_compressor_depth=2;
 #define DWF_COMPRESS
 class FaceGatherPartialDWF
 {

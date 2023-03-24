@@ -183,7 +183,7 @@ int main(int argc, char **argv) {
   // 4/2 => 0.6 dH
   // 3/3 => 0.8 dH .. depth 3, slower
   //MD.MDsteps =  4;
-  MD.MDsteps =  3;
+  MD.MDsteps =  12;
   MD.trajL   = 0.5;
 
   HMCparameters HMCparams;
@@ -200,8 +200,8 @@ int main(int argc, char **argv) {
   TheHMC.Resources.AddFourDimGrid("gauge"); // use default simd lanes decomposition
 
   CheckpointerParameters CPparams;
-  CPparams.config_prefix = "ckpoint_DDHMC_lat";
-  CPparams.rng_prefix    = "ckpoint_DDHMC_rng";
+  CPparams.config_prefix = "ckpoint_HMC_lat";
+  CPparams.rng_prefix    = "ckpoint_HMC_rng";
   CPparams.saveInterval  = 1;
   CPparams.format        = "IEEE64BIG";
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
@@ -228,7 +228,7 @@ int main(int argc, char **argv) {
   Real pv_mass      = 1.0;
   //  std::vector<Real> hasenbusch({ 0.01, 0.045, 0.108, 0.25, 0.51 , pv_mass });
   //  std::vector<Real> hasenbusch({ light_mass, 0.01, 0.045, 0.108, 0.25, 0.51 , pv_mass });
-  std::vector<Real> hasenbusch({ light_mass, 0.005, 0.0145, 0.045, 0.108, 0.25, 0.51 , pv_mass }); // Updated
+  std::vector<Real> hasenbusch({ 0.005, 0.0145, 0.045, 0.108, 0.25, 0.51 , pv_mass }); // Updated
   //  std::vector<Real> hasenbusch({ light_mass, 0.0145, 0.045, 0.108, 0.25, 0.51 , 0.75 , pv_mass });
 
   auto GridPtr   = TheHMC.Resources.GetCartesian();
@@ -299,8 +299,8 @@ int main(int argc, char **argv) {
   ////////////////////////////////////
   // Collect actions
   ////////////////////////////////////
-  ActionLevel<HMCWrapper::Field> Level1(1);
-  ActionLevel<HMCWrapper::Field> Level2(3);
+  //  ActionLevel<HMCWrapper::Field> Level1(1);
+  ActionLevel<HMCWrapper::Field> Level2(1);
   ActionLevel<HMCWrapper::Field> Level3(15);
 
   ////////////////////////////////////
@@ -369,7 +369,7 @@ int main(int argc, char **argv) {
 	 ActionCGL, ActionCGR,
 	 DerivativeCGL, DerivativeCGR,
 	 SFRp, true);
-  //  Level2.push_back(&EOFA);
+  Level2.push_back(&EOFA);
 
   ////////////////////////////////////
   // up down action
@@ -477,7 +477,7 @@ int main(int argc, char **argv) {
   // Gauge action
   /////////////////////////////////////////////////////////////
   Level3.push_back(&GaugeAction);
-  TheHMC.TheAction.push_back(Level1);
+  //  TheHMC.TheAction.push_back(Level1);
   TheHMC.TheAction.push_back(Level2);
   TheHMC.TheAction.push_back(Level3);
   std::cout << GridLogMessage << " Action complete "<< std::endl;

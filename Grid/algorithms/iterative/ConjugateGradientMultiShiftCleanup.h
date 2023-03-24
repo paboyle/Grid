@@ -27,53 +27,21 @@ Author: Christopher Kelly <ckelly@bnl.gov>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef GRID_CONJUGATE_GRADIENT_MULTI_SHIFT_MIXEDPREC_H
-#define GRID_CONJUGATE_GRADIENT_MULTI_SHIFT_MIXEDPREC_H
+#pragma once
 
 NAMESPACE_BEGIN(Grid);
 
 //CK 2020: A variant of the multi-shift conjugate gradient with the matrix multiplication in single precision. 
 //The residual is stored in single precision, but the search directions and solution are stored in double precision. 
 //Every update_freq iterations the residual is corrected in double precision. 
-    
 //For safety the a final regular CG is applied to clean up if necessary
 
-//Linop to add shift to input linop, used in cleanup CG
-namespace ConjugateGradientMultiShiftMixedPrecSupport{
-template<typename Field>
-class ShiftedLinop: public LinearOperatorBase<Field>{
-public:
-  LinearOperatorBase<Field> &linop_base;
-  RealD shift;
-
-  ShiftedLinop(LinearOperatorBase<Field> &_linop_base, RealD _shift): linop_base(_linop_base), shift(_shift){}
-
-  void OpDiag (const Field &in, Field &out){ assert(0); }
-  void OpDir  (const Field &in, Field &out,int dir,int disp){ assert(0); }
-  void OpDirAll  (const Field &in, std::vector<Field> &out){ assert(0); }
-  
-  void Op     (const Field &in, Field &out){ assert(0); }
-  void AdjOp  (const Field &in, Field &out){ assert(0); }
-
-  void HermOp(const Field &in, Field &out){
-    linop_base.HermOp(in, out);
-    axpy(out, shift, in, out);
-  }    
-
-  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
-    HermOp(in,out);
-    ComplexD dot = innerProduct(in,out);
-    n1=real(dot);
-    n2=norm2(out);
-  }
-};
-};
-
+//PB Pure single, then double fixup
 
 template<class FieldD, class FieldF,
 	 typename std::enable_if< getPrecision<FieldD>::value == 2, int>::type = 0,
 	 typename std::enable_if< getPrecision<FieldF>::value == 1, int>::type = 0> 
-class ConjugateGradientMultiShiftMixedPrec : public OperatorMultiFunction<FieldD>,
+class ConjugateGradientMultiShiftMixedPrecCleanup : public OperatorMultiFunction<FieldD>,
 					     public OperatorFunction<FieldD>
 {
 public:                                                
@@ -94,7 +62,7 @@ public:
   GridBase* SinglePrecGrid; //Grid for single-precision fields
   LinearOperatorBase<FieldF> &Linop_f; //single precision
 
-  ConjugateGradientMultiShiftMixedPrec(Integer maxit, const MultiShiftFunction &_shifts,
+  ConjugateGradientMultiShiftMixedPrecCleanup(Integer maxit, const MultiShiftFunction &_shifts,
 				       GridBase* _SinglePrecGrid, LinearOperatorBase<FieldF> &_Linop_f,
 				       int _ReliableUpdateFreq) : 
     MaxIterationsMshift(maxit),  shifts(_shifts), SinglePrecGrid(_SinglePrecGrid), Linop_f(_Linop_f), ReliableUpdateFreq(_ReliableUpdateFreq),
@@ -128,12 +96,9 @@ public:
 
   void operator() (LinearOperatorBase<FieldD> &Linop_d, const FieldD &src_d, std::vector<FieldD> &psi_d)
   { 
-    GRID_TRACE("ConjugateGradientMultiShiftMixedPrec");
+    GRID_TRACE("ConjugateGradientMultiShiftMixedPrecCleanup");
     GridBase *DoublePrecGrid = src_d.Grid();
 
-    precisionChangeWorkspace pc_wk_s_to_d(DoublePrecGrid,SinglePrecGrid);
-    precisionChangeWorkspace pc_wk_d_to_s(SinglePrecGrid,DoublePrecGrid);
-    
     ////////////////////////////////////////////////////////////////////////
     // Convenience references to the info stored in "MultiShiftFunction"
     ////////////////////////////////////////////////////////////////////////
@@ -145,10 +110,12 @@ public:
 
     //Double precision search directions
     FieldD p_d(DoublePrecGrid);
-    std::vector<FieldD> ps_d(nshift, DoublePrecGrid);// Search directions (double precision)
+    std::vector<FieldF> ps_f (nshift, SinglePrecGrid);// Search directions (single precision)
+    std::vector<FieldF> psi_f(nshift, SinglePrecGrid);// solutions (single precision)
 
     FieldD tmp_d(DoublePrecGrid);
     FieldD r_d(DoublePrecGrid);
+    FieldF r_f(SinglePrecGrid);
     FieldD mmp_d(DoublePrecGrid);
 
     assert(psi_d.size()==nshift);
@@ -187,6 +154,7 @@ public:
     if( cp == 0. ){
       for(int s=0;s<nshift;s++){
 	psi_d[s] = Zero();
+	psi_f[s] = Zero();
 	IterationsToCompleteShift[s] = 1;
 	TrueResidualShift[s] = 0.;
       }
@@ -196,18 +164,18 @@ public:
     for(int s=0;s<nshift;s++){
       rsq[s] = cp * mresidual[s] * mresidual[s];
       rsqf[s] =rsq[s];
-      std::cout<<GridLogMessage<<"ConjugateGradientMultiShiftMixedPrec: shift "<< s <<" target resid "<<rsq[s]<<std::endl;
-      ps_d[s] = src_d;
+      std::cout<<GridLogMessage<<"ConjugateGradientMultiShiftMixedPrecCleanup: shift "<< s <<" target resid "<<rsq[s]<<std::endl;
+      //      ps_d[s] = src_d;
+      precisionChangeFast(ps_f[s],src_d);
     }
     // r and p for primary
     p_d = src_d; //primary copy --- make this a reference to ps_d to save axpys
     r_d = p_d;
     
     //MdagM+m[0]
-    precisionChange(p_f, p_d, pc_wk_d_to_s);
-
+    precisionChangeFast(p_f,p_d);
     Linop_f.HermOpAndNorm(p_f,mmp_f,d,qq); // mmp = MdagM p        d=real(dot(p, mmp)),  qq=norm2(mmp)
-    precisionChange(tmp_d, mmp_f, pc_wk_s_to_d);
+    precisionChangeFast(tmp_d,mmp_f);
     Linop_d.HermOpAndNorm(p_d,mmp_d,d,qq); // mmp = MdagM p        d=real(dot(p, mmp)),  qq=norm2(mmp)
     tmp_d = tmp_d - mmp_d;
     std::cout << " Testing operators match "<<norm2(mmp_d)<<" f "<<norm2(mmp_f)<<" diff "<< norm2(tmp_d)<<std::endl;
@@ -236,6 +204,7 @@ public:
   
     for(int s=0;s<nshift;s++) {
       axpby(psi_d[s],0.,-bs[s]*alpha[s],src_d,src_d);
+      precisionChangeFast(psi_f[s],psi_d[s]);
     }
   
     ///////////////////////////////////////
@@ -253,36 +222,38 @@ public:
       a = c /cp;
       AXPYTimer.Start();
       axpy(p_d,a,p_d,r_d); 
+      AXPYTimer.Stop();
 
+      PrecChangeTimer.Start();
+      precisionChangeFast(r_f, r_d);
+      PrecChangeTimer.Stop();
+
+      AXPYTimer.Start();
       for(int s=0;s<nshift;s++){
 	if ( ! converged[s] ) { 
 	  if (s==0){
-	    axpy(ps_d[s],a,ps_d[s],r_d);
+	    axpy(ps_f[s],a,ps_f[s],r_f);
 	  } else{
 	    RealD as =a *z[s][iz]*bs[s] /(z[s][1-iz]*b);
-	    axpby(ps_d[s],z[s][iz],as,r_d,ps_d[s]);
+	    axpby(ps_f[s],z[s][iz],as,r_f,ps_f[s]);
 	  }
 	}
       }
       AXPYTimer.Stop();
 
-      PrecChangeTimer.Start();
-      precisionChange(p_f, p_d, pc_wk_d_to_s); //get back single prec search direction for linop
-      PrecChangeTimer.Stop();
-
       cp=c;
+      PrecChangeTimer.Start();
+      precisionChangeFast(p_f, p_d); //get back single prec search direction for linop
+      PrecChangeTimer.Stop();
       MatrixTimer.Start();  
       Linop_f.HermOp(p_f,mmp_f);
       MatrixTimer.Stop();  
-
       PrecChangeTimer.Start();
-      precisionChange(mmp_d, mmp_f, pc_wk_s_to_d); // From Float to Double
+      precisionChangeFast(mmp_d, mmp_f); // From Float to Double
       PrecChangeTimer.Stop();
 
-      AXPYTimer.Start();
       d=real(innerProduct(p_d,mmp_d));    
       axpy(mmp_d,mass[0],p_d,mmp_d);
-      AXPYTimer.Stop();
       RealD rn = norm2(p_d);
       d += rn*mass[0];
     
@@ -304,35 +275,16 @@ public:
       }
       ShiftTimer.Stop();
 
-      //Update double precision solutions
+      //Update single precision solutions
       AXPYTimer.Start();
       for(int s=0;s<nshift;s++){
 	int ss = s;
 	if( (!converged[s]) ) { 
-	  axpy(psi_d[ss],-bs[s]*alpha[s],ps_d[s],psi_d[ss]);
+	  axpy(psi_f[ss],-bs[s]*alpha[s],ps_f[s],psi_f[ss]);
 	}
       }
-
-      //Perform reliable update if necessary; otherwise update residual from single-prec mmp
       c = axpy_norm(r_d,b,mmp_d,r_d);
-
       AXPYTimer.Stop();
-
-      if(k % ReliableUpdateFreq == 0){
-	RealD c_old = c;
-	//Replace r with true residual
-	MatrixTimer.Start();  
-	Linop_d.HermOp(psi_d[0],mmp_d); 
-	MatrixTimer.Stop();  
-
-	AXPYTimer.Start();
-	axpy(mmp_d,mass[0],psi_d[0],mmp_d);
-
-	c = axpy_norm(r_d, -1.0, mmp_d, src_d);
-	AXPYTimer.Stop();
-
-	std::cout<<GridLogMessage<<"ConjugateGradientMultiShiftMixedPrec k="<<k<< ", replaced |r|^2 = "<<c_old <<" with |r|^2 = "<<c<<std::endl;
-      }
     
       // Convergence checks
       int all_converged = 1;
@@ -345,7 +297,7 @@ public:
 	
 	  if(css<rsqf[s]){
 	    if ( ! converged[s] )
-	      std::cout<<GridLogMessage<<"ConjugateGradientMultiShiftMixedPrec k="<<k<<" Shift "<<s<<" has converged"<<std::endl;
+	      std::cout<<GridLogMessage<<"ConjugateGradientMultiShiftMixedPrecCleanup k="<<k<<" Shift "<<s<<" has converged"<<std::endl;
 	    converged[s]=1;
 	  } else {
 	    all_converged=0;
@@ -358,11 +310,16 @@ public:
 
 	SolverTimer.Stop();
 
+	for(int s=0;s<nshift;s++){
+	  precisionChangeFast(psi_d[s],psi_f[s]);
+	}
+
+	
 	if ( all_converged ){
-	  std::cout<<GridLogMessage<< "ConjugateGradientMultiShiftMixedPrec: All shifts have converged iteration "<<k<<std::endl;
-	  std::cout<<GridLogMessage<< "ConjugateGradientMultiShiftMixedPrec: Checking solutions"<<std::endl;
+	  std::cout<<GridLogMessage<< "ConjugateGradientMultiShiftMixedPrecCleanup: All shifts have converged iteration "<<k<<std::endl;
+	  std::cout<<GridLogMessage<< "ConjugateGradientMultiShiftMixedPrecCleanup: Checking solutions"<<std::endl;
 	} else {
-	  std::cout<<GridLogMessage<< "ConjugateGradientMultiShiftMixedPrec: Not all shifts have converged iteration "<<k<<std::endl;
+	  std::cout<<GridLogMessage<< "ConjugateGradientMultiShiftMixedPrecCleanup: Not all shifts have converged iteration "<<k<<std::endl;
 	}
 	
 	// Check answers 
@@ -373,12 +330,12 @@ public:
 	  RealD rn = norm2(r_d);
 	  RealD cn = norm2(src_d);
 	  TrueResidualShift[s] = std::sqrt(rn/cn);
-	  std::cout<<GridLogMessage<<"ConjugateGradientMultiShiftMixedPrec: shift["<<s<<"] true residual "<< TrueResidualShift[s] << " target " << mresidual[s] << std::endl;
+	  std::cout<<GridLogMessage<<"ConjugateGradientMultiShiftMixedPrecCleanup: shift["<<s<<"] true residual "<< TrueResidualShift[s] << " target " << mresidual[s] << std::endl;
 
 	  //If we have not reached the desired tolerance, do a (mixed precision) CG cleanup
 	  if(rn >= rsq[s]){
 	    CleanupTimer.Start();
-	    std::cout<<GridLogMessage<<"ConjugateGradientMultiShiftMixedPrec: performing cleanup step for shift " << s << std::endl;
+	    std::cout<<GridLogMessage<<"ConjugateGradientMultiShiftMixedPrecCleanup: performing cleanup step for shift " << s << std::endl;
 
 	    //Setup linear operators for final cleanup
 	    ConjugateGradientMultiShiftMixedPrecSupport::ShiftedLinop<FieldD> Linop_shift_d(Linop_d, mass[s]);
@@ -392,7 +349,7 @@ public:
 	  }
 	}
 
-	std::cout << GridLogMessage << "ConjugateGradientMultiShiftMixedPrec: Time Breakdown for body"<<std::endl;
+	std::cout << GridLogMessage << "ConjugateGradientMultiShiftMixedPrecCleanup: Time Breakdown for body"<<std::endl;
 	std::cout << GridLogMessage << "\tSolver    " << SolverTimer.Elapsed()     <<std::endl;
 	std::cout << GridLogMessage << "\t\tAXPY    " << AXPYTimer.Elapsed()     <<std::endl;
 	std::cout << GridLogMessage << "\t\tMatrix    " << MatrixTimer.Elapsed()     <<std::endl;
@@ -413,4 +370,4 @@ public:
 
 };
 NAMESPACE_END(Grid);
-#endif
+

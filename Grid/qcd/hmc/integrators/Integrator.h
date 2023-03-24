@@ -285,6 +285,15 @@ public:
       }
     }
     std::cout << GridLogMessage << "--------------------------- "<<std::endl;
+    std::cout << GridLogMessage << " Dslash counts "<<std::endl;
+    std::cout << GridLogMessage << "------------------------- "<<std::endl;
+    uint64_t full, partial, dirichlet;
+    DslashGetCounts(dirichlet,partial,full);
+    std::cout << GridLogMessage << " Full BCs               : "<<full<<std::endl;
+    std::cout << GridLogMessage << " Partial dirichlet BCs  : "<<partial<<std::endl;
+    std::cout << GridLogMessage << " Dirichlet BCs          : "<<dirichlet<<std::endl;
+
+    std::cout << GridLogMessage << "--------------------------- "<<std::endl;
     std::cout << GridLogMessage << " Force average size "<<std::endl;
     std::cout << GridLogMessage << "------------------------- "<<std::endl;
     for (int level = 0; level < as.size(); ++level) {

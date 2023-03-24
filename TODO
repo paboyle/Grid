@@ -1,3 +1,12 @@
+- - Slice sum optimisation & A2A - atomic addition
+- - Also faster non-atomic reduction
+- - Remaining PRs
+- - DDHMC
+  - - MixedPrec is the action eval, high precision
+  - - MixedPrecCleanup is the force eval, low precision
+
+=================
+=================
 Lattice_basis.h -- > HIP and SYCL GPU code
 
 
@@ -7,6 +16,7 @@ DDHMC
 -- Reliable Update CG - DONE
 -- Multishift Mixed Precision - DONE
 -- Pole dependent residual  - DONE
+
 
 =======
 -- comms threads issue??

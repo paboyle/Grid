@@ -476,6 +476,20 @@ int main (int argc, char ** argv)
   //  ForceTest<GimplTypesR>(BdyNf2eo,U,DDHMCFilter);
 
   //////////////////// One flavour boundary det  ////////////////////
+  RationalActionParams OFRp; // Up/down
+  OFRp.lo       = 6.0e-5;
+  OFRp.hi       = 90.0;
+  OFRp.inv_pow  = 2;
+  OFRp.MaxIter  = SP_iters; // get most shifts by 2000, stop sharing space
+  OFRp.action_tolerance= 1.0e-8;
+  OFRp.action_degree   = 18;
+  OFRp.md_tolerance= 1.0e-5;
+  OFRp.md_degree   = 14;
+  //  OFRp.degree   = 20; converges
+  //  OFRp.degree   = 16;
+  OFRp.precision= 80;
+  OFRp.BoundsCheckFreq=0;
+  /*
   OneFlavourRationalParams OFRp; // Up/down
   OFRp.lo       = 4.0e-5;
   OFRp.hi       = 90.0;
@@ -485,6 +499,23 @@ int main (int argc, char ** argv)
   OFRp.degree   = 18;
   OFRp.precision= 80;
   OFRp.BoundsCheckFreq=0;
+  */
+  std::vector<RealD> ActionTolByPole({
+      1.0e-7,1.0e-8,1.0e-8,1.0e-8,
+      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
+      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
+      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
+      1.0e-8,1.0e-8
+    });
+  std::vector<RealD> MDTolByPole({
+      1.6e-5,5.0e-6,1.0e-6,3.0e-7, // soften convergence more more
+      //      1.0e-6,3.0e-7,1.0e-7,1.0e-7,
+      //      3.0e-6,1.0e-6,1.0e-7,1.0e-7, // soften convergence
+      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
+      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
+      1.0e-8,1.0e-8
+    });
+  /*
   std::vector<RealD> ActionTolByPole({
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
@@ -499,9 +530,9 @@ int main (int argc, char ** argv)
       //      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,
-      1.0e-8,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8
     });
+  */
   OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> BdySqrt(DdwfDirichlet,DdwfPeriodic,OFRp);
   BdySqrt.SetTolerances(ActionTolByPole,MDTolByPole);
   ForceTest<GimplTypesR>(BdySqrt,U,DDHMCFilter);
