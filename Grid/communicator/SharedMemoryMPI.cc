@@ -37,9 +37,11 @@ Author: Christoph Lehner <christoph@lhnr.de>
 #ifdef GRID_HIP
 #include <hip/hip_runtime_api.h>
 #endif
-#ifdef GRID_SYCl
+#ifdef GRID_SYCL
 
 #endif
+#define GRID_SYCL_LEVEL_ZERO_IPC
+
 
 NAMESPACE_BEGIN(Grid); 
 #define header "SharedMemoryMpi: "
