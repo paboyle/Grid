@@ -1,1 +1,0 @@
-#define IMPLEMENTATION ZWilsonImplD2

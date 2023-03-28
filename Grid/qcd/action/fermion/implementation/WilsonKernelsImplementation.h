@@ -463,11 +463,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
 
    if( interior && exterior ) {
      if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSite); return;}
-#ifdef SYCL_HACK     
-     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteSycl);    return; }
-#else
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSite);    return;}
-#endif     
 #ifndef GRID_CUDA
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSite);    return;}
 #endif
