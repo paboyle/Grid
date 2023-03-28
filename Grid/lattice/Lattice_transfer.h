@@ -288,7 +288,36 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
     blockZAXPY(fineDataRed,ip,Basis[v],fineDataRed); 
   }
 }
+template<class vobj,class CComplex,int nbasis,class VLattice>
+inline void batchBlockProject(std::vector<Lattice<iVector<CComplex,nbasis>>> &coarseData,
+                               const std::vector<Lattice<vobj>> &fineData,
+                               const VLattice &Basis)
+{
+  int NBatch = fineData.size();
+  assert(coarseData.size() == NBatch);
 
+  GridBase * fine  = fineData[0].Grid();
+  GridBase * coarse= coarseData[0].Grid();
+
+  Lattice<iScalar<CComplex>> ip(coarse);
+  std::vector<Lattice<vobj>> fineDataCopy = fineData;
+
+  autoView(ip_, ip, AcceleratorWrite);
+  for(int v=0;v<nbasis;v++) {
+    for (int k=0; k<NBatch; k++) {
+      autoView( coarseData_ , coarseData[k], AcceleratorWrite);
+      blockInnerProductD(ip,Basis[v],fineDataCopy[k]); // ip = <basis|fine>
+      accelerator_for( sc, coarse->oSites(), vobj::Nsimd(), {
+        convertType(coarseData_[sc](v),ip_[sc]);
+      });
+
+      // improve numerical stability of projection
+      // |fine> = |fine> - <basis|fine> |basis>
+      ip=-ip;
+      blockZAXPY(fineDataCopy[k],ip,Basis[v],fineDataCopy[k]); 
+    }
+  }
+}
 
 template<class vobj,class vobj2,class CComplex>
   inline void blockZAXPY(Lattice<vobj> &fineZ,
@@ -589,6 +618,26 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
   }
 }
 #endif
+
+template<class vobj,class CComplex,int nbasis,class VLattice>
+inline void batchBlockPromote(const std::vector<Lattice<iVector<CComplex,nbasis>>> &coarseData,
+                               std::vector<Lattice<vobj>> &fineData,
+                               const VLattice &Basis)
+{
+  int NBatch = coarseData.size();
+  assert(fineData.size() == NBatch);
+
+  GridBase * fine   = fineData[0].Grid();
+  GridBase * coarse = coarseData[0].Grid();
+  for (int k=0; k<NBatch; k++)
+    fineData[k]=Zero();
+  for (int i=0;i<nbasis;i++) {
+    for (int k=0; k<NBatch; k++) {
+      Lattice<iScalar<CComplex>> ip = PeekIndex<0>(coarseData[k],i);
+      blockZAXPY(fineData[k],ip,Basis[i],fineData[k]);
+    }
+  }
+}
 
 // Useful for precision conversion, or indeed anything where an operator= does a conversion on scalars.
 // Simd layouts need not match since we use peek/poke Local

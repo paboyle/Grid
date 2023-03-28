@@ -153,33 +153,44 @@ inline typename vobj::scalar_objectD sumD_large(const vobj *arg, Integer osites)
 }
 
 template<class vobj>
-inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
+inline typename vobj::scalar_object rankSum(const Lattice<vobj> &arg)
 {
   Integer osites = arg.Grid()->oSites();
 #if defined(GRID_CUDA)||defined(GRID_HIP)||defined(GRID_SYCL)
-  typename vobj::scalar_object ssum;
   autoView( arg_v, arg, AcceleratorRead);
-  ssum= sum_gpu(&arg_v[0],osites);
+  return sum_gpu(&arg_v[0],osites);
 #else
   autoView(arg_v, arg, CpuRead);
-  auto ssum= sum_cpu(&arg_v[0],osites);
+  return sum_cpu(&arg_v[0],osites);
 #endif  
+}
+
+template<class vobj>
+inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
+{
+  auto ssum = rankSum(arg);
   arg.Grid()->GlobalSum(ssum);
   return ssum;
 }
 
 template<class vobj>
-inline typename vobj::scalar_object sum_large(const Lattice<vobj> &arg)
+inline typename vobj::scalar_object rankSumLarge(const Lattice<vobj> &arg)
 {
 #if defined(GRID_CUDA)||defined(GRID_HIP)||defined(GRID_SYCL)
   autoView( arg_v, arg, AcceleratorRead);
   Integer osites = arg.Grid()->oSites();
-  auto ssum= sum_gpu_large(&arg_v[0],osites);
+  return sum_gpu_large(&arg_v[0],osites);
 #else
   autoView(arg_v, arg, CpuRead);
   Integer osites = arg.Grid()->oSites();
-  auto ssum= sum_cpu(&arg_v[0],osites);
+  return sum_cpu(&arg_v[0],osites);
 #endif
+}
+
+template<class vobj>
+inline typename vobj::scalar_object sum_large(const Lattice<vobj> &arg)
+{
+  auto ssum = rankSumLarge(arg);
   arg.Grid()->GlobalSum(ssum);
   return ssum;
 }
