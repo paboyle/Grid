@@ -401,8 +401,6 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &list,int dir)
 {
   //   std::cout << "Copy Synchronised\n"<<std::endl;
-  acceleratorCopySynchronise();
-
   int nreq=list.size();
 
   if (nreq==0) return;
