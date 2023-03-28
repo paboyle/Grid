@@ -398,6 +398,8 @@ public:
   ////////////////////////////////////////////////////////////////////////
   void CommunicateBegin(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
+    // Buffers are gathered AND synchronised
+    // Copies are MPI ISend OR asynch copy on copy stream
     reqs.resize(Packets.size());
     commtime-=usecond();
     for(int i=0;i<Packets.size();i++){
@@ -410,14 +412,18 @@ public:
       comms_bytes+=bytes;
       shm_bytes  +=2*Packets[i].bytes-bytes;
     }
-    _grid->StencilBarrier();// Synch shared memory on a single nodes
   }
 
   void CommunicateComplete(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
+    // complete intranode
+    acceleratorCopySynchronise();
+    // complete MPI
     for(int i=0;i<Packets.size();i++){
       _grid->StencilSendToRecvFromComplete(reqs[i],i);
     }
+    // Everyone agrees we are all done
+    _grid->StencilBarrier(); 
     commtime+=usecond();
   }
   ////////////////////////////////////////////////////////////////////////
@@ -425,33 +431,9 @@ public:
   ////////////////////////////////////////////////////////////////////////
   void Communicate(void)
   {
-    if ( 0 ){
-      thread_region {
-	// must be called in parallel region
-	int mythread  = thread_num();
-	int maxthreads= thread_max();
-	int nthreads = CartesianCommunicator::nCommThreads;
-	assert(nthreads <= maxthreads);
-	if (nthreads == -1) nthreads = 1;
-	if (mythread < nthreads) {
-	  for (int i = mythread; i < Packets.size(); i += nthreads) {
-	    double start = usecond();
-	    uint64_t bytes= _grid->StencilSendToRecvFrom(Packets[i].send_buf,
-							 Packets[i].to_rank,
-							 Packets[i].recv_buf,
-							 Packets[i].from_rank,
-							 Packets[i].bytes,i);
-	    comm_bytes_thr[mythread] += bytes;
-	    shm_bytes_thr[mythread]  += Packets[i].bytes - bytes;
-	    comm_time_thr[mythread]  += usecond() - start;
-	  }
-	}
-      }
-    } else { // Concurrent and non-threaded asynch calls to MPI
-      std::vector<std::vector<CommsRequest_t> > reqs;
-      this->CommunicateBegin(reqs);
-      this->CommunicateComplete(reqs);
-    }
+    std::vector<std::vector<CommsRequest_t> > reqs;
+    this->CommunicateBegin(reqs);
+    this->CommunicateComplete(reqs);
   }
 
   template<class compressor> void HaloExchange(const Lattice<vobj> &source,compressor &compress)
@@ -527,7 +509,6 @@ public:
     _grid->StencilBarrier();// Synch shared memory on a single nodes
     mpi3synctime_g+=usecond();
 
-    // conformable(source.Grid(),_grid);
     assert(source.Grid()==_grid);
     halogtime-=usecond();
 
@@ -586,13 +567,8 @@ public:
     CommsMerge(decompress,Mergers,Decompressions);
   }
   template<class decompressor>  void CommsMergeSHM(decompressor decompress) {
-    mpi3synctime-=usecond();
-    accelerator_barrier();
-    _grid->StencilBarrier();// Synch shared memory on a single nodes
-    mpi3synctime+=usecond();
-    shmmergetime-=usecond();
-    CommsMerge(decompress,MergersSHM,DecompressionsSHM);
-    shmmergetime+=usecond();
+    assert(MergersSHM.size()==0);
+    assert(DecompressionsSHM.size()==0);
   }
 
   template<class decompressor>
