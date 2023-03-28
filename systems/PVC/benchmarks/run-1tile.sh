@@ -4,7 +4,7 @@
 #SBATCH -p QZ1J-ICX-PVC
 ##SBATCH -p QZ1J-SPR-PVC-2C
 
-source /nfs/site/home/paboylex/ATS/GridNew/Grid/systems/PVC-nightly/setup.sh
+#source /nfs/site/home/paboylex/ATS/GridNew/Grid/systems/PVC-nightly/setup.sh
 
 export NT=8
 
