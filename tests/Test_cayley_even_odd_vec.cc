@@ -73,12 +73,12 @@ int main (int argc, char ** argv)
   RealD M5  =1.8;
 
   std::cout<<GridLogMessage<<"**************************************************************"<<std::endl;
-  std::cout<<GridLogMessage <<"DomainWallFermion vectorised test"<<std::endl;
+  std::cout<<GridLogMessage <<"DomainWallFermion test"<<std::endl;
   std::cout<<GridLogMessage<<"**************************************************************"<<std::endl;
   std::vector<Complex> boundary = {1,1,1,-1};
   DomainWallFermionD::ImplParams Params(boundary);
-  Coordinate Dirichlet({0,8,8,16,32});
-  Params.dirichlet=Dirichlet;
+  //  Coordinate Dirichlet({0,8,8,16,32});
+  //  Params.dirichlet=Dirichlet;
 
   DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,Params);
   TestWhat<DomainWallFermionD>(Ddwf,FGrid,FrbGrid,UGrid,mass,M5,&RNG4,&RNG5);
