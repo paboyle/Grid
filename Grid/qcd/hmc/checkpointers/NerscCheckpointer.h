@@ -43,7 +43,8 @@ private:
 
 public:
   INHERIT_GIMPL_TYPES(Gimpl);  // only for gauge configurations
-
+  typedef GaugeStatistics<Gimpl> GaugeStats;
+  
   NerscHmcCheckpointer(const CheckpointerParameters &Params_) { initialize(Params_); }
 
   void initialize(const CheckpointerParameters &Params_) {
@@ -60,7 +61,7 @@ public:
       int precision32 = 1;
       int tworow = 0;
       NerscIO::writeRNGState(sRNG, pRNG, rng);
-      NerscIO::writeConfiguration(U, config, tworow, precision32);
+      NerscIO::writeConfiguration<GaugeStats>(U, config, tworow, precision32);
     }
   };
 
@@ -74,7 +75,7 @@ public:
 
     FieldMetaData header;
     NerscIO::readRNGState(sRNG, pRNG, header, rng);
-    NerscIO::readConfiguration(U, header, config);
+    NerscIO::readConfiguration<GaugeStats>(U, header, config);
   };
 };
 

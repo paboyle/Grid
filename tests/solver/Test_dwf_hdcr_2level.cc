@@ -56,6 +56,7 @@ RealD InverseApproximation(RealD x){
 template<class Field,class Matrix> class ChebyshevSmoother : public LinearFunction<Field>
 {
 public:
+  using LinearFunction<Field>::operator();
   typedef LinearOperatorBase<Field>                            FineOperator;
   Matrix         & _SmootherMatrix;
   FineOperator   & _SmootherOperator;
@@ -79,6 +80,7 @@ public:
 template<class Field,class Matrix> class MirsSmoother : public LinearFunction<Field>
 {
 public:
+  using LinearFunction<Field>::operator();
   typedef LinearOperatorBase<Field>                            FineOperator;
   Matrix         & SmootherMatrix;
   FineOperator   & SmootherOperator;
@@ -108,6 +110,7 @@ public:
 template<class Field,class Matrix> class RedBlackSmoother : public LinearFunction<Field>
 {
 public:
+  using LinearFunction<Field>::operator();
   typedef LinearOperatorBase<Field>                            FineOperator;
   Matrix         & SmootherMatrix;
   RealD tol;
@@ -134,6 +137,7 @@ public:
 template<class Fobj,class CComplex,int nbasis, class Matrix, class Guesser, class CoarseSolver>
 class MultiGridPreconditioner : public LinearFunction< Lattice<Fobj> > {
 public:
+  using LinearFunction<Lattice<Fobj> >::operator();
 
   typedef Aggregation<Fobj,CComplex,nbasis> Aggregates;
   typedef CoarsenedMatrix<Fobj,CComplex,nbasis> CoarseOperator;
@@ -241,7 +245,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   const int Ls=16;
-  const int rLs=8;
+  //  const int rLs=8;
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
@@ -262,6 +266,8 @@ int main (int argc, char ** argv)
 
   GridCartesian *Coarse4d =  SpaceTimeGrid::makeFourDimGrid(clatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());;
   GridCartesian *Coarse5d =  SpaceTimeGrid::makeFiveDimGrid(1,Coarse4d);
+  GridRedBlackCartesian * Coarse4dRB = SpaceTimeGrid::makeFourDimRedBlackGrid(Coarse4d);
+  GridRedBlackCartesian * Coarse5dRB = SpaceTimeGrid::makeFiveDimRedBlackGrid(1,Coarse4d);
 
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
@@ -328,7 +334,7 @@ int main (int argc, char ** argv)
 
   Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> HermIndefOp(Ddwf);
 
-  Level1Op LDOp(*Coarse5d,1); LDOp.CoarsenOperator(FGrid,HermIndefOp,Aggregates);
+  Level1Op LDOp(*Coarse5d,*Coarse5dRB,1); LDOp.CoarsenOperator(FGrid,HermIndefOp,Aggregates);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << " Running Coarse grid Lanczos "<< std::endl;
@@ -352,7 +358,9 @@ int main (int argc, char ** argv)
 
   //  ConjugateGradient<CoarseVector>  CoarseCG(0.01,1000);
   
-  ConjugateGradient<CoarseVector>  CoarseCG(0.02,1000);// 14.7s
+  ConjugateGradient<CoarseVector>  CoarseCG(0.01,2000);// 14.7s
+  eval.resize(0);
+  evec.resize(0,Coarse5d);
   DeflatedGuesser<CoarseVector> DeflCoarseGuesser(evec,eval);
   NormalEquations<CoarseVector> DeflCoarseCGNE(LDOp,CoarseCG,DeflCoarseGuesser);
 
@@ -384,7 +392,7 @@ int main (int argc, char ** argv)
   //  RedBlackSmoother<LatticeFermion,DomainWallFermionR> FineRBSmoother(0.00,0.001,100,Ddwf);
 
   // Wrap the 2nd level solver in a MultiGrid preconditioner acting on the fine space
-  ZeroGuesser<CoarseVector> CoarseZeroGuesser;
+  //  ZeroGuesser<CoarseVector> CoarseZeroGuesser;
   TwoLevelMG TwoLevelPrecon(Aggregates, LDOp,
 			    HermIndefOp,Ddwf,
 			    FineSmoother,

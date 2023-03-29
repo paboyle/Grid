@@ -85,6 +85,76 @@ template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Latti
   });
 }
 
+template<class vobj> inline void acceleratorPickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full, int checker_dim_half=0)
+{
+  half.Checkerboard() = cb;
+  autoView(half_v, half, AcceleratorWrite);
+  autoView(full_v, full, AcceleratorRead);
+  Coordinate rdim_full             = full.Grid()->_rdimensions;
+  Coordinate rdim_half             = half.Grid()->_rdimensions;
+  unsigned long ndim_half          = half.Grid()->_ndimension;
+  Coordinate checker_dim_mask_half = half.Grid()->_checker_dim_mask;
+  Coordinate ostride_half          = half.Grid()->_ostride;
+  accelerator_for(ss, full.Grid()->oSites(),full.Grid()->Nsimd(),{
+    
+    Coordinate coor;
+    int cbos;
+    int linear=0;
+
+    Lexicographic::CoorFromIndex(coor,ss,rdim_full);
+    assert(coor.size()==ndim_half);
+
+    for(int d=0;d<ndim_half;d++){ 
+      if(checker_dim_mask_half[d]) linear += coor[d];
+    }
+    cbos = (linear&0x1);
+
+    if (cbos==cb) {
+      int ssh=0;
+      for(int d=0;d<ndim_half;d++) {
+        if (d == checker_dim_half) ssh += ostride_half[d] * ((coor[d] / 2) % rdim_half[d]);
+        else ssh += ostride_half[d] * (coor[d] % rdim_half[d]);
+      }
+      coalescedWrite(half_v[ssh],full_v(ss));
+    }
+  });
+}
+template<class vobj> inline void acceleratorSetCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half, int checker_dim_half=0)
+{
+  int cb = half.Checkerboard();
+  autoView(half_v , half, AcceleratorRead);
+  autoView(full_v , full, AcceleratorWrite);
+  Coordinate rdim_full             = full.Grid()->_rdimensions;
+  Coordinate rdim_half             = half.Grid()->_rdimensions;
+  unsigned long ndim_half          = half.Grid()->_ndimension;
+  Coordinate checker_dim_mask_half = half.Grid()->_checker_dim_mask;
+  Coordinate ostride_half          = half.Grid()->_ostride;
+  accelerator_for(ss,full.Grid()->oSites(),full.Grid()->Nsimd(),{
+
+    Coordinate coor;
+    int cbos;
+    int linear=0;
+  
+    Lexicographic::CoorFromIndex(coor,ss,rdim_full);
+    assert(coor.size()==ndim_half);
+
+    for(int d=0;d<ndim_half;d++){ 
+      if(checker_dim_mask_half[d]) linear += coor[d];
+    }
+    cbos = (linear&0x1);
+
+    if (cbos==cb) {
+      int ssh=0;
+      for(int d=0;d<ndim_half;d++){
+        if (d == checker_dim_half) ssh += ostride_half[d] * ((coor[d] / 2) % rdim_half[d]);
+        else ssh += ostride_half[d] * (coor[d] % rdim_half[d]);
+      }
+      coalescedWrite(full_v[ss],half_v(ssh));
+    }
+
+  });
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Flexible Type Conversion for internal promotion to double as well as graceful
 // treatment of scalar-compatible types
@@ -96,6 +166,20 @@ accelerator_inline void convertType(ComplexD & out, const std::complex<double> &
 accelerator_inline void convertType(ComplexF & out, const std::complex<float> & in) {
   out = in;
 }
+
+template<typename T>
+accelerator_inline EnableIf<isGridFundamental<T>> convertType(T & out, const T & in) {
+  out = in;
+}
+
+// This would allow for conversions between GridFundamental types, but is not strictly needed as yet
+/*template<typename T1, typename T2>
+accelerator_inline typename std::enable_if<isGridFundamental<T1>::value && isGridFundamental<T2>::value>::type
+// Or to make this very broad, conversions between anything that's not a GridTensor could be allowed
+//accelerator_inline typename std::enable_if<!isGridTensor<T1>::value && !isGridTensor<T2>::value>::type
+convertType(T1 & out, const T2 & in) {
+  out = in;
+}*/
 
 #ifdef GRID_SIMT
 accelerator_inline void convertType(vComplexF & out, const ComplexF & in) {
@@ -117,18 +201,18 @@ accelerator_inline void convertType(vComplexD2 & out, const vComplexF & in) {
   Optimization::PrecisionChange::StoD(in.v,out._internal[0].v,out._internal[1].v);
 }
 
-template<typename T1,typename T2,int N>
-  accelerator_inline void convertType(iMatrix<T1,N> & out, const iMatrix<T2,N> & in);
-template<typename T1,typename T2,int N>
-  accelerator_inline void convertType(iVector<T1,N> & out, const iVector<T2,N> & in);
+template<typename T1,typename T2>
+accelerator_inline void convertType(iScalar<T1> & out, const iScalar<T2> & in) {
+  convertType(out._internal,in._internal);
+}
 
-template<typename T1,typename T2, typename std::enable_if<!isGridScalar<T1>::value, T1>::type* = nullptr>
-accelerator_inline void convertType(T1 & out, const iScalar<T2> & in) {
+template<typename T1,typename T2>
+accelerator_inline NotEnableIf<isGridScalar<T1>> convertType(T1 & out, const iScalar<T2> & in) {
   convertType(out,in._internal);
 }
 
 template<typename T1,typename T2>
-accelerator_inline void convertType(iScalar<T1> & out, const T2 & in) {
+accelerator_inline NotEnableIf<isGridScalar<T2>> convertType(iScalar<T1> & out, const T2 & in) {
   convertType(out._internal,in);
 }
 
@@ -143,11 +227,6 @@ template<typename T1,typename T2,int N>
 accelerator_inline void convertType(iVector<T1,N> & out, const iVector<T2,N> & in) {
   for (int i=0;i<N;i++)
     convertType(out._internal[i],in._internal[i]);
-}
-
-template<typename T, typename std::enable_if<isGridFundamental<T>::value, T>::type* = nullptr>
-accelerator_inline void convertType(T & out, const T & in) {
-  out = in;
 }
 
 template<typename T1,typename T2>
@@ -209,7 +288,36 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
     blockZAXPY(fineDataRed,ip,Basis[v],fineDataRed); 
   }
 }
+template<class vobj,class CComplex,int nbasis,class VLattice>
+inline void batchBlockProject(std::vector<Lattice<iVector<CComplex,nbasis>>> &coarseData,
+                               const std::vector<Lattice<vobj>> &fineData,
+                               const VLattice &Basis)
+{
+  int NBatch = fineData.size();
+  assert(coarseData.size() == NBatch);
 
+  GridBase * fine  = fineData[0].Grid();
+  GridBase * coarse= coarseData[0].Grid();
+
+  Lattice<iScalar<CComplex>> ip(coarse);
+  std::vector<Lattice<vobj>> fineDataCopy = fineData;
+
+  autoView(ip_, ip, AcceleratorWrite);
+  for(int v=0;v<nbasis;v++) {
+    for (int k=0; k<NBatch; k++) {
+      autoView( coarseData_ , coarseData[k], AcceleratorWrite);
+      blockInnerProductD(ip,Basis[v],fineDataCopy[k]); // ip = <basis|fine>
+      accelerator_for( sc, coarse->oSites(), vobj::Nsimd(), {
+        convertType(coarseData_[sc](v),ip_[sc]);
+      });
+
+      // improve numerical stability of projection
+      // |fine> = |fine> - <basis|fine> |basis>
+      ip=-ip;
+      blockZAXPY(fineDataCopy[k],ip,Basis[v],fineDataCopy[k]); 
+    }
+  }
+}
 
 template<class vobj,class vobj2,class CComplex>
   inline void blockZAXPY(Lattice<vobj> &fineZ,
@@ -355,16 +463,22 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
   autoView( coarseData_ , coarseData, AcceleratorWrite);
   autoView( fineData_   , fineData, AcceleratorRead);
 
+  auto coarseData_p = &coarseData_[0];
+  auto fineData_p = &fineData_[0];
+  
   Coordinate fine_rdimensions = fine->_rdimensions;
   Coordinate coarse_rdimensions = coarse->_rdimensions;
+
+  vobj zz = Zero();
   
   accelerator_for(sc,coarse->oSites(),1,{
 
       // One thread per sub block
       Coordinate coor_c(_ndimension);
       Lexicographic::CoorFromIndex(coor_c,sc,coarse_rdimensions);  // Block coordinate
-      coarseData_[sc]=Zero();
 
+      vobj cd = zz;
+      
       for(int sb=0;sb<blockVol;sb++){
 
 	int sf;
@@ -374,8 +488,10 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
 	for(int d=0;d<_ndimension;d++) coor_f[d]=coor_c[d]*block_r[d] + coor_b[d];
 	Lexicographic::IndexFromCoor(coor_f,sf,fine_rdimensions);
 
-	coarseData_[sc]=coarseData_[sc]+fineData_[sf];
+	cd=cd+fineData_p[sf];
       }
+
+      coarseData_p[sc] = cd;
 
     });
   return;
@@ -502,6 +618,26 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
   }
 }
 #endif
+
+template<class vobj,class CComplex,int nbasis,class VLattice>
+inline void batchBlockPromote(const std::vector<Lattice<iVector<CComplex,nbasis>>> &coarseData,
+                               std::vector<Lattice<vobj>> &fineData,
+                               const VLattice &Basis)
+{
+  int NBatch = coarseData.size();
+  assert(fineData.size() == NBatch);
+
+  GridBase * fine   = fineData[0].Grid();
+  GridBase * coarse = coarseData[0].Grid();
+  for (int k=0; k<NBatch; k++)
+    fineData[k]=Zero();
+  for (int i=0;i<nbasis;i++) {
+    for (int k=0; k<NBatch; k++) {
+      Lattice<iScalar<CComplex>> ip = PeekIndex<0>(coarseData[k],i);
+      blockZAXPY(fineData[k],ip,Basis[i],fineData[k]);
+    }
+  }
+}
 
 // Useful for precision conversion, or indeed anything where an operator= does a conversion on scalars.
 // Simd layouts need not match since we use peek/poke Local

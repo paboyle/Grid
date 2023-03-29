@@ -57,6 +57,7 @@ private:
   OperatorFunction<Field> & _Solver;
   LinearFunction<Field>   & _Guess;
 public:
+  using LinearFunction<Field>::operator();
 
   /////////////////////////////////////////////////////
   // Wrap the usual normal equations trick
@@ -118,6 +119,7 @@ RealD InverseApproximation(RealD x){
 template<class Field,class Matrix> class ChebyshevSmoother : public LinearFunction<Field>
 {
 public:
+  using LinearFunction<Field>::operator();
   typedef LinearOperatorBase<Field>                            FineOperator;
   Matrix         & _SmootherMatrix;
   FineOperator   & _SmootherOperator;
@@ -174,6 +176,7 @@ public:
 template<class Fobj,class CComplex,int nbasis, class CoarseSolver>
 class HDCRPreconditioner : public LinearFunction< Lattice<Fobj> > {
 public:
+  using LinearFunction<Lattice<Fobj> >::operator();
 
   typedef Aggregation<Fobj,CComplex,nbasis> Aggregates;
   typedef CoarsenedMatrix<Fobj,CComplex,nbasis> CoarseOperator;
@@ -370,6 +373,11 @@ int main (int argc, char ** argv)
   GridCartesian *CoarseCoarse4d =  SpaceTimeGrid::makeFourDimGrid(cclatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());;
   GridCartesian *CoarseCoarse5d =  SpaceTimeGrid::makeFiveDimGrid(1,CoarseCoarse4d);
 
+  GridRedBlackCartesian * Coarse4dRB = SpaceTimeGrid::makeFourDimRedBlackGrid(Coarse4d);
+  GridRedBlackCartesian * Coarse5dRB = SpaceTimeGrid::makeFiveDimRedBlackGrid(1,Coarse4d);
+  GridRedBlackCartesian *CoarseCoarse4dRB = SpaceTimeGrid::makeFourDimRedBlackGrid(CoarseCoarse4d);
+  GridRedBlackCartesian *CoarseCoarse5dRB = SpaceTimeGrid::makeFiveDimRedBlackGrid(1,CoarseCoarse4d);
+
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
   std::vector<int> cseeds({5,6,7,8});
@@ -434,8 +442,8 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Building coarse representation of Indef operator" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
 
-  Level1Op LDOp(*Coarse5d,1);   LDOp.CoarsenOperator(FGrid,HermIndefOp,Aggregates);
-  Level1Op LDOpPV(*Coarse5d,1); LDOpPV.CoarsenOperator(FGrid,HermIndefOpPV,Aggregates);
+  Level1Op LDOp(*Coarse5d,*Coarse5dRB,1);   LDOp.CoarsenOperator(FGrid,HermIndefOp,Aggregates);
+  Level1Op LDOpPV(*Coarse5d,*Coarse5dRB,1); LDOpPV.CoarsenOperator(FGrid,HermIndefOpPV,Aggregates);
 
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;

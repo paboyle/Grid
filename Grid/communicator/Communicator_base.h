@@ -1,4 +1,3 @@
-
 /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -35,6 +34,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/communicator/SharedMemory.h>
 
 NAMESPACE_BEGIN(Grid);
+
+extern bool Stencil_force_mpi ;
 
 class CartesianCommunicator : public SharedMemory {
 
@@ -108,6 +109,8 @@ public:
   ////////////////////////////////////////////////////////////
   // Reduction
   ////////////////////////////////////////////////////////////
+  void GlobalMax(RealD &);
+  void GlobalMax(RealF &);
   void GlobalSum(RealF &);
   void GlobalSumVector(RealF *,int N);
   void GlobalSum(RealD &);

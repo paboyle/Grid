@@ -80,6 +80,13 @@ template<typename T> struct isSpinor {
 template <typename T> using IfSpinor    = Invoke<std::enable_if< isSpinor<T>::value,int> > ;
 template <typename T> using IfNotSpinor = Invoke<std::enable_if<!isSpinor<T>::value,int> > ;
 
+const int CoarseIndex = 4;
+template<typename T> struct isCoarsened {
+   static constexpr bool value = (CoarseIndex<=T::TensorLevel);
+};
+template <typename T> using IfCoarsened    = Invoke<std::enable_if< isCoarsened<T>::value,int> > ;
+template <typename T> using IfNotCoarsened = Invoke<std::enable_if<!isCoarsened<T>::value,int> > ;
+
 // ChrisK very keen to add extra space for Gparity doubling.
 //
 // Also add domain wall index, in a way where Wilson operator 
@@ -444,9 +451,20 @@ template<class vobj> void pokeLorentz(vobj &lhs,const decltype(peekIndex<Lorentz
 // Fermion <-> propagator assignements
 //////////////////////////////////////////////
 //template <class Prop, class Ferm>
+#define FAST_FERM_TO_PROP
 template <class Fimpl>
 void FermToProp(typename Fimpl::PropagatorField &p, const typename Fimpl::FermionField &f, const int s, const int c)
 {
+#ifdef FAST_FERM_TO_PROP
+  autoView(p_v,p,CpuWrite);
+  autoView(f_v,f,CpuRead);
+  thread_for(idx,p_v.oSites(),{
+      for(int ss = 0; ss < Ns; ++ss) {
+      for(int cc = 0; cc < Fimpl::Dimension; ++cc) {
+	p_v[idx]()(ss,s)(cc,c) = f_v[idx]()(ss)(cc); // Propagator sink index is LEFT, suitable for left mult by gauge link (e.g.)
+      }}
+    });
+#else
   for(int j = 0; j < Ns; ++j)
     {
       auto pjs = peekSpin(p, j, s);
@@ -458,12 +476,23 @@ void FermToProp(typename Fimpl::PropagatorField &p, const typename Fimpl::Fermio
 	}
       pokeSpin(p, pjs, j, s);
     }
+#endif
 }
     
 //template <class Prop, class Ferm>
 template <class Fimpl>
 void PropToFerm(typename Fimpl::FermionField &f, const typename Fimpl::PropagatorField &p, const int s, const int c)
 {
+#ifdef FAST_FERM_TO_PROP
+  autoView(p_v,p,CpuRead);
+  autoView(f_v,f,CpuWrite);
+  thread_for(idx,p_v.oSites(),{
+      for(int ss = 0; ss < Ns; ++ss) {
+      for(int cc = 0; cc < Fimpl::Dimension; ++cc) {
+	f_v[idx]()(ss)(cc) = p_v[idx]()(ss,s)(cc,c); // LEFT index is copied across for s,c right index
+      }}
+    });
+#else
   for(int j = 0; j < Ns; ++j)
     {
       auto pjs = peekSpin(p, j, s);
@@ -475,6 +504,7 @@ void PropToFerm(typename Fimpl::FermionField &f, const typename Fimpl::Propagato
 	}
       pokeSpin(f, fj, j);
     }
+#endif
 }
     
 //////////////////////////////////////////////

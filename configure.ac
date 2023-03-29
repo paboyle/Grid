@@ -7,7 +7,12 @@ AM_INIT_AUTOMAKE([subdir-objects 1.13])
 AM_EXTRA_RECURSIVE_TARGETS([tests bench])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([Grid/Grid.h])
-AC_CONFIG_HEADERS([Grid/Config.h],[sed -i 's|PACKAGE_|GRID_|' Grid/Config.h])
+AC_CONFIG_HEADERS([Grid/Config.h],[[$SED_INPLACE -e 's|PACKAGE_|GRID_|' -e 's|[[:space:]]PACKAGE[[:space:]]| GRID_PACKAGE |' -e 's|[[:space:]]VERSION[[:space:]]| GRID_PACKAGE_VERSION |' Grid/Config.h]],
+    [if test x"$host_os" == x"${host_os#darwin}" ; then]
+        [SED_INPLACE="sed -i"]
+    [else]
+        [SED_INPLACE="sed -i .bak"]
+    [fi])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 ################ Get git info
@@ -123,9 +128,38 @@ case ${ac_LAPACK} in
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK]);;
 esac
 
+############### fermions
+AC_ARG_ENABLE([fermion-reps],
+     [AC_HELP_STRING([--enable-fermion-reps=yes|no], [enable extra fermion representation support])],
+     [ac_FERMION_REPS=${enable_fermion_reps}], [ac_FERMION_REPS=yes])
+
+AM_CONDITIONAL(BUILD_FERMION_REPS, [ test "${ac_FERMION_REPS}X" == "yesX" ])
+
+AC_ARG_ENABLE([gparity],
+     [AC_HELP_STRING([--enable-gparity=yes|no], [enable G-parity support])],
+     [ac_GPARITY=${enable_gparity}], [ac_GPARITY=yes])
+
+AM_CONDITIONAL(BUILD_GPARITY, [ test "${ac_GPARITY}X" == "yesX" ])
+
+AC_ARG_ENABLE([zmobius],
+     [AC_HELP_STRING([--enable-zmobius=yes|no], [enable Zmobius support])],
+     [ac_ZMOBIUS=${enable_zmobius}], [ac_ZMOBIUS=yes])
+
+AM_CONDITIONAL(BUILD_ZMOBIUS, [ test "${ac_ZMOBIUS}X" == "yesX" ])
+
+
+case ${ac_FERMION_REPS} in
+   yes) AC_DEFINE([ENABLE_FERMION_REPS],[1],[non QCD fermion reps]);;
+esac
+case ${ac_GPARITY} in
+   yes) AC_DEFINE([ENABLE_GPARITY],[1],[fermion actions with GPARITY BCs]);;
+esac
+case ${ac_ZMOBIUS} in
+   yes) AC_DEFINE([ENABLE_ZMOBIUS],[1],[Zmobius fermion actions]);;
+esac
 ############### Nc
 AC_ARG_ENABLE([Nc],
-    [AC_HELP_STRING([--enable-Nc=2|3|4], [enable number of colours])],
+    [AC_HELP_STRING([--enable-Nc=2|3|4|5], [enable number of colours])],
     [ac_Nc=${enable_Nc}], [ac_Nc=3])
 
 case ${ac_Nc} in
@@ -356,6 +390,7 @@ case ${CXXTEST} in
     CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
     if test $ac_openmp = yes; then
        CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
+       LDFLAGS="$LDFLAGS -Xcompiler -fopenmp"
     fi
     ;;
   hipcc)
@@ -410,7 +445,7 @@ case ${ax_cv_cxx_compiler_vendor} in
         SIMD_FLAGS='-mavx2 -mfma -mf16c';;
       AVX512)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
-        SIMD_FLAGS='-mavx512f -mavx512pf -mavx512er -mavx512cd';;
+        SIMD_FLAGS='-mavx512f -mavx512cd';;
       SKL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics for SkyLake Xeon])
         SIMD_FLAGS='-march=skylake-avx512';;
@@ -464,6 +499,9 @@ case ${ax_cv_cxx_compiler_vendor} in
         SIMD_FLAGS='-march=core-avx2 -xcore-avx2';;
       AVX512)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
+        SIMD_FLAGS='-xcommon-avx512';;
+      SKL)
+        AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-xcore-avx512';;
       KNC)
         AC_DEFINE([IMCI],[1],[IMCI Intrinsics for Knights Corner])
@@ -492,13 +530,35 @@ AM_CFLAGS="$SIMD_FLAGS $AM_CFLAGS"
 AC_DEFINE([GRID_DEFAULT_PRECISION_DOUBLE],[1],[GRID_DEFAULT_PRECISION is DOUBLE] )
 
 #########################################################
+######################  GRID ALLOCATOR ALIGNMENT ##
+#########################################################
+AC_ARG_ENABLE([alloc-align],[AC_HELP_STRING([--enable-alloc-align=2MB|4k],
+              [Alignment in bytes of GRID Allocator ])],[ac_ALLOC_ALIGN=${enable_alloc_align}],[ac_ALLOC_ALIGN=2MB])
+case ${ac_ALLOC_ALIGN} in
+    4k)
+     AC_DEFINE([GRID_ALLOC_ALIGN],[(4096)],[GRID_ALLOC_ALIGN]);;
+    2MB)
+     AC_DEFINE([GRID_ALLOC_ALIGN],[(2*1024*1024)],[GRID_ALLOC_ALIGN]);;
+    *);;
+esac
+
+AC_ARG_ENABLE([alloc-cache],[AC_HELP_STRING([--enable-alloc-cache ],
+              [Cache a pool of recent "frees" to reuse])],[ac_ALLOC_CACHE=${enable_alloc_cache}],[ac_ALLOC_CACHE=yes])
+case ${ac_ALLOC_CACHE} in
+    yes)
+     AC_DEFINE([ALLOCATION_CACHE],[1],[ALLOCATION_CACHE]);;
+    *);;
+esac
+
+
+#########################################################
 ######################  set GPU device to rank in node ##
 #########################################################
 AC_ARG_ENABLE([setdevice],[AC_HELP_STRING([--enable-setdevice | --disable-setdevice],
               [Set GPU to rank in node with cudaSetDevice or similar])],[ac_SETDEVICE=${enable_SETDEVICE}],[ac_SETDEVICE=no])
 case ${ac_SETDEVICE} in
     yes);;
-    *)
+    no)
      AC_DEFINE([GRID_DEFAULT_GPU],[1],[GRID_DEFAULT_GPU] )
     ;;
 esac
@@ -528,7 +588,7 @@ case ${ac_SHM} in
 
      shmnone | no)
      AC_DEFINE([GRID_MPI3_SHM_NONE],[1],[GRID_MPI3_SHM_NONE] )
-     AC_DEFINE([GRID_SHM_DISABLE],[1],[USE MPI for intranode comms]);;
+     ;;
 
      nvlink)
      AC_DEFINE([GRID_MPI3_SHM_NVLINK],[1],[GRID_MPI3_SHM_NVLINK] )
@@ -550,6 +610,15 @@ AC_ARG_ENABLE([shmpath],[AC_HELP_STRING([--enable-shmpath=path],
 	      [ac_SHMPATH=/var/lib/hugetlbfs/global/pagesize-2MB/])
 AC_DEFINE_UNQUOTED([GRID_SHM_PATH],["$ac_SHMPATH"],[Path to a hugetlbfs filesystem for MMAPing])
 
+############### force MPI in SMP
+AC_ARG_ENABLE([shm-force-mpi],[AC_HELP_STRING([--enable-shm-force-mpi],
+              [Force MPI within shared memory])],[ac_SHM_FORCE_MPI=${enable_shm_force_mpi}],[ac_SHM_FORCE_MPI=no])
+case ${ac_SHM_FORCE_MPI} in
+     yes)
+        AC_DEFINE([GRID_SHM_FORCE_MPI],[1],[GRID_SHM_FORCE_MPI] )
+      ;;
+     *) ;;
+esac
 
 ############### communication type selection
 AC_ARG_ENABLE([comms-threads],[AC_HELP_STRING([--enable-comms-threads | --disable-comms-threads],
@@ -747,6 +816,7 @@ AC_CONFIG_FILES(tests/smearing/Makefile)
 AC_CONFIG_FILES(tests/qdpxx/Makefile)
 AC_CONFIG_FILES(tests/testu01/Makefile)
 AC_CONFIG_FILES(benchmarks/Makefile)
+AC_CONFIG_FILES(examples/Makefile)
 AC_OUTPUT
 
 echo ""

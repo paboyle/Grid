@@ -21,6 +21,7 @@ if BUILD_HDF5
   extra_headers+=serialisation/Hdf5Type.h
 endif
 
+
 all: version-cache Version.h
 
 version-cache:
@@ -52,6 +53,19 @@ Version.h: version-cache
 #
 include Make.inc
 include Eigen.inc
+
+extra_sources+=$(WILS_FERMION_FILES)
+extra_sources+=$(STAG_FERMION_FILES)
+if BUILD_ZMOBIUS
+  extra_sources+=$(ZWILS_FERMION_FILES)
+endif
+if BUILD_GPARITY
+  extra_sources+=$(GP_FERMION_FILES)
+endif
+if BUILD_FERMION_REPS
+  extra_sources+=$(ADJ_FERMION_FILES)
+  extra_sources+=$(TWOIND_FERMION_FILES)
+endif
 
 lib_LIBRARIES = libGrid.a
 

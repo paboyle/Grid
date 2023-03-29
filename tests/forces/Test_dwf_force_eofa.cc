@@ -86,7 +86,9 @@ int main (int argc, char** argv)
   ConjugateGradient<LatticeFermion> CG(1.0e-12, 5000);
   ExactOneFlavourRatioPseudoFermionAction<WilsonImplR> Meofa(Lop, Rop, CG, CG, CG, CG, CG, Params, true);
 
-  Meofa.refresh(U, RNG5);
+  GridSerialRNG  sRNG; sRNG.SeedFixedIntegers(seeds4);
+  Meofa.refresh(U, sRNG, RNG5 );
+
   RealD S = Meofa.S(U); // pdag M p
 
   // get the deriv of phidag M phi with respect to "U"

@@ -85,7 +85,7 @@ class MADWF
       maxiter     =_maxiter;
     };
    
-  void operator() (const FermionFieldo &src4,FermionFieldo &sol5)
+  void operator() (const FermionFieldo &src,FermionFieldo &sol5)
   {
     std::cout << GridLogMessage<< " ************************************************" << std::endl;
     std::cout << GridLogMessage<< "  MADWF-like algorithm                           " << std::endl;
@@ -114,8 +114,16 @@ class MADWF
     ///////////////////////////////////////
     //Import source, include Dminus factors
     ///////////////////////////////////////
-    Mato.ImportPhysicalFermionSource(src4,b); 
-    std::cout << GridLogMessage << " src4 " <<norm2(src4)<<std::endl;
+    GridBase *src_grid = src.Grid();
+
+    assert( (src_grid == Mato.GaugeGrid()) || (src_grid == Mato.FermionGrid()));
+
+    if ( src_grid == Mato.GaugeGrid() ) {
+      Mato.ImportPhysicalFermionSource(src,b);
+    } else {
+      b=src;
+    }
+    std::cout << GridLogMessage << " src " <<norm2(src)<<std::endl;
     std::cout << GridLogMessage << " b    " <<norm2(b)<<std::endl;
 
     defect = b;

@@ -449,7 +449,8 @@ public:
     LatticeReal alpha(grid);
 
     //    std::cout<<GridLogMessage<<"xi "<<xi <<std::endl;
-    alpha = toReal(2.0 * xi);
+    xi = 2.0 *xi;
+    alpha = toReal(xi);
 
     do {
       // A. Generate two uniformly distributed pseudo-random numbers R and R',
@@ -734,7 +735,6 @@ public:
     }
   }
 
-
   template <typename GaugeField>
   static void HotConfiguration(GridParallelRNG &pRNG, GaugeField &out) {
     typedef typename GaugeField::vector_type vector_type;
@@ -798,6 +798,88 @@ public:
     }
   }
 };
+
+template<int N>
+LatticeComplexD Determinant(const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu)
+{
+  GridBase *grid=Umu.Grid();
+  auto lvol = grid->lSites();
+  LatticeComplexD ret(grid);
+
+  autoView(Umu_v,Umu,CpuRead);
+  autoView(ret_v,ret,CpuWrite);
+  thread_for(site,lvol,{
+    Eigen::MatrixXcd EigenU = Eigen::MatrixXcd::Zero(N,N);
+    Coordinate lcoor;
+    grid->LocalIndexToLocalCoor(site, lcoor);
+    iScalar<iScalar<iMatrix<ComplexD, N> > > Us;
+    peekLocalSite(Us, Umu_v, lcoor);
+    for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	EigenU(i,j) = Us()()(i,j);
+      }}
+    ComplexD det = EigenU.determinant();
+    pokeLocalSite(det,ret_v,lcoor);
+  });
+  return ret;
+}
+template<int N>
+static void ProjectSUn(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu)
+{
+  Umu      = ProjectOnGroup(Umu);
+  auto det = Determinant(Umu);
+
+  det = conjugate(det);
+
+  for(int i=0;i<N;i++){
+    auto element = PeekIndex<ColourIndex>(Umu,N-1,i);
+    element = element * det;
+    PokeIndex<ColourIndex>(Umu,element,Nc-1,i);
+  }
+}
+template<int N>
+static void ProjectSUn(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >,Nd> > &U)
+{
+  GridBase *grid=U.Grid();
+  // Reunitarise
+  for(int mu=0;mu<Nd;mu++){
+    auto Umu = PeekIndex<LorentzIndex>(U,mu);
+    Umu      = ProjectOnGroup(Umu);
+    ProjectSUn(Umu);
+    PokeIndex<LorentzIndex>(U,Umu,mu);
+  }
+}
+// Explicit specialisation for SU(3).
+// Explicit specialisation for SU(3).
+static void
+ProjectSU3 (Lattice<iScalar<iScalar<iMatrix<vComplexD, 3> > > > &Umu)
+{
+  GridBase *grid=Umu.Grid();
+  const int x=0;
+  const int y=1;
+  const int z=2;
+  // Reunitarise
+  Umu = ProjectOnGroup(Umu);
+  autoView(Umu_v,Umu,CpuWrite);
+  thread_for(ss,grid->oSites(),{
+      auto cm = Umu_v[ss];
+      cm()()(2,x) = adj(cm()()(0,y)*cm()()(1,z)-cm()()(0,z)*cm()()(1,y)); //x= yz-zy
+      cm()()(2,y) = adj(cm()()(0,z)*cm()()(1,x)-cm()()(0,x)*cm()()(1,z)); //y= zx-xz
+      cm()()(2,z) = adj(cm()()(0,x)*cm()()(1,y)-cm()()(0,y)*cm()()(1,x)); //z= xy-yx
+      Umu_v[ss]=cm;
+  });
+}
+static void ProjectSU3(Lattice<iVector<iScalar<iMatrix<vComplexD, 3> >,Nd> > &U)
+{
+  GridBase *grid=U.Grid();
+  // Reunitarise
+  for(int mu=0;mu<Nd;mu++){
+    auto Umu = PeekIndex<LorentzIndex>(U,mu);
+    Umu      = ProjectOnGroup(Umu);
+    ProjectSU3(Umu);
+    PokeIndex<LorentzIndex>(U,Umu,mu);
+  }
+}
 
 typedef SU<2> SU2;
 typedef SU<3> SU3;

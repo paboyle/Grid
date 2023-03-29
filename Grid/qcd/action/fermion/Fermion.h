@@ -53,6 +53,7 @@ NAMESPACE_CHECK(Wilson);
 #include <Grid/qcd/action/fermion/WilsonTMFermion.h>       // 4d wilson like
 NAMESPACE_CHECK(WilsonTM);
 #include <Grid/qcd/action/fermion/WilsonCloverFermion.h> // 4d wilson clover fermions
+#include <Grid/qcd/action/fermion/CompactWilsonCloverFermion.h> // 4d compact wilson clover fermions
 NAMESPACE_CHECK(WilsonClover);
 #include <Grid/qcd/action/fermion/WilsonFermion5D.h>     // 5d base used by all 5d overlap types
 NAMESPACE_CHECK(Wilson5D);
@@ -115,9 +116,9 @@ typedef WilsonFermion<WilsonImplR> WilsonFermionR;
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;
 typedef WilsonFermion<WilsonImplD> WilsonFermionD;
 
-typedef WilsonFermion<WilsonImplRL> WilsonFermionRL;
-typedef WilsonFermion<WilsonImplFH> WilsonFermionFH;
-typedef WilsonFermion<WilsonImplDF> WilsonFermionDF;
+//typedef WilsonFermion<WilsonImplRL> WilsonFermionRL;
+//typedef WilsonFermion<WilsonImplFH> WilsonFermionFH;
+//typedef WilsonFermion<WilsonImplDF> WilsonFermionDF;
 
 typedef WilsonFermion<WilsonAdjImplR> WilsonAdjFermionR;
 typedef WilsonFermion<WilsonAdjImplF> WilsonAdjFermionF;
@@ -137,62 +138,93 @@ typedef WilsonTMFermion<WilsonImplF> WilsonTMFermionF;
 typedef WilsonTMFermion<WilsonImplD> WilsonTMFermionD;
 
 // Clover fermions
-typedef WilsonCloverFermion<WilsonImplR> WilsonCloverFermionR;
-typedef WilsonCloverFermion<WilsonImplF> WilsonCloverFermionF;
-typedef WilsonCloverFermion<WilsonImplD> WilsonCloverFermionD;
+template <typename WImpl> using WilsonClover = WilsonCloverFermion<WImpl, CloverHelpers<WImpl>>;
+template <typename WImpl> using WilsonExpClover = WilsonCloverFermion<WImpl, ExpCloverHelpers<WImpl>>;
 
-typedef WilsonCloverFermion<WilsonAdjImplR> WilsonCloverAdjFermionR;
-typedef WilsonCloverFermion<WilsonAdjImplF> WilsonCloverAdjFermionF;
-typedef WilsonCloverFermion<WilsonAdjImplD> WilsonCloverAdjFermionD;
+typedef WilsonClover<WilsonImplR> WilsonCloverFermionR;
+typedef WilsonClover<WilsonImplF> WilsonCloverFermionF;
+typedef WilsonClover<WilsonImplD> WilsonCloverFermionD;
 
-typedef WilsonCloverFermion<WilsonTwoIndexSymmetricImplR> WilsonCloverTwoIndexSymmetricFermionR;
-typedef WilsonCloverFermion<WilsonTwoIndexSymmetricImplF> WilsonCloverTwoIndexSymmetricFermionF;
-typedef WilsonCloverFermion<WilsonTwoIndexSymmetricImplD> WilsonCloverTwoIndexSymmetricFermionD;
+typedef WilsonExpClover<WilsonImplR> WilsonExpCloverFermionR;
+typedef WilsonExpClover<WilsonImplF> WilsonExpCloverFermionF;
+typedef WilsonExpClover<WilsonImplD> WilsonExpCloverFermionD;
 
-typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplR> WilsonCloverTwoIndexAntiSymmetricFermionR;
-typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplF> WilsonCloverTwoIndexAntiSymmetricFermionF;
-typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplD> WilsonCloverTwoIndexAntiSymmetricFermionD;
+typedef WilsonClover<WilsonAdjImplR> WilsonCloverAdjFermionR;
+typedef WilsonClover<WilsonAdjImplF> WilsonCloverAdjFermionF;
+typedef WilsonClover<WilsonAdjImplD> WilsonCloverAdjFermionD;
+
+typedef WilsonClover<WilsonTwoIndexSymmetricImplR> WilsonCloverTwoIndexSymmetricFermionR;
+typedef WilsonClover<WilsonTwoIndexSymmetricImplF> WilsonCloverTwoIndexSymmetricFermionF;
+typedef WilsonClover<WilsonTwoIndexSymmetricImplD> WilsonCloverTwoIndexSymmetricFermionD;
+
+typedef WilsonClover<WilsonTwoIndexAntiSymmetricImplR> WilsonCloverTwoIndexAntiSymmetricFermionR;
+typedef WilsonClover<WilsonTwoIndexAntiSymmetricImplF> WilsonCloverTwoIndexAntiSymmetricFermionF;
+typedef WilsonClover<WilsonTwoIndexAntiSymmetricImplD> WilsonCloverTwoIndexAntiSymmetricFermionD;
+
+// Compact Clover fermions
+template <typename WImpl> using CompactWilsonClover = CompactWilsonCloverFermion<WImpl, CompactCloverHelpers<WImpl>>;
+template <typename WImpl> using CompactWilsonExpClover = CompactWilsonCloverFermion<WImpl, CompactExpCloverHelpers<WImpl>>;
+
+typedef CompactWilsonClover<WilsonImplR> CompactWilsonCloverFermionR;
+typedef CompactWilsonClover<WilsonImplF> CompactWilsonCloverFermionF;
+typedef CompactWilsonClover<WilsonImplD> CompactWilsonCloverFermionD;
+
+typedef CompactWilsonExpClover<WilsonImplR> CompactWilsonExpCloverFermionR;
+typedef CompactWilsonExpClover<WilsonImplF> CompactWilsonExpCloverFermionF;
+typedef CompactWilsonExpClover<WilsonImplD> CompactWilsonExpCloverFermionD;
+
+typedef CompactWilsonClover<WilsonAdjImplR> CompactWilsonCloverAdjFermionR;
+typedef CompactWilsonClover<WilsonAdjImplF> CompactWilsonCloverAdjFermionF;
+typedef CompactWilsonClover<WilsonAdjImplD> CompactWilsonCloverAdjFermionD;
+
+typedef CompactWilsonClover<WilsonTwoIndexSymmetricImplR> CompactWilsonCloverTwoIndexSymmetricFermionR;
+typedef CompactWilsonClover<WilsonTwoIndexSymmetricImplF> CompactWilsonCloverTwoIndexSymmetricFermionF;
+typedef CompactWilsonClover<WilsonTwoIndexSymmetricImplD> CompactWilsonCloverTwoIndexSymmetricFermionD;
+
+typedef CompactWilsonClover<WilsonTwoIndexAntiSymmetricImplR> CompactWilsonCloverTwoIndexAntiSymmetricFermionR;
+typedef CompactWilsonClover<WilsonTwoIndexAntiSymmetricImplF> CompactWilsonCloverTwoIndexAntiSymmetricFermionF;
+typedef CompactWilsonClover<WilsonTwoIndexAntiSymmetricImplD> CompactWilsonCloverTwoIndexAntiSymmetricFermionD;
 
 // Domain Wall fermions
 typedef DomainWallFermion<WilsonImplR> DomainWallFermionR;
 typedef DomainWallFermion<WilsonImplF> DomainWallFermionF;
 typedef DomainWallFermion<WilsonImplD> DomainWallFermionD;
 
-typedef DomainWallFermion<WilsonImplRL> DomainWallFermionRL;
-typedef DomainWallFermion<WilsonImplFH> DomainWallFermionFH;
-typedef DomainWallFermion<WilsonImplDF> DomainWallFermionDF;
+//typedef DomainWallFermion<WilsonImplRL> DomainWallFermionRL;
+//typedef DomainWallFermion<WilsonImplFH> DomainWallFermionFH;
+//typedef DomainWallFermion<WilsonImplDF> DomainWallFermionDF;
 
 typedef DomainWallEOFAFermion<WilsonImplR> DomainWallEOFAFermionR;
 typedef DomainWallEOFAFermion<WilsonImplF> DomainWallEOFAFermionF;
 typedef DomainWallEOFAFermion<WilsonImplD> DomainWallEOFAFermionD;
 
-typedef DomainWallEOFAFermion<WilsonImplRL> DomainWallEOFAFermionRL;
-typedef DomainWallEOFAFermion<WilsonImplFH> DomainWallEOFAFermionFH;
-typedef DomainWallEOFAFermion<WilsonImplDF> DomainWallEOFAFermionDF;
+//typedef DomainWallEOFAFermion<WilsonImplRL> DomainWallEOFAFermionRL;
+//typedef DomainWallEOFAFermion<WilsonImplFH> DomainWallEOFAFermionFH;
+//typedef DomainWallEOFAFermion<WilsonImplDF> DomainWallEOFAFermionDF;
 
 typedef MobiusFermion<WilsonImplR> MobiusFermionR;
 typedef MobiusFermion<WilsonImplF> MobiusFermionF;
 typedef MobiusFermion<WilsonImplD> MobiusFermionD;
 
-typedef MobiusFermion<WilsonImplRL> MobiusFermionRL;
-typedef MobiusFermion<WilsonImplFH> MobiusFermionFH;
-typedef MobiusFermion<WilsonImplDF> MobiusFermionDF;
+//typedef MobiusFermion<WilsonImplRL> MobiusFermionRL;
+//typedef MobiusFermion<WilsonImplFH> MobiusFermionFH;
+//typedef MobiusFermion<WilsonImplDF> MobiusFermionDF;
 
 typedef MobiusEOFAFermion<WilsonImplR> MobiusEOFAFermionR;
 typedef MobiusEOFAFermion<WilsonImplF> MobiusEOFAFermionF;
 typedef MobiusEOFAFermion<WilsonImplD> MobiusEOFAFermionD;
 
-typedef MobiusEOFAFermion<WilsonImplRL> MobiusEOFAFermionRL;
-typedef MobiusEOFAFermion<WilsonImplFH> MobiusEOFAFermionFH;
-typedef MobiusEOFAFermion<WilsonImplDF> MobiusEOFAFermionDF;
+//typedef MobiusEOFAFermion<WilsonImplRL> MobiusEOFAFermionRL;
+//typedef MobiusEOFAFermion<WilsonImplFH> MobiusEOFAFermionFH;
+//typedef MobiusEOFAFermion<WilsonImplDF> MobiusEOFAFermionDF;
 
 typedef ZMobiusFermion<ZWilsonImplR> ZMobiusFermionR;
 typedef ZMobiusFermion<ZWilsonImplF> ZMobiusFermionF;
 typedef ZMobiusFermion<ZWilsonImplD> ZMobiusFermionD;
 
-typedef ZMobiusFermion<ZWilsonImplRL> ZMobiusFermionRL;
-typedef ZMobiusFermion<ZWilsonImplFH> ZMobiusFermionFH;
-typedef ZMobiusFermion<ZWilsonImplDF> ZMobiusFermionDF;
+//typedef ZMobiusFermion<ZWilsonImplRL> ZMobiusFermionRL;
+//typedef ZMobiusFermion<ZWilsonImplFH> ZMobiusFermionFH;
+//typedef ZMobiusFermion<ZWilsonImplDF> ZMobiusFermionDF;
 
 // Ls vectorised
 typedef ScaledShamirFermion<WilsonImplR> ScaledShamirFermionR;
@@ -235,49 +267,49 @@ typedef WilsonFermion<GparityWilsonImplR>     GparityWilsonFermionR;
 typedef WilsonFermion<GparityWilsonImplF>     GparityWilsonFermionF;
 typedef WilsonFermion<GparityWilsonImplD>     GparityWilsonFermionD;
 
-typedef WilsonFermion<GparityWilsonImplRL>     GparityWilsonFermionRL;
-typedef WilsonFermion<GparityWilsonImplFH>     GparityWilsonFermionFH;
-typedef WilsonFermion<GparityWilsonImplDF>     GparityWilsonFermionDF;
+//typedef WilsonFermion<GparityWilsonImplRL>     GparityWilsonFermionRL;
+//typedef WilsonFermion<GparityWilsonImplFH>     GparityWilsonFermionFH;
+//typedef WilsonFermion<GparityWilsonImplDF>     GparityWilsonFermionDF;
 
 typedef DomainWallFermion<GparityWilsonImplR> GparityDomainWallFermionR;
 typedef DomainWallFermion<GparityWilsonImplF> GparityDomainWallFermionF;
 typedef DomainWallFermion<GparityWilsonImplD> GparityDomainWallFermionD;
 
-typedef DomainWallFermion<GparityWilsonImplRL> GparityDomainWallFermionRL;
-typedef DomainWallFermion<GparityWilsonImplFH> GparityDomainWallFermionFH;
-typedef DomainWallFermion<GparityWilsonImplDF> GparityDomainWallFermionDF;
+//typedef DomainWallFermion<GparityWilsonImplRL> GparityDomainWallFermionRL;
+//typedef DomainWallFermion<GparityWilsonImplFH> GparityDomainWallFermionFH;
+//typedef DomainWallFermion<GparityWilsonImplDF> GparityDomainWallFermionDF;
 
 typedef DomainWallEOFAFermion<GparityWilsonImplR> GparityDomainWallEOFAFermionR;
 typedef DomainWallEOFAFermion<GparityWilsonImplF> GparityDomainWallEOFAFermionF;
 typedef DomainWallEOFAFermion<GparityWilsonImplD> GparityDomainWallEOFAFermionD;
 
-typedef DomainWallEOFAFermion<GparityWilsonImplRL> GparityDomainWallEOFAFermionRL;
-typedef DomainWallEOFAFermion<GparityWilsonImplFH> GparityDomainWallEOFAFermionFH;
-typedef DomainWallEOFAFermion<GparityWilsonImplDF> GparityDomainWallEOFAFermionDF;
+//typedef DomainWallEOFAFermion<GparityWilsonImplRL> GparityDomainWallEOFAFermionRL;
+//typedef DomainWallEOFAFermion<GparityWilsonImplFH> GparityDomainWallEOFAFermionFH;
+//typedef DomainWallEOFAFermion<GparityWilsonImplDF> GparityDomainWallEOFAFermionDF;
 
 typedef WilsonTMFermion<GparityWilsonImplR> GparityWilsonTMFermionR;
 typedef WilsonTMFermion<GparityWilsonImplF> GparityWilsonTMFermionF;
 typedef WilsonTMFermion<GparityWilsonImplD> GparityWilsonTMFermionD;
 
-typedef WilsonTMFermion<GparityWilsonImplRL> GparityWilsonTMFermionRL;
-typedef WilsonTMFermion<GparityWilsonImplFH> GparityWilsonTMFermionFH;
-typedef WilsonTMFermion<GparityWilsonImplDF> GparityWilsonTMFermionDF;
+//typedef WilsonTMFermion<GparityWilsonImplRL> GparityWilsonTMFermionRL;
+//typedef WilsonTMFermion<GparityWilsonImplFH> GparityWilsonTMFermionFH;
+//typedef WilsonTMFermion<GparityWilsonImplDF> GparityWilsonTMFermionDF;
 
 typedef MobiusFermion<GparityWilsonImplR> GparityMobiusFermionR;
 typedef MobiusFermion<GparityWilsonImplF> GparityMobiusFermionF;
 typedef MobiusFermion<GparityWilsonImplD> GparityMobiusFermionD;
 
-typedef MobiusFermion<GparityWilsonImplRL> GparityMobiusFermionRL;
-typedef MobiusFermion<GparityWilsonImplFH> GparityMobiusFermionFH;
-typedef MobiusFermion<GparityWilsonImplDF> GparityMobiusFermionDF;
+//typedef MobiusFermion<GparityWilsonImplRL> GparityMobiusFermionRL;
+//typedef MobiusFermion<GparityWilsonImplFH> GparityMobiusFermionFH;
+//typedef MobiusFermion<GparityWilsonImplDF> GparityMobiusFermionDF;
 
 typedef MobiusEOFAFermion<GparityWilsonImplR> GparityMobiusEOFAFermionR;
 typedef MobiusEOFAFermion<GparityWilsonImplF> GparityMobiusEOFAFermionF;
 typedef MobiusEOFAFermion<GparityWilsonImplD> GparityMobiusEOFAFermionD;
 
-typedef MobiusEOFAFermion<GparityWilsonImplRL> GparityMobiusEOFAFermionRL;
-typedef MobiusEOFAFermion<GparityWilsonImplFH> GparityMobiusEOFAFermionFH;
-typedef MobiusEOFAFermion<GparityWilsonImplDF> GparityMobiusEOFAFermionDF;
+//typedef MobiusEOFAFermion<GparityWilsonImplRL> GparityMobiusEOFAFermionRL;
+//typedef MobiusEOFAFermion<GparityWilsonImplFH> GparityMobiusEOFAFermionFH;
+//typedef MobiusEOFAFermion<GparityWilsonImplDF> GparityMobiusEOFAFermionDF;
 
 typedef ImprovedStaggeredFermion<StaggeredImplR> ImprovedStaggeredFermionR;
 typedef ImprovedStaggeredFermion<StaggeredImplF> ImprovedStaggeredFermionF;
@@ -290,12 +322,6 @@ typedef NaiveStaggeredFermion<StaggeredImplD> NaiveStaggeredFermionD;
 typedef ImprovedStaggeredFermion5D<StaggeredImplR> ImprovedStaggeredFermion5DR;
 typedef ImprovedStaggeredFermion5D<StaggeredImplF> ImprovedStaggeredFermion5DF;
 typedef ImprovedStaggeredFermion5D<StaggeredImplD> ImprovedStaggeredFermion5DD;
-
-#ifndef GRID_CUDA
-typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplR> ImprovedStaggeredFermionVec5dR;
-typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplF> ImprovedStaggeredFermionVec5dF;
-typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplD> ImprovedStaggeredFermionVec5dD;
-#endif
 
 NAMESPACE_END(Grid);
 

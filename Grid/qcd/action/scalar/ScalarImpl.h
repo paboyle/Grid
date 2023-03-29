@@ -27,7 +27,7 @@ public:
   typedef Field              FermionField;
   typedef Field              PropagatorField;
     
-  static inline void generate_momenta(Field& P, GridParallelRNG& pRNG){
+  static inline void generate_momenta(Field& P, GridSerialRNG &sRNG, GridParallelRNG& pRNG){
     RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR); // CPS/UKQCD momentum rescaling
     gaussian(pRNG, P);
     P *= scale; 
@@ -53,6 +53,10 @@ public:
 
   static inline void ColdConfiguration(GridParallelRNG &pRNG, Field &U) {
     U = 1.0;
+  }
+
+  static inline void Project(Field &U) {
+    return;
   }
     
   static void MomentumSpacePropagator(Field &out, RealD m)
@@ -147,7 +151,7 @@ public:
       out = one / out;
     }
 
-    static inline void generate_momenta(Field &P, GridParallelRNG &pRNG)
+    static inline void generate_momenta(Field &P, GridSerialRNG & sRNG, GridParallelRNG &pRNG)
     {
       RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR); // CPS/UKQCD momentum rescaling
 #ifndef USE_FFT_ACCELERATION
@@ -232,6 +236,10 @@ public:
       // from the definition of the DFT we need to divide by the volume
       return (-TensorRemove(sum(trace(adj(Up) * Up2))).real() / U.Grid()->gSites());
 #endif //USE_FFT_ACCELERATION
+  }
+
+  static inline void Project(Field &U) {
+    return;
   }
 
   static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U) {

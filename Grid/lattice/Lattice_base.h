@@ -88,6 +88,13 @@ public:
     LatticeView<vobj> accessor(*( (LatticeAccelerator<vobj> *) this),mode);
     accessor.ViewClose();
   }
+
+  // Helper function to print the state of this object in the AccCache
+  void PrintCacheState(void)
+  {
+    MemoryManager::PrintState(this->_odata);
+  }
+
   /////////////////////////////////////////////////////////////////////////////////
   // Return a view object that may be dereferenced in site loops.
   // The view is trivially copy constructible and may be copied to an accelerator device
@@ -281,8 +288,8 @@ public:
     typename std::enable_if<!std::is_same<robj,vobj>::value,int>::type i=0;
     conformable(*this,r);
     this->checkerboard = r.Checkerboard();
-    auto me =   View(AcceleratorWriteDiscard);
     auto him= r.View(AcceleratorRead);
+    auto me =   View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       coalescedWrite(me[ss],him(ss));
     });
@@ -296,8 +303,8 @@ public:
   inline Lattice<vobj> & operator = (const Lattice<vobj> & r){
     this->checkerboard = r.Checkerboard();
     conformable(*this,r);
-    auto me =   View(AcceleratorWriteDiscard);
     auto him= r.View(AcceleratorRead);
+    auto me =   View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       coalescedWrite(me[ss],him(ss));
     });

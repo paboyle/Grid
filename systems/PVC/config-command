@@ -1,0 +1,16 @@
+INSTALL=/nfs/site/home/azusayax/install
+../../configure \
+	--enable-simd=GPU \
+	--enable-gen-simd-width=64 \
+	--enable-comms=mpi-auto \
+	--disable-accelerator-cshift \
+	--disable-gparity \
+	--disable-fermion-reps \
+	--enable-shm=nvlink \
+	--enable-accelerator=sycl \
+	--enable-unified=no \
+	MPICXX=mpicxx \
+	CXX=dpcpp \
+	LDFLAGS="-fsycl-device-code-split=per_kernel -fsycl-device-lib=all -lze_loader -L$INSTALL/lib" \
+	CXXFLAGS="-fsycl-unnamed-lambda -fsycl -no-fma -I$INSTALL/include -Wno-tautological-compare"
+

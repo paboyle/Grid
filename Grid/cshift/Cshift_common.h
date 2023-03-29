@@ -110,9 +110,11 @@ Gather_plane_extract(const Lattice<vobj> &rhs,
   int n1=rhs.Grid()->_slice_stride[dimension];
 
   if ( cbmask ==0x3){
-#ifdef ACCELERATOR_CSHIFT    
+#ifdef ACCELERATOR_CSHIFT
     autoView(rhs_v , rhs, AcceleratorRead);
-    accelerator_for2d(n,e1,b,e2,1,{
+    accelerator_for(nn,e1*e2,1,{
+	int n = nn%e1;
+	int b = nn/e1;
 	int o      =   n*n1;
 	int offset = b+n*e2;
 	
@@ -135,7 +137,9 @@ Gather_plane_extract(const Lattice<vobj> &rhs,
     std::cout << " Dense packed buffer WARNING " <<std::endl; // Does this get called twice once for each cb?
 #ifdef ACCELERATOR_CSHIFT    
     autoView(rhs_v , rhs, AcceleratorRead);
-    accelerator_for2d(n,e1,b,e2,1,{
+    accelerator_for(nn,e1*e2,1,{
+	int n = nn%e1;
+	int b = nn/e1;
 
 	Coordinate coor;
 
@@ -257,7 +261,9 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
     int _slice_block = rhs.Grid()->_slice_block[dimension];
 #ifdef ACCELERATOR_CSHIFT    
     autoView( rhs_v , rhs, AcceleratorWrite);
-    accelerator_for2d(n,e1,b,e2,1,{
+    accelerator_for(nn,e1*e2,1,{
+	int n = nn%e1;
+	int b = nn/e1;
 	int o      = n*_slice_stride;
 	int offset = b+n*_slice_block;
 	merge(rhs_v[so+o+b],pointers,offset);
@@ -274,7 +280,7 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
 
     // Case of SIMD split AND checker dim cannot currently be hit, except in 
     // Test_cshift_red_black code.
-    //    std::cout << "Scatter_plane merge assert(0); think this is buggy FIXME "<< std::endl;// think this is buggy FIXME
+    std::cout << "Scatter_plane merge assert(0); think this is buggy FIXME "<< std::endl;// think this is buggy FIXME
     std::cout<<" Unthreaded warning -- buffer is not densely packed ??"<<std::endl;
     assert(0); // This will fail if hit on GPU
     autoView( rhs_v, rhs, CpuWrite);
@@ -290,6 +296,30 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
     }
   }
 }
+
+#if (defined(GRID_CUDA) || defined(GRID_HIP)) && defined(ACCELERATOR_CSHIFT)
+
+template <typename T>
+T iDivUp(T a, T b) // Round a / b to nearest higher integer value
+{ return (a % b != 0) ? (a / b + 1) : (a / b); }
+
+template <typename T>
+__global__ void populate_Cshift_table(T* vector, T lo, T ro, T e1, T e2, T stride)
+{
+    int idx = blockIdx.x*blockDim.x + threadIdx.x;
+    if (idx >= e1*e2) return;
+
+    int n, b, o;
+
+    n = idx / e2;
+    b = idx % e2;
+    o = n*stride + b;
+
+    vector[2*idx + 0] = lo + o;
+    vector[2*idx + 1] = ro + o;
+}
+
+#endif
 
 //////////////////////////////////////////////////////
 // local to node block strided copies
@@ -315,12 +345,20 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
   int ent=0;
 
   if(cbmask == 0x3 ){
+#if (defined(GRID_CUDA) || defined(GRID_HIP)) && defined(ACCELERATOR_CSHIFT)
+    ent = e1*e2;
+    dim3 blockSize(acceleratorThreads());
+    dim3 gridSize(iDivUp((unsigned int)ent, blockSize.x));
+    populate_Cshift_table<<<gridSize, blockSize>>>(&Cshift_table[0].first, lo, ro, e1, e2, stride);
+    accelerator_barrier();
+#else
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
         int o =n*stride+b;
 	Cshift_table[ent++] = std::pair<int,int>(lo+o,ro+o);
       }
     }
+#endif
   } else { 
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
@@ -371,11 +409,19 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
   int ent=0;
 
   if ( cbmask == 0x3 ) {
+#if (defined(GRID_CUDA) || defined(GRID_HIP)) && defined(ACCELERATOR_CSHIFT)
+    ent = e1*e2;
+    dim3 blockSize(acceleratorThreads());
+    dim3 gridSize(iDivUp((unsigned int)ent, blockSize.x));
+    populate_Cshift_table<<<gridSize, blockSize>>>(&Cshift_table[0].first, lo, ro, e1, e2, stride);
+    accelerator_barrier();
+#else
     for(int n=0;n<e1;n++){
     for(int b=0;b<e2;b++){
       int o  =n*stride;
       Cshift_table[ent++] = std::pair<int,int>(lo+o+b,ro+o+b);
     }}
+#endif
   } else {
     for(int n=0;n<e1;n++){
     for(int b=0;b<e2;b++){

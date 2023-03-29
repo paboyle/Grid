@@ -14,7 +14,11 @@
 /* NVCC save and restore compile environment*/
 #ifdef __NVCC__
 #pragma push
+#ifdef __NVCC_DIAG_PRAGMA_SUPPORT__
+#pragma nv_diag_suppress code_is_unreachable
+#else
 #pragma diag_suppress code_is_unreachable
+#endif
 #pragma push_macro("__CUDA_ARCH__")
 #pragma push_macro("__NVCC__")
 #pragma push_macro("__CUDACC__")

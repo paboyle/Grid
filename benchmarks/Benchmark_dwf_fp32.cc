@@ -53,7 +53,7 @@ int main (int argc, char ** argv)
   int threads = GridThread::GetThreads();
 
   Coordinate latt4 = GridDefaultLatt();
-  int Ls=8;
+  int Ls=16;
   for(int i=0;i<argc;i++)
     if(std::string(argv[i]) == "-Ls"){
       std::stringstream ss(argv[i+1]); ss >> Ls;
@@ -126,19 +126,10 @@ int main (int argc, char ** argv)
   // Naive wilson implementation
   ////////////////////////////////////
   // replicate across fifth dimension
-  LatticeGaugeFieldF Umu5d(FGrid);
-  std::vector<LatticeColourMatrixF> U(4,FGrid);
-  {
-    autoView( Umu5d_v, Umu5d, CpuWrite);
-    autoView( Umu_v  , Umu  , CpuRead);
-    for(int ss=0;ss<Umu.Grid()->oSites();ss++){
-      for(int s=0;s<Ls;s++){
-	Umu5d_v[Ls*ss+s] = Umu_v[ss];
-      }
-    }
-  }
+  //  LatticeGaugeFieldF Umu5d(FGrid);
+  std::vector<LatticeColourMatrixF> U(4,UGrid);
   for(int mu=0;mu<Nd;mu++){
-    U[mu] = PeekIndex<LorentzIndex>(Umu5d,mu);
+    U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
   }
   std::cout << GridLogMessage << "Setting up Cshift based reference " << std::endl;
 
@@ -147,10 +138,28 @@ int main (int argc, char ** argv)
     ref = Zero();
     for(int mu=0;mu<Nd;mu++){
 
-      tmp = U[mu]*Cshift(src,mu+1,1);
+      tmp = Cshift(src,mu+1,1);
+      {
+	autoView( tmp_v  , tmp  , CpuWrite);
+	autoView( U_v  , U[mu]  , CpuRead);
+	for(int ss=0;ss<U[mu].Grid()->oSites();ss++){
+	  for(int s=0;s<Ls;s++){
+	    tmp_v[Ls*ss+s] = U_v[ss]*tmp_v[Ls*ss+s];
+	  }
+	}
+      }
       ref=ref + tmp - Gamma(Gmu[mu])*tmp;
 
-      tmp =adj(U[mu])*src;
+      {
+	autoView( tmp_v  , tmp  , CpuWrite);
+	autoView( U_v  , U[mu]  , CpuRead);
+	autoView( src_v, src    , CpuRead);
+	for(int ss=0;ss<U[mu].Grid()->oSites();ss++){
+	  for(int s=0;s<Ls;s++){
+	    tmp_v[Ls*ss+s] = adj(U_v[ss])*src_v[Ls*ss+s];
+	  }
+	}
+      }
       tmp =Cshift(tmp,mu+1,-1);
       ref=ref + tmp + Gamma(Gmu[mu])*tmp;
     }
@@ -182,7 +191,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
 
   DomainWallFermionF Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  int ncall =1000;
+  int ncall =300;
 
   if (1) {
     FGrid->Barrier();
@@ -242,16 +251,30 @@ int main (int argc, char ** argv)
     for(int mu=0;mu<Nd;mu++){
 
       //    ref =  src - Gamma(Gamma::Algebra::GammaX)* src ; // 1+gamma_x
-      tmp = U[mu]*Cshift(src,mu+1,1);
+      tmp = Cshift(src,mu+1,1);
       {
 	autoView( ref_v, ref, CpuWrite);
 	autoView( tmp_v, tmp, CpuRead);
-	for(int i=0;i<ref_v.size();i++){
-	  ref_v[i]+= tmp_v[i] + Gamma(Gmu[mu])*tmp_v[i]; ;
+	autoView( U_v  , U[mu]  , CpuRead);
+	for(int ss=0;ss<U[mu].Grid()->oSites();ss++){
+	  for(int s=0;s<Ls;s++){
+	    int i=s+Ls*ss;
+	    ref_v[i]+= U_v[ss]*(tmp_v[i] + Gamma(Gmu[mu])*tmp_v[i]); ;
+	  }
 	}
       }
-
-      tmp =adj(U[mu])*src;
+      
+      {
+	autoView( tmp_v  , tmp  , CpuWrite);
+	autoView( U_v  , U[mu]  , CpuRead);
+	autoView( src_v, src    , CpuRead);
+	for(int ss=0;ss<U[mu].Grid()->oSites();ss++){
+	  for(int s=0;s<Ls;s++){
+	    tmp_v[Ls*ss+s] = adj(U_v[ss])*src_v[Ls*ss+s];
+	  }
+	}
+      }
+      //      tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu+1,-1);
       {
 	autoView( ref_v, ref, CpuWrite);

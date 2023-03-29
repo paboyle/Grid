@@ -61,18 +61,19 @@ public:
   typedef typename SiteHalfSpinor::vector_type     vComplexHigh;
   constexpr static int Nw=sizeof(SiteHalfSpinor)/sizeof(vComplexHigh);
 
-  accelerator_inline int CommDatumSize(void) {
+  accelerator_inline int CommDatumSize(void) const {
     return sizeof(SiteHalfCommSpinor);
   }
 
   /*****************************************************/
   /* Compress includes precision change if mpi data is not same */
   /*****************************************************/
-  template<class _SiteHalfSpinor, class _SiteSpinor>
-  accelerator_inline void Compress(_SiteHalfSpinor *buf,Integer o,const _SiteSpinor &in) {
-    _SiteHalfSpinor tmp;
-    projector::Proj(tmp,in,mu,dag);
-    vstream(buf[o],tmp);
+  accelerator_inline void Compress(SiteHalfSpinor &buf,const SiteSpinor &in) const {
+    typedef decltype(coalescedRead(buf)) sobj;
+    sobj sp;
+    auto sin = coalescedRead(in);
+    projector::Proj(sp,sin,mu,dag);
+    coalescedWrite(buf,sp);
   }
 
   /*****************************************************/
@@ -81,19 +82,24 @@ public:
   accelerator_inline void Exchange(SiteHalfSpinor *mp,
 				   const SiteHalfSpinor * __restrict__ vp0,
 				   const SiteHalfSpinor * __restrict__ vp1,
-				   Integer type,Integer o){
+				   Integer type,Integer o) const {
+#ifdef GRID_SIMT
+    exchangeSIMT(mp[2*o],mp[2*o+1],vp0[o],vp1[o],type);
+#else
     SiteHalfSpinor tmp1;
     SiteHalfSpinor tmp2;
     exchange(tmp1,tmp2,vp0[o],vp1[o],type);
     vstream(mp[2*o  ],tmp1);
     vstream(mp[2*o+1],tmp2);
+#endif
   }
+
 
   /*****************************************************/
   /* Have a decompression step if mpi data is not same */
   /*****************************************************/
   accelerator_inline void Decompress(SiteHalfSpinor * __restrict__ out,
-				     SiteHalfSpinor * __restrict__ in, Integer o) {    
+				     SiteHalfSpinor * __restrict__ in, Integer o) const {    
     assert(0);
   }
 
@@ -103,8 +109,30 @@ public:
   accelerator_inline void CompressExchange(SiteHalfSpinor * __restrict__ out0,
 					   SiteHalfSpinor * __restrict__ out1,
 					   const SiteSpinor * __restrict__ in,
-					   Integer j,Integer k, Integer m,Integer type)
+					   Integer j,Integer k, Integer m,Integer type) const
   {
+#ifdef GRID_SIMT
+    typedef SiteSpinor vobj;
+    typedef SiteHalfSpinor hvobj;
+    typedef decltype(coalescedRead(*in))    sobj;
+    typedef decltype(coalescedRead(*out0)) hsobj;
+
+    constexpr unsigned int Nsimd = vobj::Nsimd();
+    unsigned int mask = Nsimd >> (type + 1);
+    int lane = acceleratorSIMTlane(Nsimd);
+    int j0 = lane &(~mask); // inner coor zero
+    int j1 = lane |(mask) ; // inner coor one
+    const vobj *vp0 = &in[k];  // out0[j] = merge low bit of type from in[k] and in[m] 
+    const vobj *vp1 = &in[m];  // out1[j] = merge hi  bit of type from in[k] and in[m]
+    const vobj *vp = (lane&mask) ? vp1:vp0;// if my lane has high bit take vp1, low bit take vp0
+    auto sa = coalescedRead(*vp,j0); // lane to read for out 0, NB 50% read coalescing
+    auto sb = coalescedRead(*vp,j1); // lane to read for out 1
+    hsobj psa, psb;
+    projector::Proj(psa,sa,mu,dag);  // spin project the result0
+    projector::Proj(psb,sb,mu,dag);  // spin project the result1
+    coalescedWrite(out0[j],psa);
+    coalescedWrite(out1[j],psb);
+#else
     SiteHalfSpinor temp1, temp2;
     SiteHalfSpinor temp3, temp4;
     projector::Proj(temp1,in[k],mu,dag);
@@ -112,15 +140,17 @@ public:
     exchange(temp3,temp4,temp1,temp2,type);
     vstream(out0[j],temp3);
     vstream(out1[j],temp4);
+#endif
   }
 
   /*****************************************************/
   /* Pass the info to the stencil */
   /*****************************************************/
-  accelerator_inline bool DecompressionStep(void) { return false; }
+  accelerator_inline bool DecompressionStep(void) const { return false; }
 
 };
 
+#if 0
 template<class _HCspinor,class _Hspinor,class _Spinor, class projector>
 class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
 				typename std::enable_if<!std::is_same<_HCspinor,_Hspinor>::value>::type >
@@ -142,19 +172,29 @@ public:
   typedef typename SiteHalfSpinor::vector_type     vComplexHigh;
   constexpr static int Nw=sizeof(SiteHalfSpinor)/sizeof(vComplexHigh);
 
-  accelerator_inline int CommDatumSize(void) {
+  accelerator_inline int CommDatumSize(void) const {
     return sizeof(SiteHalfCommSpinor);
   }
 
   /*****************************************************/
   /* Compress includes precision change if mpi data is not same */
   /*****************************************************/
-  template<class _SiteHalfSpinor, class _SiteSpinor>
-  accelerator_inline void Compress(_SiteHalfSpinor *buf,Integer o,const _SiteSpinor &in) {
-    _SiteHalfSpinor hsp;
+  accelerator_inline void Compress(SiteHalfSpinor &buf,const SiteSpinor &in) const {
+    SiteHalfSpinor hsp;
     SiteHalfCommSpinor *hbuf = (SiteHalfCommSpinor *)buf;
     projector::Proj(hsp,in,mu,dag);
     precisionChange((vComplexLow *)&hbuf[o],(vComplexHigh *)&hsp,Nw);
+  }
+  accelerator_inline void Compress(SiteHalfSpinor &buf,const SiteSpinor &in) const {
+#ifdef GRID_SIMT
+    typedef decltype(coalescedRead(buf)) sobj;
+    sobj sp;
+    auto sin = coalescedRead(in);
+    projector::Proj(sp,sin,mu,dag);
+    coalescedWrite(buf,sp);
+#else
+    projector::Proj(buf,in,mu,dag);
+#endif
   }
 
   /*****************************************************/
@@ -163,7 +203,7 @@ public:
   accelerator_inline void Exchange(SiteHalfSpinor *mp,
                        SiteHalfSpinor *vp0,
                        SiteHalfSpinor *vp1,
-		       Integer type,Integer o){
+		       Integer type,Integer o) const {
     SiteHalfSpinor vt0,vt1;
     SiteHalfCommSpinor *vpp0 = (SiteHalfCommSpinor *)vp0;
     SiteHalfCommSpinor *vpp1 = (SiteHalfCommSpinor *)vp1;
@@ -175,7 +215,7 @@ public:
   /*****************************************************/
   /* Have a decompression step if mpi data is not same */
   /*****************************************************/
-  accelerator_inline void Decompress(SiteHalfSpinor *out, SiteHalfSpinor *in, Integer o){
+  accelerator_inline void Decompress(SiteHalfSpinor *out, SiteHalfSpinor *in, Integer o) const {
     SiteHalfCommSpinor *hin=(SiteHalfCommSpinor *)in;
     precisionChange((vComplexHigh *)&out[o],(vComplexLow *)&hin[o],Nw);
   }
@@ -186,7 +226,7 @@ public:
   accelerator_inline void CompressExchange(SiteHalfSpinor *out0,
 			       SiteHalfSpinor *out1,
 			       const SiteSpinor *in,
-			       Integer j,Integer k, Integer m,Integer type){
+			       Integer j,Integer k, Integer m,Integer type) const {
     SiteHalfSpinor temp1, temp2,temp3,temp4;
     SiteHalfCommSpinor *hout0 = (SiteHalfCommSpinor *)out0;
     SiteHalfCommSpinor *hout1 = (SiteHalfCommSpinor *)out1;
@@ -200,9 +240,10 @@ public:
   /*****************************************************/
   /* Pass the info to the stencil */
   /*****************************************************/
-  accelerator_inline bool DecompressionStep(void) { return true; }
+  accelerator_inline bool DecompressionStep(void) const { return true; }
 
 };
+#endif
 
 #define DECLARE_PROJ(Projector,Compressor,spProj)			\
   class Projector {							\
@@ -253,33 +294,8 @@ public:
   typedef typename Base::View_type View_type;
   typedef typename Base::StencilVector StencilVector;
 
-  double timer0;
-  double timer1;
-  double timer2;
-  double timer3;
-  double timer4;
-  double timer5;
-  double timer6;
-  uint64_t callsi;
-  void ZeroCountersi(void)
-  {
-    timer0=0;
-    timer1=0;
-    timer2=0;
-    timer3=0;
-    timer4=0;
-    timer5=0;
-    timer6=0;
-    callsi=0;
-  }
-  void Reporti(int calls)
-  {
-    if ( timer0 ) std::cout << GridLogMessage << " timer0 (HaloGatherOpt) " <<timer0/calls <<std::endl;
-    if ( timer1 ) std::cout << GridLogMessage << " timer1 (Communicate)   " <<timer1/calls <<std::endl;
-    if ( timer2 ) std::cout << GridLogMessage << " timer2 (CommsMerge )   " <<timer2/calls <<std::endl;
-    if ( timer3 ) std::cout << GridLogMessage << " timer3 (commsMergeShm) " <<timer3/calls <<std::endl;
-    if ( timer4 ) std::cout << GridLogMessage << " timer4 " <<timer4 <<std::endl;
-  }
+  void ZeroCountersi(void)  {  }
+  void Reporti(int calls)  {  }
 
   std::vector<int> surface_list;
 
@@ -321,26 +337,18 @@ public:
   {
     std::vector<std::vector<CommsRequest_t> > reqs;
     this->HaloExchangeOptGather(source,compress);
-    double t1=usecond();
     // Asynchronous MPI calls multidirectional, Isend etc...
     // Non-overlapped directions within a thread. Asynchronous calls except MPI3, threaded up to comm threads ways.
     this->Communicate();
-    double t2=usecond(); timer1 += t2-t1;
     this->CommsMerge(compress);
-    double t3=usecond(); timer2 += t3-t2;
     this->CommsMergeSHM(compress);
-    double t4=usecond(); timer3 += t4-t3;
   }
   
   template <class compressor>
   void HaloExchangeOptGather(const Lattice<vobj> &source,compressor &compress) 
   {
     this->Prepare();
-    double t0=usecond();
     this->HaloGatherOpt(source,compress);
-    double t1=usecond();
-    timer0 += t1-t0;
-    callsi++;
   }
 
   template <class compressor>
@@ -352,12 +360,9 @@ public:
     typedef typename compressor::SiteHalfSpinor     SiteHalfSpinor;
     typedef typename compressor::SiteHalfCommSpinor SiteHalfCommSpinor;
 
-    this->mpi3synctime_g-=usecond();
     this->_grid->StencilBarrier();
-    this->mpi3synctime_g+=usecond();
 
     assert(source.Grid()==this->_grid);
-    this->halogtime-=usecond();
     
     this->u_comm_offset=0;
       
@@ -393,7 +398,6 @@ public:
     }
     this->face_table_computed=1;
     assert(this->u_comm_offset==this->_unified_buffer_size);
-    this->halogtime+=usecond();
     accelerator_barrier();
   }
 

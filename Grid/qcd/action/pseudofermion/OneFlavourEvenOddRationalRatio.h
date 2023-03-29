@@ -101,7 +101,7 @@ NAMESPACE_BEGIN(Grid);
       }
       
       
-      virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {
+      virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) {
 
 	// S_f = chi^dag* P(V^dag*V)/Q(V^dag*V)* N(M^dag*M)/D(M^dag*M)* P(V^dag*V)/Q(V^dag*V)* chi       
 	//
@@ -170,7 +170,10 @@ NAMESPACE_BEGIN(Grid);
 	msCG_M(MdagM,X,Y);
 
 	// Randomly apply rational bounds checks.
-	if ( (rand()%param.BoundsCheckFreq)==0 ) { 
+	auto grid = NumOp.FermionGrid();
+        auto r=rand();
+        grid->Broadcast(0,r);
+        if ( (r%param.BoundsCheckFreq)==0 ) { 
 	  FermionField gauss(NumOp.FermionRedBlackGrid());
 	  gauss = PhiOdd;
 	  HighBoundCheck(MdagM,gauss,param.hi);

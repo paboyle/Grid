@@ -33,16 +33,19 @@ namespace Grid {
 template<class Field>
 class ZeroGuesser: public LinearFunction<Field> {
 public:
+  using LinearFunction<Field>::operator();
     virtual void operator()(const Field &src, Field &guess) { guess = Zero(); };
 };
 template<class Field>
 class DoNothingGuesser: public LinearFunction<Field> {
 public:
+  using LinearFunction<Field>::operator();
   virtual void operator()(const Field &src, Field &guess) {  };
 };
 template<class Field>
 class SourceGuesser: public LinearFunction<Field> {
 public:
+  using LinearFunction<Field>::operator();
   virtual void operator()(const Field &src, Field &guess) { guess = src; };
 };
 
@@ -54,15 +57,24 @@ class DeflatedGuesser: public LinearFunction<Field> {
 private:
   const std::vector<Field> &evec;
   const std::vector<RealD> &eval;
+  const unsigned int       N;
 
 public:
+  using LinearFunction<Field>::operator();
 
-  DeflatedGuesser(const std::vector<Field> & _evec,const std::vector<RealD> & _eval) : evec(_evec), eval(_eval) {};
+  DeflatedGuesser(const std::vector<Field> & _evec,const std::vector<RealD> & _eval)
+  : DeflatedGuesser(_evec, _eval, _evec.size())
+  {}
+
+  DeflatedGuesser(const std::vector<Field> & _evec, const std::vector<RealD> & _eval, const unsigned int _N)
+  : evec(_evec), eval(_eval), N(_N)
+  {
+    assert(evec.size()==eval.size());
+    assert(N <= evec.size());
+  } 
 
   virtual void operator()(const Field &src,Field &guess) {
     guess = Zero();
-    assert(evec.size()==eval.size());
-    auto N = evec.size();
     for (int i=0;i<N;i++) {
       const Field& tmp = evec[i];
       axpy(guess,TensorRemove(innerProduct(tmp,src)) / eval[i],tmp,guess);
@@ -79,6 +91,7 @@ private:
   const std::vector<RealD>       &eval_coarse;
 public:
   
+  using LinearFunction<FineField>::operator();
   LocalCoherenceDeflatedGuesser(const std::vector<FineField>   &_subspace,
 				const std::vector<CoarseField> &_evec_coarse,
 				const std::vector<RealD>       &_eval_coarse)
@@ -100,7 +113,43 @@ public:
     blockPromote(guess_coarse,guess,subspace);
     guess.Checkerboard() = src.Checkerboard();
   };
-};
+
+  void operator()(const std::vector<FineField> &src,std::vector<FineField> &guess) {
+    int Nevec = (int)evec_coarse.size();
+    int Nsrc = (int)src.size();
+    // make temp variables
+    std::vector<CoarseField> src_coarse(Nsrc,evec_coarse[0].Grid());
+    std::vector<CoarseField> guess_coarse(Nsrc,evec_coarse[0].Grid());    
+    //Preporcessing
+    std::cout << GridLogMessage << "Start BlockProject for loop" << std::endl;
+    for (int j=0;j<Nsrc;j++)
+    {
+    guess_coarse[j] = Zero();
+    std::cout << GridLogMessage << "BlockProject iter: " << j << std::endl;
+    blockProject(src_coarse[j],src[j],subspace);
+    }
+    //deflation set up for eigen vector batchsize 1 and source batch size equal number of sources
+    std::cout << GridLogMessage << "Start ProjectAccum for loop" << std::endl;
+    for (int i=0;i<Nevec;i++)
+    {
+      std::cout << GridLogMessage << "ProjectAccum Nvec: " << i << std::endl;
+      const CoarseField & tmp = evec_coarse[i];
+      for (int j=0;j<Nsrc;j++)
+      {
+        axpy(guess_coarse[j],TensorRemove(innerProduct(tmp,src_coarse[j])) / eval_coarse[i],tmp,guess_coarse[j]);
+      }
+    }
+    //postprocessing
+    std::cout << GridLogMessage << "Start BlockPromote for loop" << std::endl;
+    for (int j=0;j<Nsrc;j++)
+    {
+    std::cout << GridLogMessage << "BlockProject iter: " << j << std::endl;
+    blockPromote(guess_coarse[j],guess[j],subspace);
+    guess[j].Checkerboard() = src[j].Checkerboard();
+    }
+  };
+
+  };
 
 
 

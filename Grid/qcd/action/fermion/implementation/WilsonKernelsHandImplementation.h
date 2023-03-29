@@ -76,7 +76,24 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define REGISTER
 
-#define LOAD_CHIMU \
+#ifdef GRID_SIMT
+#define LOAD_CHIMU(Ptype)		\
+  {const SiteSpinor & ref (in[offset]);	\
+    Chimu_00=coalescedReadPermute<Ptype>(ref()(0)(0),perm,lane);	\
+    Chimu_01=coalescedReadPermute<Ptype>(ref()(0)(1),perm,lane);		\
+    Chimu_02=coalescedReadPermute<Ptype>(ref()(0)(2),perm,lane);		\
+    Chimu_10=coalescedReadPermute<Ptype>(ref()(1)(0),perm,lane);		\
+    Chimu_11=coalescedReadPermute<Ptype>(ref()(1)(1),perm,lane);		\
+    Chimu_12=coalescedReadPermute<Ptype>(ref()(1)(2),perm,lane);		\
+    Chimu_20=coalescedReadPermute<Ptype>(ref()(2)(0),perm,lane);		\
+    Chimu_21=coalescedReadPermute<Ptype>(ref()(2)(1),perm,lane);		\
+    Chimu_22=coalescedReadPermute<Ptype>(ref()(2)(2),perm,lane);		\
+    Chimu_30=coalescedReadPermute<Ptype>(ref()(3)(0),perm,lane);		\
+    Chimu_31=coalescedReadPermute<Ptype>(ref()(3)(1),perm,lane);		\
+    Chimu_32=coalescedReadPermute<Ptype>(ref()(3)(2),perm,lane);	}
+#define PERMUTE_DIR(dir) ;
+#else
+#define LOAD_CHIMU(Ptype)		\
   {const SiteSpinor & ref (in[offset]);	\
     Chimu_00=ref()(0)(0);\
     Chimu_01=ref()(0)(1);\
@@ -91,54 +108,54 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     Chimu_31=ref()(3)(1);\
     Chimu_32=ref()(3)(2);}
 
-#define LOAD_CHI\
-  {const SiteHalfSpinor &ref(buf[offset]);	\
-    Chi_00 = ref()(0)(0);\
-    Chi_01 = ref()(0)(1);\
-    Chi_02 = ref()(0)(2);\
-    Chi_10 = ref()(1)(0);\
-    Chi_11 = ref()(1)(1);\
-    Chi_12 = ref()(1)(2);}
+#define PERMUTE_DIR(dir)			\
+  permute##dir(Chi_00,Chi_00);			\
+  permute##dir(Chi_01,Chi_01);			\
+  permute##dir(Chi_02,Chi_02);			\
+  permute##dir(Chi_10,Chi_10);			\
+  permute##dir(Chi_11,Chi_11);			\
+  permute##dir(Chi_12,Chi_12);
 
-// To splat or not to splat depends on the implementation
+#endif
+
 #define MULT_2SPIN(A)\
-  {auto & ref(U[sU](A));			\
-   Impl::loadLinkElement(U_00,ref()(0,0));	\
-   Impl::loadLinkElement(U_10,ref()(1,0));	\
-   Impl::loadLinkElement(U_20,ref()(2,0));	\
-   Impl::loadLinkElement(U_01,ref()(0,1));	\
-   Impl::loadLinkElement(U_11,ref()(1,1));	\
-   Impl::loadLinkElement(U_21,ref()(2,1));	\
-    UChi_00 = U_00*Chi_00;\
-    UChi_10 = U_00*Chi_10;\
-    UChi_01 = U_10*Chi_00;\
-    UChi_11 = U_10*Chi_10;\
-    UChi_02 = U_20*Chi_00;\
-    UChi_12 = U_20*Chi_10;\
-    UChi_00+= U_01*Chi_01;\
-    UChi_10+= U_01*Chi_11;\
-    UChi_01+= U_11*Chi_01;\
-    UChi_11+= U_11*Chi_11;\
-    UChi_02+= U_21*Chi_01;\
-    UChi_12+= U_21*Chi_11;\
-    Impl::loadLinkElement(U_00,ref()(0,2));	\
-    Impl::loadLinkElement(U_10,ref()(1,2));	\
-    Impl::loadLinkElement(U_20,ref()(2,2));	\
-    UChi_00+= U_00*Chi_02;\
-    UChi_10+= U_00*Chi_12;\
-    UChi_01+= U_10*Chi_02;\
-    UChi_11+= U_10*Chi_12;\
-    UChi_02+= U_20*Chi_02;\
+  {auto & ref(U[sU](A));						\
+    U_00=coalescedRead(ref()(0,0),lane);				\
+    U_10=coalescedRead(ref()(1,0),lane);				\
+    U_20=coalescedRead(ref()(2,0),lane);				\
+    U_01=coalescedRead(ref()(0,1),lane);				\
+    U_11=coalescedRead(ref()(1,1),lane);				\
+    U_21=coalescedRead(ref()(2,1),lane);				\
+    UChi_00 = U_00*Chi_00;						\
+    UChi_10 = U_00*Chi_10;						\
+    UChi_01 = U_10*Chi_00;						\
+    UChi_11 = U_10*Chi_10;						\
+    UChi_02 = U_20*Chi_00;						\
+    UChi_12 = U_20*Chi_10;						\
+    UChi_00+= U_01*Chi_01;						\
+    UChi_10+= U_01*Chi_11;						\
+    UChi_01+= U_11*Chi_01;						\
+    UChi_11+= U_11*Chi_11;						\
+    UChi_02+= U_21*Chi_01;						\
+    UChi_12+= U_21*Chi_11;						\
+    U_00=coalescedRead(ref()(0,2),lane);				\
+    U_10=coalescedRead(ref()(1,2),lane);				\
+    U_20=coalescedRead(ref()(2,2),lane);				\
+    UChi_00+= U_00*Chi_02;						\
+    UChi_10+= U_00*Chi_12;						\
+    UChi_01+= U_10*Chi_02;						\
+    UChi_11+= U_10*Chi_12;						\
+    UChi_02+= U_20*Chi_02;						\
     UChi_12+= U_20*Chi_12;}
 
-
-#define PERMUTE_DIR(dir)			\
-      permute##dir(Chi_00,Chi_00);\
-      permute##dir(Chi_01,Chi_01);\
-      permute##dir(Chi_02,Chi_02);\
-      permute##dir(Chi_10,Chi_10);\
-      permute##dir(Chi_11,Chi_11);\
-      permute##dir(Chi_12,Chi_12);
+#define LOAD_CHI				\
+  {const SiteHalfSpinor &ref(buf[offset]);	\
+    Chi_00 = coalescedRead(ref()(0)(0),lane);	\
+    Chi_01 = coalescedRead(ref()(0)(1),lane);	\
+    Chi_02 = coalescedRead(ref()(0)(2),lane);	\
+    Chi_10 = coalescedRead(ref()(1)(0),lane);	\
+    Chi_11 = coalescedRead(ref()(1)(1),lane);	\
+    Chi_12 = coalescedRead(ref()(1)(2),lane);}
 
 //      hspin(0)=fspin(0)+timesI(fspin(3));
 //      hspin(1)=fspin(1)+timesI(fspin(2));
@@ -353,88 +370,124 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   result_31-= UChi_11;	\
   result_32-= UChi_12;
 
-#define HAND_STENCIL_LEG(PROJ,PERM,DIR,RECON)	\
-  SE=st.GetEntry(ptype,DIR,ss);			\
-  offset = SE->_offset;				\
-  local  = SE->_is_local;			\
-  perm   = SE->_permute;			\
-  if ( local ) {				\
-    LOAD_CHIMU;					\
-    PROJ;					\
-    if ( perm) {				\
-      PERMUTE_DIR(PERM);			\
-    }						\
-  } else {					\
-    LOAD_CHI;					\
-  }						\
-  MULT_2SPIN(DIR);				\
-  RECON;					
+#define HAND_STENCIL_LEGB(PROJ,PERM,DIR,RECON)	\
+  {int ptype;					\
+   SE=st.GetEntry(ptype,DIR,ss);		\
+   auto offset = SE->_offset;			\
+   auto local  = SE->_is_local;			\
+   auto perm   = SE->_permute;			\
+   if ( local ) {				\
+     LOAD_CHIMU(PERM);				\
+     PROJ;					\
+     if ( perm) {				\
+       PERMUTE_DIR(PERM);			\
+     }						\
+   } else {					\
+     LOAD_CHI;					\
+   }						\
+   acceleratorSynchronise();			\
+   MULT_2SPIN(DIR);				\
+   RECON;					}
+
+#define HAND_STENCIL_LEG(PROJ,PERM,DIR,RECON)		\
+  { SE=&st_p[DIR+8*ss];						\
+  auto ptype=st_perm[DIR];					\
+  auto offset = SE->_offset;					\
+  auto local  = SE->_is_local;					\
+  auto perm   = SE->_permute;					\
+  if ( local ) {						\
+    LOAD_CHIMU(PERM);						\
+    PROJ;							\
+    if ( perm) {						\
+      PERMUTE_DIR(PERM);					\
+    }								\
+  } else {							\
+    LOAD_CHI;							\
+  }								\
+  acceleratorSynchronise();					\
+  MULT_2SPIN(DIR);						\
+  RECON;					}
+
+#define HAND_STENCIL_LEGA(PROJ,PERM,DIR,RECON)				\
+  { SE=&st_p[DIR+8*ss];							\
+    auto ptype=st_perm[DIR];						\
+    /*SE=st.GetEntry(ptype,DIR,ss);*/					\
+    auto offset = SE->_offset;						\
+    auto perm   = SE->_permute;						\
+    LOAD_CHIMU(PERM);							\
+    PROJ;								\
+    MULT_2SPIN(DIR);							\
+    RECON;					}
 
 #define HAND_STENCIL_LEG_INT(PROJ,PERM,DIR,RECON)	\
-  SE=st.GetEntry(ptype,DIR,ss);			\
-  offset = SE->_offset;				\
-  local  = SE->_is_local;			\
-  perm   = SE->_permute;			\
-  if ( local ) {				\
-    LOAD_CHIMU;					\
-    PROJ;					\
-    if ( perm) {				\
-      PERMUTE_DIR(PERM);			\
-    }						\
-  } else if ( st.same_node[DIR] ) {		\
-    LOAD_CHI;					\
-  }						\
-  if (local || st.same_node[DIR] ) {		\
-    MULT_2SPIN(DIR);				\
-    RECON;					\
-  }
+  { int ptype;						\
+  SE=st.GetEntry(ptype,DIR,ss);				\
+  auto offset = SE->_offset;					\
+  auto local  = SE->_is_local;					\
+  auto perm   = SE->_permute;					\
+  if ( local ) {						\
+    LOAD_CHIMU(PERM);						\
+    PROJ;							\
+    if ( perm) {						\
+      PERMUTE_DIR(PERM);					\
+    }								\
+  } else if ( st.same_node[DIR] ) {				\
+    LOAD_CHI;							\
+  }								\
+  acceleratorSynchronise();					\
+  if (local || st.same_node[DIR] ) {				\
+    MULT_2SPIN(DIR);						\
+    RECON;							\
+  }								\
+  acceleratorSynchronise();			}
 
 #define HAND_STENCIL_LEG_EXT(PROJ,PERM,DIR,RECON)	\
-  SE=st.GetEntry(ptype,DIR,ss);			\
-  offset = SE->_offset;				\
-  if((!SE->_is_local)&&(!st.same_node[DIR]) ) {	\
-    LOAD_CHI;					\
-    MULT_2SPIN(DIR);				\
-    RECON;					\
-    nmu++;					\
+  { int ptype;						\
+  SE=st.GetEntry(ptype,DIR,ss);				\
+  auto offset = SE->_offset;				\
+  if((!SE->_is_local)&&(!st.same_node[DIR]) ) {		\
+    LOAD_CHI;						\
+    MULT_2SPIN(DIR);					\
+    RECON;						\
+    nmu++;						\
+  }							\
+  acceleratorSynchronise();			}
+
+#define HAND_RESULT(ss)					\
+  {							\
+    SiteSpinor & ref (out[ss]);				\
+    coalescedWrite(ref()(0)(0),result_00,lane);		\
+    coalescedWrite(ref()(0)(1),result_01,lane);		\
+    coalescedWrite(ref()(0)(2),result_02,lane);		\
+    coalescedWrite(ref()(1)(0),result_10,lane);		\
+    coalescedWrite(ref()(1)(1),result_11,lane);		\
+    coalescedWrite(ref()(1)(2),result_12,lane);		\
+    coalescedWrite(ref()(2)(0),result_20,lane);		\
+    coalescedWrite(ref()(2)(1),result_21,lane);		\
+    coalescedWrite(ref()(2)(2),result_22,lane);		\
+    coalescedWrite(ref()(3)(0),result_30,lane);		\
+    coalescedWrite(ref()(3)(1),result_31,lane);		\
+    coalescedWrite(ref()(3)(2),result_32,lane);		\
   }
 
-#define HAND_RESULT(ss)				\
-  {						\
-    SiteSpinor & ref (out[ss]);		\
-    vstream(ref()(0)(0),result_00);		\
-    vstream(ref()(0)(1),result_01);		\
-    vstream(ref()(0)(2),result_02);		\
-    vstream(ref()(1)(0),result_10);		\
-    vstream(ref()(1)(1),result_11);		\
-    vstream(ref()(1)(2),result_12);		\
-    vstream(ref()(2)(0),result_20);		\
-    vstream(ref()(2)(1),result_21);		\
-    vstream(ref()(2)(2),result_22);		\
-    vstream(ref()(3)(0),result_30);		\
-    vstream(ref()(3)(1),result_31);		\
-    vstream(ref()(3)(2),result_32);		\
+#define HAND_RESULT_EXT(ss)				\
+  {							\
+    SiteSpinor & ref (out[ss]);				\
+    coalescedWrite(ref()(0)(0),coalescedRead(ref()(0)(0))+result_00,lane);	\
+    coalescedWrite(ref()(0)(1),coalescedRead(ref()(0)(1))+result_01,lane);	\
+    coalescedWrite(ref()(0)(2),coalescedRead(ref()(0)(2))+result_02,lane);	\
+    coalescedWrite(ref()(1)(0),coalescedRead(ref()(1)(0))+result_10,lane);	\
+    coalescedWrite(ref()(1)(1),coalescedRead(ref()(1)(1))+result_11,lane);	\
+    coalescedWrite(ref()(1)(2),coalescedRead(ref()(1)(2))+result_12,lane);	\
+    coalescedWrite(ref()(2)(0),coalescedRead(ref()(2)(0))+result_20,lane);	\
+    coalescedWrite(ref()(2)(1),coalescedRead(ref()(2)(1))+result_21,lane);	\
+    coalescedWrite(ref()(2)(2),coalescedRead(ref()(2)(2))+result_22,lane);	\
+    coalescedWrite(ref()(3)(0),coalescedRead(ref()(3)(0))+result_30,lane);	\
+    coalescedWrite(ref()(3)(1),coalescedRead(ref()(3)(1))+result_31,lane);	\
+    coalescedWrite(ref()(3)(2),coalescedRead(ref()(3)(2))+result_32,lane);	\
   }
 
-#define HAND_RESULT_EXT(ss)			\
-  if (nmu){					\
-    SiteSpinor & ref (out[ss]);		\
-    ref()(0)(0)+=result_00;		\
-    ref()(0)(1)+=result_01;		\
-    ref()(0)(2)+=result_02;		\
-    ref()(1)(0)+=result_10;		\
-    ref()(1)(1)+=result_11;		\
-    ref()(1)(2)+=result_12;		\
-    ref()(2)(0)+=result_20;		\
-    ref()(2)(1)+=result_21;		\
-    ref()(2)(2)+=result_22;		\
-    ref()(3)(0)+=result_30;		\
-    ref()(3)(1)+=result_31;		\
-    ref()(3)(2)+=result_32;		\
-  }
-
-
-#define HAND_DECLARATIONS(a)			\
+#define HAND_DECLARATIONS(Simd)			\
   Simd result_00;				\
   Simd result_01;				\
   Simd result_02;				\
@@ -466,19 +519,19 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   Simd U_11;					\
   Simd U_21;
 
-#define ZERO_RESULT				\
-  result_00=Zero();				\
-  result_01=Zero();				\
-  result_02=Zero();				\
-  result_10=Zero();				\
-  result_11=Zero();				\
-  result_12=Zero();				\
-  result_20=Zero();				\
-  result_21=Zero();				\
-  result_22=Zero();				\
-  result_30=Zero();				\
-  result_31=Zero();				\
-  result_32=Zero();			
+#define ZERO_RESULT							\
+  zeroit(result_00);							\
+  zeroit(result_01);							\
+  zeroit(result_02);							\
+  zeroit(result_10);							\
+  zeroit(result_11);							\
+  zeroit(result_12);							\
+  zeroit(result_20);							\
+  zeroit(result_21);							\
+  zeroit(result_22);							\
+  zeroit(result_30);							\
+  zeroit(result_31);							\
+  zeroit(result_32);			
 
 #define Chimu_00 Chi_00
 #define Chimu_01 Chi_01
@@ -495,19 +548,54 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
+
+#ifdef SYCL_HACK
 template<class Impl> accelerator_inline void 
-WilsonKernels<Impl>::HandDhopSite(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
-				  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
+WilsonKernels<Impl>::HandDhopSiteSycl(StencilVector st_perm,StencilEntry *st_p, SiteDoubledGaugeField *U,SiteHalfSpinor  *buf,
+				      int ss,int sU,const SiteSpinor *in, SiteSpinor *out)
 {
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
+  typedef iSinglet<Simd> vCplx;
+  //  typedef decltype( coalescedRead( vCplx()()() )) Simt;
+  typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
 
-  HAND_DECLARATIONS(ignore);
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=acceleratorSIMTlane(Nsimd);
 
-  int offset,local,perm, ptype;
+  HAND_DECLARATIONS(Simt);
+
   StencilEntry *SE;
+  HAND_STENCIL_LEG(XM_PROJ,3,Xp,XM_RECON);
+  HAND_STENCIL_LEG(YM_PROJ,2,Yp,YM_RECON_ACCUM);
+  HAND_STENCIL_LEG(ZM_PROJ,1,Zp,ZM_RECON_ACCUM);
+  HAND_STENCIL_LEG(TM_PROJ,0,Tp,TM_RECON_ACCUM);
+  HAND_STENCIL_LEG(XP_PROJ,3,Xm,XP_RECON_ACCUM);
+  HAND_STENCIL_LEG(YP_PROJ,2,Ym,YP_RECON_ACCUM);
+  HAND_STENCIL_LEG(ZP_PROJ,1,Zm,ZP_RECON_ACCUM);
+  HAND_STENCIL_LEG(TP_PROJ,0,Tm,TP_RECON_ACCUM);
+  HAND_RESULT(ss);
+}
+#endif
 
+template<class Impl> accelerator_inline void 
+WilsonKernels<Impl>::HandDhopSite(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
+				  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
+{
+  auto st_p = st._entries_p;						
+  auto st_perm = st._permute_type;					
+// T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
+  typedef typename Simd::scalar_type S;
+  typedef typename Simd::vector_type V;
+  typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
+
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=acceleratorSIMTlane(Nsimd);
+
+  HAND_DECLARATIONS(Simt);
+
+  StencilEntry *SE;
   HAND_STENCIL_LEG(XM_PROJ,3,Xp,XM_RECON);
   HAND_STENCIL_LEG(YM_PROJ,2,Yp,YM_RECON_ACCUM);
   HAND_STENCIL_LEG(ZM_PROJ,1,Zp,ZM_RECON_ACCUM);
@@ -523,14 +611,18 @@ template<class Impl>  accelerator_inline
 void WilsonKernels<Impl>::HandDhopSiteDag(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+  auto st_p = st._entries_p;						
+  auto st_perm = st._permute_type;					
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
+  typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
 
-  HAND_DECLARATIONS(ignore);
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=acceleratorSIMTlane(Nsimd);
+
+  HAND_DECLARATIONS(Simt);
 
   StencilEntry *SE;
-  int offset,local,perm, ptype;
-  
   HAND_STENCIL_LEG(XP_PROJ,3,Xp,XP_RECON);
   HAND_STENCIL_LEG(YP_PROJ,2,Yp,YP_RECON_ACCUM);
   HAND_STENCIL_LEG(ZP_PROJ,1,Zp,ZP_RECON_ACCUM);
@@ -546,13 +638,18 @@ template<class Impl>  accelerator_inline void
 WilsonKernels<Impl>::HandDhopSiteInt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
 					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+  //  auto st_p = st._entries_p;						
+  //  auto st_perm = st._permute_type;					
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
+  typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
 
-  HAND_DECLARATIONS(ignore);
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=acceleratorSIMTlane(Nsimd);
 
-  int offset,local,perm, ptype;
+  HAND_DECLARATIONS(Simt);
+
   StencilEntry *SE;
   ZERO_RESULT;
   HAND_STENCIL_LEG_INT(XM_PROJ,3,Xp,XM_RECON_ACCUM);
@@ -570,13 +667,18 @@ template<class Impl> accelerator_inline
 void WilsonKernels<Impl>::HandDhopSiteDagInt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 						  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+  //  auto st_p = st._entries_p;						
+  //  auto st_perm = st._permute_type;					
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
+  typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
 
-  HAND_DECLARATIONS(ignore);
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=acceleratorSIMTlane(Nsimd);
+
+  HAND_DECLARATIONS(Simt);
 
   StencilEntry *SE;
-  int offset,local,perm, ptype;
   ZERO_RESULT;
   HAND_STENCIL_LEG_INT(XP_PROJ,3,Xp,XP_RECON_ACCUM);
   HAND_STENCIL_LEG_INT(YP_PROJ,2,Yp,YP_RECON_ACCUM);
@@ -593,13 +695,19 @@ template<class Impl>  accelerator_inline void
 WilsonKernels<Impl>::HandDhopSiteExt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
 					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+  //  auto st_p = st._entries_p;						
+  //  auto st_perm = st._permute_type;					
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
+  typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
 
-  HAND_DECLARATIONS(ignore);
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=acceleratorSIMTlane(Nsimd);
 
-  int offset, ptype;
+  HAND_DECLARATIONS(Simt);
+
+  //  int offset, ptype;
   StencilEntry *SE;
   int nmu=0;
   ZERO_RESULT;
@@ -618,13 +726,19 @@ template<class Impl>  accelerator_inline
 void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 						  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+  //  auto st_p = st._entries_p;						
+  //  auto st_perm = st._permute_type;					
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
+  typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
 
-  HAND_DECLARATIONS(ignore);
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=acceleratorSIMTlane(Nsimd);
+
+  HAND_DECLARATIONS(Simt);
 
   StencilEntry *SE;
-  int offset, ptype;
+  //  int offset, ptype;
   int nmu=0;
   ZERO_RESULT;
   HAND_STENCIL_LEG_EXT(XP_PROJ,3,Xp,XP_RECON_ACCUM);
@@ -682,3 +796,4 @@ NAMESPACE_END(Grid);
 #undef HAND_RESULT
 #undef HAND_RESULT_INT
 #undef HAND_RESULT_EXT
+#undef HAND_DECLARATIONS

@@ -78,6 +78,8 @@ public:
   typedef Lattice<SiteLink>    LinkField; 
   typedef Lattice<SiteField>   Field;
 
+  typedef SU<Nrepresentation> Group;
+
   // Guido: we can probably separate the types from the HMC functions
   // this will create 2 kind of implementations
   // probably confusing the users
@@ -96,7 +98,7 @@ public:
   ///////////////////////////////////////////////////////////
   // Move these to another class
   // HMC auxiliary functions
-  static inline void generate_momenta(Field &P, GridParallelRNG &pRNG) 
+  static inline void generate_momenta(Field &P, GridSerialRNG & sRNG, GridParallelRNG &pRNG) 
   {
     // Zbigniew Srocinsky thesis:
     //
@@ -118,7 +120,7 @@ public:
     LinkField Pmu(P.Grid());
     Pmu = Zero();
     for (int mu = 0; mu < Nd; mu++) {
-      SU<Nrepresentation>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
+      Group::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
       RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR) ;
       Pmu = Pmu*scale;
       PokeIndex<LorentzIndex>(P, Pmu, mu);
@@ -154,16 +156,20 @@ public:
     return Hsum.real();
   }
 
+  static inline void Project(Field &U) {
+    ProjectSUn(U);
+  }
+
   static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U) {
-    SU<Nc>::HotConfiguration(pRNG, U);
+    Group::HotConfiguration(pRNG, U);
   }
 
   static inline void TepidConfiguration(GridParallelRNG &pRNG, Field &U) {
-    SU<Nc>::TepidConfiguration(pRNG, U);
+    Group::TepidConfiguration(pRNG, U);
   }
 
   static inline void ColdConfiguration(GridParallelRNG &pRNG, Field &U) {
-    SU<Nc>::ColdConfiguration(pRNG, U);
+    Group::ColdConfiguration(pRNG, U);
   }
 };
 

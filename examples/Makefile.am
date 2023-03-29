@@ -1,0 +1,6 @@
+SUBDIRS = . 
+
+include Make.inc
+
+
+

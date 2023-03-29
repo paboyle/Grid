@@ -231,6 +231,20 @@ int main(int argc, char **argv) {
       scalar = localInnerProduct(cVec, cVec);
       scalar = localNorm2(cVec);
 
+      std::cout << "Testing maxLocalNorm2" <<std::endl;
+      
+      LatticeComplex rand_scalar(&Fine);
+      random(FineRNG, rand_scalar);  //uniform [0,1]
+      for(Integer gsite=0;gsite<Fine.gSites();gsite++){ //check on every site independently
+	scalar = rand_scalar;
+	TComplex big(10.0);
+	Coordinate coor;
+	Fine.GlobalIndexToGlobalCoor(gsite,coor);
+        pokeSite(big,scalar,coor);
+	
+	RealD Linfty = maxLocalNorm2(scalar);
+	assert(Linfty == 100.0);
+      }
       //     -=,+=,*=,()
       //     add,+,sub,-,mult,mac,*
       //     adj,conjugate
@@ -350,14 +364,12 @@ int main(int argc, char **argv) {
 
       {  // Peek-ology and Poke-ology, with a little app-ology
         Complex c;
-        ColourMatrix c_m;
-        SpinMatrix s_m;
-        SpinColourMatrix sc_m;
+        ColourMatrix c_m = Zero();
+        SpinMatrix s_m = Zero();
+        SpinColourMatrix sc_m = Zero();
 
-        s_m = TensorIndexRecursion<ColourIndex>::traceIndex(
-            sc_m);  // Map to traceColour
-        c_m = TensorIndexRecursion<SpinIndex>::traceIndex(
-            sc_m);  // map to traceSpin
+        s_m = TensorIndexRecursion<ColourIndex>::traceIndex(sc_m);  // Map to traceColour
+        c_m = TensorIndexRecursion<SpinIndex>::traceIndex(sc_m);  // map to traceSpin
 
         c = TensorIndexRecursion<SpinIndex>::traceIndex(s_m);
         c = TensorIndexRecursion<ColourIndex>::traceIndex(c_m);
@@ -549,7 +561,8 @@ int main(int argc, char **argv) {
 
                   std::vector<int> shiftcoor = coor;
                   shiftcoor[dir] = (shiftcoor[dir] + shift + latt_size[dir]) %
-                                   (latt_size[dir] / mpi_layout[dir]);
+                                   (latt_size[dir]);
+		  //                                   (latt_size[dir] / mpi_layout[dir]);
 
                   std::vector<int> rl(4);
                   for (int dd = 0; dd < 4; dd++) {

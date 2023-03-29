@@ -342,19 +342,14 @@ inline void ExpressionViewClose(LatticeTrinaryExpression<Op, T1, T2, T3> &expr)
 
 GridUnopClass(UnarySub, -a);
 GridUnopClass(UnaryNot, Not(a));
-GridUnopClass(UnaryAdj, adj(a));
-GridUnopClass(UnaryConj, conjugate(a));
 GridUnopClass(UnaryTrace, trace(a));
 GridUnopClass(UnaryTranspose, transpose(a));
 GridUnopClass(UnaryTa, Ta(a));
 GridUnopClass(UnaryProjectOnGroup, ProjectOnGroup(a));
-GridUnopClass(UnaryToReal, toReal(a));
-GridUnopClass(UnaryToComplex, toComplex(a));
 GridUnopClass(UnaryTimesI, timesI(a));
 GridUnopClass(UnaryTimesMinusI, timesMinusI(a));
 GridUnopClass(UnaryAbs, abs(a));
 GridUnopClass(UnarySqrt, sqrt(a));
-GridUnopClass(UnaryRsqrt, rsqrt(a));
 GridUnopClass(UnarySin, sin(a));
 GridUnopClass(UnaryCos, cos(a));
 GridUnopClass(UnaryAsin, asin(a));
@@ -456,20 +451,17 @@ GridTrinOpClass(TrinaryWhere,
 GRID_DEF_UNOP(operator-, UnarySub);
 GRID_DEF_UNOP(Not, UnaryNot);
 GRID_DEF_UNOP(operator!, UnaryNot);
-GRID_DEF_UNOP(adj, UnaryAdj);
-GRID_DEF_UNOP(conjugate, UnaryConj);
+//GRID_DEF_UNOP(adj, UnaryAdj);
+//GRID_DEF_UNOP(conjugate, UnaryConj);
 GRID_DEF_UNOP(trace, UnaryTrace);
 GRID_DEF_UNOP(transpose, UnaryTranspose);
 GRID_DEF_UNOP(Ta, UnaryTa);
 GRID_DEF_UNOP(ProjectOnGroup, UnaryProjectOnGroup);
-GRID_DEF_UNOP(toReal, UnaryToReal);
-GRID_DEF_UNOP(toComplex, UnaryToComplex);
 GRID_DEF_UNOP(timesI, UnaryTimesI);
 GRID_DEF_UNOP(timesMinusI, UnaryTimesMinusI);
 GRID_DEF_UNOP(abs, UnaryAbs);  // abs overloaded in cmath C++98; DON'T do the
                                // abs-fabs-dabs-labs thing
 GRID_DEF_UNOP(sqrt, UnarySqrt);
-GRID_DEF_UNOP(rsqrt, UnaryRsqrt);
 GRID_DEF_UNOP(sin, UnarySin);
 GRID_DEF_UNOP(cos, UnaryCos);
 GRID_DEF_UNOP(asin, UnaryAsin);
@@ -494,27 +486,27 @@ GRID_DEF_TRINOP(where, TrinaryWhere);
 /////////////////////////////////////////////////////////////
 template <class Op, class T1>
 auto closure(const LatticeUnaryExpression<Op, T1> &expr)
-  -> Lattice<decltype(expr.op.func(vecEval(0, expr.arg1)))> 
+  -> Lattice<typename std::remove_const<decltype(expr.op.func(vecEval(0, expr.arg1)))>::type > 
 {
-  Lattice<decltype(expr.op.func(vecEval(0, expr.arg1)))> ret(expr);
+  Lattice<typename std::remove_const<decltype(expr.op.func(vecEval(0, expr.arg1)))>::type > ret(expr);
   return ret;
 }
 template <class Op, class T1, class T2>
 auto closure(const LatticeBinaryExpression<Op, T1, T2> &expr)
-  -> Lattice<decltype(expr.op.func(vecEval(0, expr.arg1),vecEval(0, expr.arg2)))> 
+  -> Lattice<typename std::remove_const<decltype(expr.op.func(vecEval(0, expr.arg1),vecEval(0, expr.arg2)))>::type >
 {
-  Lattice<decltype(expr.op.func(vecEval(0, expr.arg1),vecEval(0, expr.arg2)))> ret(expr);
+  Lattice<typename std::remove_const<decltype(expr.op.func(vecEval(0, expr.arg1),vecEval(0, expr.arg2)))>::type > ret(expr);
   return ret;
 }
 template <class Op, class T1, class T2, class T3>
 auto closure(const LatticeTrinaryExpression<Op, T1, T2, T3> &expr)
-  -> Lattice<decltype(expr.op.func(vecEval(0, expr.arg1),
+  -> Lattice<typename std::remove_const<decltype(expr.op.func(vecEval(0, expr.arg1),
 				   vecEval(0, expr.arg2),
-				   vecEval(0, expr.arg3)))> 
+				   vecEval(0, expr.arg3)))>::type >
 {
-  Lattice<decltype(expr.op.func(vecEval(0, expr.arg1),
+  Lattice<typename std::remove_const<decltype(expr.op.func(vecEval(0, expr.arg1),
 				vecEval(0, expr.arg2),
-			        vecEval(0, expr.arg3)))>  ret(expr);
+			        vecEval(0, expr.arg3)))>::type >  ret(expr);
   return ret;
 }
 #define EXPRESSION_CLOSURE(function)					\

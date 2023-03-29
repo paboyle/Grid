@@ -31,6 +31,7 @@ directory
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include <map>
 
 #include <pwd.h>
@@ -123,7 +124,7 @@ assert(GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) < 1.0e-5);
  ////////////////////////////////////////////////////////////
  // Helper to fill out metadata
  ////////////////////////////////////////////////////////////
- template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
+template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
 					  FieldMetaData &header,
 					  scidacRecord & _scidacRecord,
 					  scidacFile   & _scidacFile) 
@@ -576,6 +577,8 @@ class ScidacReader : public GridLimeReader {
     std::string rec_name(ILDG_BINARY_DATA);
     while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
       if ( !strncmp(limeReaderType(LimeR), rec_name.c_str(),strlen(rec_name.c_str()) )  ) {
+  // in principle should do the line below, but that breaks backard compatibility with old data
+  // skipPastObjectRecord(std::string(GRID_FIELD_NORM));
 	skipPastObjectRecord(std::string(SCIDAC_CHECKSUM));
 	return;
       }
@@ -619,12 +622,12 @@ class IldgWriter : public ScidacWriter {
   // Don't require scidac records EXCEPT checksum
   // Use Grid MetaData object if present.
   ////////////////////////////////////////////////////////////////
-  template <class vsimd>
-  void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,int sequence,std::string LFN,std::string description) 
+  template <class stats = PeriodicGaugeStatistics>
+  void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,int sequence,std::string LFN,std::string description) 
   {
     GridBase * grid = Umu.Grid();
-    typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
-    typedef iLorentzColourMatrix<vsimd> vobj;
+    typedef Lattice<vLorentzColourMatrixD> GaugeField;
+    typedef vLorentzColourMatrixD vobj;
     typedef typename vobj::scalar_object sobj;
 
     ////////////////////////////////////////
@@ -636,6 +639,9 @@ class IldgWriter : public ScidacWriter {
 
     ScidacMetaData(Umu,header,_scidacRecord,_scidacFile);
 
+    stats Stats;
+    Stats(Umu,header);
+    
     std::string format = header.floating_point;
     header.ensemble_id    = description;
     header.ensemble_label = description;
@@ -649,7 +655,8 @@ class IldgWriter : public ScidacWriter {
     // Fill ILDG header data struct
     //////////////////////////////////////////////////////
     ildgFormat ildgfmt ;
-    ildgfmt.field     = std::string("su3gauge");
+    const std::string stNC = std::to_string( Nc ) ;
+    ildgfmt.field          = std::string("su"+stNC+"gauge");
 
     if ( format == std::string("IEEE32BIG") ) { 
       ildgfmt.precision = 32;
@@ -705,10 +712,10 @@ class IldgReader : public GridLimeReader {
   // Else use ILDG MetaData object if present.
   // Else use SciDAC MetaData object if present.
   ////////////////////////////////////////////////////////////////
-  template <class vsimd>
-  void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu, FieldMetaData &FieldMetaData_) {
+  template <class stats = PeriodicGaugeStatistics>
+  void readConfiguration(Lattice<vLorentzColourMatrixD> &Umu, FieldMetaData &FieldMetaData_) {
 
-    typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
+    typedef Lattice<vLorentzColourMatrixD > GaugeField;
     typedef typename GaugeField::vector_object  vobj;
     typedef typename vobj::scalar_object sobj;
 
@@ -866,7 +873,8 @@ class IldgReader : public GridLimeReader {
     } else { 
 
       assert(found_ildgFormat);
-      assert ( ildgFormat_.field == std::string("su3gauge") );
+      const std::string stNC = std::to_string( Nc ) ;
+      assert ( ildgFormat_.field == std::string("su"+stNC+"gauge") );
 
       ///////////////////////////////////////////////////////////////////////////////////////
       // Populate our Grid metadata as best we can
@@ -874,7 +882,7 @@ class IldgReader : public GridLimeReader {
 
       std::ostringstream vers; vers << ildgFormat_.version;
       FieldMetaData_.hdr_version = vers.str();
-      FieldMetaData_.data_type = std::string("4D_SU3_GAUGE_3X3");
+      FieldMetaData_.data_type = std::string("4D_SU"+stNC+"_GAUGE_"+stNC+"x"+stNC);
 
       FieldMetaData_.nd=4;
       FieldMetaData_.dimension.resize(4);
@@ -921,7 +929,8 @@ class IldgReader : public GridLimeReader {
 
     if ( found_FieldMetaData || found_usqcdInfo ) {
       FieldMetaData checker;
-      GaugeStatistics(Umu,checker);
+      stats Stats;
+      Stats(Umu,checker);
       assert(fabs(checker.plaquette  - FieldMetaData_.plaquette )<1.0e-5);
       assert(fabs(checker.link_trace - FieldMetaData_.link_trace)<1.0e-5);
       std::cout << GridLogMessage<<"Plaquette and link trace match " << std::endl;

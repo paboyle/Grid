@@ -1,0 +1,1 @@
+CXX=mpicxx-openmpi-mp CXXFLAGS=-I/opt/local/include/ LDFLAGS=-L/opt/local/lib/ ../../configure --enable-simd=GEN --enable-debug --enable-comms=mpi --enable-unified=no

@@ -56,6 +56,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 static int
 feenableexcept (unsigned int excepts)
 {
+#if 0
+  // Fails on Apple M1
   static fenv_t fenv;
   unsigned int new_excepts = excepts & FE_ALL_EXCEPT;
   unsigned int old_excepts;  // previous masks
@@ -70,6 +72,8 @@ feenableexcept (unsigned int excepts)
 
   iold_excepts  = (int) old_excepts;
   return ( fesetenv (&fenv) ? -1 : iold_excepts );
+#endif
+  return 0;
 }
 #endif
 
@@ -140,7 +144,7 @@ void GridCmdOptionCSL(std::string str,std::vector<std::string> & vec)
 }
 
 template<class VectorInt>
-void GridCmdOptionIntVector(std::string &str,VectorInt & vec)
+void GridCmdOptionIntVector(const std::string &str,VectorInt & vec)
 {
   vec.resize(0);
   std::stringstream ss(str);
@@ -153,7 +157,17 @@ void GridCmdOptionIntVector(std::string &str,VectorInt & vec)
   return;
 }
 
+template void GridCmdOptionIntVector(const std::string &str,std::vector<int> & vec);
+template void GridCmdOptionIntVector(const std::string &str,Coordinate & vec);
+
 void GridCmdOptionInt(std::string &str,int & val)
+{
+  std::stringstream ss(str);
+  ss>>val;
+  return;
+}
+
+void GridCmdOptionFloat(std::string &str,float & val)
 {
   std::stringstream ss(str);
   ss>>val;
@@ -294,6 +308,13 @@ void Grid_init(int *argc,char ***argv)
     GlobalSharedMemory::MAX_MPI_SHM_BYTES = MB64*1024LL*1024LL;
   }
 
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--shm-mpi") ){
+    int forcempi;
+    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--shm-mpi");
+    GridCmdOptionInt(arg,forcempi);
+    Stencil_force_mpi = (bool)forcempi;
+  }
+  
   if( GridCmdOptionExists(*argv,*argv+*argc,"--device-mem") ){
     int MB;
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--device-mem");
@@ -412,7 +433,9 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"  --threads n     : default number of OMP threads"<<std::endl;
     std::cout<<GridLogMessage<<"  --grid n.n.n.n  : default Grid size"<<std::endl;
     std::cout<<GridLogMessage<<"  --shm  M        : allocate M megabytes of shared memory for comms"<<std::endl;
-    std::cout<<GridLogMessage<<"  --shm-hugepages : use explicit huge pages in mmap call "<<std::endl;    
+    std::cout<<GridLogMessage<<"  --shm-mpi 0|1   : Force MPI usage under multi-rank per node "<<std::endl;
+    std::cout<<GridLogMessage<<"  --shm-hugepages : use explicit huge pages in mmap call "<<std::endl;
+    std::cout<<GridLogMessage<<"  --device-mem M  : Size of device software cache for lattice fields (MB) "<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Verbose and debug:"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
@@ -511,6 +534,7 @@ void Grid_init(int *argc,char ***argv)
 void Grid_finalize(void)
 {
 #if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) || defined (GRID_COMMS_MPIT)
+  MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
   Grid_unquiesce_nodes();
 #endif
