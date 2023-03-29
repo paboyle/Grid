@@ -585,6 +585,7 @@ public:
 	  decompress.Exchange(mp,vp0,vp1,type,o);
       });
     }
+    if ( mm.size() )    acceleratorFenceComputeStream();
     mergetime+=usecond();
 
     decompresstime-=usecond();
@@ -595,7 +596,9 @@ public:
 	decompress.Decompress(kp,mp,o);
       });
     }
+    if ( dd.size() )    acceleratorFenceComputeStream();
     decompresstime+=usecond();
+    
   }
   ////////////////////////////////////////
   // Set up routines
