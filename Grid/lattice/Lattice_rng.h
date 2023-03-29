@@ -440,17 +440,8 @@ public:
 	_grid->GlobalCoorToGlobalIndex(gcoor,gidx);
 
 	_grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
-#if 1
-	assert(rank == _grid->ThisRank() );
-#else
-// 
-	if (rank != _grid->ThisRank() ){
-	std::cout <<"rank "<<rank<<" _grid->ThisRank() "<<_grid->ThisRank()<< std::endl;
-//	exit(-42);
-//	assert(0);
-	}
-#endif
 
+	assert(rank == _grid->ThisRank() );
 	
 	int l_idx=generator_idx(o_idx,i_idx);
 	_generators[l_idx] = master_engine;
