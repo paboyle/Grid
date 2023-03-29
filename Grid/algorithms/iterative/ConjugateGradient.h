@@ -191,7 +191,7 @@ public:
 	std::cout << GridLogMessage << "\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
 	std::cout << GridLogMessage << "\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
 
-	std::cout << GridLogMessage << "\tMobius flop rate " << DwfFlops/ usecs<< " Gflops " <<std::endl;
+	std::cout << GridLogDebug << "\tMobius flop rate " << DwfFlops/ usecs<< " Gflops " <<std::endl;
 
         if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0);
 

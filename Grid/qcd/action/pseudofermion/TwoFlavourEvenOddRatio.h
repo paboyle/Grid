@@ -112,40 +112,27 @@ NAMESPACE_BEGIN(Grid);
         // NumOp == V
         // DenOp == M
         //
-    AUDIT();
         FermionField etaOdd (NumOp.FermionRedBlackGrid());
         FermionField etaEven(NumOp.FermionRedBlackGrid());
         FermionField tmp    (NumOp.FermionRedBlackGrid());
 
-    AUDIT();
         pickCheckerboard(Even,etaEven,eta);
-    AUDIT();
         pickCheckerboard(Odd,etaOdd,eta);
 
-    AUDIT();
         NumOp.ImportGauge(U);
-    AUDIT();
         DenOp.ImportGauge(U);
 	std::cout << " TwoFlavourRefresh:  Imported gauge "<<std::endl;
-    AUDIT();
 
         SchurDifferentiableOperator<Impl> Mpc(DenOp);
-    AUDIT();
         SchurDifferentiableOperator<Impl> Vpc(NumOp);
-    AUDIT();
 
 	std::cout << " TwoFlavourRefresh: Diff ops "<<std::endl;
-    AUDIT();
         // Odd det factors
         Mpc.MpcDag(etaOdd,PhiOdd);
-    AUDIT();
 	std::cout << " TwoFlavourRefresh: MpcDag "<<std::endl;
         tmp=Zero();
-    AUDIT();
 	std::cout << " TwoFlavourRefresh: Zero() guess "<<std::endl;
-    AUDIT();
         HeatbathSolver(Vpc,PhiOdd,tmp);
-    AUDIT();
 	std::cout << " TwoFlavourRefresh: Heatbath solver "<<std::endl;
         Vpc.Mpc(tmp,PhiOdd);            
 	std::cout << " TwoFlavourRefresh: Mpc "<<std::endl;
