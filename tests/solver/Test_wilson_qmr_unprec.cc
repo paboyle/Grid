@@ -56,9 +56,9 @@ int main (int argc, char ** argv)
   QuasiMinimalResidual<LatticeFermion> QMR(1.0e-8,10000);
   
   RealD mass=0.0;
-  WilsonFermionR Dw(Umu,*Grid,*rbGrid,mass);
+  WilsonFermionD Dw(Umu,*Grid,*rbGrid,mass);
 
-  NonHermitianLinearOperator<WilsonFermionR,LatticeFermion> NonHermOp(Dw);
+  NonHermitianLinearOperator<WilsonFermionD,LatticeFermion> NonHermOp(Dw);
   QMR(NonHermOp,src,result);
 
   Grid_finalize();

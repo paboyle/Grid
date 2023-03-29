@@ -29,6 +29,8 @@ template<class Field> class PowerMethod
       RealD vnum = real(innerProduct(src_n,tmp)); // HermOp. 
       RealD vden = norm2(src_n); 
       RealD na = vnum/vden; 
+
+      std::cout << GridLogIterative << "PowerMethod: Current approximation of largest eigenvalue " << na << std::endl;
       
       if ( (fabs(evalMaxApprox/na - 1.0) < 0.001) || (i==_MAX_ITER_EST_-1) ) { 
  	evalMaxApprox = na; 

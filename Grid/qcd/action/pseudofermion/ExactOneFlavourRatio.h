@@ -44,6 +44,10 @@ NAMESPACE_BEGIN(Grid);
   // Exact one flavour implementation of DWF determinant ratio //
   ///////////////////////////////////////////////////////////////
 
+  //Note: using mixed prec CG for the heatbath solver in this action class will not work
+  //      because the L, R operators must have their shift coefficients updated throughout the heatbath step
+  //      You will find that the heatbath solver simply won't converge.
+  //      To use mixed precision here use the ExactOneFlavourRatioMixedPrecHeatbathPseudoFermionAction variant below
   template<class Impl>
   class ExactOneFlavourRatioPseudoFermionAction : public Action<typename Impl::GaugeField>
   {
@@ -57,37 +61,60 @@ NAMESPACE_BEGIN(Grid);
       bool use_heatbath_forecasting;
       AbstractEOFAFermion<Impl>& Lop; // the basic LH operator
       AbstractEOFAFermion<Impl>& Rop; // the basic RH operator
-      SchurRedBlackDiagMooeeSolve<FermionField> SolverHB;
+      SchurRedBlackDiagMooeeSolve<FermionField> SolverHBL;
+      SchurRedBlackDiagMooeeSolve<FermionField> SolverHBR;
       SchurRedBlackDiagMooeeSolve<FermionField> SolverL;
       SchurRedBlackDiagMooeeSolve<FermionField> SolverR;
       SchurRedBlackDiagMooeeSolve<FermionField> DerivativeSolverL;
       SchurRedBlackDiagMooeeSolve<FermionField> DerivativeSolverR;
       FermionField Phi; // the pseudofermion field for this trajectory
 
+      RealD norm2_eta; //|eta|^2 where eta is the random gaussian field used to generate the pseudofermion field
+      bool initial_action; //true for the first call to S after refresh, for which the identity S = |eta|^2 holds provided the rational approx is good
     public:
 
+      //Used in the heatbath, refresh the shift coefficients of the L (LorR=0) or R (LorR=1) operator
+      virtual void heatbathRefreshShiftCoefficients(int LorR, RealD to){
+	AbstractEOFAFermion<Impl>&op = LorR == 0 ? Lop : Rop;
+	op.RefreshShiftCoefficients(to);
+      }
+
+
+      //Use the same solver for L,R in all cases
       ExactOneFlavourRatioPseudoFermionAction(AbstractEOFAFermion<Impl>& _Lop, 
 					      AbstractEOFAFermion<Impl>& _Rop,
 					      OperatorFunction<FermionField>& CG, 
 					      Params& p, 
 					      bool use_fc=false) 
-	: ExactOneFlavourRatioPseudoFermionAction(_Lop,_Rop,CG,CG,CG,CG,CG,p,use_fc) {};
-	
+	: ExactOneFlavourRatioPseudoFermionAction(_Lop,_Rop,CG,CG,CG,CG,CG,CG,p,use_fc) {};
+
+      //Use the same solver for L,R in the heatbath but different solvers elsewhere
       ExactOneFlavourRatioPseudoFermionAction(AbstractEOFAFermion<Impl>& _Lop, 
 					      AbstractEOFAFermion<Impl>& _Rop,
-					      OperatorFunction<FermionField>& HeatbathCG, 
+					      OperatorFunction<FermionField>& HeatbathCG,
+					      OperatorFunction<FermionField>& ActionCGL, OperatorFunction<FermionField>& ActionCGR, 
+					      OperatorFunction<FermionField>& DerivCGL , OperatorFunction<FermionField>& DerivCGR, 
+					      Params& p, 
+					      bool use_fc=false)
+	: ExactOneFlavourRatioPseudoFermionAction(_Lop,_Rop,HeatbathCG,HeatbathCG, ActionCGL, ActionCGR, DerivCGL,DerivCGR,p,use_fc) {};
+
+      //Use different solvers for L,R in all cases
+      ExactOneFlavourRatioPseudoFermionAction(AbstractEOFAFermion<Impl>& _Lop, 
+					      AbstractEOFAFermion<Impl>& _Rop,
+					      OperatorFunction<FermionField>& HeatbathCGL, OperatorFunction<FermionField>& HeatbathCGR,
 					      OperatorFunction<FermionField>& ActionCGL, OperatorFunction<FermionField>& ActionCGR, 
 					      OperatorFunction<FermionField>& DerivCGL , OperatorFunction<FermionField>& DerivCGR, 
 					      Params& p, 
 					      bool use_fc=false) : 
         Lop(_Lop), 
 	Rop(_Rop), 
-	SolverHB(HeatbathCG,false,true),
+	SolverHBL(HeatbathCGL,false,true), SolverHBR(HeatbathCGR,false,true),
 	SolverL(ActionCGL, false, true), SolverR(ActionCGR, false, true), 
 	DerivativeSolverL(DerivCGL, false, true), DerivativeSolverR(DerivCGR, false, true), 
 	Phi(_Lop.FermionGrid()), 
 	param(p), 
-        use_heatbath_forecasting(use_fc)
+	use_heatbath_forecasting(use_fc),
+	initial_action(false)
       {
         AlgRemez remez(param.lo, param.hi, param.precision);
 
@@ -96,6 +123,8 @@ NAMESPACE_BEGIN(Grid);
         remez.generateApprox(param.degree, 1, 2);
         PowerNegHalf.Init(remez, param.tolerance, true);
       };
+
+      const FermionField &getPhi() const{ return Phi; }
 
       virtual std::string action_name() { return "ExactOneFlavourRatioPseudoFermionAction"; }
 
@@ -117,6 +146,19 @@ NAMESPACE_BEGIN(Grid);
         else{ for(int s=0; s<Ls; ++s){ axpby_ssp_pminus(out, 0.0, in, 1.0, in, s, s); } }
       }
 
+      virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) {
+        // P(eta_o) = e^{- eta_o^dag eta_o}
+        //
+        // e^{x^2/2 sig^2} => sig^2 = 0.5.
+        // 
+        RealD scale = std::sqrt(0.5);
+
+        FermionField eta    (Lop.FermionGrid());
+        gaussian(pRNG,eta); eta = eta * scale;
+
+	refresh(U,eta);
+      }
+
       // EOFA heatbath: see Eqn. (29) of arXiv:1706.05843
       // We generate a Gaussian noise vector \eta, and then compute
       //  \Phi = M_{\rm EOFA}^{-1/2} * \eta
@@ -124,12 +166,10 @@ NAMESPACE_BEGIN(Grid);
       //
       // As a check of rational require \Phi^dag M_{EOFA} \Phi == eta^dag M^-1/2^dag M M^-1/2 eta = eta^dag eta
       //
-      virtual void refresh(const GaugeField& U, GridSerialRNG &sRNG, GridParallelRNG& pRNG)
-      {
+     void refresh(const GaugeField &U, const FermionField &eta) {
         Lop.ImportGauge(U);
         Rop.ImportGauge(U);
 
-        FermionField eta         (Lop.FermionGrid());
         FermionField CG_src      (Lop.FermionGrid());
         FermionField CG_soln     (Lop.FermionGrid());
         FermionField Forecast_src(Lop.FermionGrid());
@@ -139,11 +179,6 @@ NAMESPACE_BEGIN(Grid);
         std::vector<FermionField> prev_solns;
         if(use_heatbath_forecasting){ prev_solns.reserve(param.degree); }
         ChronoForecast<AbstractEOFAFermion<Impl>, FermionField> Forecast;
-
-        // Seed with Gaussian noise vector (var = 0.5)
-        RealD scale = std::sqrt(0.5);
-        gaussian(pRNG,eta);
-        eta = eta * scale;
 
         // \Phi = ( \alpha_{0} + \sum_{k=1}^{N_{p}} \alpha_{l} * \gamma_{l} ) * \eta
         RealD N(PowerNegHalf.norm);
@@ -160,15 +195,15 @@ NAMESPACE_BEGIN(Grid);
         tmp[1] = Zero();
         for(int k=0; k<param.degree; ++k){
           gamma_l = 1.0 / ( 1.0 + PowerNegHalf.poles[k] );
-          Lop.RefreshShiftCoefficients(-gamma_l);
+          heatbathRefreshShiftCoefficients(0, -gamma_l);
           if(use_heatbath_forecasting){ // Forecast CG guess using solutions from previous poles
             Lop.Mdag(CG_src, Forecast_src);
             CG_soln = Forecast(Lop, Forecast_src, prev_solns);
-            SolverHB(Lop, CG_src, CG_soln);
+            SolverHBL(Lop, CG_src, CG_soln);
             prev_solns.push_back(CG_soln);
           } else {
             CG_soln = Zero(); // Just use zero as the initial guess
-            SolverHB(Lop, CG_src, CG_soln);
+	    SolverHBL(Lop, CG_src, CG_soln);
           }
           Lop.Dtilde(CG_soln, tmp[0]); // We actually solved Cayley preconditioned system: transform back
           tmp[1] = tmp[1] + ( PowerNegHalf.residues[k]*gamma_l*gamma_l*Lop.k ) * tmp[0];
@@ -187,15 +222,15 @@ NAMESPACE_BEGIN(Grid);
         if(use_heatbath_forecasting){ prev_solns.clear(); } // empirically, LH solns don't help for RH solves
         for(int k=0; k<param.degree; ++k){
           gamma_l = 1.0 / ( 1.0 + PowerNegHalf.poles[k] );
-          Rop.RefreshShiftCoefficients(-gamma_l*PowerNegHalf.poles[k]);
+	  heatbathRefreshShiftCoefficients(1, -gamma_l*PowerNegHalf.poles[k]);
           if(use_heatbath_forecasting){
             Rop.Mdag(CG_src, Forecast_src);
             CG_soln = Forecast(Rop, Forecast_src, prev_solns);
-            SolverHB(Rop, CG_src, CG_soln);
+            SolverHBR(Rop, CG_src, CG_soln);
             prev_solns.push_back(CG_soln);
           } else {
             CG_soln = Zero();
-            SolverHB(Rop, CG_src, CG_soln);
+            SolverHBR(Rop, CG_src, CG_soln);
           }
           Rop.Dtilde(CG_soln, tmp[0]); // We actually solved Cayley preconditioned system: transform back
           tmp[1] = tmp[1] - ( PowerNegHalf.residues[k]*gamma_l*gamma_l*Rop.k ) * tmp[0];
@@ -205,48 +240,116 @@ NAMESPACE_BEGIN(Grid);
         Phi = Phi + tmp[1];
 
         // Reset shift coefficients for energy and force evals
-        Lop.RefreshShiftCoefficients(0.0);
-        Rop.RefreshShiftCoefficients(-1.0);
+	heatbathRefreshShiftCoefficients(0, 0.0);
+	heatbathRefreshShiftCoefficients(1, -1.0);
+
+	//Mark that the next call to S is the first after refresh
+	initial_action = true;
+
 
 	// Bounds check
 	RealD EtaDagEta = norm2(eta);
+	norm2_eta = EtaDagEta;
+
 	//	RealD PhiDagMPhi= norm2(eta);
 
       };
 
-      void Meofa(const GaugeField& U,const FermionField &phi, FermionField & Mphi) 
+      void Meofa(const GaugeField& U,const FermionField &in, FermionField & out) 
       {
-#if 0
         Lop.ImportGauge(U);
         Rop.ImportGauge(U);
 
-        FermionField spProj_Phi(Lop.FermionGrid());
-	FermionField mPhi(Lop.FermionGrid());
+        FermionField spProj_in(Lop.FermionGrid());
         std::vector<FermionField> tmp(2, Lop.FermionGrid());
-	mPhi = phi;
+	out = in;
 	
         // LH term: S = S - k <\Phi| P_{-} \Omega_{-}^{\dagger} H(mf)^{-1} \Omega_{-} P_{-} |\Phi>
-        spProj(Phi, spProj_Phi, -1, Lop.Ls);
-        Lop.Omega(spProj_Phi, tmp[0], -1, 0);
+        spProj(in, spProj_in, -1, Lop.Ls);
+        Lop.Omega(spProj_in, tmp[0], -1, 0);
         G5R5(tmp[1], tmp[0]);
         tmp[0] = Zero();
         SolverL(Lop, tmp[1], tmp[0]);
         Lop.Dtilde(tmp[0], tmp[1]); // We actually solved Cayley preconditioned system: transform back
         Lop.Omega(tmp[1], tmp[0], -1, 1);
-	mPhi = mPhi -  Lop.k * innerProduct(spProj_Phi, tmp[0]).real();
+	spProj(tmp[0], tmp[1], -1, Lop.Ls);
+
+	out = out -  Lop.k * tmp[1];
 
         // RH term: S = S + k <\Phi| P_{+} \Omega_{+}^{\dagger} ( H(mb)
-        //               - \Delta_{+}(mf,mb) P_{+} )^{-1} \Omega_{-} P_{-} |\Phi>
-        spProj(Phi, spProj_Phi, 1, Rop.Ls);
-        Rop.Omega(spProj_Phi, tmp[0], 1, 0);
+        //               - \Delta_{+}(mf,mb) P_{+} )^{-1} \Omega_{+} P_{+} |\Phi>
+        spProj(in, spProj_in, 1, Rop.Ls);
+        Rop.Omega(spProj_in, tmp[0], 1, 0);
         G5R5(tmp[1], tmp[0]);
         tmp[0] = Zero();
         SolverR(Rop, tmp[1], tmp[0]);
         Rop.Dtilde(tmp[0], tmp[1]);
         Rop.Omega(tmp[1], tmp[0], 1, 1);
-        action += Rop.k * innerProduct(spProj_Phi, tmp[0]).real();
-#endif
+	spProj(tmp[0], tmp[1], 1, Rop.Ls);
+
+        out = out + Rop.k * tmp[1];
       }
+
+      //Due to the structure of EOFA, it is no more expensive to compute the inverse of Meofa
+      //To ensure correctness we can simply reuse the heatbath code but use the rational approx
+      //f(x) = 1/x   which corresponds to alpha_0=0,  alpha_1=1,  beta_1=0 => gamma_1=1
+      void MeofaInv(const GaugeField &U, const FermionField &in, FermionField &out) {
+        Lop.ImportGauge(U);
+        Rop.ImportGauge(U);
+
+        FermionField CG_src      (Lop.FermionGrid());
+        FermionField CG_soln     (Lop.FermionGrid());
+        std::vector<FermionField> tmp(2, Lop.FermionGrid());
+
+        // \Phi = ( \alpha_{0} + \sum_{k=1}^{N_{p}} \alpha_{l} * \gamma_{l} ) * \eta
+	// = 1 * \eta
+        out = in;
+
+        // LH terms:
+        // \Phi = \Phi + k \sum_{k=1}^{N_{p}} P_{-} \Omega_{-}^{\dagger} ( H(mf)
+        //          - \gamma_{l} \Delta_{-}(mf,mb) P_{-} )^{-1} \Omega_{-} P_{-} \eta
+        spProj(in, tmp[0], -1, Lop.Ls);
+        Lop.Omega(tmp[0], tmp[1], -1, 0);
+        G5R5(CG_src, tmp[1]);
+        {
+          heatbathRefreshShiftCoefficients(0, -1.); //-gamma_1 = -1.
+
+	  CG_soln = Zero(); // Just use zero as the initial guess
+	  SolverHBL(Lop, CG_src, CG_soln);
+
+          Lop.Dtilde(CG_soln, tmp[0]); // We actually solved Cayley preconditioned system: transform back
+          tmp[1] = Lop.k * tmp[0];
+        }
+        Lop.Omega(tmp[1], tmp[0], -1, 1);
+        spProj(tmp[0], tmp[1], -1, Lop.Ls);
+        out = out + tmp[1];
+
+        // RH terms:
+        // \Phi = \Phi - k \sum_{k=1}^{N_{p}} P_{+} \Omega_{+}^{\dagger} ( H(mb)
+        //          - \beta_l\gamma_{l} \Delta_{+}(mf,mb) P_{+} )^{-1} \Omega_{+} P_{+} \eta
+        spProj(in, tmp[0], 1, Rop.Ls);
+        Rop.Omega(tmp[0], tmp[1], 1, 0);
+        G5R5(CG_src, tmp[1]);
+        {
+	  heatbathRefreshShiftCoefficients(1, 0.); //-gamma_1 * beta_1 = 0
+
+	  CG_soln = Zero();
+	  SolverHBR(Rop, CG_src, CG_soln);
+
+          Rop.Dtilde(CG_soln, tmp[0]); // We actually solved Cayley preconditioned system: transform back
+          tmp[1] = - Rop.k * tmp[0];
+        }
+        Rop.Omega(tmp[1], tmp[0], 1, 1);
+        spProj(tmp[0], tmp[1], 1, Rop.Ls);
+        out = out + tmp[1];
+
+        // Reset shift coefficients for energy and force evals
+	heatbathRefreshShiftCoefficients(0, 0.0);
+	heatbathRefreshShiftCoefficients(1, -1.0);
+      };
+
+
+
 
       // EOFA action: see Eqn. (10) of arXiv:1706.05843
       virtual RealD S(const GaugeField& U)
@@ -271,7 +374,7 @@ NAMESPACE_BEGIN(Grid);
         action -= Lop.k * innerProduct(spProj_Phi, tmp[0]).real();
 
         // RH term: S = S + k <\Phi| P_{+} \Omega_{+}^{\dagger} ( H(mb)
-        //               - \Delta_{+}(mf,mb) P_{+} )^{-1} \Omega_{-} P_{-} |\Phi>
+        //               - \Delta_{+}(mf,mb) P_{+} )^{-1} \Omega_{+} P_{+} |\Phi>
         spProj(Phi, spProj_Phi, 1, Rop.Ls);
         Rop.Omega(spProj_Phi, tmp[0], 1, 0);
         G5R5(tmp[1], tmp[0]);
@@ -280,6 +383,26 @@ NAMESPACE_BEGIN(Grid);
         Rop.Dtilde(tmp[0], tmp[1]);
         Rop.Omega(tmp[1], tmp[0], 1, 1);
         action += Rop.k * innerProduct(spProj_Phi, tmp[0]).real();
+
+	if(initial_action){
+	  //For the first call to S after refresh,  S = |eta|^2. We can use this to ensure the rational approx is good
+	  RealD diff = action - norm2_eta;
+
+	  //S_init = eta^dag M^{-1/2} M M^{-1/2} eta
+	  //S_init - eta^dag eta =  eta^dag ( M^{-1/2} M M^{-1/2} - 1 ) eta
+
+	  //If approximate solution
+	  //S_init - eta^dag eta =  eta^dag ( [M^{-1/2}+\delta M^{-1/2}] M [M^{-1/2}+\delta M^{-1/2}] - 1 ) eta
+	  //               \approx  eta^dag ( \delta M^{-1/2} M^{1/2} + M^{1/2}\delta M^{-1/2} ) eta
+	  // We divide out |eta|^2 to remove source scaling but the tolerance on this check should still be somewhat higher than the actual approx tolerance
+	  RealD test = fabs(diff)/norm2_eta; //test the quality of the rational approx
+
+	  std::cout << GridLogMessage << action_name() << " initial action " << action << " expect " << norm2_eta << "; diff " << diff << std::endl;
+	  std::cout << GridLogMessage << action_name() << "[ eta^dag ( M^{-1/2} M M^{-1/2} - 1 ) eta ]/|eta^2| = " << test << "  expect 0 (tol " << param.BoundsCheckTol << ")" << std::endl;
+
+	  assert( ( test < param.BoundsCheckTol ) && " Initial action check failed" );
+	  initial_action = false;
+	}
 
         return action;
       };
@@ -328,6 +451,40 @@ NAMESPACE_BEGIN(Grid);
         dSdU = dSdU + Rop.k * force;
       };
   };
+
+  template<class ImplD, class ImplF>
+  class ExactOneFlavourRatioMixedPrecHeatbathPseudoFermionAction : public ExactOneFlavourRatioPseudoFermionAction<ImplD>{
+  public:
+    INHERIT_IMPL_TYPES(ImplD);
+    typedef OneFlavourRationalParams Params;
+
+  private:
+    AbstractEOFAFermion<ImplF>& LopF; // the basic LH operator
+    AbstractEOFAFermion<ImplF>& RopF; // the basic RH operator
+
+  public:
+    
+    virtual std::string action_name() { return "ExactOneFlavourRatioMixedPrecHeatbathPseudoFermionAction"; }
+    
+    //Used in the heatbath, refresh the shift coefficients of the L (LorR=0) or R (LorR=1) operator
+    virtual void heatbathRefreshShiftCoefficients(int LorR, RealD to){
+      AbstractEOFAFermion<ImplF> &op = LorR == 0 ? LopF : RopF;
+      op.RefreshShiftCoefficients(to);
+      this->ExactOneFlavourRatioPseudoFermionAction<ImplD>::heatbathRefreshShiftCoefficients(LorR,to);
+    }
+    
+    ExactOneFlavourRatioMixedPrecHeatbathPseudoFermionAction(AbstractEOFAFermion<ImplF>& _LopF, 
+							     AbstractEOFAFermion<ImplF>& _RopF,
+							     AbstractEOFAFermion<ImplD>& _LopD, 
+							     AbstractEOFAFermion<ImplD>& _RopD,
+							     OperatorFunction<FermionField>& HeatbathCGL, OperatorFunction<FermionField>& HeatbathCGR,
+							     OperatorFunction<FermionField>& ActionCGL, OperatorFunction<FermionField>& ActionCGR, 
+							     OperatorFunction<FermionField>& DerivCGL , OperatorFunction<FermionField>& DerivCGR, 
+							     Params& p, 
+							     bool use_fc=false) : 
+    LopF(_LopF), RopF(_RopF), ExactOneFlavourRatioPseudoFermionAction<ImplD>(_LopD, _RopD, HeatbathCGL, HeatbathCGR, ActionCGL, ActionCGR, DerivCGL, DerivCGR, p, use_fc){}
+  };
+
 
 NAMESPACE_END(Grid);
 

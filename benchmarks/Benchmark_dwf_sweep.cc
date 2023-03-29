@@ -168,7 +168,7 @@ void benchDw(std::vector<int> & latt4, int Ls, int threads,int report )
   RealD M5  =1.8;
   RealD NP = UGrid->_Nprocessors;
 
-  DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionD Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   
   double t0=usecond();
   Dw.Dhop(src,result,0);

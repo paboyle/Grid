@@ -54,8 +54,6 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi_i, const FermionFi
   auto pupper = &upper[0];
   auto plower = &lower[0];
   // Flops = 6.0*(Nc*Ns) *Ls*vol
-  this->M5Dcalls++;
-  this->M5Dtime -= usecond();
   
   auto nloop=grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
@@ -71,7 +69,6 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi_i, const FermionFi
     }
   });
 
-  this->M5Dtime += usecond();
 }
 
 template<class Impl>
@@ -91,8 +88,6 @@ void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi_i, const Fermio
   auto plower = &lower[0];
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
-  this->M5Dcalls++;
-  this->M5Dtime -= usecond();
 
   auto nloop=grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
@@ -108,7 +103,6 @@ void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi_i, const Fermio
     }
   });
 
-  this->M5Dtime += usecond();
 }
 
 template<class Impl>
@@ -127,8 +121,6 @@ void DomainWallEOFAFermion<Impl>::MooeeInv(const FermionField& psi_i, FermionFie
   auto pleem = & this->leem[0];
   auto pueem = & this->ueem[0];
 
-  this->MooeeInvCalls++;
-  this->MooeeInvTime -= usecond();
   uint64_t nloop=grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
     uint64_t ss=sss*Ls;
@@ -164,7 +156,6 @@ void DomainWallEOFAFermion<Impl>::MooeeInv(const FermionField& psi_i, FermionFie
       coalescedWrite(chi[ss+s],res);
     }
   });
-  this->MooeeInvTime += usecond();
 }
 
 template<class Impl>
@@ -185,8 +176,6 @@ void DomainWallEOFAFermion<Impl>::MooeeInvDag(const FermionField& psi_i, Fermion
 
   assert(psi.Checkerboard() == psi.Checkerboard());
 
-  this->MooeeInvCalls++;
-  this->MooeeInvTime -= usecond();
   auto nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
     uint64_t ss=sss*Ls;
@@ -223,7 +212,6 @@ void DomainWallEOFAFermion<Impl>::MooeeInvDag(const FermionField& psi_i, Fermion
     }
   });
 
-  this->MooeeInvTime += usecond();
 }
 
 NAMESPACE_END(Grid);

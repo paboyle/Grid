@@ -34,9 +34,9 @@ using namespace Grid;
 
 int main (int argc, char ** argv)
 {
-  typedef typename DomainWallFermionR::FermionField FermionField; 
-  typedef typename DomainWallFermionR::ComplexField ComplexField; 
-  typename DomainWallFermionR::ImplParams params; 
+  typedef typename DomainWallFermionD::FermionField FermionField; 
+  typedef typename DomainWallFermionD::ComplexField ComplexField; 
+  typename DomainWallFermionD::ImplParams params; 
 
   const int Ls=4;
 
@@ -124,15 +124,15 @@ int main (int argc, char ** argv)
   ///////////////////////////////////////////////////////////////
   RealD mass=0.01;
   RealD M5=1.8;
-  DomainWallFermionR Dchk(Umu,*FGrid,*FrbGrid,*UGrid,*rbGrid,mass,M5);
-  DomainWallFermionR Ddwf(s_Umu,*SFGrid,*SFrbGrid,*SGrid,*SrbGrid,mass,M5);
+  DomainWallFermionD Dchk(Umu,*FGrid,*FrbGrid,*UGrid,*rbGrid,mass,M5);
+  DomainWallFermionD Ddwf(s_Umu,*SFGrid,*SFrbGrid,*SGrid,*SrbGrid,mass,M5);
 
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   std::cout << GridLogMessage << " Calling DWF CG "<<std::endl;
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
 
-  MdagMLinearOperator<DomainWallFermionR,FermionField> HermOp(Ddwf);
-  MdagMLinearOperator<DomainWallFermionR,FermionField> HermOpCk(Dchk);
+  MdagMLinearOperator<DomainWallFermionD,FermionField> HermOp(Ddwf);
+  MdagMLinearOperator<DomainWallFermionD,FermionField> HermOpCk(Dchk);
   ConjugateGradient<FermionField> CG((1.0e-8/(me+1)),10000);
   s_res = Zero();
   CG(HermOp,s_src,s_res);

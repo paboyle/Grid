@@ -80,16 +80,16 @@ int main(int argc, char **argv) {
   // Note: We do chiral doubling, so actually only nbasis/2 full basis vectors are used
   const int nbasis = 40;
 
-  WilsonCloverFermionR Dwc(Umu, *FGrid, *FrbGrid, mass, csw_r, csw_t);
+  WilsonCloverFermionD Dwc(Umu, *FGrid, *FrbGrid, mass, csw_r, csw_t);
 
-  MdagMLinearOperator<WilsonCloverFermionR, LatticeFermion> MdagMOpDwc(Dwc);
+  MdagMLinearOperator<WilsonCloverFermionD, LatticeFermion> MdagMOpDwc(Dwc);
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
   std::cout << GridLogMessage << "Testing Multigrid for Wilson Clover" << std::endl;
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
   TrivialPrecon<LatticeFermion> TrivialPrecon;
-  auto MGPreconDwc = createMGInstance<vSpinColourVector, vTComplex, nbasis, WilsonCloverFermionR>(mgParams, levelInfo, Dwc, Dwc);
+  auto MGPreconDwc = createMGInstance<vSpinColourVector, vTComplex, nbasis, WilsonCloverFermionD>(mgParams, levelInfo, Dwc, Dwc);
 
   MGPreconDwc->setup();
 

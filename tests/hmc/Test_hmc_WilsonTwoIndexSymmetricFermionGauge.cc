@@ -29,6 +29,7 @@ directory
 /*  END LEGAL */
 #include "Grid/Grid.h"
 
+#ifdef ENABLE_FERMION_REPS
 int main(int argc, char **argv) {
   using namespace Grid;
    ;
@@ -45,7 +46,7 @@ int main(int argc, char **argv) {
   typedef GenericHMCRunnerHirep<TheRepresentations, MinimumNorm2> HMCWrapper;
 
   typedef WilsonTwoIndexSymmetricImplR FermionImplPolicy; // gauge field implemetation for the pseudofermions
-  typedef WilsonTwoIndexSymmetricFermionR FermionAction; // type of lattice fermions (Wilson, DW, ...)
+  typedef WilsonTwoIndexSymmetricFermionD FermionAction; // type of lattice fermions (Wilson, DW, ...)
   typedef typename FermionAction::FermionField FermionField;
 
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -127,3 +128,6 @@ int main(int argc, char **argv) {
 } // main
 
 
+#else
+int main(int argc, char **argv){}
+#endif

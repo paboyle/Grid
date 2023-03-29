@@ -250,7 +250,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   RealD mass=0.00078;
   RealD M5=1.8;
-  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis>              Subspace;
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>          CoarseOperator;
@@ -259,7 +259,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Calling Aggregation class to build subspace" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermDefOp(Ddwf);
+  MdagMLinearOperator<DomainWallFermionD,LatticeFermion> HermDefOp(Ddwf);
 
   Subspace Aggregates(Coarse5d,FGrid,0);
 
@@ -292,7 +292,7 @@ int main (int argc, char ** argv)
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>    Level1Op;
   typedef CoarsenedMatrix<siteVector,iScalar<vTComplex>,nbasisc> Level2Op;
 
-  Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> HermIndefOp(Ddwf);
+  Gamma5R5HermitianLinearOperator<DomainWallFermionD,LatticeFermion> HermIndefOp(Ddwf);
 
   
   GridRedBlackCartesian * Coarse4dRB = SpaceTimeGrid::makeFourDimRedBlackGrid(Coarse4d);
@@ -391,18 +391,18 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Building 3 level Multigrid            "<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  //  typedef MultiGridPreconditioner<vSpinColourVector,  vTComplex,nbasis, DomainWallFermionR,DeflatedGuesser<CoarseVector> , NormalEquations<CoarseVector> >   TwoLevelMG;
-  typedef MultiGridPreconditioner<vSpinColourVector,  vTComplex,nbasis, DomainWallFermionR,ZeroGuesser<CoarseVector> , NormalEquations<CoarseVector> >   TwoLevelMG;
+  //  typedef MultiGridPreconditioner<vSpinColourVector,  vTComplex,nbasis, DomainWallFermionD,DeflatedGuesser<CoarseVector> , NormalEquations<CoarseVector> >   TwoLevelMG;
+  typedef MultiGridPreconditioner<vSpinColourVector,  vTComplex,nbasis, DomainWallFermionD,ZeroGuesser<CoarseVector> , NormalEquations<CoarseVector> >   TwoLevelMG;
   typedef MultiGridPreconditioner<siteVector,iScalar<vTComplex>,nbasisc,Level1Op, DeflatedGuesser<CoarseCoarseVector>, NormalEquations<CoarseCoarseVector> > CoarseMG;
-  typedef MultiGridPreconditioner<vSpinColourVector,  vTComplex,nbasis, DomainWallFermionR,ZeroGuesser<CoarseVector>, LinearFunction<CoarseVector> >     ThreeLevelMG;
+  typedef MultiGridPreconditioner<vSpinColourVector,  vTComplex,nbasis, DomainWallFermionD,ZeroGuesser<CoarseVector>, LinearFunction<CoarseVector> >     ThreeLevelMG;
 
-  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother(0.25,60.0,12,HermIndefOp,Ddwf);
+  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother(0.25,60.0,12,HermIndefOp,Ddwf);
   /*
   // MultiGrid preconditioner acting on the coarse space <-> coarsecoarse space
   ChebyshevSmoother<CoarseVector,  Level1Op >        CoarseSmoother(0.1,15.0,3,L1LinOp,LDOp);
 
   //  MirsSmoother<CoarseVector,  Level1Op >        CoarseCGSmoother(0.1,0.1,4,L1LinOp,LDOp);
-  //  MirsSmoother<LatticeFermion,DomainWallFermionR> FineCGSmoother(0.0,0.01,8,HermIndefOp,Ddwf);
+  //  MirsSmoother<LatticeFermion,DomainWallFermionD> FineCGSmoother(0.0,0.01,8,HermIndefOp,Ddwf);
 
   CoarseMG Level2Precon (CoarseAggregates, L2Op,
 			 L1LinOp,LDOp,
@@ -463,7 +463,7 @@ int main (int argc, char ** argv)
     LatticeFermion result_o(FrbGrid);
     pickCheckerboard(Odd,src_o,src);
     result_o=Zero();
-    SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOpEO(Ddwf);
+    SchurDiagMooeeOperator<DomainWallFermionD,LatticeFermion> HermOpEO(Ddwf);
     //    pCG(HermOpEO,src_o,result_o);
   
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;

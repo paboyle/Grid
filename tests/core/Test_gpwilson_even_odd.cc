@@ -52,7 +52,7 @@ int main (int argc, char ** argv)
   //  pRNG.SeedFixedIntegers(seeds);
   pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
-  typedef typename GparityWilsonFermionR::FermionField FermionField;
+  typedef typename GparityWilsonFermionD::FermionField FermionField;
 
   FermionField src   (&Grid); random(pRNG,src);
   FermionField phi   (&Grid); random(pRNG,phi);
@@ -80,10 +80,10 @@ int main (int argc, char ** argv)
 
   RealD mass=0.1;
 
-  GparityWilsonFermionR::ImplParams params;
+  GparityWilsonFermionD::ImplParams params;
   std::vector<int> twists(Nd,0);  twists[1] = 1;
   params.twists = twists;
-  GparityWilsonFermionR Dw(Umu,Grid,RBGrid,mass,params);
+  GparityWilsonFermionD Dw(Umu,Grid,RBGrid,mass,params);
 
   FermionField src_e   (&RBGrid);
   FermionField src_o   (&RBGrid);
@@ -199,7 +199,7 @@ int main (int argc, char ** argv)
   pickCheckerboard(Even,phi_e,phi);
   pickCheckerboard(Odd ,phi_o,phi);
 
-  SchurDiagMooeeOperator<GparityWilsonFermionR,FermionField> HermOpEO(Dw);
+  SchurDiagMooeeOperator<GparityWilsonFermionD,FermionField> HermOpEO(Dw);
   HermOpEO.MpcDagMpc(chi_e,dchi_e);
   HermOpEO.MpcDagMpc(chi_o,dchi_o);
 

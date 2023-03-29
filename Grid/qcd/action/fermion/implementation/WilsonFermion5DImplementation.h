@@ -60,8 +60,13 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   UmuOdd (_FourDimRedBlackGrid),
   Lebesgue(_FourDimGrid),
   LebesgueEvenOdd(_FourDimRedBlackGrid),
-  _tmp(&FiveDimRedBlackGrid)
+  _tmp(&FiveDimRedBlackGrid),
+  Dirichlet(0)
 {
+  Stencil.lo     = &Lebesgue;
+  StencilEven.lo = &LebesgueEvenOdd;
+  StencilOdd.lo  = &LebesgueEvenOdd;
+  
   // some assertions
   assert(FiveDimGrid._ndimension==5);
   assert(FourDimGrid._ndimension==4);
@@ -89,6 +94,19 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
     assert(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
     assert(FiveDimRedBlackGrid._simd_layout[d+1]==FourDimGrid._simd_layout[d]);
     assert(FourDimRedBlackGrid._simd_layout[d]  ==FourDimGrid._simd_layout[d]);
+  }
+
+  if ( p.dirichlet.size() == Nd+1) {
+    Coordinate block = p.dirichlet;
+    if ( block[0] || block[1] || block[2] || block[3] || block[4] ){
+      Dirichlet = 1;
+      std::cout << GridLogMessage << " WilsonFermion: non-trivial Dirichlet condition "<< block << std::endl;
+      std::cout << GridLogMessage << " WilsonFermion: partial Dirichlet "<< p.partialDirichlet << std::endl;
+      Block = block;
+    }
+  } else {
+    Coordinate block(Nd+1,0);
+    Block = block;
   }
 
   if (Impl::LsVectorised) { 
@@ -125,99 +143,38 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   StencilEven.BuildSurfaceList(LLs,vol4);
    StencilOdd.BuildSurfaceList(LLs,vol4);
 
-   //  std::cout << GridLogMessage << " SurfaceLists "<< Stencil.surface_list.size()
-   //                       <<" " << StencilEven.surface_list.size()<<std::endl;
-
 }
-     
-template<class Impl>
-void WilsonFermion5D<Impl>::Report(void)
-{
-  RealD NP     = _FourDimGrid->_Nprocessors;
-  RealD NN     = _FourDimGrid->NodeCount();
-  RealD volume = Ls;  
-  Coordinate latt = _FourDimGrid->GlobalDimensions();
-  for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
-
-  if ( DhopCalls > 0 ) {
-    std::cout << GridLogMessage << "#### Dhop calls report " << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D Number of DhopEO Calls   : " << DhopCalls   << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D TotalTime   /Calls        : " << DhopTotalTime   / DhopCalls << " us" << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D CommTime    /Calls        : " << DhopCommTime    / DhopCalls << " us" << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D FaceTime    /Calls        : " << DhopFaceTime    / DhopCalls << " us" << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D ComputeTime1/Calls        : " << DhopComputeTime / DhopCalls << " us" << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D ComputeTime2/Calls        : " << DhopComputeTime2/ DhopCalls << " us" << std::endl;
-
-    // Average the compute time
-    _FourDimGrid->GlobalSum(DhopComputeTime);
-    DhopComputeTime/=NP;
-    RealD mflops = 1344*volume*DhopCalls/DhopComputeTime/2; // 2 for red black counting
-    std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per node       : " << mflops/NN << std::endl;
-
-    RealD Fullmflops = 1344*volume*DhopCalls/(DhopTotalTime)/2; // 2 for red black counting
-    std::cout << GridLogMessage << "Average mflops/s per call (full)         : " << Fullmflops << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per rank (full): " << Fullmflops/NP << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per node (full): " << Fullmflops/NN << std::endl;
-
-   }
-
-  if ( DerivCalls > 0 ) {
-    std::cout << GridLogMessage << "#### Deriv calls report "<< std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D Number of Deriv Calls    : " <<DerivCalls <<std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D CommTime/Calls           : " <<DerivCommTime/DerivCalls<<" us" <<std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D ComputeTime/Calls        : " <<DerivComputeTime/DerivCalls<<" us" <<std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D Dhop ComputeTime/Calls   : " <<DerivDhopComputeTime/DerivCalls<<" us" <<std::endl;
-    
-    RealD mflops = 144*volume*DerivCalls/DerivDhopComputeTime;
-    std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per node       : " << mflops/NP << std::endl;
-
-    RealD Fullmflops = 144*volume*DerivCalls/(DerivDhopComputeTime+DerivCommTime)/2; // 2 for red black counting
-    std::cout << GridLogMessage << "Average mflops/s per call (full)         : " << Fullmflops << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per node (full): " << Fullmflops/NP << std::endl;  }
-
-  if (DerivCalls > 0 || DhopCalls > 0){
-    std::cout << GridLogMessage << "WilsonFermion5D Stencil"    <<std::endl;  Stencil.Report();
-    std::cout << GridLogMessage << "WilsonFermion5D StencilEven"<<std::endl;  StencilEven.Report();
-    std::cout << GridLogMessage << "WilsonFermion5D StencilOdd" <<std::endl;  StencilOdd.Report();
-  }
-  if ( DhopCalls > 0){
-    std::cout << GridLogMessage << "WilsonFermion5D Stencil     Reporti()"    <<std::endl;  Stencil.Reporti(DhopCalls);
-    std::cout << GridLogMessage << "WilsonFermion5D StencilEven Reporti()"<<std::endl;  StencilEven.Reporti(DhopCalls);
-    std::cout << GridLogMessage << "WilsonFermion5D StencilOdd  Reporti()" <<std::endl;  StencilOdd.Reporti(DhopCalls);
-  }
-}
-
-template<class Impl>
-void WilsonFermion5D<Impl>::ZeroCounters(void) {
-  DhopCalls       = 0;
-  DhopCommTime    = 0;
-  DhopComputeTime = 0;
-  DhopComputeTime2= 0;
-  DhopFaceTime    = 0;
-  DhopTotalTime   = 0;
-
-  DerivCalls       = 0;
-  DerivCommTime    = 0;
-  DerivComputeTime = 0;
-  DerivDhopComputeTime = 0;
-
-  Stencil.ZeroCounters();
-  StencilEven.ZeroCounters();
-  StencilOdd.ZeroCounters();
-  Stencil.ZeroCountersi();
-  StencilEven.ZeroCountersi();
-  StencilOdd.ZeroCountersi();
-}
-
 
 template<class Impl>
 void WilsonFermion5D<Impl>::ImportGauge(const GaugeField &_Umu)
 {
   GaugeField HUmu(_Umu.Grid());
   HUmu = _Umu*(-0.5);
+  if ( Dirichlet ) {
+
+    if ( this->Params.partialDirichlet ) {
+      std::cout << GridLogMessage << " partialDirichlet BCs " <<Block<<std::endl;
+    } else {
+      std::cout << GridLogMessage << " FULL Dirichlet BCs " <<Block<<std::endl;
+    }
+    
+    std:: cout << GridLogMessage << "Checking block size multiple of rank boundaries for Dirichlet"<<std::endl;
+    for(int d=0;d<Nd;d++) {
+      int GaugeBlock = Block[d+1];
+      int ldim=GaugeGrid()->LocalDimensions()[d];
+      if (GaugeBlock) assert( (GaugeBlock%ldim)==0);
+    }
+
+    if (!this->Params.partialDirichlet) {
+      std::cout << GridLogMessage << " Dirichlet filtering gauge field BCs block " <<Block<<std::endl;
+      Coordinate GaugeBlock(Nd);
+      for(int d=0;d<Nd;d++) GaugeBlock[d] = Block[d+1];
+      DirichletFilter<GaugeField> Filter(GaugeBlock);
+      Filter.applyFilter(HUmu);
+    } else {
+      std::cout << GridLogMessage << " Dirichlet "<< Dirichlet << " NOT filtered gauge field" <<std::endl;
+    }
+  }
   Impl::DoubleStore(GaugeGrid(),Umu,HUmu);
   pickCheckerboard(Even,UmuEven,Umu);
   pickCheckerboard(Odd ,UmuOdd,Umu);
@@ -259,7 +216,6 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
 					  const FermionField &B,
 					  int dag)
 {
-  DerivCalls++;
   assert((dag==DaggerNo) ||(dag==DaggerYes));
 
   conformable(st.Grid(),A.Grid());
@@ -270,15 +226,12 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
   FermionField Btilde(B.Grid());
   FermionField Atilde(B.Grid());
 
-  DerivCommTime-=usecond();
   st.HaloExchange(B,compressor);
-  DerivCommTime+=usecond();
 
   Atilde=A;
   int LLs = B.Grid()->_rdimensions[0];
 
 
-  DerivComputeTime-=usecond();
   for (int mu = 0; mu < Nd; mu++) {
     ////////////////////////////////////////////////////////////////////////
     // Flip gamma if dag
@@ -290,8 +243,6 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
     // Call the single hop
     ////////////////////////
 
-    DerivDhopComputeTime -= usecond();
-
     int Usites = U.Grid()->oSites();
 
     Kernels::DhopDirKernel(st, U, st.CommBuf(), Ls, Usites, B, Btilde, mu,gamma);
@@ -299,10 +250,8 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
     ////////////////////////////
     // spin trace outer product
     ////////////////////////////
-    DerivDhopComputeTime += usecond();
     Impl::InsertForce5D(mat, Btilde, Atilde, mu);
   }
-  DerivComputeTime += usecond();
 }
 
 template<class Impl>
@@ -360,12 +309,10 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
                                          DoubledGaugeField & U,
                                          const FermionField &in, FermionField &out,int dag)
 {
-  DhopTotalTime-=usecond();
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute )
     DhopInternalOverlappedComms(st,lo,U,in,out,dag);
   else 
     DhopInternalSerialComms(st,lo,U,in,out,dag);
-  DhopTotalTime+=usecond();
 }
 
 
@@ -374,6 +321,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 							DoubledGaugeField & U,
 							const FermionField &in, FermionField &out,int dag)
 {
+  GRID_TRACE("DhopInternalOverlappedComms");
   Compressor compressor(dag);
 
   int LLs = in.Grid()->_rdimensions[0];
@@ -382,53 +330,58 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   /////////////////////////////
   // Start comms  // Gather intranode and extra node differentiated??
   /////////////////////////////
-  DhopFaceTime-=usecond();
-  st.HaloExchangeOptGather(in,compressor);
-  DhopFaceTime+=usecond();
-
-  DhopCommTime -=usecond();
+  {
+    GRID_TRACE("Gather");
+    st.HaloExchangeOptGather(in,compressor);
+    accelerator_barrier();
+  }
+  
   std::vector<std::vector<CommsRequest_t> > requests;
+  auto id=traceStart("Communicate overlapped");
   st.CommunicateBegin(requests);
 
   /////////////////////////////
   // Overlap with comms
   /////////////////////////////
-  DhopFaceTime-=usecond();
-  st.CommsMergeSHM(compressor);// Could do this inside parallel region overlapped with comms
-  DhopFaceTime+=usecond();
+  {
+    GRID_TRACE("MergeSHM");
+    st.CommsMergeSHM(compressor);// Could do this inside parallel region overlapped with comms
+  }
       
   /////////////////////////////
   // do the compute interior
   /////////////////////////////
   int Opt = WilsonKernelsStatic::Opt; // Why pass this. Kernels should know
-  DhopComputeTime-=usecond();
   if (dag == DaggerYes) {
+    GRID_TRACE("DhopDagInterior");
     Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,1,0);
   } else {
+    GRID_TRACE("DhopInterior");
     Kernels::DhopKernel   (Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,1,0);
   }
-  DhopComputeTime+=usecond();
 
   /////////////////////////////
   // Complete comms
   /////////////////////////////
   st.CommunicateComplete(requests);
-  DhopCommTime   +=usecond();
+  traceStop(id);
 
   /////////////////////////////
   // do the compute exterior
   /////////////////////////////
-  DhopFaceTime-=usecond();
-  st.CommsMerge(compressor);
-  DhopFaceTime+=usecond();
+  {
+    GRID_TRACE("Merge");
+    st.CommsMerge(compressor);
+  }
+  
 
-  DhopComputeTime2-=usecond();
   if (dag == DaggerYes) {
+    GRID_TRACE("DhopDagExterior");
     Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,0,1);
   } else {
+    GRID_TRACE("DhopExterior");
     Kernels::DhopKernel   (Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,0,1);
   }
-  DhopComputeTime2+=usecond();
 }
 
 
@@ -438,29 +391,30 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOr
 						    const FermionField &in, 
 						    FermionField &out,int dag)
 {
+  GRID_TRACE("DhopInternalSerialComms");
   Compressor compressor(dag);
 
   int LLs = in.Grid()->_rdimensions[0];
+
+  {
+    GRID_TRACE("HaloExchange");
+    st.HaloExchangeOpt(in,compressor);
+  }
   
-  DhopCommTime-=usecond();
-  st.HaloExchangeOpt(in,compressor);
-  DhopCommTime+=usecond();
-  
-  DhopComputeTime-=usecond();
   int Opt = WilsonKernelsStatic::Opt;
   if (dag == DaggerYes) {
+    GRID_TRACE("DhopDag");
     Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out);
   } else {
+    GRID_TRACE("Dhop");
     Kernels::DhopKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out);
   }
-  DhopComputeTime+=usecond();
 }
 
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int dag)
 {
-  DhopCalls++;
   conformable(in.Grid(),FermionRedBlackGrid());    // verifies half grid
   conformable(in.Grid(),out.Grid()); // drops the cb check
 
@@ -472,7 +426,6 @@ void WilsonFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
 {
-  DhopCalls++;
   conformable(in.Grid(),FermionRedBlackGrid());    // verifies half grid
   conformable(in.Grid(),out.Grid()); // drops the cb check
 
@@ -484,7 +437,6 @@ void WilsonFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int
 template<class Impl>
 void WilsonFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int dag)
 {
-  DhopCalls+=2;
   conformable(in.Grid(),FermionGrid()); // verifies full grid
   conformable(in.Grid(),out.Grid());
 
@@ -539,12 +491,17 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt_5d(FermionField &out,const
   LatComplex    sk(_grid);  sk = Zero();
   LatComplex    sk2(_grid); sk2= Zero();
   LatComplex    W(_grid); W= Zero();
-  LatComplex    a(_grid); a= Zero();
   LatComplex    one  (_grid); one = ScalComplex(1.0,0.0);
   LatComplex 	cosha(_grid);
   LatComplex 	kmu(_grid);
   LatComplex 	Wea(_grid);
   LatComplex 	Wema(_grid);
+  LatComplex 	ea(_grid);
+  LatComplex 	ema(_grid);
+  LatComplex 	eaLs(_grid);
+  LatComplex 	emaLs(_grid);
+  LatComplex 	ea2Ls(_grid);
+  LatComplex 	ema2Ls(_grid);
   LatComplex 	sinha(_grid);
   LatComplex 	sinhaLs(_grid);
   LatComplex 	coshaLs(_grid);
@@ -579,39 +536,29 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt_5d(FermionField &out,const
   ////////////////////////////////////////////
   cosha = (one + W*W + sk) / (abs(W)*2.0);
 
-  // FIXME Need a Lattice acosh
-
-  {
-    autoView(cosha_v,cosha,CpuRead);
-    autoView(a_v,a,CpuWrite);
-    for(int idx=0;idx<_grid->lSites();idx++){
-      Coordinate lcoor(Nd);
-      Tcomplex cc;
-      //    RealD sgn;
-      _grid->LocalIndexToLocalCoor(idx,lcoor);
-      peekLocalSite(cc,cosha_v,lcoor);
-      assert((double)real(cc)>=1.0);
-      assert(fabs((double)imag(cc))<=1.0e-15);
-      cc = ScalComplex(::acosh(real(cc)),0.0);
-      pokeLocalSite(cc,a_v,lcoor);
-    }
-  }
-
-  Wea = ( exp( a) * abs(W)  );
-  Wema= ( exp(-a) * abs(W)  );
-  sinha = 0.5*(exp( a) - exp(-a));
-  sinhaLs = 0.5*(exp( a*Ls) - exp(-a*Ls));
-  coshaLs = 0.5*(exp( a*Ls) + exp(-a*Ls));
+  ea = (cosha + sqrt(cosha*cosha-one));
+  ema= (cosha - sqrt(cosha*cosha-one));
+  eaLs = pow(ea,Ls);
+  emaLs= pow(ema,Ls);
+  ea2Ls = pow(ea,2.0*Ls);
+  ema2Ls= pow(ema,2.0*Ls);
+  Wea= abs(W) * ea;
+  Wema= abs(W) * ema;
+  //  a=log(ea);
+  
+  sinha = 0.5*(ea - ema);
+  sinhaLs = 0.5*(eaLs-emaLs);
+  coshaLs = 0.5*(eaLs+emaLs);
 
   A = one / (abs(W) * sinha * 2.0) * one / (sinhaLs * 2.0);
-  F = exp( a*Ls) * (one - Wea + (Wema - one) * mass*mass);
-  F = F + exp(-a*Ls) * (Wema - one + (one - Wea) * mass*mass);
+  F = eaLs * (one - Wea + (Wema - one) * mass*mass);
+  F = F + emaLs * (Wema - one + (one - Wea) * mass*mass);
   F = F - abs(W) * sinha * 4.0 * mass;
 
-  Bpp =  (A/F) * (exp(-a*Ls*2.0) - one) * (one - Wema) * (one - mass*mass * one);
-  Bmm =  (A/F) * (one - exp(a*Ls*2.0)) * (one - Wea) * (one - mass*mass * one);
-  App =  (A/F) * (exp(-a*Ls*2.0) - one) * exp(-a) * (exp(-a) - abs(W)) * (one - mass*mass * one);
-  Amm =  (A/F) * (one - exp(a*Ls*2.0)) * exp(a) * (exp(a) - abs(W)) * (one - mass*mass * one);
+  Bpp =  (A/F) * (ema2Ls - one) * (one - Wema) * (one - mass*mass * one);
+  Bmm =  (A/F) * (one - ea2Ls)  * (one - Wea) * (one - mass*mass * one);
+  App =  (A/F) * (ema2Ls - one) * ema * (ema - abs(W)) * (one - mass*mass * one);
+  Amm =  (A/F) * (one - ea2Ls)  * ea  * (ea  - abs(W)) * (one - mass*mass * one);
   ABpm = (A/F) * abs(W) * sinha * 2.0  * (one + mass * coshaLs * 2.0 + mass*mass * one);
 
   //P+ source, P- source
@@ -634,29 +581,29 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt_5d(FermionField &out,const
       buf1_4d = Zero();
       ExtractSlice(buf1_4d, PRsource, (tt-1), 0);
       //G(s,t)
-      bufR_4d = bufR_4d + A * exp(a*Ls) * exp(-a*f) * signW * buf1_4d + A * exp(-a*Ls) * exp(a*f) * signW * buf1_4d;
+      bufR_4d = bufR_4d + A * eaLs * pow(ema,f) * signW * buf1_4d + A * emaLs * pow(ea,f) * signW * buf1_4d;
       //A++*exp(a(s+t))
-      bufR_4d = bufR_4d + App * exp(a*ss) * exp(a*tt) * signW * buf1_4d ;
+      bufR_4d = bufR_4d + App * pow(ea,ss) * pow(ea,tt) * signW * buf1_4d ;
       //A+-*exp(a(s-t))
-      bufR_4d = bufR_4d + ABpm * exp(a*ss) * exp(-a*tt) * signW * buf1_4d ;
+      bufR_4d = bufR_4d + ABpm * pow(ea,ss) * pow(ema,tt) * signW * buf1_4d ;
       //A-+*exp(a(-s+t))
-      bufR_4d = bufR_4d + ABpm * exp(-a*ss) * exp(a*tt) * signW * buf1_4d ;
+      bufR_4d = bufR_4d + ABpm * pow(ema,ss) * pow(ea,tt) * signW * buf1_4d ;
       //A--*exp(a(-s-t))
-      bufR_4d = bufR_4d + Amm * exp(-a*ss) * exp(-a*tt) * signW * buf1_4d ;
+      bufR_4d = bufR_4d + Amm * pow(ema,ss) * pow(ema,tt) * signW * buf1_4d ;
 
       //GL
       buf2_4d = Zero();
       ExtractSlice(buf2_4d, PLsource, (tt-1), 0);
       //G(s,t)
-      bufL_4d = bufL_4d + A * exp(a*Ls) * exp(-a*f) * signW * buf2_4d + A * exp(-a*Ls) * exp(a*f) * signW * buf2_4d;
+      bufL_4d = bufL_4d + A * eaLs * pow(ema,f) * signW * buf2_4d + A * emaLs * pow(ea,f) * signW * buf2_4d;
       //B++*exp(a(s+t))
-      bufL_4d = bufL_4d + Bpp * exp(a*ss) * exp(a*tt) * signW * buf2_4d ;
+      bufL_4d = bufL_4d + Bpp * pow(ea,ss) * pow(ea,tt) * signW * buf2_4d ;
       //B+-*exp(a(s-t))
-      bufL_4d = bufL_4d + ABpm * exp(a*ss) * exp(-a*tt) * signW * buf2_4d ;
+      bufL_4d = bufL_4d + ABpm * pow(ea,ss) * pow(ema,tt) * signW * buf2_4d ;
       //B-+*exp(a(-s+t))
-      bufL_4d = bufL_4d + ABpm * exp(-a*ss) * exp(a*tt) * signW * buf2_4d ;
+      bufL_4d = bufL_4d + ABpm * pow(ema,ss) * pow(ea,tt) * signW * buf2_4d ;
       //B--*exp(a(-s-t))
-      bufL_4d = bufL_4d + Bmm * exp(-a*ss) * exp(-a*tt) * signW * buf2_4d ;
+      bufL_4d = bufL_4d + Bmm * pow(ema,ss) * pow(ema,tt) * signW * buf2_4d ;
     }
     InsertSlice(bufR_4d, GR, (ss-1), 0);
     InsertSlice(bufL_4d, GL, (ss-1), 0);
@@ -775,28 +722,12 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
   W = one - M5 + sk2;
 
   ////////////////////////////////////////////
-  // Cosh alpha -> alpha
+  // Cosh alpha -> exp(+/- alpha)
   ////////////////////////////////////////////
   cosha =  (one + W*W + sk) / (abs(W)*2.0);
 
-  // FIXME Need a Lattice acosh
-  {
-  autoView(cosha_v,cosha,CpuRead);
-  autoView(a_v,a,CpuWrite);
-  for(int idx=0;idx<_grid->lSites();idx++){
-    Coordinate lcoor(Nd);
-    Tcomplex cc;
-    //    RealD sgn;
-    _grid->LocalIndexToLocalCoor(idx,lcoor);
-    peekLocalSite(cc,cosha_v,lcoor);
-    assert((double)real(cc)>=1.0);
-    assert(fabs((double)imag(cc))<=1.0e-15);
-    cc = ScalComplex(::acosh(real(cc)),0.0);
-    pokeLocalSite(cc,a_v,lcoor);
-  }}
-  
-  Wea = ( exp( a) * abs(W)  );
-  Wema= ( exp(-a) * abs(W)  );
+  Wea = abs(W)*(cosha + sqrt(cosha*cosha-one));
+  Wema= abs(W)*(cosha - sqrt(cosha*cosha-one));
   
   num   = num + ( one - Wema ) * mass * in;
   denom= ( Wea - one ) + mass*mass * (one - Wema); 

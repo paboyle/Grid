@@ -29,4 +29,5 @@ mpiexec -launcher ssh -n 2 -host localhost  ./wrap.sh ./Benchmark_dwf_fp32 --mpi
 mpiexec -launcher ssh -n 2 -host localhost  ./wrap.sh ./Benchmark_dwf_fp32 --mpi 2.1.1.1 --grid 64.32.32.32 --accelerator-threads $NT  --shm-mpi 0  --device-mem 32768 > 2.1.1.1.log$i 
 done
 
+mpiexec -launcher ssh -n 2 -host localhost  ./wrap.sh ./Benchmark_dwf_fp32 --mpi 2.1.1.1 --grid 64.32.32.32 --accelerator-threads $NT --comms-sequential --shm-mpi 0
 

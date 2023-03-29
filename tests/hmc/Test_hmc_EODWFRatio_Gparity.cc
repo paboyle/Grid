@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
   typedef ConjugateHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
 
   typedef GparityWilsonImplR FermionImplPolicy;
-  typedef GparityDomainWallFermionR FermionAction;
+  typedef GparityDomainWallFermionD FermionAction;
   typedef typename FermionAction::FermionField FermionField;
 
 
@@ -132,15 +132,9 @@ int main(int argc, char **argv) {
   TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
 
   // Reset performance counters 
-  NumOp.ZeroCounters();
-  DenOp.ZeroCounters();
   TheHMC.Run();  // no smearing
   // TheHMC.Run(SmearingPolicy); // for smearing
 
-  std::cout << GridLogMessage << "Numerator report, Pauli-Villars term         : " << std::endl;
-  NumOp.Report();
-  std::cout << GridLogMessage << "Denominator report, Dw(m) term (includes CG) : " << std::endl;
-  DenOp.Report();
 
   Grid_finalize();
 

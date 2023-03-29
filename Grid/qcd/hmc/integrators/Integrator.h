@@ -33,7 +33,6 @@ directory
 #define INTEGRATOR_INCLUDED
 
 #include <memory>
-#include "MomentumFilter.h"
 
 NAMESPACE_BEGIN(Grid);
 
@@ -64,9 +63,10 @@ public:
 };
 
 /*! @brief Class for Molecular Dynamics management */
-template <class FieldImplementation, class SmearingPolicy, class RepresentationPolicy>
+template <class FieldImplementation_, class SmearingPolicy, class RepresentationPolicy>
 class Integrator {
 protected:
+  typedef FieldImplementation_ FieldImplementation;
   typedef typename FieldImplementation::Field MomentaField;  //for readability
   typedef typename FieldImplementation::Field Field;
 
@@ -119,36 +119,65 @@ protected:
     }
   } update_P_hireps{};
 
+ 
   void update_P(MomentaField& Mom, Field& U, int level, double ep) {
     // input U actually not used in the fundamental case
     // Fundamental updates, include smearing
 
     for (int a = 0; a < as[level].actions.size(); ++a) {
+
       double start_full = usecond();
       Field force(U.Grid());
       conformable(U.Grid(), Mom.Grid());
 
       Field& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
       double start_force = usecond();
+
+      std::cout << GridLogMessage << "AuditForce["<<level<<"]["<<a<<"] before"<<std::endl;
+      
+      as[level].actions.at(a)->deriv_timer_start();
       as[level].actions.at(a)->deriv(Us, force);  // deriv should NOT include Ta
+      as[level].actions.at(a)->deriv_timer_stop();
+
+      std::cout << GridLogMessage << "AuditForce["<<level<<"]["<<a<<"] after"<<std::endl;
 
       std::cout << GridLogIntegrator << "Smearing (on/off): " << as[level].actions.at(a)->is_smeared << std::endl;
+      auto name = as[level].actions.at(a)->action_name();
       if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
+
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
       double end_force = usecond();
-      Real force_abs = std::sqrt(norm2(force)/U.Grid()->gSites());
-      std::cout << GridLogIntegrator << "["<<level<<"]["<<a<<"] Force average: " << force_abs << std::endl;
+
+      //      DumpSliceNorm("force ",force,Nd-1);
+      MomFilter->applyFilter(force);
+      std::cout << GridLogIntegrator << " update_P : Level [" << level <<"]["<<a <<"] "<<name<<" dt "<<ep<<  std::endl;
+      DumpSliceNorm("force filtered ",force,Nd-1);
+      
+      Real force_abs   = std::sqrt(norm2(force)/U.Grid()->gSites()); //average per-site norm.  nb. norm2(latt) = \sum_x norm2(latt[x]) 
+      Real impulse_abs = force_abs * ep * HMC_MOMENTUM_DENOMINATOR;    
+
+      Real force_max   = std::sqrt(maxLocalNorm2(force));
+      Real impulse_max = force_max * ep * HMC_MOMENTUM_DENOMINATOR;    
+
+      as[level].actions.at(a)->deriv_log(force_abs,force_max,impulse_abs,impulse_max);
+      
+      std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] dt           : " << ep <<" "<<name<<std::endl;
+      std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Force average: " << force_abs <<" "<<name<<std::endl;
+      std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Force max    : " << force_max <<" "<<name<<std::endl;
+      std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Fdt average  : " << impulse_abs <<" "<<name<<std::endl;
+      std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Fdt max      : " << impulse_max <<" "<<name<<std::endl;
+
       Mom -= force * ep* HMC_MOMENTUM_DENOMINATOR;; 
       double end_full = usecond();
       double time_full  = (end_full - start_full) / 1e3;
       double time_force = (end_force - start_force) / 1e3;
       std::cout << GridLogMessage << "["<<level<<"]["<<a<<"] P update elapsed time: " << time_full << " ms (force: " << time_force << " ms)"  << std::endl;
+
     }
 
     // Force from the other representations
     as[level].apply(update_P_hireps, Representations, Mom, U, ep);
 
-    MomFilter->applyFilter(Mom);
   }
 
   void update_U(Field& U, double ep) 
@@ -162,8 +191,12 @@ protected:
   
   void update_U(MomentaField& Mom, Field& U, double ep) 
   {
+    MomentaField MomFiltered(Mom.Grid());
+    MomFiltered = Mom;
+    MomFilter->applyFilter(MomFiltered);
+
     // exponential of Mom*U in the gauge fields case
-    FieldImplementation::update_field(Mom, U, ep);
+    FieldImplementation::update_field(MomFiltered, U, ep);
 
     // Update the smeared fields, can be implemented as observer
     Smearer.set_Field(U);
@@ -206,6 +239,77 @@ public:
   const MomentaField & getMomentum() const{ return P; }
   
 
+  void reset_timer(void)
+  {
+    for (int level = 0; level < as.size(); ++level) {
+      for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+        as[level].actions.at(actionID)->reset_timer();
+      }
+    }
+  }
+  void print_timer(void)
+  {
+    std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::" << std::endl;
+    std::cout << GridLogMessage << " Refresh cumulative timings "<<std::endl;
+    std::cout << GridLogMessage << "--------------------------- "<<std::endl;
+    for (int level = 0; level < as.size(); ++level) {
+      for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+	std::cout << GridLogMessage 
+		  << as[level].actions.at(actionID)->action_name()
+		  <<"["<<level<<"]["<< actionID<<"] "
+		  << as[level].actions.at(actionID)->refresh_us*1.0e-6<<" s"<< std::endl;
+      }
+    }
+    std::cout << GridLogMessage << "--------------------------- "<<std::endl;
+    std::cout << GridLogMessage << " Action cumulative timings "<<std::endl;
+    std::cout << GridLogMessage << "--------------------------- "<<std::endl;
+    for (int level = 0; level < as.size(); ++level) {
+      for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+	std::cout << GridLogMessage 
+		  << as[level].actions.at(actionID)->action_name()
+		  <<"["<<level<<"]["<< actionID<<"] "
+		  << as[level].actions.at(actionID)->S_us*1.0e-6<<" s"<< std::endl;
+      }
+    }
+    std::cout << GridLogMessage << "--------------------------- "<<std::endl;
+    std::cout << GridLogMessage << " Force cumulative timings "<<std::endl;
+    std::cout << GridLogMessage << "------------------------- "<<std::endl;
+    for (int level = 0; level < as.size(); ++level) {
+      for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+	std::cout << GridLogMessage 
+		  << as[level].actions.at(actionID)->action_name()
+		  <<"["<<level<<"]["<< actionID<<"] "
+		  << as[level].actions.at(actionID)->deriv_us*1.0e-6<<" s"<< std::endl;
+      }
+    }
+    std::cout << GridLogMessage << "--------------------------- "<<std::endl;
+    std::cout << GridLogMessage << " Dslash counts "<<std::endl;
+    std::cout << GridLogMessage << "------------------------- "<<std::endl;
+    uint64_t full, partial, dirichlet;
+    DslashGetCounts(dirichlet,partial,full);
+    std::cout << GridLogMessage << " Full BCs               : "<<full<<std::endl;
+    std::cout << GridLogMessage << " Partial dirichlet BCs  : "<<partial<<std::endl;
+    std::cout << GridLogMessage << " Dirichlet BCs          : "<<dirichlet<<std::endl;
+
+    std::cout << GridLogMessage << "--------------------------- "<<std::endl;
+    std::cout << GridLogMessage << " Force average size "<<std::endl;
+    std::cout << GridLogMessage << "------------------------- "<<std::endl;
+    for (int level = 0; level < as.size(); ++level) {
+      for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+	std::cout << GridLogMessage 
+		  << as[level].actions.at(actionID)->action_name()
+		  <<"["<<level<<"]["<< actionID<<"] :\n\t\t "
+		  <<" force max " << as[level].actions.at(actionID)->deriv_max_average()
+		  <<" norm "      << as[level].actions.at(actionID)->deriv_norm_average()
+		  <<" Fdt max  "  << as[level].actions.at(actionID)->Fdt_max_average()
+		  <<" Fdt norm "  << as[level].actions.at(actionID)->Fdt_norm_average()
+		  <<" calls "     << as[level].actions.at(actionID)->deriv_num
+		  << std::endl;
+      }
+    }
+    std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::"<< std::endl;
+  }
+  
   void print_parameters()
   {
     std::cout << GridLogMessage << "[Integrator] Name : "<< integrator_name() << std::endl;
@@ -224,7 +328,6 @@ public:
       }
     }
     std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::"<< std::endl;
-
   }
 
   void reverse_momenta()
@@ -249,15 +352,19 @@ public:
   void refresh(Field& U,  GridSerialRNG & sRNG, GridParallelRNG& pRNG) 
   {
     assert(P.Grid() == U.Grid());
-    std::cout << GridLogIntegrator << "Integrator refresh\n";
+    std::cout << GridLogIntegrator << "Integrator refresh" << std::endl;
 
+    std::cout << GridLogIntegrator << "Generating momentum" << std::endl;
     FieldImplementation::generate_momenta(P, sRNG, pRNG);
 
     // Update the smeared fields, can be implemented as observer
     // necessary to keep the fields updated even after a reject
     // of the Metropolis
+    std::cout << GridLogIntegrator << "Updating smeared fields" << std::endl;
     Smearer.set_Field(U);
     // Set the (eventual) representations gauge fields
+
+    std::cout << GridLogIntegrator << "Updating representations" << std::endl;
     Representations.update(U);
 
     // The Smearer is attached to a pointer of the gauge field
@@ -267,15 +374,24 @@ public:
       for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
         // get gauge field from the SmearingPolicy and
         // based on the boolean is_smeared in actionID
+	auto name = as[level].actions.at(actionID)->action_name();
+        std::cout << GridLogMessage << "refresh [" << level << "][" << actionID << "] "<<name << std::endl;
+
         Field& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
+
+	std::cout << GridLogMessage << "AuditRefresh["<<level<<"]["<<actionID<<"] before"<<std::endl;
+
+	as[level].actions.at(actionID)->refresh_timer_start();
         as[level].actions.at(actionID)->refresh(Us, sRNG, pRNG);
+	as[level].actions.at(actionID)->refresh_timer_stop();
+	std::cout << GridLogMessage << "AuditRefresh["<<level<<"]["<<actionID<<"] after"<<std::endl;
+
       }
 
       // Refresh the higher representation actions
       as[level].apply(refresh_hireps, Representations, sRNG, pRNG);
     }
 
-    MomFilter->applyFilter(P);
   }
 
   // to be used by the actionlevel class to iterate
@@ -306,13 +422,17 @@ public:
     // Actions
     for (int level = 0; level < as.size(); ++level) {
       for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+
         // get gauge field from the SmearingPolicy and
         // based on the boolean is_smeared in actionID
         Field& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
         std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] action eval " << std::endl;
+	        as[level].actions.at(actionID)->S_timer_start();
         Hterm = as[level].actions.at(actionID)->S(Us);
+   	        as[level].actions.at(actionID)->S_timer_stop();
         std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] H = " << Hterm << std::endl;
         H += Hterm;
+
       }
       as[level].apply(S_hireps, Representations, level, H);
     }
@@ -320,6 +440,52 @@ public:
     return H;
   }
 
+  struct _Sinitial {
+    template <class FieldType, class Repr>
+    void operator()(std::vector<Action<FieldType>*> repr_set, Repr& Rep, int level, RealD& H) {
+      
+      for (int a = 0; a < repr_set.size(); ++a) {
+
+        RealD Hterm = repr_set.at(a)->Sinitial(Rep.U);
+
+        std::cout << GridLogMessage << "Sinitial Level " << level << " term " << a << " H Hirep = " << Hterm << std::endl;
+        H += Hterm;
+
+      }
+    }
+  } Sinitial_hireps{};
+
+  RealD Sinitial(Field& U) 
+  {  // here also U not used
+
+    std::cout << GridLogIntegrator << "Integrator initial action\n";
+
+    RealD H = - FieldImplementation::FieldSquareNorm(P)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
+
+    RealD Hterm;
+
+    // Actions
+    for (int level = 0; level < as.size(); ++level) {
+      for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+        // get gauge field from the SmearingPolicy and
+        // based on the boolean is_smeared in actionID
+        Field& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
+        std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] action eval " << std::endl;
+	        as[level].actions.at(actionID)->S_timer_start();
+
+        Hterm = as[level].actions.at(actionID)->Sinitial(Us);
+   	        as[level].actions.at(actionID)->S_timer_stop();
+
+        std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] H = " << Hterm << std::endl;
+        H += Hterm;
+      }
+      as[level].apply(Sinitial_hireps, Representations, level, H);
+    }
+
+    return H;
+  }
+
+  
   void integrate(Field& U) 
   {
     // reset the clocks

@@ -52,13 +52,6 @@ public:
   typedef AcceleratorVector<int,STENCIL_MAX> StencilVector;   
 public:
 
-#ifdef GRID_SYCL
-#define SYCL_HACK
-#endif  
-#ifdef SYCL_HACK
-  static void HandDhopSiteSycl(StencilVector st_perm,StencilEntry *st_p, SiteDoubledGaugeField *U,SiteHalfSpinor  *buf,
-			       int ss,int sU,const SiteSpinor *in, SiteSpinor *out);
-#endif
   
   static void DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
 			 int Ls, int Nsite, const FermionField &in, FermionField &out,

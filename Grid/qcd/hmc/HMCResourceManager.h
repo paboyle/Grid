@@ -72,6 +72,8 @@ class HMCResourceManager {
   typedef HMCModuleBase< BaseHmcCheckpointer<ImplementationPolicy> > CheckpointerBaseModule;
   typedef HMCModuleBase< HmcObservable<typename ImplementationPolicy::Field> > ObservableBaseModule;
   typedef ActionModuleBase< Action<typename ImplementationPolicy::Field>, GridModule > ActionBaseModule;
+  typedef typename ImplementationPolicy::Field MomentaField;
+  typedef typename ImplementationPolicy::Field Field;  
 
   // Named storage for grid pairs (std + red-black)
   std::unordered_map<std::string, GridModule> Grids;
@@ -80,6 +82,9 @@ class HMCResourceManager {
   // SmearingModule<ImplementationPolicy> Smearing;
   std::unique_ptr<CheckpointerBaseModule> CP;
 
+  // Momentum filter
+  std::unique_ptr<MomentumFilterBase<typename ImplementationPolicy::Field> > Filter;
+  
   // A vector of HmcObservable modules
   std::vector<std::unique_ptr<ObservableBaseModule> > ObservablesList;
 
@@ -90,6 +95,7 @@ class HMCResourceManager {
 
   bool have_RNG;
   bool have_CheckPointer;
+  bool have_Filter;
 
   // NOTE: operator << is not overloaded for std::vector<string> 
   // so this function is necessary
@@ -101,7 +107,7 @@ class HMCResourceManager {
 
 
 public:
-  HMCResourceManager() : have_RNG(false), have_CheckPointer(false) {}
+  HMCResourceManager() : have_RNG(false), have_CheckPointer(false), have_Filter(false) {}
 
   template <class ReaderClass, class vector_type = vComplex >
   void initialize(ReaderClass &Read){
@@ -129,6 +135,7 @@ public:
     RNGModuleParameters RNGpar(Read);
     SetRNGSeeds(RNGpar);
 
+  
     // Observables
     auto &ObsFactory = HMC_ObservablesModuleFactory<observable_string, typename ImplementationPolicy::Field, ReaderClass>::getInstance(); 
     Read.push(observable_string);// here must check if existing...
@@ -208,6 +215,16 @@ public:
     AddGrid(s, Mod);
   }
 
+  void SetMomentumFilter( MomentumFilterBase<typename ImplementationPolicy::Field> * MomFilter) {
+    assert(have_Filter==false);
+    Filter = std::unique_ptr<MomentumFilterBase<typename ImplementationPolicy::Field> >(MomFilter);
+    have_Filter = true;
+  }
+  MomentumFilterBase<typename ImplementationPolicy::Field> *GetMomentumFilter(void) {
+    if ( !have_Filter)
+      SetMomentumFilter(new MomentumFilterNone<typename ImplementationPolicy::Field>());
+    return Filter.get();
+  }
 
   GridCartesian* GetCartesian(std::string s = "") {
     if (s.empty()) s = Grids.begin()->first;
@@ -226,6 +243,9 @@ public:
   //////////////////////////////////////////////////////
   // Random number generators
   //////////////////////////////////////////////////////
+  
+  //Return true if the RNG objects have been instantiated
+  bool haveRNGs() const{ return have_RNG; }
 
   void AddRNGs(std::string s = "") {
     // Couple the RNGs to the GridModule tagged by s
