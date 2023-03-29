@@ -38,9 +38,8 @@ Author: Christoph Lehner <christoph@lhnr.de>
 #include <hip/hip_runtime_api.h>
 #endif
 #ifdef GRID_SYCL
-
-#endif
 #define GRID_SYCL_LEVEL_ZERO_IPC
+#endif
 
 
 NAMESPACE_BEGIN(Grid); 
