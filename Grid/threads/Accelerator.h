@@ -525,7 +525,7 @@ inline void acceleratorFreeCpu  (void *ptr){free(ptr);};
 //////////////////////////////////////////////
 
 #ifdef GRID_SYCL
-inline void acceleratorFenceComputeStream(void){ accelerator_barrier();};
+inline void acceleratorFenceComputeStream(void){ theGridAccelerator->submit_barrier();};
 #else
 // Ordering within a stream guaranteed on Nvidia & AMD
 inline void acceleratorFenceComputeStream(void){ };
