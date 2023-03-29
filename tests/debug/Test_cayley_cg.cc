@@ -125,10 +125,10 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"DomainWallFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
-  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   DomainWallFermionF DdwfF(UmuF,*FGridF,*FrbGridF,*UGridF,*UrbGridF,mass,M5);
-  TestCGinversions<DomainWallFermionR>(Ddwf,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
-  TestReconstruct5DFA<DomainWallFermionR,DomainWallFermionF>(Ddwf,DdwfF,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  TestCGinversions<DomainWallFermionD>(Ddwf,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  TestReconstruct5DFA<DomainWallFermionD,DomainWallFermionF>(Ddwf,DdwfF,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   RealD b=1.5;// Scale factor b+c=2, b-c=1
   RealD c=0.5;
@@ -137,54 +137,54 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"MobiusFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
-  MobiusFermionR Dmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c);
+  MobiusFermionD Dmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c);
   MobiusFermionF DmobF(UmuF,*FGridF,*FrbGridF,*UGridF,*UrbGridF,mass,M5,b,c);
-  TestCGinversions<MobiusFermionR>(Dmob,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
-  TestReconstruct5DFA<MobiusFermionR,MobiusFermionF>(Dmob,DmobF,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  TestCGinversions<MobiusFermionD>(Dmob,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  TestReconstruct5DFA<MobiusFermionD,MobiusFermionF>(Dmob,DmobF,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"ZMobiusFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
-  ZMobiusFermionR ZDmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,gamma,b,c);
-  TestCGinversions<ZMobiusFermionR>(ZDmob,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
-  TestReconstruct5D<ZMobiusFermionR>(ZDmob,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  ZMobiusFermionD ZDmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,gamma,b,c);
+  TestCGinversions<ZMobiusFermionD>(ZDmob,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  TestReconstruct5D<ZMobiusFermionD>(ZDmob,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"MobiusZolotarevFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
-  MobiusZolotarevFermionR Dzolo(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c,0.1,2.0);
-  TestCGinversions<MobiusZolotarevFermionR>(Dzolo,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
-  TestReconstruct5D<MobiusZolotarevFermionR>(Dzolo,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  MobiusZolotarevFermionD Dzolo(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c,0.1,2.0);
+  TestCGinversions<MobiusZolotarevFermionD>(Dzolo,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  TestReconstruct5D<MobiusZolotarevFermionD>(Dzolo,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"ScaledShamirFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
-  ScaledShamirFermionR Dsham(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,2.0);
+  ScaledShamirFermionD Dsham(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,2.0);
   ScaledShamirFermionF DshamF(UmuF,*FGridF,*FrbGridF,*UGridF,*UrbGridF,mass,M5,2.0);
-  TestCGinversions<ScaledShamirFermionR>(Dsham,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
-  TestReconstruct5DFA<ScaledShamirFermionR,ScaledShamirFermionF>(Dsham,DshamF,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  TestCGinversions<ScaledShamirFermionD>(Dsham,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  TestReconstruct5DFA<ScaledShamirFermionD,ScaledShamirFermionF>(Dsham,DshamF,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"ShamirZolotarevFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
-  ShamirZolotarevFermionR Dshamz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,2.0);
-  TestCGinversions<ShamirZolotarevFermionR>(Dshamz,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
-  TestReconstruct5D<ShamirZolotarevFermionR>(Dshamz,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  ShamirZolotarevFermionD Dshamz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,2.0);
+  TestCGinversions<ShamirZolotarevFermionD>(Dshamz,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  TestReconstruct5D<ShamirZolotarevFermionD>(Dshamz,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"OverlapWilsonCayleyTanhFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
-  OverlapWilsonCayleyTanhFermionR Dov(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+  OverlapWilsonCayleyTanhFermionD Dov(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
   OverlapWilsonCayleyTanhFermionF DovF(UmuF,*FGridF,*FrbGridF,*UGridF,*UrbGridF,mass,M5,1.0);
-  TestCGinversions<OverlapWilsonCayleyTanhFermionR>(Dov,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
-  TestReconstruct5DFA<OverlapWilsonCayleyTanhFermionR,OverlapWilsonCayleyTanhFermionF>(Dov,DovF,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  TestCGinversions<OverlapWilsonCayleyTanhFermionD>(Dov,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  TestReconstruct5DFA<OverlapWilsonCayleyTanhFermionD,OverlapWilsonCayleyTanhFermionF>(Dov,DovF,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"OverlapWilsonCayleyZolotarevFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
-  OverlapWilsonCayleyZolotarevFermionR Dovz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,2.0);
-  TestCGinversions<OverlapWilsonCayleyZolotarevFermionR>(Dovz,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
-  TestReconstruct5D<OverlapWilsonCayleyZolotarevFermionR>(Dovz,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  OverlapWilsonCayleyZolotarevFermionD Dovz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,2.0);
+  TestCGinversions<OverlapWilsonCayleyZolotarevFermionD>(Dovz,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  TestReconstruct5D<OverlapWilsonCayleyZolotarevFermionD>(Dovz,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   Grid_finalize();
 }

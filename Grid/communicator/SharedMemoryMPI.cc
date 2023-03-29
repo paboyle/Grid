@@ -29,6 +29,7 @@ Author: Christoph Lehner <christoph@lhnr.de>
 
 #include <Grid/GridCore.h>
 #include <pwd.h>
+#include <syscall.h>
 
 #ifdef GRID_CUDA
 #include <cuda_runtime_api.h>
@@ -153,7 +154,7 @@ int Log2Size(int TwoToPower,int MAXLOG2)
   }
   return log2size;
 }
-void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
+void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_MPI_Comm & optimal_comm,Coordinate &SHM)
 {
   //////////////////////////////////////////////////////////////////////////////
   // Look and see if it looks like an HPE 8600 based on hostname conventions
@@ -166,8 +167,8 @@ void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_M
   gethostname(name,namelen);
   int nscan = sscanf(name,"r%di%dn%d",&R,&I,&N) ;
 
-  if(nscan==3 && HPEhypercube ) OptimalCommunicatorHypercube(processors,optimal_comm);
-  else                          OptimalCommunicatorSharedMemory(processors,optimal_comm);
+  if(nscan==3 && HPEhypercube ) OptimalCommunicatorHypercube(processors,optimal_comm,SHM);
+  else                          OptimalCommunicatorSharedMemory(processors,optimal_comm,SHM);
 }
 static inline int divides(int a,int b)
 {
@@ -222,7 +223,7 @@ void GlobalSharedMemory::GetShmDims(const Coordinate &WorldDims,Coordinate &ShmD
     dim=(dim+1) %ndimension;
   }
 }
-void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
+void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processors,Grid_MPI_Comm & optimal_comm,Coordinate &SHM)
 {
   ////////////////////////////////////////////////////////////////
   // Assert power of two shm_size.
@@ -295,7 +296,8 @@ void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processo
   Coordinate HyperCoor(ndimension);
 
   GetShmDims(WorldDims,ShmDims);
-
+  SHM = ShmDims;
+  
   ////////////////////////////////////////////////////////////////
   // Establish torus of processes and nodes with sub-blockings
   ////////////////////////////////////////////////////////////////
@@ -342,7 +344,7 @@ void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processo
   int ierr= MPI_Comm_split(WorldComm,0,rank,&optimal_comm);
   assert(ierr==0);
 }
-void GlobalSharedMemory::OptimalCommunicatorSharedMemory(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
+void GlobalSharedMemory::OptimalCommunicatorSharedMemory(const Coordinate &processors,Grid_MPI_Comm & optimal_comm,Coordinate &SHM)
 {
   ////////////////////////////////////////////////////////////////
   // Identify subblock of ranks on node spreading across dims
@@ -354,6 +356,8 @@ void GlobalSharedMemory::OptimalCommunicatorSharedMemory(const Coordinate &proce
   Coordinate ShmCoor(ndimension);    Coordinate NodeCoor(ndimension);   Coordinate WorldCoor(ndimension);
 
   GetShmDims(WorldDims,ShmDims);
+  SHM=ShmDims;
+
   ////////////////////////////////////////////////////////////////
   // Establish torus of processes and nodes with sub-blockings
   ////////////////////////////////////////////////////////////////
@@ -521,7 +525,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   }
   if ( WorldRank == 0 ){
     std::cout << WorldRank << header " SharedMemoryMPI.cc acceleratorAllocDevice "<< bytes 
-	      << "bytes at "<< std::hex<< ShmCommBuf <<std::dec<<" for comms buffers " <<std::endl;
+	      << "bytes at "<< std::hex<< ShmCommBuf << " - "<<(bytes-1+(uint64_t)ShmCommBuf) <<std::dec<<" for comms buffers " <<std::endl;
   }
   SharedMemoryZero(ShmCommBuf,bytes);
   std::cout<< "Setting up IPC"<<std::endl;

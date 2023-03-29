@@ -40,27 +40,45 @@ public:
   typedef typename Gimpl::GaugeLinkField GaugeMat;
   typedef typename Gimpl::GaugeField GaugeLorentz;
 
-  static void GaugeLinkToLieAlgebraField(const std::vector<GaugeMat> &U,std::vector<GaugeMat> &A) {
-    for(int mu=0;mu<Nd;mu++){
-      Complex cmi(0.0,-1.0);
-      A[mu] = Ta(U[mu]) * cmi;
-    }
+  //A_\mu(x) = -i Ta(U_\mu(x) )   where Ta(U) = 1/2( U - U^dag ) - 1/2N tr(U - U^dag)  is the traceless antihermitian part. This is an O(A^3) approximation to the logarithm of U
+  static void GaugeLinkToLieAlgebraField(const GaugeMat &U, GaugeMat &A) {
+    Complex cmi(0.0,-1.0);
+    A = Ta(U) * cmi;
   }
-  static void DmuAmu(const std::vector<GaugeMat> &A,GaugeMat &dmuAmu,int orthog) {
+  
+  //The derivative of the Lie algebra field
+  static void DmuAmu(const std::vector<GaugeMat> &U, GaugeMat &dmuAmu,int orthog) {
+    GridBase* grid = U[0].Grid();
+    GaugeMat Ax(grid);
+    GaugeMat Axm1(grid);
+    GaugeMat Utmp(grid);
+
     dmuAmu=Zero();
     for(int mu=0;mu<Nd;mu++){
       if ( mu != orthog ) {
-	dmuAmu = dmuAmu + A[mu] - Cshift(A[mu],mu,-1);
+	//Rather than define functionality to work out how the BCs apply to A_\mu we simply use the BC-aware Cshift to the gauge links and compute A_\mu(x) and A_\mu(x-1) separately
+	//Ax = A_\mu(x)
+	GaugeLinkToLieAlgebraField(U[mu], Ax);
+	
+	//Axm1 = A_\mu(x_\mu-1)
+	Utmp = Gimpl::CshiftLink(U[mu], mu, -1);
+	GaugeLinkToLieAlgebraField(Utmp, Axm1);
+	
+	//Derivative
+	dmuAmu = dmuAmu + Ax - Axm1;
       }
     }
   }  
 
-  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1,bool err_on_no_converge=true) {
+  //Fix the gauge field Umu
+  //0 < alpha < 1 is related to the step size, cf https://arxiv.org/pdf/1405.5812.pdf
+  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,Real alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1,bool err_on_no_converge=true) {
     GridBase *grid = Umu.Grid();
     GaugeMat xform(grid);
     SteepestDescentGaugeFix(Umu,xform,alpha,maxiter,Omega_tol,Phi_tol,Fourier,orthog,err_on_no_converge);
   }
-  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,GaugeMat &xform,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1,bool err_on_no_converge=true) {
+  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,GaugeMat &xform,Real alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1,bool err_on_no_converge=true) {
+  //Fix the gauge field Umu and also return the gauge transformation from the original gauge field, xform
 
     GridBase *grid = Umu.Grid();
 
@@ -123,28 +141,25 @@ public:
       }
     }
     std::cout << GridLogError << "Gauge fixing did not converge in " << maxiter << " iterations." << std::endl;
-    if (err_on_no_converge) assert(0);
+    if (err_on_no_converge)
+      assert(0 && "Gauge fixing did not converge within the specified number of iterations");
   };
-  static Real SteepestDescentStep(std::vector<GaugeMat> &U,GaugeMat &xform,Real & alpha, GaugeMat & dmuAmu,int orthog) {
+  static Real SteepestDescentStep(std::vector<GaugeMat> &U,GaugeMat &xform, Real alpha, GaugeMat & dmuAmu,int orthog) {
     GridBase *grid = U[0].Grid();
 
-    std::vector<GaugeMat> A(Nd,grid);
     GaugeMat g(grid);
-
-    GaugeLinkToLieAlgebraField(U,A);
-    ExpiAlphaDmuAmu(A,g,alpha,dmuAmu,orthog);
-
+    ExpiAlphaDmuAmu(U,g,alpha,dmuAmu,orthog);
 
     Real vol = grid->gSites();
     Real trG = TensorRemove(sum(trace(g))).real()/vol/Nc;
 
     xform = g*xform ;
-    SU<Nc>::GaugeTransform(U,g);
+    SU<Nc>::GaugeTransform<Gimpl>(U,g);
 
     return trG;
   }
 
-  static Real FourierAccelSteepestDescentStep(std::vector<GaugeMat> &U,GaugeMat &xform,Real & alpha, GaugeMat & dmuAmu,int orthog) {
+  static Real FourierAccelSteepestDescentStep(std::vector<GaugeMat> &U,GaugeMat &xform, Real alpha, GaugeMat & dmuAmu,int orthog) {
 
     GridBase *grid = U[0].Grid();
 
@@ -159,11 +174,7 @@ public:
 
     GaugeMat g(grid);
     GaugeMat dmuAmu_p(grid);
-    std::vector<GaugeMat> A(Nd,grid);
-
-    GaugeLinkToLieAlgebraField(U,A);
-
-    DmuAmu(A,dmuAmu,orthog);
+    DmuAmu(U,dmuAmu,orthog);
 
     std::vector<int> mask(Nd,1);
     for(int mu=0;mu<Nd;mu++) if (mu==orthog) mask[mu]=0;
@@ -207,16 +218,16 @@ public:
     Real trG = TensorRemove(sum(trace(g))).real()/vol/Nc;
 
     xform = g*xform ;
-    SU<Nc>::GaugeTransform(U,g);
+    SU<Nc>::GaugeTransform<Gimpl>(U,g);
 
     return trG;
   }
 
-  static void ExpiAlphaDmuAmu(const std::vector<GaugeMat> &A,GaugeMat &g,Real & alpha, GaugeMat &dmuAmu,int orthog) {
+  static void ExpiAlphaDmuAmu(const std::vector<GaugeMat> &U,GaugeMat &g, Real alpha, GaugeMat &dmuAmu,int orthog) {
     GridBase *grid = g.Grid();
     Complex cialpha(0.0,-alpha);
     GaugeMat ciadmam(grid);
-    DmuAmu(A,dmuAmu,orthog);
+    DmuAmu(U,dmuAmu,orthog);
     ciadmam = dmuAmu*cialpha;
     SU<Nc>::taExp(ciadmam,g);
   }  

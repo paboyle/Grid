@@ -71,31 +71,31 @@ int main (int argc, char ** argv)
   RealD csw_r = 1.0;
   RealD csw_t = 1.0;
   RealD cF = 1.0;
-  WilsonCloverFermionR Dw(Umu, Grid, RBGrid, mass, csw_r, csw_t);
-  CompactWilsonCloverFermionR Dw_compact(Umu, Grid, RBGrid, mass, csw_r, csw_t, 0.0);
-  WilsonExpCloverFermionR Dwe(Umu, Grid, RBGrid, mass, csw_r, csw_t);
-  CompactWilsonExpCloverFermionR Dwe_compact(Umu, Grid, RBGrid, mass, csw_r, csw_t, 0.0);
+  WilsonCloverFermionD Dw(Umu, Grid, RBGrid, mass, csw_r, csw_t);
+  CompactWilsonCloverFermionD Dw_compact(Umu, Grid, RBGrid, mass, csw_r, csw_t, 0.0);
+  WilsonExpCloverFermionD Dwe(Umu, Grid, RBGrid, mass, csw_r, csw_t);
+  CompactWilsonExpCloverFermionD Dwe_compact(Umu, Grid, RBGrid, mass, csw_r, csw_t, 0.0);
 
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
 
   std::cout << GridLogMessage << "Testing Wilson Clover" << std::endl;
-  MdagMLinearOperator<WilsonCloverFermionR,LatticeFermion> HermOp(Dw);
+  MdagMLinearOperator<WilsonCloverFermionD,LatticeFermion> HermOp(Dw);
   result=Zero();
   CG(HermOp,src,result);
 
   std::cout << GridLogMessage << "Testing Compact Wilson Clover" << std::endl;
-  MdagMLinearOperator<CompactWilsonCloverFermionR,LatticeFermion> HermOp_compact(Dw_compact);
+  MdagMLinearOperator<CompactWilsonCloverFermionD,LatticeFermion> HermOp_compact(Dw_compact);
   result=Zero();
   CG(HermOp_compact,src,result);
 
 
   std::cout << GridLogMessage << "Testing Wilson Exp Clover" << std::endl;
-  MdagMLinearOperator<WilsonExpCloverFermionR,LatticeFermion> HermOp_exp(Dwe);
+  MdagMLinearOperator<WilsonExpCloverFermionD,LatticeFermion> HermOp_exp(Dwe);
   result=Zero();
   CG(HermOp_exp,src,result);
 
   std::cout << GridLogMessage << "Testing Compact Wilson Exp Clover" << std::endl;
-  MdagMLinearOperator<CompactWilsonExpCloverFermionR,LatticeFermion> HermOp_exp_compact(Dwe_compact);
+  MdagMLinearOperator<CompactWilsonExpCloverFermionD,LatticeFermion> HermOp_exp_compact(Dwe_compact);
   result=Zero();
   CG(HermOp_exp_compact,src,result);
 

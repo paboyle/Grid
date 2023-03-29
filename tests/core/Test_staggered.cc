@@ -53,9 +53,9 @@ int main (int argc, char ** argv)
   pRNG.SeedFixedIntegers(seeds);
   //  pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
 
-  typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
-  typedef typename ImprovedStaggeredFermionR::ComplexField ComplexField; 
-  typename ImprovedStaggeredFermionR::ImplParams params; 
+  typedef typename ImprovedStaggeredFermionD::FermionField FermionField; 
+  typedef typename ImprovedStaggeredFermionD::ComplexField ComplexField; 
+  typename ImprovedStaggeredFermionD::ImplParams params; 
 
   FermionField src   (&Grid); random(pRNG,src);
   FermionField result(&Grid); result=Zero();
@@ -130,7 +130,7 @@ int main (int argc, char ** argv)
     //    ref = ref + mass * src;
   }
 
-  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0,params);
+  ImprovedStaggeredFermionD Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0,params);
   
 
   std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
@@ -269,7 +269,7 @@ int main (int argc, char ** argv)
   pickCheckerboard(Even,phi_e,phi);
   pickCheckerboard(Odd ,phi_o,phi);
 
-  SchurDiagMooeeOperator<ImprovedStaggeredFermionR,FermionField> HermOpEO(Ds);
+  SchurDiagMooeeOperator<ImprovedStaggeredFermionD,FermionField> HermOpEO(Ds);
   HermOpEO.MpcDagMpc(chi_e,dchi_e);
   HermOpEO.MpcDagMpc(chi_o,dchi_o);
 

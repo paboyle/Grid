@@ -167,13 +167,12 @@ void GridCmdOptionInt(std::string &str,int & val)
   return;
 }
 
-void GridCmdOptionFloat(std::string &str,float & val)
+void GridCmdOptionFloat(std::string &str,double & val)
 {
   std::stringstream ss(str);
   ss>>val;
   return;
 }
-
 
 void GridParseLayout(char **argv,int argc,
 		     Coordinate &latt_c,
@@ -355,6 +354,11 @@ void Grid_init(int *argc,char ***argv)
   // MPI initialisation
   //////////////////////////////////////////////////////////
   CartesianCommunicator::Init(argc,argv);
+
+  GridLogger::GlobalStopWatch.Stop();
+  CartesianCommunicator::BarrierWorld();
+  GridLogger::GlobalStopWatch.Reset();// Back to zero with synchronised clock
+  GridLogger::GlobalStopWatch.Start();
 
   ////////////////////////////////////
   // Banner after MPI (unless GPU)

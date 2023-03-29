@@ -501,7 +501,7 @@ struct Conj{
 struct TimesMinusI{
   // Complex
   template <typename T>
-  inline vec<T> operator()(vec<T> a, vec<T> b){
+  inline vec<T> operator()(vec<T> a){
     vec<T> out;
     const vec<typename acle<T>::uint> tbl_swap = acle<T>::tbl_swap();
     svbool_t pg1 = acle<T>::pg1();
@@ -520,7 +520,7 @@ struct TimesMinusI{
 struct TimesI{
   // Complex
   template <typename T>
-  inline vec<T> operator()(vec<T> a, vec<T> b){
+  inline vec<T> operator()(vec<T> a){
     vec<T> out;
     const vec<typename acle<T>::uint> tbl_swap = acle<T>::tbl_swap();
     svbool_t pg1 = acle<T>::pg1();

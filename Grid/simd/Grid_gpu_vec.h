@@ -38,7 +38,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifdef GRID_HIP
 #include <hip/hip_fp16.h>
 #endif
-#ifdef GRID_SYCL
+#if !defined(GRID_CUDA) && !defined(GRID_HIP)
 namespace Grid {
   typedef struct { uint16_t x;} half;
   typedef struct { half   x; half   y;} half2;
@@ -486,7 +486,7 @@ namespace Optimization {
 
   struct TimesMinusI{
     //Complex single
-    accelerator_inline GpuVectorCF operator()(GpuVectorCF in,GpuVectorCF dummy){
+    accelerator_inline GpuVectorCF operator()(GpuVectorCF in){
       typedef GpuVectorCF vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
@@ -495,7 +495,7 @@ namespace Optimization {
       }
       return ret;
     }
-    accelerator_inline GpuVectorCD operator()(GpuVectorCD in,GpuVectorCD dummy){
+    accelerator_inline GpuVectorCD operator()(GpuVectorCD in){
       typedef GpuVectorCD vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
@@ -508,7 +508,7 @@ namespace Optimization {
 
   struct TimesI{
     //Complex single
-    accelerator_inline GpuVectorCF operator()(GpuVectorCF in,GpuVectorCF dummy){
+    accelerator_inline GpuVectorCF operator()(GpuVectorCF in){
       typedef GpuVectorCF vec;
       vec ret;
       for(int i=0;i<vec::N;i++){
@@ -517,7 +517,7 @@ namespace Optimization {
       }
       return ret;
     }
-    accelerator_inline GpuVectorCD operator()(GpuVectorCD in,GpuVectorCD dummy){
+    accelerator_inline GpuVectorCD operator()(GpuVectorCD in){
       typedef GpuVectorCD vec;
       vec ret;
       for(int i=0;i<vec::N;i++){

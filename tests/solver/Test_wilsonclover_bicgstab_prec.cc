@@ -70,14 +70,14 @@ int main (int argc, char ** argv)
   RealD mass = -0.1;
   RealD csw_r = 1.0;
   RealD csw_t = 1.0;
-  WilsonCloverFermionR Dw(Umu, Grid, RBGrid, mass, csw_r, csw_t);
+  WilsonCloverFermionD Dw(Umu, Grid, RBGrid, mass, csw_r, csw_t);
 
   LatticeFermion    src_o(&RBGrid);
   LatticeFermion result_o(&RBGrid);
   pickCheckerboard(Odd, src_o, src);
   result_o = Zero();
 
-  NonHermitianSchurDiagMooeeOperator<WilsonCloverFermionR,LatticeFermion> HermOp(Dw);
+  NonHermitianSchurDiagMooeeOperator<WilsonCloverFermionD,LatticeFermion> HermOp(Dw);
   BiCGSTAB<LatticeFermion> CG(1.0e-8,10000);
   CG(HermOp, src_o, result_o);
 

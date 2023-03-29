@@ -253,7 +253,7 @@ int main (int argc, char ** argv)
 
   int nmass = masses.size();
 
-  std::vector<MobiusFermionR *> FermActs;
+  std::vector<MobiusFermionD *> FermActs;
   
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"MobiusFermion action as Scaled Shamir kernel"<<std::endl;
@@ -265,7 +265,7 @@ int main (int argc, char ** argv)
     RealD b=1.5;// Scale factor b+c=2, b-c=1
     RealD c=0.5;
     
-    FermActs.push_back(new MobiusFermionR(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c));
+    FermActs.push_back(new MobiusFermionD(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c));
    
   }
 

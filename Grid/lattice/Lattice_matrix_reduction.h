@@ -32,7 +32,6 @@ template<class vobj>
 static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<vobj> &X,const Lattice<vobj> &Y,int Orthog,RealD scale=1.0) 
 {    
   typedef typename vobj::scalar_object sobj;
-  typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   int Nblock = X.Grid()->GlobalDimensions()[Orthog];
@@ -82,7 +81,6 @@ template<class vobj>
 static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<vobj> &X,int Orthog,RealD scale=1.0) 
 {    
   typedef typename vobj::scalar_object sobj;
-  typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   int Nblock = X.Grid()->GlobalDimensions()[Orthog];
@@ -130,7 +128,6 @@ template<class vobj>
 static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int Orthog) 
 {
   typedef typename vobj::scalar_object sobj;
-  typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
   
   GridBase *FullGrid  = lhs.Grid();

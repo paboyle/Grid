@@ -38,7 +38,7 @@ NAMESPACE_BEGIN(Grid);
     class TwoFlavourEvenOddRatioPseudoFermionAction : public Action<typename Impl::GaugeField> {
     public:
       INHERIT_IMPL_TYPES(Impl);
-
+      
     private:
       FermionOperator<Impl> & NumOp;// the basic operator
       FermionOperator<Impl> & DenOp;// the basic operator
@@ -50,6 +50,8 @@ NAMESPACE_BEGIN(Grid);
       FermionField PhiOdd;   // the pseudo fermion field for this trajectory
       FermionField PhiEven;  // the pseudo fermion field for this trajectory
 
+      RealD RefreshAction;
+      
     public:
       TwoFlavourEvenOddRatioPseudoFermionAction(FermionOperator<Impl>  &_NumOp, 
                                                 FermionOperator<Impl>  &_DenOp, 
@@ -75,24 +77,22 @@ NAMESPACE_BEGIN(Grid);
           conformable(_NumOp.GaugeRedBlackGrid(), _DenOp.GaugeRedBlackGrid());
         };
 
-      virtual std::string action_name(){return "TwoFlavourEvenOddRatioPseudoFermionAction";}
+      virtual std::string action_name(){
+	std::stringstream sstream;
+	sstream<<"TwoFlavourEvenOddRatioPseudoFermionAction det("<<DenOp.Mass()<<") / det("<<NumOp.Mass()<<")";
+	return sstream.str();
+      }
 
       virtual std::string LogParameters(){
 	std::stringstream sstream;
-	sstream << GridLogMessage << "["<<action_name()<<"] has no parameters" << std::endl;
+	sstream<< GridLogMessage << "["<<action_name()<<"] -- No further parameters "<<std::endl;
 	return sstream.str();
       } 
 
       
-      virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) {
+      const FermionField &getPhiOdd() const{ return PhiOdd; }
 
-        // P(phi) = e^{- phi^dag Vpc (MpcdagMpc)^-1 Vpcdag phi}
-        //
-        // NumOp == V
-        // DenOp == M
-        //
-        // Take phi_o = Vpcdag^{-1} Mpcdag eta_o  ; eta_o = Mpcdag^{-1} Vpcdag Phi
-        //
+      virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) {
         // P(eta_o) = e^{- eta_o^dag eta_o}
         //
         // e^{x^2/2 sig^2} => sig^2 = 0.5.
@@ -100,39 +100,59 @@ NAMESPACE_BEGIN(Grid);
         RealD scale = std::sqrt(0.5);
 
         FermionField eta    (NumOp.FermionGrid());
+        gaussian(pRNG,eta); eta = eta * scale;
+
+	refresh(U,eta);
+      }
+
+      void refresh(const GaugeField &U, const FermionField &eta) {
+
+        // P(phi) = e^{- phi^dag Vpc (MpcdagMpc)^-1 Vpcdag phi}
+        //
+        // NumOp == V
+        // DenOp == M
+        //
         FermionField etaOdd (NumOp.FermionRedBlackGrid());
         FermionField etaEven(NumOp.FermionRedBlackGrid());
         FermionField tmp    (NumOp.FermionRedBlackGrid());
-
-        gaussian(pRNG,eta);
 
         pickCheckerboard(Even,etaEven,eta);
         pickCheckerboard(Odd,etaOdd,eta);
 
         NumOp.ImportGauge(U);
         DenOp.ImportGauge(U);
+	std::cout << " TwoFlavourRefresh:  Imported gauge "<<std::endl;
 
         SchurDifferentiableOperator<Impl> Mpc(DenOp);
         SchurDifferentiableOperator<Impl> Vpc(NumOp);
 
+	std::cout << " TwoFlavourRefresh: Diff ops "<<std::endl;
         // Odd det factors
         Mpc.MpcDag(etaOdd,PhiOdd);
+	std::cout << " TwoFlavourRefresh: MpcDag "<<std::endl;
         tmp=Zero();
+	std::cout << " TwoFlavourRefresh: Zero() guess "<<std::endl;
         HeatbathSolver(Vpc,PhiOdd,tmp);
+	std::cout << " TwoFlavourRefresh: Heatbath solver "<<std::endl;
         Vpc.Mpc(tmp,PhiOdd);            
+	std::cout << " TwoFlavourRefresh: Mpc "<<std::endl;
 
         // Even det factors
         DenOp.MooeeDag(etaEven,tmp);
         NumOp.MooeeInvDag(tmp,PhiEven);
+	std::cout << " TwoFlavourRefresh: Mee "<<std::endl;
 
-        PhiOdd =PhiOdd*scale;
-        PhiEven=PhiEven*scale;
-        
+	RefreshAction = norm2(etaEven)+norm2(etaOdd);
+	std::cout << " refresh " <<action_name()<< " action "<<RefreshAction<<std::endl;
       };
 
       //////////////////////////////////////////////////////
       // S = phi^dag V (Mdag M)^-1 Vdag phi
       //////////////////////////////////////////////////////
+      virtual RealD Sinitial(const GaugeField &U) {
+	std::cout << GridLogMessage << "Returning stored two flavour refresh action "<<RefreshAction<<std::endl;
+	return RefreshAction;
+      }
       virtual RealD S(const GaugeField &U) {
 
         NumOp.ImportGauge(U);

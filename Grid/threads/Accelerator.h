@@ -107,6 +107,7 @@ void     acceleratorInit(void);
 
 extern int acceleratorAbortOnGpuError;
 extern cudaStream_t copyStream;
+extern cudaStream_t computeStream;
 
 accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 #ifdef GRID_SIMT
@@ -134,7 +135,7 @@ inline void cuda_mem(void)
     };									\
     dim3 cu_threads(nsimd,acceleratorThreads(),1);			\
     dim3 cu_blocks ((num1+nt-1)/nt,num2,1);				\
-    LambdaApply<<<cu_blocks,cu_threads>>>(num1,num2,nsimd,lambda);	\
+    LambdaApply<<<cu_blocks,cu_threads,0,computeStream>>>(num1,num2,nsimd,lambda);	\
   }
 
 #define accelerator_for6dNB(iter1, num1,				\
@@ -153,7 +154,7 @@ inline void cuda_mem(void)
     };									\
     dim3 cu_blocks (num1,num2,num3);					\
     dim3 cu_threads(num4,num5,num6);					\
-    Lambda6Apply<<<cu_blocks,cu_threads>>>(num1,num2,num3,num4,num5,num6,lambda); \
+    Lambda6Apply<<<cu_blocks,cu_threads,0,computeStream>>>(num1,num2,num3,num4,num5,num6,lambda); \
   }
 
 template<typename lambda>  __global__
@@ -189,7 +190,7 @@ void Lambda6Apply(uint64_t num1, uint64_t num2, uint64_t num3,
 
 #define accelerator_barrier(dummy)					\
   {									\
-    cudaDeviceSynchronize();						\
+    cudaStreamSynchronize(computeStream);				\
     cudaError err = cudaGetLastError();					\
     if ( cudaSuccess != err ) {						\
       printf("accelerator_barrier(): Cuda error %s \n",			\
@@ -247,7 +248,10 @@ inline int  acceleratorIsCommunicable(void *ptr)
 //////////////////////////////////////////////
 // SyCL acceleration
 //////////////////////////////////////////////
+
 #ifdef GRID_SYCL
+#define GRID_SYCL_LEVEL_ZERO_IPC
+
 NAMESPACE_END(Grid);
 #if 0
 #include <CL/sycl.hpp>
@@ -260,6 +264,7 @@ NAMESPACE_END(Grid);
 #include <level_zero/ze_api.h>
 #include <sycl/ext/oneapi/backend/level_zero.hpp>
 #endif
+
 NAMESPACE_BEGIN(Grid);
 
 extern cl::sycl::queue *theGridAccelerator;
@@ -341,6 +346,7 @@ NAMESPACE_BEGIN(Grid);
 #define accelerator_inline __host__ __device__ inline
 
 extern hipStream_t copyStream;
+extern hipStream_t computeStream;
 /*These routines define mapping from thread grid to loop & vector lane indexing */
 accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 #ifdef GRID_SIMT
@@ -362,15 +368,14 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
     dim3 hip_blocks ((num1+nt-1)/nt,num2,1); \
     if(hip_threads.x * hip_threads.y * hip_threads.z <= 64){ \
       hipLaunchKernelGGL(LambdaApply64,hip_blocks,hip_threads,		\
-            0,0,						\
-            num1,num2,nsimd, lambda);				\
+   	                 0,computeStream,						\
+			 num1,num2,nsimd, lambda);			\
     } else { \
       hipLaunchKernelGGL(LambdaApply,hip_blocks,hip_threads,		\
-            0,0,						\
-            num1,num2,nsimd, lambda);				\
+			 0,computeStream,				\
+			 num1,num2,nsimd, lambda);			\
     } \
   }
-
 
 template<typename lambda>  __global__
 __launch_bounds__(64,1)
@@ -400,7 +405,7 @@ void LambdaApply(uint64_t numx, uint64_t numy, uint64_t numz, lambda Lambda)
 
 #define accelerator_barrier(dummy)				\
   {								\
-    hipDeviceSynchronize();					\
+    hipStreamSynchronize(computeStream);			\
     auto err = hipGetLastError();				\
     if ( err != hipSuccess ) {					\
       printf("After hipDeviceSynchronize() : HIP error %s \n", hipGetErrorString( err )); \
@@ -443,7 +448,7 @@ inline void acceleratorMemSet(void *base,int value,size_t bytes) { hipMemset(bas
 
 inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) // Asynch
 {
-  hipMemcpyAsync(to,from,bytes, hipMemcpyDeviceToDevice,copyStream);
+  hipMemcpyDtoDAsync(to,from,bytes, copyStream);
 }
 inline void acceleratorCopySynchronise(void) { hipStreamSynchronize(copyStream); };
 
@@ -462,6 +467,8 @@ inline void acceleratorCopySynchronise(void) { hipStreamSynchronize(copyStream);
 #define accelerator_for2d(iter1, num1, iter2, num2, nsimd, ... )	\
   accelerator_for2dNB(iter1, num1, iter2, num2, nsimd, { __VA_ARGS__ } ); \
   accelerator_barrier(dummy);
+
+#define GRID_ACCELERATED
 
 #endif
 
