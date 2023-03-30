@@ -42,7 +42,7 @@ public:
                              const std::vector<ComplexField > &mom,
                              int orthogdim, double *t_kernel = nullptr, double *t_gsum = nullptr);
   template <typename TensorType> // output: rank 5 tensor, e.g. Eigen::Tensor<ComplexD, 5>
-  static void StagMesonFieldLocalMILC(TensorType &mat,
+  static void StagMesonFieldAccumLocalMILC(TensorType &mat,
                              const FermionField *lhs_wi,
                              const FermionField *rhs_vj,
                              std::vector<Gamma::Algebra> gammas,
@@ -1514,7 +1514,7 @@ void A2Autils<FImpl>::DeltaFeq2(int dt_min,int dt_max,
 
 template <class FImpl>
 template <typename TensorType>
-void A2Autils<FImpl>::StagMesonFieldLocalMILC(TensorType &mat,
+void A2Autils<FImpl>::StagMesonFieldAccumLocalMILC(TensorType &mat,
                                      const FermionField *lhs_wi,
                                      const FermionField *rhs_vj,
                                      std::vector<Gamma::Algebra> gammas,
@@ -1576,14 +1576,6 @@ void A2Autils<FImpl>::StagMesonFieldLocalMILC(TensorType &mat,
   int MFlvol = ld*Lblock*Rblock*Nmom*Ngamma;
   
   Vector<Scalar_v> lvSum(MFrvol);
-  Vector<Scalar_s> lsSum(MFlvol);
-
-  thread_for(r, MFrvol,{
-    lvSum[r] = Zero();
-  });  
-  thread_for(r, MFlvol,{
-    lsSum[r]=scalar_type(0.0);
-  });
 
   int nBlocks = grid->_slice_nblock[orthogdim];
   int vecsPerSlicePerBlock = grid->_slice_block[orthogdim];
@@ -1677,7 +1669,10 @@ void A2Autils<FImpl>::StagMesonFieldLocalMILC(TensorType &mat,
   Integer    *hcoor_p = & hcoor[0];
 
   Scalar_v *lvSum_p = &lvSum[0];
-  Scalar_s *lsSum_p = &lsSum[0];
+
+  accelerator_for(r, MFrvol,{
+    lvSum_p[r] = Zero();
+  });  
 
   Coordinate *icoor_p = &icoorContainer[0];
 
@@ -1751,7 +1746,16 @@ void A2Autils<FImpl>::StagMesonFieldLocalMILC(TensorType &mat,
     }
   });
 
+  // Free all Lattice Views
+  for(int p=0;p<sizeL;p++) AcceleratorViewContainerW[p].ViewClose();
+  for(int p=0;p<sizeR;p++) AcceleratorViewContainerV[p].ViewClose();
+  for(int p=0;p<Ngamma;p++) AcceleratorViewContainerStag[p].ViewClose();
+  for(int p=0;p<Nmom;p++) AcceleratorViewContainerMom[p].ViewClose();
 
+  int pd = grid->_processors[orthogdim];
+  int pc = grid->_processor_coor[orthogdim];
+
+  auto data_p = mat.data();
   accelerator_for(l_index,Lblock,acceleratorThreads(),{
     // Sum across simd lanes in the plane, breaking out orthog dir.
     ExtractBuffer<Scalar_s> extracted(Nsimd);
@@ -1763,63 +1767,18 @@ void A2Autils<FImpl>::StagMesonFieldLocalMILC(TensorType &mat,
         int base = Ngamma*Nmom*l_index+Ngamma*Nmom*Lblock*r_index+Ngamma*Nmom*Lblock*Rblock*rt;
         for (int mu = 0; mu < Ngamma; mu++) {
           for ( int m=0;m<Nmom;m++){
-            
-            // Final matrix layout is mat[Nmom,Ngamma,Nt,Nw,Nv]
-            // Thus, ignoring gamma and time we get the index of lvSum
             int ij_rdx = base+mu*Nmom+m;
             
             extract(lvSum_p[ij_rdx],extracted);
             
             for(int idx=0;idx<Nsimd;idx++){
                 
-                // Get the *internal* coord that the SIMD lane idx represents
-                
-                // We are looking to add each element of a SIMD lane to the appropriate time slice in lsSum.
-                // ldx is the actual time slice on the lattice
-                int ldx    = rt+icoor_p[idx][orthogdim]*rd;
-                
-                // The offset for lsSum is thus lsSum[timeSlice,Lblock,Rblock,gamma,momentum] in row major
-                int ij_ldx = m+mu*Nmom+Ngamma*Nmom*l_index+Ngamma*Nmom*Lblock*r_index+Ngamma*Nmom*Lblock*Rblock*ldx;
-                
-                lsSum_p[ij_ldx]=lsSum_p[ij_ldx]+extracted[idx];
-            }
-          }
-        }
-      }
-    }
-  });
+                int lt = rt+icoor_p[idx][orthogdim]*rd;
+                int t = lt + pc*ld;
 
-  assert(mat.dimension(0) == Nmom);
-  assert(mat.dimension(1) == Ngamma);
-  assert(mat.dimension(2) == Nt);
-
-  int pd = grid->_processors[orthogdim];
-  int pc = grid->_processor_coor[orthogdim];
-
-  thread_for_collapse(2,lt,ld,{
-    for(int pt=0;pt<pd;pt++){
-      int t = lt + pt*ld;
-      // Fill mat only with the data you have locally
-      if (pt == pc){
-        for(int i=0;i<Lblock;i++){
-          for(int j=0;j<Rblock;j++){
-            for (int mu = 0; mu < Ngamma; mu++) {
-              for(int m=0;m<Nmom;m++){
-                int ij_dx = m+Nmom*mu+Ngamma*Nmom*i + Ngamma*Nmom*Lblock * j + Ngamma*Nmom*Lblock * Rblock * lt;
-                mat(m,mu,t,i,j) = lsSum[ij_dx];
-              }
-            }
-          }
-        }
-      // Otherwise fill with zeros
-      } else {
-        const scalar_type zz(0.0);
-        for(int i=0;i<Lblock;i++){
-          for(int j=0;j<Rblock;j++){
-            for (int mu = 0; mu < Ngamma; mu++) {
-              for(int m=0;m<Nmom;m++){
-                mat(m,mu,t,i,j) = zz;
-              }
+                int ij_dx = r_index + Rblock*l_index + Rblock*Lblock*t + Rblock*Lblock*Nt*mu + Rblock*Lblock*Nt*Ngamma*m;
+                
+                data_p[ij_dx]=data_p[ij_dx]+extracted[idx];
             }
           }
         }
@@ -1828,12 +1787,6 @@ void A2Autils<FImpl>::StagMesonFieldLocalMILC(TensorType &mat,
   });
 
   if (t_kernel) *t_kernel += usecond();
-
-  // Free all Lattice Views
-  for(int p=0;p<sizeL;p++) AcceleratorViewContainerW[p].ViewClose();
-  for(int p=0;p<sizeR;p++) AcceleratorViewContainerV[p].ViewClose();
-  for(int p=0;p<Ngamma;p++) AcceleratorViewContainerStag[p].ViewClose();
-  for(int p=0;p<Nmom;p++) AcceleratorViewContainerMom[p].ViewClose();
 }
 
 template <class FImpl>
@@ -1846,7 +1799,15 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
                                      int orthogdim, double *t_kernel, double *t_gsum)
 {
 
-  StagMesonFieldLocalMILC(mat,lhs_wi,rhs_vj,gammas,mom,orthogdim,t_kernel);
+  int size = mat.size();
+  auto data_p =  mat.data();
+  const scalar_type zz(0.0);
+
+  accelerator_for(i,size,acceleratorThreads(),{
+    data_p[i] = zz;
+  });
+
+  StagMesonFieldAccumLocalMILC(mat,lhs_wi,rhs_vj,gammas,mom,orthogdim,t_kernel);
 
   // Combine local mat objects from all processors so that it's completely filled in.
   ////////////////////////////////////////////////////////////////////
