@@ -1670,10 +1670,12 @@ void A2Autils<FImpl>::StagMesonFieldAccumLocalMILC(TensorType &mat,
 
   Scalar_v *lvSum_p = &lvSum[0];
 
-  accelerator_for(r, MFrvol,{
-    lvSum_p[r] = Zero();
-  });  
-
+  {
+    Scalar_v zz(0.0);
+    accelerator_for(r, MFrvol,{
+      lvSum_p[r] = zz;
+    });  
+  }
   Coordinate *icoor_p = &icoorContainer[0];
 
   // Hack to prefetch fields onto device memory. There's probably a more explicit way to do it?
