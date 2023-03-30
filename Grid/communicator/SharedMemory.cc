@@ -91,6 +91,59 @@ void *SharedMemory::ShmBufferSelf(void)
   //std::cerr << "ShmBufferSelf "<<ShmRank<<" "<<std::hex<< ShmCommBufs[ShmRank] <<std::dec<<std::endl;
   return ShmCommBufs[ShmRank];
 }
+static inline int divides(int a,int b)
+{
+  return ( b == ( (b/a)*a ) );
+}
+void GlobalSharedMemory::GetShmDims(const Coordinate &WorldDims,Coordinate &ShmDims)
+{
+  ////////////////////////////////////////////////////////////////
+  // Allow user to configure through environment variable
+  ////////////////////////////////////////////////////////////////
+  char* str = getenv(("GRID_SHM_DIMS_" + std::to_string(ShmDims.size())).c_str());
+  if ( str ) {
+    std::vector<int> IntShmDims;
+    GridCmdOptionIntVector(std::string(str),IntShmDims);
+    assert(IntShmDims.size() == WorldDims.size());
+    long ShmSize = 1;
+    for (int dim=0;dim<WorldDims.size();dim++) {
+      ShmSize *= (ShmDims[dim] = IntShmDims[dim]);
+      assert(divides(ShmDims[dim],WorldDims[dim]));
+    }
+    assert(ShmSize == WorldShmSize);
+    return;
+  }
+  
+  ////////////////////////////////////////////////////////////////
+  // Powers of 2,3,5 only in prime decomposition for now
+  ////////////////////////////////////////////////////////////////
+  int ndimension = WorldDims.size();
+  ShmDims=Coordinate(ndimension,1);
+
+  std::vector<int> primes({2,3,5});
+
+  int dim = 0;
+  int last_dim = ndimension - 1;
+  int AutoShmSize = 1;
+  while(AutoShmSize != WorldShmSize) {
+    int p;
+    for(p=0;p<primes.size();p++) {
+      int prime=primes[p];
+      if ( divides(prime,WorldDims[dim]/ShmDims[dim])
+        && divides(prime,WorldShmSize/AutoShmSize)  ) {
+  AutoShmSize*=prime;
+  ShmDims[dim]*=prime;
+  last_dim = dim;
+  break;
+      }
+    }
+    if (p == primes.size() && last_dim == dim) {
+      std::cerr << "GlobalSharedMemory::GetShmDims failed" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+    dim=(dim+1) %ndimension;
+  }
+}
 
 NAMESPACE_END(Grid); 
 
