@@ -128,7 +128,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 							 int recv_from_rank,int dor,
 							 int xbytes,int rbytes, int dir)
 {
-  return 2.0*bytes;
+  return xbytes+rbytes;
 }
 void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int dir)
 {
