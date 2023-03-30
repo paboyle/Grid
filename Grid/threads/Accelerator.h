@@ -458,7 +458,8 @@ inline void acceleratorCopySynchronise(void) { hipStreamSynchronize(copyStream);
 // Common on all GPU targets
 //////////////////////////////////////////////
 #if defined(GRID_SYCL) || defined(GRID_CUDA) || defined(GRID_HIP)
-#define accelerator_forNB( iter1, num1, nsimd, ... ) accelerator_for2dNB( iter1, num1, iter2, 1, nsimd, {__VA_ARGS__} );
+#define accelerator_forNB( iter1, num1, nsimd, ... ) accelerator_for2dNB( iter1, num1, iter2, 1, nsimd, {__VA_ARGS__} );   accelerator_barrier(dummy);
+
 
 #define accelerator_for( iter, num, nsimd, ... )		\
   accelerator_forNB(iter, num, nsimd, { __VA_ARGS__ } );	\
