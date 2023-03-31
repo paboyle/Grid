@@ -1573,7 +1573,6 @@ void A2Autils<FImpl>::StagMesonFieldAccumLocalMILC(TensorType &mat,
   int rd=grid->_rdimensions[orthogdim];
   
   int MFrvol = rd*Lblock*Rblock*Nmom*Ngamma;
-  int MFlvol = ld*Lblock*Rblock*Nmom*Ngamma;
   
   Vector<Scalar_v> lvSum(MFrvol);
 
@@ -1670,21 +1669,11 @@ void A2Autils<FImpl>::StagMesonFieldAccumLocalMILC(TensorType &mat,
 
   Scalar_v *lvSum_p = &lvSum[0];
 
-  {
-    Scalar_v zz(0.0);
-    accelerator_for(r, MFrvol,{
-      lvSum_p[r] = zz;
+  accelerator_for(r, MFrvol,1,{
+      lvSum_p[r] = Zero();
     });  
-  }
-  Coordinate *icoor_p = &icoorContainer[0];
 
-  // Hack to prefetch fields onto device memory. There's probably a more explicit way to do it?
-  accelerator_forNB(index,sizeL+sizeR,1,{
-    if (index < sizeL)
-      auto a = view_pW[index][0];
-    else
-      auto a = view_pV[index-sizeL][0];                                                                                                                                                                                
-  });  
+  Coordinate *icoor_p = &icoorContainer[0];
 
   accelerator_for2d(l_index,sizeL,r_index,sizeR,Nsimd,{
 
@@ -1758,7 +1747,8 @@ void A2Autils<FImpl>::StagMesonFieldAccumLocalMILC(TensorType &mat,
   int pc = grid->_processor_coor[orthogdim];
 
   auto data_p = mat.data();
-  accelerator_for(l_index,Lblock,acceleratorThreads(),{
+  
+  accelerator_for(l_index,Lblock,1,{
     // Sum across simd lanes in the plane, breaking out orthog dir.
     ExtractBuffer<Scalar_s> extracted(Nsimd);
 
