@@ -29,7 +29,7 @@ Author: Christoph Lehner <christoph@lhnr.de>
 
 #include <Grid/GridCore.h>
 #include <pwd.h>
-#include <syscall.h>
+#include <sys/syscall.h>
 
 #ifdef GRID_CUDA
 #include <cuda_runtime_api.h>
