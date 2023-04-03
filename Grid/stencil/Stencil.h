@@ -434,7 +434,6 @@ public:
   ////////////////////////////////////////////////////////////////////////
   void CommunicateBegin(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
-    accelerator_barrier();
     for(int i=0;i<Packets.size();i++){
       _grid->StencilSendToRecvFromBegin(MpiReqs,
 					Packets[i].send_buf,
@@ -443,7 +442,6 @@ public:
 					Packets[i].from_rank,Packets[i].do_recv,
 					Packets[i].xbytes,Packets[i].rbytes,i);
     }
-    _grid->StencilBarrier();// Synch shared memory on a single nodes
   }
 
   void CommunicateComplete(std::vector<std::vector<CommsRequest_t> > &reqs)
@@ -452,6 +450,9 @@ public:
     if   ( this->partialDirichlet ) DslashLogPartial();
     else if ( this->fullDirichlet ) DslashLogDirichlet();
     else DslashLogFull();
+    acceleratorCopySynchronise();
+    // Everyone agrees we are all done
+    _grid->StencilBarrier(); 
   }
   ////////////////////////////////////////////////////////////////////////
   // Blocking send and receive. Either sequential or parallel.
@@ -529,7 +530,6 @@ public:
   {
     _grid->StencilBarrier();// Synch shared memory on a single nodes
 
-    // conformable(source.Grid(),_grid);
     assert(source.Grid()==_grid);
 
     u_comm_offset=0;
@@ -655,8 +655,8 @@ public:
     CommsMerge(decompress,Mergers,Decompressions);
   }
   template<class decompressor>  void CommsMergeSHM(decompressor decompress) {
-    _grid->StencilBarrier();// Synch shared memory on a single nodes
-    CommsMerge(decompress,MergersSHM,DecompressionsSHM);
+    assert(MergersSHM.size()==0);
+    assert(DecompressionsSHM.size()==0);
   }
 
   template<class decompressor>
@@ -665,9 +665,11 @@ public:
     for(int i=0;i<mm.size();i++){
       decompressor::MergeFace(decompress,mm[i]);
     }
+    if ( mm.size() )    acceleratorFenceComputeStream();
     for(int i=0;i<dd.size();i++){
       decompressor::DecompressFace(decompress,dd[i]);
     }
+    if ( dd.size() )    acceleratorFenceComputeStream();
   }
   ////////////////////////////////////////
   // Set up routines

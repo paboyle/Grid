@@ -55,6 +55,7 @@ NAMESPACE_CHECK(BiCGSTAB);
 #include <Grid/algorithms/iterative/ConjugateGradientMultiShift.h>
 #include <Grid/algorithms/iterative/ConjugateGradientMixedPrec.h>
 #include <Grid/algorithms/iterative/ConjugateGradientMultiShiftMixedPrec.h>
+#include <Grid/algorithms/iterative/ConjugateGradientMixedPrecBatched.h>
 #include <Grid/algorithms/iterative/BiCGSTABMixedPrec.h>
 #include <Grid/algorithms/iterative/BlockConjugateGradient.h>
 #include <Grid/algorithms/iterative/ConjugateGradientReliableUpdate.h>

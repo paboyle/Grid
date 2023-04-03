@@ -1,1 +1,0 @@
-#define IMPLEMENTATION WilsonImplD2
