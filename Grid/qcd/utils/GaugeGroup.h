@@ -350,11 +350,10 @@ class GaugeGroup {
 
     template <int N>    // reunitarise, resimplectify... previously ProjectSUn
     static void ProjectGn(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U, GroupName::SU) {
-      GridBase *grid = U.Grid();
       // Reunitarise
       for (int mu = 0; mu < Nd; mu++) {
         auto Umu = PeekIndex<LorentzIndex>(U, mu);
-        ProjectOnGaugeGroup(Umu);
+        ProjectGn(Umu);
         PokeIndex<LorentzIndex>(U, Umu, mu);
       }
     }
