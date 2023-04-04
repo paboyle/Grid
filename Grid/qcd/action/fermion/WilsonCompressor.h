@@ -507,6 +507,7 @@ public:
     }
     this->face_table_computed=1;
     assert(this->u_comm_offset==this->_unified_buffer_size);
+    accelerator_barrier();
   }
 
 };
