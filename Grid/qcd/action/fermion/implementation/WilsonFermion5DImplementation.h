@@ -332,8 +332,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   /////////////////////////////
   {
     GRID_TRACE("Gather");
-    st.HaloExchangeOptGather(in,compressor);
-    accelerator_barrier();
+    st.HaloExchangeOptGather(in,compressor); // Put the barrier in the routine
   }
   
   std::vector<std::vector<CommsRequest_t> > requests;
