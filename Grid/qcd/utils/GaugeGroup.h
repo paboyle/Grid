@@ -300,9 +300,10 @@ class GaugeGroup {
     ColdConfiguration(out);
   }
 
-  template <typename LatticeMatrixType, ONLY_IF_SU>
+  template <typename LatticeMatrixType>
   static void taProj(const LatticeMatrixType &in, LatticeMatrixType &out) {
-    out = Ta(in);
+    taProj(in, out, group_name());
+    //out = Ta(in);
   }
     
   template <typename LatticeMatrixType>
@@ -333,6 +334,32 @@ class GaugeGroup {
       ProjectOnGaugeGroup(Umu, group_name());
   }
     
+    template <class vtype>
+    static void ProjectOnGaugeGroup(iScalar<vtype> &r) {
+      ProjectOnGaugeGroup(r, group_name());
+    }
+
+    template <class vtype, int N>
+    static void ProjectOnGaugeGroup(iVector<vtype,N> &r) {
+      r = ProjectOnGaugeGroup(r, group_name());
+    }
+
+    template <class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr>
+    static void ProjectOnGaugeGroup(iMatrix<vtype,N> &arg) {
+      arg = ProjectOnGaugeGroup(arg, group_name());
+    }
+
+    
+/*
+  template <int N>        // reunitarise, resimplectify...
+  static void ProjectOnGaugeGroup(iVector<iScalar<iMatrix<vComplexD, N> >, Nd> &U) {
+      ProjectOnGaugeGroup(U, group_name());
+  }
+         
+  template <int N>        // reunitarise, resimplectify...
+  static void ProjectOnGaugeGroup(iScalar<iScalar<iMatrix<vComplexD, N> > > &Umu) {
+      ProjectOnGaugeGroup(Umu, group_name());
+  }*/
 
   template <int N>       // reunitarise, resimplectify... previously ProjectSUn
   static void ProjectGn(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
@@ -349,7 +376,7 @@ class GaugeGroup {
    }
 
     template <int N>    // reunitarise, resimplectify... previously ProjectSUn
-    static void ProjectGn(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U, GroupName::SU) {
+    static void ProjectGn(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
       // Reunitarise
       for (int mu = 0; mu < Nd; mu++) {
         auto Umu = PeekIndex<LorentzIndex>(U, mu);

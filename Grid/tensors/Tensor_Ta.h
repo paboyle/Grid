@@ -66,23 +66,23 @@ template<class vtype,int N> accelerator_inline iMatrix<vtype,N> Ta(const iMatrix
   return ret;
 }
 
-// for sp2n can't do something as simple as Ta. We do a Gram-Schmidt
+// for sp2n can't be as simple as Ta. We do a Gram-Schmidt
 
-template<class vtype> accelerator_inline iScalar<vtype> ProjectSp2nAlgebra(const iScalar<vtype>&r)
+template<class vtype> accelerator_inline iScalar<vtype> SpTa(const iScalar<vtype>&r)
 {
   iScalar<vtype> ret;
-  ret._internal = ProjectSp2nAlgebra(r._internal);
-  return ret;
+  ret._internal = SpTa(r._internal);
+  return Ta(ret);
 }
-template<class vtype,int N> accelerator_inline iVector<vtype,N> ProjectSp2nAlgebra(const iVector<vtype,N>&r)
+template<class vtype,int N> accelerator_inline iVector<vtype,N> SpTa(const iVector<vtype,N>&r)
 {
   iVector<vtype,N> ret;
   for(int i=0;i<N;i++){
-    ret._internal[i] = ProjectSp2nAlgebra(r._internal[i]);
+    ret._internal[i] = SpTa(r._internal[i]);
   }
-  return ret;
+  return Ta(ret);
 }
-template<class vtype,int N> accelerator_inline iMatrix<vtype,N> ProjectSp2nAlgebra(const iMatrix<vtype,N> &arg)
+template<class vtype,int N> accelerator_inline iMatrix<vtype,N> SpTa(const iMatrix<vtype,N> &arg)
 {
     iMatrix<vtype,N> ret;
     vtype nrm;
@@ -142,7 +142,7 @@ template<class vtype,int N> accelerator_inline iMatrix<vtype,N> ProjectSp2nAlgeb
     }
     
   
-  return ret;
+  return Ta(ret);
 }
 
 
