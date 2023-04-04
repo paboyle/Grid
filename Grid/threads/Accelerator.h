@@ -476,6 +476,12 @@ inline void acceleratorCopySynchronise(void) { hipStreamSynchronize(copyStream);
 
 //OpenMP Target Offloading
 #ifdef OMPTARGET
+#include<omp.h>
+extern "C" void *llvm_omp_target_alloc_host  (size_t Size, int DeviceNum);
+extern "C" void *llvm_omp_target_alloc_device(size_t Size, int DeviceNum);
+extern "C" void *llvm_omp_target_alloc_shared(size_t Size, int DeviceNum);
+//TODO: Dynamic Shared Memory
+
 #define THREAD_LIMIT acceleratorThreads()
 
 #define accelerator
@@ -507,17 +513,46 @@ inline void acceleratorCopySynchronise(void) { hipStreamSynchronize(copyStream);
 #endif
 
 accelerator_inline int acceleratorSIMTlane(int Nsimd) { return 0; } // CUDA specific
-inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  {;}
-inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){;}
-inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  { memcpy(to,from,bytes);}
-inline void acceleratorCopySynchronize(void) {;};
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)
+{
+  printf("copy to device start \n");
+  int devc = omp_get_default_device();
+  int host = omp_get_initial_device();
+  if( omp_target_memcpy( to, from, bytes, 0, 0, devc, host ) ) {
+    printf(" omp_target_memcpy host to device failed for %ld in device %d \n",bytes,devc);
+  }
+  printf("copy to device end \n");
+};
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes)
+{
+  printf("copy from device start \n");
+  int devc = omp_get_default_device();
+  int host = omp_get_initial_device();
+  if( omp_target_memcpy( to, from, bytes, 0, 0, host, devc ) ) {
+    printf(" omp_target_memcpy device to host failed for %ld in device %d \n",bytes,devc);
+  }
+  printf("copy from device end \n");
+};
+inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) { printf("TODO acceleratorCopyDeviceToDeviceAsynch");memcpy(to,from,bytes);}
+inline void acceleratorCopySynchronize(void) {printf("TODO acceleratorCopySynchronize");};
 
 inline int  acceleratorIsCommunicable(void *ptr){ return 1; }
-inline void acceleratorMemSet(void *base,int value,size_t bytes) { memset(base,value,bytes);}
+inline void acceleratorMemSet(void *base,int value,size_t bytes)
+{
+  printf(" l-l-l-l-l-l-l-l-l-l-l-l-l OMPTARGET calling memset on host and copying to dev l-l-l-l-l-l-l-l-l-l-l-l \n");
+  void *base_host = memalign(GRID_ALLOC_ALIGN,bytes);
+  memset(base_host,value,bytes);
+  int devc = omp_get_default_device();
+  int host = omp_get_initial_device();
+  if( omp_target_memcpy( base, base_host, bytes, 0, 0, devc, host ) ) {
+    printf(" omp_target_memcpy device to host failed in MemSet for %ld in device %d \n",bytes,devc);
+  }
+};
 #ifdef OMPTARGET_MANAGED 
 #include <cuda_runtime_api.h>
 inline void *acceleratorAllocShared(size_t bytes)
 {
+  printf(" l-l-l-l-l-l-l-l-l-l-l-l-l Allocating shared from OMPTARGET MANAGED l-l-l-l-l-l-l-l-l-l-l-l \n");	
   void *ptr=NULL;
   auto err = cudaMallocManaged((void **)&ptr,bytes);
   if( err != cudaSuccess ) {
@@ -530,10 +565,30 @@ inline void acceleratorFreeShared(void *ptr){cudaFree(ptr);};
 inline void *acceleratorAllocDevice(size_t bytes){return memalign(GRID_ALLOC_ALIGN,bytes);};
 inline void acceleratorFreeDevice(void *ptr){free(ptr);};
 #else
-inline void *acceleratorAllocShared(size_t bytes){return memalign(GRID_ALLOC_ALIGN,bytes);};
-inline void *acceleratorAllocDevice(size_t bytes){return memalign(GRID_ALLOC_ALIGN,bytes);};
-inline void acceleratorFreeShared(void *ptr){free(ptr);};
-inline void acceleratorFreeDevice(void *ptr){free(ptr);};
+inline void *acceleratorAllocShared(size_t bytes)
+{
+  printf(" l-l-l-l-l-l-l-l-l-l-l-l-l Allocating shared mem from OMPTARGET l-l-l-l-l-l-l-l-l-l-l-l \n");
+  int devc = omp_get_default_device();
+  void *ptr=NULL;
+  ptr = (void *) llvm_omp_target_alloc_shared(bytes, devc);
+  if( ptr == NULL ) {
+    printf(" llvm_omp_target_alloc_shared failed for %ld in device %d \n",bytes,devc);
+  }
+  return ptr;
+};
+inline void *acceleratorAllocDevice(size_t bytes)
+{
+  printf(" l-l-l-l-l-l-l-l-l-l-l-l-l Allocating device mem from OMPTARGET l-l-l-l-l-l-l-l-l-l-l-l \n");
+  int devc = omp_get_default_device();
+  void *ptr=NULL;
+  ptr = (void *) omp_target_alloc(bytes, devc);
+  if( ptr == NULL ) {
+    printf(" omp_target_alloc failed for %ld in device %d \n",bytes,devc);
+  }
+  return ptr;
+};
+inline void acceleratorFreeShared(void *ptr){omp_target_free(ptr, omp_get_default_device());};
+inline void acceleratorFreeDevice(void *ptr){omp_target_free(ptr, omp_get_default_device());};
 #endif
 
 //OpenMP CPU threads
