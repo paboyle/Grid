@@ -428,9 +428,10 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
   auto ptr = &st.surface_list[0];					\
   accelerator_forNB( ss, sz, Simd::Nsimd(), {				\
       int sF = ptr[ss];							\
-      int sU = ss/Ls;							\
+      int sU = sF/Ls;							\
       WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,in_v,out_v);		\
-    });									
+    });									\
+  accelerator_barrier();
 
 #define ASM_CALL(A)							\
   thread_for( sss, Nsite, {						\
@@ -474,9 +475,10 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteInt);    return;}
 #endif
    } else if( exterior ) {
+     // dependent on result of merge
      acceleratorFenceComputeStream();
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteExt); return;}
-     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteExt);    return;}
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL_EXT(GenericDhopSiteExt); return;}
+     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL_EXT(HandDhopSiteExt);    return;}
 #ifndef GRID_CUDA
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteExt);    return;}
 #endif
@@ -506,9 +508,10 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDagInt);     return;}
 #endif
    } else if( exterior ) {
+     // Dependent on result of merge
      acceleratorFenceComputeStream();
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteDagExt); return;}
-     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteDagExt);    return;}
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL_EXT(GenericDhopSiteDagExt); return;}
+     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL_EXT(HandDhopSiteDagExt);    return;}
 #ifndef GRID_CUDA
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDagExt);     return;}
 #endif
