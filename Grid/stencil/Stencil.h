@@ -348,7 +348,7 @@ public:
   ////////////////////////////////////////
   // Stencil query
   ////////////////////////////////////////
-#ifdef SHM_FAST_PATH
+#if 1
   inline int SameNode(int point) {
 
     int dimension    = this->_directions[point];
@@ -434,7 +434,6 @@ public:
   ////////////////////////////////////////////////////////////////////////
   void CommunicateBegin(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
-    accelerator_barrier();
     for(int i=0;i<Packets.size();i++){
       _grid->StencilSendToRecvFromBegin(MpiReqs,
 					Packets[i].send_buf,
@@ -708,6 +707,7 @@ public:
 	}
       }
     }
+    std::cout << "BuildSurfaceList size is "<<surface_list.size()<<std::endl;
   }
   /// Introduce a block structure and switch off comms on boundaries
   void DirichletBlock(const Coordinate &dirichlet_block)
