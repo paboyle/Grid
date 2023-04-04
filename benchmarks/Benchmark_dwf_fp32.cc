@@ -425,7 +425,7 @@ void Benchmark(int Ls, Coordinate Dirichlet)
 
   err = r_eo-result;
   n2e= norm2(err);
-  std::cout<<GridLogMessage << "norm diff   "<< n2e<< "  Line "<<__LINE__ <<std::endl;
+  std::cout<<GridLogMessage << "norm diff   "<< n2e<<std::endl;
   assert(n2e<1.0e-4);
 
   pickCheckerboard(Even,src_e,err);
