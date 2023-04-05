@@ -170,8 +170,7 @@ class GaugeGroup {
     }
   }
 
-  // reunitarise??
-  template <typename LatticeMatrixType>
+ template <typename LatticeMatrixType>
   static void LieRandomize(GridParallelRNG &pRNG, LatticeMatrixType &out,
                            double scale = 1.0) {
     GridBase *grid = out.Grid();
@@ -282,6 +281,7 @@ class GaugeGroup {
       PokeIndex<LorentzIndex>(out, Umu, mu);
     }
   }
+    
   template <typename GaugeField>
   static void ColdConfiguration(GaugeField &out) {
     typedef typename GaugeField::vector_type vector_type;
@@ -294,6 +294,7 @@ class GaugeGroup {
       PokeIndex<LorentzIndex>(out, Umu, mu);
     }
   }
+    
   template <typename GaugeField>
   static void ColdConfiguration(GridParallelRNG &pRNG, GaugeField &out) {
     ColdConfiguration(out);
@@ -303,6 +304,7 @@ class GaugeGroup {
   static void taProj(const LatticeMatrixType &in, LatticeMatrixType &out) {
     out = Ta(in);
   }
+    
   template <typename LatticeMatrixType>
   static void taExp(const LatticeMatrixType &x, LatticeMatrixType &ex) {
     typedef typename LatticeMatrixType::scalar_type ComplexType;
@@ -320,6 +322,42 @@ class GaugeGroup {
       ex = ex + xn * nfac;     // x2/2!, x3/3!....
     }
   }
+    
+  template <int N>        // reunitarise, resimplectify...
+  static void ProjectOnGaugeGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
+      ProjectOnGaugeGroup(U, group_name());
+  }
+       
+  template <int N>        // reunitarise, resimplectify...
+  static void ProjectOnGaugeGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
+      ProjectOnGaugeGroup(Umu, group_name());
+  }
+    
+
+  template <int N>       // reunitarise, resimplectify... previously ProjectSUn
+  static void ProjectGn(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
+       ProjectOnGaugeGroup(Umu);
+       auto det = Determinant(Umu);
+
+       det = conjugate(det);
+
+       for (int i = 0; i < N; i++) {
+           auto element = PeekIndex<ColourIndex>(Umu, N - 1, i);
+           element = element * det;
+           PokeIndex<ColourIndex>(Umu, element, Nc - 1, i);
+       }
+   }
+
+    template <int N>    // reunitarise, resimplectify... previously ProjectSUn
+    static void ProjectGn(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U, GroupName::SU) {
+      // Reunitarise
+      for (int mu = 0; mu < Nd; mu++) {
+        auto Umu = PeekIndex<LorentzIndex>(U, mu);
+        ProjectGn(Umu);
+        PokeIndex<LorentzIndex>(U, Umu, mu);
+      }
+    }
+
 };
 
 template <int N>
@@ -347,6 +385,8 @@ LatticeComplexD Determinant(
   });
   return ret;
 }
+
+
 template <int N>
 static void ProjectSUn(
     Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
@@ -361,6 +401,7 @@ static void ProjectSUn(
     PokeIndex<ColourIndex>(Umu, element, Nc - 1, i);
   }
 }
+
 template <int N>
 static void ProjectSUn(
     Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
@@ -373,6 +414,7 @@ static void ProjectSUn(
     PokeIndex<LorentzIndex>(U, Umu, mu);
   }
 }
+
 // Explicit specialisation for SU(3).
 // Explicit specialisation for SU(3).
 static void ProjectSU3(

@@ -28,6 +28,7 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
+
 #include <Grid/Grid.h>
 
 #include <Grid/qcd/utils/CovariantCshift.h>
@@ -42,11 +43,11 @@ directory
 
 using namespace std;
 using namespace Grid;
- ;
+
 
 int main(int argc, char** argv) {
   Grid_init(&argc, &argv);
-
+    
   std::vector<int> latt({4, 4, 4, 8});
   GridCartesian* grid = SpaceTimeGrid::makeFourDimGrid(
       latt, GridDefaultSimd(Nd, vComplex::Nsimd()), GridDefaultMpi());
@@ -66,7 +67,7 @@ int main(int argc, char** argv) {
 
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
-  std::cout << GridLogMessage << "* Generators for SU(Nc" << std::endl;
+  std::cout << GridLogMessage << "* Generators for SU(3)" << std::endl;
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
   SU3::printGenerators();
@@ -87,22 +88,22 @@ int main(int argc, char** argv) {
   // Projectors 
   GridParallelRNG gridRNG(grid);
   gridRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
-  SU3Adjoint::LatticeAdjMatrix Gauss(grid);
-  SU3::LatticeAlgebraVector ha(grid);
-  SU3::LatticeAlgebraVector hb(grid);
+  SU_Adjoint<Nc>::LatticeAdjMatrix Gauss(grid);
+  SU<Nc>::LatticeAlgebraVector ha(grid);
+  SU<Nc>::LatticeAlgebraVector hb(grid);
   random(gridRNG,Gauss);
 
   std::cout << GridLogMessage << "Start projectOnAlgebra" << std::endl;
-  SU3Adjoint::projectOnAlgebra(ha, Gauss);
+  SU_Adjoint<Nc>::projectOnAlgebra(ha, Gauss);
   std::cout << GridLogMessage << "end projectOnAlgebra" << std::endl;
   std::cout << GridLogMessage << "Start projector" << std::endl;
-  SU3Adjoint::projector(hb, Gauss);
+  SU_Adjoint<Nc>::projector(hb, Gauss);
   std::cout << GridLogMessage << "end projector" << std::endl;
 
   std::cout << GridLogMessage << "ReStart projector" << std::endl;
-  SU3Adjoint::projector(hb, Gauss);
+  SU_Adjoint<Nc>::projector(hb, Gauss);
   std::cout << GridLogMessage << "end projector" << std::endl;
-  SU3::LatticeAlgebraVector diff = ha -hb;
+  SU<Nc>::LatticeAlgebraVector diff = ha -hb;
   std::cout << GridLogMessage << "Difference: " << norm2(diff) << std::endl;
 
 
@@ -114,8 +115,8 @@ int main(int argc, char** argv) {
 
   
   LatticeGaugeField U(grid), V(grid);
-  SU3::HotConfiguration<LatticeGaugeField>(gridRNG, U);
-  SU3::HotConfiguration<LatticeGaugeField>(gridRNG, V);
+  SU<Nc>::HotConfiguration<LatticeGaugeField>(gridRNG, U);
+  SU<Nc>::HotConfiguration<LatticeGaugeField>(gridRNG, V);
 
   // Adjoint representation
   // Test group structure
@@ -123,8 +124,8 @@ int main(int argc, char** argv) {
   LatticeGaugeField UV(grid);
   UV = Zero();
   for (int mu = 0; mu < Nd; mu++) {
-    SU3::LatticeMatrix Umu = peekLorentz(U,mu);
-    SU3::LatticeMatrix Vmu = peekLorentz(V,mu);
+    SU<Nc>::LatticeMatrix Umu = peekLorentz(U,mu);
+    SU<Nc>::LatticeMatrix Vmu = peekLorentz(V,mu);
     pokeLorentz(UV,Umu*Vmu, mu);
   }
 
@@ -151,16 +152,16 @@ int main(int argc, char** argv) {
 
   // Check correspondence of algebra and group transformations
   // Create a random vector
-  SU3::LatticeAlgebraVector h_adj(grid);
+  SU<Nc>::LatticeAlgebraVector h_adj(grid);
   typename AdjointRep<Nc>::LatticeMatrix Ar(grid);
   random(gridRNG,h_adj);
   h_adj = real(h_adj);
   SU_Adjoint<Nc>::AdjointLieAlgebraMatrix(h_adj,Ar);
 
   // Re-extract h_adj
-  SU3::LatticeAlgebraVector h_adj2(grid);
+  SU<Nc>::LatticeAlgebraVector h_adj2(grid);
   SU_Adjoint<Nc>::projectOnAlgebra(h_adj2, Ar);
-  SU3::LatticeAlgebraVector h_diff = h_adj - h_adj2;
+  SU<Nc>::LatticeAlgebraVector h_diff = h_adj - h_adj2;
   std::cout << GridLogMessage << "Projections structure check vector difference (Adjoint representation) : " << norm2(h_diff) << std::endl;
 
   // Exponentiate
@@ -183,14 +184,14 @@ int main(int argc, char** argv) {
       
 
   // Construct the fundamental matrix in the group
-  SU3::LatticeMatrix Af(grid);
-  SU3::FundamentalLieAlgebraMatrix(h_adj,Af);
-  SU3::LatticeMatrix Ufund(grid);
+  SU<Nc>::LatticeMatrix Af(grid);
+  SU<Nc>::FundamentalLieAlgebraMatrix(h_adj,Af);
+  SU<Nc>::LatticeMatrix Ufund(grid);
   Ufund  = expMat(Af, 1.0, 16);
   // Check unitarity
-  SU3::LatticeMatrix uno_f(grid);
+  SU<Nc>::LatticeMatrix uno_f(grid);
   uno_f = 1.0;
-  SU3::LatticeMatrix UnitCheck(grid);
+  SU<Nc>::LatticeMatrix UnitCheck(grid);
   UnitCheck = Ufund * adj(Ufund) - uno_f;
   std::cout << GridLogMessage << "unitarity check 1: " << norm2(UnitCheck)
             << std::endl;
@@ -260,20 +261,20 @@ int main(int argc, char** argv) {
   std::cout << GridLogMessage << "Test for the Two Index Symmetric projectors"
       << std::endl;
   // Projectors 
-  SU3TwoIndexSymm::LatticeTwoIndexMatrix Gauss2(grid);
+  SU_TwoIndex<Nc, Symmetric>::LatticeTwoIndexMatrix Gauss2(grid);
   random(gridRNG,Gauss2);
   
   std::cout << GridLogMessage << "Start projectOnAlgebra" << std::endl;
-  SU3TwoIndexSymm::projectOnAlgebra(ha, Gauss2);
+  SU_TwoIndex<Nc, Symmetric>::projectOnAlgebra(ha, Gauss2);
   std::cout << GridLogMessage << "end projectOnAlgebra" << std::endl;
   std::cout << GridLogMessage << "Start projector" << std::endl;
-  SU3TwoIndexSymm::projector(hb, Gauss2);
+  SU_TwoIndex<Nc, Symmetric>::projector(hb, Gauss2);
   std::cout << GridLogMessage << "end projector" << std::endl;
   
   std::cout << GridLogMessage << "ReStart projector" << std::endl;
-  SU3TwoIndexSymm::projector(hb, Gauss2);
+  SU_TwoIndex<Nc, Symmetric>::projector(hb, Gauss2);
   std::cout << GridLogMessage << "end projector" << std::endl;
-  SU3::LatticeAlgebraVector diff2 = ha - hb;
+  SU<Nc>::LatticeAlgebraVector diff2 = ha - hb;
   std::cout << GridLogMessage << "Difference: " << norm2(diff) << std::endl;
   std::cout << GridLogMessage << "*********************************************"
       << std::endl;
@@ -284,20 +285,20 @@ int main(int argc, char** argv) {
   std::cout << GridLogMessage << "Test for the Two index anti-Symmetric projectors"
       << std::endl;
   // Projectors
-  SU3TwoIndexAntiSymm::LatticeTwoIndexMatrix Gauss2a(grid);
+  SU_TwoIndex<Nc, AntiSymmetric>::LatticeTwoIndexMatrix Gauss2a(grid);
   random(gridRNG,Gauss2a);
   
   std::cout << GridLogMessage << "Start projectOnAlgebra" << std::endl;
-  SU3TwoIndexAntiSymm::projectOnAlgebra(ha, Gauss2a);
+  SU_TwoIndex<Nc, AntiSymmetric>::projectOnAlgebra(ha, Gauss2a);
   std::cout << GridLogMessage << "end projectOnAlgebra" << std::endl;
   std::cout << GridLogMessage << "Start projector" << std::endl;
-  SU3TwoIndexAntiSymm::projector(hb, Gauss2a);
+  SU_TwoIndex<Nc, AntiSymmetric>::projector(hb, Gauss2a);
   std::cout << GridLogMessage << "end projector" << std::endl;
   
   std::cout << GridLogMessage << "ReStart projector" << std::endl;
-  SU3TwoIndexAntiSymm::projector(hb, Gauss2a);
+  SU_TwoIndex<Nc, AntiSymmetric>::projector(hb, Gauss2a);
   std::cout << GridLogMessage << "end projector" << std::endl;
-  SU3::LatticeAlgebraVector diff2a = ha - hb;
+  SU<Nc>::LatticeAlgebraVector diff2a = ha - hb;
   std::cout << GridLogMessage << "Difference: " << norm2(diff2a) << std::endl;
   std::cout << GridLogMessage << "*********************************************"
       << std::endl;
@@ -311,14 +312,14 @@ int main(int argc, char** argv) {
   // Test group structure
   // (U_f * V_f)_r = U_r * V_r
   LatticeGaugeField U2(grid), V2(grid);
-  SU3::HotConfiguration<LatticeGaugeField>(gridRNG, U2);
-  SU3::HotConfiguration<LatticeGaugeField>(gridRNG, V2);
+  SU<Nc>::HotConfiguration<LatticeGaugeField>(gridRNG, U2);
+  SU<Nc>::HotConfiguration<LatticeGaugeField>(gridRNG, V2);
   
   LatticeGaugeField UV2(grid);
   UV2 = Zero();
   for (int mu = 0; mu < Nd; mu++) {
-    SU3::LatticeMatrix Umu2 = peekLorentz(U2,mu);
-    SU3::LatticeMatrix Vmu2 = peekLorentz(V2,mu);
+    SU<Nc>::LatticeMatrix Umu2 = peekLorentz(U2,mu);
+    SU<Nc>::LatticeMatrix Vmu2 = peekLorentz(V2,mu);
     pokeLorentz(UV2,Umu2*Vmu2, mu);
   }
   
@@ -345,16 +346,16 @@ int main(int argc, char** argv) {
   
   // Check correspondence of algebra and group transformations
   // Create a random vector
-  SU3::LatticeAlgebraVector h_sym(grid);
+  SU<Nc>::LatticeAlgebraVector h_sym(grid);
   typename TwoIndexRep< Nc, Symmetric>::LatticeMatrix Ar_sym(grid);
   random(gridRNG,h_sym);
   h_sym = real(h_sym);
   SU_TwoIndex<Nc,Symmetric>::TwoIndexLieAlgebraMatrix(h_sym,Ar_sym);
   
   // Re-extract h_sym
-  SU3::LatticeAlgebraVector h_sym2(grid);
+  SU<Nc>::LatticeAlgebraVector h_sym2(grid);
   SU_TwoIndex< Nc, Symmetric>::projectOnAlgebra(h_sym2, Ar_sym);
-  SU3::LatticeAlgebraVector h_diff_sym = h_sym - h_sym2;
+  SU<Nc>::LatticeAlgebraVector h_diff_sym = h_sym - h_sym2;
   std::cout << GridLogMessage << "Projections structure check vector difference (Two Index Symmetric): " << norm2(h_diff_sym) << std::endl;
 
   
@@ -379,11 +380,11 @@ int main(int argc, char** argv) {
   
   
   // Construct the fundamental matrix in the group
-  SU3::LatticeMatrix Af_sym(grid);
-  SU3::FundamentalLieAlgebraMatrix(h_sym,Af_sym);
-  SU3::LatticeMatrix Ufund2(grid);
+  SU<Nc>::LatticeMatrix Af_sym(grid);
+  SU<Nc>::FundamentalLieAlgebraMatrix(h_sym,Af_sym);
+  SU<Nc>::LatticeMatrix Ufund2(grid);
   Ufund2  = expMat(Af_sym, 1.0, 16);
-  SU3::LatticeMatrix UnitCheck2(grid);
+  SU<Nc>::LatticeMatrix UnitCheck2(grid);
   UnitCheck2 = Ufund2 * adj(Ufund2) - uno_f;
   std::cout << GridLogMessage << "unitarity check 1: " << norm2(UnitCheck2)
       << std::endl;
@@ -421,14 +422,14 @@ int main(int argc, char** argv) {
   // Test group structure
   // (U_f * V_f)_r = U_r * V_r
   LatticeGaugeField U2A(grid), V2A(grid);
-  SU3::HotConfiguration<LatticeGaugeField>(gridRNG, U2A);
-  SU3::HotConfiguration<LatticeGaugeField>(gridRNG, V2A);
+  SU<Nc>::HotConfiguration<LatticeGaugeField>(gridRNG, U2A);
+  SU<Nc>::HotConfiguration<LatticeGaugeField>(gridRNG, V2A);
   
   LatticeGaugeField UV2A(grid);
   UV2A = Zero();
   for (int mu = 0; mu < Nd; mu++) {
-    SU3::LatticeMatrix Umu2A = peekLorentz(U2,mu);
-    SU3::LatticeMatrix Vmu2A = peekLorentz(V2,mu);
+    SU<Nc>::LatticeMatrix Umu2A = peekLorentz(U2,mu);
+    SU<Nc>::LatticeMatrix Vmu2A = peekLorentz(V2,mu);
     pokeLorentz(UV2A,Umu2A*Vmu2A, mu);
   }
   
@@ -455,16 +456,16 @@ int main(int argc, char** argv) {
   
   // Check correspondence of algebra and group transformations
   // Create a random vector
-  SU3::LatticeAlgebraVector h_Asym(grid);
+  SU<Nc>::LatticeAlgebraVector h_Asym(grid);
   typename TwoIndexRep< Nc, AntiSymmetric>::LatticeMatrix Ar_Asym(grid);
   random(gridRNG,h_Asym);
   h_Asym = real(h_Asym);
   SU_TwoIndex< Nc, AntiSymmetric>::TwoIndexLieAlgebraMatrix(h_Asym,Ar_Asym);
   
   // Re-extract h_sym
-  SU3::LatticeAlgebraVector h_Asym2(grid);
+  SU<Nc>::LatticeAlgebraVector h_Asym2(grid);
   SU_TwoIndex< Nc, AntiSymmetric>::projectOnAlgebra(h_Asym2, Ar_Asym);
-  SU3::LatticeAlgebraVector h_diff_Asym = h_Asym - h_Asym2;
+  SU<Nc>::LatticeAlgebraVector h_diff_Asym = h_Asym - h_Asym2;
   std::cout << GridLogMessage << "Projections structure check vector difference (Two Index anti-Symmetric): " << norm2(h_diff_Asym) << std::endl;
 
   
@@ -489,11 +490,11 @@ int main(int argc, char** argv) {
   
   
   // Construct the fundamental matrix in the group
-  SU3::LatticeMatrix Af_Asym(grid);
-  SU3::FundamentalLieAlgebraMatrix(h_Asym,Af_Asym);
-  SU3::LatticeMatrix Ufund2A(grid);
+  SU<Nc>::LatticeMatrix Af_Asym(grid);
+  SU<Nc>::FundamentalLieAlgebraMatrix(h_Asym,Af_Asym);
+  SU<Nc>::LatticeMatrix Ufund2A(grid);
   Ufund2A  = expMat(Af_Asym, 1.0, 16);
-  SU3::LatticeMatrix UnitCheck2A(grid);
+  SU<Nc>::LatticeMatrix UnitCheck2A(grid);
   UnitCheck2A = Ufund2A * adj(Ufund2A) - uno_f;
   std::cout << GridLogMessage << "unitarity check 1: " << norm2(UnitCheck2A)
       << std::endl;
@@ -526,7 +527,7 @@ int main(int argc, char** argv) {
 
 
 
-
   
   Grid_finalize();
 }
+

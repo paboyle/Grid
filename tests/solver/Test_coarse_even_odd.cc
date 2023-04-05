@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
   //                    Setup of Dirac Matrix and Operator                   //
   /////////////////////////////////////////////////////////////////////////////
 
-  LatticeGaugeField Umu(Grid_f); SU3::HotConfiguration(pRNG_f, Umu);
+  LatticeGaugeField Umu(Grid_f); SU<Nc>::HotConfiguration(pRNG_f, Umu);
 
   RealD checkTolerance = (getPrecision<LatticeFermion>::value == 1) ? 1e-7 : 1e-15;
 
