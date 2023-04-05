@@ -451,7 +451,7 @@ int main(int argc, char **argv) {
   
 #define MIXED_PRECISION
 #ifdef MIXED_PRECISION
-  std::vector<GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicy> *> Bdys;
+  std::vector<GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF> *> Bdys;
 #else
   std::vector<GeneralEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> *> Bdys;
 #endif
@@ -526,15 +526,13 @@ int main(int argc, char **argv) {
       Quotients.push_back (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],*MPCG[h],*ActionMPCG[h],CG));
     } else {
 #ifdef MIXED_PRECISION
-      Bdys.push_back( new GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicy>(
+      Bdys.push_back( new GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF>(
 			   *Numerators[h],*Denominators[h],
 			   *NumeratorsF[h],*DenominatorsF[h],
-			   *Numerators[h],*Denominators[h],
 			   OFRp, SP_iters) );
-      Bdys.push_back( new GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicy>(
+      Bdys.push_back( new GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF>(
 			   *Numerators[h],*Denominators[h],
 			   *NumeratorsF[h],*DenominatorsF[h],
-			   *Numerators[h],*Denominators[h],
 			   OFRp, SP_iters) );
 #else
       Bdys.push_back( new GeneralEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));

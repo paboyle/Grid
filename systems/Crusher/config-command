@@ -1,7 +1,7 @@
 CLIME=`spack find --paths c-lime@2-3-9 | grep c-lime| cut -c 15-`
 ../../configure --enable-comms=mpi-auto \
 --with-lime=$CLIME \
---enable-unified=yes \
+--enable-unified=no \
 --enable-shm=nvlink \
 --enable-tracing=timer \
 --enable-accelerator=hip \
