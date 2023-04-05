@@ -36,7 +36,7 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-#define LMAX (8)
+#define LMAX (64)
 #define LMIN (8)
 #define LADD (8)
 
@@ -49,6 +49,7 @@ int main (int argc, char ** argv)
   int64_t threads = GridThread::GetThreads();
   int64_t accelerator_threads = acceleratorThreads();
 
+  std::cout<<GridLogMessage << "Grid is setup with LMAX="<< LMAX << ", LMIN=" << LMIN << ", LADD=" << LADD << ", Nwarm, Nloop =" << Nwarm <<"," << Nloop <<std::endl;
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
   std::cout<<GridLogMessage << "Grid is setup to use "<<accelerator_threads<<" GPU threads"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
@@ -64,9 +65,10 @@ int main (int argc, char ** argv)
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
       GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
-      LatticeColourMatrix z(&Grid); random(pRNG,z);
-      LatticeColourMatrix x(&Grid); random(pRNG,x);
-      LatticeColourMatrix y(&Grid); random(pRNG,y);
+      printf("line 67 \n");
+      LatticeColourMatrix z(&Grid); printf("z lattice color mat \n"); random(pRNG,z);
+      LatticeColourMatrix x(&Grid); printf("x lattice color mat \n"); random(pRNG,x);
+      LatticeColourMatrix y(&Grid); printf("y lattice color mat \n"); random(pRNG,y);
 
       for(int64_t i=0;i<Nwarm;i++){
 	x=x*y;
