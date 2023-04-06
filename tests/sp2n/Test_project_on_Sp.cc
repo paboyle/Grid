@@ -31,6 +31,7 @@ int main (int argc, char **argv)
     
     identity = 1.0;
     RealD epsilon = 0.01;
+    RealD Delta = 666.;
     Complex i(0., 1.);
     RealD u = 0.;
     double vol = Umu.Grid()->gSites();
@@ -118,7 +119,7 @@ int main (int argc, char **argv)
     
     
     std::cout << GridLogMessage << "Testing ProjectOnGaugeGroup" << std::endl;
-    U = U + 2932.111*identity;
+    U = U + Delta*identity;
     std::cout << GridLogMessage << "Apply ProjectOnGaugeGroup to deformed matrix" << std::endl;
     Sp<Nc>::ProjectOnGaugeGroup(U);
     aux = U*adj(U) - identity;
@@ -162,7 +163,7 @@ int main (int argc, char **argv)
     }
     
     std::cout << GridLogMessage << "Testing ProjectGn" << std::endl;
-    U = U + 2932.111*identity;
+    U = U + Delta*identity;
     std::cout << GridLogMessage << "Apply ProjectGn to deformed matrix" << std::endl;
     Sp<Nc>::ProjectGn(U);
     aux = U*adj(U) - identity;
@@ -214,7 +215,7 @@ int main (int argc, char **argv)
     std::cout << GridLogMessage << "Testing SpTa" << std::endl;
     
     U = PeekIndex<LorentzIndex>(Umu,1);
-    U = U + 666.*identity;
+    U = U + Delta*identity;
     std::cout << GridLogMessage << "Matrix deformed " << std::endl;
     std::cout << GridLogMessage << "Apply SpTa to deformed matrix" << std::endl;
     U = SpTa(U);
@@ -279,7 +280,7 @@ int main (int argc, char **argv)
     
     // test taProj
     std::cout << GridLogMessage << "Testing taProj" << std::endl;
-    U = U + 666.*identity;
+    U = U + Delta*identity;
     std::cout << GridLogMessage << "Matrix deformed " << std::endl;
     std::cout << GridLogMessage << "Apply taProj to deformed matrix" << std::endl;
     Sp<Nc>::taProj(U, Up);
@@ -333,10 +334,7 @@ int main (int argc, char **argv)
             assert(  amizeroo.real() < 10e-6 );
         }
     }
-    
-    
+        
     Grid_finalize();
 
-
 }
-

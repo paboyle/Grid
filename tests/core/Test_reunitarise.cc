@@ -122,15 +122,16 @@ int main (int argc, char ** argv)
   detU=detU-1.0;
   std::cout << "Determinant defect before projection " <<norm2(detU)<<std::endl;
   tmp = U*adj(U) - ident;
-  std::cout << "Unitarity check before projection    " << norm2(tmp)<<std::endl; 
-  #if Nc==3
+  std::cout << "Unitarity check before projection    " << norm2(tmp)<<std::endl;
+    
+#if Nc==3
   ProjectSU3(U);
   detU= Determinant(U) ;
   detU= detU -1.0;
   std::cout << "Determinant ProjectSU3 defect " <<norm2(detU)<<std::endl;
   tmp = U*adj(U) - ident;
   std::cout << "Unitarity check after projection    " << norm2(tmp)<<std::endl; 
-  #endif
+#endif
   ProjectSUn(UU);
   detUU= Determinant(UU);
   detUU= detUU -1.0;
@@ -140,8 +141,3 @@ int main (int argc, char ** argv)
   
   Grid_finalize();
 }
-
-
-
-
-

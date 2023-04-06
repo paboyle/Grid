@@ -170,7 +170,7 @@ class GaugeGroup {
     }
   }
 
- template <typename LatticeMatrixType>
+  template <typename LatticeMatrixType>
   static void LieRandomize(GridParallelRNG &pRNG, LatticeMatrixType &out,
                            double scale = 1.0) {
     GridBase *grid = out.Grid();
