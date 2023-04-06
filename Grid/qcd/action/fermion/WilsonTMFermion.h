@@ -63,7 +63,9 @@ public:
   virtual void MooeeDag(const FermionField &in, FermionField &out) ;
   virtual void MooeeInv(const FermionField &in, FermionField &out) ;
   virtual void MooeeInvDag(const FermionField &in, FermionField &out) ;
-
+  virtual void M(const FermionField &in, FermionField &out) ;
+  virtual void Mdag(const FermionField &in, FermionField &out) ;
+  
 private:
   RealD mu; // TwistedMass parameter
 
