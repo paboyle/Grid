@@ -1,8 +1,7 @@
 # Grid 
+**Data parallel C++ mathematical object library.**
 
 [![Teamcity status](https://ci.dev.dirac.ed.ac.uk/guestAuth/app/rest/builds/aggregated/strob:(buildType:(affectedProject(id:GridBasedSoftware_Grid)),branch:default:true)/statusIcon.svg)](https://ci.dev.dirac.ed.ac.uk/project/GridBasedSoftware_Grid?mode=builds) 
-
-**Data parallel C++ mathematical object library.**
 
 License: GPL v2.
 
