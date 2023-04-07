@@ -237,9 +237,6 @@ void copyLane(vobjOut & __restrict__ vecOut, int lane_out, const vobjIn & __rest
   typedef oextract_type * opointer;
   typedef iextract_type * ipointer;
 
-  constexpr int oNsimd=ovector_type::Nsimd();
-  constexpr int iNsimd=ivector_type::Nsimd();
-
   iscalar_type itmp;
   oscalar_type otmp;
 
