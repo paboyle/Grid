@@ -53,9 +53,10 @@ NAMESPACE_BEGIN(Grid);
       Integer ReliableUpdateFreq;
     protected:
 
+      //Action evaluation
       //Allow derived classes to override the multishift CG
       virtual void multiShiftInverse(bool numerator, const MultiShiftFunction &approx, const Integer MaxIter, const FermionFieldD &in, FermionFieldD &out){
-#if 0
+#if 1
 	SchurDifferentiableOperator<ImplD> schurOp(numerator ? NumOpD : DenOpD);
 	ConjugateGradientMultiShift<FermionFieldD> msCG(MaxIter, approx);
 	msCG(schurOp,in, out);
@@ -70,9 +71,10 @@ NAMESPACE_BEGIN(Grid);
 	msCG(schurOpD, in, out);
 #endif
       }
+      //Force evaluation
       virtual void multiShiftInverse(bool numerator, const MultiShiftFunction &approx, const Integer MaxIter, const FermionFieldD &in, std::vector<FermionFieldD> &out_elems, FermionFieldD &out){
 	SchurDifferentiableOperator<ImplD> schurOpD(numerator ? NumOpD : DenOpD);
-	SchurDifferentiableOperator<ImplF>  schurOpF (numerator ? NumOpF  : DenOpF);
+	SchurDifferentiableOperator<ImplF>  schurOpF(numerator ? NumOpF  : DenOpF);
 
 	FermionFieldD inD(NumOpD.FermionRedBlackGrid());
 	FermionFieldD outD(NumOpD.FermionRedBlackGrid());
@@ -84,20 +86,15 @@ NAMESPACE_BEGIN(Grid);
       virtual void ImportGauge(const typename ImplD::GaugeField &Ud){
 
 	typename ImplF::GaugeField Uf(NumOpF.GaugeGrid());
-	typename ImplD::GaugeField Ud2(NumOpD.GaugeGrid());
 	precisionChange(Uf, Ud);
-	precisionChange(Ud2, Ud);
 
-	std::cout << "Importing "<<norm2(Ud)<<" "<< norm2(Uf)<<" " << norm2(Ud2)<<std::endl;
+	std::cout << "Importing "<<norm2(Ud)<<" "<< norm2(Uf)<<" " <<std::endl;
 	
 	NumOpD.ImportGauge(Ud);
 	DenOpD.ImportGauge(Ud);
 
 	NumOpF.ImportGauge(Uf);
 	DenOpF.ImportGauge(Uf);
-
-	NumOpD.ImportGauge(Ud2);
-	DenOpD.ImportGauge(Ud2);
       }
       
     public:

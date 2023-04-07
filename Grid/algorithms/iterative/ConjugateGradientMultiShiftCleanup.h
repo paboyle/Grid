@@ -166,16 +166,16 @@ public:
       rsqf[s] =rsq[s];
       std::cout<<GridLogMessage<<"ConjugateGradientMultiShiftMixedPrecCleanup: shift "<< s <<" target resid "<<rsq[s]<<std::endl;
       //      ps_d[s] = src_d;
-      precisionChangeFast(ps_f[s],src_d);
+      precisionChange(ps_f[s],src_d);
     }
     // r and p for primary
     p_d = src_d; //primary copy --- make this a reference to ps_d to save axpys
     r_d = p_d;
     
     //MdagM+m[0]
-    precisionChangeFast(p_f,p_d);
+    precisionChange(p_f,p_d);
     Linop_f.HermOpAndNorm(p_f,mmp_f,d,qq); // mmp = MdagM p        d=real(dot(p, mmp)),  qq=norm2(mmp)
-    precisionChangeFast(tmp_d,mmp_f);
+    precisionChange(tmp_d,mmp_f);
     Linop_d.HermOpAndNorm(p_d,mmp_d,d,qq); // mmp = MdagM p        d=real(dot(p, mmp)),  qq=norm2(mmp)
     tmp_d = tmp_d - mmp_d;
     std::cout << " Testing operators match "<<norm2(mmp_d)<<" f "<<norm2(mmp_f)<<" diff "<< norm2(tmp_d)<<std::endl;
@@ -204,7 +204,7 @@ public:
   
     for(int s=0;s<nshift;s++) {
       axpby(psi_d[s],0.,-bs[s]*alpha[s],src_d,src_d);
-      precisionChangeFast(psi_f[s],psi_d[s]);
+      precisionChange(psi_f[s],psi_d[s]);
     }
   
     ///////////////////////////////////////
@@ -225,7 +225,7 @@ public:
       AXPYTimer.Stop();
 
       PrecChangeTimer.Start();
-      precisionChangeFast(r_f, r_d);
+      precisionChange(r_f, r_d);
       PrecChangeTimer.Stop();
 
       AXPYTimer.Start();
@@ -243,13 +243,13 @@ public:
 
       cp=c;
       PrecChangeTimer.Start();
-      precisionChangeFast(p_f, p_d); //get back single prec search direction for linop
+      precisionChange(p_f, p_d); //get back single prec search direction for linop
       PrecChangeTimer.Stop();
       MatrixTimer.Start();  
       Linop_f.HermOp(p_f,mmp_f);
       MatrixTimer.Stop();  
       PrecChangeTimer.Start();
-      precisionChangeFast(mmp_d, mmp_f); // From Float to Double
+      precisionChange(mmp_d, mmp_f); // From Float to Double
       PrecChangeTimer.Stop();
 
       d=real(innerProduct(p_d,mmp_d));    
@@ -311,7 +311,7 @@ public:
 	SolverTimer.Stop();
 
 	for(int s=0;s<nshift;s++){
-	  precisionChangeFast(psi_d[s],psi_f[s]);
+	  precisionChange(psi_d[s],psi_f[s]);
 	}
 
 	
