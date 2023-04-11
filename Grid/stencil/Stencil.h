@@ -665,11 +665,9 @@ public:
     for(int i=0;i<mm.size();i++){
       decompressor::MergeFace(decompress,mm[i]);
     }
-    if ( mm.size() )    acceleratorFenceComputeStream();
     for(int i=0;i<dd.size();i++){
       decompressor::DecompressFace(decompress,dd[i]);
     }
-    if ( dd.size() )    acceleratorFenceComputeStream();
   }
   ////////////////////////////////////////
   // Set up routines
