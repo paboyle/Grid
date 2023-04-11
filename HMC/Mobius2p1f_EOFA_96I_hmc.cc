@@ -164,11 +164,6 @@ int main(int argc, char **argv) {
   typedef MobiusEOFAFermionF FermionEOFAActionF;
   typedef typename FermionActionF::FermionField FermionFieldF;
 
-  typedef WilsonImplD2 FermionImplPolicyD2;
-  typedef MobiusFermionD2 FermionActionD2;
-  typedef MobiusEOFAFermionD2 FermionEOFAActionD2;
-  typedef typename FermionActionD2::FermionField FermionFieldD2;
-
   typedef Grid::XmlReader       Serialiser;
 
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -272,7 +267,6 @@ int main(int argc, char **argv) {
   // temporarily need a gauge field
   LatticeGaugeFieldD  U(GridPtr); U=Zero();
   LatticeGaugeFieldF  UF(GridPtrF); UF=Zero();
-  LatticeGaugeFieldD2 UD2(GridPtrF); UD2=Zero();
 
   std::cout << GridLogMessage << " Running the HMC "<< std::endl;
   TheHMC.ReadCommandLine(argc,argv);  // params on CML or from param file
@@ -394,15 +388,13 @@ int main(int argc, char **argv) {
   std::vector<FermionAction *> Denominators;
   std::vector<FermionActionF *> NumeratorsF;
   std::vector<FermionActionF *> DenominatorsF;
-  std::vector<FermionActionD2 *> NumeratorsD2;
-  std::vector<FermionActionD2 *> DenominatorsD2;
   std::vector<TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> *> Quotients;
   std::vector<MxPCG *> ActionMPCG;
   std::vector<MxPCG *> MPCG;
   
 #define MIXED_PRECISION
 #ifdef MIXED_PRECISION
-  std::vector<OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicyD2> *> Bdys;
+  std::vector<OneFlavourEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF> *> Bdys;
 #else
   std::vector<OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> *> Bdys;
 #endif

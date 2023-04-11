@@ -227,7 +227,7 @@ int main(int argc, char **argv) {
   //  std::vector<Real> hasenbusch({ light_mass, 0.005, 0.0145, 0.045, 0.108, 0.25, 0.51 , pv_mass }); // Updated
   //  std::vector<Real> hasenbusch({ light_mass, 0.0145, 0.045, 0.108, 0.25, 0.51 , 0.75 , pv_mass });
 
-  int SP_iters=10000;
+  int SP_iters=9000;
   
   RationalActionParams OFRp; // Up/down
   OFRp.lo       = 6.0e-5;
@@ -362,12 +362,12 @@ int main(int argc, char **argv) {
 
   // Probably dominates the force - back to EOFA.
   OneFlavourRationalParams SFRp;
-  SFRp.lo       = 0.25;
+  SFRp.lo       = 0.1;
   SFRp.hi       = 25.0;
   SFRp.MaxIter  = 10000;
-  SFRp.tolerance= 1.0e-5;
+  SFRp.tolerance= 1.0e-8;
   SFRp.mdtolerance= 2.0e-4;
-  SFRp.degree   = 8;
+  SFRp.degree   = 12;
   SFRp.precision= 50;
   
   MobiusEOFAFermionD Strange_Op_L (U , *FGrid , *FrbGrid , *GridPtr , *GridRBPtr , strange_mass, strange_mass, pv_mass, 0.0, -1, M5, b, c);
@@ -451,7 +451,7 @@ int main(int argc, char **argv) {
   
 #define MIXED_PRECISION
 #ifdef MIXED_PRECISION
-  std::vector<GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicy> *> Bdys;
+  std::vector<GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF> *> Bdys;
 #else
   std::vector<GeneralEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> *> Bdys;
 #endif
@@ -526,15 +526,13 @@ int main(int argc, char **argv) {
       Quotients.push_back (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],*MPCG[h],*ActionMPCG[h],CG));
     } else {
 #ifdef MIXED_PRECISION
-      Bdys.push_back( new GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicy>(
+      Bdys.push_back( new GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF>(
 			   *Numerators[h],*Denominators[h],
 			   *NumeratorsF[h],*DenominatorsF[h],
-			   *Numerators[h],*Denominators[h],
 			   OFRp, SP_iters) );
-      Bdys.push_back( new GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF,FermionImplPolicy>(
+      Bdys.push_back( new GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicy,FermionImplPolicyF>(
 			   *Numerators[h],*Denominators[h],
 			   *NumeratorsF[h],*DenominatorsF[h],
-			   *Numerators[h],*Denominators[h],
 			   OFRp, SP_iters) );
 #else
       Bdys.push_back( new GeneralEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],OFRp));
