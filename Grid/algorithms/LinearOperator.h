@@ -542,6 +542,7 @@ public:
       (*this)(in[i], out[i]);
     }
   }
+  virtual ~LinearFunction(){};
 };
 
 template<class Field> class IdentityLinearFunction : public LinearFunction<Field> {
