@@ -170,10 +170,7 @@ void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_M
   if(nscan==3 && HPEhypercube ) OptimalCommunicatorHypercube(processors,optimal_comm,SHM);
   else                          OptimalCommunicatorSharedMemory(processors,optimal_comm,SHM);
 }
-static inline int divides(int a,int b)
-{
-  return ( b == ( (b/a)*a ) );
-}
+
 void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processors,Grid_MPI_Comm & optimal_comm,Coordinate &SHM)
 {
   ////////////////////////////////////////////////////////////////

@@ -1367,10 +1367,11 @@ public:
 	    int recv_from_rank;
 	    int xmit_to_rank;
 	    int shm_send=0;
-	    int shm_recv=0;
+
 	    _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank);
 #ifdef SHM_FAST_PATH
   #warning STENCIL SHM FAST PATH SELECTED
+  	  int shm_recv=0;
 	    // shm == receive pointer         if offnode
 	    // shm == Translate[send pointer] if on node -- my view of his send pointer
 	    cobj *shm = (cobj *) _grid->ShmBufferTranslate(recv_from_rank,sp);
@@ -1403,7 +1404,6 @@ public:
 		acceleratorMemSet(rp,0,bytes); // Zero prefill comms buffer to zero
 	      }
 	      int do_send = (comms_send|comms_partial_send) && (!shm_send );
-	      int do_recv = (comms_send|comms_partial_send) && (!shm_recv );
 	      AddPacket((void *)sp,(void *)rp,
 			xmit_to_rank,do_send,
 			recv_from_rank,do_send,

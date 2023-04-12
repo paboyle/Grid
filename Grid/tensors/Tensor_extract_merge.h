@@ -133,7 +133,6 @@ typename vobj::scalar_object extractLane(int lane, const vobj & __restrict__ vec
   typedef scalar_type * pointer;
 
   constexpr int words=sizeof(vobj)/sizeof(vector_type);
-  constexpr int Nsimd=vector_type::Nsimd();
 
   scalar_object extracted;
   pointer __restrict__  sp = (pointer)&extracted; // Type pun
@@ -153,7 +152,6 @@ void insertLane(int lane, vobj & __restrict__ vec,const typename vobj::scalar_ob
   typedef scalar_type * pointer;
 
   constexpr int words=sizeof(vobj)/sizeof(vector_type);
-  constexpr int Nsimd=vector_type::Nsimd();
 
   pointer __restrict__ sp = (pointer)&extracted;
   vector_type *vp = (vector_type *)&vec;
@@ -178,8 +176,6 @@ void extract(const vobj &vec,const ExtractPointerArray<sobj> &extracted, int off
   const int s = Nsimd/Nextr;
 
   vector_type * vp = (vector_type *)&vec;
-  scalar_type      vtmp;
-  sobj_scalar_type stmp;
   for(int w=0;w<words;w++){
     for(int i=0;i<Nextr;i++){
       sobj_scalar_type * pointer = (sobj_scalar_type *)& extracted[i][offset];
@@ -205,7 +201,6 @@ void merge(vobj &vec,const ExtractPointerArray<sobj> &extracted, int offset)
 
   vector_type * vp = (vector_type *)&vec;
   scalar_type      vtmp;
-  sobj_scalar_type stmp;
   for(int w=0;w<words;w++){
     for(int i=0;i<Nextr;i++){
       sobj_scalar_type * pointer = (sobj_scalar_type *)& extracted[i][offset];
@@ -241,9 +236,6 @@ void copyLane(vobjOut & __restrict__ vecOut, int lane_out, const vobjIn & __rest
 
   typedef oextract_type * opointer;
   typedef iextract_type * ipointer;
-
-  constexpr int oNsimd=ovector_type::Nsimd();
-  constexpr int iNsimd=ivector_type::Nsimd();
 
   iscalar_type itmp;
   oscalar_type otmp;

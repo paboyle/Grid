@@ -519,7 +519,6 @@ void MemoryManager::Audit(std::string s)
   uint64_t LruBytes1=0;
   uint64_t LruBytes2=0;
   uint64_t LruCnt=0;
-  uint64_t LockedBytes=0;
   
   std::cout << " Memory Manager::Audit() from "<<s<<std::endl;
   for(auto it=LRU.begin();it!=LRU.end();it++){
