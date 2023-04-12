@@ -476,7 +476,9 @@ int main (int argc, char ** argv)
   //  ForceTest<GimplTypesR>(BdyNf2eo,U,DDHMCFilter);
 
   //////////////////// One flavour boundary det  ////////////////////
+  /*
   RationalActionParams OFRp; // Up/down
+  int SP_iters = 3000;
   OFRp.lo       = 6.0e-5;
   OFRp.hi       = 90.0;
   OFRp.inv_pow  = 2;
@@ -489,7 +491,7 @@ int main (int argc, char ** argv)
   //  OFRp.degree   = 16;
   OFRp.precision= 80;
   OFRp.BoundsCheckFreq=0;
-  /*
+  */
   OneFlavourRationalParams OFRp; // Up/down
   OFRp.lo       = 4.0e-5;
   OFRp.hi       = 90.0;
@@ -499,7 +501,6 @@ int main (int argc, char ** argv)
   OFRp.degree   = 18;
   OFRp.precision= 80;
   OFRp.BoundsCheckFreq=0;
-  */
   std::vector<RealD> ActionTolByPole({
       1.0e-7,1.0e-8,1.0e-8,1.0e-8,
       1.0e-8,1.0e-8,1.0e-8,1.0e-8,

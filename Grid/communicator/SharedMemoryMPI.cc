@@ -29,7 +29,6 @@ Author: Christoph Lehner <christoph@lhnr.de>
 
 #include <Grid/GridCore.h>
 #include <pwd.h>
-#include <syscall.h>
 
 #ifdef GRID_CUDA
 #include <cuda_runtime_api.h>
@@ -38,6 +37,7 @@ Author: Christoph Lehner <christoph@lhnr.de>
 #include <hip/hip_runtime_api.h>
 #endif
 #ifdef GRID_SYCL
+#include <syscall.h>
 #define GRID_SYCL_LEVEL_ZERO_IPC
 #endif
 
