@@ -72,7 +72,7 @@ template<class vtype> accelerator_inline iScalar<vtype> SpTa(const iScalar<vtype
 {
   iScalar<vtype> ret;
   ret._internal = SpTa(r._internal);
-  return Ta(ret);
+  return ret;
 }
 template<class vtype,int N> accelerator_inline iVector<vtype,N> SpTa(const iVector<vtype,N>&r)
 {
@@ -80,11 +80,11 @@ template<class vtype,int N> accelerator_inline iVector<vtype,N> SpTa(const iVect
   for(int i=0;i<N;i++){
     ret._internal[i] = SpTa(r._internal[i]);
   }
-  return Ta(ret);
+  return ret;
 }
 template<class vtype,int N> accelerator_inline iMatrix<vtype,N> SpTa(const iMatrix<vtype,N> &arg)
 {
-    iMatrix<vtype,N> ret;
+    iMatrix<vtype,N> ret(arg);
     vtype nrm;
     vtype inner;
     vtype tmp;
