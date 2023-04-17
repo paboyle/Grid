@@ -339,8 +339,8 @@ public:
   // Vectors that live on the symmetric heap in case of SHMEM
   // These are used; either SHM objects or refs to the above symmetric heap vectors
   // depending on comms target
-  Vector<cobj *> u_simd_send_buf;
-  Vector<cobj *> u_simd_recv_buf;
+  std::vector<cobj *> u_simd_send_buf;
+  std::vector<cobj *> u_simd_recv_buf;
 
   int u_comm_offset;
   int _unified_buffer_size;
