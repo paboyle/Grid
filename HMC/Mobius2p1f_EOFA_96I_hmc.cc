@@ -244,11 +244,6 @@ int main(int argc, char **argv) {
   Coordinate shm;
 
   GlobalSharedMemory::GetShmDims(mpi,shm);
-  
-  Coordinate CommDim(Nd);
-  for(int d=0;d<Nd;d++) CommDim[d]= (mpi[d]/shm[d])>1 ? 1 : 0;
-
-  Coordinate NonDirichlet(Nd+1,0);
 
   //////////////////////////
   // Fermion Grids
@@ -277,8 +272,6 @@ int main(int argc, char **argv) {
   std::vector<Complex> boundary = {1,1,1,-1};
   FermionAction::ImplParams Params(boundary);
   FermionActionF::ImplParams ParamsF(boundary);
-  Params.dirichlet=NonDirichlet;
-  ParamsF.dirichlet=NonDirichlet;
 
   //  double StoppingCondition = 1e-14;
   //  double MDStoppingCondition = 1e-9;
@@ -305,7 +298,7 @@ int main(int argc, char **argv) {
 
   // Probably dominates the force - back to EOFA.
   OneFlavourRationalParams SFRp;
-  SFRp.lo       = 0.25;
+  SFRp.lo       = 0.1;
   SFRp.hi       = 25.0;
   SFRp.MaxIter  = 10000;
   SFRp.tolerance= 1.0e-5;
@@ -370,19 +363,17 @@ int main(int argc, char **argv) {
   ////////////////////////////////////
   std::vector<Real> light_den;
   std::vector<Real> light_num;
-  std::vector<int> dirichlet_den;
-  std::vector<int> dirichlet_num;
 
   int n_hasenbusch = hasenbusch.size();
-  light_den.push_back(light_mass);  dirichlet_den.push_back(0);
+  light_den.push_back(light_mass); 
   for(int h=0;h<n_hasenbusch;h++){
-    light_den.push_back(hasenbusch[h]); dirichlet_den.push_back(0);
+    light_den.push_back(hasenbusch[h]);
   }
 
   for(int h=0;h<n_hasenbusch;h++){
-    light_num.push_back(hasenbusch[h]); dirichlet_num.push_back(0);
+    light_num.push_back(hasenbusch[h]);
   }
-  light_num.push_back(pv_mass);  dirichlet_num.push_back(0);
+  light_num.push_back(pv_mass);
 
   std::vector<FermionAction *> Numerators;
   std::vector<FermionAction *> Denominators;
@@ -408,9 +399,7 @@ int main(int argc, char **argv) {
     std::cout << GridLogMessage
 	      << " 2f quotient Action ";
     std::cout << "det D("<<light_den[h]<<")";
-    if ( dirichlet_den[h] ) std::cout << "^dirichlet    ";
     std::cout << "/ det D("<<light_num[h]<<")";
-    if ( dirichlet_num[h] ) std::cout << "^dirichlet    ";
     std::cout << std::endl;
 
     FermionAction::ImplParams ParamsNum(boundary);
@@ -418,21 +407,11 @@ int main(int argc, char **argv) {
     FermionActionF::ImplParams ParamsDenF(boundary);
     FermionActionF::ImplParams ParamsNumF(boundary);
     
-    ParamsNum.dirichlet = NonDirichlet;
-    ParamsDen.dirichlet = NonDirichlet;
-
-    ParamsNum.partialDirichlet = 0;
-    ParamsDen.partialDirichlet = 0;
-    
     Numerators.push_back  (new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, ParamsNum));
     Denominators.push_back(new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, ParamsDen));
 
-    ParamsDenF.dirichlet = ParamsDen.dirichlet;
-    ParamsDenF.partialDirichlet = ParamsDen.partialDirichlet;
     DenominatorsF.push_back(new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[h],M5,b,c, ParamsDenF));
 
-    ParamsNumF.dirichlet = ParamsNum.dirichlet;
-    ParamsNumF.partialDirichlet = ParamsNum.partialDirichlet;
     NumeratorsF.push_back  (new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_num[h],M5,b,c, ParamsNumF));
 
     LinOpD.push_back(new LinearOperatorD(*Denominators[h]));
@@ -469,7 +448,6 @@ int main(int argc, char **argv) {
   // Gauge action
   /////////////////////////////////////////////////////////////
   Level3.push_back(&GaugeAction);
-  //  TheHMC.TheAction.push_back(Level1);
   TheHMC.TheAction.push_back(Level2);
   TheHMC.TheAction.push_back(Level3);
   std::cout << GridLogMessage << " Action complete "<< std::endl;
