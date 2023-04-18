@@ -80,7 +80,7 @@ int main(int argc, char **argv)
   // that have a complex construction
   // standard
   RealD beta = 8.0 ;
-  SymplWilsonGaugeActionR Waction(beta);
+  SpWilsonGaugeActionR Waction(beta);
   
   ActionLevel<HMCWrapper::Field> Level1(1);
   Level1.push_back(&Waction);

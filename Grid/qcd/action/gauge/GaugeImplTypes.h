@@ -191,9 +191,9 @@ typedef GaugeImplTypes<vComplex, Nc> GimplTypesR;
 typedef GaugeImplTypes<vComplexF, Nc> GimplTypesF;
 typedef GaugeImplTypes<vComplexD, Nc> GimplTypesD;
 
-typedef GaugeImplTypes<vComplex, Nc, 12, Sp<Nc> > SymplGimplTypesR;
-typedef GaugeImplTypes<vComplexF, Nc, 12, Sp<Nc> > SymplGimplTypesF;
-typedef GaugeImplTypes<vComplexD, Nc, 12, Sp<Nc> > SymplGimplTypesD;
+typedef GaugeImplTypes<vComplex, Nc, 12, Sp<Nc> > SpGimplTypesR;
+typedef GaugeImplTypes<vComplexF, Nc, 12, Sp<Nc> > SpGimplTypesF;
+typedef GaugeImplTypes<vComplexD, Nc, 12, Sp<Nc> > SpGimplTypesD;
 
 typedef GaugeImplTypes<vComplex, SU<Nc>::AdjointDimension> GimplAdjointTypesR;
 typedef GaugeImplTypes<vComplexF, SU<Nc>::AdjointDimension> GimplAdjointTypesF;
