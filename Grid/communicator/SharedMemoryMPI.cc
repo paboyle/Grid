@@ -27,9 +27,10 @@ Author: Christoph Lehner <christoph@lhnr.de>
 *************************************************************************************/
 /*  END LEGAL */
 
+#define header "SharedMemoryMpi: "
+
 #include <Grid/GridCore.h>
 #include <pwd.h>
-#include <syscall.h>
 
 #ifdef GRID_CUDA
 #include <cuda_runtime_api.h>
@@ -39,11 +40,118 @@ Author: Christoph Lehner <christoph@lhnr.de>
 #endif
 #ifdef GRID_SYCL
 #define GRID_SYCL_LEVEL_ZERO_IPC
+#include <syscall.h>
+#define SHM_SOCKETS 
+#endif
+
+#include <sys/socket.h>
+#include <sys/un.h>
+
+NAMESPACE_BEGIN(Grid); 
+
+#ifdef SHM_SOCKETS
+
+/*
+ * Barbaric extra intranode communication route in case we need sockets to pass FDs
+ * Forced by level_zero not being nicely designed
+ */
+static int sock;
+static const char *sock_path_fmt = "/tmp/GridUnixSocket.%d";
+static char sock_path[256];
+class UnixSockets {
+public:
+  static void Open(int rank)
+  {
+    int errnum;
+
+    sock = socket(AF_UNIX, SOCK_DGRAM, 0);  assert(sock>0);
+
+    struct sockaddr_un sa_un = { 0 };
+    sa_un.sun_family = AF_UNIX;
+    snprintf(sa_un.sun_path, sizeof(sa_un.sun_path),sock_path_fmt,rank);
+    unlink(sa_un.sun_path);
+    if (bind(sock, (struct sockaddr *)&sa_un, sizeof(sa_un))) {
+      perror("bind failure");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  static int RecvFileDescriptor(void)
+  {
+    int n;
+    int fd;
+    char buf[1];
+    struct iovec iov;
+    struct msghdr msg;
+    struct cmsghdr *cmsg;
+    char cms[CMSG_SPACE(sizeof(int))];
+
+    iov.iov_base = buf;
+    iov.iov_len = 1;
+
+    memset(&msg, 0, sizeof msg);
+    msg.msg_name = 0;
+    msg.msg_namelen = 0;
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+
+    msg.msg_control = (caddr_t)cms;
+    msg.msg_controllen = sizeof cms;
+
+    if((n=recvmsg(sock, &msg, 0)) < 0) {
+      perror("recvmsg failed");
+      return -1;
+    }
+    if(n == 0){
+      perror("recvmsg returned 0");
+      return -1;
+    }
+    cmsg = CMSG_FIRSTHDR(&msg);
+
+    memmove(&fd, CMSG_DATA(cmsg), sizeof(int));
+
+    return fd;
+  }
+
+  static void SendFileDescriptor(int fildes,int xmit_to_rank)
+  {
+    struct msghdr msg;
+    struct iovec iov;
+    struct cmsghdr *cmsg = NULL;
+    char ctrl[CMSG_SPACE(sizeof(int))];
+    char data = ' ';
+
+    memset(&msg, 0, sizeof(struct msghdr));
+    memset(ctrl, 0, CMSG_SPACE(sizeof(int)));
+    iov.iov_base = &data;
+    iov.iov_len = sizeof(data);
+    
+    sprintf(sock_path,sock_path_fmt,xmit_to_rank);
+    
+    struct sockaddr_un sa_un = { 0 };
+    sa_un.sun_family = AF_UNIX;
+    snprintf(sa_un.sun_path, sizeof(sa_un.sun_path),sock_path_fmt,xmit_to_rank);
+
+    msg.msg_name = (void *)&sa_un;
+    msg.msg_namelen = sizeof(sa_un);
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+    msg.msg_controllen =  CMSG_SPACE(sizeof(int));
+    msg.msg_control = ctrl;
+
+    cmsg = CMSG_FIRSTHDR(&msg);
+    cmsg->cmsg_level = SOL_SOCKET;
+    cmsg->cmsg_type = SCM_RIGHTS;
+    cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+
+    *((int *) CMSG_DATA(cmsg)) = fildes;
+
+    sendmsg(sock, &msg, 0);
+  };
+};
 #endif
 
 
-NAMESPACE_BEGIN(Grid); 
-#define header "SharedMemoryMpi: "
 /*Construct from an MPI communicator*/
 void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
 {
@@ -170,10 +278,7 @@ void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_M
   if(nscan==3 && HPEhypercube ) OptimalCommunicatorHypercube(processors,optimal_comm,SHM);
   else                          OptimalCommunicatorSharedMemory(processors,optimal_comm,SHM);
 }
-static inline int divides(int a,int b)
-{
-  return ( b == ( (b/a)*a ) );
-}
+
 void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processors,Grid_MPI_Comm & optimal_comm,Coordinate &SHM)
 {
   ////////////////////////////////////////////////////////////////
@@ -483,7 +588,12 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Loop over ranks/gpu's on our node
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef SHM_SOCKETS
+  UnixSockets::Open(WorldShmRank);
+#endif
   for(int r=0;r<WorldShmSize;r++){
+
+    MPI_Barrier(WorldShmComm);
 
 #ifndef GRID_MPI3_SHM_NONE
     //////////////////////////////////////////////////
@@ -492,24 +602,32 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     void * thisBuf = ShmCommBuf;
     if(!Stencil_force_mpi) {
 #ifdef GRID_SYCL_LEVEL_ZERO_IPC
-    typedef struct { int fd; pid_t pid ; } clone_mem_t;
+    typedef struct { int fd; pid_t pid ; ze_ipc_mem_handle_t ze; } clone_mem_t;
 
     auto zeDevice    = cl::sycl::get_native<cl::sycl::backend::level_zero>(theGridAccelerator->get_device());
     auto zeContext   = cl::sycl::get_native<cl::sycl::backend::level_zero>(theGridAccelerator->get_context());
       
     ze_ipc_mem_handle_t ihandle;
     clone_mem_t handle;
-
+    
     if ( r==WorldShmRank ) { 
       auto err = zeMemGetIpcHandle(zeContext,ShmCommBuf,&ihandle);
       if ( err != ZE_RESULT_SUCCESS ) {
-	std::cout << "SharedMemoryMPI.cc zeMemGetIpcHandle failed for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl;
+	std::cerr << "SharedMemoryMPI.cc zeMemGetIpcHandle failed for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl;
 	exit(EXIT_FAILURE);
       } else {
 	std::cout << "SharedMemoryMPI.cc zeMemGetIpcHandle succeeded for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl;
       }
       memcpy((void *)&handle.fd,(void *)&ihandle,sizeof(int));
       handle.pid = getpid();
+      memcpy((void *)&handle.ze,(void *)&ihandle,sizeof(ihandle));
+#ifdef SHM_SOCKETS
+      for(int rr=0;rr<WorldShmSize;rr++){
+	if(rr!=r){
+	  UnixSockets::SendFileDescriptor(handle.fd,rr);
+	}
+      }
+#endif
     }
 #endif
 #ifdef GRID_CUDA
@@ -537,6 +655,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     // Share this IPC handle across the Shm Comm
     //////////////////////////////////////////////////
     { 
+      MPI_Barrier(WorldShmComm);
       int ierr=MPI_Bcast(&handle,
 			 sizeof(handle),
 			 MPI_BYTE,
@@ -552,6 +671,10 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 #ifdef GRID_SYCL_LEVEL_ZERO_IPC
     if ( r!=WorldShmRank ) {
       thisBuf = nullptr;
+      int myfd;
+#ifdef SHM_SOCKETS
+      myfd=UnixSockets::RecvFileDescriptor();
+#else
       std::cout<<"mapping seeking remote pid/fd "
 	       <<handle.pid<<"/"
 	       <<handle.fd<<std::endl;
@@ -559,16 +682,22 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
       int pidfd = syscall(SYS_pidfd_open,handle.pid,0);
       std::cout<<"Using IpcHandle pidfd "<<pidfd<<"\n";
       //      int myfd  = syscall(SYS_pidfd_getfd,pidfd,handle.fd,0);
-      int myfd  = syscall(438,pidfd,handle.fd,0);
-
-      std::cout<<"Using IpcHandle myfd "<<myfd<<"\n";
-      
+      myfd  = syscall(438,pidfd,handle.fd,0);
+      int err_t = errno;
+      if (myfd < 0) {
+        fprintf(stderr,"pidfd_getfd returned %d errno was %d\n", myfd,err_t); fflush(stderr);
+	perror("pidfd_getfd failed ");
+	assert(0);
+      }
+#endif
+      std::cout<<"Using IpcHandle mapped remote pid "<<handle.pid <<" FD "<<handle.fd <<" to myfd "<<myfd<<"\n";
+      memcpy((void *)&ihandle,(void *)&handle.ze,sizeof(ihandle));
       memcpy((void *)&ihandle,(void *)&myfd,sizeof(int));
 
       auto err = zeMemOpenIpcHandle(zeContext,zeDevice,ihandle,0,&thisBuf);
       if ( err != ZE_RESULT_SUCCESS ) {
-	std::cout << "SharedMemoryMPI.cc "<<zeContext<<" "<<zeDevice<<std::endl;
-	std::cout << "SharedMemoryMPI.cc zeMemOpenIpcHandle failed for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl; 
+	std::cerr << "SharedMemoryMPI.cc "<<zeContext<<" "<<zeDevice<<std::endl;
+	std::cerr << "SharedMemoryMPI.cc zeMemOpenIpcHandle failed for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl; 
 	exit(EXIT_FAILURE);
       } else {
 	std::cout << "SharedMemoryMPI.cc zeMemOpenIpcHandle succeeded for rank "<<r<<std::endl;
@@ -603,6 +732,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 #else
     WorldShmCommBufs[r] = ShmCommBuf;
 #endif
+    MPI_Barrier(WorldShmComm);
   }
 
   _ShmAllocBytes=bytes;

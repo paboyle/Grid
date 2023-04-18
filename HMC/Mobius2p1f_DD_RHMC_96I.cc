@@ -329,7 +329,6 @@ int main(int argc, char **argv) {
 
     
     auto grid4= GridPtr;
-    auto rbgrid4= GridRBPtr;
     auto rbgrid = StrangeOp.FermionRedBlackGrid();
     auto grid = StrangeOp.FermionGrid();
     if(1){

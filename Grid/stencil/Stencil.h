@@ -339,8 +339,8 @@ public:
   // Vectors that live on the symmetric heap in case of SHMEM
   // These are used; either SHM objects or refs to the above symmetric heap vectors
   // depending on comms target
-  Vector<cobj *> u_simd_send_buf;
-  Vector<cobj *> u_simd_recv_buf;
+  std::vector<cobj *> u_simd_send_buf;
+  std::vector<cobj *> u_simd_recv_buf;
 
   int u_comm_offset;
   int _unified_buffer_size;
@@ -348,7 +348,7 @@ public:
   ////////////////////////////////////////
   // Stencil query
   ////////////////////////////////////////
-#ifdef SHM_FAST_PATH
+#if 1
   inline int SameNode(int point) {
 
     int dimension    = this->_directions[point];
@@ -434,7 +434,6 @@ public:
   ////////////////////////////////////////////////////////////////////////
   void CommunicateBegin(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
-    accelerator_barrier();
     for(int i=0;i<Packets.size();i++){
       _grid->StencilSendToRecvFromBegin(MpiReqs,
 					Packets[i].send_buf,
@@ -666,11 +665,9 @@ public:
     for(int i=0;i<mm.size();i++){
       decompressor::MergeFace(decompress,mm[i]);
     }
-    if ( mm.size() )    acceleratorFenceComputeStream();
     for(int i=0;i<dd.size();i++){
       decompressor::DecompressFace(decompress,dd[i]);
     }
-    if ( dd.size() )    acceleratorFenceComputeStream();
   }
   ////////////////////////////////////////
   // Set up routines
@@ -708,6 +705,7 @@ public:
 	}
       }
     }
+    std::cout << "BuildSurfaceList size is "<<surface_list.size()<<std::endl;
   }
   /// Introduce a block structure and switch off comms on boundaries
   void DirichletBlock(const Coordinate &dirichlet_block)
@@ -1369,10 +1367,11 @@ public:
 	    int recv_from_rank;
 	    int xmit_to_rank;
 	    int shm_send=0;
-	    int shm_recv=0;
+
 	    _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank);
 #ifdef SHM_FAST_PATH
   #warning STENCIL SHM FAST PATH SELECTED
+  	  int shm_recv=0;
 	    // shm == receive pointer         if offnode
 	    // shm == Translate[send pointer] if on node -- my view of his send pointer
 	    cobj *shm = (cobj *) _grid->ShmBufferTranslate(recv_from_rank,sp);
@@ -1405,7 +1404,6 @@ public:
 		acceleratorMemSet(rp,0,bytes); // Zero prefill comms buffer to zero
 	      }
 	      int do_send = (comms_send|comms_partial_send) && (!shm_send );
-	      int do_recv = (comms_send|comms_partial_send) && (!shm_recv );
 	      AddPacket((void *)sp,(void *)rp,
 			xmit_to_rank,do_send,
 			recv_from_rank,do_send,
