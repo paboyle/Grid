@@ -299,11 +299,11 @@ int main(int argc, char **argv) {
   // Probably dominates the force - back to EOFA.
   OneFlavourRationalParams SFRp;
   SFRp.lo       = 0.1;
-  SFRp.hi       = 25.0;
+  SFRp.hi       = 30.0;
   SFRp.MaxIter  = 10000;
-  SFRp.tolerance= 1.0e-5;
-  SFRp.mdtolerance= 2.0e-4;
-  SFRp.degree   = 8;
+  SFRp.tolerance= 1.0e-8;
+  SFRp.mdtolerance= 2.0e-6;
+  SFRp.degree   = 10;
   SFRp.precision= 50;
   
   MobiusEOFAFermionD Strange_Op_L (U , *FGrid , *FrbGrid , *GridPtr , *GridRBPtr , strange_mass, strange_mass, pv_mass, 0.0, -1, M5, b, c);
