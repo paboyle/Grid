@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
   TheHMC.Resources.AddObservable<PlaqObs>();
   //////////////////////////////////////////////
 
-  const int Ls      = 4;
+  const int Ls      = 8;
   Real beta         = 2.13;
   Real light_mass   = 0.01;
   Real strange_mass = 0.04;

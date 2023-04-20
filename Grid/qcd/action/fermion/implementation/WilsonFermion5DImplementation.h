@@ -196,7 +196,6 @@ void WilsonFermion5D<Impl>::DhopDir(const FermionField &in, FermionField &out,in
   
   uint64_t Nsite = Umu.Grid()->oSites();
   Kernels::DhopDirKernel(Stencil,Umu,Stencil.CommBuf(),Ls,Nsite,in,out,dirdisp,gamma);
-
 };
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopDirAll(const FermionField &in, std::vector<FermionField> &out)
@@ -247,10 +246,14 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
 
     Kernels::DhopDirKernel(st, U, st.CommBuf(), Ls, Usites, B, Btilde, mu,gamma);
 
+    std::cout << " InsertForce Btilde "<< norm2(Btilde)<<std::endl;
+
     ////////////////////////////
     // spin trace outer product
     ////////////////////////////
     Impl::InsertForce5D(mat, Btilde, Atilde, mu);
+
+    std::cout << " InsertForce "<< norm2(mat)<<std::endl;
   }
 }
 

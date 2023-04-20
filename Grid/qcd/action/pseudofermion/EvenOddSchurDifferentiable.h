@@ -119,13 +119,19 @@ public:
     //  X^dag Der_oe MeeInv Meo Y
     // Use Mooee as nontrivial but gauge field indept
     this->_Mat.MeooeDag   (V,tmp1);      // odd->even -- implicit -0.5 factor to be applied
+    std::cout << " tmp 1" << norm2(tmp1)<<std::endl;
     this->_Mat.MooeeInvDag(tmp1,tmp2);   // even->even 
+    std::cout << " tmp 1" << norm2(tmp2)<<std::endl;
     this->_Mat.MoeDeriv(ForceO,U,tmp2,DaggerYes);
+    std::cout << " ForceO " << norm2(ForceO)<<std::endl;
           
     //  Accumulate X^dag M_oe MeeInv Der_eo Y
     this->_Mat.Meooe   (U,tmp1);    // even->odd -- implicit -0.5 factor to be applied
+    std::cout << " tmp 1" << norm2(tmp1)<<std::endl;
     this->_Mat.MooeeInv(tmp1,tmp2); // even->even 
+    std::cout << " tmp 2" << norm2(tmp2)<<std::endl;
     this->_Mat.MeoDeriv(ForceE,tmp2,V,DaggerYes);
+    std::cout << " ForceE " << norm2(ForceE)<<std::endl;
 
     assert(ForceE.Checkerboard()==Even);
     assert(ForceO.Checkerboard()==Odd);
