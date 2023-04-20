@@ -207,20 +207,27 @@ NAMESPACE_BEGIN(Grid);
         //X = (Mdag M)^-1 V^dag phi
         //Y = (Mdag)^-1 V^dag  phi
         Vpc.MpcDag(PhiOdd,Y);          // Y= Vdag phi
+	std::cout << GridLogMessage <<" Y "<<norm2(Y)<<std::endl;
         X=Zero();
         DerivativeSolver(Mpc,Y,X);     // X= (MdagM)^-1 Vdag phi
+	std::cout << GridLogMessage <<" X "<<norm2(X)<<std::endl;
         Mpc.Mpc(X,Y);                  // Y=  Mdag^-1 Vdag phi
+	std::cout << GridLogMessage <<" Y "<<norm2(Y)<<std::endl;
 
         // phi^dag V (Mdag M)^-1 dV^dag  phi
         Vpc.MpcDagDeriv(force , X, PhiOdd );   dSdU = force;
+	std::cout << GridLogMessage <<" deriv "<<norm2(force)<<std::endl;
   
         // phi^dag dV (Mdag M)^-1 V^dag  phi
         Vpc.MpcDeriv(force , PhiOdd, X );      dSdU = dSdU+force;
+	std::cout << GridLogMessage <<" deriv "<<norm2(force)<<std::endl;
 
         //    -    phi^dag V (Mdag M)^-1 Mdag dM   (Mdag M)^-1 V^dag  phi
         //    -    phi^dag V (Mdag M)^-1 dMdag M   (Mdag M)^-1 V^dag  phi
         Mpc.MpcDeriv(force,Y,X);              dSdU = dSdU-force;
+	std::cout << GridLogMessage <<" deriv "<<norm2(force)<<std::endl;
         Mpc.MpcDagDeriv(force,X,Y);           dSdU = dSdU-force;
+	std::cout << GridLogMessage <<" deriv "<<norm2(force)<<std::endl;
 
         // FIXME No force contribution from EvenEven assumed here
         // Needs a fix for clover.
