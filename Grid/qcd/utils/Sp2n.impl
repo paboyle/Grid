@@ -273,21 +273,6 @@ static void ProjectOnGaugeGroup(iMatrix<vtype,N> &arg, GroupName::Sp) {
   arg = ProjectOnSpGroup(arg);
 }
 
-/*
-template <int N>    // non-lattice objects
-static void ProjectOnGaugeGroup(iScalar<iScalar<iMatrix<vComplexD, N> > >  &Umu, GroupName::Sp) {
-  Umu = ProjectOnSpGroup(Umu);
- }
-
-template <int N>
-static void ProjectOnGaugeGroup(iVector<iScalar<iMatrix<vComplexD, N> >, Nd>  &U, GroupName::Sp) {
-  // Reunitarise
-  for (int mu = 0; mu < Nd; mu++) {
-    auto Umu = PeekIndex<LorentzIndex>(U, mu);
-    Umu = ProjectOnSpGroup(Umu);
-  }
-}*/
-
 template <typename LatticeMatrixType>   
 static void taProj(const LatticeMatrixType &in, LatticeMatrixType &out, GroupName::Sp) {
   out = SpTa(in);
@@ -300,11 +285,6 @@ static void OmegaInvariance(ColourMatrix &in) {
   Omega = Zero();
   const int nsp=ncolour/2;
 
-  // for (int i = 0; i < ncolour; i++)         wrong?!
-  //{
-  //     Omega()()(i, 2*ncolour-1-i) = 1.;
-  //     Omega()()(2*ncolour-1-i, i) = -1;
-  // }
   for (int i = 0; i < nsp; i++) {
     Omega()()(i, nsp + i) = 1.;
     Omega()()(nsp + i, i) = -1;
