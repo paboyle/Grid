@@ -1523,7 +1523,6 @@ void A2Autils<FImpl>::StagMesonFieldAccumLocalMILC(TensorType &mat,
 {
   typedef decltype(coalescedRead(Scalar_v())) calcScalar;
   typedef decltype(coalescedRead(vobj())) calcSpinor;
-  
 
   int Lblock = mat.dimension(3);
   int Rblock = mat.dimension(4);
@@ -1560,20 +1559,20 @@ void A2Autils<FImpl>::StagMesonFieldAccumLocalMILC(TensorType &mat,
 
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
-  
+
   int Nt     = grid->GlobalDimensions()[orthogdim];
   int Ngamma = gammas.size();
   int Nmom   = mom.size();
-  
+
   // The full length of the lattice in the "time" dimension
   int fd=grid->_fdimensions[orthogdim];
   // The local number of time slices held by this processor
   int ld=grid->_ldimensions[orthogdim];
   // The reduced number of time slices after ignoring SIMD vector lanes
   int rd=grid->_rdimensions[orthogdim];
-  
+
   int MFrvol = rd*Lblock*Rblock*Nmom*Ngamma;
-  
+
   Vector<Scalar_v> lvSum(MFrvol);
 
   int nBlocks = grid->_slice_nblock[orthogdim];
@@ -1607,17 +1606,17 @@ void A2Autils<FImpl>::StagMesonFieldAccumLocalMILC(TensorType &mat,
 
   // potentially wasting cores here if local time extent too small
   if (t_kernel) *t_kernel = -usecond();
-  
+
   // based on phases in Grid/qcd/action/fermion/FermionOperatorImpl.h
   // Pretty cute implementation, if I may say so myself (!) (-PAB)
   // Staggered Phases for local, taste non-singlet meson operators.
   // See Degrand and Detar, Ch 11.2
-  
+
   Lattice<iScalar<vInteger> > x(grid); LatticeCoordinate(x,0);
   Lattice<iScalar<vInteger> > y(grid); LatticeCoordinate(y,1);
   Lattice<iScalar<vInteger> > z(grid); LatticeCoordinate(z,2);
   Lattice<iScalar<vInteger> > t(grid); LatticeCoordinate(t,3);
-  
+
   Lattice<iScalar<vInteger> > lin_x(grid); lin_x=y+z+t;
   Lattice<iScalar<vInteger> > lin_y(grid); lin_y=x+z+t;
   Lattice<iScalar<vInteger> > lin_z(grid); lin_z=x+y+t;
@@ -1677,59 +1676,60 @@ void A2Autils<FImpl>::StagMesonFieldAccumLocalMILC(TensorType &mat,
 
   accelerator_for2d(l_index,sizeL,r_index,sizeR,Nsimd,{
 
-    // Spawn threads for each time slice on the local processor
-    for (int rt=0;rt<rd;rt++) {
+    calcSpinor left, right;
+    calcScalar temp_site, gamma_phase, momentum_phase, sum, output;
+
+    // time slice loop (simd reduced)
+    for (int rt=0;rt<rd;rt++) { 
+
       int so=rt*rtStride; // base offset for start of the local plane
       int base = Ngamma*Nmom*(checkerL?2:1)*l_index+Ngamma*Nmom*Lblock*(checkerR?2:1)*r_index+Ngamma*Nmom*Lblock*Rblock*rt;
 
-      calcSpinor left, right;
-      calcScalar temp_site, temp_phase, temp_phase_neg, gamma_phase, momentum_phase;
-      for(int n=0;n<nBlocks;n++){
-        for(int b=0;b<vecsPerSlicePerBlock;b++){
-          int ss = so+n*blockStride+b;
-          int fullss = ss;
+      for ( int m=0;m<Nmom;m++){
+        for (int mu = 0; mu < Ngamma; mu++) {
+          sum = 0.0;
 
-          if (checkerL || checkerR)
-            fullss = hcoor_p[ss];
+          // Loop through all points on the same time slice
+          for(int n=0;n<nBlocks;n++){ 
+            for(int b=0;b<vecsPerSlicePerBlock;b++){
 
-          if (checkerL)
-            left  = coalescedRead(view_pW[l_index][ss]);
-          else
-            left  = coalescedRead(view_pW[l_index][fullss]);
+              int ss = so+n*blockStride+b; // index of lattice point (for checkerboard, if appropriate).
 
-          if (checkerR)
-            right = coalescedRead(view_pV[r_index][ss]);
-          else
-            right = coalescedRead(view_pV[r_index][fullss]);
- 
-          temp_site  = innerProduct(left,right);
+              int fullss = ss; // If checkerboarded, get corresponding full lattice coord.
+              if (checkerL || checkerR)
+                fullss = hcoor_p[ss];
 
-          for (int mu = 0; mu < Ngamma; mu++) {
-            gamma_phase = coalescedRead(view_pS[mu][fullss]);
-            for ( int m=0;m<Nmom;m++){
-              int idx = base+mu*Nmom+m;
-
+              gamma_phase = coalescedRead(view_pS[mu][fullss]);
               momentum_phase = coalescedRead(view_pM[m][fullss]);
 
-              temp_phase = gamma_phase*momentum_phase;
-              temp_phase_neg = -temp_phase;
+              if (checkerL)
+                left  = coalescedRead(view_pW[l_index][ss]);
+              else
+                left  = coalescedRead(view_pW[l_index][fullss]);
+              
+              if (checkerR)
+                right = coalescedRead(view_pV[r_index][ss]);
+              else
+                right = coalescedRead(view_pV[r_index][fullss]);
 
-              // Add contribution to 4 combinations of evec pairs
-              for (int lshifts = 0; lshifts < (checkerL?2:1);lshifts ++){
-                for (int rshifts = 0; rshifts < (checkerR?2:1);rshifts ++){
+              temp_site  = innerProduct(left,right);
 
-                  int shift_idx = idx + Ngamma*Nmom*(lshifts+rshifts*Lblock);
-                  auto sum = coalescedRead(lvSum_p[shift_idx]);
+              sum += gamma_phase*momentum_phase*temp_site;
+            }
+          }
+          int idx = base+mu*Nmom+m;
+          // Add contribution to 4 combinations of evec pairs
+          for (int lshifts = 0; lshifts < (checkerL?2:1);lshifts ++){
+            for (int rshifts = 0; rshifts < (checkerR?2:1);rshifts ++){
+          
+              int shift_idx = idx + Ngamma*Nmom*(lshifts+rshifts*Lblock);
 
-                  // The Mdag eigenvectors have a negative odd checkerboard
-                  if ( (lshifts != rshifts) && cb == Odd)
-                    mac(&sum,&temp_site,&temp_phase_neg);
-                  else
-                    mac(&sum,&temp_site,&temp_phase);
+              if ( (lshifts != rshifts) && cb == Odd)
+                output = -1.0*sum;
+              else
+                output = sum;
 
-                  coalescedWrite(lvSum_p[shift_idx],sum);
-                }
-              }
+              coalescedWrite(lvSum_p[shift_idx],output);
             }
           }
         }
