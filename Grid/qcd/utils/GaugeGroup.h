@@ -326,7 +326,10 @@ class GaugeGroup {
     
   template <int N>        // reunitarise, resimplectify...
   static void ProjectOnGaugeGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
-      ProjectOnGaugeGroup(U, group_name());
+    for (int mu = 0; mu < Nd; mu++) {
+      auto Umu = PeekIndex<LorentzIndex>(U, mu);
+      ProjectOnGaugeGroup(Umu);
+    }
   }
        
   template <int N>        // reunitarise, resimplectify...

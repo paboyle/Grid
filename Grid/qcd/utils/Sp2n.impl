@@ -256,15 +256,6 @@ static void testGenerators(GroupName::Sp) {
 template <int N>
 static void ProjectOnGaugeGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu, GroupName::Sp) {
   Umu = ProjectOnSpGroup(Umu);
- }
-
-template <int N>
-static void ProjectOnGaugeGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U, GroupName::Sp) {
-  // Reunitarise
-  for (int mu = 0; mu < Nd; mu++) {
-    auto Umu = PeekIndex<LorentzIndex>(U, mu);
-    Umu = ProjectOnSpGroup(Umu);
-  }
 }
 
 template <class vtype>

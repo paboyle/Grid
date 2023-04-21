@@ -508,19 +508,9 @@ static void testGenerators(GroupName::SU) {
   std::cout << GridLogMessage << std::endl;
 }
 
-
 template <int N>
 static void ProjectOnGaugeGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu, GroupName::SU) {
   Umu = ProjectOnGroup(Umu);
- }
-
-template <int N>
-static void ProjectOnGaugeGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U, GroupName::SU) {
-  // Reunitarise
-  for (int mu = 0; mu < Nd; mu++) {
-    auto Umu = PeekIndex<LorentzIndex>(U, mu);
-    Umu = ProjectOnGroup(Umu);
-  }
 }
 
 template <class vtype>
