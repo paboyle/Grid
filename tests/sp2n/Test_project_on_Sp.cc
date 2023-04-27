@@ -117,6 +117,8 @@ int main (int argc, char **argv)
         }
     }
     
+    SU<Nc>::HotConfiguration(pRNG,Umu); //refresh
+    U = PeekIndex<LorentzIndex>(Umu,1);
     
     std::cout << GridLogMessage << "Testing ProjectOnGaugeGroup" << std::endl;
     U = U + Delta*identity;
@@ -214,7 +216,9 @@ int main (int argc, char **argv)
     std::cout <<GridLogMessage << std::endl;
     std::cout << GridLogMessage << "Testing SpTa" << std::endl;
     
-    U = PeekIndex<LorentzIndex>(Umu,1);
+    SU<Nc>::HotConfiguration(pRNG,Umu);//refresh
+    U = PeekIndex<LorentzIndex>(Umu,2);
+
     U = U + Delta*identity;
     std::cout << GridLogMessage << "Matrix deformed " << std::endl;
     std::cout << GridLogMessage << "Apply SpTa to deformed matrix" << std::endl;
@@ -224,19 +228,19 @@ int main (int argc, char **argv)
     std::cout << GridLogMessage << "SpTa ::: T - Tda = " << norm2(aux) << std::endl;
     aux = U + adj(U);
     std::cout << GridLogMessage << "SpTa ::: T + Tda = " << norm2(aux) << std::endl;
+    assert( norm2(aux) - 1 < 1e-8);
     
-    std::cout << GridLogMessage << "Check that Omega U Omega = conj(U)" << std::endl;
+    std::cout << GridLogMessage << "Check that Omega T Omega + conj(T) = 0 " << std::endl;
 
     LatticeColourMatrixD Omega(&Grid);
     Sp<Nc>::Omega(Omega);
-    aux = Omega*U*Omega - conjugate(U);
-    std::cout << GridLogMessage << "Omega U Omega - conj(U) = " << norm2(aux) << std::endl;
+    aux = Omega*U*Omega + conjugate(U);
     assert( norm2(aux) < 1e-8);
     
     
     std::cout << GridLogMessage << "Checking the structure is " << std::endl;
     std::cout << GridLogMessage << "U  =  (   W    X   )  " << std::endl;
-    std::cout << GridLogMessage << "      (  X^*  -W^* )  " << std::endl;
+    std::cout << GridLogMessage << "      (  -X^*  W^* )  " << std::endl;
     std::cout <<GridLogMessage << std::endl;
     for (int c1 = 0; c1 < nsp; c1++) //check on W
     {
@@ -245,7 +249,7 @@ int main (int argc, char **argv)
             auto W = PeekIndex<ColourIndex>(U,c1,c2);
             auto Wstar =  PeekIndex<ColourIndex>(U,c1+nsp,c2+nsp);
             auto Ww = conjugate( Wstar );
-            auto amizero = sum(W + Ww);
+            auto amizero = sum(W - Ww);
             auto amizeroo = TensorRemove(amizero);
             assert(  amizeroo.real() < 10e-6 );
             amizeroo *= i;
@@ -261,73 +265,7 @@ int main (int argc, char **argv)
             auto X = PeekIndex<ColourIndex>(U,c1,c2+nsp);
             auto minusXstar = PeekIndex<ColourIndex>(U,c1+nsp,c2);
             auto minusXx = conjugate(minusXstar);
-            auto amizero = sum (X - minusXx);
-            auto amizeroo = TensorRemove(amizero);
-            assert(  amizeroo.real() < 10e-6 );
-            amizeroo *= i;
-            assert(  amizeroo.real() < 10e-6 );
-        }
-    }
-    
-    //test Ta
-    /*
-    U = U + 666.*identity;
-    Up = Ta(U);
-    aux = Up - adj(Up);
-    std::cout << GridLogMessage << "TA !!! T - Tda = " << norm2(aux) << std::endl;
-    aux = Up + adj(Up);
-    std::cout << GridLogMessage << "TA !!! T + Tda = " << norm2(aux) << std::endl;*/
-    
-    // test taProj
-    std::cout << GridLogMessage << "Testing taProj" << std::endl;
-    U = U + Delta*identity;
-    std::cout << GridLogMessage << "Matrix deformed " << std::endl;
-    std::cout << GridLogMessage << "Apply taProj to deformed matrix" << std::endl;
-    Sp<Nc>::taProj(U, Up);
-    aux = Up - adj(Up);
-    std::cout << GridLogMessage << "taProj ::: T - Tda = " << norm2(aux) << std::endl;
-    aux = Up + adj(Up);
-    std::cout << GridLogMessage << "taProj ::: T + Tda = " << norm2(aux) << std::endl;
-    
-    std::cout << GridLogMessage << "Check that Omega U Omega = conj(U)" << std::endl;
-    Sp<Nc>::Omega(Omega);
-    aux = Omega*Up*Omega - conjugate(Up);
-    std::cout << GridLogMessage << "Omega U Omega - conj(U) = " << norm2(aux) << std::endl;
-    assert( norm2(aux) < 1e-8);
-    // before it was
-    aux = Omega*U*Omega - conjugate(U);
-    std::cout << GridLogMessage << " before taProj Omega U Omega - conj(U) = " << norm2(aux) << std::endl;
-
-    U = Up;
-    
-    std::cout << GridLogMessage << "Checking the structure is " << std::endl;
-    std::cout << GridLogMessage << "U  =  (   W    X   )  " << std::endl;
-    std::cout << GridLogMessage << "      (  X^*  -W^* )  " << std::endl;
-    std::cout <<GridLogMessage << std::endl;
-    for (int c1 = 0; c1 < nsp; c1++) //check on W
-    {
-        for (int c2 = 0; c2 < nsp; c2++)
-        {
-            auto W = PeekIndex<ColourIndex>(U,c1,c2);
-            auto Wstar =  PeekIndex<ColourIndex>(U,c1+nsp,c2+nsp);
-            auto Ww = conjugate( Wstar );
-            auto amizero = sum(W + Ww);
-            auto amizeroo = TensorRemove(amizero);
-            assert(  amizeroo.real() < 10e-6 );
-            amizeroo *= i;
-            assert(  amizeroo.real() < 10e-6 );
-        }
-        
-    }
-
-    for (int c1 = 0; c1 < nsp ; c1++)
-    {
-        for (int c2 = 0; c2 < nsp; c2++)
-        {
-            auto X = PeekIndex<ColourIndex>(U,c1,c2+nsp);
-            auto minusXstar = PeekIndex<ColourIndex>(U,c1+nsp,c2);
-            auto minusXx = conjugate(minusXstar);
-            auto amizero = sum (X - minusXx);
+            auto amizero = sum (X + minusXx);
             auto amizeroo = TensorRemove(amizero);
             assert(  amizeroo.real() < 10e-6 );
             amizeroo *= i;
