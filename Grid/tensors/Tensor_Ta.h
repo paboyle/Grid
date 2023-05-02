@@ -84,46 +84,43 @@ template<class vtype,int N> accelerator_inline iVector<vtype,N> SpTa(const iVect
 }
 template<class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr> accelerator_inline iMatrix<vtype,N> SpTa(const iMatrix<vtype,N> &arg)
 {
-    // Generalises Ta to Sp2n
-    // Applies the following projections
-    // P_{antihermitian} P_{antihermitian-Sp-algebra} P_{traceless}
-    // where the ordering matters
-    // P_{traceless} subtracts the trace
-    // P_{antihermitian-Sp-algebra} provides the block structure of the algebra based on U = exp(T) i.e. anti-hermitian generators
-    // P_{antihermitian} does in-adj(in) / 2
-    iMatrix<vtype,N> ret(arg);
-    double factor = (1.0/(double)N);
-    vtype nrm;
-    nrm = 0.5;
+  // Generalises Ta to Sp2n
+  // Applies the following projections
+  // P_{antihermitian} P_{antihermitian-Sp-algebra} P_{traceless}
+  // where the ordering matters
+  // P_{traceless} subtracts the trace
+  // P_{antihermitian-Sp-algebra} provides the block structure of the algebra based on U = exp(T) i.e. anti-hermitian generators
+  // P_{antihermitian} does in-adj(in) / 2
+  iMatrix<vtype,N> ret(arg);
+  double factor = (1.0/(double)N);
+  vtype nrm;
+  nrm = 0.5;
     
-    ret = arg - (trace(arg)*factor);
+  ret = arg - (trace(arg)*factor);
     
-    for(int c1=0;c1<N/2;c1++)
-    {
-        for(int c2=0;c2<N/2;c2++)
-        {
-            ret._internal[c1][c2] = nrm*(conjugate(ret._internal[c1+N/2][c2+N/2]) + ret._internal[c1][c2]); // new[up-left] = old[up-left]+old*[down-right]
-            ret._internal[c1][c2+N/2] = nrm*(ret._internal[c1][c2+N/2] - conjugate(ret._internal[c1+N/2][c2])); // new[up-right] = old[up-right]-old*[down-left]
-        }
-        for(int c2=N/2;c2<N;c2++)
-        {
-            ret._internal[c1+N/2][c2-N/2] = -conjugate(ret._internal[c1][c2]);  //  reconstructs lower blocks
-            ret._internal[c1+N/2][c2] = conjugate(ret._internal[c1][c2-N/2]);   //  from upper blocks
-        }
-    }
+  for(int c1=0;c1<N/2;c1++)
+  {
+      for(int c2=0;c2<N/2;c2++)
+      {
+          ret._internal[c1][c2] = nrm*(conjugate(ret._internal[c1+N/2][c2+N/2]) + ret._internal[c1][c2]); // new[up-left] = old[up-left]+old*[down-right]
+          ret._internal[c1][c2+N/2] = nrm*(ret._internal[c1][c2+N/2] - conjugate(ret._internal[c1+N/2][c2])); // new[up-right] = old[up-right]-old*[down-left]
+      }
+      for(int c2=N/2;c2<N;c2++)
+      {
+          ret._internal[c1+N/2][c2-N/2] = -conjugate(ret._internal[c1][c2]);  //  reconstructs lower blocks
+          ret._internal[c1+N/2][c2] = conjugate(ret._internal[c1][c2-N/2]);   //  from upper blocks
+      }
+  }
     
-    ret = (ret - adj(ret))*0.5;
+  ret = (ret - adj(ret))*0.5;
 
-    return ret;
+  return ret;
 }
-
-
 
 /////////////////////////////////////////////// 
 // ProjectOnGroup function for scalar, vector, matrix 
 // Projects on orthogonal, unitary group
 /////////////////////////////////////////////// 
-
 
 template<class vtype> accelerator_inline iScalar<vtype> ProjectOnGroup(const iScalar<vtype>&r)
 {

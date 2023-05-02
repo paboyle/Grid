@@ -10,14 +10,14 @@ int main(int argc, char** argv) {
   //latt, GridDefaultSimd(Nd, vComplex::Nsimd()), GridDefaultMpi());
   //GridRedBlackCartesian* rbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(grid);
     
-    std::cout << GridLogMessage << "*********************************************"
+  std::cout << GridLogMessage << "*********************************************"
               << std::endl;
-    std::cout << GridLogMessage << "* Generators for Sp(2)" << std::endl;
-    std::cout << GridLogMessage << "*********************************************"
+  std::cout << GridLogMessage << "* Generators for Sp(2)" << std::endl;
+  std::cout << GridLogMessage << "*********************************************"
               << std::endl;
       
-    Sp2::printGenerators();
-    Sp2::testGenerators();
+  Sp2::printGenerators();
+  Sp2::testGenerators();
   
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
@@ -45,7 +45,6 @@ int main(int argc, char** argv) {
     
   Sp8::printGenerators();
   Sp8::testGenerators(); 
-    
     
   Grid_finalize();
 }
