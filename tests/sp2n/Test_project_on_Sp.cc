@@ -2,6 +2,109 @@
 
 using namespace Grid;
 
+template <typename T>
+bool has_correct_block_structure(T U){
+    // checks on elements
+    
+    const int nsp = Nc / 2;
+    Complex i(0., 1.);
+
+    std::cout << GridLogMessage << "Checking the structure is " << std::endl;
+    std::cout << GridLogMessage << "U  =  (   W    X   )  " << std::endl;
+    std::cout << GridLogMessage << "      (  -X^*  W^* )  " << std::endl;
+    std::cout <<GridLogMessage << std::endl;
+    for (int c1 = 0; c1 < nsp; c1++) //check on W
+    {
+        for (int c2 = 0; c2 < nsp; c2++)
+        {
+            auto W = PeekIndex<ColourIndex>(U,c1,c2);
+            auto Wstar =  PeekIndex<ColourIndex>(U,c1+nsp,c2+nsp);
+            auto Ww = conjugate( Wstar );
+            auto amizero = sum(W - Ww);
+            auto amizeroo = TensorRemove(amizero);
+            assert(  amizeroo.real() < 10e-6 );
+            amizeroo *= i;
+            assert(  amizeroo.real() < 10e-6 );
+        }
+        
+    }
+
+    for (int c1 = 0; c1 < nsp ; c1++)
+    {
+        for (int c2 = 0; c2 < nsp; c2++)
+        {
+            auto X = PeekIndex<ColourIndex>(U,c1,c2+nsp);
+            auto minusXstar = PeekIndex<ColourIndex>(U,c1+nsp,c2);
+            auto minusXx = conjugate(minusXstar);
+            auto amizero = sum (X + minusXx);
+            auto amizeroo = TensorRemove(amizero);
+            assert(  amizeroo.real() < 10e-6 );
+            amizeroo *= i;
+            assert(  amizeroo.real() < 10e-6 );
+        }
+    }
+    return true;
+};
+
+template <typename T>
+bool is_element_of_Sp2n(T U) {
+ 
+    LatticeColourMatrixD aux(U.Grid());
+    LatticeColourMatrixD identity(U.Grid());
+    
+    identity = 1.0;
+    double vol = U.Grid()->gSites();
+    
+    std::cout << GridLogMessage << "Unitary check" << std::endl;
+    aux = U*adj(U) - identity;
+    std::cout << GridLogMessage << "U adjU - 1 = " << norm2(aux) << std::endl;
+    assert( norm2(aux) < 1e-8);
+    
+    // actual sp2n check
+    std::cout << GridLogMessage << "Checking Omega invariance" << std::endl;
+    Sp<Nc>::OmegaInvariance(U);     // no assertion here, but the next check will kill us if we are not simplectic
+    
+  return has_correct_block_structure(U);
+}
+
+template<typename T>
+void test_group_projections(T U) {
+    RealD Delta = 666.;
+    LatticeColourMatrixD identity(U.Grid());
+    identity = 1.0;
+
+    std::cout <<GridLogMessage << std::endl;
+    std::cout << GridLogMessage << "#   #   #   #" << std::endl;
+    std::cout << GridLogMessage << "Group" << std::endl;
+    std::cout << GridLogMessage << "#   #   #   #" << std::endl;
+    std::cout <<GridLogMessage << std::endl;
+
+    std::string name="ProjectOnSpGroup";
+    std::cout << GridLogMessage << "Testing "<< name << std::endl;
+    std::cout << GridLogMessage << "Apply to deformed matrix" << std::endl;
+
+    U = ProjectOnSpGroup(U);
+    assert(is_element_of_Sp2n(U));
+   
+    name = "ProjectOnGaugeGroup";
+    std::cout << GridLogMessage << "Testing "<< name << std::endl;
+    std::cout << GridLogMessage << "Apply to deformed matrix" << std::endl;
+
+    U = U + Delta*identity;
+    Sp<Nc>::ProjectOnGaugeGroup(U);
+    assert(is_element_of_Sp2n(U));
+   
+    name = "ProjectGn";
+    std::cout << GridLogMessage << "Testing "<< name << std::endl;
+    std::cout << GridLogMessage << "Apply to deformed matrix" << std::endl;
+
+    U = U + Delta*identity;
+    Sp<Nc>::ProjectGn(U);
+    assert(is_element_of_Sp2n(U));
+}
+
+
+
 int main (int argc, char **argv)
 {
     Grid_init(&argc,&argv);
@@ -61,152 +164,8 @@ int main (int argc, char **argv)
     std::cout << GridLogMessage << "Unitary matrix deformed " << std::endl;
     std::cout << GridLogMessage << "now U adjU - 1 = " << norm2(aux) << std::endl;
     
-    std::cout <<GridLogMessage << std::endl;
-    std::cout << GridLogMessage << "#   #   #   #" << std::endl;
-    std::cout << GridLogMessage << "Group" << std::endl;
-    std::cout << GridLogMessage << "#   #   #   #" << std::endl;
-    std::cout <<GridLogMessage << std::endl;
-    //  Testing ProjectOnSpGroup
-    std::cout << GridLogMessage << "Testing ProjectOnSpGroup" << std::endl;
-    std::cout << GridLogMessage << "Apply ProjectOnSpGroup to deformed matrix" << std::endl;
-    U = ProjectOnSpGroup(U);
+    test_group_projections(U);
 
-    aux = U*adj(U) - identity;
-    std::cout << GridLogMessage << "Unitary check after ProjectOnSpGroup " << std::endl;
-    std::cout << GridLogMessage << "U adjU - 1 = " << norm2(aux) << std::endl;
-    assert( norm2(aux) < 1e-8);
-    
-    // actual sp2n check
-    std::cout << GridLogMessage << "Checking Omega invariance after ProjectOnSpGroup" << std::endl;
-    Sp<Nc>::OmegaInvariance(U);     // no assertion here, but the next check will kill us if we are not simplectic
-    
-    // checks on elements
-    
-    std::cout << GridLogMessage << "Checking the structure is " << std::endl;
-    std::cout << GridLogMessage << "U  =  (   W    X   )  " << std::endl;
-    std::cout << GridLogMessage << "      (  -X^*  W^* )  " << std::endl;
-    std::cout <<GridLogMessage << std::endl;
-    for (int c1 = 0; c1 < nsp; c1++) //check on W
-    {
-        for (int c2 = 0; c2 < nsp; c2++)
-        {
-            auto W = PeekIndex<ColourIndex>(U,c1,c2);
-            auto Wstar =  PeekIndex<ColourIndex>(U,c1+nsp,c2+nsp);
-            auto Ww = conjugate( Wstar );
-            auto amizero = sum(W - Ww);
-            auto amizeroo = TensorRemove(amizero);
-            assert(  amizeroo.real() < 10e-6 );
-            amizeroo *= i;
-            assert(  amizeroo.real() < 10e-6 );
-        }
-        
-    }
-
-    for (int c1 = 0; c1 < nsp ; c1++)
-    {
-        for (int c2 = 0; c2 < nsp; c2++)
-        {
-            auto X = PeekIndex<ColourIndex>(U,c1,c2+nsp);
-            auto minusXstar = PeekIndex<ColourIndex>(U,c1+nsp,c2);
-            auto minusXx = conjugate(minusXstar);
-            auto amizero = sum (X + minusXx);
-            auto amizeroo = TensorRemove(amizero);
-            assert(  amizeroo.real() < 10e-6 );
-            amizeroo *= i;
-            assert(  amizeroo.real() < 10e-6 );
-        }
-    }
-    
-    
-    std::cout << GridLogMessage << "Testing ProjectOnGaugeGroup" << std::endl;
-    U = U + Delta*identity;
-    std::cout << GridLogMessage << "Apply ProjectOnGaugeGroup to deformed matrix" << std::endl;
-    Sp<Nc>::ProjectOnGaugeGroup(U);
-    aux = U*adj(U) - identity;
-    std::cout << GridLogMessage << "U adjU - 1 = " << norm2(aux) << std::endl;
-    assert( norm2(aux) < 1e-8);
-    Sp<Nc>::OmegaInvariance(U);
-    
-    std::cout << GridLogMessage << "Checking the structure is " << std::endl;
-    std::cout << GridLogMessage << "U  =  (   W    X   )  " << std::endl;
-    std::cout << GridLogMessage << "      (  -X^*  W^* )  " << std::endl;
-    
-    for (int c1 = 0; c1 < nsp; c1++) //check on W
-    {
-        for (int c2 = 0; c2 < nsp; c2++)
-        {
-            auto W = PeekIndex<ColourIndex>(U,c1,c2);
-            auto Wstar =  PeekIndex<ColourIndex>(U,c1+nsp,c2+nsp);
-            auto Ww = conjugate( Wstar );
-            auto amizero = sum(W - Ww);
-            auto amizeroo = TensorRemove(amizero);
-            assert(  amizeroo.real() < 10e-6 );
-            amizeroo *= i;
-            assert(  amizeroo.real() < 10e-6 );
-        }
-        
-    }
-
-    for (int c1 = 0; c1 < nsp ; c1++)
-    {
-        for (int c2 = 0; c2 < nsp; c2++)
-        {
-            auto X = PeekIndex<ColourIndex>(U,c1,c2+nsp);
-            auto minusXstar = PeekIndex<ColourIndex>(U,c1+nsp,c2);
-            auto minusXx = conjugate(minusXstar);
-            auto amizero = sum (X + minusXx);
-            auto amizeroo = TensorRemove(amizero);
-            assert(  amizeroo.real() < 10e-6 );
-            amizeroo *= i;
-            assert(  amizeroo.real() < 10e-6 );
-        }
-    }
-    
-    std::cout << GridLogMessage << "Testing ProjectGn" << std::endl;
-    U = U + Delta*identity;
-    std::cout << GridLogMessage << "Apply ProjectGn to deformed matrix" << std::endl;
-    Sp<Nc>::ProjectGn(U);
-    aux = U*adj(U) - identity;
-    std::cout << GridLogMessage << "U adjU - 1 = " << norm2(aux) << std::endl;
-    assert( norm2(aux) < 1e-8);
-    std::cout << GridLogMessage << "Det after ProjectGn = " << norm2( Determinant(U) ) / vol << std::endl;
-    assert( norm2(aux) - 1 < 1e-8);
-    Sp<Nc>::OmegaInvariance(U);
-    
-    std::cout << GridLogMessage << "Checking the structure is " << std::endl;
-    std::cout << GridLogMessage << "U  =  (   W    X   )  " << std::endl;
-    std::cout << GridLogMessage << "      (  -X^*  W^* )  " << std::endl;
-    std::cout <<GridLogMessage << std::endl;
-    for (int c1 = 0; c1 < nsp; c1++) //check on W
-    {
-        for (int c2 = 0; c2 < nsp; c2++)
-        {
-            auto W = PeekIndex<ColourIndex>(U,c1,c2);
-            auto Wstar =  PeekIndex<ColourIndex>(U,c1+nsp,c2+nsp);
-            auto Ww = conjugate( Wstar );
-            auto amizero = sum(W - Ww);
-            auto amizeroo = TensorRemove(amizero);
-            assert(  amizeroo.real() < 10e-6 );
-            amizeroo *= i;
-            assert(  amizeroo.real() < 10e-6 );
-        }
-        
-    }
-
-    for (int c1 = 0; c1 < nsp ; c1++)
-    {
-        for (int c2 = 0; c2 < nsp; c2++)
-        {
-            auto X = PeekIndex<ColourIndex>(U,c1,c2+nsp);
-            auto minusXstar = PeekIndex<ColourIndex>(U,c1+nsp,c2);
-            auto minusXx = conjugate(minusXstar);
-            auto amizero = sum (X + minusXx);
-            auto amizeroo = TensorRemove(amizero);
-            assert(  amizeroo.real() < 10e-6 );
-            amizeroo *= i;
-            assert(  amizeroo.real() < 10e-6 );
-        }
-    }
     std::cout <<GridLogMessage << std::endl;
     std::cout << GridLogMessage << "#   #   #   #" << std::endl;
     std::cout << GridLogMessage << "Algebra" << std::endl;
