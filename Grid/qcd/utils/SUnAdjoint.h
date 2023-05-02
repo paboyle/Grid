@@ -68,8 +68,7 @@ public:
     for (int a = 0; a < Dimension; a++) {
       tmp = ta[a] * ta[Index] - ta[Index] * ta[a];
       for (int b = 0; b < (ncolour * ncolour - 1); b++) {
-        iSUnMatrix<cplx> tmp1 =
-	  2.0 * tmp * ta[b];  // 2.0 from the normalization
+        iSUnMatrix<cplx> tmp1 = 2.0 * tmp * ta[b];  // 2.0 from the normalization
         Complex iTr = TensorRemove(timesI(trace(tmp1)));
         //iAdjTa()()(b, a) = iTr;
         iAdjTa()()(a, b) = iTr;

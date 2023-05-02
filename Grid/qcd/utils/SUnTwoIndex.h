@@ -126,8 +126,7 @@ public:
 
   template <class cplx>
   static void generator(int Index, iSUnTwoIndexMatrix<cplx> &i2indTa) {
-    Vector<iSUnMatrix<cplx> > ta(
-								ncolour * ncolour - 1);
+    Vector<iSUnMatrix<cplx> > ta(ncolour * ncolour - 1);
     Vector<iSUnMatrix<cplx> > eij(Dimension);
     iSUnMatrix<cplx> tmp;
     i2indTa = Zero();

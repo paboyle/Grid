@@ -66,8 +66,6 @@ template<class vtype,int N> accelerator_inline iMatrix<vtype,N> Ta(const iMatrix
   return ret;
 }
 
-// for sp2n can't be as simple as Ta. We do a Gram-Schmidt
-
 template<class vtype> accelerator_inline iScalar<vtype> SpTa(const iScalar<vtype>&r)
 {
   iScalar<vtype> ret;
@@ -82,7 +80,8 @@ template<class vtype,int N> accelerator_inline iVector<vtype,N> SpTa(const iVect
   }
   return ret;
 }
-template<class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr> accelerator_inline iMatrix<vtype,N> SpTa(const iMatrix<vtype,N> &arg)
+template<class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr>
+accelerator_inline iMatrix<vtype,N> SpTa(const iMatrix<vtype,N> &arg)
 {
   // Generalises Ta to Sp2n
   // Applies the following projections

@@ -340,12 +340,12 @@ class GaugeGroup {
 
   template <class vtype, int N>
   static void ProjectOnGaugeGroup(iVector<vtype,N> &r) {
-      r = ProjectOnGaugeGroup(r, group_name());
+      ProjectOnGaugeGroup(r, group_name());
   }
 
   template <class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr>
   static void ProjectOnGaugeGroup(iMatrix<vtype,N> &arg) {
-      arg = ProjectOnGaugeGroup(arg, group_name());
+      ProjectOnGaugeGroup(arg, group_name());
   }
 
   template <int N>       // reunitarise, resimplectify... previously ProjectSUn
@@ -428,7 +428,6 @@ static void ProjectSUn(
   }
 }
 
-// Explicit specialisation for SU(3).
 // Explicit specialisation for SU(3).
 static void ProjectSU3(
     Lattice<iScalar<iScalar<iMatrix<vComplexD, 3> > > > &Umu) {
