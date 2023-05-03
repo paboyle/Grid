@@ -111,36 +111,33 @@ bool has_correct_algebra_block_structure(const T& U) {
   const int nsp = Nc / 2;
   Complex i(0., 1.);
   std::cout << GridLogMessage << "Checking the structure is " << std::endl;
-    std::cout << GridLogMessage << "U  =  (   W    X   )  " << std::endl;
-    std::cout << GridLogMessage << "      (  -X^*  W^* )  " << std::endl;
-    for (int c1 = 0; c1 < nsp; c1++) //check on W
-    {
-        for (int c2 = 0; c2 < nsp; c2++)
-        {
-            auto W = PeekIndex<ColourIndex>(U,c1,c2);
-            auto Wstar =  PeekIndex<ColourIndex>(U,c1+nsp,c2+nsp);
-            auto Ww = conjugate( Wstar );
-            auto amizero = sum(W - Ww);
-            auto amizeroo = TensorRemove(amizero);
-            assert(  amizeroo.real() < 10e-6 );
-            amizeroo *= i;
-            assert(  amizeroo.real() < 10e-6 );
-        }
+  std::cout << GridLogMessage << "U  =  (   W    X   )  " << std::endl;
+  std::cout << GridLogMessage << "      (  -X^*  W^* )  " << std::endl;
+  for (int c1 = 0; c1 < nsp; c1++)  // check on W
+  {
+    for (int c2 = 0; c2 < nsp; c2++) {
+      auto W = PeekIndex<ColourIndex>(U, c1, c2);
+      auto Wstar = PeekIndex<ColourIndex>(U, c1 + nsp, c2 + nsp);
+      auto Ww = conjugate(Wstar);
+      auto amizero = sum(W - Ww);
+      auto amizeroo = TensorRemove(amizero);
+      assert(amizeroo.real() < 10e-6);
+      amizeroo *= i;
+      assert(amizeroo.real() < 10e-6);
     }
-    for (int c1 = 0; c1 < nsp ; c1++)
-    {
-        for (int c2 = 0; c2 < nsp; c2++)
-        {
-            auto X = PeekIndex<ColourIndex>(U,c1,c2+nsp);
-            auto minusXstar = PeekIndex<ColourIndex>(U,c1+nsp,c2);
-            auto minusXx = conjugate(minusXstar);
-            auto amizero = sum (X + minusXx);
-            auto amizeroo = TensorRemove(amizero);
-            assert(  amizeroo.real() < 10e-6 );
-            amizeroo *= i;
-            assert(  amizeroo.real() < 10e-6 );
-        }
+  }
+  for (int c1 = 0; c1 < nsp; c1++) {
+    for (int c2 = 0; c2 < nsp; c2++) {
+      auto X = PeekIndex<ColourIndex>(U, c1, c2 + nsp);
+      auto minusXstar = PeekIndex<ColourIndex>(U, c1 + nsp, c2);
+      auto minusXx = conjugate(minusXstar);
+      auto amizero = sum(X + minusXx);
+      auto amizeroo = TensorRemove(amizero);
+      assert(amizeroo.real() < 10e-6);
+      amizeroo *= i;
+      assert(amizeroo.real() < 10e-6);
     }
+  }
 
   return true;
 }
