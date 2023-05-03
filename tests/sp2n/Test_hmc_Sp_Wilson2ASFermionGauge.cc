@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
     
   RealD beta = 6.7 ;
     
-  SymplWilsonGaugeActionR Waction(beta);
+  SpWilsonGaugeActionR Waction(beta);
     
   auto GridPtr = TheHMC.Resources.GetCartesian();
   auto GridRBPtr = TheHMC.Resources.GetRBCartesian();

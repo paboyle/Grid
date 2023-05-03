@@ -256,15 +256,26 @@ static void testGenerators(GroupName::Sp) {
 template <int N>
 static void ProjectOnGaugeGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu, GroupName::Sp) {
   Umu = ProjectOnSpGroup(Umu);
- }
+}
 
-template <int N>
-static void ProjectOnGaugeGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U, GroupName::Sp) {
-  // Reunitarise
-  for (int mu = 0; mu < Nd; mu++) {
-    auto Umu = PeekIndex<LorentzIndex>(U, mu);
-    Umu = ProjectOnSpGroup(Umu);
-  }
+template <class vtype>
+static void ProjectOnGaugeGroup(iScalar<vtype> &r, GroupName::Sp) {
+  r = ProjectOnSpGroup(r);
+}
+
+template <class vtype, int N>
+static void ProjectOnGaugeGroup(iVector<vtype,N> &r, GroupName::Sp) {
+  r = ProjectOnSpGroup(r);
+}
+
+template <class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr>
+static void ProjectOnGaugeGroup(iMatrix<vtype,N> &arg, GroupName::Sp) {
+  arg = ProjectOnSpGroup(arg);
+}
+
+template <typename LatticeMatrixType>   
+static void taProj(const LatticeMatrixType &in, LatticeMatrixType &out, GroupName::Sp) {
+  out = SpTa(in);
 }
 
 public:
@@ -274,13 +285,6 @@ static void OmegaInvariance(ColourMatrix &in) {
   Omega = Zero();
   const int nsp=ncolour/2;
 
-  std::cout << GridLogMessage << "I am a ColourMatrix" << std::endl;
-
-  // for (int i = 0; i < ncolour; i++)         wrong?!
-  //{
-  //     Omega()()(i, 2*ncolour-1-i) = 1.;
-  //     Omega()()(2*ncolour-1-i, i) = -1;
-  // }
   for (int i = 0; i < nsp; i++) {
     Omega()()(i, nsp + i) = 1.;
     Omega()()(nsp + i, i) = -1;
@@ -314,8 +318,6 @@ static void OmegaInvariance(GaugeField &in) {
   Omega = Zero();
   identity = 1.;
 
-  std::cout << GridLogMessage << "I am a GaugeField " << std::endl;
-
   U = PeekIndex<LorentzIndex>(in, 1);
 
   OmegaInvariance(U);
@@ -332,8 +334,6 @@ static void OmegaInvariance(LatticeColourMatrixD &in) {
   OmegaLatt = Zero();
   Omega = Zero();
   identity = 1.;
-
-  std::cout << GridLogMessage << "I am a LatticeColourMatrix " << std::endl;
 
   for (int i = 0; i < nsp; i++) {
     Omega()()(i, nsp + i) = 1.;
@@ -356,3 +356,21 @@ static void OmegaInvariance(LatticeColourMatrixD &in) {
   }
 }
 
+template <ONLY_IF_Sp>
+static void Omega(LatticeColourMatrixD &in) {
+  const int nsp=ncolour/2;
+  LatticeColourMatrixD OmegaLatt(in.Grid());
+  LatticeColourMatrixD identity(in.Grid());
+  ColourMatrix Omega;
+
+  OmegaLatt = Zero();
+  Omega = Zero();
+  identity = 1.;
+
+  for (int i = 0; i < nsp; i++) {
+    Omega()()(i, nsp + i) = 1.;
+    Omega()()(nsp + i, i) = -1;
+  }
+  OmegaLatt = OmegaLatt + (identity * Omega);
+  in = OmegaLatt;
+}

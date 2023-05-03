@@ -511,15 +511,26 @@ static void testGenerators(GroupName::SU) {
 template <int N>
 static void ProjectOnGaugeGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu, GroupName::SU) {
   Umu = ProjectOnGroup(Umu);
- }
+}
 
-template <int N>
-static void ProjectOnGaugeGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U, GroupName::SU) {
-  // Reunitarise
-  for (int mu = 0; mu < Nd; mu++) {
-    auto Umu = PeekIndex<LorentzIndex>(U, mu);
-    Umu = ProjectOnGroup(Umu);
-  }
+template <class vtype>
+static void ProjectOnGaugeGroup(iScalar<vtype> &r, GroupName::SU) {
+  r = ProjectOnGroup(r);
+}
+
+template <class vtype, int N>
+static void ProjectOnGaugeGroup(iVector<vtype,N> &r, GroupName::SU) {
+  r = ProjectOnGroup(r);
+}
+
+template <class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr>
+static void ProjectOnGaugeGroup(iMatrix<vtype,N> &arg, GroupName::SU) {
+  arg = ProjectOnGroup(arg);
+}
+
+template <typename LatticeMatrixType>
+static void taProj(const LatticeMatrixType &in, LatticeMatrixType &out, GroupName::SU) {
+  out = Ta(in);
 }
 
 /*

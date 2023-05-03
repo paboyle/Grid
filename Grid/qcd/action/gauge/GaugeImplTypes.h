@@ -62,7 +62,7 @@ NAMESPACE_BEGIN(Grid);
 
 // hardcodes the exponential approximation in the template
 //template <class S, int Nrepresentation = Nc, int Nexp = 12 > class GaugeImplTypes {
-template <class S, int Nrepresentation = Nc, int Nexp = 12, bool isSp2n = false > class GaugeImplTypes {
+template <class S, int Nrepresentation = Nc, int Nexp = 12, class Group = SU<Nc> > class GaugeImplTypes {
 public:
   typedef S Simd;
   typedef typename Simd::scalar_type scalar_type;
@@ -79,8 +79,6 @@ public:
   typedef Lattice<SiteComplex> ComplexField;
   typedef Lattice<SiteLink>    LinkField; 
   typedef Lattice<SiteField>   Field;
-
-  typedef SU<Nrepresentation> Group;
 
   // Guido: we can probably separate the types from the HMC functions
   // this will create 2 kind of implementations
@@ -124,53 +122,18 @@ public:
 
     for (int mu = 0; mu < Nd; mu++)
     {
-        if (isSp2n == true)
-        {
-            //const int nSp = Nrepresentation/2;
-            Sp<Nrepresentation>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
-        } else
-        {
-        
-
-            Group::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
-        }
-
+      Group::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
       RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR) ;
       Pmu = Pmu*scale;
       PokeIndex<LorentzIndex>(P, Pmu, mu);
     }
   }
     
-    
-
   static inline Field projectForce(Field &P)
     {
-        if (isSp2n == true)
-        {
-            P = Ta(P);
-            //const int nsp = Nc / 2;
-
-            Sp<Nc>::iGroupMatrix<Complex> gen;
-            
-
-            auto Psum = P;
-
-            Psum = Zero();
-            
-            for (int a = 0; a < Sp<Nrepresentation>::AlgebraDimension; a++)
-            {
-                Sp<Nrepresentation>::generator(a, gen);
-
-                auto coeff = 2. * trace(P * gen);
-                Psum += coeff * gen;
-            }
-            
-            return Psum;
-            
-        } else
-        {
-            return Ta(P);
-        }
+        Field ret(P.Grid());
+        Group::taProj(P, ret);
+        return ret;
     }
 
   static inline void update_field(Field& P, Field& U, double ep){
@@ -181,14 +144,8 @@ public:
     autoView(P_v,P,AcceleratorRead);
     accelerator_for(ss, P.Grid()->oSites(),1,{
       for (int mu = 0; mu < Nd; mu++) {
-          if (isSp2n == true)
-          {
-              U_v[ss](mu) = ProjectOnSpGroup(Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu));
-          } else
-          {
-              U_v[ss](mu) = ProjectOnGroup(Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu));
-          }
-        
+          U_v[ss](mu) = Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu);
+          Group::ProjectOnGaugeGroup(U_v[ss](mu));
       }
     });
    //auto end = std::chrono::high_resolution_clock::now();
@@ -209,52 +166,22 @@ public:
 
   static inline void Project(Field &U)
   {
-      if (isSp2n == true)
-      {
-          ProjectSp2n(U);
-      } else
-      {
-          ProjectSUn(U);
-      }
+      Group::ProjectGn(U);
   }
-
 
   static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U)
   {
-      if (isSp2n == true)
-      {
-          //const int nSp = Nrepresentation/2;
-          Sp<Nrepresentation>::HotConfiguration(pRNG, U);
-      } else
-      {
-          Group::HotConfiguration(pRNG, U);
-      }
+      Group::HotConfiguration(pRNG, U);
   }
 
   static inline void TepidConfiguration(GridParallelRNG &pRNG, Field &U)
   {
-      if (isSp2n == true)
-    {
-        //const int nSp = Nrepresentation/2;
-        Sp<Nrepresentation>::TepidConfiguration(pRNG, U);
-    } else
-    {
-        Group::TepidConfiguration(pRNG, U);
-    }
+    Group::TepidConfiguration(pRNG, U);
   }
-
 
   static inline void ColdConfiguration(GridParallelRNG &pRNG, Field &U)
   {
-      if (isSp2n == true)
-      {
-          //const int nSp = Nrepresentation/2;
-          Sp<Nrepresentation>::ColdConfiguration(pRNG, U);
-      } else
-      {
-          Group::ColdConfiguration(pRNG, U);
-      }
-
+    Group::ColdConfiguration(pRNG, U);
   }
 
 };
@@ -264,9 +191,9 @@ typedef GaugeImplTypes<vComplex, Nc> GimplTypesR;
 typedef GaugeImplTypes<vComplexF, Nc> GimplTypesF;
 typedef GaugeImplTypes<vComplexD, Nc> GimplTypesD;
 
-typedef GaugeImplTypes<vComplex, Nc, 12, true> SymplGimplTypesR;
-typedef GaugeImplTypes<vComplexF, Nc, 12, true> SymplGimplTypesF;
-typedef GaugeImplTypes<vComplexD, Nc, 12, true> SymplGimplTypesD;
+typedef GaugeImplTypes<vComplex, Nc, 12, Sp<Nc> > SpGimplTypesR;
+typedef GaugeImplTypes<vComplexF, Nc, 12, Sp<Nc> > SpGimplTypesF;
+typedef GaugeImplTypes<vComplexD, Nc, 12, Sp<Nc> > SpGimplTypesD;
 
 typedef GaugeImplTypes<vComplex, SU<Nc>::AdjointDimension> GimplAdjointTypesR;
 typedef GaugeImplTypes<vComplexF, SU<Nc>::AdjointDimension> GimplAdjointTypesF;

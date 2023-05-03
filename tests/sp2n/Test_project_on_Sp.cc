@@ -2,155 +2,232 @@
 
 using namespace Grid;
 
-int main (int argc, char **argv)
-{
-    Grid_init(&argc,&argv);
-    
-    
-    Coordinate latt_size   = GridDefaultLatt();
-    Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-    Coordinate mpi_layout  = GridDefaultMpi();
+template <typename T>
+bool has_correct_group_block_structure(const T& U) {
+  std::cout << GridLogMessage << "Checking the structure is " << std::endl;
+  std::cout << GridLogMessage << "U  =  (   W    X   )  " << std::endl;
+  std::cout << GridLogMessage << "      (  -X^*  W^* )  " << std::endl;
+  std::cout << GridLogMessage << std::endl;
 
-    GridCartesian             Grid(latt_size,simd_layout,mpi_layout);
-    GridRedBlackCartesian     RBGrid(&Grid);
-    
-    
-    LatticeGaugeField Umu(&Grid);
-    LatticeColourMatrixD U(&Grid);
-    LatticeColourMatrixD aux(&Grid);
-    LatticeColourMatrixD identity(&Grid);
-    
-    const int nsp = Nc / 2;
-    
-    identity = 1.0;
-    RealD epsilon = 0.01;
-    Complex i(0., 1.);
-    RealD u = 0.;
-    double vol = Umu.Grid()->gSites();
-    
-    std::vector<int> pseeds({1,2,3,4,5});
-    std::vector<int> sseeds({6,7,8,9,10});
-    GridParallelRNG  pRNG(&Grid); pRNG.SeedFixedIntegers(pseeds);
-    GridSerialRNG    sRNG;       sRNG.SeedFixedIntegers(sseeds);
-    
-    SU<Nc>::HotConfiguration(pRNG,Umu);
-    U = PeekIndex<LorentzIndex>(Umu,2);
-    
-    aux = U*adj(U) - identity;
-    std::cout <<GridLogMessage << std::endl;
-    std::cout << GridLogMessage << "Starting with random SUn matrix " << std::endl;
-    std::cout << GridLogMessage << "Unitary check " << std::endl;
-    std::cout <<GridLogMessage << "U adjU - 1 = " << norm2(aux) << std::endl;
-    assert ( norm2(aux) < 1e-8 );
-    std::cout <<GridLogMessage << std::endl;
-    if (Nc != 2)
-    {
-        std::cout << GridLogMessage << "This matrix should not leave Omega invariant, expect a warning" << std::endl;
+  const int nsp = Nc / 2;
+  Complex i(0., 1.);
+  for (int c1 = 0; c1 < nsp; c1++)  // check on W
+  {
+    for (int c2 = 0; c2 < nsp; c2++) {
+      auto W = PeekIndex<ColourIndex>(U, c1, c2);
+      auto Wstar = PeekIndex<ColourIndex>(U, c1 + nsp, c2 + nsp);
+      auto Ww = conjugate(Wstar);
+      auto amizero = sum(W - Ww);
+      auto amizeroo = TensorRemove(amizero);
+      assert(amizeroo.real() < 10e-6);
+      amizeroo *= i;
+      assert(amizeroo.real() < 10e-6);
     }
-    Sp<Nc>::OmegaInvariance(U);
-    std::cout <<GridLogMessage << std::endl;
-    
-    U = U + epsilon*identity;
-    aux = U*adj(U) - identity;
-    
-    std::cout << GridLogMessage << "Unitary matrix deformed " << std::endl;
-    std::cout << GridLogMessage << "now U adjU - 1 = " << norm2(aux) << std::endl;
-    std::cout <<GridLogMessage << std::endl;
+  }
 
-    std::cout <<GridLogMessage << std::endl;
-    std::cout << GridLogMessage << "Projecting on Sp2n " << std::endl;
-
-    U = ProjectOnSpGroup(U);
-    //U = ProjectOnGroup(U);
-    aux = U*adj(U) - identity;
-    std::cout <<GridLogMessage << std::endl;
-    std::cout <<GridLogMessage << std::endl;
-    std::cout << GridLogMessage << "Unitary check after Sp(2n) projection " << std::endl;
-    std::cout << GridLogMessage << "U adjU - 1 = " << norm2(aux) << std::endl;
-    assert( norm2(aux) < 1e-8);
-    std::cout <<GridLogMessage << std::endl;
-    std::cout <<GridLogMessage << std::endl;
-    
-    // checks on determinant
-    std::cout << GridLogMessage << "Det after Projection on Sp2n = " << norm2( Determinant(U) ) / vol << std::endl;
-    std::cout <<GridLogMessage << std::endl;
-    std::cout <<GridLogMessage << std::endl;
-    
-    // actual sp2n check
-    std::cout << GridLogMessage << "Checking invariance after projection "<< std::endl;
-    Sp<Nc>::OmegaInvariance(U);
-    
-    // checks on elements
-    
-    std::cout <<GridLogMessage << std::endl;
-    std::cout <<GridLogMessage << std::endl;
-    std::cout << GridLogMessage << "Checking the structure is " << std::endl;
-    std::cout << GridLogMessage << "U  =  (   W    X   )  " << std::endl;
-    std::cout << GridLogMessage << "      (  -X^*  W^* )  " << std::endl;
-    std::cout <<GridLogMessage << std::endl;
-    for (int c1 = 0; c1 < nsp; c1++) //check on W
-    {
-        for (int c2 = 0; c2 < nsp; c2++)
-        {
-            auto W = PeekIndex<ColourIndex>(U,c1,c2);
-            auto Wstar =  PeekIndex<ColourIndex>(U,c1+nsp,c2+nsp);
-            auto Ww = conjugate( Wstar );
-            auto amizero = sum(W - Ww);
-            auto amizeroo = TensorRemove(amizero);
-            assert(  amizeroo.real() < 10e-6 );
-            amizeroo *= i;
-            assert(  amizeroo.real() < 10e-6 );
-        }
-        
+  for (int c1 = 0; c1 < nsp; c1++) {
+    for (int c2 = 0; c2 < nsp; c2++) {
+      auto X = PeekIndex<ColourIndex>(U, c1, c2 + nsp);
+      auto minusXstar = PeekIndex<ColourIndex>(U, c1 + nsp, c2);
+      auto minusXx = conjugate(minusXstar);
+      auto amizero = sum(X + minusXx);
+      auto amizeroo = TensorRemove(amizero);
+      assert(amizeroo.real() < 10e-6);
+      amizeroo *= i;
+      assert(amizeroo.real() < 10e-6);
     }
+  }
+  return true;
+};
 
-    for (int c1 = 0; c1 < nsp ; c1++)
-    {
-        for (int c2 = 0; c2 < nsp; c2++)
-        {
-            auto X = PeekIndex<ColourIndex>(U,c1,c2+nsp);
-            auto minusXstar = PeekIndex<ColourIndex>(U,c1+nsp,c2);
-            auto minusXx = conjugate(minusXstar);
-            auto amizero = sum (X + minusXx);
-            auto amizeroo = TensorRemove(amizero);
-            assert(  amizeroo.real() < 10e-6 );
-            amizeroo *= i;
-            assert(  amizeroo.real() < 10e-6 );
-        }
+template <typename T>
+bool is_element_of_sp2n_group(const T& U) {
+  LatticeColourMatrixD aux(U.Grid());
+  LatticeColourMatrixD identity(U.Grid());
+  identity = 1.0;
+  LatticeColourMatrixD Omega(U.Grid());
+  Sp<Nc>::Omega(Omega);
+
+  std::cout << GridLogMessage << "Check matrix is non-zero " << std::endl;
+  assert(norm2(U) > 1e-8);
+
+  std::cout << GridLogMessage << "Unitary check" << std::endl;
+  aux = U * adj(U) - identity;
+  std::cout << GridLogMessage << "U adjU - 1 = " << norm2(aux) << std::endl;
+  assert(norm2(aux) < 1e-8);
+
+  aux = Omega - (U * Omega * transpose(U));
+  std::cout << GridLogMessage << "Omega - U Omega transpose(U) = " << norm2(aux)
+            << std::endl;
+  assert(norm2(aux) < 1e-8);
+
+  std::cout << GridLogMessage
+            << "|Det| = " << norm2(Determinant(U)) / U.Grid()->gSites()
+            << std::endl;
+  assert(norm2(Determinant(U)) / U.Grid()->gSites() - 1 < 1e-8);
+
+  return has_correct_group_block_structure(U);
+}
+
+template <typename T>
+void test_group_projections(T U) {
+  RealD Delta = 666.;
+  LatticeColourMatrixD identity(U.Grid());
+  identity = 1.0;
+
+  std::cout << GridLogMessage << "#   #   #   #" << std::endl;
+  std::cout << GridLogMessage << "Group" << std::endl;
+  std::cout << GridLogMessage << "#   #   #   #" << std::endl;
+  std::cout << GridLogMessage << std::endl;
+
+  std::string name = "ProjectOnSpGroup";
+  std::cout << GridLogMessage << "Testing " << name << std::endl;
+  std::cout << GridLogMessage << "Apply to deformed matrix" << std::endl;
+
+  U = U + Delta * identity;
+  U = ProjectOnSpGroup(U);
+  assert(is_element_of_sp2n_group(U));
+
+  name = "ProjectOnGaugeGroup";
+  std::cout << GridLogMessage << "Testing " << name << std::endl;
+  std::cout << GridLogMessage << "Apply to deformed matrix" << std::endl;
+
+  U = U + Delta * identity;
+  Sp<Nc>::ProjectOnGaugeGroup(U);
+  assert(is_element_of_sp2n_group(U));
+
+  name = "ProjectGn";
+  std::cout << GridLogMessage << "Testing " << name << std::endl;
+  std::cout << GridLogMessage << "Apply to deformed matrix" << std::endl;
+
+  U = U + Delta * identity;
+  Sp<Nc>::ProjectGn(U);
+  assert(is_element_of_sp2n_group(U));
+}
+
+template <typename T>
+bool has_correct_algebra_block_structure(const T& U) {
+  // this only checks for the anti-hermitian part of the algebra
+  const int nsp = Nc / 2;
+  Complex i(0., 1.);
+  std::cout << GridLogMessage << "Checking the structure is " << std::endl;
+  std::cout << GridLogMessage << "U  =  (   W    X   )  " << std::endl;
+  std::cout << GridLogMessage << "      (  -X^*  W^* )  " << std::endl;
+  for (int c1 = 0; c1 < nsp; c1++)  // check on W
+  {
+    for (int c2 = 0; c2 < nsp; c2++) {
+      auto W = PeekIndex<ColourIndex>(U, c1, c2);
+      auto Wstar = PeekIndex<ColourIndex>(U, c1 + nsp, c2 + nsp);
+      auto Ww = conjugate(Wstar);
+      auto amizero = sum(W - Ww);
+      auto amizeroo = TensorRemove(amizero);
+      assert(amizeroo.real() < 10e-6);
+      amizeroo *= i;
+      assert(amizeroo.real() < 10e-6);
     }
-    
-    std::cout << GridLogMessage << "ok" << std::endl;
-    
-    // an explicit check for sp2
-    /*
-    if (Nc == 2)
-    {
-        assert(Nc==2);
-        ColourMatrix A;
-        A = Zero();
+  }
+  for (int c1 = 0; c1 < nsp; c1++) {
+    for (int c2 = 0; c2 < nsp; c2++) {
+      auto X = PeekIndex<ColourIndex>(U, c1, c2 + nsp);
+      auto minusXstar = PeekIndex<ColourIndex>(U, c1 + nsp, c2);
+      auto minusXx = conjugate(minusXstar);
+      auto amizero = sum(X + minusXx);
+      auto amizeroo = TensorRemove(amizero);
+      assert(amizeroo.real() < 10e-6);
+      amizeroo *= i;
+      assert(amizeroo.real() < 10e-6);
+    }
+  }
 
-        Complex a(25041994., 12.);
-        Complex b(39., 0.22);
-        Complex d(10000., -2222.3333);
-    
-        A()()(0,0) = a;
-        A()()(0,1) = b;
-        A()()(1,0) = i;
-        A()()(1,1) = d;
-        std::cout <<GridLogMessage << std::endl;
-        std::cout <<GridLogMessage << std::endl;
-        std::cout << GridLogMessage << "An explicit check for Sp2" << std::endl;
-        std::cout <<GridLogMessage << std::endl;
-        std::cout << GridLogMessage << "Building a non unitary matrix by hand with funny entries " << std::endl;
-        std::cout << GridLogMessage << "A = " << A << std::endl;
-        std::cout << GridLogMessage << "Projecting on Sp2 " << std::endl;
-        A = ProjectOnSpGroup(A);
-        std::cout << GridLogMessage << "now A = " << A << std::endl;
-        std::cout << GridLogMessage << "A(0,0) - conjA(1,1) = " << A()()(0,0) - adj ( A()()(1,1) )<< std::endl;
-        std::cout << GridLogMessage << "A(0,1) + conjA(1,0) = " << A()()(0,1) + adj ( A()()(1,0) )<< std::endl;
-    }*/
-    
-    Grid_finalize();
+  return true;
+}
 
+template <typename T>
+bool is_element_of_sp2n_algebra(const T& U) {
+  LatticeColourMatrixD aux(U.Grid());
+  LatticeColourMatrixD identity(U.Grid());
+  identity = 1.0;
+  LatticeColourMatrixD Omega(U.Grid());
+  Sp<Nc>::Omega(Omega);
 
+  std::cout << GridLogMessage << "Check matrix is non-zero " << std::endl;
+  assert(norm2(U) > 1e-8);
+
+  aux = U - adj(U);
+  std::cout << GridLogMessage << "T - Tda = " << norm2(aux)
+            << " (not supposed to vanish)" << std::endl;
+
+  aux = U + adj(U);
+  std::cout << GridLogMessage << "T + Tda = " << norm2(aux)
+            << " (supposed to vanish)" << std::endl;
+  assert(norm2(aux) - 1 < 1e-8);
+
+  std::cout << GridLogMessage << "Check that Omega T Omega + conj(T) = 0 "
+            << std::endl;
+  aux = Omega * U * Omega + conjugate(U);
+  assert(norm2(aux) < 1e-8);
+
+  return has_correct_algebra_block_structure(U);
+}
+
+template <typename T>
+void test_algebra_projections(T U) {
+  RealD Delta = 666.;
+  LatticeColourMatrixD tmp(U.Grid());
+  LatticeColourMatrixD identity(U.Grid());
+  identity = 1.0;
+
+  std::cout << GridLogMessage << "#   #   #   #" << std::endl;
+  std::cout << GridLogMessage << "Algebra" << std::endl;
+  std::cout << GridLogMessage << "#   #   #   #" << std::endl;
+  std::cout << GridLogMessage << std::endl;
+
+  std::string name = "SpTa";
+  std::cout << GridLogMessage << "Testing " << name << std::endl;
+  std::cout << GridLogMessage << "Apply to deformed matrix" << std::endl;
+
+  U = U + Delta * identity;
+  U = SpTa(U);
+  assert(is_element_of_sp2n_algebra(U));
+
+  name = "TaProj";
+  std::cout << GridLogMessage << "Testing " << name << std::endl;
+  std::cout << GridLogMessage << "Apply to deformed matrix" << std::endl;
+
+  U = U + Delta * identity;
+  Sp<Nc>::taProj(U, tmp);
+  U = tmp;
+  assert(is_element_of_sp2n_algebra(U));
+}
+
+int main(int argc, char** argv) {
+  Grid_init(&argc, &argv);
+
+  Coordinate latt_size = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
+  Coordinate mpi_layout = GridDefaultMpi();
+
+  GridCartesian Grid(latt_size, simd_layout, mpi_layout);
+
+  LatticeGaugeField Umu(&Grid);
+  LatticeColourMatrixD U(&Grid);
+
+  // Will test resimplectification-related functionalities (from
+  // ProjectOnGaugeGroup, ProjectOnSpGroup, ProjectGn) and projection on the
+  // algebra (from ProjectSp2nAlgebra) we work with matrices with positive
+  // determinant so detU = 1 even if in principle ProjectOnGaugeGroup and
+  // ProjectOnSpGroup allow for detU=-1 so the checks will be the same for the
+  // three functions NB only ProjectGn is the proper simplectification function
+
+  std::vector<int> pseeds({1, 2, 3, 4, 5});
+  GridParallelRNG pRNG(&Grid);
+  pRNG.SeedFixedIntegers(pseeds);
+
+  SU<Nc>::HotConfiguration(pRNG, Umu);
+  U = PeekIndex<LorentzIndex>(Umu, 0);
+  test_group_projections(U);
+  U = PeekIndex<LorentzIndex>(Umu, 1);
+  test_algebra_projections(U);
+
+  Grid_finalize();
 }
