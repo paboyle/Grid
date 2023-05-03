@@ -41,22 +41,30 @@ bool has_correct_group_block_structure(const T& U) {
 };
 
 template <typename T>
-bool is_element_of_sp2n_group(T U) {
-  // does explicitly take a copy in order to not spoil the matrix for further
-  // use
-
+bool is_element_of_sp2n_group(const T& U) {
   LatticeColourMatrixD aux(U.Grid());
   LatticeColourMatrixD identity(U.Grid());
   identity = 1.0;
+  LatticeColourMatrixD Omega(U.Grid());
+  Sp<Nc>::Omega(Omega);
+
+  std::cout << GridLogMessage << "Check matrix is non-zero " << std::endl;
+  assert(norm2(U) > 1e-8);
 
   std::cout << GridLogMessage << "Unitary check" << std::endl;
   aux = U * adj(U) - identity;
   std::cout << GridLogMessage << "U adjU - 1 = " << norm2(aux) << std::endl;
   assert(norm2(aux) < 1e-8);
 
-  std::cout << GridLogMessage << "Checking Omega invariance" << std::endl;
-  Sp<Nc>::OmegaInvariance(U);  // no assertion here, but the next check will
-                               // kill us if we are not simplectic
+  aux = Omega - (U * Omega * transpose(U));
+  std::cout << GridLogMessage << "Omega - U Omega transpose(U) = " << norm2(aux)
+            << std::endl;
+  assert(norm2(aux) < 1e-8);
+
+  std::cout << GridLogMessage
+            << "|Det| = " << norm2(Determinant(U)) / U.Grid()->gSites()
+            << std::endl;
+  assert(norm2(Determinant(U)) / U.Grid()->gSites() - 1 < 1e-8);
 
   return has_correct_group_block_structure(U);
 }
