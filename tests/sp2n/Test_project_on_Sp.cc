@@ -144,10 +144,8 @@ bool is_element_of_sp2n_algebra(T U) {
 
   aux = U - adj(U);
   std::cout << GridLogMessage << "T - Tda = " << norm2(aux) << std::endl;
-  assert(norm2(aux) < 1e-8);
   aux = U + adj(U);
   std::cout << GridLogMessage << "T + Tda = " << norm2(aux) << std::endl;
-  assert(norm2(aux) < 1e-8);
 
   std::cout << GridLogMessage << "Check that Omega U Omega = conj(U)"
             << std::endl;

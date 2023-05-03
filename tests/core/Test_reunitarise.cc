@@ -36,7 +36,7 @@ using namespace Grid;
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
-    
+
   std::vector<int> latt({8,8,8,8});
   GridCartesian * grid = SpaceTimeGrid::makeFourDimGrid(latt, 
 							GridDefaultSimd(Nd,vComplexD::Nsimd()),
