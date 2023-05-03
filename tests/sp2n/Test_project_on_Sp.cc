@@ -3,16 +3,14 @@
 using namespace Grid;
 
 template <typename T>
-bool has_correct_block_structure(T U){
-    // checks on elements
-    
-    const int nsp = Nc / 2;
-    Complex i(0., 1.);
-
+bool has_correct_group_block_structure(const T& U){
     std::cout << GridLogMessage << "Checking the structure is " << std::endl;
     std::cout << GridLogMessage << "U  =  (   W    X   )  " << std::endl;
     std::cout << GridLogMessage << "      (  -X^*  W^* )  " << std::endl;
     std::cout <<GridLogMessage << std::endl;
+
+    const int nsp = Nc / 2;
+    Complex i(0., 1.);
     for (int c1 = 0; c1 < nsp; c1++) //check on W
     {
         for (int c2 = 0; c2 < nsp; c2++)
@@ -47,24 +45,21 @@ bool has_correct_block_structure(T U){
 };
 
 template <typename T>
-bool is_element_of_Sp2n(T U) {
+bool is_element_of_sp2n_group(T U) {// does explicitly take a copy in order to not spoil the matrix for further use
  
     LatticeColourMatrixD aux(U.Grid());
     LatticeColourMatrixD identity(U.Grid());
-    
     identity = 1.0;
-    double vol = U.Grid()->gSites();
     
     std::cout << GridLogMessage << "Unitary check" << std::endl;
     aux = U*adj(U) - identity;
     std::cout << GridLogMessage << "U adjU - 1 = " << norm2(aux) << std::endl;
     assert( norm2(aux) < 1e-8);
     
-    // actual sp2n check
     std::cout << GridLogMessage << "Checking Omega invariance" << std::endl;
     Sp<Nc>::OmegaInvariance(U);     // no assertion here, but the next check will kill us if we are not simplectic
     
-  return has_correct_block_structure(U);
+  return has_correct_group_block_structure(U);
 }
 
 template<typename T>
@@ -83,8 +78,9 @@ void test_group_projections(T U) {
     std::cout << GridLogMessage << "Testing "<< name << std::endl;
     std::cout << GridLogMessage << "Apply to deformed matrix" << std::endl;
 
+    U = U + Delta*identity;
     U = ProjectOnSpGroup(U);
-    assert(is_element_of_Sp2n(U));
+    assert(is_element_of_sp2n_group(U));
    
     name = "ProjectOnGaugeGroup";
     std::cout << GridLogMessage << "Testing "<< name << std::endl;
@@ -92,7 +88,7 @@ void test_group_projections(T U) {
 
     U = U + Delta*identity;
     Sp<Nc>::ProjectOnGaugeGroup(U);
-    assert(is_element_of_Sp2n(U));
+    assert(is_element_of_sp2n_group(U));
    
     name = "ProjectGn";
     std::cout << GridLogMessage << "Testing "<< name << std::endl;
@@ -100,7 +96,7 @@ void test_group_projections(T U) {
 
     U = U + Delta*identity;
     Sp<Nc>::ProjectGn(U);
-    assert(is_element_of_Sp2n(U));
+    assert(is_element_of_sp2n_group(U));
 }
 
 
@@ -115,7 +111,6 @@ int main (int argc, char **argv)
     Coordinate mpi_layout  = GridDefaultMpi();
 
     GridCartesian             Grid(latt_size,simd_layout,mpi_layout);
-    GridRedBlackCartesian     RBGrid(&Grid);
     
     
     LatticeGaugeField Umu(&Grid);
