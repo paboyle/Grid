@@ -323,37 +323,37 @@ class GaugeGroup {
     }
   }
     
-  template <int N>        // reunitarise, resimplectify...
-  static void ProjectOnGaugeGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
+  template <int N>                  // Projects on the general groups U(N), Sp(2N)xZ2 i.e. determinant il allowed a complex phase.
+  static void ProjectOnGeneralGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
     for (int mu = 0; mu < Nd; mu++) {
       auto Umu = PeekIndex<LorentzIndex>(U, mu);
-      ProjectOnGaugeGroup(Umu);
+      ProjectOnGeneralGroup(Umu);
     }
   }
        
-  template <int N>        // reunitarise, resimplectify...
-  static void ProjectOnGaugeGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
-      ProjectOnGaugeGroup(Umu, group_name());
+  template <int N>
+  static void ProjectOnGeneralGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
+      ProjectOnGeneralGroup(Umu, group_name());
   }
     
   template <class vtype>
-  static void ProjectOnGaugeGroup(iScalar<vtype> &r) {
-      ProjectOnGaugeGroup(r, group_name());
+  static void ProjectOnGeneralGroup(iScalar<vtype> &r) {
+      ProjectOnGeneralGroup(r, group_name());
   }
 
   template <class vtype, int N>
-  static void ProjectOnGaugeGroup(iVector<vtype,N> &r) {
-      ProjectOnGaugeGroup(r, group_name());
+  static void ProjectOnGeneralGroup(iVector<vtype,N> &r) {
+      ProjectOnGeneralGroup(r, group_name());
   }
 
   template <class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr>
-  static void ProjectOnGaugeGroup(iMatrix<vtype,N> &arg) {
-      ProjectOnGaugeGroup(arg, group_name());
+  static void ProjectOnGeneralGroup(iMatrix<vtype,N> &arg) {
+      ProjectOnGeneralGroup(arg, group_name());
   }
 
-  template <int N>       // reunitarise, resimplectify... previously ProjectSUn
-  static void ProjectGn(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
-       ProjectOnGaugeGroup(Umu);
+  template <int N>       // Projects on SU(N), Sp(2N)
+  static void ProjectOnSpecialGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
+       ProjectOnGeneralGroup(Umu);
        auto det = Determinant(Umu);
 
        det = conjugate(det);
@@ -366,11 +366,11 @@ class GaugeGroup {
    }
 
     template <int N>    // reunitarise, resimplectify... previously ProjectSUn
-    static void ProjectGn(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
+    static void ProjectOnSpecialGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
       // Reunitarise
       for (int mu = 0; mu < Nd; mu++) {
         auto Umu = PeekIndex<LorentzIndex>(U, mu);
-        ProjectGn(Umu);
+        ProjectOnSpecialGroup(Umu);
         PokeIndex<LorentzIndex>(U, Umu, mu);
       }
     }

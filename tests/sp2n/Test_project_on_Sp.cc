@@ -88,20 +88,20 @@ void test_group_projections(T U) {
   U = ProjectOnSpGroup(U);
   assert(is_element_of_sp2n_group(U));
 
-  name = "ProjectOnGaugeGroup";
+  name = "ProjectOnGeneralGroup";
   std::cout << GridLogMessage << "Testing " << name << std::endl;
   std::cout << GridLogMessage << "Apply to deformed matrix" << std::endl;
 
   U = U + Delta * identity;
-  Sp<Nc>::ProjectOnGaugeGroup(U);
+  Sp<Nc>::ProjectOnGeneralGroup(U);
   assert(is_element_of_sp2n_group(U));
 
-  name = "ProjectGn";
+  name = "ProjectOnSpecialGroup";
   std::cout << GridLogMessage << "Testing " << name << std::endl;
   std::cout << GridLogMessage << "Apply to deformed matrix" << std::endl;
 
   U = U + Delta * identity;
-  Sp<Nc>::ProjectGn(U);
+  Sp<Nc>::ProjectOnSpecialGroup(U);
   assert(is_element_of_sp2n_group(U));
 }
 
@@ -213,11 +213,10 @@ int main(int argc, char** argv) {
   LatticeColourMatrixD U(&Grid);
 
   // Will test resimplectification-related functionalities (from
-  // ProjectOnGaugeGroup, ProjectOnSpGroup, ProjectGn) and projection on the
-  // algebra (from ProjectSp2nAlgebra) we work with matrices with positive
-  // determinant so detU = 1 even if in principle ProjectOnGaugeGroup and
-  // ProjectOnSpGroup allow for detU=-1 so the checks will be the same for the
-  // three functions NB only ProjectGn is the proper simplectification function
+  // ProjectOnGeneralGroup, ProjectOnSpGroup, ProjectOnSpecialGroup) and projection on the
+  // algebra (from SpTa)
+  // ProjectOnGeneralGroup, ProjectOnSpGroup project on the non-special group allowi for complex determinants of module 1
+  // ProjectOnSpecialGroup projects on the full gauge group providing a determinant equals to 1
 
   std::vector<int> pseeds({1, 2, 3, 4, 5});
   GridParallelRNG pRNG(&Grid);

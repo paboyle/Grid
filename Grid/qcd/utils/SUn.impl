@@ -509,22 +509,22 @@ static void testGenerators(GroupName::SU) {
 }
 
 template <int N>
-static void ProjectOnGaugeGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu, GroupName::SU) {
+static void ProjectOnGeneralGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu, GroupName::SU) {
   Umu = ProjectOnGroup(Umu);
 }
 
 template <class vtype>
-static void ProjectOnGaugeGroup(iScalar<vtype> &r, GroupName::SU) {
+static void ProjectOnGeneralGroup(iScalar<vtype> &r, GroupName::SU) {
   r = ProjectOnGroup(r);
 }
 
 template <class vtype, int N>
-static void ProjectOnGaugeGroup(iVector<vtype,N> &r, GroupName::SU) {
+static void ProjectOnGeneralGroup(iVector<vtype,N> &r, GroupName::SU) {
   r = ProjectOnGroup(r);
 }
 
 template <class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr>
-static void ProjectOnGaugeGroup(iMatrix<vtype,N> &arg, GroupName::SU) {
+static void ProjectOnGeneralGroup(iMatrix<vtype,N> &arg, GroupName::SU) {
   arg = ProjectOnGroup(arg);
 }
 
