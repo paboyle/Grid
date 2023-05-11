@@ -658,9 +658,9 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
   Coordinate ist = Tg->_istride;
   Coordinate ost = Tg->_ostride;
 
-  autoView( t_v , To, AcceleratorWrite);
-  autoView( f_v , From, AcceleratorRead);
-  accelerator_for(idx,Fg->lSites(),1,{
+  autoView( t_v , To, CpuWrite);
+  autoView( f_v , From, CpuRead);
+  thread_for(idx,Fg->lSites(),{
     sobj s;
     Coordinate Fcoor(nd);
     Coordinate Tcoor(nd);
@@ -673,15 +673,20 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
       Tcoor[d] = ToLowerLeft[d]+ Fcoor[d]-FromLowerLeft[d];
     }
     if (in_region) {
-      Integer idx_f = 0; for(int d=0;d<nd;d++) idx_f+=isf[d]*(Fcoor[d]/rdf[d]);
-      Integer idx_t = 0; for(int d=0;d<nd;d++) idx_t+=ist[d]*(Tcoor[d]/rdt[d]);
-      Integer odx_f = 0; for(int d=0;d<nd;d++) odx_f+=osf[d]*(Fcoor[d]%rdf[d]);
-      Integer odx_t = 0; for(int d=0;d<nd;d++) odx_t+=ost[d]*(Tcoor[d]%rdt[d]);
+#if 0      
+      Integer idx_f = 0; for(int d=0;d<nd;d++) idx_f+=isf[d]*(Fcoor[d]/rdf[d]); // inner index from
+      Integer idx_t = 0; for(int d=0;d<nd;d++) idx_t+=ist[d]*(Tcoor[d]/rdt[d]); // inner index to
+      Integer odx_f = 0; for(int d=0;d<nd;d++) odx_f+=osf[d]*(Fcoor[d]%rdf[d]); // outer index from
+      Integer odx_t = 0; for(int d=0;d<nd;d++) odx_t+=ost[d]*(Tcoor[d]%rdt[d]); // outer index to
       scalar_type * fp = (scalar_type *)&f_v[odx_f];
       scalar_type * tp = (scalar_type *)&t_v[odx_t];
       for(int w=0;w<words;w++){
 	tp[idx_t+w*Nsimd] = fp[idx_f+w*Nsimd];  // FIXME IF RRII layout, type pun no worke
       }
+#else
+    peekLocalSite(s,f_v,Fcoor);
+    pokeLocalSite(s,t_v,Tcoor);
+#endif
     }
   });
 }
@@ -792,9 +797,9 @@ void InsertSliceLocal(const Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int
 
   for(int d=0;d<nh;d++){
     if ( d!=orthog ) {
-    assert(lg->_processors[d]  == hg->_processors[d]);
-    assert(lg->_ldimensions[d] == hg->_ldimensions[d]);
-  }
+      assert(lg->_processors[d]  == hg->_processors[d]);
+      assert(lg->_ldimensions[d] == hg->_ldimensions[d]);
+    }
   }
 
   // the above should guarantee that the operations are local
