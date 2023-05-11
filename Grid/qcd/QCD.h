@@ -101,6 +101,7 @@ template<typename vtype> using iSpinMatrix                = iScalar<iMatrix<iSca
 template<typename vtype> using iColourMatrix              = iScalar<iScalar<iMatrix<vtype, Nc> > > ;
 template<typename vtype> using iSpinColourMatrix          = iScalar<iMatrix<iMatrix<vtype, Nc>, Ns> >;
 template<typename vtype> using iLorentzColourMatrix       = iVector<iScalar<iMatrix<vtype, Nc> >, Nd > ;
+template<typename vtype> using iLorentzComplex            = iVector<iScalar<iScalar<vtype> >, Nd > ;
 template<typename vtype> using iDoubleStoredColourMatrix  = iVector<iScalar<iMatrix<vtype, Nc> >, Nds > ;
 template<typename vtype> using iSpinVector                = iScalar<iVector<iScalar<vtype>, Ns> >;
 template<typename vtype> using iColourVector              = iScalar<iScalar<iVector<vtype, Nc> > >;
@@ -166,6 +167,15 @@ typedef iLorentzColourMatrix<ComplexD > LorentzColourMatrixD;
 typedef iLorentzColourMatrix<vComplex > vLorentzColourMatrix;
 typedef iLorentzColourMatrix<vComplexF> vLorentzColourMatrixF;
 typedef iLorentzColourMatrix<vComplexD> vLorentzColourMatrixD;
+
+// LorentzComplex
+typedef iLorentzComplex<Complex  > LorentzComplex;
+typedef iLorentzComplex<ComplexF > LorentzComplexF;
+typedef iLorentzComplex<ComplexD > LorentzComplexD;
+
+typedef iLorentzComplex<vComplex > vLorentzComplex;
+typedef iLorentzComplex<vComplexF> vLorentzComplexF;
+typedef iLorentzComplex<vComplexD> vLorentzComplexD;
 
 // DoubleStored gauge field
 typedef iDoubleStoredColourMatrix<Complex  > DoubleStoredColourMatrix;
@@ -262,6 +272,10 @@ typedef Lattice<vSpinColourSpinColourMatrixD>     LatticeSpinColourSpinColourMat
 typedef Lattice<vLorentzColourMatrix>  LatticeLorentzColourMatrix;
 typedef Lattice<vLorentzColourMatrixF> LatticeLorentzColourMatrixF;
 typedef Lattice<vLorentzColourMatrixD> LatticeLorentzColourMatrixD;
+
+typedef Lattice<vLorentzComplex>  LatticeLorentzComplex;
+typedef Lattice<vLorentzComplexF> LatticeLorentzComplexF;
+typedef Lattice<vLorentzComplexD> LatticeLorentzComplexD;
 
 // DoubleStored gauge field
 typedef Lattice<vDoubleStoredColourMatrix>  LatticeDoubleStoredColourMatrix;
