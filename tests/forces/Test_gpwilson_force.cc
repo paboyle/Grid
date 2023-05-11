@@ -50,7 +50,7 @@ int main (int argc, char ** argv)
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
-  typedef typename GparityDomainWallFermionR::FermionField FermionField;
+  typedef typename GparityDomainWallFermionD::FermionField FermionField;
   FermionField phi        (FGrid); gaussian(RNG4,phi);
   FermionField Mphi       (FGrid); 
   FermionField MphiPrime  (FGrid); 
@@ -64,10 +64,14 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   RealD mass=0.01; 
 
-  const int nu = 3;
-  std::vector<int> twists(Nd,0);  twists[nu] = 1;
-  GparityWilsonFermionR::ImplParams params;  params.twists = twists;
-  GparityWilsonFermionR Wil(U,*UGrid,*UrbGrid,mass,params);
+  const int nu = 1;
+  const int Lnu=latt_size[nu];
+
+  std::vector<int> twists(Nd,0);
+  twists[nu] = 1;
+  twists[3]=1;
+  GparityWilsonFermionD::ImplParams params;  params.twists = twists;
+  GparityWilsonFermionD Wil(U,*UGrid,*UrbGrid,mass,params);
   Wil.M   (phi,Mphi);
 
   ComplexD S    = innerProduct(Mphi,Mphi); // pdag MdagM p

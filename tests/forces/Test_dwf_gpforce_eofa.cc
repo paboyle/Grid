@@ -33,7 +33,7 @@ using namespace std;
 using namespace Grid;
 
 typedef GparityWilsonImplR FermionImplPolicy;
-typedef GparityDomainWallEOFAFermionR FermionAction;
+typedef GparityDomainWallEOFAFermionD FermionAction;
 typedef typename FermionAction::FermionField FermionField;
 
 int main (int argc, char** argv)

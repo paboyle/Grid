@@ -320,7 +320,7 @@ struct Conj{
 
 struct TimesMinusI{
   //Complex single
-  inline float32x4_t operator()(float32x4_t in, float32x4_t ret){
+  inline float32x4_t operator()(float32x4_t in){
     // ar ai br bi -> ai -ar ai -br
     float32x4_t r0, r1;
     r0 = vnegq_f32(in);        // -ar -ai -br -bi
@@ -328,7 +328,7 @@ struct TimesMinusI{
     return vtrn1q_f32(r1, r0); //  ar -ai  br -bi
   }
   //Complex double
-  inline float64x2_t operator()(float64x2_t in, float64x2_t ret){
+  inline float64x2_t operator()(float64x2_t in){
     // a ib -> b -ia
     float64x2_t tmp;
     tmp = vnegq_f64(in);
@@ -338,7 +338,7 @@ struct TimesMinusI{
 
 struct TimesI{
   //Complex single
-  inline float32x4_t operator()(float32x4_t in, float32x4_t ret){
+  inline float32x4_t operator()(float32x4_t in){
     // ar ai br bi -> -ai ar -bi br
     float32x4_t r0, r1;
     r0 = vnegq_f32(in);        // -ar -ai -br -bi
@@ -346,7 +346,7 @@ struct TimesI{
     return vtrn1q_f32(r1, in); // -ai  ar -bi  br
   }
   //Complex double
-  inline float64x2_t operator()(float64x2_t in, float64x2_t ret){
+  inline float64x2_t operator()(float64x2_t in){
     // a ib -> -b ia
     float64x2_t tmp;
     tmp = vnegq_f64(in);

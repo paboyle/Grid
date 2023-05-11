@@ -298,45 +298,33 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl &
   int LLs = in.Grid()->_rdimensions[0];
   int len =  U.Grid()->oSites();
 
-  DhopFaceTime-=usecond();
   st.Prepare();
   st.HaloGather(in,compressor);
-  DhopFaceTime+=usecond();
 
-  DhopCommTime -=usecond();
   std::vector<std::vector<CommsRequest_t> > requests;
   st.CommunicateBegin(requests);
 
   //  st.HaloExchangeOptGather(in,compressor); // Wilson compressor
-  DhopFaceTime-=usecond();
   st.CommsMergeSHM(compressor);// Could do this inside parallel region overlapped with comms
-  DhopFaceTime+=usecond();
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   // Remove explicit thread mapping introduced for OPA reasons.
   //////////////////////////////////////////////////////////////////////////////////////////////////////
-  DhopComputeTime-=usecond();
   {
     int interior=1;
     int exterior=0;
     Kernels::DhopImproved(st,lo,U,UUU,in,out,dag,interior,exterior);
   }
-  DhopComputeTime+=usecond();
 
-  DhopFaceTime-=usecond();
   st.CommsMerge(compressor);
-  DhopFaceTime+=usecond();
 
   st.CommunicateComplete(requests);
-  DhopCommTime +=usecond();
 
-  DhopComputeTime2-=usecond();
   {
     int interior=0;
     int exterior=1;
     Kernels::DhopImproved(st,lo,U,UUU,in,out,dag,interior,exterior);
   }
-  DhopComputeTime2+=usecond();
 }
 
 template<class Impl>
@@ -347,22 +335,14 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st,
   Compressor compressor;
   int LLs = in.Grid()->_rdimensions[0];
 
- //double t1=usecond();
-  DhopTotalTime -= usecond();
-  DhopCommTime -= usecond();
   st.HaloExchange(in,compressor);
-  DhopCommTime += usecond();
   
-  DhopComputeTime -= usecond();
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
   {
     int interior=1;
     int exterior=1;
     Kernels::DhopImproved(st,lo,U,UUU,in,out,dag,interior,exterior);
   }
-  DhopComputeTime += usecond();
-  DhopTotalTime   += usecond();
-
 }
 /*CHANGE END*/
 
@@ -371,7 +351,6 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st,
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int dag)
 {
-  DhopCalls+=1;
   conformable(in.Grid(),FermionRedBlackGrid());    // verifies half grid
   conformable(in.Grid(),out.Grid()); // drops the cb check
 
@@ -383,7 +362,6 @@ void ImprovedStaggeredFermion5D<Impl>::DhopOE(const FermionField &in, FermionFie
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
 {
-  DhopCalls+=1;
   conformable(in.Grid(),FermionRedBlackGrid());    // verifies half grid
   conformable(in.Grid(),out.Grid()); // drops the cb check
 
@@ -395,65 +373,12 @@ void ImprovedStaggeredFermion5D<Impl>::DhopEO(const FermionField &in, FermionFie
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int dag)
 {
-  DhopCalls+=2;
   conformable(in.Grid(),FermionGrid()); // verifies full grid
   conformable(in.Grid(),out.Grid());
 
   out.Checkerboard() = in.Checkerboard();
 
   DhopInternal(Stencil,Lebesgue,Umu,UUUmu,in,out,dag);
-}
-
-template<class Impl>
-void ImprovedStaggeredFermion5D<Impl>::Report(void) 
-{
-  Coordinate latt = GridDefaultLatt();          
-  RealD volume = Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
-  RealD NP = _FourDimGrid->_Nprocessors;
-  RealD NN = _FourDimGrid->NodeCount();
-
-  std::cout << GridLogMessage << "#### Dhop calls report " << std::endl;
-
-  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D Number of DhopEO Calls   : " 
-	    << DhopCalls   << std::endl;
-  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D TotalTime   /Calls       : " 
-	    << DhopTotalTime   / DhopCalls << " us" << std::endl;
-  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D CommTime    /Calls       : " 
-	    << DhopCommTime    / DhopCalls << " us" << std::endl;
-  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D ComputeTime/Calls        : " 
-	    << DhopComputeTime / DhopCalls << " us" << std::endl;
-
-  // Average the compute time
-  _FourDimGrid->GlobalSum(DhopComputeTime);
-  DhopComputeTime/=NP;
-
-  RealD mflops = 1154*volume*DhopCalls/DhopComputeTime/2; // 2 for red black counting
-  std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
-  std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
-  std::cout << GridLogMessage << "Average mflops/s per call per node       : " << mflops/NN << std::endl;
-  
-  RealD Fullmflops = 1154*volume*DhopCalls/(DhopTotalTime)/2; // 2 for red black counting
-  std::cout << GridLogMessage << "Average mflops/s per call (full)         : " << Fullmflops << std::endl;
-  std::cout << GridLogMessage << "Average mflops/s per call per rank (full): " << Fullmflops/NP << std::endl;
-  std::cout << GridLogMessage << "Average mflops/s per call per node (full): " << Fullmflops/NN << std::endl;
-
-  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D Stencil"    <<std::endl;  Stencil.Report();
-  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D StencilEven"<<std::endl;  StencilEven.Report();
-  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D StencilOdd" <<std::endl;  StencilOdd.Report();
-}
-template<class Impl>
-void ImprovedStaggeredFermion5D<Impl>::ZeroCounters(void) 
-{
-  DhopCalls       = 0;
-  DhopTotalTime    = 0;
-  DhopCommTime    = 0;
-  DhopComputeTime = 0;
-  DhopFaceTime    = 0;
-
-
-  Stencil.ZeroCounters();
-  StencilEven.ZeroCounters();
-  StencilOdd.ZeroCounters();
 }
 
 /////////////////////////////////////////////////////////////////////////

@@ -397,8 +397,8 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   RealD mass=0.001;
   RealD M5=1.8;
-  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  DomainWallFermionR Dpv (Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,M5);
+  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionD Dpv (Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,M5);
 
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis>              Subspace;
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>          CoarseOperator;
@@ -407,7 +407,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Calling Aggregation class to build subspace" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermDefOp(Ddwf);
+  MdagMLinearOperator<DomainWallFermionD,LatticeFermion> HermDefOp(Ddwf);
 
   Subspace Aggregates(Coarse5d,FGrid,0);
 
@@ -435,8 +435,8 @@ int main (int argc, char ** argv)
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>    Level1Op;
   typedef CoarsenedMatrix<siteVector,iScalar<vTComplex>,nbasisc> Level2Op;
 
-  Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> HermIndefOp(Ddwf);
-  Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> HermIndefOpPV(Dpv);
+  Gamma5R5HermitianLinearOperator<DomainWallFermionD,LatticeFermion> HermIndefOp(Ddwf);
+  Gamma5R5HermitianLinearOperator<DomainWallFermionD,LatticeFermion> HermIndefOpPV(Dpv);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Building coarse representation of Indef operator" <<std::endl;
@@ -470,10 +470,10 @@ int main (int argc, char ** argv)
   ConjugateGradient<LatticeFermion>          FineCG(tol,MaxIt);
   //  GeneralisedMinimalResidual<LatticeFermion> FineGMRES(tol,MaxIt,20);
   
-  MdagMLinearOperator<DomainWallFermionR,LatticeFermion>    FineMdagM(Ddwf);     //  M^\dag M
-  PVdagMLinearOperator<DomainWallFermionR,LatticeFermion>   FinePVdagM(Ddwf,Dpv);//  M_{pv}^\dag M
-  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> FineDiagMooee(Ddwf); //  M_ee - Meo Moo^-1 Moe 
-  SchurDiagOneOperator<DomainWallFermionR,LatticeFermion>   FineDiagOne(Ddwf);   //  1 - M_ee^{-1} Meo Moo^{-1} Moe e
+  MdagMLinearOperator<DomainWallFermionD,LatticeFermion>    FineMdagM(Ddwf);     //  M^\dag M
+  PVdagMLinearOperator<DomainWallFermionD,LatticeFermion>   FinePVdagM(Ddwf,Dpv);//  M_{pv}^\dag M
+  SchurDiagMooeeOperator<DomainWallFermionD,LatticeFermion> FineDiagMooee(Ddwf); //  M_ee - Meo Moo^-1 Moe 
+  SchurDiagOneOperator<DomainWallFermionD,LatticeFermion>   FineDiagOne(Ddwf);   //  1 - M_ee^{-1} Meo Moo^{-1} Moe e
 
    MdagMLinearOperator<Level1Op,CoarseVector> CoarseMdagM(LDOp);
   PVdagMLinearOperator<Level1Op,CoarseVector> CoarsePVdagM(LDOp,LDOpPV);
@@ -552,7 +552,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
 
   ConjugateGradient<CoarseVector>  CoarseMgridCG(0.001,1000);     
-  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother(0.5,60.0,10,HermIndefOp,Ddwf);
+  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother(0.5,60.0,10,HermIndefOp,Ddwf);
 
   typedef HDCRPreconditioner<vSpinColourVector,  vTComplex,nbasis, NormalEquations<CoarseVector> >   TwoLevelHDCR;
   TwoLevelHDCR TwoLevelPrecon(Aggregates,

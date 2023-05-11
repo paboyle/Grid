@@ -152,58 +152,6 @@ void CayleyFermion5D<Impl>::DminusDag(const FermionField &psi, FermionField &chi
   }
 }
 
-template<class Impl> void CayleyFermion5D<Impl>::CayleyReport(void)
-{
-  this->Report();
-  Coordinate latt = GridDefaultLatt();          
-  RealD volume = this->Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
-  RealD NP     = this->_FourDimGrid->_Nprocessors;
-  if ( M5Dcalls > 0 ) {
-    std::cout << GridLogMessage << "#### M5D calls report " << std::endl;
-    std::cout << GridLogMessage << "CayleyFermion5D Number of M5D Calls     : " << M5Dcalls   << std::endl;
-    std::cout << GridLogMessage << "CayleyFermion5D ComputeTime/Calls       : " << M5Dtime / M5Dcalls << " us" << std::endl;
-
-    // Flops = 10.0*(Nc*Ns) *Ls*vol
-    RealD mflops = 10.0*(Nc*Ns)*volume*M5Dcalls/M5Dtime/2; // 2 for red black counting
-    std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
-
-    // Bytes = sizeof(Real) * (Nc*Ns*Nreim) * Ls * vol * (read+write) (/2 for red black counting)
-    // read = 2 ( psi[ss+s+1] and psi[ss+s-1] count as 1 )
-    // write = 1
-    RealD Gbytes = sizeof(Real) * (Nc*Ns*2) * volume * 3 /2. * 1.e-9;
-    std::cout << GridLogMessage << "Average bandwidth (GB/s)                 : " << Gbytes/M5Dtime*M5Dcalls*1.e6 << std::endl;
-  }
-
-  if ( MooeeInvCalls > 0 ) {
-
-    std::cout << GridLogMessage << "#### MooeeInv calls report " << std::endl;
-    std::cout << GridLogMessage << "CayleyFermion5D Number of MooeeInv Calls     : " << MooeeInvCalls   << std::endl;
-    std::cout << GridLogMessage << "CayleyFermion5D ComputeTime/Calls            : " << MooeeInvTime / MooeeInvCalls << " us" << std::endl;
-#ifdef GRID_CUDA
-    RealD mflops = ( -16.*Nc*Ns+this->Ls*(1.+18.*Nc*Ns) )*volume*MooeeInvCalls/MooeeInvTime/2; // 2 for red black counting
-    std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
-#else
-    // Flops = MADD * Ls *Ls *4dvol * spin/colour/complex
-    RealD mflops = 2.0*24*this->Ls*volume*MooeeInvCalls/MooeeInvTime/2; // 2 for red black counting
-    std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
-#endif
-  }
-
-}
-template<class Impl> void CayleyFermion5D<Impl>::CayleyZeroCounters(void)
-{
-  this->ZeroCounters();
-  M5Dflops=0;
-  M5Dcalls=0;
-  M5Dtime=0;
-  MooeeInvFlops=0;
-  MooeeInvCalls=0;
-  MooeeInvTime=0;
-}
-
 template<class Impl>  
 void CayleyFermion5D<Impl>::M5D   (const FermionField &psi, FermionField &chi)
 {
@@ -646,7 +594,6 @@ void CayleyFermion5D<Impl>::ContractConservedCurrent( PropagatorField &q_in_1,
   assert(mass_plus == mass_minus);
   RealD mass = mass_plus;
   
-#if (!defined(GRID_HIP))
   Gamma::Algebra Gmu [] = {
     Gamma::Algebra::GammaX,
     Gamma::Algebra::GammaY,
@@ -765,7 +712,7 @@ void CayleyFermion5D<Impl>::ContractConservedCurrent( PropagatorField &q_in_1,
     else          q_out +=     C;
     
   }
-#endif
+
 }
 
 template <class Impl>
@@ -832,7 +779,6 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   }
 #endif
 
-#if (!defined(GRID_HIP))
   int tshift = (mu == Nd-1) ? 1 : 0;
   unsigned int LLt    = GridDefaultLatt()[Tp];
   ////////////////////////////////////////////////
@@ -952,95 +898,12 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 
     InsertSlice(L_Q, q_out, s , 0);
   }
-#endif
 }
 #undef Pp
 #undef Pm
 #undef Q_4d
 #undef TopRowWithSource
 
-
-
-#if 0
-template<class Impl>
-void CayleyFermion5D<Impl>::MooeeInternalCompute(int dag, int inv,
-						 Vector<iSinglet<Simd> > & Matp,
-						 Vector<iSinglet<Simd> > & Matm)
-{
-  int Ls=this->Ls;
-
-  GridBase *grid = this->FermionRedBlackGrid();
-  int LLs = grid->_rdimensions[0];
-
-  if ( LLs == Ls ) {
-    return; // Not vectorised in 5th direction
-  }
-
-  Eigen::MatrixXcd Pplus  = Eigen::MatrixXcd::Zero(Ls,Ls);
-  Eigen::MatrixXcd Pminus = Eigen::MatrixXcd::Zero(Ls,Ls);
-  
-  for(int s=0;s<Ls;s++){
-    Pplus(s,s) = bee[s];
-    Pminus(s,s)= bee[s];
-  }
-  
-  for(int s=0;s<Ls-1;s++){
-    Pminus(s,s+1) = -cee[s];
-  }
-  
-  for(int s=0;s<Ls-1;s++){
-    Pplus(s+1,s) = -cee[s+1];
-  }
-  Pplus (0,Ls-1) = mass*cee[0];
-  Pminus(Ls-1,0) = mass*cee[Ls-1];
-  
-  Eigen::MatrixXcd PplusMat ;
-  Eigen::MatrixXcd PminusMat;
-  
-  if ( inv ) {
-    PplusMat =Pplus.inverse();
-    PminusMat=Pminus.inverse();
-  } else { 
-    PplusMat =Pplus;
-    PminusMat=Pminus;
-  }
-  
-  if(dag){
-    PplusMat.adjointInPlace();
-    PminusMat.adjointInPlace();
-  }
-  
-  typedef typename SiteHalfSpinor::scalar_type scalar_type;
-  const int Nsimd=Simd::Nsimd();
-  Matp.resize(Ls*LLs);
-  Matm.resize(Ls*LLs);
-
-  for(int s2=0;s2<Ls;s2++){
-    for(int s1=0;s1<LLs;s1++){
-      int istride = LLs;
-      int ostride = 1;
-      Simd Vp;
-      Simd Vm;
-      scalar_type *sp = (scalar_type *)&Vp;
-      scalar_type *sm = (scalar_type *)&Vm;
-      for(int l=0;l<Nsimd;l++){
-	if ( switcheroo<Coeff_t>::iscomplex() ) {
-	  sp[l] = PplusMat (l*istride+s1*ostride,s2);
-	  sm[l] = PminusMat(l*istride+s1*ostride,s2);
-	} else { 
-	  // if real
-	  scalar_type tmp;
-	  tmp = PplusMat (l*istride+s1*ostride,s2);
-	  sp[l] = scalar_type(tmp.real(),tmp.real());
-	  tmp = PminusMat(l*istride+s1*ostride,s2);
-	  sm[l] = scalar_type(tmp.real(),tmp.real());
-	}
-      }
-      Matp[LLs*s2+s1] = Vp;
-      Matm[LLs*s2+s1] = Vm;
-    }}
-}
-#endif
 
 NAMESPACE_END(Grid);
 

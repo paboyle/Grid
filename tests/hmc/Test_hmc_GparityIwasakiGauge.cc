@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
   typedef ConjugateHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
 
   typedef GparityWilsonImplR FermionImplPolicy;
-  typedef GparityDomainWallFermionR FermionAction;
+  typedef GparityDomainWallFermionD FermionAction;
   typedef typename FermionAction::FermionField FermionField;
 
 
@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
   CheckpointerParameters CPparams;  
   CPparams.config_prefix = "ckpoint_EODWF_lat";
   CPparams.rng_prefix = "ckpoint_EODWF_rng";
-  CPparams.saveInterval = 5;
+  CPparams.saveInterval = 1;
   CPparams.format = "IEEE64BIG";
   
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
   // that have a complex construction
   // standard
   RealD beta = 2.6 ;
-  const int nu = 3;
+  const int nu = 1;
   std::vector<int> twists(Nd,0);
   twists[nu] = 1;
   ConjugateGimplD::setDirections(twists);

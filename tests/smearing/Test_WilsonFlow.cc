@@ -96,13 +96,16 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Initial plaquette: "
     << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu) << std::endl;
 
-  WilsonFlow<PeriodicGimplR> WF(WFPar.steps, WFPar.step_size, WFPar.meas_interval);
+  int t=WFPar.maxTau;
+  WilsonFlowAdaptive<PeriodicGimplR> WF(WFPar.step_size, WFPar.maxTau,
+					1.0e-4,
+					WFPar.meas_interval);
 
-  WF.smear_adaptive(Uflow, Umu, WFPar.maxTau);
+  WF.smear(Uflow, Umu);
 
   RealD WFlow_plaq = WilsonLoops<PeriodicGimplR>::avgPlaquette(Uflow);
   RealD WFlow_TC   = WilsonLoops<PeriodicGimplR>::TopologicalCharge(Uflow);
-  RealD WFlow_T0   = WF.energyDensityPlaquette(Uflow);
+  RealD WFlow_T0   = WF.energyDensityPlaquette(t,Uflow);
   std::cout << GridLogMessage << "Plaquette          "<< conf << "   " << WFlow_plaq << std::endl;
   std::cout << GridLogMessage << "T0                 "<< conf << "   " << WFlow_T0 << std::endl;
   std::cout << GridLogMessage << "TopologicalCharge  "<< conf << "   " << WFlow_TC   << std::endl;

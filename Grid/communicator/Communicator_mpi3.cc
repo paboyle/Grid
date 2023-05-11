@@ -106,7 +106,7 @@ CartesianCommunicator::CartesianCommunicator(const Coordinate &processors)
   // Remap using the shared memory optimising routine
   // The remap creates a comm which must be freed
   ////////////////////////////////////////////////////
-  GlobalSharedMemory::OptimalCommunicator    (processors,optimal_comm);
+  GlobalSharedMemory::OptimalCommunicator    (processors,optimal_comm,_shm_processors);
   InitFromMPICommunicator(processors,optimal_comm);
   SetCommunicator(optimal_comm);
   ///////////////////////////////////////////////////
@@ -124,12 +124,13 @@ CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const 
   int parent_ndimension = parent._ndimension; assert(_ndimension >= parent._ndimension);
   Coordinate parent_processor_coor(_ndimension,0);
   Coordinate parent_processors    (_ndimension,1);
-
+  Coordinate shm_processors       (_ndimension,1);
   // Can make 5d grid from 4d etc...
   int pad = _ndimension-parent_ndimension;
   for(int d=0;d<parent_ndimension;d++){
     parent_processor_coor[pad+d]=parent._processor_coor[d];
     parent_processors    [pad+d]=parent._processors[d];
+    shm_processors       [pad+d]=parent._shm_processors[d];
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -154,6 +155,7 @@ CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const 
     ccoor[d] = parent_processor_coor[d] % processors[d];
     scoor[d] = parent_processor_coor[d] / processors[d];
     ssize[d] = parent_processors[d]     / processors[d];
+    if ( processors[d] < shm_processors[d] ) shm_processors[d] = processors[d]; // subnode splitting.
   }
 
   // rank within subcomm ; srank is rank of subcomm within blocks of subcomms
@@ -335,23 +337,23 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
 }
 // Basic Halo comms primitive
 double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
-						     int dest,
+						     int dest, int dox,
 						     void *recv,
-						     int from,
+						     int from, int dor,
 						     int bytes,int dir)
 {
   std::vector<CommsRequest_t> list;
-  double offbytes = StencilSendToRecvFromBegin(list,xmit,dest,recv,from,bytes,dir);
+  double offbytes = StencilSendToRecvFromBegin(list,xmit,dest,dox,recv,from,dor,bytes,bytes,dir);
   StencilSendToRecvFromComplete(list,dir);
   return offbytes;
 }
 
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 							 void *xmit,
-							 int dest,
+							 int dest,int dox,
 							 void *recv,
-							 int from,
-							 int bytes,int dir)
+							 int from,int dor,
+							 int xbytes,int rbytes,int dir)
 {
   int ncomm  =communicator_halo.size();
   int commdir=dir%ncomm;
@@ -370,39 +372,34 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
   double off_node_bytes=0.0;
   int tag;
 
-  if ( (gfrom ==MPI_UNDEFINED) || Stencil_force_mpi ) {
-    tag= dir+from*32;
-    ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,tag,communicator_halo[commdir],&rrq);
-    assert(ierr==0);
-    list.push_back(rrq);
-    off_node_bytes+=bytes;
+  if ( dor ) {
+    if ( (gfrom ==MPI_UNDEFINED) || Stencil_force_mpi ) {
+      tag= dir+from*32;
+      ierr=MPI_Irecv(recv, rbytes, MPI_CHAR,from,tag,communicator_halo[commdir],&rrq);
+      assert(ierr==0);
+      list.push_back(rrq);
+      off_node_bytes+=rbytes;
+    }
   }
-
-  if ( (gdest == MPI_UNDEFINED) || Stencil_force_mpi ) {
-    tag= dir+_processor*32;
-    ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,tag,communicator_halo[commdir],&xrq);
-    assert(ierr==0);
-    list.push_back(xrq);
-    off_node_bytes+=bytes;
-  } else {
-    // TODO : make a OMP loop on CPU, call threaded bcopy
-    void *shm = (void *) this->ShmBufferTranslate(dest,recv);
-    assert(shm!=NULL);
-    //    std::cout <<"acceleratorCopyDeviceToDeviceAsynch"<< std::endl;
-    acceleratorCopyDeviceToDeviceAsynch(xmit,shm,bytes);
+  
+  if (dox) {
+    if ( (gdest == MPI_UNDEFINED) || Stencil_force_mpi ) {
+      tag= dir+_processor*32;
+      ierr =MPI_Isend(xmit, xbytes, MPI_CHAR,dest,tag,communicator_halo[commdir],&xrq);
+      assert(ierr==0);
+      list.push_back(xrq);
+      off_node_bytes+=xbytes;
+    } else {
+      void *shm = (void *) this->ShmBufferTranslate(dest,recv);
+      assert(shm!=NULL);
+      acceleratorCopyDeviceToDeviceAsynch(xmit,shm,xbytes);
+    }
   }
-
-  //  if ( CommunicatorPolicy == CommunicatorPolicySequential ) {
-  //    this->StencilSendToRecvFromComplete(list,dir);
-  //  }
 
   return off_node_bytes;
 }
 void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &list,int dir)
 {
-  //   std::cout << "Copy Synchronised\n"<<std::endl;
-  acceleratorCopySynchronise();
-
   int nreq=list.size();
 
   if (nreq==0) return;
@@ -437,6 +434,10 @@ int CartesianCommunicator::RankWorld(void){
   int r;
   MPI_Comm_rank(communicator_world,&r);
   return r;
+}
+void CartesianCommunicator::BarrierWorld(void){
+  int ierr = MPI_Barrier(communicator_world);
+  assert(ierr==0);
 }
 void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
 {

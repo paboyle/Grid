@@ -42,39 +42,6 @@ NAMESPACE_BEGIN(Grid);
   template<typename T>     struct isGridScalar                : public std::false_type { static constexpr bool notvalue = true; };
   template<class T>        struct isGridScalar<iScalar<T>>    : public std::true_type  { static constexpr bool notvalue = false; };
 
-  // Store double-precision data in single-precision grids for precision promoted localInnerProductD
-  template<typename T>
-  class TypePair {
-  public:
-    T _internal[2];
-    accelerator TypePair<T>& operator=(const Grid::Zero& o) {
-      _internal[0] = Zero();
-      _internal[1] = Zero();
-      return *this;
-    }
-
-    accelerator TypePair<T> operator+(const TypePair<T>& o) const {
-      TypePair<T> r;
-      r._internal[0] = _internal[0] + o._internal[0];
-      r._internal[1] = _internal[1] + o._internal[1];
-      return r;
-    }
-
-    accelerator TypePair<T>& operator+=(const TypePair<T>& o) {
-      _internal[0] += o._internal[0];
-      _internal[1] += o._internal[1];
-      return *this;
-    }
-
-    friend accelerator_inline void add(TypePair<T>* ret, const TypePair<T>* a, const TypePair<T>* b) {
-      add(&ret->_internal[0],&a->_internal[0],&b->_internal[0]);
-      add(&ret->_internal[1],&a->_internal[1],&b->_internal[1]);
-    }
-  };
-  typedef TypePair<ComplexD> ComplexD2;
-  typedef TypePair<RealD> RealD2;
-  typedef TypePair<vComplexD> vComplexD2;
-  typedef TypePair<vRealD> vRealD2;
 
   // Traits to identify fundamental data types
   template<typename T>     struct isGridFundamental                : public std::false_type { static constexpr bool notvalue = true; };
@@ -88,8 +55,6 @@ NAMESPACE_BEGIN(Grid);
   template<>               struct isGridFundamental<RealD>         : public std::true_type  { static constexpr bool notvalue = false; };
   template<>               struct isGridFundamental<vComplexD2>    : public std::true_type  { static constexpr bool notvalue = false; };
   template<>               struct isGridFundamental<vRealD2>       : public std::true_type  { static constexpr bool notvalue = false; };
-  template<>               struct isGridFundamental<ComplexD2>     : public std::true_type  { static constexpr bool notvalue = false; };
-  template<>               struct isGridFundamental<RealD2>        : public std::true_type  { static constexpr bool notvalue = false; };
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -136,7 +101,7 @@ NAMESPACE_BEGIN(Grid);
     typedef ComplexF Complexified;
     typedef RealF Realified;
     typedef RealD DoublePrecision;
-    typedef RealD2 DoublePrecision2;
+    typedef RealD DoublePrecision2;
   };
   template<> struct GridTypeMapper<RealD> : public GridTypeMapper_Base {
     typedef RealD scalar_type;
@@ -151,19 +116,6 @@ NAMESPACE_BEGIN(Grid);
     typedef RealD DoublePrecision;
     typedef RealD DoublePrecision2;
   };
-  template<> struct GridTypeMapper<RealD2> : public GridTypeMapper_Base {
-    typedef RealD2 scalar_type;
-    typedef RealD2 scalar_typeD;
-    typedef RealD2 vector_type;
-    typedef RealD2 vector_typeD;
-    typedef RealD2 tensor_reduced;
-    typedef RealD2 scalar_object;
-    typedef RealD2 scalar_objectD;
-    typedef ComplexD2 Complexified;
-    typedef RealD2 Realified;
-    typedef RealD2 DoublePrecision;
-    typedef RealD2 DoublePrecision2;
-  };
   template<> struct GridTypeMapper<ComplexF> : public GridTypeMapper_Base {
     typedef ComplexF scalar_type;
     typedef ComplexD scalar_typeD;
@@ -175,7 +127,7 @@ NAMESPACE_BEGIN(Grid);
     typedef ComplexF Complexified;
     typedef RealF Realified;
     typedef ComplexD DoublePrecision;
-    typedef ComplexD2 DoublePrecision2;
+    typedef ComplexD DoublePrecision2;
   };
   template<> struct GridTypeMapper<ComplexD> : public GridTypeMapper_Base {
     typedef ComplexD scalar_type;
@@ -191,7 +143,7 @@ NAMESPACE_BEGIN(Grid);
     typedef ComplexD DoublePrecision2;
   };
 
-#ifdef GRID_CUDA
+#if defined(GRID_CUDA) || defined(GRID_HIP)  
   template<> struct GridTypeMapper<std::complex<float> > : public GridTypeMapper_Base {
     typedef std::complex<float> scalar_type;
     typedef std::complex<double> scalar_typeD;
@@ -220,19 +172,6 @@ NAMESPACE_BEGIN(Grid);
   };
 #endif
 
-  template<> struct GridTypeMapper<ComplexD2> : public GridTypeMapper_Base {
-    typedef ComplexD2 scalar_type;
-    typedef ComplexD2 scalar_typeD;
-    typedef ComplexD2 vector_type;
-    typedef ComplexD2 vector_typeD;
-    typedef ComplexD2 tensor_reduced;
-    typedef ComplexD2 scalar_object;
-    typedef ComplexD2 scalar_objectD;
-    typedef ComplexD2 Complexified;
-    typedef RealD2 Realified;
-    typedef ComplexD2 DoublePrecision;
-    typedef ComplexD2 DoublePrecision2;
-  };
   template<> struct GridTypeMapper<Integer> : public GridTypeMapper_Base {
     typedef Integer scalar_type;
     typedef Integer scalar_typeD;
@@ -274,13 +213,13 @@ NAMESPACE_BEGIN(Grid);
     typedef vRealD DoublePrecision2;
   };
   template<> struct GridTypeMapper<vRealD2> : public GridTypeMapper_Base {
-    typedef RealD2  scalar_type;
-    typedef RealD2  scalar_typeD;
+    typedef RealD  scalar_type;
+    typedef RealD  scalar_typeD;
     typedef vRealD2 vector_type;
     typedef vRealD2 vector_typeD;
     typedef vRealD2 tensor_reduced;
-    typedef RealD2  scalar_object;
-    typedef RealD2  scalar_objectD;
+    typedef RealD  scalar_object;
+    typedef RealD  scalar_objectD;
     typedef vComplexD2 Complexified;
     typedef vRealD2 Realified;
     typedef vRealD2 DoublePrecision;
@@ -341,13 +280,13 @@ NAMESPACE_BEGIN(Grid);
     typedef vComplexD DoublePrecision2;
   };
   template<> struct GridTypeMapper<vComplexD2> : public GridTypeMapper_Base {
-    typedef ComplexD2  scalar_type;
-    typedef ComplexD2  scalar_typeD;
+    typedef ComplexD  scalar_type;
+    typedef ComplexD  scalar_typeD;
     typedef vComplexD2 vector_type;
     typedef vComplexD2 vector_typeD;
     typedef vComplexD2 tensor_reduced;
-    typedef ComplexD2  scalar_object;
-    typedef ComplexD2  scalar_objectD;
+    typedef ComplexD  scalar_object;
+    typedef ComplexD  scalar_objectD;
     typedef vComplexD2 Complexified;
     typedef vRealD2 Realified;
     typedef vComplexD2 DoublePrecision;
