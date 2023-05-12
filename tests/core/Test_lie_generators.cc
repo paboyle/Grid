@@ -35,7 +35,7 @@ directory
 
 #include <Grid/qcd/utils/GaugeGroup.h>
 #include <Grid/qcd/utils/SUnAdjoint.h>
-#include <Grid/qcd/utils/SUnTwoIndex.h>
+#include <Grid/qcd/utils/GaugeGroupTwoIndex.h>
 
 #include <Grid/qcd/representations/adjoint.h>
 #include <Grid/qcd/representations/two_index.h>
