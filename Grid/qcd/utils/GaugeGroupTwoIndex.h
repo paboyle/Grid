@@ -181,7 +181,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
     iGroupMatrix<cplx> tmp;
     i2indTa = Zero();
 
-    for (int a = 0; a < ncolour * ncolour - 1; a++)
+    for (int a = 0; a < NumGenerators; a++)
       GaugeGroup<ncolour, group_name>::generator(a, ta[a]);
 
     for (int a = 0; a < Dimension; a++) base(a, eij[a]);
@@ -197,7 +197,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
   }
 
   static void printGenerators(void) {
-    for (int gen = 0; gen < ncolour * ncolour - 1; gen++) {
+    for (int gen = 0; gen < NumGenerators; gen++) {
       TIMatrix i2indTa;
       generator(gen, i2indTa);
       std::cout << GridLogMessage << "Nc = " << ncolour << " t_" << gen
@@ -210,7 +210,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
     TIMatrix i2indTa, i2indTb;
     std::cout << GridLogMessage << "2IndexRep - Checking if traceless"
               << std::endl;
-    for (int a = 0; a < ncolour * ncolour - 1; a++) {
+    for (int a = 0; a < NumGenerators; a++) {
       generator(a, i2indTa);
       std::cout << GridLogMessage << a << std::endl;
       assert(norm2(trace(i2indTa)) < 1.0e-6);
@@ -219,7 +219,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
 
     std::cout << GridLogMessage << "2IndexRep - Checking if antihermitean"
               << std::endl;
-    for (int a = 0; a < ncolour * ncolour - 1; a++) {
+    for (int a = 0; a < NumGenerators; a++) {
       generator(a, i2indTa);
       std::cout << GridLogMessage << a << std::endl;
       assert(norm2(adj(i2indTa) + i2indTa) < 1.0e-6);
@@ -229,8 +229,8 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
     std::cout << GridLogMessage
               << "2IndexRep - Checking Tr[Ta*Tb]=delta(a,b)*(N +- 2)/2"
               << std::endl;
-    for (int a = 0; a < ncolour * ncolour - 1; a++) {
-      for (int b = 0; b < ncolour * ncolour - 1; b++) {
+    for (int a = 0; a < NumGenerators; a++) {
+      for (int b = 0; b < NumGenerators; b++) {
         generator(a, i2indTa);
         generator(b, i2indTb);
 
@@ -252,7 +252,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
     TIMatrix i2indTa;
 
     out = Zero();
-    for (int a = 0; a < ncolour * ncolour - 1; a++) {
+    for (int a = 0; a < NumGenerators; a++) {
       generator(a, i2indTa);
       la = peekColour(h, a) * i2indTa;
       out += la;
@@ -270,7 +270,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
     TIMatrix i2indTa;
     Real coefficient = -2.0 / (ncolour + 2 * S) * scale;
     // 2/(Nc +/- 2) for the normalization of the trace in the two index rep
-    for (int a = 0; a < ncolour * ncolour - 1; a++) {
+    for (int a = 0; a < NumGenerators; a++) {
       generator(a, i2indTa);
       pokeColour(h_out, real(trace(i2indTa * in)) * coefficient, a);
     }
@@ -282,19 +282,19 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
                         const LatticeTwoIndexMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
     // to store the generators
-    static std::vector<TIMatrix> i2indTa(ncolour * ncolour - 1);
+    static std::vector<TIMatrix> i2indTa(NumGenerators);
     h_out = Zero();
     static bool precalculated = false;
     if (!precalculated) {
       precalculated = true;
-      for (int a = 0; a < ncolour * ncolour - 1; a++) generator(a, i2indTa[a]);
+      for (int a = 0; a < NumGenerators; a++) generator(a, i2indTa[a]);
     }
 
     Real coefficient =
         -2.0 / (ncolour + 2 * S) * scale;  // 2/(Nc +/- 2) for the normalization
     // of the trace in the two index rep
 
-    for (int a = 0; a < ncolour * ncolour - 1; a++) {
+    for (int a = 0; a < NumGenerators; a++) {
       auto tmp = real(trace(i2indTa[a] * in)) * coefficient;
       pokeColour(h_out, tmp, a);
     }
