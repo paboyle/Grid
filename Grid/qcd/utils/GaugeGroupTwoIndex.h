@@ -89,10 +89,10 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
       for (int i = 1; i < ncolour; i++) {
         for (int j = 0; j < i; j++) {
           a[counter][0] = i;
-          a[counter][1] =
-              i == ngroup ? j + 1
+          j = i == ngroup ? j + 1
                           : j;  // this will only ever trigger for Sp because
                                 // ngroup == ncolour is out of range for SU
+          a[counter][1] = j;
           counter++;
         }
       }
