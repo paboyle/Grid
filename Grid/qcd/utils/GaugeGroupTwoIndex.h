@@ -41,7 +41,8 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
                 "ngroup is only implemented for SU and Sp currently.");
   static const int ngroup =
       std::is_same<group_name, GroupName::SU>::value ? ncolour : ncolour / 2;
-  static const int Dimension = ngroup * (ncolour + S) / 2;
+  static const int Dimension =
+      std::is_same<group_name, GroupName::SU>::value ? ncolour * (ncolour + S) / 2 : ngroup * (ncolour + S) + S;
   static const int NumGenerators =
       GaugeGroup<ncolour, group_name>::AlgebraDimension;
 
@@ -243,7 +244,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
   }
 
   static void TwoIndexLieAlgebraMatrix(
-      const typename SU<ncolour>::LatticeAlgebraVector &h,
+      const typename GaugeGroup<ncolour, group_name>::LatticeAlgebraVector &h,
       LatticeTwoIndexMatrix &out, Real scale = 1.0) {
     conformable(h, out);
     GridBase *grid = out.Grid();
@@ -262,7 +263,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
   // Projects the algebra components
   // of a lattice matrix ( of dimension ncol*ncol -1 )
   static void projectOnAlgebra(
-      typename SU<ncolour>::LatticeAlgebraVector &h_out,
+      typename GaugeGroup<ncolour, group_name>::LatticeAlgebraVector &h_out,
       const LatticeTwoIndexMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
     h_out = Zero();
@@ -277,7 +278,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
 
   // a projector that keeps the generators stored to avoid the overhead of
   // recomputing them
-  static void projector(typename SU<ncolour>::LatticeAlgebraVector &h_out,
+  static void projector(typename GaugeGroup<ncolour, group_name>::LatticeAlgebraVector &h_out,
                         const LatticeTwoIndexMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
     // to store the generators
