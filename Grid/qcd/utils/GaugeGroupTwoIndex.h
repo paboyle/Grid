@@ -240,7 +240,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
                   << std::endl;
         if (a==b) {
             assert(imag(Tr) < 1e-8);
-            assert(real(Tr) - 1 < 1e-8);
+            assert(real(Tr) - ((ncolour+S*2)*0.5) < 1e-8);
         } else {
             assert(imag(Tr) < 1e-8);
             assert(real(Tr) < 1e-8);

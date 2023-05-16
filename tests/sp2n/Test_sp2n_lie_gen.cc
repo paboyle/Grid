@@ -49,6 +49,24 @@ int main(int argc, char** argv) {
 
   Sp4TwoIndexAntiSymm::printGenerators();
   Sp4TwoIndexAntiSymm::testGenerators();
+    
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+  std::cout << GridLogMessage << "* Generators for Sp(6) TwoIndex AntiSymmetric" << std::endl;
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+    
+  SU_TwoIndex<6, AntiSymmetric>::printGenerators();
+  SU_TwoIndex<6, AntiSymmetric>::testGenerators();
+
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+  std::cout << GridLogMessage << "* Generators for Sp(8) TwoIndex AntiSymmetric" << std::endl;
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+  
+  Sp_TwoIndex<8, AntiSymmetric>::printGenerators();
+  Sp_TwoIndex<8, AntiSymmetric>::testGenerators();
 
   Grid_finalize();
 }
