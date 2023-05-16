@@ -238,6 +238,13 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
         Complex Tr = -TensorRemove(trace(i2indTa * i2indTb));
         std::cout << GridLogMessage << "a=" << a << "b=" << b << "Tr=" << Tr
                   << std::endl;
+        if (a==b) {
+            assert(imag(Tr) < 1e-8);
+            assert(real(Tr) - 1 < 1e-8);
+        } else {
+            assert(imag(Tr) < 1e-8);
+            assert(real(Tr) < 1e-8);
+        }
       }
     }
     std::cout << GridLogMessage << std::endl;
@@ -313,7 +320,6 @@ typedef SU_TwoIndex<3, Symmetric> SU3TwoIndexSymm;
 typedef SU_TwoIndex<4, Symmetric> SU4TwoIndexSymm;
 typedef SU_TwoIndex<5, Symmetric> SU5TwoIndexSymm;
 
-typedef SU_TwoIndex<2, AntiSymmetric> SU2TwoIndexAntiSymm;
 typedef SU_TwoIndex<3, AntiSymmetric> SU3TwoIndexAntiSymm;
 typedef SU_TwoIndex<4, AntiSymmetric> SU4TwoIndexAntiSymm;
 typedef SU_TwoIndex<5, AntiSymmetric> SU5TwoIndexAntiSymm;
@@ -327,7 +333,6 @@ typedef Sp_TwoIndex<Nc, AntiSymmetric> SpTwoIndexAntiSymmMatrices;
 typedef Sp_TwoIndex<2, Symmetric> Sp2TwoIndexSymm;
 typedef Sp_TwoIndex<4, Symmetric> Sp4TwoIndexSymm;
 
-typedef Sp_TwoIndex<2, AntiSymmetric> Sp2TwoIndexAntiSymm;
 typedef Sp_TwoIndex<4, AntiSymmetric> Sp4TwoIndexAntiSymm;
 
 

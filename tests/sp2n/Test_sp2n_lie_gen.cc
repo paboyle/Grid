@@ -5,11 +5,6 @@ using namespace Grid;
 int main(int argc, char** argv) {
   Grid_init(&argc, &argv);
     
-  //std::vector<int> latt({4, 4, 4, 8});
-  //GridCartesian* grid = SpaceTimeGrid::makeFourDimGrid(
-  //latt, GridDefaultSimd(Nd, vComplex::Nsimd()), GridDefaultMpi());
-  //GridRedBlackCartesian* rbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(grid);
-    
   std::cout << GridLogMessage << "*********************************************"
               << std::endl;
   std::cout << GridLogMessage << "* Generators for Sp(2)" << std::endl;
@@ -46,5 +41,14 @@ int main(int argc, char** argv) {
   Sp8::printGenerators();
   Sp8::testGenerators(); 
     
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+  std::cout << GridLogMessage << "* Generators for Sp(4) TwoIndex AntiSymmetric" << std::endl;
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+
+  Sp4TwoIndexAntiSymm::printGenerators();
+  Sp4TwoIndexAntiSymm::testGenerators();
+
   Grid_finalize();
 }
