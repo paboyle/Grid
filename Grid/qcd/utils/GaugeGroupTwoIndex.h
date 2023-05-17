@@ -78,7 +78,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
   template <class cplx>
   static void base(int Index, iGroupMatrix<cplx> &eij) {
     // returns (e)^(ij)_{kl} necessary for change of base U_F -> U_R
-    assert(Index < NumGenerators);
+    assert(Index < Dimension);
     eij = Zero();
 
     // for the linearisation of the 2 indexes
@@ -89,9 +89,10 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
       for (int i = 1; i < ncolour; i++) {
         for (int j = 0; j < i; j++) {
           a[counter][0] = i;
-          j = i == ngroup ? j + 1
-                          : j;  // this will only ever trigger for Sp because
-                                // ngroup == ncolour is out of range for SU
+            if (j==0 && ngroup == ncolour/2 && i==ngroup+j) {
+                //std::cout << "skipping" << std::endl; // for Sp2n this vanishes identically.
+                j = j+1;
+            }
           a[counter][1] = j;
           counter++;
         }
@@ -320,6 +321,7 @@ typedef SU_TwoIndex<3, Symmetric> SU3TwoIndexSymm;
 typedef SU_TwoIndex<4, Symmetric> SU4TwoIndexSymm;
 typedef SU_TwoIndex<5, Symmetric> SU5TwoIndexSymm;
 
+typedef SU_TwoIndex<2, AntiSymmetric> SU2TwoIndexAntiSymm;
 typedef SU_TwoIndex<3, AntiSymmetric> SU3TwoIndexAntiSymm;
 typedef SU_TwoIndex<4, AntiSymmetric> SU4TwoIndexAntiSymm;
 typedef SU_TwoIndex<5, AntiSymmetric> SU5TwoIndexAntiSymm;
