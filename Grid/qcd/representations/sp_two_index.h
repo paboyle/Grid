@@ -27,7 +27,7 @@ public:
   // types for the higher representation fields
   typedef typename Sp_TwoIndex<ncolour, S>::LatticeTwoIndexMatrix LatticeMatrix;
   typedef typename Sp_TwoIndex<ncolour, S>::LatticeTwoIndexField LatticeField;
-  static const int Dimension = (ncolour * (ncolour + S) / 2) - 1;
+  static const int Dimension = (ncolour * (ncolour + S) / 2) + S;
   static const bool isFundamental = false;
   //static const int nsp = Nc / 2;
   LatticeField U;
