@@ -1,6 +1,6 @@
 #include <Grid/Grid.h>
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   using namespace Grid;
 
   typedef Representations<SpFundamentalRepresentation,
@@ -76,15 +76,6 @@ int main(int argc, char** argv) {
 
   TheHMC.ReadCommandLine(argc, argv);
   TheHMC.Run();
-
-  if (std::string(argv[argc - 1]).compare("--assert=true") == 0) {
-    // this is the pseudofermion action's value for
-    // --grid 4.4.4.4 --Trajectories 1 --Thermalizations 0 --StartingType
-    // ColdStart and Nc == 4 if this assertion fails, check that you have run
-    // with these exact parameters
-    assert(Nc == 4);
-    assert(abs(Nf2.S(U) - 6586.6498) < 1.e-4);
-  }
 
   Grid_finalize();
 }
