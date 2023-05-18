@@ -4,15 +4,10 @@ using namespace Grid;
 
 int main(int argc, char** argv) {
   Grid_init(&argc, &argv);
-    
-  //std::vector<int> latt({4, 4, 4, 8});
-  //GridCartesian* grid = SpaceTimeGrid::makeFourDimGrid(
-  //latt, GridDefaultSimd(Nd, vComplex::Nsimd()), GridDefaultMpi());
-  //GridRedBlackCartesian* rbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(grid);
-    
+
   std::cout << GridLogMessage << "*********************************************"
               << std::endl;
-  std::cout << GridLogMessage << "* Generators for Sp(2)" << std::endl;
+  std::cout << GridLogMessage << "* Generators for Sp(2) (print and test)" << std::endl;
   std::cout << GridLogMessage << "*********************************************"
               << std::endl;
       
@@ -21,7 +16,7 @@ int main(int argc, char** argv) {
   
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
-  std::cout << GridLogMessage << "* Generators for Sp(4)" << std::endl;
+  std::cout << GridLogMessage << "* Generators for Sp(4) (print and test)" << std::endl;
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
     
@@ -30,21 +25,43 @@ int main(int argc, char** argv) {
     
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
-  std::cout << GridLogMessage << "* Generators for Sp(6)" << std::endl;
+  std::cout << GridLogMessage << "* Generators for Sp(6) (test)" << std::endl;
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
-  
-  Sp6::printGenerators();
+
   Sp6::testGenerators();
-    
+
   std::cout << GridLogMessage << "*********************************************"
               << std::endl;
-  std::cout << GridLogMessage << "* Generators for Sp(8)" << std::endl;
+  std::cout << GridLogMessage << "* Generators for Sp(8) (test)" << std::endl;
   std::cout << GridLogMessage << "*********************************************"
               << std::endl;
     
-  Sp8::printGenerators();
-  Sp8::testGenerators(); 
+  Sp8::testGenerators();
     
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+  std::cout << GridLogMessage << "* Generators for Sp(4) TwoIndexAS (test)" << std::endl;
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+
+  Sp_TwoIndex<4, AntiSymmetric>::testGenerators();
+    
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+  std::cout << GridLogMessage << "* Generators for Sp(6) TwoIndexAS (test)" << std::endl;
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+
+  Sp_TwoIndex<6, AntiSymmetric>::testGenerators();
+
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+  std::cout << GridLogMessage << "* Generators for Sp(8) TwoIndexAS (test)" << std::endl;
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+
+  Sp_TwoIndex<8, AntiSymmetric>::testGenerators();
+
   Grid_finalize();
 }

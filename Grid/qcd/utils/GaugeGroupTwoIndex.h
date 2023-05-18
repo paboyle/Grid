@@ -16,77 +16,90 @@
 //
 //   (iT_a)^(ij)(lk) = i * ( tr[e^(ij)^dag e^(lk) T^trasp_a] +
 //   tr[e^(lk)e^(ij)^dag T_a] )  //
-//   
+//
 //
 ////////////////////////////////////////////////////////////////////////
 
 // Authors: David Preti, Guido Cossu
 
-#ifndef QCD_UTIL_SP2N2INDEX_H
-#define QCD_UTIL_SP2N2INDEX_H
-
+#ifndef QCD_UTIL_SUN2INDEX_H
+#define QCD_UTIL_SUN2INDEX_H
 
 NAMESPACE_BEGIN(Grid);
 
-//enum SpTwoIndexSymmetry { S = 1, AS = -1 };
+enum TwoIndexSymmetry { Symmetric = 1, AntiSymmetric = -1 };
 
-//inline Real delta(int a, int b) { return (a == b) ? 1.0 : 0.0; }
+inline Real delta(int a, int b) { return (a == b) ? 1.0 : 0.0; }
 
-template <int ncolour, TwoIndexSymmetry S>
-class Sp_TwoIndex : public Sp<ncolour> {
-public:
-  static const int nsp = ncolour/2;
-  static const int Dimension = nsp * (ncolour + S) - 1 ;
-  static const int NumGenerators = Sp<ncolour>::AlgebraDimension;
+template <int ncolour, TwoIndexSymmetry S, class group_name>
+class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
+ public:
+  static_assert(
+      std::is_same<group_name, GroupName::Sp>::value ? S != Symmetric : true,
+      "The symmetric two-index representation of Sp(2N) does not work "
+      "currently. If you want to use it, you need to implement the equivalent "
+      "of Eq. (27) and (28) from https://doi.org/10.48550/arXiv.2202.05516.");
+
+  // The chosen convention is that we are taking ncolour to be N in SU<N> but 2N
+  // in Sp(2N). ngroup is equal to N for SU but 2N/2 = N for Sp(2N).
+  static_assert(std::is_same<group_name, GroupName::SU>::value or
+                    std::is_same<group_name, GroupName::Sp>::value,
+                "ngroup is only implemented for SU and Sp currently.");
+  static const int ngroup =
+      std::is_same<group_name, GroupName::SU>::value ? ncolour : ncolour / 2;
+  static const int Dimension = std::is_same<group_name, GroupName::SU>::value
+                                   ? ncolour * (ncolour + S) / 2
+                                   : ngroup * (ncolour + S) + S;
+  static const int NumGenerators =
+      GaugeGroup<ncolour, group_name>::AlgebraDimension;
 
   template <typename vtype>
-  using iSp2nTwoIndexMatrix = iScalar<iScalar<iMatrix<vtype, Dimension> > >;
+  using iGroupTwoIndexMatrix = iScalar<iScalar<iMatrix<vtype, Dimension> > >;
 
-  typedef iSp2nTwoIndexMatrix<Complex> TIMatrix;
-  typedef iSp2nTwoIndexMatrix<ComplexF> TIMatrixF;
-  typedef iSp2nTwoIndexMatrix<ComplexD> TIMatrixD;
+  typedef iGroupTwoIndexMatrix<Complex> TIMatrix;
+  typedef iGroupTwoIndexMatrix<ComplexF> TIMatrixF;
+  typedef iGroupTwoIndexMatrix<ComplexD> TIMatrixD;
 
-  typedef iSp2nTwoIndexMatrix<vComplex> vTIMatrix;
-  typedef iSp2nTwoIndexMatrix<vComplexF> vTIMatrixF;
-  typedef iSp2nTwoIndexMatrix<vComplexD> vTIMatrixD;
+  typedef iGroupTwoIndexMatrix<vComplex> vTIMatrix;
+  typedef iGroupTwoIndexMatrix<vComplexF> vTIMatrixF;
+  typedef iGroupTwoIndexMatrix<vComplexD> vTIMatrixD;
 
   typedef Lattice<vTIMatrix> LatticeTwoIndexMatrix;
   typedef Lattice<vTIMatrixF> LatticeTwoIndexMatrixF;
   typedef Lattice<vTIMatrixD> LatticeTwoIndexMatrixD;
 
   typedef Lattice<iVector<iScalar<iMatrix<vComplex, Dimension> >, Nd> >
-  LatticeTwoIndexField;
+      LatticeTwoIndexField;
   typedef Lattice<iVector<iScalar<iMatrix<vComplexF, Dimension> >, Nd> >
-  LatticeTwoIndexFieldF;
+      LatticeTwoIndexFieldF;
   typedef Lattice<iVector<iScalar<iMatrix<vComplexD, Dimension> >, Nd> >
-  LatticeTwoIndexFieldD;
+      LatticeTwoIndexFieldD;
 
   template <typename vtype>
-  using iSp2nMatrix = iScalar<iScalar<iMatrix<vtype, ncolour> > >;
+  using iGroupMatrix = iScalar<iScalar<iMatrix<vtype, ncolour> > >;
 
-  typedef iSp2nMatrix<Complex> Matrix;
-  typedef iSp2nMatrix<ComplexF> MatrixF;
-  typedef iSp2nMatrix<ComplexD> MatrixD;
+  typedef iGroupMatrix<Complex> Matrix;
+  typedef iGroupMatrix<ComplexF> MatrixF;
+  typedef iGroupMatrix<ComplexD> MatrixD;
 
   template <class cplx>
-  static void base(int Index, iSp2nMatrix<cplx> &eij) {
+  static void base(int Index, iGroupMatrix<cplx> &eij) {
     // returns (e)^(ij)_{kl} necessary for change of base U_F -> U_R
-    assert(Index < NumGenerators);
+    assert(Index < Dimension);
     eij = Zero();
 
-    // for the linearisation of the 2 indexes 
-    static int a[ncolour * (ncolour - 1) / 2][2]; // store the a <-> i,j
+    // for the linearisation of the 2 indexes
+    static int a[ncolour * (ncolour - 1) / 2][2];  // store the a <-> i,j
     static bool filled = false;
     if (!filled) {
       int counter = 0;
       for (int i = 1; i < ncolour; i++) {
         for (int j = 0; j < i; j++) {
-           
-            if (i==nsp)
-            {
+          a[counter][0] = i;
+            if (j==0 && ngroup == ncolour/2 && i==ngroup+j) {
+                //std::cout << "skipping" << std::endl; // for Sp2n this vanishes identically.
                 j = j+1;
             }
-          a[counter][0] = i;
           a[counter][1] = j;
           counter++;
         }
@@ -95,69 +108,65 @@ public:
     }
 
     if (Index < ncolour * (ncolour - 1) / 2) {
-      baseOffDiagonal(a[Index][0], a[Index][1], eij);
+      baseOffDiagonal(a[Index][0], a[Index][1], eij, group_name());
     } else {
       baseDiagonal(Index, eij);
     }
   }
-    
-
 
   template <class cplx>
-  static void baseDiagonal(int Index, iSp2nMatrix<cplx> &eij) {
+  static void baseDiagonal(int Index, iGroupMatrix<cplx> &eij) {
     eij = Zero();
     eij()()(Index - ncolour * (ncolour - 1) / 2,
             Index - ncolour * (ncolour - 1) / 2) = 1.0;
   }
 
   template <class cplx>
-  static void baseOffDiagonal(int i, int j, iSp2nMatrix<cplx> &eij) {
+  static void baseOffDiagonal(int i, int j, iGroupMatrix<cplx> &eij,
+                              GroupName::Sp) {
     eij = Zero();
-    //std::cout << GridLogMessage << " doing i j = " << i << j << std::endl;
-      RealD tmp;
+    RealD tmp;
 
-    if ( (i == nsp + j) && (1 <= j) && (j < nsp) )
-        {
-            for (int k = 0; k < nsp; k++)
-            {
-                if (k < j)
-                {
-                    //std::cout << GridLogMessage << "b=N+a 1"<< std::endl;
-                    //std::cout << GridLogMessage << "j i "<< j << i << std::endl;
-                    tmp = sqrt( 2*j*(j+1)  );
-                    tmp = 1/tmp;
-                    tmp *= std::sqrt(2.0);
-                    eij()()(k,k+nsp) =  tmp;
-                    eij()()(k+nsp,k) =  - tmp;
-                }
-                if (k == j)
-                {
-                    //std::cout << GridLogMessage << "b=N+a 2"<< std::endl;
-                    //std::cout << GridLogMessage << "j i "<< j << i << std::endl;
-                    tmp = sqrt(2*j*(j+1)  );
-                    tmp = -j/tmp;
-                    tmp *= std::sqrt(2.0);
-                    eij()()(k,k+nsp) = tmp ;
-                    eij()()(k+nsp,k) = - tmp ;
-                 }
-            }
-            
+    if ((i == ngroup + j) && (1 <= j) && (j < ngroup)) {
+      for (int k = 0; k < ngroup; k++) {
+        if (k < j) {
+          tmp = sqrt(2 * j * (j + 1));
+          tmp = 1 / tmp;
+          tmp *= std::sqrt(2.0);
+          eij()()(k, k + ngroup) = tmp;
+          eij()()(k + ngroup, k) = -tmp;
         }
-      
-      
-        else if (i != nsp+j)
-        {
-            for (int k = 0; k < ncolour; k++)
-                for (int l = 0; l < ncolour; l++)
-                {
-                    eij()()(l, k) = delta(i, k) * delta(j, l) + S * delta(j, k) * delta(i, l);
-                }
-            
+        if (k == j) {
+          tmp = sqrt(2 * j * (j + 1));
+          tmp = -j / tmp;
+          tmp *= std::sqrt(2.0);
+          eij()()(k, k + ngroup) = tmp;
+          eij()()(k + ngroup, k) = -tmp;
         }
-      
-          
-    
-        
+      }
+
+    }
+
+    else if (i != ngroup + j) {
+      for (int k = 0; k < ncolour; k++)
+        for (int l = 0; l < ncolour; l++) {
+          eij()()(l, k) =
+              delta(i, k) * delta(j, l) + S * delta(j, k) * delta(i, l);
+        }
+    }
+
+    RealD nrm = 1. / std::sqrt(2.0);
+    eij = eij * nrm;
+  }
+
+  template <class cplx>
+  static void baseOffDiagonal(int i, int j, iGroupMatrix<cplx> &eij,
+                              GroupName::SU) {
+    eij = Zero();
+    for (int k = 0; k < ncolour; k++)
+      for (int l = 0; l < ncolour; l++)
+        eij()()(l, k) =
+            delta(i, k) * delta(j, l) + S * delta(j, k) * delta(i, l);
 
     RealD nrm = 1. / std::sqrt(2.0);
     eij = eij * nrm;
@@ -174,23 +183,21 @@ public:
   }
 
   template <class cplx>
-  static void generator(int Index, iSp2nTwoIndexMatrix<cplx> &i2indTa) {
-    Vector<iSp2nMatrix<cplx> > ta(
-								NumGenerators);
-    Vector<iSp2nMatrix<cplx> > eij(Dimension);
-    iSp2nMatrix<cplx> tmp;
+  static void generator(int Index, iGroupTwoIndexMatrix<cplx> &i2indTa) {
+    Vector<iGroupMatrix<cplx> > ta(NumGenerators);
+    Vector<iGroupMatrix<cplx> > eij(Dimension);
+    iGroupMatrix<cplx> tmp;
     i2indTa = Zero();
-    
+
     for (int a = 0; a < NumGenerators; a++)
-      Sp<ncolour>::generator(a, ta[a]);
-    
+      GaugeGroup<ncolour, group_name>::generator(a, ta[a]);
+
     for (int a = 0; a < Dimension; a++) base(a, eij[a]);
 
     for (int a = 0; a < Dimension; a++) {
       tmp = transpose(ta[Index]) * adj(eij[a]) + adj(eij[a]) * ta[Index];
       for (int b = 0; b < Dimension; b++) {
-        iSp2nMatrix<cplx> tmp1 =
-	  tmp * eij[b]; 
+        iGroupMatrix<cplx> tmp1 = tmp * eij[b];
         Complex iTr = TensorRemove(timesI(trace(tmp1)));
         i2indTa()()(a, b) = iTr;
       }
@@ -239,14 +246,21 @@ public:
         Complex Tr = -TensorRemove(trace(i2indTa * i2indTb));
         std::cout << GridLogMessage << "a=" << a << "b=" << b << "Tr=" << Tr
                   << std::endl;
+        if (a == b) {
+          assert(imag(Tr) < 1e-8);
+          assert(real(Tr) - ((ncolour + S * 2) * 0.5) < 1e-8);
+        } else {
+          assert(imag(Tr) < 1e-8);
+          assert(real(Tr) < 1e-8);
+        }
       }
     }
     std::cout << GridLogMessage << std::endl;
   }
 
   static void TwoIndexLieAlgebraMatrix(
-				       const typename Sp<ncolour>::LatticeAlgebraVector &h,
-				       LatticeTwoIndexMatrix &out, Real scale = 1.0) {
+      const typename GaugeGroup<ncolour, group_name>::LatticeAlgebraVector &h,
+      LatticeTwoIndexMatrix &out, Real scale = 1.0) {
     conformable(h, out);
     GridBase *grid = out.Grid();
     LatticeTwoIndexMatrix la(grid);
@@ -261,11 +275,11 @@ public:
     out *= scale;
   }
 
-  // Projects the algebra components 
+  // Projects the algebra components
   // of a lattice matrix ( of dimension ncol*ncol -1 )
   static void projectOnAlgebra(
-			       typename Sp<ncolour>::LatticeAlgebraVector &h_out,
-			       const LatticeTwoIndexMatrix &in, Real scale = 1.0) {
+      typename GaugeGroup<ncolour, group_name>::LatticeAlgebraVector &h_out,
+      const LatticeTwoIndexMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
     h_out = Zero();
     TIMatrix i2indTa;
@@ -273,14 +287,15 @@ public:
     // 2/(Nc +/- 2) for the normalization of the trace in the two index rep
     for (int a = 0; a < NumGenerators; a++) {
       generator(a, i2indTa);
-     pokeColour(h_out, real(trace(i2indTa * in)) * coefficient, a);
+      pokeColour(h_out, real(trace(i2indTa * in)) * coefficient, a);
     }
   }
 
   // a projector that keeps the generators stored to avoid the overhead of
   // recomputing them
-  static void projector(typename Sp<ncolour>::LatticeAlgebraVector &h_out,
-                        const LatticeTwoIndexMatrix &in, Real scale = 1.0) {
+  static void projector(
+      typename GaugeGroup<ncolour, group_name>::LatticeAlgebraVector &h_out,
+      const LatticeTwoIndexMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
     // to store the generators
     static std::vector<TIMatrix> i2indTa(NumGenerators);
@@ -292,7 +307,7 @@ public:
     }
 
     Real coefficient =
-      -2.0 / (ncolour + 2 * S) * scale;  // 2/(Nc +/- 2) for the normalization
+        -2.0 / (ncolour + 2 * S) * scale;  // 2/(Nc +/- 2) for the normalization
     // of the trace in the two index rep
 
     for (int a = 0; a < NumGenerators; a++) {
@@ -302,17 +317,33 @@ public:
   }
 };
 
+template <int ncolour, TwoIndexSymmetry S>
+using SU_TwoIndex = GaugeGroupTwoIndex<ncolour, S, GroupName::SU>;
 
 // Some useful type names
+typedef SU_TwoIndex<Nc, Symmetric> TwoIndexSymmMatrices;
+typedef SU_TwoIndex<Nc, AntiSymmetric> TwoIndexAntiSymmMatrices;
+
+typedef SU_TwoIndex<2, Symmetric> SU2TwoIndexSymm;
+typedef SU_TwoIndex<3, Symmetric> SU3TwoIndexSymm;
+typedef SU_TwoIndex<4, Symmetric> SU4TwoIndexSymm;
+typedef SU_TwoIndex<5, Symmetric> SU5TwoIndexSymm;
+
+typedef SU_TwoIndex<2, AntiSymmetric> SU2TwoIndexAntiSymm;
+typedef SU_TwoIndex<3, AntiSymmetric> SU3TwoIndexAntiSymm;
+typedef SU_TwoIndex<4, AntiSymmetric> SU4TwoIndexAntiSymm;
+typedef SU_TwoIndex<5, AntiSymmetric> SU5TwoIndexAntiSymm;
+
+template <int ncolour, TwoIndexSymmetry S>
+using Sp_TwoIndex = GaugeGroupTwoIndex<ncolour, S, GroupName::Sp>;
+
 typedef Sp_TwoIndex<Nc, Symmetric> SpTwoIndexSymmMatrices;
 typedef Sp_TwoIndex<Nc, AntiSymmetric> SpTwoIndexAntiSymmMatrices;
 
 typedef Sp_TwoIndex<2, Symmetric> Sp2TwoIndexSymm;
 typedef Sp_TwoIndex<4, Symmetric> Sp4TwoIndexSymm;
 
-typedef Sp_TwoIndex<2, AntiSymmetric> Sp2TwoIndexAntiSymm;
 typedef Sp_TwoIndex<4, AntiSymmetric> Sp4TwoIndexAntiSymm;
-
 
 NAMESPACE_END(Grid);
 
