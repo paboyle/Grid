@@ -34,6 +34,12 @@ inline Real delta(int a, int b) { return (a == b) ? 1.0 : 0.0; }
 template <int ncolour, TwoIndexSymmetry S, class group_name>
 class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
  public:
+  static_assert(
+      std::is_same<group_name, GroupName::Sp>::value ? S != Symmetric : true,
+      "The symmetric two-index representation of Sp(2N) does not work "
+      "currently. If you want to use it, you need to implement the equivalent "
+      "of Eq. (27) and (28) from https://doi.org/10.48550/arXiv.2202.05516.");
+
   // The chosen convention is that we are taking ncolour to be N in SU<N> but 2N
   // in Sp(2N). ngroup is equal to N for SU but 2N/2 = N for Sp(2N).
   static_assert(std::is_same<group_name, GroupName::SU>::value or
@@ -41,8 +47,9 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
                 "ngroup is only implemented for SU and Sp currently.");
   static const int ngroup =
       std::is_same<group_name, GroupName::SU>::value ? ncolour : ncolour / 2;
-  static const int Dimension =
-      std::is_same<group_name, GroupName::SU>::value ? ncolour * (ncolour + S) / 2 : ngroup * (ncolour + S) + S;
+  static const int Dimension = std::is_same<group_name, GroupName::SU>::value
+                                   ? ncolour * (ncolour + S) / 2
+                                   : ngroup * (ncolour + S) + S;
   static const int NumGenerators =
       GaugeGroup<ncolour, group_name>::AlgebraDimension;
 
@@ -238,12 +245,12 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
         Complex Tr = -TensorRemove(trace(i2indTa * i2indTb));
         std::cout << GridLogMessage << "a=" << a << "b=" << b << "Tr=" << Tr
                   << std::endl;
-        if (a==b) {
-            assert(imag(Tr) < 1e-8);
-            assert(real(Tr) - ((ncolour+S*2)*0.5) < 1e-8);
+        if (a == b) {
+          assert(imag(Tr) < 1e-8);
+          assert(real(Tr) - ((ncolour + S * 2) * 0.5) < 1e-8);
         } else {
-            assert(imag(Tr) < 1e-8);
-            assert(real(Tr) < 1e-8);
+          assert(imag(Tr) < 1e-8);
+          assert(real(Tr) < 1e-8);
         }
       }
     }
@@ -285,8 +292,9 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
 
   // a projector that keeps the generators stored to avoid the overhead of
   // recomputing them
-  static void projector(typename GaugeGroup<ncolour, group_name>::LatticeAlgebraVector &h_out,
-                        const LatticeTwoIndexMatrix &in, Real scale = 1.0) {
+  static void projector(
+      typename GaugeGroup<ncolour, group_name>::LatticeAlgebraVector &h_out,
+      const LatticeTwoIndexMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
     // to store the generators
     static std::vector<TIMatrix> i2indTa(NumGenerators);
@@ -334,7 +342,6 @@ typedef Sp_TwoIndex<2, Symmetric> Sp2TwoIndexSymm;
 typedef Sp_TwoIndex<4, Symmetric> Sp4TwoIndexSymm;
 
 typedef Sp_TwoIndex<4, AntiSymmetric> Sp4TwoIndexAntiSymm;
-
 
 NAMESPACE_END(Grid);
 
