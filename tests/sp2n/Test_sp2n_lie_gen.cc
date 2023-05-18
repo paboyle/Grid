@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
 
-  Sp_TwoIndex<4, AntiSymmetric>:::testGenerators();
+  Sp_TwoIndex<4, AntiSymmetric>::testGenerators();
     
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
