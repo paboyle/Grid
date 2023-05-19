@@ -47,7 +47,7 @@ private:
   const unsigned int N = Impl::Group::Dimension;
 
   typedef typename Field::vector_object vobj;
-  typedef CartesianStencil<vobj, vobj,int> Stencil;
+  typedef CartesianStencil<vobj, vobj,DefaultImplParams> Stencil;
 
   SimpleCompressor<vobj> compressor;
   int npoint = 2 * Ndim;
@@ -82,7 +82,7 @@ public:
   virtual RealD S(const Field &p)
   {
     assert(p.Grid()->Nd() == Ndim);
-    static Stencil phiStencil(p.Grid(), npoint, 0, directions, displacements,0);
+    static Stencil phiStencil(p.Grid(), npoint, 0, directions, displacements);
     phiStencil.HaloExchange(p, compressor);
     Field action(p.Grid()), pshift(p.Grid()), phisquared(p.Grid());
     phisquared = p * p;
@@ -133,7 +133,7 @@ public:
     double interm_t = usecond();
 
     // move this outside
-    static Stencil phiStencil(p.Grid(), npoint, 0, directions, displacements,0);
+    static Stencil phiStencil(p.Grid(), npoint, 0, directions, displacements);
 
     phiStencil.HaloExchange(p, compressor);
     double halo_t = usecond();

@@ -53,10 +53,11 @@ public:
   // Communicator should know nothing of the physics grid, only processor grid.
   ////////////////////////////////////////////
   int              _Nprocessors;     // How many in all
-  Coordinate _processors;      // Which dimensions get relayed out over processors lanes.
   int              _processor;       // linear processor rank
-  Coordinate _processor_coor;  // linear processor coordinate
   unsigned long    _ndimension;
+  Coordinate _shm_processors;  // Which dimensions get relayed out over processors lanes.
+  Coordinate _processors;      // Which dimensions get relayed out over processors lanes.
+  Coordinate _processor_coor;  // linear processor coordinate
   static Grid_MPI_Comm      communicator_world;
   Grid_MPI_Comm             communicator;
   std::vector<Grid_MPI_Comm> communicator_halo;
@@ -97,14 +98,16 @@ public:
   int                      BossRank(void)          ;
   int                      ThisRank(void)          ;
   const Coordinate & ThisProcessorCoor(void) ;
+  const Coordinate & ShmGrid(void)  { return _shm_processors; }  ;
   const Coordinate & ProcessorGrid(void)     ;
-  int                      ProcessorCount(void)    ;
+  int                ProcessorCount(void)    ;
 
   ////////////////////////////////////////////////////////////////////////////////
   // very VERY rarely (Log, serial RNG) we need world without a grid
   ////////////////////////////////////////////////////////////////////////////////
   static int  RankWorld(void) ;
   static void BroadcastWorld(int root,void* data, int bytes);
+  static void BarrierWorld(void);
   
   ////////////////////////////////////////////////////////////
   // Reduction
@@ -128,7 +131,7 @@ public:
   template<class obj> void GlobalSum(obj &o){
     typedef typename obj::scalar_type scalar_type;
     int words = sizeof(obj)/sizeof(scalar_type);
-    scalar_type * ptr = (scalar_type *)& o;
+    scalar_type * ptr = (scalar_type *)& o; // Safe alias 
     GlobalSumVector(ptr,words);
   }
   
@@ -142,17 +145,17 @@ public:
 		      int bytes);
   
   double StencilSendToRecvFrom(void *xmit,
-			       int xmit_to_rank,
+			       int xmit_to_rank,int do_xmit,
 			       void *recv,
-			       int recv_from_rank,
+			       int recv_from_rank,int do_recv,
 			       int bytes,int dir);
 
   double StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 				    void *xmit,
-				    int xmit_to_rank,
+				    int xmit_to_rank,int do_xmit,
 				    void *recv,
-				    int recv_from_rank,
-				    int bytes,int dir);
+				    int recv_from_rank,int do_recv,
+				    int xbytes,int rbytes,int dir);
   
   
   void StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int i);

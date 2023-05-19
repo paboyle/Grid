@@ -49,10 +49,12 @@ NAMESPACE_BEGIN(Grid);
       Params param;
 
       MultiShiftFunction PowerHalf   ;
-      MultiShiftFunction PowerNegHalf;
       MultiShiftFunction PowerQuarter;
+      MultiShiftFunction PowerNegHalf;
       MultiShiftFunction PowerNegQuarter;
 
+      MultiShiftFunction MDPowerQuarter;
+      MultiShiftFunction MDPowerNegHalf;
     private:
      
       FermionOperator<Impl> & NumOp;// the basic operator
@@ -73,15 +75,22 @@ NAMESPACE_BEGIN(Grid);
 	remez.generateApprox(param.degree,1,2);
 	PowerHalf.Init(remez,param.tolerance,false);
 	PowerNegHalf.Init(remez,param.tolerance,true);
+	MDPowerNegHalf.Init(remez,param.mdtolerance,true);
 
 	// MdagM^(+- 1/4)
 	std::cout<<GridLogMessage << "Generating degree "<<param.degree<<" for x^(1/4)"<<std::endl;
 	remez.generateApprox(param.degree,1,4);
    	PowerQuarter.Init(remez,param.tolerance,false);
+   	MDPowerQuarter.Init(remez,param.mdtolerance,false);
 	PowerNegQuarter.Init(remez,param.tolerance,true);
       };
 
-      virtual std::string action_name(){return "OneFlavourRatioRationalPseudoFermionAction";}
+      virtual std::string action_name(){
+	std::stringstream sstream;
+	sstream<<"OneFlavourRatioRationalPseudoFermionAction("
+	       <<DenOp.Mass()<<") / det("<<NumOp.Mass()<<")";
+	return sstream.str();
+      }
       
       virtual std::string LogParameters(){
 	std::stringstream sstream;
@@ -204,8 +213,8 @@ NAMESPACE_BEGIN(Grid);
 
       virtual void deriv(const GaugeField &U,GaugeField & dSdU) {
 
-	const int n_f  = PowerNegHalf.poles.size();
-	const int n_pv = PowerQuarter.poles.size();
+	const int n_f  = MDPowerNegHalf.poles.size();
+	const int n_pv = MDPowerQuarter.poles.size();
 
 	std::vector<FermionField> MpvPhi_k     (n_pv,NumOp.FermionGrid());
 	std::vector<FermionField> MpvMfMpvPhi_k(n_pv,NumOp.FermionGrid());
@@ -224,8 +233,8 @@ NAMESPACE_BEGIN(Grid);
 	MdagMLinearOperator<FermionOperator<Impl> ,FermionField> MdagM(DenOp);
 	MdagMLinearOperator<FermionOperator<Impl> ,FermionField> VdagV(NumOp);
 
-	ConjugateGradientMultiShift<FermionField> msCG_V(param.MaxIter,PowerQuarter);
-	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,PowerNegHalf);
+	ConjugateGradientMultiShift<FermionField> msCG_V(param.MaxIter,MDPowerQuarter);
+	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,MDPowerNegHalf);
 
 	msCG_V(VdagV,Phi,MpvPhi_k,MpvPhi);
 	msCG_M(MdagM,MpvPhi,MfMpvPhi_k,MfMpvPhi);
@@ -244,7 +253,7 @@ NAMESPACE_BEGIN(Grid);
 
 	//(1)
 	for(int k=0;k<n_f;k++){
-	  ak = PowerNegHalf.residues[k];
+	  ak = MDPowerNegHalf.residues[k];
 	  DenOp.M(MfMpvPhi_k[k],Y);
 	  DenOp.MDeriv(tmp , MfMpvPhi_k[k], Y,DaggerYes );  dSdU=dSdU+ak*tmp;
 	  DenOp.MDeriv(tmp , Y, MfMpvPhi_k[k], DaggerNo );  dSdU=dSdU+ak*tmp;
@@ -254,7 +263,7 @@ NAMESPACE_BEGIN(Grid);
 	//(3)
 	for(int k=0;k<n_pv;k++){
 
-          ak = PowerQuarter.residues[k];
+          ak = MDPowerQuarter.residues[k];
 	  
 	  NumOp.M(MpvPhi_k[k],Y);
 	  NumOp.MDeriv(tmp,MpvMfMpvPhi_k[k],Y,DaggerYes); dSdU=dSdU+ak*tmp;

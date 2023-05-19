@@ -34,7 +34,7 @@ class ScalarActionParameters : Serializable {
     double, lambda,
     double, g);
 
-  ScalarActionParameters() = default;
+  ScalarActionParameters() {};
 
     template <class ReaderClass >
   ScalarActionParameters(Reader<ReaderClass>& Reader){
@@ -45,7 +45,6 @@ class ScalarActionParameters : Serializable {
 }
 
 using namespace Grid;
- ;
 
 template <class Impl>
 class MagMeas : public HmcObservable<typename Impl::Field> {

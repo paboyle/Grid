@@ -1,0 +1,73 @@
+#Example script 
+DIR=/gpfs/alpine/phy157/proj-shared/phy157dwf/chulwoo/Grid/BL/build/tests/lanczos
+BIN=${DIR}/Test_dwf_block_lanczos
+
+VOL='--grid 16.16.16.32 '
+GRID='--mpi 1.1.1.4 ' 
+CONF='--gconf ckpoint_lat.IEEE64BIG.2000 '
+OPT='--mass 0.01 --M5 1.8 --phase in.params --omega in.params --shm 4096' 
+#BL='--rbl 16.1024.128.1000.10 --split 1.1.4.4 --check_int 100 --resid 1.0e-5 --cheby_l 0.007 --cheby_u 7 --cheby_n 51'
+BL='--rbl 4.128.16.100.10 --split 1.1.1.4 --check_int 25 --resid 1.0e-5 --cheby_l 0.007 --cheby_u 7 --cheby_n 51'
+
+ARGS=${CONF}" "${OPT}" "${BL}" "${VOL}" "${GRID}
+export APP="${BIN}  ${ARGS}"
+echo APP=${APP}
+#export JS="jsrun --nrs 32 -a4 -g4 -c42 -dpacked -b packed:7 --smpiargs="-gpu" "
+export JS="jsrun --nrs 1 -a4 -g4 -c42 -dpacked -b  packed:10  --smpiargs="-gpu" "
+$JS  $APP
+
+#sample in.param 
+
+boundary_phase 0 1 0
+boundary_phase 1 1 0
+boundary_phase 2 1 0
+boundary_phase 3 -1 0
+
+omega 0 0.5 0
+omega 1 0.5 0
+omega 2 0.5 0
+omega 3 0.5 0
+omega 4 0.5 0
+omega 5 0.5 0
+omega 6 0.5 0
+omega 7 0.5 0
+omega 8 0.5 0
+omega 9 0.5 0
+omega 10 0.5 0
+omega 11 0.5 0
+
+
+#output 
+
+Grid : Message : 1.717474 s :  Gauge Configuration ckpoint_lat.IEEE64BIG.2000
+Grid : Message : 1.717478 s :  boundary_phase[0] = (1,0)
+Grid : Message : 1.717497 s :  boundary_phase[1] = (1,0)
+Grid : Message : 1.717500 s :  boundary_phase[2] = (1,0)
+Grid : Message : 1.717503 s :  boundary_phase[3] = (-1,0)
+Grid : Message : 1.717506 s :  Ls 12
+Grid : Message : 1.717507 s :  mass 0.01
+Grid : Message : 1.717510 s :  M5 1.8
+Grid : Message : 1.717512 s :  mob_b 1.5
+Grid : Message : 1.717514 s :  omega[0] = (0.5,0)
+Grid : Message : 1.717517 s :  omega[1] = (0.5,0)
+Grid : Message : 1.717520 s :  omega[2] = (0.5,0)
+Grid : Message : 1.717523 s :  omega[3] = (0.5,0)
+Grid : Message : 1.717526 s :  omega[4] = (0.5,0)
+Grid : Message : 1.717529 s :  omega[5] = (0.5,0)
+Grid : Message : 1.717532 s :  omega[6] = (0.5,0)
+Grid : Message : 1.717535 s :  omega[7] = (0.5,0)
+Grid : Message : 1.717538 s :  omega[8] = (0.5,0)
+Grid : Message : 1.717541 s :  omega[9] = (0.5,0)
+Grid : Message : 1.717544 s :  omega[10] = (0.5,0)
+Grid : Message : 1.717547 s :  omega[11] = (0.5,0)
+Grid : Message : 1.717550 s :  Nu 4
+Grid : Message : 1.717551 s :  Nk 128
+Grid : Message : 1.717552 s :  Np 16
+Grid : Message : 1.717553 s :  Nm 288
+Grid : Message : 1.717554 s :  Nstop 100
+Grid : Message : 1.717555 s :  Ntest 25
+Grid : Message : 1.717557 s :  MaxIter 10
+Grid : Message : 1.717558 s :  resid 1e-05
+Grid : Message : 1.717560 s :  Cheby Poly 0.007,7,51
+
+

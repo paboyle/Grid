@@ -70,7 +70,7 @@ int main(int argc, char **argv)
   ////////////////////////////////////
   RealD mass = 0.1;
   Real csw = 1.0;
-  WilsonCloverFermionR Dw(U, Grid, RBGrid, mass, csw, csw);
+  WilsonCloverFermionD Dw(U, Grid, RBGrid, mass, csw, csw);
   Dw.ImportGauge(U);
   Dw.M(phi, Mphi);
   ComplexD S = innerProduct(Mphi, Mphi); // Action : pdag MdagM p

@@ -44,8 +44,8 @@ int main (int argc, char ** argv)
   std::vector<int> seeds({1,2,3,4});
   GridParallelRNG          pRNG(&Grid);  pRNG.SeedFixedIntegers(seeds);
 
-  typedef typename WilsonCloverFermionR::FermionField FermionField;
-  typename WilsonCloverFermionR::ImplParams params;
+  typedef typename WilsonCloverFermionD::FermionField FermionField;
+  typename WilsonCloverFermionD::ImplParams params;
   WilsonAnisotropyCoefficients anis;
 
   FermionField src(&Grid); random(pRNG,src);
@@ -61,9 +61,9 @@ int main (int argc, char ** argv)
   RealD mass  = 0.5;
   RealD csw_r = 1.0;
   RealD csw_t = 1.0;
-  WilsonCloverFermionR Dwc(Umu,Grid,RBGrid,mass,csw_r,csw_t,anis,params);
+  WilsonCloverFermionD Dwc(Umu,Grid,RBGrid,mass,csw_r,csw_t,anis,params);
 
-  MdagMLinearOperator<WilsonCloverFermionR,FermionField> HermOp(Dwc);
+  MdagMLinearOperator<WilsonCloverFermionD,FermionField> HermOp(Dwc);
   MinimalResidual<FermionField> MR(1.0e-8,10000,0.8);
   MR(HermOp,src,result);
 

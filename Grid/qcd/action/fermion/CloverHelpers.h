@@ -140,6 +140,7 @@ public:
     return NMAX;
   }
 
+  static int getNMAX(Lattice<iImplClover<vComplexD2>> &t, RealD R) {return getNMAX(1e-12,R);}
   static int getNMAX(Lattice<iImplClover<vComplexD>> &t, RealD R) {return getNMAX(1e-12,R);}
   static int getNMAX(Lattice<iImplClover<vComplexF>> &t, RealD R) {return getNMAX(1e-6,R);}
 

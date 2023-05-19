@@ -75,19 +75,8 @@ public:
   FermionField _tmp;
   FermionField &tmp(void) { return _tmp; }
 
-  void Report(void);
-  void ZeroCounters(void);
-  double DhopCalls;
-  double DhopCommTime;
-  double DhopComputeTime;
-  double DhopComputeTime2;
-  double DhopFaceTime;
-  double DhopTotalTime;
-
-  double DerivCalls;
-  double DerivCommTime;
-  double DerivComputeTime;
-  double DerivDhopComputeTime;
+  int Dirichlet;
+  Coordinate Block; 
 
   ///////////////////////////////////////////////////////////////
   // Implement the abstract base
@@ -173,7 +162,10 @@ public:
 		  GridCartesian         &FourDimGrid,
 		  GridRedBlackCartesian &FourDimRedBlackGrid,
 		  double _M5,const ImplParams &p= ImplParams());
-    
+
+  virtual void DirichletBlock(const Coordinate & block)
+  {
+  }
   // Constructors
   /*
     WilsonFermion5D(int simd, 

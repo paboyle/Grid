@@ -95,8 +95,8 @@ int main (int argc, char ** argv)
   RealD mass=0.5;
   RealD M5=1.8;
 
-  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> HermIndefOp(Ddwf);
+  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  Gamma5R5HermitianLinearOperator<DomainWallFermionD,LatticeFermion> HermIndefOp(Ddwf);
 
   HermIndefOp.Op(src,ref);
   HermIndefOp.OpDiag(src,result);
@@ -118,7 +118,7 @@ int main (int argc, char ** argv)
 
   std::cout<<GridLogMessage<<"Calling Aggregation class" <<std::endl;
 
-  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermDefOp(Ddwf);
+  MdagMLinearOperator<DomainWallFermionD,LatticeFermion> HermDefOp(Ddwf);
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis> Subspace;
 
   Subspace Aggregates(Coarse5d,FGrid,cb);

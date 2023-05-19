@@ -405,12 +405,12 @@ struct Conj{
 
 struct TimesMinusI{
   //Complex single
-  inline __m256 operator()(__m256 in, __m256 ret){
+  inline __m256 operator()(__m256 in){
     __m256 tmp =_mm256_addsub_ps(_mm256_setzero_ps(),in);   // r,-i
     return _mm256_shuffle_ps(tmp,tmp,_MM_SELECT_FOUR_FOUR(2,3,0,1)); //-i,r
   }
   //Complex double
-  inline __m256d operator()(__m256d in, __m256d ret){
+  inline __m256d operator()(__m256d in){
     __m256d tmp = _mm256_addsub_pd(_mm256_setzero_pd(),in); // r,-i
     return _mm256_shuffle_pd(tmp,tmp,0x5);
   }
@@ -418,12 +418,12 @@ struct TimesMinusI{
 
 struct TimesI{
   //Complex single
-  inline __m256 operator()(__m256 in, __m256 ret){
+  inline __m256 operator()(__m256 in){
     __m256 tmp =_mm256_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1)); // i,r
     return _mm256_addsub_ps(_mm256_setzero_ps(),tmp);          // i,-r
   }
   //Complex double
-  inline __m256d operator()(__m256d in, __m256d ret){
+  inline __m256d operator()(__m256d in){
     __m256d tmp = _mm256_shuffle_pd(in,in,0x5);
     return _mm256_addsub_pd(_mm256_setzero_pd(),tmp); // i,-r
   }

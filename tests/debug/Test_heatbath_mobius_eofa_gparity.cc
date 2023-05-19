@@ -41,7 +41,7 @@ using namespace Grid;
  ;
 
 typedef GparityWilsonImplR FermionImplPolicy;
-typedef GparityMobiusEOFAFermionR FermionAction;
+typedef GparityMobiusEOFAFermionD FermionAction;
 typedef typename FermionAction::FermionField FermionField;
 
 // Parameters for test

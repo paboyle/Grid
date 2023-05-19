@@ -244,7 +244,7 @@ struct Conj{
 struct TimesMinusI{
   // Complex
   template <typename T>
-  accelerator_inline vec<T> operator()(vec<T> a, vec<T> b){
+  accelerator_inline vec<T> operator()(vec<T> a){
     vec<T> out;
       
     VECTOR_FOR(i, W<T>::c, 1)
@@ -265,7 +265,7 @@ struct TimesMinusI{
 struct TimesI{
   // Complex
   template <typename T>
-  accelerator_inline vec<T> operator()(vec<T> a, vec<T> b){
+  accelerator_inline vec<T> operator()(vec<T> a){
     vec<T> out;
       
     VECTOR_FOR(i, W<T>::c, 1)

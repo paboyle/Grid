@@ -55,9 +55,6 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi_i, const FermionField 
   auto plower = &lower[0];
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
-  this->M5Dcalls++;
-  this->M5Dtime -= usecond();
-
   int nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
     uint64_t ss = sss*Ls;
@@ -73,7 +70,6 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi_i, const FermionField 
     }
   });
 
-  this->M5Dtime += usecond();
 }
 
 template<class Impl>
@@ -99,9 +95,6 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi_i, const Fermion
   auto pshift_coeffs = &shift_coeffs[0];
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
-  this->M5Dcalls++;
-  this->M5Dtime -= usecond();
-
   int nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
     uint64_t ss = sss*Ls;
@@ -122,7 +115,6 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi_i, const Fermion
     }
   });
 
-  this->M5Dtime += usecond();
 }
 
 template<class Impl>
@@ -143,9 +135,6 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField &psi_i, const FermionFie
   auto plower = &lower[0];
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
-  this->M5Dcalls++;
-  this->M5Dtime -= usecond();
-
   int nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(), {
     uint64_t ss = sss*Ls;
@@ -161,8 +150,6 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField &psi_i, const FermionFie
       coalescedWrite(chi[ss+s], pdiag[s]*phi(ss+s) + pupper[s]*tmp1 + plower[s]*tmp2);
     }
   });
-
-  this->M5Dtime += usecond();
 }
 
 template<class Impl>
@@ -186,9 +173,6 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField &psi_i, const Ferm
   auto pshift_coeffs = &shift_coeffs[0];
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
-  this->M5Dcalls++;
-  this->M5Dtime -= usecond();
-
   auto pm = this->pm;
 
   int nloop = grid->oSites()/Ls;
@@ -217,7 +201,6 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField &psi_i, const Ferm
     }
   });
 
-  this->M5Dtime += usecond();
 }
 
 template<class Impl>
@@ -236,9 +219,6 @@ void MobiusEOFAFermion<Impl>::MooeeInv(const FermionField &psi_i, FermionField &
   auto pueem= & this->ueem[0];
 
   if(this->shift != 0.0){ MooeeInv_shift(psi_i,chi_i); return; }
-
-  this->MooeeInvCalls++;
-  this->MooeeInvTime -= usecond();
 
   int nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
@@ -277,7 +257,6 @@ void MobiusEOFAFermion<Impl>::MooeeInv(const FermionField &psi_i, FermionField &
     }
   });
    
-  this->MooeeInvTime += usecond();
 }
 
 template<class Impl>
@@ -297,8 +276,6 @@ void MobiusEOFAFermion<Impl>::MooeeInv_shift(const FermionField &psi_i, FermionF
   auto pueem= & this->ueem[0];
   auto pMooeeInv_shift_lc   = &MooeeInv_shift_lc[0];
   auto pMooeeInv_shift_norm = &MooeeInv_shift_norm[0];
-  this->MooeeInvCalls++;
-  this->MooeeInvTime -= usecond();
 
   int nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
@@ -343,7 +320,6 @@ void MobiusEOFAFermion<Impl>::MooeeInv_shift(const FermionField &psi_i, FermionF
       }
   });
 
-  this->MooeeInvTime += usecond();
 }
 
 template<class Impl>
@@ -362,9 +338,6 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag(const FermionField &psi_i, FermionFiel
   auto puee = & this->uee [0];
   auto pleem= & this->leem[0];
   auto pueem= & this->ueem[0];
-
-  this->MooeeInvCalls++;
-  this->MooeeInvTime -= usecond();
 
   int nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
@@ -402,7 +375,6 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag(const FermionField &psi_i, FermionFiel
       coalescedWrite(chi[ss+s],res);
     }
   });
-  this->MooeeInvTime += usecond();
 }
 
 template<class Impl>
@@ -422,9 +394,6 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag_shift(const FermionField &psi_i, Fermi
   auto pueem= & this->ueem[0];
   auto pMooeeInvDag_shift_lc   = &MooeeInvDag_shift_lc[0];
   auto pMooeeInvDag_shift_norm = &MooeeInvDag_shift_norm[0];
-
-  this->MooeeInvCalls++;
-  this->MooeeInvTime -= usecond();
 
   int nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
@@ -469,7 +438,6 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag_shift(const FermionField &psi_i, Fermi
       }
   });
 
-  this->MooeeInvTime += usecond();
 }
 
 NAMESPACE_END(Grid);

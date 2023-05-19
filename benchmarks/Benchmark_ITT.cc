@@ -420,7 +420,6 @@ public:
 	FGrid->Broadcast(0,&ncall,sizeof(ncall));
 
 	//	std::cout << GridLogMessage << " Estimate " << ncall << " calls per second"<<std::endl;
-	Dw.ZeroCounters();
 
 	time_statistics timestat;
 	std::vector<double> t_time(ncall);
@@ -589,7 +588,6 @@ public:
 	FGrid->Broadcast(0,&ncall,sizeof(ncall));
 
 	//	std::cout << GridLogMessage << " Estimate " << ncall << " calls per second"<<std::endl;
-	Ds.ZeroCounters();
 
 	time_statistics timestat;
 	std::vector<double> t_time(ncall);

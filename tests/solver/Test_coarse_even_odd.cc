@@ -108,8 +108,8 @@ int main(int argc, char** argv) {
   RealD mass = -0.30;
   RealD csw  = 1.9192;
 
-  WilsonCloverFermionR Dwc(Umu, *Grid_f, *RBGrid_f, mass, csw, csw);
-  MdagMLinearOperator<WilsonCloverFermionR, LatticeFermion> MdagMOp_Dwc(Dwc);
+  WilsonCloverFermionD Dwc(Umu, *Grid_f, *RBGrid_f, mass, csw, csw);
+  MdagMLinearOperator<WilsonCloverFermionD, LatticeFermion> MdagMOp_Dwc(Dwc);
 
   /////////////////////////////////////////////////////////////////////////////
   //                             Type definitions                            //
