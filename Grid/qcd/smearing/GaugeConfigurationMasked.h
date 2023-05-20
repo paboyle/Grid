@@ -6,19 +6,12 @@
 
 NAMESPACE_BEGIN(Grid);
 
-
-template<class T> void Dump(Lattice<T> & lat, std::string s,Coordinate site = Coordinate({0,0,0,0}))
-{
-  typename T::scalar_object tmp;
-  peekSite(tmp,lat,site);
-  std::cout << " GRID "<<s<<" "<<tmp<<std::endl;
-}
 /*!
   @brief Smeared configuration masked container
   Modified for a multi-subset smearing (aka Luscher Flowed HMC)
 */
 template <class Gimpl>
-class SmearedConfigurationMasked
+class SmearedConfigurationMasked : public SmearedConfiguration<Gimpl>
 {
 public:
   INHERIT_GIMPL_TYPES(Gimpl);
@@ -29,33 +22,28 @@ private:
   std::vector<GaugeField> SmearedSet;
   std::vector<LatticeLorentzComplex> masks;
 
-  ///////////////////////////////////////////////////
-  // Additions
-  // Could just set masks to 1 in case of oldsmearing
-  // and share the code. Pass in a mask creation object with alternate constructor -- SmearMaskMaker
-  ///////////////////////////////////////////////////
   typedef typename SU3Adjoint::AMatrix AdjMatrix;
   typedef typename SU3Adjoint::LatticeAdjMatrix  AdjMatrixField;
   typedef typename SU3Adjoint::LatticeAdjVector  AdjVectorField;
-  /*
-      set_zero(f_det_basis);
-      for (int a = 0; a < 8; ++a) {
-        const ColorMatrix uc = uc_pre * ts[a] * uc_post;
-        for (int c = 0; c < 8; ++c) {
-          const ColorMatrix d_n = make_tr_less_anti_herm_matrix(ts[c] * uc);
-          const array<double, 8> d_n_b =
-              basis_projection_anti_hermitian_matrix(d_n);
-          for (int b = 0; b < 8; ++b) {
-	    f_det_basis[a] += n_e_mp_inv_j_x_mat(c, b) * d_n_b[b];
-          }
-        }
-      }
-  */
-  void AdjointDeriv2(const GaugeLinkField &PlaqL,const GaugeLinkField &PlaqR, AdjMatrixField MpInvJx,AdjVectorField &Fdet2 )
+
+  // Adjoint vector to GaugeField force
+  void InsertForce(GaugeField &Fdet,AdjVectorField &Fdet_nu,int nu)
+  {
+    Complex ci(0,1);
+    GaugeLinkField Fdet_pol(Fdet.Grid());
+    Fdet_pol=Zero();
+    for(int e=0;e<8;e++){
+      ColourMatrix te;
+      SU3::generatorQlat(e, te);
+      auto tmp=peekColour(Fdet_nu,e);
+      Fdet_pol=Fdet_pol + ci*tmp*te; // but norm of te is different.. why?
+    }
+    pokeLorentz(Fdet, Fdet_pol, nu);
+  }
+  void Compute_MpInvJx_dNxxdSy(const GaugeLinkField &PlaqL,const GaugeLinkField &PlaqR, AdjMatrixField MpInvJx,AdjVectorField &Fdet2 )
   {
     GaugeLinkField UtaU(PlaqL.Grid());
     GaugeLinkField D(PlaqL.Grid());
-    GaugeLinkField aa(PlaqL.Grid());
     AdjMatrixField Dbc(PlaqL.Grid());
     LatticeComplex tmp(PlaqL.Grid());
     const int Ngen = SU3Adjoint::Dimension;
@@ -69,24 +57,18 @@ private:
       for(int c=0;c<Ngen;c++) {
 	SU3::generatorQlat(c, tc);
 	D = Ta( (2.0)*ci*tc *UtaU);
-	//	Dump(D," (-4.0)*Ta( tc *UtaU)");
 	for(int b=0;b<Ngen;b++){
 	  SU3::generatorQlat(b, tb);
 	  tmp =-trace(ci*tb*D); 
 	  PokeIndex<ColourIndex>(Dbc,tmp,b,c);  // Adjoint rep
-	  //	  Dump(tmp," -trace(ci*tb*D)");
 	}
       }
-      //      Dump(Dbc," Dbc ");
-      //      Dump(MpInvJx," MpInvJx ");
       tmp = trace(MpInvJx * Dbc);
-      //      Dump(tmp,"  trace(MpInvJx * Dbc) ");
       PokeIndex<ColourIndex>(Fdet2,tmp,a);
     }
-    Dump(Fdet2," Fdet2 ");
   }
   
-  void AdjointDeriv(const GaugeLinkField &PlaqL,const GaugeLinkField &PlaqR,AdjMatrixField &NxAd)
+  void ComputeNxy(const GaugeLinkField &PlaqL,const GaugeLinkField &PlaqR,AdjMatrixField &NxAd)
   {
     GaugeLinkField Nx(PlaqL.Grid());
     const int Ngen = SU3Adjoint::Dimension;
@@ -95,12 +77,11 @@ private:
     ColourMatrix   tc;
     for(int b=0;b<Ngen;b++) {
       SU3::generatorQlat(b, tb);
-      // Qlat Tb = 2i Tb^Grid
       Nx = (2.0)*Ta( adj(PlaqL)*ci*tb * PlaqR );
       for(int c=0;c<Ngen;c++) {
 	SU3::generatorQlat(c, tc);
-	auto tmp =closure( -trace(ci*tc*Nx)); // Luchang's norm: (2Tc) (2Td) N^db = -2 delta cd N^db // - was important
-	PokeIndex<ColourIndex>(NxAd,tmp,c,b);  // Adjoint rep
+	auto tmp =closure( -trace(ci*tc*Nx)); 
+	PokeIndex<ColourIndex>(NxAd,tmp,c,b); 
       }
     }
   }
@@ -116,6 +97,7 @@ private:
     }
   }
 public:
+
   void logDetJacobianForceLevel(const GaugeField &U, GaugeField &force ,int smr)
   {
     GridBase* grid = U.Grid();
@@ -128,19 +110,20 @@ public:
     std::vector<GaugeLinkField> Umu(Nd,grid);
     GaugeLinkField Cmu(grid); // U and staple; C contains factor of epsilon
     GaugeLinkField Zx(grid);  // U times Staple, contains factor of epsilon
-    GaugeLinkField Nx(grid);  // Nxx fundamental space
+    GaugeLinkField Nxx(grid);  // Nxx fundamental space
     GaugeLinkField Utmp(grid);
     GaugeLinkField PlaqL(grid);
     GaugeLinkField PlaqR(grid);
     const int Ngen = SU3Adjoint::Dimension;
     AdjMatrix TRb;
     ColourMatrix Ident;
-    LatticeComplex  cplx(grid); 
-    AdjVectorField  AlgV(grid); 
-    AdjVectorField  AlgVtmp(grid); 
+    LatticeComplex  cplx(grid);
+    
+    AdjVectorField  dJdXe_nMpInv(grid); 
+    AdjVectorField  dJdXe_nMpInv_y(grid); 
     AdjMatrixField  MpAd(grid);    // Mprime luchang's notes
     AdjMatrixField  MpAdInv(grid); // Mprime inverse
-    AdjMatrixField  NxAd(grid);    // Nxx in adjoint space
+    AdjMatrixField  NxxAd(grid);    // Nxx in adjoint space
     AdjMatrixField  JxAd(grid);     
     AdjMatrixField  ZxAd(grid);
     AdjMatrixField  mZxAd(grid);
@@ -153,42 +136,49 @@ public:
     }
     int mu= (smr/2) %Nd;
 
+    ////////////////////////////////////////////////////////////////////////////////
+    // Mask the gauge field
+    ////////////////////////////////////////////////////////////////////////////////
     auto mask=PeekIndex<LorentzIndex>(masks[smr],mu); // the cb mask
 
-    // Mask the gauge field
     Umsk = U;
     ApplyMask(Umsk,smr);
     Utmp = peekLorentz(Umsk,mu);
 
+    ////////////////////////////////////////////////////////////////////////////////
+    // Retrieve the eps/rho parameter(s) -- could allow all different but not so far
+    ////////////////////////////////////////////////////////////////////////////////
+    double rho=StoutSmearing->SmearRho[1];
+    int idx=0;
+    for(int mu=0;mu<4;mu++){
+    for(int nu=0;nu<4;nu++){
+      if ( mu!=nu) assert(StoutSmearing->SmearRho[idx]==rho);
+      else         assert(StoutSmearing->SmearRho[idx]==0.0);
+      idx++;
+    }}
     //////////////////////////////////////////////////////////////////
     // Assemble the N matrix
     //////////////////////////////////////////////////////////////////
-    // Computes ALL the staples -- could compute one only here
+    // Computes ALL the staples -- could compute one only and do it here
     StoutSmearing->BaseSmear(C, U);
-    double rho=0.1;
     Cmu = peekLorentz(C, mu);
-    Dump(Cmu,std::string(" Cmu "));
 
     //////////////////////////////////////////////////////////////////
     // Assemble Luscher exp diff map J matrix 
     //////////////////////////////////////////////////////////////////
     // Ta so Z lives in Lie algabra
     Zx  = Ta(Cmu * adj(Umu[mu]));
-    //    Dump(Zx,std::string("Zx"));
 
     // Move Z to the Adjoint Rep == make_adjoint_representation
     ZxAd = Zero();
     for(int b=0;b<8;b++) {
       // Adj group sets traceless antihermitian T's -- Guido, really????
-      // Is the mapping of these the same? Same structure constants
-      // Might never have been checked.
       SU3::generatorQlat(b, tb);         // Fund group sets traceless hermitian T's
       SU3Adjoint::generatorQlat(b,TRb);
       TRb=-TRb;
       cplx = 2.0*trace(ci*tb*Zx); // my convention 1/2 delta ba
       ZxAd = ZxAd + cplx * TRb; // is this right? YES - Guido used Anti herm Ta's and with bloody wrong sign.
     }
-    Dump(ZxAd,std::string("ZxAd"));
 
     //////////////////////////////////////
     // J(x) = 1 + Sum_k=1..N (-Zac)^k/(k+1)!
@@ -202,17 +192,9 @@ public:
       kpfac = kpfac /(k+1);
       JxAd = JxAd + X * kpfac;
     }
-    Dump(JxAd,std::string("JxAd"));
 
     //////////////////////////////////////
-    // dJ(x)/dxe = d/dxe Sum_k=1..N X^k/(k+1)!
-    //           = 1/2! te
-    //           + 1/3! (te x + x te ) )
-    //           + 1/4! (te x x + x te x + x x te )
-    //           + 1/5! (te x x x + x te x x + x x te x + x x x te )
-    // Iterate:
-    // teX_n = teX_{n-1} x
-    // S_n = x S_{n-1} + teX_{n}
+    // dJ(x)/dxe
     //////////////////////////////////////
     std::vector<AdjMatrixField>  dJdX;    dJdX.resize(8,grid);
     AdjMatrixField tbXn(grid);
@@ -225,7 +207,7 @@ public:
     for(int b=0;b<8;b++){
       aunit = ComplexD(1.0);
       SU3Adjoint::generatorQlat(b, TRb); //dt2
-      Dump(ZxAd,std::string("ZxAd"));
+
       X  = (-1.0)*ZxAd; 
       t2 = X;
       dt2 = TRb;
@@ -235,212 +217,131 @@ public:
 	t2 = X * t3;
 	dt2 = TRb * t3 + X * dt3;
       }
-      //      dt3 = .5 * dt2;
-      dJdX[b] = -dt2; // sign and 2x ?
-      Dump(dJdX[b],std::string("dJdX"));
+      dJdX[b] = -dt2; 
     }
-      /*
-      X = (-1.0)*ZxAd; //x=t2
-      // n=1 point
-      tbXn=TRb;
-      sumXtbX= TRb;
-      RealD kpfac = 1.0/2.0;
-      dJdX[b] = sumXtbX *kpfac;
-      for(int k=2;k<12;k++){
-	kpfac = kpfac /(k+1);
-	tbXn = tbXn*X;
-	sumXtbX = X*sumXtbX + tbXn;
-	dJdX[b] = dJdX[b] + sumXtbX *kpfac;
-      }
-      */
     /////////////////////////////////////////////////////////////////
     // Mask Umu for this link
     /////////////////////////////////////////////////////////////////
-    //      Nx = (2.0)*Ta( adj(PlaqL)*ci*tb * PlaqR );
     PlaqL = Ident;
     PlaqR = Utmp*adj(Cmu);
-    AdjointDeriv(PlaqL,PlaqR,NxAd);
-    Dump(NxAd,std::string("NxAd"));
-
+    ComputeNxy(PlaqL,PlaqR,NxxAd);
     
     ////////////////////////////
     // Mab
     ////////////////////////////
-    //    Mab = Complex(1.0,0.0);
-    //    Mab = Mab - Jac * Ncb;
-
     MpAd = Complex(1.0,0.0);
-    MpAd = MpAd - JxAd * NxAd;
-    Dump(MpAd,std::string("MpAd"));
+    MpAd = MpAd - JxAd * NxxAd;
 
     /////////////////////////
     // invert the 8x8
     /////////////////////////
     MpAdInv = Inverse(MpAd);
-    Dump(MpAdInv,std::string("MpAdInv"));
     
     /////////////////////////////////////////////////////////////////
-    // Alternate way of creating
-    // May need to keep the +nu and -nu plaq fields distinct to stop collision
+    // Nxx Mp^-1
     /////////////////////////////////////////////////////////////////
+    AdjVectorField  FdetV(grid);
+    AdjVectorField  Fdet1_nu(grid);
+    AdjVectorField  Fdet2_nu(grid);
+    AdjVectorField  Fdet2_mu(grid);
+    AdjVectorField  Fdet1_mu(grid);
 
     AdjMatrixField nMpInv(grid);
-    nMpInv= NxAd *MpAdInv;
-    Dump(nMpInv," nMpInv ");
+    nMpInv= NxxAd *MpAdInv;
 
     AdjMatrixField MpInvJx(grid);
     AdjMatrixField MpInvJx_nu(grid);
     MpInvJx = (-1.0)*MpAdInv * JxAd;// rho is on the plaq factor
-    Dump(MpInvJx," MpInvJx ");
 
-    AdjVectorField  FdetV(grid);
-    AdjVectorField  FdetV2(grid);
-    AdjVectorField  FdetV2_mu(grid);
-    // First shot at the Fdet2
-    AdjointDeriv2(PlaqL,PlaqR,MpInvJx,FdetV);
-    FdetV2_mu=FdetV;
-    Dump(FdetV,std::string(" FdetV2xx_mu "));
+    Compute_MpInvJx_dNxxdSy(PlaqL,PlaqR,MpInvJx,FdetV);
+    Fdet2_mu=FdetV;
+    Fdet1_mu=Zero();
     
     for(int e =0 ; e<8 ; e++){
       LatticeComplexD tr(grid);
       ColourMatrix te;
       SU3::generatorQlat(e, te);
       tr = trace(dJdX[e] * nMpInv);
-      pokeColour(AlgV,tr,e);
-      //      std::cout << " ***** tr " <<e<<std::endl;
-      //      Dump(tr,std::string("tr"));
+      pokeColour(dJdXe_nMpInv,tr,e);
     }
+    ///////////////////////////////
     // Mask it off
+    ///////////////////////////////
     auto tmp=PeekIndex<LorentzIndex>(masks[smr],mu);
-    AlgV = AlgV*tmp;
-    Dump(AlgV,std::string("AlgV"));
-    //    AlgV needs to multiply:
-    //       NxAd (site local)                                            (1)
-    //       NfmuPlus (site local) one site forward  in each nu direction (3)
-    //       NfmuMinus (site local) one site backward in each nu direction(3)
-    //       Nfnu (site local) 0,0 ; +mu,0; 0,-nu; +mu-nu   [ 3x4 = 12]
+    dJdXe_nMpInv = dJdXe_nMpInv*tmp;
+    
+    //    dJdXe_nMpInv needs to multiply:
+    //       Nxx_mu (site local)                           (1)
+    //       Nxy_mu one site forward  in each nu direction (3)
+    //       Nxy_mu one site backward in each nu direction (3)
+    //       Nxy_nu 0,0  ; +mu,0; 0,-nu; +mu-nu   [ 3x4 = 12]
     // 19 terms.
-    AdjVectorField  AlgVmu_p(grid); AlgVmu_p=Zero();
-    AdjVectorField  AlgVmu_m(grid); AlgVmu_m=Zero();
-    AdjVectorField  AlgVnu(grid);   AlgVnu=Zero();
+    AdjMatrixField Nxy(grid);
 
-    GaugeLinkField FmuPlus(grid);
-    GaugeLinkField FmuMinus(grid);
-    GaugeLinkField Fnu(grid);
-    GaugeLinkField Fnumu(grid);
-    std::vector<AdjMatrixField> Nfperp(Nd,grid); // Why needed vs nu?
-    AdjMatrixField NfmuPlus(grid);
-    AdjMatrixField NfmuMinus(grid);
-    for(int d=0;d<Nd;d++){
-      Nfperp[d] = Zero();
-    }
-    NfmuPlus=Zero();
-    NfmuMinus=Zero();
-    //////////////////////////////////////////////////////
-    // six force inserts x 3 directions from OTHER links y!=x || mu!=nu
-    //
-    // To avoid collison of x-y pairs need to keep +ve nu and -ve nu separate, at least for mu force
-    // FmuPlus, FmuMinus and Fnu/Fperp
-    //////////////////////////////////////////////////////
     GaugeField Fdet1(grid);
     GaugeField Fdet2(grid);
-    GaugeLinkField Fdet1_pol(grid);
-    GaugeLinkField Fdet2_pol(grid);
-    
-    AdjVectorField  FdetV_acc(grid); 
-    AdjVectorField  FdetV2_acc(grid); 
-    AdjVectorField  FdetV_mu(grid);  FdetV_mu=Zero();
+    GaugeLinkField Fdet_pol(grid); // one polarisation
+
     for(int nu=0;nu<Nd;nu++){
 
       if (nu!=mu) {
-	LatticeComplexD tr(grid);
-
-	int Lnu = grid->GlobalDimensions()[nu];
-	Coordinate coormu({0,0,0,0});	coormu[mu]=1;
-	Coordinate coornu({0,0,0,0});	coornu[nu]=1;
-	Coordinate coornnu({0,0,0,0});	coornnu[nu]=Lnu-1;
-	Coordinate coormunu({0,0,0,0});	 coormunu[mu]=1; coormunu[nu]=1;
-	Coordinate coormunnu({0,0,0,0}); coormunnu[mu]=1; coormunnu[nu]=Lnu-1;
-
 	///////////////// +ve nu /////////////////
 	//     __
 	//    |  |
 	//    x==    // nu polarisation -- clockwise
-	std::cout << " ********************* "<<std::endl;
-	std::cout << "   nu+ = "<<nu<<std::endl;
-	std::cout << " ********************* "<<std::endl;
+
 	PlaqL=Ident;
+
 	PlaqR=(-rho)*Gimpl::CovShiftForward(Umu[nu], nu,
  	       Gimpl::CovShiftForward(Umu[mu], mu,
 	         Gimpl::CovShiftBackward(Umu[nu], nu,
 		   Gimpl::CovShiftIdentityBackward(Utmp, mu))));
 
-	//      Nx = -2.0*ci*trace(tc*Ta( adj(PlaqL)*ci*tb * PlaqR )));
-	AdjointDeriv(PlaqL,PlaqR,Nfperp[nu]);
-
-	AlgVnu =   AlgV;
+	dJdXe_nMpInv_y =   dJdXe_nMpInv;
+	ComputeNxy(PlaqL,PlaqR,Nxy);
+	Fdet1_nu = transpose(Nxy)*dJdXe_nMpInv_y;
 
 	PlaqR=(-1.0)*PlaqR;
-	FdetV = transpose(Nfperp[nu])*AlgVnu;
-	Dump(FdetV,std::string("FdetVxy_nu ; y=x ")); // OK
-
-	FdetV_acc = FdetV;
-
-	AdjointDeriv2(PlaqL,PlaqR,MpInvJx,FdetV2);
-	FdetV2_acc = FdetV2;
-	Dump(FdetV2,std::string("FdetV2xy_nu ; y=x ")); 
+	Compute_MpInvJx_dNxxdSy(PlaqL,PlaqR,MpInvJx,FdetV);
+	Fdet2_nu = FdetV;
 	
 	//    x==
 	//    |  |
 	//    .__|    // nu polarisation -- anticlockwise
 
-	//      Nx = (2.0)*Ta( adj(PlaqL)*ci*tb * PlaqR );
 	PlaqR=(rho)*Gimpl::CovShiftForward(Umu[nu], nu,
 		      Gimpl::CovShiftBackward(Umu[mu], mu,
     	 	        Gimpl::CovShiftIdentityBackward(Umu[nu], nu)));
+
 	PlaqL=Gimpl::CovShiftIdentityBackward(Utmp, mu);
 
-	AdjointDeriv(PlaqL, PlaqR,Nfperp[nu]);
-
-	AlgVnu = Cshift(AlgV,mu,-1);
+	dJdXe_nMpInv_y = Cshift(dJdXe_nMpInv,mu,-1);
+	ComputeNxy(PlaqL, PlaqR,Nxy);
+	Fdet1_nu = Fdet1_nu+transpose(Nxy)*dJdXe_nMpInv_y;
 	
-	FdetV = transpose(Nfperp[nu])*AlgVnu;
-	Dump(FdetV,std::string("FdetVxy_nu ; +mu "),coormu); // OK
-
-	
-	FdetV_acc = FdetV_acc + FdetV;
 
 	MpInvJx_nu = Cshift(MpInvJx,mu,-1);
-	AdjointDeriv2(PlaqL,PlaqR,MpInvJx_nu,FdetV2);
-	FdetV2_acc = FdetV2_acc+FdetV2;
-	Dump(FdetV2,std::string("FdetV2xy_nu ; +mu "),coormu); 
+	Compute_MpInvJx_dNxxdSy(PlaqL,PlaqR,MpInvJx_nu,FdetV);
+	Fdet2_nu = Fdet2_nu+FdetV;
 	
 	///////////////// -ve nu /////////////////
 	//  __
 	// |  |
 	// x==          // nu polarisation -- clockwise
-	std::cout << " ********************* "<<std::endl;
-	std::cout << "   nu- = "<<nu<<std::endl;
-	std::cout << " ********************* "<<std::endl;
 
 	PlaqL=(rho)* Gimpl::CovShiftForward(Umu[mu], mu,
 		       Gimpl::CovShiftForward(Umu[nu], nu,
 			 Gimpl::CovShiftIdentityBackward(Utmp, mu)));
+
         PlaqR = Gimpl::CovShiftIdentityForward(Umu[nu], nu);
-	AdjointDeriv(PlaqL,PlaqR,Nfperp[nu]);
-	
-	AlgVnu = Cshift(AlgV,nu,1);
 
-	FdetV = transpose(Nfperp[nu])*AlgVnu;
-
-	Dump(FdetV,std::string("FdetVxy_nu ; -nu"),coornnu); 
-
-	FdetV_acc = FdetV_acc + FdetV;
+	dJdXe_nMpInv_y = Cshift(dJdXe_nMpInv,nu,1);
+	ComputeNxy(PlaqL,PlaqR,Nxy);
+	Fdet1_nu = Fdet1_nu + transpose(Nxy)*dJdXe_nMpInv_y;
 
 	MpInvJx_nu = Cshift(MpInvJx,nu,1);
-	AdjointDeriv2(PlaqL,PlaqR,MpInvJx_nu,FdetV2);
-	FdetV2_acc = FdetV2_acc+FdetV2;
-	Dump(FdetV2,std::string("FdetV2xy_nu ; -nu "),coornnu); 
+	Compute_MpInvJx_dNxxdSy(PlaqL,PlaqR,MpInvJx_nu,FdetV);
+	Fdet2_nu = Fdet2_nu+FdetV;
 	
 	// x==
 	// |  |
@@ -448,43 +349,26 @@ public:
 
 	PlaqL=(-rho)*Gimpl::CovShiftForward(Umu[nu], nu,
  	        Gimpl::CovShiftIdentityBackward(Utmp, mu));
+
 	PlaqR=Gimpl::CovShiftBackward(Umu[mu], mu,
 	        Gimpl::CovShiftIdentityForward(Umu[nu], nu));
 
-	AdjointDeriv(PlaqL,PlaqR,Nfperp[nu]);
+	dJdXe_nMpInv_y = Cshift(dJdXe_nMpInv,mu,-1);
+	dJdXe_nMpInv_y = Cshift(dJdXe_nMpInv_y,nu,1);
 
-	AlgVnu = Cshift(AlgV,mu,-1);
-	AlgVnu = Cshift(AlgVnu,nu,1);
-
-	FdetV = transpose(Nfperp[nu])*AlgVnu;
-	Dump(FdetV,std::string("FdetVxy_nu; -nu +mu"),coormunnu);
-
-	FdetV_acc = FdetV_acc + FdetV;
+	ComputeNxy(PlaqL,PlaqR,Nxy);
+	Fdet1_nu = Fdet1_nu + transpose(Nxy)*dJdXe_nMpInv_y;
 
 	MpInvJx_nu = Cshift(MpInvJx,mu,-1);
 	MpInvJx_nu = Cshift(MpInvJx_nu,nu,1);
-	AdjointDeriv2(PlaqL,PlaqR,MpInvJx_nu,FdetV2);
-	FdetV2_acc = FdetV2_acc+FdetV2;
-	Dump(FdetV2,std::string("FdetV2xy_nu ; -nu +mu "),coormunu); 
-	
-	// Set up the determinant force contribution in 3x3 algebra basis
-	Fdet1_pol=Zero();
-	for(int e=0;e<8;e++){
-	  ColourMatrix te;
-	  SU3::generatorQlat(e, te);
-	  auto tmp=peekColour(FdetV_acc,e);
-	  Fdet1_pol=Fdet1_pol + ci*tmp*te; // but norm of te is different.. why?
-	}
-	pokeLorentz(Fdet1, Fdet1_pol, nu);
+	Compute_MpInvJx_dNxxdSy(PlaqL,PlaqR,MpInvJx_nu,FdetV);
+	Fdet2_nu = Fdet2_nu+FdetV;
 
-	Fdet2_pol=Zero();
-	for(int e=0;e<8;e++){
-	  ColourMatrix te;
-	  SU3::generatorQlat(e, te);
-	  auto tmp=peekColour(FdetV2_acc,e);
-	  Fdet2_pol=Fdet2_pol + ci*tmp*te; // but norm of te is different.. why?
-	}
-	pokeLorentz(Fdet2, Fdet2_pol, nu);
+	/////////////////////////////////////////////////////////////////////
+	// Set up the determinant force contribution in 3x3 algebra basis
+	/////////////////////////////////////////////////////////////////////
+	InsertForce(Fdet1,Fdet1_nu,nu);
+	InsertForce(Fdet2,Fdet2_nu,nu);
 	
 	//////////////////////////////////////////////////
 	// Parallel direction terms
@@ -496,21 +380,18 @@ public:
 	PlaqL=(-rho)*Gimpl::CovShiftForward(Umu[mu], mu,
 		      Gimpl::CovShiftBackward(Umu[nu], nu,
    		        Gimpl::CovShiftIdentityBackward(Utmp, mu)));
+
 	PlaqR=Gimpl::CovShiftIdentityBackward(Umu[nu], nu);
 	
-	AdjointDeriv(PlaqL,PlaqR,NfmuPlus);
+	dJdXe_nMpInv_y = Cshift(dJdXe_nMpInv,nu,-1);
 
-	AlgVnu = Cshift(AlgV,nu,-1);
-
-	FdetV = transpose(NfmuPlus)*AlgVnu;
-	Dump(FdetV,std::string("FdetV mu ; +nu "),coornu);
-
-	FdetV_mu = FdetV_mu + FdetV;
+	ComputeNxy(PlaqL,PlaqR,Nxy);
+	Fdet1_mu = Fdet1_mu + transpose(Nxy)*dJdXe_nMpInv_y;
 
 	MpInvJx_nu = Cshift(MpInvJx,nu,-1);
-	AdjointDeriv2(PlaqL,PlaqR,MpInvJx_nu,FdetV2);
-	FdetV2_mu = FdetV2_mu+FdetV2;
-	Dump(FdetV2,std::string("FdetV2xy_mu ; +nu "),coornu); 
+
+	Compute_MpInvJx_dNxxdSy(PlaqL,PlaqR,MpInvJx_nu,FdetV);
+	Fdet2_mu = Fdet2_mu+FdetV;
 
 	//  __
 	// "  |
@@ -519,50 +400,28 @@ public:
 	PlaqL=(-rho)*Gimpl::CovShiftForward(Umu[mu], mu,
 		       Gimpl::CovShiftForward(Umu[nu], nu,
 		 	 Gimpl::CovShiftIdentityBackward(Utmp, mu)));
+
         PlaqR=Gimpl::CovShiftIdentityForward(Umu[nu], nu);
 
-	AdjointDeriv(PlaqL,PlaqR,NfmuMinus);
+	dJdXe_nMpInv_y = Cshift(dJdXe_nMpInv,nu,1);
 
-	AlgVnu = Cshift(AlgV,nu,1);
-
-	FdetV = transpose(NfmuMinus)*AlgVnu;
-
-	Dump(FdetV,std::string("FdetV_xy mu ; -nu "),coornnu);
-
-	FdetV_mu = FdetV_mu + FdetV;
+	ComputeNxy(PlaqL,PlaqR,Nxy);
+	Fdet1_mu = Fdet1_mu + transpose(Nxy)*dJdXe_nMpInv_y;
 
 	MpInvJx_nu = Cshift(MpInvJx,nu,1);
-	AdjointDeriv2(PlaqL,PlaqR,MpInvJx_nu,FdetV2);
-	FdetV2_mu = FdetV2_mu+FdetV2;
-	Dump(FdetV2,std::string("FdetV2xy_mu ; -nu "),coornnu); 
+
+	Compute_MpInvJx_dNxxdSy(PlaqL,PlaqR,MpInvJx_nu,FdetV);
+	Fdet2_mu = Fdet2_mu+FdetV;
 	
       }
     }
 
-    FdetV = transpose(NxAd)*AlgV;
-    Dump(FdetV,std::string(" FdetVxx_mu "));
-    FdetV_mu = FdetV_mu + FdetV;
-    Fdet1_pol=Zero();
-    for(int e=0;e<8;e++){
-      ColourMatrix te;
-      SU3::generatorQlat(e, te);
-      auto tmp=peekColour(FdetV_mu,e);
-      Fdet1_pol=Fdet1_pol + ci*tmp*te; // but norm of te is different.. why?
-    }
-    pokeLorentz(Fdet1, Fdet1_pol, mu);
+    Fdet1_mu = Fdet1_mu + transpose(NxxAd)*dJdXe_nMpInv;
 
-    Fdet2_pol=Zero();
-    for(int e=0;e<8;e++){
-      ColourMatrix te;
-      SU3::generatorQlat(e, te);
-      auto tmp=peekColour(FdetV2_mu,e);
-      Fdet2_pol=Fdet2_pol + ci*tmp*te; // but norm of te is different.. why?
-    }
-    pokeLorentz(Fdet2, Fdet2_pol, mu);
+    InsertForce(Fdet1,Fdet1_mu,mu);
+    InsertForce(Fdet2,Fdet2_mu,mu);
 
     force = Fdet1 + Fdet2;
-    //    force = Fdet1;
-    //    force = Fdet2;
     
   }
   RealD logDetJacobianLevel(const GaugeField &U,int smr)
@@ -775,7 +634,6 @@ private:
     SigmaK = SigmaK+SigmaKPrimeB;
     return SigmaK;
   }
-
 
   ////////////////////////////////////////
   // INHERIT THESE
