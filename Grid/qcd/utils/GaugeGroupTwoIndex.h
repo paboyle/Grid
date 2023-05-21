@@ -31,15 +31,27 @@ enum TwoIndexSymmetry { Symmetric = 1, AntiSymmetric = -1 };
 
 inline Real delta(int a, int b) { return (a == b) ? 1.0 : 0.0; }
 
+template <int nc, TwoIndexSymmetry S, class group_name>
+struct DimensionHelper;
+
+template <int nc, TwoIndexSymmetry S>
+struct DimensionHelper<nc, S, GroupName::SU> {
+    static const int Dimension = nc * (nc + S) + S;
+};
+
+template <int nc>
+struct DimensionHelper<nc, Symmetric, GroupName::Sp> {
+    static const int Dimension = nc * (nc + 1) / 2;
+};
+
+template <int nc>
+struct DimensionHelper<nc, AntiSymmetric, GroupName::Sp> {
+    static const int Dimension = (nc / 2) * (nc - 1) - 1;
+};
+
 template <int ncolour, TwoIndexSymmetry S, class group_name>
 class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
  public:
-  static_assert(
-      std::is_same<group_name, GroupName::Sp>::value ? S != Symmetric : true,
-      "The symmetric two-index representation of Sp(2N) does not work "
-      "currently. If you want to use it, you need to implement the equivalent "
-      "of Eq. (27) and (28) from https://doi.org/10.48550/arXiv.2202.05516.");
-
   // The chosen convention is that we are taking ncolour to be N in SU<N> but 2N
   // in Sp(2N). ngroup is equal to N for SU but 2N/2 = N for Sp(2N).
   static_assert(std::is_same<group_name, GroupName::SU>::value or
@@ -47,9 +59,8 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
                 "ngroup is only implemented for SU and Sp currently.");
   static const int ngroup =
       std::is_same<group_name, GroupName::SU>::value ? ncolour : ncolour / 2;
-  static const int Dimension = std::is_same<group_name, GroupName::SU>::value
-                                   ? ncolour * (ncolour + S) / 2
-                                   : ngroup * (ncolour + S) + S;
+  static const int Dimension =
+      DimensionHelper<ncolour, S, group_name>::Dimension;
   static const int NumGenerators =
       GaugeGroup<ncolour, group_name>::AlgebraDimension;
 

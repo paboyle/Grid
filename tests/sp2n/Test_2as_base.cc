@@ -32,8 +32,7 @@ int main(int argc, char** argv) {
   std::cout << GridLogMessage << "2as dimension is " << this_irrep_dim << std::endl;
   std::cout << GridLogMessage << "algebra dimension is " << this_algebra_dim << std::endl;
   realA = Sp_TwoIndex<this_nc, AntiSymmetric>::Dimension + Sp_TwoIndex<this_nc, Symmetric>::Dimension;
-  realB = Sp<this_nc>::Dimension*Sp<this_nc>::Dimension;
-  assert ( realA == realB);
+  assert ( realA == this_nc * this_nc - 1); // Nc x Nc = dim(2indxS) + dim(2indxAS) + dim(singlet)
 
   std::cout << GridLogMessage << "checking base is antisymmetric " << std::endl;
   for (int a=0; a < this_irrep_dim; a++)
