@@ -80,14 +80,14 @@ public:
   }
 
 private:
-  void projectOnAlgebra(typename SU<ncolour>::LatticeAlgebraVector &h_out,
+  void projectOnAlgebra(typename GaugeGroup<ncolour, group_name>::LatticeAlgebraVector &h_out,
                         const LatticeMatrix &in, Real scale = 1.0) const {
     GaugeGroupTwoIndex<ncolour, S,group_name>::projectOnAlgebra(h_out, in, scale);
   }
 
   void FundamentalLieAlgebraMatrix(
-				   typename SU<ncolour>::LatticeAlgebraVector &h,
-				   typename SU<ncolour>::LatticeMatrix &out, Real scale = 1.0) const {
+				   typename GaugeGroup<ncolour, group_name>::LatticeAlgebraVector &h,
+				   typename GaugeGroup<ncolour, group_name>::LatticeMatrix &out, Real scale = 1.0) const {
     GaugeGroup<ncolour,group_name>::FundamentalLieAlgebraMatrix(h, out, scale);
   }
 };
