@@ -148,21 +148,22 @@ int main (int argc, char **argv)
     //   --grid n.n.n.n
     Grid_init(&argc, &argv);
 
-    // This is where you would specify a custom lattice size, if not from the command line.
-    Coordinate simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
+    // This is where you would specify a custom lattice size, if not from the command line. Here
+    // Nd is a global quantity that is currently set to 4.
+    Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
     Coordinate mpi_layout  = GridDefaultMpi();
     Coordinate latt_size   = GridDefaultLatt();
 
-    // Instantiate the Grid on which everything will be built.
-    GridCartesian spacetime(latt_size,simd_layout,mpi_layout);
+    // Instantiate the spacetime Grid on which everything will be built.
+    GridCartesian GRID(latt_size,simd_layout,mpi_layout);
 
     // The PeriodicGimplD type is what you want for gauge matrices. There is also a LatticeGaugeFieldD
     // type that you can use, which will work perfectly with what follows. 
-    PeriodicGimplD::Field U(&spacetime);
+    PeriodicGimplD::Field U(&GRID);
 
     // Here we read in the parameter file params.json to get conf_name. The last argument is what the
     // top organizational level is called in the param file. 
-    XmlReader Reader("params.xml",false, "grid");
+    XmlReader Reader("Example_plaquette.xml",false, "grid");
     ConfParameters param(Reader);  
 
     // Load a lattice from SIMULATeQCD into U. SIMULATeQCD finds plaquette = 0.6381995717
