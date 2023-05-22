@@ -36,7 +36,7 @@ struct DimensionHelper;
 
 template <int nc, TwoIndexSymmetry S>
 struct DimensionHelper<nc, S, GroupName::SU> {
-    static const int Dimension = nc * (nc + S) + S;
+    static const int Dimension = nc * (nc + S) / 2;
 };
 
 template <int nc>

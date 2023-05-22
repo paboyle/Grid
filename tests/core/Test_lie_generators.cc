@@ -307,7 +307,7 @@ int main(int argc, char** argv) {
   std::cout << GridLogMessage << "Two index Symmetric: Checking Group Structure"
       << std::endl;
   // Testing HMC representation classes
-  TwoIndexRep< Nc, Symmetric > TIndexRep(grid);
+  TwoIndexRep< Nc, Symmetric, GroupName::SU > TIndexRep(grid);
 
   // Test group structure
   // (U_f * V_f)_r = U_r * V_r
@@ -324,30 +324,30 @@ int main(int argc, char** argv) {
   }
   
   TIndexRep.update_representation(UV2);
-  typename TwoIndexRep< Nc, Symmetric >::LatticeField UVr2 = TIndexRep.U;  // (U_f * V_f)_r
+  typename TwoIndexRep< Nc, Symmetric, GroupName::SU >::LatticeField UVr2 = TIndexRep.U;  // (U_f * V_f)_r
   
   TIndexRep.update_representation(U2);
-  typename TwoIndexRep< Nc, Symmetric >::LatticeField Ur2 = TIndexRep.U;  // U_r
+  typename TwoIndexRep< Nc, Symmetric, GroupName::SU >::LatticeField Ur2 = TIndexRep.U;  // U_r
   
   TIndexRep.update_representation(V2);
-  typename TwoIndexRep< Nc, Symmetric >::LatticeField Vr2 = TIndexRep.U;  // V_r
+  typename TwoIndexRep< Nc, Symmetric, GroupName::SU >::LatticeField Vr2 = TIndexRep.U;  // V_r
   
-  typename TwoIndexRep< Nc, Symmetric >::LatticeField Ur2Vr2(grid);
+  typename TwoIndexRep< Nc, Symmetric, GroupName::SU >::LatticeField Ur2Vr2(grid);
   Ur2Vr2 = Zero();
   for (int mu = 0; mu < Nd; mu++) {
-    typename TwoIndexRep< Nc, Symmetric >::LatticeMatrix Urmu2 = peekLorentz(Ur2,mu);
-    typename TwoIndexRep< Nc, Symmetric >::LatticeMatrix Vrmu2 = peekLorentz(Vr2,mu);
+    typename TwoIndexRep< Nc, Symmetric, GroupName::SU >::LatticeMatrix Urmu2 = peekLorentz(Ur2,mu);
+    typename TwoIndexRep< Nc, Symmetric, GroupName::SU >::LatticeMatrix Vrmu2 = peekLorentz(Vr2,mu);
     pokeLorentz(Ur2Vr2,Urmu2*Vrmu2, mu);
   }
   
-  typename TwoIndexRep< Nc, Symmetric >::LatticeField Diff_check2 = UVr2 - Ur2Vr2;
+  typename TwoIndexRep< Nc, Symmetric, GroupName::SU >::LatticeField Diff_check2 = UVr2 - Ur2Vr2;
   std::cout << GridLogMessage << "Group structure SU("<<Nc<<") check difference (Two Index Symmetric): " << norm2(Diff_check2) << std::endl;
 
   
   // Check correspondence of algebra and group transformations
   // Create a random vector
   SU<Nc>::LatticeAlgebraVector h_sym(grid);
-  typename TwoIndexRep< Nc, Symmetric>::LatticeMatrix Ar_sym(grid);
+  typename TwoIndexRep< Nc, Symmetric, GroupName::SU>::LatticeMatrix Ar_sym(grid);
   random(gridRNG,h_sym);
   h_sym = real(h_sym);
   SU_TwoIndex<Nc,Symmetric>::TwoIndexLieAlgebraMatrix(h_sym,Ar_sym);
@@ -360,13 +360,13 @@ int main(int argc, char** argv) {
 
   
   // Exponentiate
-  typename TwoIndexRep< Nc, Symmetric>::LatticeMatrix U2iS(grid);
+  typename TwoIndexRep< Nc, Symmetric, GroupName::SU>::LatticeMatrix U2iS(grid);
   U2iS  = expMat(Ar_sym, 1.0, 16);
   
-  typename TwoIndexRep< Nc, Symmetric>::LatticeMatrix uno2iS(grid);
+  typename TwoIndexRep< Nc, Symmetric, GroupName::SU>::LatticeMatrix uno2iS(grid);
   uno2iS = 1.0;
   // Check matrix U2iS, must be real orthogonal
-  typename TwoIndexRep< Nc, Symmetric>::LatticeMatrix Ucheck2iS = U2iS - conjugate(U2iS);
+  typename TwoIndexRep< Nc, Symmetric, GroupName::SU>::LatticeMatrix Ucheck2iS = U2iS - conjugate(U2iS);
   std::cout << GridLogMessage << "Reality check: " << norm2(Ucheck2iS)
       << std::endl;
   
@@ -399,15 +399,15 @@ int main(int argc, char** argv) {
   
   TIndexRep.update_representation(U);
   Ur2 = TIndexRep.U;  // U_r  
-  typename TwoIndexRep< Nc, Symmetric>::LatticeMatrix Ur02 = peekLorentz(Ur2,0); // this should be the same as U2iS
+  typename TwoIndexRep< Nc, Symmetric, GroupName::SU>::LatticeMatrix Ur02 = peekLorentz(Ur2,0); // this should be the same as U2iS
   
-  typename TwoIndexRep< Nc, Symmetric>::LatticeMatrix Diff_check_mat2 = Ur02 - U2iS;
+  typename TwoIndexRep< Nc, Symmetric, GroupName::SU>::LatticeMatrix Diff_check_mat2 = Ur02 - U2iS;
   std::cout << GridLogMessage << "Projections structure check group difference (Two Index Symmetric): " << norm2(Diff_check_mat2) << std::endl;
   
 
 
 
-  if (TwoIndexRep<Nc, AntiSymmetric >::Dimension != 1){
+  if (TwoIndexRep<Nc, AntiSymmetric , GroupName::SU>::Dimension != 1){
 
   std::cout << GridLogMessage << "*********************************************"
       << std::endl;
@@ -416,7 +416,7 @@ int main(int argc, char** argv) {
   std::cout << GridLogMessage << "Two Index anti-Symmetric: Check Group Structure"
       << std::endl;
   // Testing HMC representation classes
-  TwoIndexRep< Nc, AntiSymmetric > TIndexRepA(grid);
+  TwoIndexRep< Nc, AntiSymmetric, GroupName::SU > TIndexRepA(grid);
 
 
   // Test group structure
@@ -434,30 +434,30 @@ int main(int argc, char** argv) {
   }
   
   TIndexRep.update_representation(UV2A);
-  typename TwoIndexRep< Nc, AntiSymmetric >::LatticeField UVr2A = TIndexRepA.U;  // (U_f * V_f)_r
+  typename TwoIndexRep< Nc, AntiSymmetric, GroupName::SU >::LatticeField UVr2A = TIndexRepA.U;  // (U_f * V_f)_r
   
   TIndexRep.update_representation(U2A);
-  typename TwoIndexRep< Nc, AntiSymmetric >::LatticeField Ur2A = TIndexRepA.U;  // U_r
+  typename TwoIndexRep< Nc, AntiSymmetric, GroupName::SU >::LatticeField Ur2A = TIndexRepA.U;  // U_r
   
   TIndexRep.update_representation(V2A);
-  typename TwoIndexRep< Nc, AntiSymmetric >::LatticeField Vr2A = TIndexRepA.U;  // V_r
+  typename TwoIndexRep< Nc, AntiSymmetric, GroupName::SU >::LatticeField Vr2A = TIndexRepA.U;  // V_r
   
-  typename TwoIndexRep< Nc, AntiSymmetric >::LatticeField Ur2Vr2A(grid);
+  typename TwoIndexRep< Nc, AntiSymmetric, GroupName::SU >::LatticeField Ur2Vr2A(grid);
   Ur2Vr2A = Zero();
   for (int mu = 0; mu < Nd; mu++) {
-    typename TwoIndexRep< Nc, AntiSymmetric >::LatticeMatrix Urmu2A = peekLorentz(Ur2A,mu);
-    typename TwoIndexRep< Nc, AntiSymmetric >::LatticeMatrix Vrmu2A = peekLorentz(Vr2A,mu);
+    typename TwoIndexRep< Nc, AntiSymmetric, GroupName::SU >::LatticeMatrix Urmu2A = peekLorentz(Ur2A,mu);
+    typename TwoIndexRep< Nc, AntiSymmetric, GroupName::SU >::LatticeMatrix Vrmu2A = peekLorentz(Vr2A,mu);
     pokeLorentz(Ur2Vr2A,Urmu2A*Vrmu2A, mu);
   }
   
-  typename TwoIndexRep< Nc, AntiSymmetric >::LatticeField Diff_check2A = UVr2A - Ur2Vr2A;
+  typename TwoIndexRep< Nc, AntiSymmetric, GroupName::SU >::LatticeField Diff_check2A = UVr2A - Ur2Vr2A;
   std::cout << GridLogMessage << "Group structure SU("<<Nc<<") check difference (Two Index anti-Symmetric): " << norm2(Diff_check2A) << std::endl;
 
   
   // Check correspondence of algebra and group transformations
   // Create a random vector
   SU<Nc>::LatticeAlgebraVector h_Asym(grid);
-  typename TwoIndexRep< Nc, AntiSymmetric>::LatticeMatrix Ar_Asym(grid);
+  typename TwoIndexRep< Nc, AntiSymmetric, GroupName::SU>::LatticeMatrix Ar_Asym(grid);
   random(gridRNG,h_Asym);
   h_Asym = real(h_Asym);
   SU_TwoIndex< Nc, AntiSymmetric>::TwoIndexLieAlgebraMatrix(h_Asym,Ar_Asym);
@@ -470,13 +470,13 @@ int main(int argc, char** argv) {
 
   
   // Exponentiate
-  typename TwoIndexRep< Nc, AntiSymmetric>::LatticeMatrix U2iAS(grid);
+  typename TwoIndexRep< Nc, AntiSymmetric, GroupName::SU>::LatticeMatrix U2iAS(grid);
   U2iAS  = expMat(Ar_Asym, 1.0, 16);
   
-  typename TwoIndexRep< Nc, AntiSymmetric>::LatticeMatrix uno2iAS(grid);
+  typename TwoIndexRep< Nc, AntiSymmetric, GroupName::SU>::LatticeMatrix uno2iAS(grid);
   uno2iAS = 1.0;
   // Check matrix U2iS, must be real orthogonal
-  typename TwoIndexRep< Nc, AntiSymmetric>::LatticeMatrix Ucheck2iAS = U2iAS - conjugate(U2iAS);
+  typename TwoIndexRep< Nc, AntiSymmetric, GroupName::SU>::LatticeMatrix Ucheck2iAS = U2iAS - conjugate(U2iAS);
   std::cout << GridLogMessage << "Reality check: " << norm2(Ucheck2iAS)
       << std::endl;
   
@@ -509,9 +509,9 @@ int main(int argc, char** argv) {
   
   TIndexRepA.update_representation(U);
   Ur2A = TIndexRepA.U;  // U_r  
-  typename TwoIndexRep< Nc, AntiSymmetric>::LatticeMatrix Ur02A = peekLorentz(Ur2A,0); // this should be the same as U2iS
+  typename TwoIndexRep< Nc, AntiSymmetric, GroupName::SU>::LatticeMatrix Ur02A = peekLorentz(Ur2A,0); // this should be the same as U2iS
   
-  typename TwoIndexRep< Nc, AntiSymmetric>::LatticeMatrix Diff_check_mat2A = Ur02A - U2iAS;
+  typename TwoIndexRep< Nc, AntiSymmetric, GroupName::SU>::LatticeMatrix Diff_check_mat2A = Ur02A - U2iAS;
   std::cout << GridLogMessage << "Projections structure check group difference (Two Index anti-Symmetric): " << norm2(Diff_check_mat2A) << std::endl;
   
 } else  {
