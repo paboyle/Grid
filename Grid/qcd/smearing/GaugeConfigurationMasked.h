@@ -17,9 +17,11 @@ public:
   INHERIT_GIMPL_TYPES(Gimpl);
 
 private:
-  const unsigned int smearingLevels;
-  Smear_Stout<Gimpl> *StoutSmearing;
-  std::vector<GaugeField> SmearedSet;
+  // These live in base class
+  //  const unsigned int smearingLevels;
+  //  Smear_Stout<Gimpl> *StoutSmearing;
+  //  std::vector<GaugeField> SmearedSet;
+  
   std::vector<LatticeLorentzComplex> masks;
 
   typedef typename SU3Adjoint::AMatrix AdjMatrix;
@@ -34,7 +36,7 @@ private:
     Fdet_pol=Zero();
     for(int e=0;e<8;e++){
       ColourMatrix te;
-      SU3::generatorQlat(e, te);
+      SU3::generator(e, te);
       auto tmp=peekColour(Fdet_nu,e);
       Fdet_pol=Fdet_pol + ci*tmp*te; // but norm of te is different.. why?
     }
@@ -51,14 +53,14 @@ private:
     ColourMatrix   ta,tb,tc;
     
     for(int a=0;a<Ngen;a++) {
-      SU3::generatorQlat(a, ta);
+      SU3::generator(a, ta);
       // Qlat Tb = 2i Tb^Grid
       UtaU= 2.0*ci*adj(PlaqL)*ta*PlaqR;
       for(int c=0;c<Ngen;c++) {
-	SU3::generatorQlat(c, tc);
+	SU3::generator(c, tc);
 	D = Ta( (2.0)*ci*tc *UtaU);
 	for(int b=0;b<Ngen;b++){
-	  SU3::generatorQlat(b, tb);
+	  SU3::generator(b, tb);
 	  tmp =-trace(ci*tb*D); 
 	  PokeIndex<ColourIndex>(Dbc,tmp,b,c);  // Adjoint rep
 	}
@@ -76,10 +78,10 @@ private:
     ColourMatrix   tb;
     ColourMatrix   tc;
     for(int b=0;b<Ngen;b++) {
-      SU3::generatorQlat(b, tb);
+      SU3::generator(b, tb);
       Nx = (2.0)*Ta( adj(PlaqL)*ci*tb * PlaqR );
       for(int c=0;c<Ngen;c++) {
-	SU3::generatorQlat(c, tc);
+	SU3::generator(c, tc);
 	auto tmp =closure( -trace(ci*tc*Nx)); 
 	PokeIndex<ColourIndex>(NxAd,tmp,c,b); 
       }
@@ -87,8 +89,8 @@ private:
   }
   void ApplyMask(GaugeField &U,int smr)
   {
-    LatticeComplex tmp(UGrid);
-    GaugeLinkField Umu(UGrid);
+    LatticeComplex tmp(U.Grid());
+    GaugeLinkField Umu(U.Grid());
     for(int mu=0;mu<Nd;mu++){
       Umu=PeekIndex<LorentzIndex>(U,mu);
       tmp=PeekIndex<LorentzIndex>(masks[smr],mu);
@@ -101,7 +103,6 @@ public:
   void logDetJacobianForceLevel(const GaugeField &U, GaugeField &force ,int smr)
   {
     GridBase* grid = U.Grid();
-    conformable(grid,UGrid);
     ColourMatrix   tb;
     ColourMatrix   tc;
     ColourMatrix   ta;
@@ -148,19 +149,19 @@ public:
     ////////////////////////////////////////////////////////////////////////////////
     // Retrieve the eps/rho parameter(s) -- could allow all different but not so far
     ////////////////////////////////////////////////////////////////////////////////
-    double rho=StoutSmearing->SmearRho[1];
+    double rho=this->StoutSmearing->SmearRho[1];
     int idx=0;
     for(int mu=0;mu<4;mu++){
     for(int nu=0;nu<4;nu++){
-      if ( mu!=nu) assert(StoutSmearing->SmearRho[idx]==rho);
-      else         assert(StoutSmearing->SmearRho[idx]==0.0);
+      if ( mu!=nu) assert(this->StoutSmearing->SmearRho[idx]==rho);
+      else         assert(this->StoutSmearing->SmearRho[idx]==0.0);
       idx++;
     }}
     //////////////////////////////////////////////////////////////////
     // Assemble the N matrix
     //////////////////////////////////////////////////////////////////
     // Computes ALL the staples -- could compute one only and do it here
-    StoutSmearing->BaseSmear(C, U);
+    this->StoutSmearing->BaseSmear(C, U);
     Cmu = peekLorentz(C, mu);
 
     //////////////////////////////////////////////////////////////////
@@ -173,8 +174,8 @@ public:
     ZxAd = Zero();
     for(int b=0;b<8;b++) {
       // Adj group sets traceless antihermitian T's -- Guido, really????
-      SU3::generatorQlat(b, tb);         // Fund group sets traceless hermitian T's
-      SU3Adjoint::generatorQlat(b,TRb);
+      SU3::generator(b, tb);         // Fund group sets traceless hermitian T's
+      SU3Adjoint::generator(b,TRb);
       TRb=-TRb;
       cplx = 2.0*trace(ci*tb*Zx); // my convention 1/2 delta ba
       ZxAd = ZxAd + cplx * TRb; // is this right? YES - Guido used Anti herm Ta's and with bloody wrong sign.
@@ -206,7 +207,7 @@ public:
     AdjMatrixField aunit(grid);
     for(int b=0;b<8;b++){
       aunit = ComplexD(1.0);
-      SU3Adjoint::generatorQlat(b, TRb); //dt2
+      SU3Adjoint::generator(b, TRb); //dt2
 
       X  = (-1.0)*ZxAd; 
       t2 = X;
@@ -260,7 +261,7 @@ public:
     for(int e =0 ; e<8 ; e++){
       LatticeComplexD tr(grid);
       ColourMatrix te;
-      SU3::generatorQlat(e, te);
+      SU3::generator(e, te);
       tr = trace(dJdX[e] * nMpInv);
       pokeColour(dJdXe_nMpInv,tr,e);
     }
@@ -427,7 +428,6 @@ public:
   RealD logDetJacobianLevel(const GaugeField &U,int smr)
   {
     GridBase* grid = U.Grid();
-    conformable(grid,UGrid);
     GaugeField C(grid);
     GaugeLinkField Nb(grid);
     GaugeLinkField Z(grid);
@@ -456,16 +456,16 @@ public:
     // Assemble the N matrix
     //////////////////////////////////////////////////////////////////
     // Computes ALL the staples -- could compute one only here
-    StoutSmearing->BaseSmear(C, U);
+    this->StoutSmearing->BaseSmear(C, U);
     Cmu = peekLorentz(C, mu);
     Umu = peekLorentz(U, mu);
     Complex ci(0,1);
     for(int b=0;b<Ngen;b++) {
-      SU3::generatorQlat(b, Tb);
+      SU3::generator(b, Tb);
       // Qlat Tb = 2i Tb^Grid
       Nb = (2.0)*Ta( ci*Tb * Umu * adj(Cmu));
       for(int c=0;c<Ngen;c++) {
-	SU3::generatorQlat(c, Tc);
+	SU3::generator(c, Tc);
 	auto tmp = -trace(ci*Tc*Nb); // Luchang's norm: (2Tc) (2Td) N^db = -2 delta cd N^db // - was important
 	PokeIndex<ColourIndex>(Ncb,tmp,c,b); 
       }
@@ -483,8 +483,8 @@ public:
       // Adj group sets traceless antihermitian T's -- Guido, really????
       // Is the mapping of these the same? Same structure constants
       // Might never have been checked.
-      SU3::generatorQlat(b, Tb);         // Fund group sets traceless hermitian T's
-      SU3Adjoint::generatorQlat(b,TRb);
+      SU3::generator(b, Tb);         // Fund group sets traceless hermitian T's
+      SU3Adjoint::generator(b,TRb);
       TRb=-TRb;
       cplx = 2.0*trace(ci*Tb*Z); // my convention 1/2 delta ba
       Zac = Zac + cplx * TRb; // is this right? YES - Guido used Anti herm Ta's and with bloody wrong sign.
@@ -532,56 +532,57 @@ public:
   RealD logDetJacobian(void)
   {
     RealD ln_det = 0;
-    if (smearingLevels > 0)
+    if (this->smearingLevels > 0)
     {
-      for (int ismr = smearingLevels - 1; ismr > 0; --ismr) {
-	ln_det+= logDetJacobianLevel(get_smeared_conf(ismr-1),ismr);
+      for (int ismr = this->smearingLevels - 1; ismr > 0; --ismr) {
+	ln_det+= logDetJacobianLevel(this->get_smeared_conf(ismr-1),ismr);
       }
-      ln_det +=logDetJacobianLevel(*ThinLinks,0);
+      ln_det +=logDetJacobianLevel(*(this->ThinLinks),0);
     }
     return ln_det;
   }
   void logDetJacobianForce(GaugeField &force)
   {
     RealD ln_det = 0;
-    if (smearingLevels > 0)
+    if (this->smearingLevels > 0)
     {
-      for (int ismr = smearingLevels - 1; ismr > 0; --ismr) {
-	ln_det+= logDetJacobianForceLevel(get_smeared_conf(ismr-1),force,ismr);
+      for (int ismr = this->smearingLevels - 1; ismr > 0; --ismr) {
+	ln_det+= logDetJacobianForceLevel(this->get_smeared_conf(ismr-1),force,ismr);
       }
-      ln_det +=logDetJacobianForeceLevel(*ThinLinks,force,0);
+      ln_det +=logDetJacobianForeceLevel(*(this->ThinLinks),force,0);
     }
   }
 
 private:
   // Member functions
   //====================================================================
-  void fill_smearedSet(GaugeField &U)
+  // Override base clas here to mask it
+  virtual void fill_smearedSet(GaugeField &U)
   {
-    ThinLinks = &U;  // attach the smearing routine to the field U
+    this->ThinLinks = &U;  // attach the smearing routine to the field U
 
     // check the pointer is not null
-    if (ThinLinks == NULL)
+    if (this->ThinLinks == NULL)
       std::cout << GridLogError << "[SmearedConfigurationMasked] Error in ThinLinks pointer\n";
 
-    if (smearingLevels > 0)
+    if (this->smearingLevels > 0)
     {
       std::cout << GridLogMessage << "[SmearedConfigurationMasked] Filling SmearedSet\n";
-      GaugeField previous_u(ThinLinks->Grid());
+      GaugeField previous_u(this->ThinLinks->Grid());
 
-      GaugeField smeared_A(ThinLinks->Grid());
-      GaugeField smeared_B(ThinLinks->Grid());
+      GaugeField smeared_A(this->ThinLinks->Grid());
+      GaugeField smeared_B(this->ThinLinks->Grid());
 
-      previous_u = *ThinLinks;
-      for (int smearLvl = 0; smearLvl < smearingLevels; ++smearLvl)
+      previous_u = *this->ThinLinks;
+      for (int smearLvl = 0; smearLvl < this->smearingLevels; ++smearLvl)
       {
-        StoutSmearing->smear(smeared_A, previous_u);
+        this->StoutSmearing->smear(smeared_A, previous_u);
 	ApplyMask(smeared_A,smearLvl);
 	smeared_B = previous_u;
 	ApplyMask(smeared_B,smearLvl);
 	// Replace only the masked portion
-	SmearedSet[smearLvl] = previous_u-smeared_B + smeared_A;
-        previous_u = SmearedSet[smearLvl];
+	this->SmearedSet[smearLvl] = previous_u-smeared_B + smeared_A;
+        previous_u = this->SmearedSet[smearLvl];
 
         // For debug purposes
         RealD impl_plaq = WilsonLoops<Gimpl>::avgPlaquette(previous_u);
@@ -590,11 +591,11 @@ private:
     }
   }
   //====================================================================
-  GaugeField AnalyticSmearedForce(const GaugeField& SigmaKPrime,
-                                  const GaugeField& GaugeK,int level) 
+  // Override base to add masking
+  virtual GaugeField AnalyticSmearedForce(const GaugeField& SigmaKPrime,
+					  const GaugeField& GaugeK,int level) 
   {
     GridBase* grid = GaugeK.Grid();
-    conformable(grid,UGrid);
     GaugeField C(grid), SigmaK(grid), iLambda(grid);
     GaugeField SigmaKPrimeA(grid);
     GaugeField SigmaKPrimeB(grid);
@@ -603,7 +604,7 @@ private:
     GaugeLinkField SigmaKPrime_mu(grid);
     GaugeLinkField GaugeKmu(grid), Cmu(grid);
 
-    StoutSmearing->BaseSmear(C, GaugeK);
+    this->StoutSmearing->BaseSmear(C, GaugeK);
     SigmaK = Zero();
     iLambda = Zero();
 
@@ -622,11 +623,11 @@ private:
       GaugeKmu = peekLorentz(GaugeK, mu);
       SigmaKPrime_mu = peekLorentz(SigmaKPrimeA, mu);
       iQ = Ta(Cmu * adj(GaugeKmu));
-      set_iLambda(iLambda_mu, e_iQ, iQ, SigmaKPrime_mu, GaugeKmu);
+      this->set_iLambda(iLambda_mu, e_iQ, iQ, SigmaKPrime_mu, GaugeKmu);
       pokeLorentz(SigmaK, SigmaKPrime_mu * e_iQ + adj(Cmu) * iLambda_mu, mu);
       pokeLorentz(iLambda, iLambda_mu, mu);
     }
-    StoutSmearing->derivative(SigmaK, iLambda,GaugeK);  // derivative of SmearBase
+    this->StoutSmearing->derivative(SigmaK, iLambda,GaugeK);  // derivative of SmearBase
 
     ////////////////////////////////////////////////////////////////////////////////////
     // propagate the rest of the force as identity map, just add back
@@ -640,14 +641,17 @@ private:
   ////////////////////////////////////////
   
   /*! @brief Returns smeared configuration at level 'Level' */
+  /*
   const GaugeField &get_smeared_conf(int Level) const
   {
     return SmearedSet[Level];
   }
-
+  */
+  
   // Duplicates code that is in GaugeConfiguration.h
   // Should inherit or share.
   //====================================================================
+  /*
   void set_iLambda(GaugeLinkField& iLambda, GaugeLinkField& e_iQ,
                    const GaugeLinkField& iQ, const GaugeLinkField& Sigmap,
                    const GaugeLinkField& GaugeK) const 
@@ -739,28 +743,27 @@ private:
 
     iLambda = Ta(iGamma);
   }
-
+  */
   //====================================================================
 public:
-  GaugeField* ThinLinks; /* Pointer to the thin links configuration */
+  //  GaugeField* ThinLinks; /* Pointer to the thin links configuration -- base class*/ 
   ////////////////////////
   // Derived class
   ////////////////////////
-  GridRedBlackCartesian * UrbGrid;
-  GridCartesian         * UGrid;
   /* Standard constructor */
   SmearedConfigurationMasked(GridCartesian* _UGrid, unsigned int Nsmear, Smear_Stout<Gimpl>& Stout,bool domask=false)
-    : UGrid(_UGrid), smearingLevels(Nsmear), StoutSmearing(&Stout), ThinLinks(NULL)
+    : SmearedConfiguration<Gimpl>(_UGrid, Nsmear,Stout)
   {
     if(domask) assert(Nsmear%(2*Nd)==0); // Or multiply by 8??
-    
-    UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(_UGrid);
-    LatticeComplex one(UGrid); one = ComplexD(1.0,0.0);
-    LatticeComplex tmp(UGrid);
 
-    for (unsigned int i = 0; i < smearingLevels; ++i) {
-      SmearedSet.push_back(*(new GaugeField(UGrid)));
-      masks.push_back(*(new LatticeLorentzComplex(UGrid)));
+    GridRedBlackCartesian * UrbGrid;
+    UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(_UGrid);
+    LatticeComplex one(_UGrid); one = ComplexD(1.0,0.0);
+    LatticeComplex tmp(_UGrid);
+
+    for (unsigned int i = 0; i < this->smearingLevels; ++i) {
+      this->SmearedSet.push_back(*(new GaugeField(_UGrid)));
+      masks.push_back(*(new LatticeLorentzComplex(_UGrid)));
       if (domask) {
 
 	int mu= (i/2) %Nd;
@@ -785,11 +788,16 @@ public:
     delete UrbGrid;
   }
 
+  //////////////////////////////////////////////////////////////
+  //Base functionality:
+  //////////////////////////////////////////////////////////////
+  
   /*! For just thin links */
   //  SmearedConfigurationMasked()
   //    : smearingLevels(0), StoutSmearing(nullptr), SmearedSet(), ThinLinks(NULL), UGrid(NULL), UrbGrid(NULL), masks() {}
 
   // attach the smeared routines to the thin links U and fill the smeared set
+  /*
   void set_Field(GaugeField &U)
   {
     double start = usecond();
@@ -798,8 +806,10 @@ public:
     double time = (end - start)/ 1e3;
     std::cout << GridLogMessage << "Smearing in " << time << " ms" << std::endl;  
   }
-
+  */
+  
   //====================================================================
+  /*
   void smeared_force(GaugeField &SigmaTilde) 
   {
     if (smearingLevels > 0)
@@ -831,10 +841,13 @@ public:
       std::cout << GridLogMessage << "Smearing force in " << time << " ms" << std::endl;  
     }  // if smearingLevels = 0 do nothing
   }
+  */
   //====================================================================
 
-  GaugeField& get_SmearedU() { return SmearedSet[smearingLevels - 1]; }
+  //  GaugeField& get_SmearedU() { return SmearedSet[smearingLevels - 1]; }
+  //  GaugeField& get_SmearedU(int n) { return this->SmearedSet[n]; }
 
+  /*
   GaugeField &get_U(bool smeared = false)
   {
     // get the config, thin links by default
@@ -864,6 +877,7 @@ public:
       return *ThinLinks;
     }
   }
+  */
 };
 
 NAMESPACE_END(Grid);

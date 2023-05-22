@@ -56,18 +56,18 @@ public:
   It stores a list of smeared configurations.
 */
 template <class Gimpl>
-class SmearedConfiguration : public ConfigurationBase<Impl>
+class SmearedConfiguration : public ConfigurationBase<Gimpl>
 {
 public:
   INHERIT_GIMPL_TYPES(Gimpl);
 
-private:
+protected:
   const unsigned int smearingLevels;
   Smear_Stout<Gimpl> *StoutSmearing;
   std::vector<GaugeField> SmearedSet;
 public:
   GaugeField*  ThinLinks; /* Pointer to the thin links configuration */ // move to base???
-private:
+protected:
   
   // Member functions
   //====================================================================
