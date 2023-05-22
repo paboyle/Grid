@@ -4,7 +4,7 @@ using namespace Grid;
 
 int main(int argc, char** argv) {
   Grid_init(&argc, &argv);
-
+    
   std::cout << GridLogMessage << "*********************************************"
               << std::endl;
   std::cout << GridLogMessage << "* Generators for Sp(2) (print and test)" << std::endl;
@@ -41,6 +41,15 @@ int main(int argc, char** argv) {
     
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
+  std::cout << GridLogMessage << "* Generators for Sp(2) TwoIndexS (print & test)" << std::endl;
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+
+  Sp_TwoIndex<2, Symmetric>::printGenerators();
+  Sp_TwoIndex<2, Symmetric>::testGenerators();
+
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
   std::cout << GridLogMessage << "* Generators for Sp(4) TwoIndexAS (test)" << std::endl;
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
@@ -49,11 +58,27 @@ int main(int argc, char** argv) {
     
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
+  std::cout << GridLogMessage << "* Generators for Sp(4) TwoIndexS (test)" << std::endl;
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+
+  Sp_TwoIndex<4, Symmetric>::testGenerators();
+    
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
   std::cout << GridLogMessage << "* Generators for Sp(6) TwoIndexAS (test)" << std::endl;
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
 
   Sp_TwoIndex<6, AntiSymmetric>::testGenerators();
+    
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+  std::cout << GridLogMessage << "* Generators for Sp(6) TwoIndexS (test)" << std::endl;
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+
+  Sp_TwoIndex<6, Symmetric>::testGenerators();
 
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
@@ -62,6 +87,14 @@ int main(int argc, char** argv) {
             << std::endl;
 
   Sp_TwoIndex<8, AntiSymmetric>::testGenerators();
+    
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+  std::cout << GridLogMessage << "* Generators for Sp(8) TwoIndexS (test)" << std::endl;
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+
+  Sp_TwoIndex<8, Symmetric>::testGenerators();
 
   Grid_finalize();
 }
