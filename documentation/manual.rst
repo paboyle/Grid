@@ -2778,46 +2778,82 @@ and there are associated reconstruction routines for assembling four spinors fro
 
 These ca
 
-
-SU(N)
+Gauge Group
 --------
+A generic Nc qcd/utils/GaugeGroup.h is provided. This defines a template class that can be specialised to different gauge groups::
 
-A generic Nc qcd/utils/SUn.h is provided. This defines a template class::
+  template <int ncolour, class group_name>
+  class GaugeGroup {...}
 
-  template <int ncolour> class SU ;
+Supported groups are SU(N) and Sp(2N). The group can be specified through the GroupName namespace::
 
-The most important external methods are::
+  namespace GroupName {
+  class SU {};
+  class Sp {};
+  }
+
+A simpler interface is achieved by instantiating the GaugeGroup class with a specific group::
+
+  template <int ncolour>
+  using SU = GaugeGroup<ncolour, GroupName::SU>;
+
+  template <int ncolour>
+  using Sp = GaugeGroup<ncolour, GroupName::Sp>;
+  
+Specific instantiations are then defined::
+
+  typedef SU<2> SU2;
+  typedef SU<3> SU3;
+  typedef SU<4> SU4;
+  typedef SU<5> SU5;
+  typedef Sp<2> Sp2;
+  typedef Sp<4> Sp4;
+  typedef Sp<6> Sp6;
+  typedef Sp<8> Sp8;
+
+Some methods are common to both gauge groups. The most important common external methods are::
 
   static void printGenerators(void) ;
   template <class cplx>  static void generator(int lieIndex, iSUnMatrix<cplx> &ta) ;
+  static void GaussianFundamentalLieAlgebraMatrix(GridParallelRNG &pRNG,
+  LatticeMatrix &out,
+  Real scale = 1.0) ;
+  static void HotConfiguration(GridParallelRNG &pRNG, GaugeField &out) ;
+  static void TepidConfiguration(GridParallelRNG &pRNG,GaugeField &out);
+  static void ColdConfiguration(GaugeField &out);
+  static void taProj( const LatticeMatrixType &in,  LatticeMatrixType &out);
+  static void taExp(const LatticeMatrixType &x, LatticeMatrixType &ex) ;
+   
+Whenever needed, a different implementation of these methods for the gauge groups is achieved by overloading. For example,::
+
+  template <typename LatticeMatrixType> //  shared interface for the traceless-antihermitian projection
+  static void taProj(const LatticeMatrixType &in, LatticeMatrixType &out) {
+    taProj(in, out, group_name());
+  }
+  
+  template <typename LatticeMatrixType> //  overloaded function to SU(N) simply perform Ta
+  static void taProj(const LatticeMatrixType &in, LatticeMatrixType &out, GroupName::SU) {
+    out = Ta(in);
+  }
+  
+  template <typename LatticeMatrixType> //  overloaded function to Sp(2N) must use a modified Ta function
+  static void taProj(const LatticeMatrixType &in, LatticeMatrixType &out, GroupName::Sp) {
+    out = SpTa(in);
+  }
+
+Gauge Group: SU(N)
+--------
+The specialisation of GaugeGroup to SU(N), formally part of qcd/utils/GaugeGroup.h, is found in the file qcd/utils/SUn.impl
+It contains methods that are only implemented for SU(N), and specialisations of shared methods to the special unitary group
+
+The most important external methods are::
 
   static void SubGroupHeatBath(GridSerialRNG &sRNG, GridParallelRNG &pRNG, RealD beta,  // coeff multiplying staple in action (with no 1/Nc)
                                LatticeMatrix &link,
 			       const LatticeMatrix &barestaple,  // multiplied by action coeffs so th
 			       int su2_subgroup, int nheatbath, LatticeInteger &wheremask);
-
-  static void GaussianFundamentalLieAlgebraMatrix(GridParallelRNG &pRNG,
-                                                  LatticeMatrix &out,
-                                                  Real scale = 1.0) ;
   static void GaugeTransform( GaugeField &Umu, GaugeMat &g)
   static void RandomGaugeTransform(GridParallelRNG &pRNG, GaugeField &Umu, GaugeMat &g);
-
-  static void HotConfiguration(GridParallelRNG &pRNG, GaugeField &out) ;
-  static void TepidConfiguration(GridParallelRNG &pRNG,GaugeField &out);
-  static void ColdConfiguration(GaugeField &out);
-
-  static void taProj( const LatticeMatrixType &in,  LatticeMatrixType &out);
-  static void taExp(const LatticeMatrixType &x, LatticeMatrixType &ex) ;
-
-  static int su2subgroups(void) ; // returns how many subgroups
-
-
-Specific instantiations are defined::
-
-	 typedef SU<2> SU2;
-	 typedef SU<3> SU3;
-	 typedef SU<4> SU4;
-	 typedef SU<5> SU5;
 
 For example, Quenched QCD updating may be run as (tests/core/Test_quenched_update.cc)::
 
@@ -2857,6 +2893,16 @@ For example, Quenched QCD updating may be run as (tests/core/Test_quenched_updat
     }
   }
 
+Gauge Group: Sp(2N)
+--------
+The specialisation of GaugeGroup to Sp(2N), formally part of qcd/utils/GaugeGroup.h, is found in the file qcd/utils/Sp(2N).impl
+It contains methods that are only implemented for Sp(2N), and specialisations of shared methods to the special unitary group
+
+The most important external methods are::
+
+  static void Omega(LatticeColourMatrixD &in) // Symplectic matrix left invariant by Sp(2N)
+
+Generation of Sp(2N) gauge fields is only supported via HMC.
 
 Space time grids
 ----------------
