@@ -49,11 +49,11 @@ struct DimensionHelper<nc, AntiSymmetric, GroupName::Sp> {
     static const int Dimension = (nc / 2) * (nc - 1) - 1;
 };
 
-template <class cplx, int nc, TwoIndexSymmetry S, class group_name>
+template <class cplx, int nc, TwoIndexSymmetry S>
 struct baseOffDiagonalSpHelper;
 
 template <class cplx, int nc>
-struct baseOffDiagonalSpHelper<cplx, nc, AntiSymmetric, GroupName::Sp> {
+struct baseOffDiagonalSpHelper<cplx, nc, AntiSymmetric> {
   static const int ngroup = nc / 2;
   static void baseOffDiagonalSp(int i, int j, iScalar<iScalar<iMatrix<cplx, nc> > > &eij) {
     eij = Zero();
@@ -93,7 +93,7 @@ struct baseOffDiagonalSpHelper<cplx, nc, AntiSymmetric, GroupName::Sp> {
 };
 
 template <class cplx, int nc>
-struct baseOffDiagonalSpHelper<cplx, nc, Symmetric, GroupName::Sp> {
+struct baseOffDiagonalSpHelper<cplx, nc, Symmetric> {
   static void baseOffDiagonalSp(int i, int j, iScalar<iScalar<iMatrix<cplx, nc> > > &eij) {
     eij = Zero();
     for (int k = 0; k < nc; k++)
@@ -237,7 +237,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
     
   template <class cplx>
   static void baseOffDiagonalSp(int i, int j, iGroupMatrix<cplx> &eij) {
-  baseOffDiagonalSpHelper<cplx, ncolour, S, GroupName::Sp>::baseOffDiagonalSp(i, j, eij);
+  baseOffDiagonalSpHelper<cplx, ncolour, S>::baseOffDiagonalSp(i, j, eij);
   }
 
   static void printBase(void) {
