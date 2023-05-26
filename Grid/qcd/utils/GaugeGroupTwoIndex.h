@@ -34,12 +34,6 @@ inline Real delta(int a, int b) { return (a == b) ? 1.0 : 0.0; }
 template <int ncolour, TwoIndexSymmetry S, class group_name>
 class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
  public:
-  static_assert(
-      std::is_same<group_name, GroupName::Sp>::value ? S != Symmetric : true,
-      "The symmetric two-index representation of Sp(2N) does not work "
-      "currently. If you want to use it, you need to implement the equivalent "
-      "of Eq. (27) and (28) from https://doi.org/10.48550/arXiv.2202.05516.");
-
   // The chosen convention is that we are taking ncolour to be N in SU<N> but 2N
   // in Sp(2N). ngroup is equal to N for SU but 2N/2 = N for Sp(2N).
   static_assert(std::is_same<group_name, GroupName::SU>::value or
@@ -84,6 +78,17 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
 
   template <class cplx>
   static void base(int Index, iGroupMatrix<cplx> &eij) {
+    // This is inside of this function because you can't use this class without
+    // this function but you can still use its static constants because as a
+    // template the following static_assert is only triggered if this function
+    // is instantiated which in turn happens only when it's used.
+    static_assert(
+        std::is_same<group_name, GroupName::Sp>::value ? S != Symmetric : true,
+        "The symmetric two-index representation of Sp(2N) does not work "
+        "currently. If you want to use it, you need to implement the "
+        "equivalent of Eq. (27) and (28) from "
+        "https://doi.org/10.48550/arXiv.2202.05516.");
+
     // returns (e)^(ij)_{kl} necessary for change of base U_F -> U_R
     assert(Index < Dimension);
     eij = Zero();
@@ -96,10 +101,9 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
       for (int i = 1; i < ncolour; i++) {
         for (int j = 0; j < i; j++) {
           a[counter][0] = i;
-            if (j==0 && ngroup == ncolour/2 && i==ngroup+j) {
-                //std::cout << "skipping" << std::endl; // for Sp2n this vanishes identically.
-                j = j+1;
-            }
+          if (j == 0 && ngroup == ncolour / 2 && i == ngroup + j) {
+            j = j + 1;
+          }
           a[counter][1] = j;
           counter++;
         }
