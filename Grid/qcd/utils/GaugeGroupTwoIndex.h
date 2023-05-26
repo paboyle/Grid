@@ -243,7 +243,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
   static void printBase(void) {
     for (int gen = 0; gen < Dimension; gen++) {
       Matrix tmp;
-      base(gen, tmp, group_name());
+      base(gen, tmp);
       std::cout << GridLogMessage << "Nc = " << ncolour << " t_" << gen
                 << std::endl;
       std::cout << GridLogMessage << tmp << std::endl;
@@ -260,7 +260,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
     for (int a = 0; a < NumGenerators; a++)
       GaugeGroup<ncolour, group_name>::generator(a, ta[a]);
 
-    for (int a = 0; a < Dimension; a++) base(a, eij[a], group_name());
+    for (int a = 0; a < Dimension; a++) base(a, eij[a]);
 
     for (int a = 0; a < Dimension; a++) {
       tmp = transpose(ta[Index]) * adj(eij[a]) + adj(eij[a]) * ta[Index];
