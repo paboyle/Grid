@@ -140,41 +140,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
   typedef iGroupMatrix<ComplexF> MatrixF;
   typedef iGroupMatrix<ComplexD> MatrixD;
     
-  template <class cplx>
-   static void base(int Index, iGroupMatrix<cplx> &eij) {
-     // returns (e)^(ij)_{kl} necessary for change of base U_F -> U_R
-     assert(Index < Dimension);
-     eij = Zero();
-
-     // for the linearisation of the 2 indexes
-     static int a[ncolour * (ncolour - 1) / 2][2];  // store the a <-> i,j
-     static bool filled = false;
-     if (!filled) {
-       int counter = 0;
-       for (int i = 1; i < ncolour; i++) {
-         for (int j = 0; j < i; j++) {
-             if (std::is_same<group_name, GroupName::Sp>::value)
-             {
-               if (j==0 && i==ngroup+j && S==-1) {
-                   //std::cout << "skipping" << std::endl; // for Sp2n this vanishes identically.
-                   j = j+1;
-               }
-             }
-           a[counter][0] = i;
-           a[counter][1] = j;
-           counter++;
-         }
-       }
-       filled = true;
-     }
-     if (Index < ncolour*ncolour - DimensionS)
-     {
-         baseOffDiagonal(a[Index][0], a[Index][1], eij, group_name());
-     } else {
-         baseDiagonal(Index, eij);
-       }
-     }
-
+private:
   template <class cplx>
   static void baseDiagonal(int Index, iGroupMatrix<cplx> &eij) {
     eij = Zero();
@@ -199,6 +165,42 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
     detail::baseOffDiagonalSpHelper<cplx, ncolour, S>::baseOffDiagonalSp(i, j, eij);
   }
 
+public:
+    
+  template <class cplx>
+  static void base(int Index, iGroupMatrix<cplx> &eij) {
+  // returns (e)^(ij)_{kl} necessary for change of base U_F -> U_R
+    assert(Index < Dimension);
+    eij = Zero();
+  // for the linearisation of the 2 indexes
+    static int a[ncolour * (ncolour - 1) / 2][2];  // store the a <-> i,j
+    static bool filled = false;
+    if (!filled) {
+      int counter = 0;
+      for (int i = 1; i < ncolour; i++) {
+      for (int j = 0; j < i; j++) {
+        if (std::is_same<group_name, GroupName::Sp>::value)
+          {
+            if (j==0 && i==ngroup+j && S==-1) {
+            //std::cout << "skipping" << std::endl; // for Sp2n this vanishes identically.
+              j = j+1;
+            }
+          }
+          a[counter][0] = i;
+          a[counter][1] = j;
+          counter++;
+          }
+      }
+      filled = true;
+    }
+    if (Index < ncolour*ncolour - DimensionS)
+    {
+      baseOffDiagonal(a[Index][0], a[Index][1], eij, group_name());
+    } else {
+      baseDiagonal(Index, eij);
+    }
+  }
+    
   static void printBase(void) {
     for (int gen = 0; gen < Dimension; gen++) {
       Matrix tmp;
