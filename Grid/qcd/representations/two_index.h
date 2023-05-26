@@ -20,7 +20,7 @@ NAMESPACE_BEGIN(Grid);
  * in the SUnTwoIndex.h file
  */
 
-template <int ncolour, TwoIndexSymmetry S, class group_name>
+template <int ncolour, TwoIndexSymmetry S, class group_name = GroupName::SU>
 class TwoIndexRep {
 public:
   // typdef to be used by the Representations class in HMC to get the

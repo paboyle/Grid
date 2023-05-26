@@ -85,7 +85,7 @@ constexpr int compute_adjoint_dimension<GroupName::Sp>(int ncolour) {
   return ncolour / 2 * (ncolour + 1);
 }
 
-template <int ncolour, class group_name>
+template <int ncolour, class group_name = GroupName::SU>
 class GaugeGroup {
  public:
   static const int Dimension = ncolour;

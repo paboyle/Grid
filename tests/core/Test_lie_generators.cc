@@ -307,7 +307,7 @@ int main(int argc, char** argv) {
   std::cout << GridLogMessage << "Two index Symmetric: Checking Group Structure"
       << std::endl;
   // Testing HMC representation classes
-  TwoIndexRep< Nc, Symmetric, GroupName::SU > TIndexRep(grid);
+  TwoIndexRep< Nc, Symmetric> TIndexRep(grid);
 
   // Test group structure
   // (U_f * V_f)_r = U_r * V_r
