@@ -210,7 +210,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
      }
 
      if (Index < DimensionHelper<ncolour, AntiSymmetric, GroupName::Sp>::Dimension + 1) {   // +1 the singlet
-       baseOffDiagonalSp(a[Index][0], a[Index][1], eij);
+       baseOffDiagonalSpHelper<cplx, ncolour, S>::baseOffDiagonalSp(a[Index][0], a[Index][1], eij);
      } else {
        baseDiagonal(Index, eij);
      }
