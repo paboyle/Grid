@@ -31,23 +31,7 @@ enum TwoIndexSymmetry { Symmetric = 1, AntiSymmetric = -1 };
 
 inline Real delta(int a, int b) { return (a == b) ? 1.0 : 0.0; }
 
-template <int nc, TwoIndexSymmetry S, class group_name>
-struct DimensionHelper;
-
-template <int nc, TwoIndexSymmetry S>
-struct DimensionHelper<nc, S, GroupName::SU> {
-    static const int Dimension = nc * (nc + S) / 2;
-};
-
-template <int nc>
-struct DimensionHelper<nc, Symmetric, GroupName::Sp> {
-    static const int Dimension = nc * (nc + 1) / 2;
-};
-
-template <int nc>
-struct DimensionHelper<nc, AntiSymmetric, GroupName::Sp> {
-    static const int Dimension = (nc / 2) * (nc - 1) - 1;
-};
+namespace detail {
 
 template <class cplx, int nc, TwoIndexSymmetry S>
 struct baseOffDiagonalSpHelper;
@@ -106,6 +90,8 @@ struct baseOffDiagonalSpHelper<cplx, nc, Symmetric> {
   }
 };
 
+}   // closing detail namespace
+
 template <int ncolour, TwoIndexSymmetry S, class group_name>
 class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
  public:
@@ -117,7 +103,11 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
   static const int ngroup =
       std::is_same<group_name, GroupName::SU>::value ? ncolour : ncolour / 2;
   static const int Dimension =
-      DimensionHelper<ncolour, S, group_name>::Dimension;
+      (ncolour * (ncolour + S) / 2) + (std::is_same<group_name, GroupName::Sp>::value ? (S - 1) / 2 : 0);
+  static const int DimensionAS =
+      (ncolour * (ncolour - 1) / 2) + (std::is_same<group_name, GroupName::Sp>::value ? (- 1) : 0);
+  static const int DimensionS =
+      ncolour * (ncolour + 1) / 2;
   static const int NumGenerators =
       GaugeGroup<ncolour, group_name>::AlgebraDimension;
 
@@ -149,43 +139,9 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
   typedef iGroupMatrix<Complex> Matrix;
   typedef iGroupMatrix<ComplexF> MatrixF;
   typedef iGroupMatrix<ComplexD> MatrixD;
-
-  template <class cplx>
-  static void base(int Index, iGroupMatrix<cplx> &eij) {
-    // returns (e)^(ij)_{kl} necessary for change of base U_F -> U_R
-    base(Index, eij, group_name());
-  }
     
   template <class cplx>
-  static void base(int Index, iGroupMatrix<cplx> &eij, GroupName::SU) {
-    // returns (e)^(ij)_{kl} necessary for change of base U_F -> U_R
-    assert(Index < Dimension);
-    eij = Zero();
-
-    // for the linearisation of the 2 indexes
-    static int a[ncolour * (ncolour - 1) / 2][2];  // store the a <-> i,j
-    static bool filled = false;
-    if (!filled) {
-      int counter = 0;
-      for (int i = 1; i < ncolour; i++) {
-        for (int j = 0; j < i; j++) {
-          a[counter][0] = i;
-          a[counter][1] = j;
-          counter++;
-        }
-      }
-      filled = true;
-    }
-
-    if (Index < ncolour * (ncolour - 1) / 2) {
-      baseOffDiagonal(a[Index][0], a[Index][1], eij);
-    } else {
-      baseDiagonal(Index, eij);
-    }
-  }
-    
-  template <class cplx>
-   static void base(int Index, iGroupMatrix<cplx> &eij, GroupName::Sp) {
+   static void base(int Index, iGroupMatrix<cplx> &eij) {
      // returns (e)^(ij)_{kl} necessary for change of base U_F -> U_R
      assert(Index < Dimension);
      eij = Zero();
@@ -197,24 +153,27 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
        int counter = 0;
        for (int i = 1; i < ncolour; i++) {
          for (int j = 0; j < i; j++) {
-           a[counter][0] = i;
-             if (j==0 && i==ngroup+j && S==-1) {
-                 //std::cout << "skipping" << std::endl; // for Sp2n this vanishes identically.
-                 j = j+1;
+             if (std::is_same<group_name, GroupName::Sp>::value)
+             {
+               if (j==0 && i==ngroup+j && S==-1) {
+                   //std::cout << "skipping" << std::endl; // for Sp2n this vanishes identically.
+                   j = j+1;
+               }
              }
+           a[counter][0] = i;
            a[counter][1] = j;
            counter++;
          }
        }
        filled = true;
      }
-
-     if (Index < DimensionHelper<ncolour, AntiSymmetric, GroupName::Sp>::Dimension + 1) {   // +1 the singlet
-       baseOffDiagonalSpHelper<cplx, ncolour, S>::baseOffDiagonalSp(a[Index][0], a[Index][1], eij);
+     if (Index < ncolour*ncolour - DimensionS)
+     {
+         baseOffDiagonal(a[Index][0], a[Index][1], eij, group_name());
      } else {
-       baseDiagonal(Index, eij);
+         baseDiagonal(Index, eij);
+       }
      }
-   }
 
   template <class cplx>
   static void baseDiagonal(int Index, iGroupMatrix<cplx> &eij) {
@@ -224,7 +183,7 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
   }
     
   template <class cplx>
-  static void baseOffDiagonal(int i, int j, iGroupMatrix<cplx> &eij) {
+  static void baseOffDiagonal(int i, int j, iGroupMatrix<cplx> &eij, GroupName::SU) {
     eij = Zero();
     for (int k = 0; k < ncolour; k++)
       for (int l = 0; l < ncolour; l++)
@@ -236,8 +195,8 @@ class GaugeGroupTwoIndex : public GaugeGroup<ncolour, group_name> {
   }
     
   template <class cplx>
-  static void baseOffDiagonalSp(int i, int j, iGroupMatrix<cplx> &eij) {
-  baseOffDiagonalSpHelper<cplx, ncolour, S>::baseOffDiagonalSp(i, j, eij);
+  static void baseOffDiagonal(int i, int j, iGroupMatrix<cplx> &eij, GroupName::Sp) {
+    detail::baseOffDiagonalSpHelper<cplx, ncolour, S>::baseOffDiagonalSp(i, j, eij);
   }
 
   static void printBase(void) {
