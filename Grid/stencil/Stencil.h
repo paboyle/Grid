@@ -451,7 +451,6 @@ public:
     else if ( this->fullDirichlet ) DslashLogDirichlet();
     else DslashLogFull();
     acceleratorCopySynchronise();
-    // Everyone agrees we are all done
     _grid->StencilBarrier(); 
   }
   ////////////////////////////////////////////////////////////////////////
@@ -540,6 +539,7 @@ public:
       compress.Point(point);
       HaloGatherDir(source,compress,point,face_idx);
     }
+    accelerator_barrier();
     face_table_computed=1;
     assert(u_comm_offset==_unified_buffer_size);
 
