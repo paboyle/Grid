@@ -423,7 +423,6 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
 #define KERNEL_CALL(A) KERNEL_CALLNB(A); accelerator_barrier();
 
 #define KERNEL_CALL_EXT(A)						\
-  const uint64_t    NN = Nsite*Ls;					\
   const uint64_t    sz = st.surface_list.size();			\
   auto ptr = &st.surface_list[0];					\
   accelerator_forNB( ss, sz, Simd::Nsimd(), {				\
