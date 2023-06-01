@@ -1,0 +1,32 @@
+spack load c-lime
+spack load gmp
+spack load mpfr
+CLIME=`spack find --paths c-lime | grep c-lime| cut -c 15-`
+GMP=`spack find --paths gmp | grep gmp | cut -c 12-`
+MPFR=`spack find --paths mpfr | grep mpfr | cut -c 12-`
+echo clime $CLIME
+echo gmp $GMP
+echo mpfr $MPFR
+
+../../configure --enable-comms=mpi-auto \
+--with-lime=$CLIME \
+--enable-unified=no \
+--enable-shm=nvlink \
+--enable-tracing=timer \
+--enable-accelerator=hip \
+--enable-gen-simd-width=64 \
+--enable-simd=GPU \
+--disable-accelerator-cshift \
+--with-gmp=$OLCF_GMP_ROOT \
+--with-fftw=$FFTW_DIR/.. \
+--with-mpfr=/opt/cray/pe/gcc/mpfr/3.1.4/ \
+--disable-fermion-reps \
+--disable-gparity \
+CXX=hipcc MPICXX=mpicxx \
+CXXFLAGS="-fPIC -I{$ROCM_PATH}/include/ -std=c++14 -I${MPICH_DIR}/include -L/lib64 --amdgpu-target=gfx90a" \
+ LDFLAGS="-L/lib64 -L/opt/rocm-5.2.0/lib/ -L${MPICH_DIR}/lib -lmpi -L${CRAY_MPICH_ROOTDIR}/gtl/lib -lmpi_gtl_hsa -lamdhip64 --amdgpu-target=gfx90a "
+
+
+#--enable-simd=GPU-RRII \
+
+
