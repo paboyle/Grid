@@ -34,10 +34,24 @@ directory
 
 NAMESPACE_BEGIN(Grid);
 
+///////////////////////////////////
+// Smart configuration base class
+///////////////////////////////////
+template< class Field >
+class ConfigurationBase
+{
+public:
+  ConfigurationBase() {}
+  virtual ~ConfigurationBase() {}
+  virtual void set_Field(Field& U) =0;
+  virtual void smeared_force(Field&) const = 0;
+  virtual Field& get_SmearedU() =0;
+  virtual Field &get_U(bool smeared = false) = 0;
+};
+
 template <class GaugeField >
 class Action 
 {
-
 public:
   bool is_smeared = false;
   RealD deriv_norm_sum;
@@ -77,11 +91,39 @@ public:
   void refresh_timer_stop(void)  { refresh_us+=usecond(); }
   void S_timer_start(void)       { S_us-=usecond(); }
   void S_timer_stop(void)        { S_us+=usecond(); }
+  /////////////////////////////
   // Heatbath?
+  /////////////////////////////
   virtual void refresh(const GaugeField& U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) = 0; // refresh pseudofermions
   virtual RealD S(const GaugeField& U) = 0;                             // evaluate the action
   virtual RealD Sinitial(const GaugeField& U) { return this->S(U); } ;  // if the refresh computes the action, can cache it. Alternately refreshAndAction() ?
   virtual void deriv(const GaugeField& U, GaugeField& dSdU) = 0;        // evaluate the action derivative
+
+  /////////////////////////////////////////////////////////////
+  // virtual smeared interface through configuration container
+  /////////////////////////////////////////////////////////////
+  virtual void refresh(ConfigurationBase<GaugeField> & U, GridSerialRNG &sRNG, GridParallelRNG& pRNG)
+  {
+    refresh(U.get_U(is_smeared),sRNG,pRNG);
+  }
+  virtual RealD S(ConfigurationBase<GaugeField>& U)
+  {
+    return S(U.get_U(is_smeared));
+  }
+  virtual RealD Sinitial(ConfigurationBase<GaugeField>& U) 
+  {
+    return Sinitial(U.get_U(is_smeared));
+  }
+  virtual void deriv(ConfigurationBase<GaugeField>& U, GaugeField& dSdU)
+  {
+    deriv(U.get_U(is_smeared),dSdU); 
+    if ( is_smeared ) {
+      U.smeared_force(dSdU);
+    }
+  }
+  ///////////////////////////////
+  // Logging
+  ///////////////////////////////
   virtual std::string action_name()    = 0;                             // return the action name
   virtual std::string LogParameters()  = 0;                             // prints action parameters
   virtual ~Action(){}
