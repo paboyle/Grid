@@ -701,13 +701,16 @@ public:
   {
     if(domask) assert(Nsmear%(2*Nd)==0); // Or multiply by 8??
 
+    // was resized in base class
+    assert(this->SmearedSet.size()==Nsmear);
+    
     GridRedBlackCartesian * UrbGrid;
     UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(_UGrid);
     LatticeComplex one(_UGrid); one = ComplexD(1.0,0.0);
     LatticeComplex tmp(_UGrid);
 
     for (unsigned int i = 0; i < this->smearingLevels; ++i) {
-      this->SmearedSet.push_back(*(new GaugeField(_UGrid)));
+
       masks.push_back(*(new LatticeLorentzComplex(_UGrid)));
       if (domask) {
 
