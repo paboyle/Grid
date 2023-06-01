@@ -307,7 +307,7 @@ int main(int argc, char** argv) {
   std::cout << GridLogMessage << "Two index Symmetric: Checking Group Structure"
       << std::endl;
   // Testing HMC representation classes
-  TwoIndexRep< Nc, Symmetric > TIndexRep(grid);
+  TwoIndexRep< Nc, Symmetric> TIndexRep(grid);
 
   // Test group structure
   // (U_f * V_f)_r = U_r * V_r
@@ -324,23 +324,23 @@ int main(int argc, char** argv) {
   }
   
   TIndexRep.update_representation(UV2);
-  typename TwoIndexRep< Nc, Symmetric >::LatticeField UVr2 = TIndexRep.U;  // (U_f * V_f)_r
+  typename TwoIndexRep< Nc, Symmetric>::LatticeField UVr2 = TIndexRep.U;  // (U_f * V_f)_r
   
   TIndexRep.update_representation(U2);
-  typename TwoIndexRep< Nc, Symmetric >::LatticeField Ur2 = TIndexRep.U;  // U_r
+  typename TwoIndexRep< Nc, Symmetric>::LatticeField Ur2 = TIndexRep.U;  // U_r
   
   TIndexRep.update_representation(V2);
-  typename TwoIndexRep< Nc, Symmetric >::LatticeField Vr2 = TIndexRep.U;  // V_r
+  typename TwoIndexRep< Nc, Symmetric>::LatticeField Vr2 = TIndexRep.U;  // V_r
   
-  typename TwoIndexRep< Nc, Symmetric >::LatticeField Ur2Vr2(grid);
+  typename TwoIndexRep< Nc, Symmetric>::LatticeField Ur2Vr2(grid);
   Ur2Vr2 = Zero();
   for (int mu = 0; mu < Nd; mu++) {
-    typename TwoIndexRep< Nc, Symmetric >::LatticeMatrix Urmu2 = peekLorentz(Ur2,mu);
-    typename TwoIndexRep< Nc, Symmetric >::LatticeMatrix Vrmu2 = peekLorentz(Vr2,mu);
+    typename TwoIndexRep< Nc, Symmetric>::LatticeMatrix Urmu2 = peekLorentz(Ur2,mu);
+    typename TwoIndexRep< Nc, Symmetric>::LatticeMatrix Vrmu2 = peekLorentz(Vr2,mu);
     pokeLorentz(Ur2Vr2,Urmu2*Vrmu2, mu);
   }
   
-  typename TwoIndexRep< Nc, Symmetric >::LatticeField Diff_check2 = UVr2 - Ur2Vr2;
+  typename TwoIndexRep< Nc, Symmetric>::LatticeField Diff_check2 = UVr2 - Ur2Vr2;
   std::cout << GridLogMessage << "Group structure SU("<<Nc<<") check difference (Two Index Symmetric): " << norm2(Diff_check2) << std::endl;
 
   
@@ -407,7 +407,7 @@ int main(int argc, char** argv) {
 
 
 
-  if (TwoIndexRep<Nc, AntiSymmetric >::Dimension != 1){
+  if (TwoIndexRep<Nc, AntiSymmetric>::Dimension != 1){
 
   std::cout << GridLogMessage << "*********************************************"
       << std::endl;
@@ -416,7 +416,7 @@ int main(int argc, char** argv) {
   std::cout << GridLogMessage << "Two Index anti-Symmetric: Check Group Structure"
       << std::endl;
   // Testing HMC representation classes
-  TwoIndexRep< Nc, AntiSymmetric > TIndexRepA(grid);
+  TwoIndexRep< Nc, AntiSymmetric> TIndexRepA(grid);
 
 
   // Test group structure
@@ -434,23 +434,23 @@ int main(int argc, char** argv) {
   }
   
   TIndexRep.update_representation(UV2A);
-  typename TwoIndexRep< Nc, AntiSymmetric >::LatticeField UVr2A = TIndexRepA.U;  // (U_f * V_f)_r
+  typename TwoIndexRep< Nc, AntiSymmetric>::LatticeField UVr2A = TIndexRepA.U;  // (U_f * V_f)_r
   
   TIndexRep.update_representation(U2A);
-  typename TwoIndexRep< Nc, AntiSymmetric >::LatticeField Ur2A = TIndexRepA.U;  // U_r
+  typename TwoIndexRep< Nc, AntiSymmetric>::LatticeField Ur2A = TIndexRepA.U;  // U_r
   
   TIndexRep.update_representation(V2A);
-  typename TwoIndexRep< Nc, AntiSymmetric >::LatticeField Vr2A = TIndexRepA.U;  // V_r
+  typename TwoIndexRep< Nc, AntiSymmetric>::LatticeField Vr2A = TIndexRepA.U;  // V_r
   
-  typename TwoIndexRep< Nc, AntiSymmetric >::LatticeField Ur2Vr2A(grid);
+  typename TwoIndexRep< Nc, AntiSymmetric>::LatticeField Ur2Vr2A(grid);
   Ur2Vr2A = Zero();
   for (int mu = 0; mu < Nd; mu++) {
-    typename TwoIndexRep< Nc, AntiSymmetric >::LatticeMatrix Urmu2A = peekLorentz(Ur2A,mu);
-    typename TwoIndexRep< Nc, AntiSymmetric >::LatticeMatrix Vrmu2A = peekLorentz(Vr2A,mu);
+    typename TwoIndexRep< Nc, AntiSymmetric>::LatticeMatrix Urmu2A = peekLorentz(Ur2A,mu);
+    typename TwoIndexRep< Nc, AntiSymmetric>::LatticeMatrix Vrmu2A = peekLorentz(Vr2A,mu);
     pokeLorentz(Ur2Vr2A,Urmu2A*Vrmu2A, mu);
   }
   
-  typename TwoIndexRep< Nc, AntiSymmetric >::LatticeField Diff_check2A = UVr2A - Ur2Vr2A;
+  typename TwoIndexRep< Nc, AntiSymmetric>::LatticeField Diff_check2A = UVr2A - Ur2Vr2A;
   std::cout << GridLogMessage << "Group structure SU("<<Nc<<") check difference (Two Index anti-Symmetric): " << norm2(Diff_check2A) << std::endl;
 
   
