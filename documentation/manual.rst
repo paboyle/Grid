@@ -2792,7 +2792,7 @@ Supported groups are SU(N) and Sp(2N). The group can be specified through the Gr
   class Sp {};
   }
 
-A simpler interface is achieved by instantiating the GaugeGroup class with a specific group::
+A simpler interface is achieved by aliasing the GaugeGroup class with a specific group::
 
   template <int ncolour>
   using SU = GaugeGroup<ncolour, GroupName::SU>;
@@ -2800,7 +2800,7 @@ A simpler interface is achieved by instantiating the GaugeGroup class with a spe
   template <int ncolour>
   using Sp = GaugeGroup<ncolour, GroupName::Sp>;
   
-Specific instantiations are then defined::
+Specific aliases are then defined::
 
   typedef SU<2> SU2;
   typedef SU<3> SU3;
