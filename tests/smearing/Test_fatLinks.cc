@@ -12,7 +12,7 @@
 #include <Grid/stencil/GeneralLocalStencil.h>
 using namespace Grid;
 
-// This is to optimize the SIMD
+// This is to optimize the SIMD (will also need to be in the class, at least for now)
 template<class vobj> void gpermute(vobj & inout,int perm) {
     vobj tmp=inout;
     if (perm & 0x1) {permute(inout,tmp,0); tmp=inout;}
@@ -81,19 +81,27 @@ int main (int argc, char **argv)
     // This is where the 3-link constructs will be stored
     LatticeGaugeField Ughost_3link(Ughost.Grid());
 
-    // Create 3-link stencil
+    // Create 3-link stencil (class will build its own stencils)
+    // writing your own stencil, you're hard-coding the periodic BCs, so you don't need
+    // the policy-based stuff, at least for now
     std::vector<Coordinate> shifts;
     for(int mu=0;mu<Nd;mu++){
         for(int nu=mu+1;nu<Nd;nu++){
+            // forward shifts
             Coordinate shift_0(Nd,0);
             Coordinate shift_mu(Nd,0); shift_mu[mu]=1;
             Coordinate shift_nu(Nd,0); shift_nu[nu]=1;
             // push_back creates an element at the end of shifts and
             // assigns the data in the argument to it.
-            shifts.push_back(shift_0);
             shifts.push_back(shift_mu);
             shifts.push_back(shift_nu);
             shifts.push_back(shift_0);
+            // reverse shifts
+            shift_nu[nu]=-1;
+            Coordinate shift_munu(Nd,0); shift_munu[mu]=1; shift_munu[nu]=-1;
+            shifts.push_back(shift_munu);
+            shifts.push_back(shift_nu);
+            shifts.push_back(shift_nu);
         }
     }
     GeneralLocalStencil gStencil(GhostGrid,shifts);
@@ -104,7 +112,7 @@ int main (int argc, char **argv)
     autoView(U_v      , Ughost      , CpuRead);
     autoView(U_3link_v, Ughost_3link, CpuWrite);
 
-    // This is a loop over local sites. 
+    // This is a loop over local sites. TODO: get backwards directions 
     for(int ss=0;ss<U_v.size();ss++){
 
         // This is the stencil index. It increases as we make our way through the spacetime sites,
@@ -114,33 +122,52 @@ int main (int argc, char **argv)
         for(int mu=0;mu<Nd;mu++){
             for(int nu=mu+1;nu<Nd;nu++){
 
+                // shift_mu; shift_mu[mu]=1
+                // shift_nu; shift_nu[nu]=1
+                // shift_0
+                // shift_munu; shift_munu[mu]= 1; shift_munu[nu]=-1;
+                // shift_nu  ;   shift_nu[nu]=-1;
+                // shift_nu  ;   shift_nu[nu]=-1;
                 auto SE0 = gStencil.GetEntry(s+0,ss);
                 auto SE1 = gStencil.GetEntry(s+1,ss);
                 auto SE2 = gStencil.GetEntry(s+2,ss);
                 auto SE3 = gStencil.GetEntry(s+3,ss);
+                auto SE4 = gStencil.GetEntry(s+4,ss);
+                auto SE5 = gStencil.GetEntry(s+5,ss);
     
                 // Each offset corresponds to a site around the plaquette.
                 int o0 = SE0->_offset;
                 int o1 = SE1->_offset;
                 int o2 = SE2->_offset;
                 int o3 = SE3->_offset;
+                int o4 = SE4->_offset;
+                int o5 = SE5->_offset;
                 
-                auto U0 = U_v[o0](mu);
-                auto U1 = U_v[o1](nu);
-                auto U2 = adj(U_v[o2](mu));
-                auto U3 = adj(U_v[o3](nu));
+                auto U0 = U_v[o0](nu);
+                auto U1 = adj(U_v[o1](mu));
+                auto U2 = adj(U_v[o2](nu));
     
                 gpermute(U0,SE0->_permute);
                 gpermute(U1,SE1->_permute);
                 gpermute(U2,SE2->_permute);
+
+                auto U3 = adj(U_v[o3](nu));
+                auto U4 = adj(U_v[o4](mu));
+                auto U5 = U_v[o5](nu); 
+
                 gpermute(U3,SE3->_permute);
+                gpermute(U4,SE4->_permute);
+                gpermute(U5,SE5->_permute);
 
-                auto W = U1*U2*U3;
-
-                // We add together contributions coming from each orientation.                
+                // Forward contribution from this orientation
+                auto W = U0*U1*U2;
                 U_3link_v[ss](mu) = U_3link_v[ss](mu) + W;
 
-                s=s+4;
+                // Backward contribution from this orientation
+                W = U3*U4*U5;
+                U_3link_v[ss](mu) = U_3link_v[ss](mu) + W;
+
+                s=s+6;
             }
         }
     }
