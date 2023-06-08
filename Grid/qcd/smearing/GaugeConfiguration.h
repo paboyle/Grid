@@ -7,23 +7,10 @@
 
 NAMESPACE_BEGIN(Grid);
 
-template< class Impl >
-class ConfigurationBase
-{
-public:
-  INHERIT_FIELD_TYPES(Impl);
-
-  ConfigurationBase() {}
-  virtual ~ConfigurationBase() {}
-  virtual void set_Field(Field& U) =0;
-  virtual void smeared_force(Field&) const = 0;
-  virtual Field& get_SmearedU() =0;
-  virtual Field &get_U(bool smeared = false) = 0;
-};
 
 //trivial class for no smearing
 template< class Impl >
-class NoSmearing : public ConfigurationBase<Impl>
+class NoSmearing : public ConfigurationBase<typename Impl::Field>
 {
 public:
   INHERIT_FIELD_TYPES(Impl);
@@ -56,7 +43,7 @@ public:
   It stores a list of smeared configurations.
 */
 template <class Gimpl>
-class SmearedConfiguration : public ConfigurationBase<Gimpl>
+class SmearedConfiguration : public ConfigurationBase<typename Gimpl::Field>
 {
 public:
   INHERIT_GIMPL_TYPES(Gimpl);
