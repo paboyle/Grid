@@ -63,10 +63,12 @@ if BUILD_GPARITY
   extra_sources+=$(GP_FERMION_FILES)
 endif
 if BUILD_FERMION_REPS
-  extra_sources+=$(SP_FERMION_FILES)
   extra_sources+=$(ADJ_FERMION_FILES)
   extra_sources+=$(TWOIND_FERMION_FILES)
-  extra_sources+=$(SP_TWOIND_FILES)
+endif
+if BUILD_SP
+    extra_sources+=$(SP_FERMION_FILES)
+    extra_sources+=$(SP_TWOIND_FILES)
 endif
 
 lib_LIBRARIES = libGrid.a
