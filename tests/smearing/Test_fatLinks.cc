@@ -67,9 +67,9 @@ int main (int argc, char **argv)
     FieldMetaData header;
     NerscIO::readConfiguration(Umu, header, param.conf_in);
 
-    Smear_HISQ_3link hisq_3link(&GRID);
+    Smear_HISQ_fat hisq_fat(&GRID);
 
-    hisq_3link.smear(U_smr,Umu);
+    hisq_fat.smear(U_smr,Umu);
 
     NerscIO::writeConfiguration(U_smr,param.conf_out,"HISQ");
 
