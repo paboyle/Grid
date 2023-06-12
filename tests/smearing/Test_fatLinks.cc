@@ -47,31 +47,38 @@ struct fatParams: Serializable {
 
 int main (int argc, char **argv)
 {
+    // Initialize the Grid
     Grid_init(&argc,&argv);
-
     Coordinate latt_size   = GridDefaultLatt();
     Coordinate simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
     Coordinate mpi_layout  = GridDefaultMpi();
-
     Grid_log("mpi = ",mpi_layout);
     Grid_log("simd = ",simd_layout);
     Grid_log("latt = ",latt_size);
-
     GridCartesian GRID(latt_size,simd_layout,mpi_layout);
 
-    XmlReader Reader("fatParams.xml",false, "grid");
-    fatParams param(Reader);  
-
+    // Instantiate the LatticeGaugeField objects holding thin (Umu) and fat (U_smr) links
     LatticeGaugeField Umu(&GRID);
     LatticeGaugeField U_smr(&GRID);
+
+    // Read in the parameter file
+    XmlReader Reader("fatParams.xml",false, "grid");
+    fatParams param(Reader);  
     FieldMetaData header;
+
+    // Read the configuration into Umu
     NerscIO::readConfiguration(Umu, header, param.conf_in);
 
+    // Smear Umu and store result in U_smr
     Smear_HISQ_fat hisq_fat(&GRID);
-
     hisq_fat.smear(U_smr,Umu);
 
     NerscIO::writeConfiguration(U_smr,param.conf_out,"HISQ");
+
+    // In the following, we test instantiation of Smear_HISQ_fat in different ways:
+    Smear_HISQ_fat hisq_fat_typical(&GRID,1,2,3,4,5,6);
+    double path_coeff[6] = {1, 2, 3, 4, 5, 6};
+    Smear_HISQ_fat hisq_fat_Cstyle(&GRID,path_coeff);
 
     Grid_finalize();
 }

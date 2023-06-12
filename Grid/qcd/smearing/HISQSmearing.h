@@ -51,17 +51,44 @@ template<class vobj> void gpermute(vobj & inout,int perm) {
 }
 
 
+/*!  @brief structure holding the link treatment */
+struct SmearingParameters{
+    SmearingParameters(){}
+    Real c_1;               // 1 link
+    Real c_naik;            // Naik term
+    Real c_3;               // 3 link
+    Real c_5;               // 5 link
+    Real c_7;               // 7 link
+    Real c_lp;              // 5 link Lepage
+    SmearingParameters(Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) :
+        c_1(c1),
+        c_naik(cnaik),
+        c_3(c3),
+        c_5(c5),
+        c_7(c7),
+        c_lp(clp){}
+};
 
-/*!  @brief create fat links from link variables. */
+
+/*!  @brief create fat links from link variables */
 class Smear_HISQ_fat {
 
 private:
     GridCartesian* const _grid;
+    SmearingParameters _LVL1;
 
 public:
 
-    // Eventually this will take, e.g., coefficients as argument 
-    Smear_HISQ_fat(GridCartesian* grid) : _grid(grid) {
+    Smear_HISQ_fat(GridCartesian* grid, Real c1=1/8., Real cnaik=0., Real c3=1/16., Real c5=1/64., Real c7=1/384., Real clp=0.) 
+        : _grid(grid), 
+          _LVL1(c1,cnaik,c3,c5,c7,clp) {
+        assert(Nc == 3 && "HISQ smearing currently implemented only for Nc==3");
+    }
+
+    // Allow to pass a pointer to a C-style, double array for MILC convenience
+    Smear_HISQ_fat(GridCartesian* grid, double* coeff) 
+        : _grid(grid), 
+          _LVL1(coeff[0],coeff[1],coeff[2],coeff[3],coeff[4],coeff[5]) {
         assert(Nc == 3 && "HISQ smearing currently implemented only for Nc==3");
     }
 
