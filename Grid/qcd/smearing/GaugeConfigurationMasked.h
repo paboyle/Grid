@@ -696,10 +696,10 @@ private:
 public:
 
   /* Standard constructor */
-  SmearedConfigurationMasked(GridCartesian* _UGrid, unsigned int Nsmear, Smear_Stout<Gimpl>& Stout,bool domask=false)
+  SmearedConfigurationMasked(GridCartesian* _UGrid, unsigned int Nsmear, Smear_Stout<Gimpl>& Stout)
     : SmearedConfiguration<Gimpl>(_UGrid, Nsmear,Stout)
   {
-    if(domask) assert(Nsmear%(2*Nd)==0); // Or multiply by 8??
+    assert(Nsmear%(2*Nd)==0); // Or multiply by 8??
 
     // was resized in base class
     assert(this->SmearedSet.size()==Nsmear);
@@ -712,26 +712,20 @@ public:
     for (unsigned int i = 0; i < this->smearingLevels; ++i) {
 
       masks.push_back(*(new LatticeLorentzComplex(_UGrid)));
-      if (domask) {
 
-	int mu= (i/2) %Nd;
-	int cb= (i%2);
-	LatticeComplex tmpcb(UrbGrid);
+      int mu= (i/2) %Nd;
+      int cb= (i%2);
+      LatticeComplex tmpcb(UrbGrid);
 	
-	masks[i]=Zero();
-	////////////////////
-	// Setup the mask
-	////////////////////
-	tmp = Zero();
-	pickCheckerboard(cb,tmpcb,one);
-	setCheckerboard(tmp,tmpcb);
-	PokeIndex<LorentzIndex>(masks[i],tmp, mu);
+      masks[i]=Zero();
+      ////////////////////
+      // Setup the mask
+      ////////////////////
+      tmp = Zero();
+      pickCheckerboard(cb,tmpcb,one);
+      setCheckerboard(tmp,tmpcb);
+      PokeIndex<LorentzIndex>(masks[i],tmp, mu);
 	
-      } else {
-	for(int mu=0;mu<Nd;mu++){
-	  PokeIndex<LorentzIndex>(masks[i],one, mu);
-	}
-      }
     }
     delete UrbGrid;
   }
@@ -764,10 +758,14 @@ public:
         tmp_mu = peekLorentz(*this->ThinLinks, mu) * peekLorentz(force, mu);
         pokeLorentz(SigmaTilde, tmp_mu, mu);
       }
+
+
       double end = usecond();
       double time = (end - start)/ 1e3;
-      std::cout << GridLogMessage << " GaugeConfigurationMasked: Smeared Force chain rule took " << time << " ms" << std::endl;  
+      std::cout << GridLogMessage << " GaugeConfigurationMasked: Smeared Force chain rule took " << time << " ms" << std::endl;
+
     }  // if smearingLevels = 0 do nothing
+    SigmaTilde=Gimpl::projectForce(SigmaTilde); // Ta
   }
 
 };
