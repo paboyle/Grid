@@ -34,6 +34,59 @@ directory
 
 NAMESPACE_BEGIN(Grid);
 
+template<int N, class Vec>
+Lattice<iScalar<iScalar<iScalar<Vec> > > > Determinant(const Lattice<iScalar<iScalar<iMatrix<Vec, N> > > > &Umu)
+{
+  GridBase *grid=Umu.Grid();
+  auto lvol = grid->lSites();
+  Lattice<iScalar<iScalar<iScalar<Vec> > > > ret(grid);
+
+  autoView(Umu_v,Umu,CpuRead);
+  autoView(ret_v,ret,CpuWrite);
+  thread_for(site,lvol,{
+    Eigen::MatrixXcd EigenU = Eigen::MatrixXcd::Zero(N,N);
+    Coordinate lcoor;
+    grid->LocalIndexToLocalCoor(site, lcoor);
+    iScalar<iScalar<iMatrix<ComplexD, N> > > Us;
+    peekLocalSite(Us, Umu_v, lcoor);
+    for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	EigenU(i,j) = Us()()(i,j);
+      }}
+    ComplexD detD  = EigenU.determinant();
+    typename Vec::scalar_type det(detD.real(),detD.imag());
+    pokeLocalSite(det,ret_v,lcoor);
+  });
+  return ret;
+}
+
+template<int N, class Vec>
+static void ProjectSUn(Lattice<iScalar<iScalar<iMatrix<Vec, N> > > > &Umu)
+{
+  Umu      = ProjectOnGroup(Umu);
+  auto det = Determinant(Umu);
+
+  det = conjugate(det);
+
+  for(int i=0;i<N;i++){
+    auto element = PeekIndex<ColourIndex>(Umu,N-1,i);
+    element = element * det;
+    PokeIndex<ColourIndex>(Umu,element,Nc-1,i);
+  }
+}
+template<int N,class Vec>
+static void ProjectSUn(Lattice<iVector<iScalar<iMatrix<Vec, N> >,Nd> > &U)
+{
+  GridBase *grid=U.Grid();
+  // Reunitarise
+  for(int mu=0;mu<Nd;mu++){
+    auto Umu = PeekIndex<LorentzIndex>(U,mu);
+    Umu      = ProjectOnGroup(Umu);
+    ProjectSUn(Umu);
+    PokeIndex<LorentzIndex>(U,Umu,mu);
+  }
+}
+
 template <int ncolour>
 class SU {
 public:
@@ -741,8 +794,14 @@ public:
     typedef Lattice<vMatrixType> LatticeMatrixType;
 
     LatticeMatrixType Umu(out.Grid());
+    LatticeMatrixType tmp(out.Grid());
     for (int mu = 0; mu < Nd; mu++) {
-      LieRandomize(pRNG, Umu, 1.0);
+      //      LieRandomize(pRNG, Umu, 1.0);
+      //      PokeIndex<LorentzIndex>(out, Umu, mu);
+      gaussian(pRNG,Umu);
+      tmp = Ta(Umu);
+      taExp(tmp,Umu);
+      ProjectSUn(Umu);
       PokeIndex<LorentzIndex>(out, Umu, mu);
     }
   }
@@ -799,30 +858,6 @@ public:
 };
 
 template<int N>
-LatticeComplexD Determinant(const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu)
-{
-  GridBase *grid=Umu.Grid();
-  auto lvol = grid->lSites();
-  LatticeComplexD ret(grid);
-
-  autoView(Umu_v,Umu,CpuRead);
-  autoView(ret_v,ret,CpuWrite);
-  thread_for(site,lvol,{
-    Eigen::MatrixXcd EigenU = Eigen::MatrixXcd::Zero(N,N);
-    Coordinate lcoor;
-    grid->LocalIndexToLocalCoor(site, lcoor);
-    iScalar<iScalar<iMatrix<ComplexD, N> > > Us;
-    peekLocalSite(Us, Umu_v, lcoor);
-    for(int i=0;i<N;i++){
-      for(int j=0;j<N;j++){
-	EigenU(i,j) = Us()()(i,j);
-      }}
-    ComplexD det = EigenU.determinant();
-    pokeLocalSite(det,ret_v,lcoor);
-  });
-  return ret;
-}
-template<int N>
 Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > Inverse(const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu)
 {
   GridBase *grid=Umu.Grid();
@@ -850,32 +885,6 @@ Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > Inverse(const Lattice<iScala
     pokeLocalSite(Ui,ret_v,lcoor);
   });
   return ret;
-}
-template<int N>
-static void ProjectSUn(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu)
-{
-  Umu      = ProjectOnGroup(Umu);
-  auto det = Determinant(Umu);
-
-  det = conjugate(det);
-
-  for(int i=0;i<N;i++){
-    auto element = PeekIndex<ColourIndex>(Umu,N-1,i);
-    element = element * det;
-    PokeIndex<ColourIndex>(Umu,element,Nc-1,i);
-  }
-}
-template<int N>
-static void ProjectSUn(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >,Nd> > &U)
-{
-  GridBase *grid=U.Grid();
-  // Reunitarise
-  for(int mu=0;mu<Nd;mu++){
-    auto Umu = PeekIndex<LorentzIndex>(U,mu);
-    Umu      = ProjectOnGroup(Umu);
-    ProjectSUn(Umu);
-    PokeIndex<LorentzIndex>(U,Umu,mu);
-  }
 }
 // Explicit specialisation for SU(3).
 // Explicit specialisation for SU(3).
