@@ -176,7 +176,6 @@ class GaugeGroup {
     GridBase *grid = out.Grid();
 
     typedef typename LatticeMatrixType::vector_type vector_type;
-    typedef typename LatticeMatrixType::scalar_type scalar_type;
 
     typedef iSinglet<vector_type> vTComplexType;
 

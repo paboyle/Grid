@@ -44,11 +44,6 @@ directory
 
 using namespace std;
 using namespace Grid;
-<<<<<<< HEAD
-
-=======
-;
->>>>>>> develop
 
 int main(int argc, char** argv) {
   Grid_init(&argc, &argv);
@@ -67,15 +62,12 @@ int main(int argc, char** argv) {
   SU2::printGenerators();
   std::cout << "Dimension of adjoint representation: "<< SU2Adjoint::Dimension << std::endl;
 
-  // guard as this code fails to compile for Nc != 3
-#if 1
-
   std::cout << " Printing  Adjoint Generators"<< std::endl;
-    
+
   SU2Adjoint::printGenerators();
   SU2::testGenerators();
   SU2Adjoint::testGenerators();
-    
+
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
   std::cout << GridLogMessage << "* Generators for SU(3)" << std::endl;
@@ -156,6 +148,7 @@ int main(int argc, char** argv) {
     pokeLorentz(UrVr,Urmu*Vrmu, mu);
   }
 
+#if Nc==3
   typedef typename SU_Adjoint<Nc>::AMatrix AdjointMatrix;
   typename AdjointRep<Nc>::LatticeField Diff_check = UVr - UrVr;
   std::cout << GridLogMessage << "Group structure SU("<<Nc<<") check difference (Adjoint representation) : " << norm2(Diff_check) << std::endl;
@@ -181,7 +174,7 @@ int main(int argc, char** argv) {
     assert(abs( (2.0*tr1-tr2) ) < 1.0e-7);
     std::cout << "------------------"<<std::endl;
   }}}
-  
+#endif
   // Check correspondence of algebra and group transformations
   // Create a random vector
   SU<Nc>::LatticeAlgebraVector h_adj(grid);
@@ -434,8 +427,6 @@ int main(int argc, char** argv) {
     std::cout << GridLogMessage << "*********************************************"
 	      << std::endl;
     
-  
-<<<<<<< HEAD
   std::cout << GridLogMessage << "Two Index anti-Symmetric: Check Group Structure"
       << std::endl;
   // Testing HMC representation classes

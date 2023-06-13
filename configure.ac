@@ -215,6 +215,7 @@ case ${ac_ENABLE_SP} in
         AC_DEFINE([Sp2n_config],[0],[gauge group SUn], [have_sp2n=false]);;
     *)
         AC_MSG_ERROR(["--enable-symplectic is either yes or no"]);;
+esac
 
 ############### FP16 conversions
 AC_ARG_ENABLE([sfw-fp16],
