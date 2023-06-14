@@ -132,13 +132,9 @@ public:
 
       double start_force = usecond();
 
-      std::cout << GridLogMessage << "AuditForce["<<level<<"]["<<a<<"] before"<<std::endl;
-      
       as[level].actions.at(a)->deriv_timer_start();
       as[level].actions.at(a)->deriv(Smearer, force);  // deriv should NOT include Ta
       as[level].actions.at(a)->deriv_timer_stop();
-
-      std::cout << GridLogMessage << "AuditForce["<<level<<"]["<<a<<"] after"<<std::endl;
 
       auto name = as[level].actions.at(a)->action_name();
 
