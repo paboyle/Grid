@@ -254,23 +254,24 @@ static void testGenerators(GroupName::Sp) {
 }
 
 template <int N>
-static void ProjectOnGeneralGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu, GroupName::Sp) {
-  Umu = ProjectOnSpGroup(Umu);
+accelerator_inline static Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > >
+ProjectOnGeneralGroup(const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu, GroupName::Sp) {
+  return ProjectOnSpGroup(Umu);
 }
 
 template <class vtype>
-static void ProjectOnGeneralGroup(iScalar<vtype> &r, GroupName::Sp) {
-  r = ProjectOnSpGroup(r);
+accelerator_inline static iScalar<vtype> ProjectOnGeneralGroup(const iScalar<vtype> &r, GroupName::Sp) {
+  return ProjectOnSpGroup(r);
 }
 
 template <class vtype, int N>
-static void ProjectOnGeneralGroup(iVector<vtype,N> &r, GroupName::Sp) {
-  r = ProjectOnSpGroup(r);
+accelerator_inline static iVector<vtype,N> ProjectOnGeneralGroup(const iVector<vtype,N> &r, GroupName::Sp) {
+  return ProjectOnSpGroup(r);
 }
 
 template <class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr>
-static void ProjectOnGeneralGroup(iMatrix<vtype,N> &arg, GroupName::Sp) {
-  arg = ProjectOnSpGroup(arg);
+accelerator_inline static iMatrix<vtype,N> ProjectOnGeneralGroup(const iMatrix<vtype,N> &arg, GroupName::Sp) {
+  return ProjectOnSpGroup(arg);
 }
 
 template <typename LatticeMatrixType>   

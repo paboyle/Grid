@@ -145,7 +145,7 @@ public:
     accelerator_for(ss, P.Grid()->oSites(),1,{
       for (int mu = 0; mu < Nd; mu++) {
           U_v[ss](mu) = Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu);
-          Group::ProjectOnGeneralGroup(U_v[ss](mu));
+          U_v[ss](mu) = Group::ProjectOnGeneralGroup(U_v[ss](mu));
       }
     });
    //auto end = std::chrono::high_resolution_clock::now();
