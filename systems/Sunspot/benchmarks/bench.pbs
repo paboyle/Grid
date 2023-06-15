@@ -1,0 +1,46 @@
+#!/bin/bash
+
+#PBS -l select=1:system=sunspot,place=scatter
+#PBS -A LatticeQCD_aesp_CNDA
+#PBS -l walltime=01:00:00
+#PBS -N dwf
+#PBS -k doe
+
+HDIR=/home/paboyle/
+module use /soft/testing/modulefiles/
+module load intel-UMD23.05.25593.11/23.05.25593.11
+module load tools/pti-gpu  
+export LD_LIBRARY_PATH=$HDIR/tools/lib64:$LD_LIBRARY_PATH
+export PATH=$HDIR/tools/bin:$PATH
+
+export TZ='/usr/share/zoneinfo/US/Central'
+export OMP_PROC_BIND=spread
+export OMP_NUM_THREADS=3
+unset OMP_PLACES
+
+cd $PBS_O_WORKDIR
+
+qsub jobscript.pbs
+
+echo Jobid: $PBS_JOBID
+echo Running on host `hostname`
+echo Running on nodes `cat $PBS_NODEFILE`
+
+echo NODES
+cat $PBS_NODEFILE
+NNODES=`wc -l < $PBS_NODEFILE`
+NRANKS=12         # Number of MPI ranks per node
+NDEPTH=4          # Number of hardware threads per rank, spacing between MPI ranks on a node
+NTHREADS=$OMP_NUM_THREADS # Number of OMP threads per rank, given to OMP_NUM_THREADS
+
+NTOTRANKS=$(( NNODES * NRANKS ))
+
+echo "NUM_NODES=${NNODES}  TOTAL_RANKS=${NTOTRANKS}  RANKS_PER_NODE=${NRANKS}  THREADS_PER_RANK=${OMP_NUM_THREADS}"
+echo "OMP_PROC_BIND=$OMP_PROC_BIND OMP_PLACES=$OMP_PLACES"
+
+    
+CMD="mpiexec -np ${NTOTRANKS} -ppn ${NRANKS} -d ${NDEPTH} --cpu-bind=depth -envall \
+	     ./gpu_tile_compact.sh \
+	./Benchmark_dwf_fp32 --mpi 1.1.2.6 --grid 16.32.64.192 --comms-overlap \
+	--shm-mpi 0 --shm 2048 --device-mem 32000 --accelerator-threads 32"
+
