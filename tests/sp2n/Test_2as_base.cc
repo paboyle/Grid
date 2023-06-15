@@ -50,7 +50,6 @@ static void run_base_checks() {
       }
 
       RealD realA;
-      RealD realB;
 
       std::cout << GridLogMessage << "checking base has symmetry " << S << std::endl;
       for (int a=0; a < this_irrep_dim; a++)
@@ -101,7 +100,6 @@ static void run_base_checks() {
       }
       for (int gen_id = 0; gen_id < this_algebra_dim; gen_id++)
       {
-          Complex iTr;
           sum = 0;
           sum_im = 0;
           std::cout << GridLogMessage <<  "generator number " << gen_id << std::endl;
