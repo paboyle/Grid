@@ -254,7 +254,7 @@ static void testGenerators(GroupName::Sp) {
 }
 
 template <int N>
-accelerator_inline static Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > >
+static Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > >
 ProjectOnGeneralGroup(const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu, GroupName::Sp) {
   return ProjectOnSpGroup(Umu);
 }

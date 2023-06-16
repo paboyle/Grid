@@ -332,7 +332,7 @@ class GaugeGroup {
   }
        
   template <int N>
-  accelerator_inline static Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > ProjectOnGeneralGroup(const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
+  static Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > ProjectOnGeneralGroup(const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
       return ProjectOnGeneralGroup(Umu, group_name());
   }
     
