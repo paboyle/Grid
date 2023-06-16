@@ -32,6 +32,7 @@ directory
 #include "Grid/Grid.h"
 
 
+#ifdef ENABLE_FERMION_REPS
 namespace Grid{
   struct FermionParameters: Serializable {
     GRID_SERIALIZABLE_CLASS_MEMBERS(FermionParameters,
@@ -84,11 +85,11 @@ int main(int argc, char **argv) {
   typedef GenericHMCRunnerHirep<TheRepresentations, MinimumNorm2> HMCWrapper;
 
   typedef WilsonImplR FundImplPolicy;
-  typedef WilsonCloverFermionR FundFermionAction; 
+  typedef WilsonCloverFermionD FundFermionAction; 
   typedef typename FundFermionAction::FermionField FundFermionField;
 
   typedef WilsonTwoIndexAntiSymmetricImplR ASymmImplPolicy; 
-  typedef WilsonCloverTwoIndexAntiSymmetricFermionR ASymmFermionAction; 
+  typedef WilsonCloverTwoIndexAntiSymmetricFermionD ASymmFermionAction; 
   typedef typename ASymmFermionAction::FermionField ASymmFermionField;
 
   typedef Grid::XmlReader Serialiser;
@@ -222,3 +223,6 @@ int main(int argc, char **argv) {
   Grid_finalize();
 
 } // main
+#else
+int main(int argc, char **argv){}
+#endif

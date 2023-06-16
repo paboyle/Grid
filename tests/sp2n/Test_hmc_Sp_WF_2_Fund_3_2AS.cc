@@ -10,11 +10,11 @@ int main(int argc, char **argv) {
   typedef GenericSp2nHMCRunnerHirep<TheRepresentations, MinimumNorm2> HMCWrapper;
     
   typedef SpWilsonTwoIndexAntiSymmetricImplR TwoIndexFermionImplPolicy;
-  typedef SpWilsonTwoIndexAntiSymmetricFermionR TwoIndexFermionAction;
+  typedef SpWilsonTwoIndexAntiSymmetricFermionD TwoIndexFermionAction;
   typedef typename TwoIndexFermionAction::FermionField TwoIndexFermionField;
     
   typedef SpWilsonImplR FundFermionImplPolicy;                                    // ok
-  typedef SpWilsonFermionR FundFermionAction;                                     // ok
+  typedef SpWilsonFermionD FundFermionAction;                                     // ok
   typedef typename FundFermionAction::FermionField FundFermionField;
  
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

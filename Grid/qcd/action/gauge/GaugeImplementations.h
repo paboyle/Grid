@@ -69,6 +69,11 @@ public:
     return PeriodicBC::ShiftStaple(Link,mu);
   }
 
+  //Same as Cshift for periodic BCs
+  static inline GaugeLinkField CshiftLink(const GaugeLinkField &Link, int mu, int shift){
+    return PeriodicBC::CshiftLink(Link,mu,shift);
+  }
+
   static inline bool isPeriodicGaugeField(void) { return true; }
 };
 
@@ -110,6 +115,11 @@ public:
       return PeriodicBC::CovShiftBackward(Link, mu, field);
   }
 
+  //If mu is a conjugate BC direction
+  //Out(x) = U^dag_\mu(x-mu)  | x_\mu != 0
+  //       = U^T_\mu(L-1)  | x_\mu == 0
+  //else
+  //Out(x) = U^dag_\mu(x-mu mod L)
   static inline GaugeLinkField
   CovShiftIdentityBackward(const GaugeLinkField &Link, int mu)
   {
@@ -129,6 +139,13 @@ public:
       return PeriodicBC::CovShiftIdentityForward(Link,mu);
   }
 
+
+  //If mu is a conjugate BC direction
+  //Out(x) = S_\mu(x+mu)  | x_\mu != L-1
+  //       = S*_\mu(x+mu)  | x_\mu == L-1
+  //else
+  //Out(x) = S_\mu(x+mu mod L)
+  //Note: While this is used for Staples it is also applicable for shifting gauge links or gauge transformation matrices
   static inline GaugeLinkField ShiftStaple(const GaugeLinkField &Link, int mu)
   {
     assert(_conjDirs.size() == Nd);
@@ -136,6 +153,27 @@ public:
       return ConjugateBC::ShiftStaple(Link,mu);
     else     
       return PeriodicBC::ShiftStaple(Link,mu);
+  }
+
+  //Boundary-aware C-shift of gauge links / gauge transformation matrices
+  //For conjugate BC direction
+  //shift = 1
+  //Out(x) = U_\mu(x+\hat\mu)  | x_\mu != L-1
+  //       = U*_\mu(0)  | x_\mu == L-1
+  //shift = -1
+  //Out(x) = U_\mu(x-mu)  | x_\mu != 0
+  //       = U*_\mu(L-1)  | x_\mu == 0
+  //else
+  //shift = 1
+  //Out(x) = U_\mu(x+\hat\mu mod L)
+  //shift = -1
+  //Out(x) = U_\mu(x-\hat\mu mod L)
+  static inline GaugeLinkField CshiftLink(const GaugeLinkField &Link, int mu, int shift){
+    assert(_conjDirs.size() == Nd);
+    if(_conjDirs[mu]) 
+      return ConjugateBC::CshiftLink(Link,mu,shift);
+    else     
+      return PeriodicBC::CshiftLink(Link,mu,shift);
   }
 
   static inline void       setDirections(std::vector<int> &conjDirs) { _conjDirs=conjDirs; }

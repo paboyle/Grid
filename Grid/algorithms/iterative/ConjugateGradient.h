@@ -58,6 +58,7 @@ public:
 
   void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) {
 
+    GRID_TRACE("ConjugateGradient");
     psi.Checkerboard() = src.Checkerboard();
 
     conformable(psi, src);
@@ -117,9 +118,13 @@ public:
     GridStopWatch MatrixTimer;
     GridStopWatch SolverTimer;
 
+    RealD usecs = -usecond();
     SolverTimer.Start();
     int k;
     for (k = 1; k <= MaxIterations; k++) {
+
+      GridStopWatch IterationTimer;
+      IterationTimer.Start();
       c = cp;
 
       MatrixTimer.Start();
@@ -152,31 +157,41 @@ public:
       LinearCombTimer.Stop();
       LinalgTimer.Stop();
 
-      std::cout << GridLogIterative << "ConjugateGradient: Iteration " << k
+      IterationTimer.Stop();
+      if ( (k % 500) == 0 ) {
+	std::cout << GridLogMessage << "ConjugateGradient: Iteration " << k
                 << " residual " << sqrt(cp/ssq) << " target " << Tolerance << std::endl;
+      } else { 
+	std::cout << GridLogIterative << "ConjugateGradient: Iteration " << k
+		  << " residual " << sqrt(cp/ssq) << " target " << Tolerance << " took " << IterationTimer.Elapsed() << std::endl;
+      }
 
       // Stopping condition
       if (cp <= rsq) {
+	usecs +=usecond();
         SolverTimer.Stop();
         Linop.HermOpAndNorm(psi, mmp, d, qq);
         p = mmp - src;
-
+	GridBase *grid = src.Grid();
+	RealD DwfFlops = (1452. )*grid->gSites()*4*k
+   	               + (8+4+8+4+4)*12*grid->gSites()*k; // CG linear algebra
         RealD srcnorm = std::sqrt(norm2(src));
         RealD resnorm = std::sqrt(norm2(p));
         RealD true_residual = resnorm / srcnorm;
-
         std::cout << GridLogMessage << "ConjugateGradient Converged on iteration " << k 
 		  << "\tComputed residual " << std::sqrt(cp / ssq)
 		  << "\tTrue residual " << true_residual
 		  << "\tTarget " << Tolerance << std::endl;
 
-        std::cout << GridLogIterative << "Time breakdown "<<std::endl;
-	std::cout << GridLogIterative << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
-	std::cout << GridLogIterative << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
-	std::cout << GridLogIterative << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
-	std::cout << GridLogIterative << "\tInner      " << InnerTimer.Elapsed() <<std::endl;
-	std::cout << GridLogIterative << "\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
-	std::cout << GridLogIterative << "\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
+        std::cout << GridLogMessage << "Time breakdown "<<std::endl;
+	std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tInner      " << InnerTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
+
+	std::cout << GridLogDebug << "\tMobius flop rate " << DwfFlops/ usecs<< " Gflops " <<std::endl;
 
         if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0);
 

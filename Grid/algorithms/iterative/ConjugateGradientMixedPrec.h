@@ -35,7 +35,8 @@ NAMESPACE_BEGIN(Grid);
     typename std::enable_if< getPrecision<FieldD>::value == 2, int>::type = 0,
     typename std::enable_if< getPrecision<FieldF>::value == 1, int>::type = 0> 
   class MixedPrecisionConjugateGradient : public LinearFunction<FieldD> {
-  public:                                                
+  public:
+    using LinearFunction<FieldD>::operator();
     RealD   Tolerance;
     RealD   InnerTolerance; //Initial tolerance for inner CG. Defaults to Tolerance but can be changed
     Integer MaxInnerIterations;
@@ -48,6 +49,7 @@ NAMESPACE_BEGIN(Grid);
     Integer TotalInnerIterations; //Number of inner CG iterations
     Integer TotalOuterIterations; //Number of restarts
     Integer TotalFinalStepIterations; //Number of CG iterations in final patch-up step
+    RealD TrueResidual;
 
     //Option to speed up *inner single precision* solves using a LinearFunction that produces a guess
     LinearFunction<FieldF> *guesser;
@@ -67,6 +69,7 @@ NAMESPACE_BEGIN(Grid);
     }
   
   void operator() (const FieldD &src_d_in, FieldD &sol_d){
+    std::cout << GridLogMessage << "MixedPrecisionConjugateGradient: Starting mixed precision CG with outer tolerance " << Tolerance << " and inner tolerance " << InnerTolerance << std::endl;
     TotalInnerIterations = 0;
 	
     GridStopWatch TotalTimer;
@@ -96,6 +99,7 @@ NAMESPACE_BEGIN(Grid);
     FieldF sol_f(SinglePrecGrid);
     sol_f.Checkerboard() = cb;
     
+    std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradient: Starting initial inner CG with tolerance " << inner_tol << std::endl;
     ConjugateGradient<FieldF> CG_f(inner_tol, MaxInnerIterations);
     CG_f.ErrorOnNoConverge = false;
 
@@ -104,7 +108,10 @@ NAMESPACE_BEGIN(Grid);
     GridStopWatch PrecChangeTimer;
     
     Integer &outer_iter = TotalOuterIterations; //so it will be equal to the final iteration count
-      
+
+    precisionChangeWorkspace pc_wk_sp_to_dp(DoublePrecGrid, SinglePrecGrid);
+    precisionChangeWorkspace pc_wk_dp_to_sp(SinglePrecGrid, DoublePrecGrid);
+    
     for(outer_iter = 0; outer_iter < MaxOuterIterations; outer_iter++){
       //Compute double precision rsd and also new RHS vector.
       Linop_d.HermOp(sol_d, tmp_d);
@@ -119,7 +126,7 @@ NAMESPACE_BEGIN(Grid);
       while(norm * inner_tol * inner_tol < stop) inner_tol *= 2;  // inner_tol = sqrt(stop/norm) ??
 
       PrecChangeTimer.Start();
-      precisionChange(src_f, src_d);
+      precisionChange(src_f, src_d, pc_wk_dp_to_sp);
       PrecChangeTimer.Stop();
       
       sol_f = Zero();
@@ -129,6 +136,7 @@ NAMESPACE_BEGIN(Grid);
 	(*guesser)(src_f, sol_f);
 
       //Inner CG
+      std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradient: Outer iteration " << outer_iter << " starting inner CG with tolerance " << inner_tol << std::endl;
       CG_f.Tolerance = inner_tol;
       InnerCGtimer.Start();
       CG_f(Linop_f, src_f, sol_f);
@@ -137,7 +145,7 @@ NAMESPACE_BEGIN(Grid);
       
       //Convert sol back to double and add to double prec solution
       PrecChangeTimer.Start();
-      precisionChange(tmp_d, sol_f);
+      precisionChange(tmp_d, sol_f, pc_wk_sp_to_dp);
       PrecChangeTimer.Stop();
       
       axpy(sol_d, 1.0, tmp_d, sol_d);
@@ -149,6 +157,7 @@ NAMESPACE_BEGIN(Grid);
     ConjugateGradient<FieldD> CG_d(Tolerance, MaxInnerIterations);
     CG_d(Linop_d, src_d_in, sol_d);
     TotalFinalStepIterations = CG_d.IterationsToComplete;
+    TrueResidual = CG_d.TrueResidual;
 
     TotalTimer.Stop();
     std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradient: Inner CG iterations " << TotalInnerIterations << " Restarts " << TotalOuterIterations << " Final CG iterations " << TotalFinalStepIterations << std::endl;

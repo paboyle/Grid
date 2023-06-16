@@ -43,7 +43,7 @@ NAMESPACE_BEGIN(Grid);
 template<class Field>
 class PrecGeneralisedConjugateResidualNonHermitian : public LinearFunction<Field> {
 public:                                                
-
+  using LinearFunction<Field>::operator();
   RealD   Tolerance;
   Integer MaxIterations;
   int verbose;
@@ -119,7 +119,8 @@ public:
   RealD GCRnStep(const Field &src, Field &psi,RealD rsq){
 
     RealD cp;
-    ComplexD a, b, zAz;
+    ComplexD a, b;
+    //    ComplexD zAz;
     RealD zAAz;
     ComplexD rq;
 
@@ -146,7 +147,7 @@ public:
     //////////////////////////////////
     MatTimer.Start();
     Linop.Op(psi,Az);
-    zAz = innerProduct(Az,psi);
+    //    zAz = innerProduct(Az,psi);
     zAAz= norm2(Az);
     MatTimer.Stop();
     
@@ -170,7 +171,7 @@ public:
 
     LinalgTimer.Start();
 
-    zAz = innerProduct(Az,psi);
+    //    zAz = innerProduct(Az,psi);
     zAAz= norm2(Az);
 
     //p[0],q[0],qq[0] 
@@ -212,7 +213,7 @@ public:
       MatTimer.Start();
       Linop.Op(z,Az);
       MatTimer.Stop();
-      zAz = innerProduct(Az,psi);
+      //      zAz = innerProduct(Az,psi);
       zAAz= norm2(Az);
 
       LinalgTimer.Start();

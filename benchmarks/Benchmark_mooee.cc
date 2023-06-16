@@ -67,22 +67,22 @@ int main (int argc, char ** argv)
     const int ncall=1000;
 
     std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
-    std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionR::Dhop "<<std::endl;
+    std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionD::Dhop "<<std::endl;
     std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
 
     GridParallelRNG RNG5(FGrid); RNG5.SeedFixedIntegers(seeds5);
     LatticeFermion src(FGrid); random(RNG5,src);
     LatticeFermion result(FGrid);
 
-    DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+    DomainWallFermionD Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
     double t0,t1;
     
-    typedef typename DomainWallFermionR::Coeff_t Coeff_t;
+    typedef typename DomainWallFermionD::Coeff_t Coeff_t;
     Vector<Coeff_t> diag = Dw.bs;
     Vector<Coeff_t> upper= Dw.cs;
     Vector<Coeff_t> lower= Dw.cs;
-    upper[Ls-1]=-Dw.mass*upper[Ls-1];
-    lower[0]   =-Dw.mass*lower[0];
+    upper[Ls-1]=-Dw.mass_minus*upper[Ls-1];
+    lower[0]   =-Dw.mass_plus*lower[0];
     
     LatticeFermion r_eo(FGrid);
     LatticeFermion src_e (FrbGrid);
@@ -103,35 +103,30 @@ int main (int argc, char ** argv)
 #define BENCH_DW(A,...)			\
     Dw. A (__VA_ARGS__);				\
     FGrid->Barrier();				\
-    Dw.CayleyZeroCounters();      \
     t0=usecond();				\
     for(int i=0;i<ncall;i++){			\
       Dw. A (__VA_ARGS__);				\
     }						\
     t1=usecond();				\
     FGrid->Barrier();				\
-    Dw.CayleyReport();					\
     std::cout<<GridLogMessage << "Called " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
     std::cout<<GridLogMessage << "******************"<<std::endl;
 
 #define BENCH_ZDW(A,in,out)			\
     zDw. A (in,out);				\
     FGrid->Barrier();				\
-    zDw.CayleyZeroCounters();      \
     t0=usecond();				\
     for(int i=0;i<ncall;i++){			\
       zDw. A (in,out);				\
     }						\
     t1=usecond();				\
     FGrid->Barrier();				\
-    zDw.CayleyReport();							\
     std::cout<<GridLogMessage << "Called ZDw " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
     std::cout<<GridLogMessage << "******************"<<std::endl;
 
 #define BENCH_DW_SSC(A,in,out)			\
     Dw. A (in,out);				\
     FGrid->Barrier();				\
-    Dw.CayleyZeroCounters();      \
     t0=usecond();				\
     for(int i=0;i<ncall;i++){			\
       __SSC_START ;				\
@@ -140,7 +135,6 @@ int main (int argc, char ** argv)
     }						\
     t1=usecond();				\
     FGrid->Barrier();				\
-    Dw.CayleyReport();					\
     std::cout<<GridLogMessage << "Called " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
     std::cout<<GridLogMessage << "******************"<<std::endl;
 

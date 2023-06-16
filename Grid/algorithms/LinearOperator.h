@@ -52,6 +52,7 @@ public:
   virtual void AdjOp  (const Field &in, Field &out) = 0; // Abstract base
   virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2)=0;
   virtual void HermOp(const Field &in, Field &out)=0;
+  virtual ~LinearOperatorBase(){};
 };
 
 
@@ -507,7 +508,7 @@ class SchurStaggeredOperator :  public SchurOperatorBase<Field> {
   virtual  void MpcDag   (const Field &in, Field &out){
     Mpc(in,out);
   }
-  virtual void MpcDagMpc(const Field &in, Field &out,RealD &ni,RealD &no) {
+  virtual void MpcDagMpc(const Field &in, Field &out) {
     assert(0);// Never need with staggered
   }
 };
@@ -525,6 +526,7 @@ public:
       (*this)(Linop,in[k],out[k]);
     }
   };
+  virtual ~OperatorFunction(){};
 };
 
 template<class Field> class LinearFunction {
@@ -540,6 +542,7 @@ public:
       (*this)(in[i], out[i]);
     }
   }
+  virtual ~LinearFunction(){};
 };
 
 template<class Field> class IdentityLinearFunction : public LinearFunction<Field> {
@@ -585,6 +588,7 @@ class HermOpOperatorFunction : public OperatorFunction<Field> {
 template<typename Field>
 class PlainHermOp : public LinearFunction<Field> {
 public:
+  using LinearFunction<Field>::operator();
   LinearOperatorBase<Field> &_Linop;
       
   PlainHermOp(LinearOperatorBase<Field>& linop) : _Linop(linop) 
@@ -598,6 +602,7 @@ public:
 template<typename Field>
 class FunctionHermOp : public LinearFunction<Field> {
 public:
+  using LinearFunction<Field>::operator(); 
   OperatorFunction<Field>   & _poly;
   LinearOperatorBase<Field> &_Linop;
       

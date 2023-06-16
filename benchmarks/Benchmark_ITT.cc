@@ -142,7 +142,7 @@ public:
 	  //	  bzero((void *)rbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
 	}
 
-	int ncomm;
+	//	int ncomm;
 	double dbytes;
 
         for(int dir=0;dir<8;dir++) {
@@ -290,7 +290,7 @@ public:
       LatticeSU4 z(&Grid); z=Zero();
       LatticeSU4 x(&Grid); x=Zero();
       LatticeSU4 y(&Grid); y=Zero();
-      double a=2.0;
+      //      double a=2.0;
 
       uint64_t Nloop=NLOOP;
 
@@ -420,7 +420,6 @@ public:
 	FGrid->Broadcast(0,&ncall,sizeof(ncall));
 
 	//	std::cout << GridLogMessage << " Estimate " << ncall << " calls per second"<<std::endl;
-	Dw.ZeroCounters();
 
 	time_statistics timestat;
 	std::vector<double> t_time(ncall);
@@ -589,7 +588,6 @@ public:
 	FGrid->Broadcast(0,&ncall,sizeof(ncall));
 
 	//	std::cout << GridLogMessage << " Estimate " << ncall << " calls per second"<<std::endl;
-	Ds.ZeroCounters();
 
 	time_statistics timestat;
 	std::vector<double> t_time(ncall);

@@ -30,12 +30,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
-
-template<class d>
-struct scal {
-  d internal;
-};
 
   Gamma::Algebra Gmu [] = {
     Gamma::Algebra::GammaX,
@@ -46,9 +40,9 @@ struct scal {
 
 int main (int argc, char ** argv)
 {
-  typedef typename ImprovedStaggeredFermion5DR::FermionField FermionField; 
-  typedef typename ImprovedStaggeredFermion5DR::ComplexField ComplexField; 
-  typename ImprovedStaggeredFermion5DR::ImplParams params; 
+  typedef typename ImprovedStaggeredFermion5DD::FermionField FermionField; 
+  typedef typename ImprovedStaggeredFermion5DD::ComplexField ComplexField; 
+  typename ImprovedStaggeredFermion5DD::ImplParams params; 
 
   const int Ls=8;
 
@@ -83,8 +77,8 @@ int main (int argc, char ** argv)
     volume=volume*latt_size[mu];
   }
 
-  ImprovedStaggeredFermion5DR Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,c1,c2,u0); 
-  MdagMLinearOperator<ImprovedStaggeredFermion5DR,FermionField> HermOp(Ds);
+  ImprovedStaggeredFermion5DD Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,c1,c2,u0); 
+  MdagMLinearOperator<ImprovedStaggeredFermion5DD,FermionField> HermOp(Ds);
 
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
   int blockDim = 0;
@@ -95,8 +89,8 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   std::cout << GridLogMessage << " Calling 4d CG "<<std::endl;
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-  ImprovedStaggeredFermionR Ds4d(Umu,Umu,*UGrid,*UrbGrid,mass,c1,c2,u0);
-  MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> HermOp4d(Ds4d);
+  ImprovedStaggeredFermionD Ds4d(Umu,Umu,*UGrid,*UrbGrid,mass,c1,c2,u0);
+  MdagMLinearOperator<ImprovedStaggeredFermionD,FermionField> HermOp4d(Ds4d);
   FermionField src4d(UGrid); random(pRNG,src4d);
   FermionField result4d(UGrid); result4d=Zero();
 
@@ -120,7 +114,6 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   result=Zero();
 {
-  Ds.ZeroCounters();
   double t1=usecond();
   CG(HermOp,src,result);
   double t2=usecond();
@@ -129,7 +122,6 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
     std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
-  Ds.Report();
 }
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
@@ -137,7 +129,6 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Calling multiRHS CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   result=Zero();
-  Ds.ZeroCounters();
 {
   double t1=usecond();
   mCG(HermOp,src,result);
@@ -148,14 +139,12 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
   std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
 }
-  Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   std::cout << GridLogMessage << " Calling Block CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   result=Zero();
-  Ds.ZeroCounters();
 {
   double t1=usecond();
   BCGrQ(HermOp,src,result);
@@ -166,7 +155,6 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
   std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
 }
-  Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
 

@@ -9,6 +9,7 @@
     Author: Matt Spraggs <matthew.spraggs@gmail.com>
     Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     Author: paboyle <paboyle@ph.ed.ac.uk>
+    Author: Jamie Hudspith <renwick.james.hudspth@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,6 +31,8 @@
 #ifndef GRID_NERSC_IO_H
 #define GRID_NERSC_IO_H
 
+#include <string>
+
 NAMESPACE_BEGIN(Grid);
 
 using namespace Grid;
@@ -39,8 +42,10 @@ using namespace Grid;
 ////////////////////////////////////////////////////////////////////////////////
 class NerscIO : public BinaryIO { 
 public:
-
   typedef Lattice<vLorentzColourMatrixD> GaugeField;
+
+  // Enable/disable exiting if the plaquette in the header does not match the value computed (default true)
+  static bool & exitOnReadPlaquetteMismatch(){ static bool v=true; return v; }
 
   static inline void truncate(std::string file){
     std::ofstream fout(file,std::ios::out);
@@ -145,15 +150,17 @@ public:
 
     std::string format(header.floating_point);
 
-    int ieee32big = (format == std::string("IEEE32BIG"));
-    int ieee32    = (format == std::string("IEEE32"));
-    int ieee64big = (format == std::string("IEEE64BIG"));
-    int ieee64    = (format == std::string("IEEE64") || format == std::string("IEEE64LITTLE"));
+    const int ieee32big = (format == std::string("IEEE32BIG"));
+    const int ieee32    = (format == std::string("IEEE32"));
+    const int ieee64big = (format == std::string("IEEE64BIG"));
+    const int ieee64    = (format == std::string("IEEE64") || \
+			   format == std::string("IEEE64LITTLE"));
 
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
     // depending on datatype, set up munger;
     // munger is a function of <floating point, Real, data_type>
-    if ( header.data_type == std::string("4D_SU3_GAUGE") ) {
+    const std::string stNC = std::to_string( Nc ) ;
+    if ( header.data_type == std::string("4D_SU"+stNC+"_GAUGE") ) {
       if ( ieee32 || ieee32big ) {
 	BinaryIO::readLatticeObject<vLorentzColourMatrixD, LorentzColour2x3F> 
 	  (Umu,file,Gauge3x2munger<LorentzColour2x3F,LorentzColourMatrix>(), offset,format,
@@ -164,7 +171,7 @@ public:
 	  (Umu,file,Gauge3x2munger<LorentzColour2x3D,LorentzColourMatrix>(),offset,format,
 	   nersc_csum,scidac_csuma,scidac_csumb);
       }
-    } else if ( header.data_type == std::string("4D_SU3_GAUGE_3x3") ) {
+    } else if ( header.data_type == std::string("4D_SU"+stNC+"_GAUGE_"+stNC+"x"+stNC) ) {
       if ( ieee32 || ieee32big ) {
 	BinaryIO::readLatticeObject<vLorentzColourMatrixD,LorentzColourMatrixF>
 	  (Umu,file,GaugeSimpleMunger<LorentzColourMatrixF,LorentzColourMatrix>(),offset,format,
@@ -198,7 +205,7 @@ public:
       std::cerr << " nersc_csum  " <<std::hex<< nersc_csum << " " << header.checksum<< std::dec<< std::endl;
       exit(0);
     }
-    assert(fabs(clone.plaquette -header.plaquette ) < 1.0e-5 );
+    if(exitOnReadPlaquetteMismatch()) assert(fabs(clone.plaquette -header.plaquette ) < 1.0e-5 );
     assert(fabs(clone.link_trace-header.link_trace) < 1.0e-6 );
     assert(nersc_csum == header.checksum );
       
@@ -209,27 +216,29 @@ public:
   template<class GaugeStats=PeriodicGaugeStatistics>
   static inline void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,
 					std::string file, 
-					std::string ens_label = std::string("DWF"))
+					std::string ens_label = std::string("DWF"),
+					std::string ens_id = std::string("UKQCD"),
+					unsigned int sequence_number = 1)
   {
-    writeConfiguration(Umu,file,0,1,ens_label);
+    writeConfiguration(Umu,file,0,1,ens_label,ens_id,sequence_number);
   }
   template<class GaugeStats=PeriodicGaugeStatistics>
   static inline void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,
 					std::string file, 
 					int two_row,
 					int bits32,
-					std::string ens_label = std::string("DWF"))
+					std::string ens_label = std::string("DWF"),
+					std::string ens_id = std::string("UKQCD"),
+					unsigned int sequence_number = 1)
   {
     typedef vLorentzColourMatrixD vobj;
     typedef typename vobj::scalar_object sobj;
 
     FieldMetaData header;
-    ///////////////////////////////////////////
-    // Following should become arguments
-    ///////////////////////////////////////////
-    header.sequence_number = 1;
-    header.ensemble_id     = std::string("UKQCD");
+    header.sequence_number = sequence_number;
+    header.ensemble_id     = ens_id;
     header.ensemble_label  = ens_label;
+    header.hdr_version     = "1.0" ;
 
     typedef LorentzColourMatrixD fobj3D;
     typedef LorentzColour2x3D    fobj2D;
@@ -243,10 +252,14 @@ public:
 
     uint64_t offset;
 
-    // Sod it -- always write 3x3 double
-    header.floating_point = std::string("IEEE64BIG");
-    header.data_type      = std::string("4D_SU3_GAUGE_3x3");
-    GaugeSimpleUnmunger<fobj3D,sobj> munge;
+    // Sod it -- always write NcxNc double
+    header.floating_point  = std::string("IEEE64BIG");
+    const std::string stNC = std::to_string( Nc ) ;
+    if( two_row ) {
+      header.data_type = std::string("4D_SU" + stNC + "_GAUGE" );
+    } else {
+      header.data_type = std::string("4D_SU" + stNC + "_GAUGE_" + stNC + "x" + stNC );
+    }
     if ( grid->IsBoss() ) { 
       truncate(file);
       offset = writeHeader(header,file);
@@ -254,8 +267,15 @@ public:
     grid->Broadcast(0,(void *)&offset,sizeof(offset));
 
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
-    BinaryIO::writeLatticeObject<vobj,fobj3D>(Umu,file,munge,offset,header.floating_point,
-					      nersc_csum,scidac_csuma,scidac_csumb);
+    if( two_row ) {
+      Gauge3x2unmunger<fobj2D,sobj> munge;
+      BinaryIO::writeLatticeObject<vobj,fobj2D>(Umu,file,munge,offset,header.floating_point,
+						nersc_csum,scidac_csuma,scidac_csumb);
+    } else {
+      GaugeSimpleUnmunger<fobj3D,sobj> munge;
+      BinaryIO::writeLatticeObject<vobj,fobj3D>(Umu,file,munge,offset,header.floating_point,
+						nersc_csum,scidac_csuma,scidac_csumb);
+    }
     header.checksum = nersc_csum;
     if ( grid->IsBoss() ) { 
       writeHeader(header,file);
@@ -287,8 +307,7 @@ public:
     header.plaquette=0.0;
     MachineCharacteristics(header);
 
-	uint64_t offset;
-  
+    uint64_t offset;
 #ifdef RNG_RANLUX
     header.floating_point = std::string("UINT64");
     header.data_type      = std::string("RANLUX48");
@@ -328,7 +347,7 @@ public:
 
     GridBase *grid = parallel.Grid();
 
-	uint64_t offset = readHeader(file,grid,header);
+    uint64_t offset = readHeader(file,grid,header);
 
     FieldMetaData clone(header);
 

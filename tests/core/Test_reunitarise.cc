@@ -132,6 +132,7 @@ int main (int argc, char ** argv)
   tmp = U*adj(U) - ident;
   std::cout << "Unitarity check after projection    " << norm2(tmp)<<std::endl; 
 #endif
+    
   ProjectSUn(UU);
   detUU= Determinant(UU);
   detUU= detUU -1.0;

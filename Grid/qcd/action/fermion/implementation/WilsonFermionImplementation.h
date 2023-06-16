@@ -4,12 +4,13 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: ./lib/qcd/action/fermion/WilsonFermion.cc
 
-Copyright (C) 2015
+Copyright (C) 2022
 
 Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Fabian Joswig <fabian.joswig@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -59,6 +60,9 @@ WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
       _tmp(&Hgrid),
       anisotropyCoeff(anis)
 {
+  Stencil.lo     = &Lebesgue;
+  StencilEven.lo = &LebesgueEvenOdd;
+  StencilOdd.lo  = &LebesgueEvenOdd;
   // Allocate the required comms buffer
   ImportGauge(_Umu);
   if  (anisotropyCoeff.isAnisotropic){
@@ -74,91 +78,6 @@ WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
   StencilEven.BuildSurfaceList(1,vol4);
   StencilOdd.BuildSurfaceList(1,vol4);
 }
-
-template<class Impl>
-void WilsonFermion<Impl>::Report(void)
-{
-  RealD NP = _grid->_Nprocessors;
-  RealD NN = _grid->NodeCount();
-  RealD volume = 1;
-  Coordinate latt = _grid->GlobalDimensions();
-  for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
-
-  if ( DhopCalls > 0 ) {
-    std::cout << GridLogMessage << "#### Dhop calls report " << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion Number of DhopEO Calls   : " << DhopCalls   << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion TotalTime   /Calls        : " << DhopTotalTime   / DhopCalls << " us" << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion CommTime    /Calls        : " << DhopCommTime    / DhopCalls << " us" << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion FaceTime    /Calls        : " << DhopFaceTime    / DhopCalls << " us" << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion ComputeTime1/Calls        : " << DhopComputeTime / DhopCalls << " us" << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion ComputeTime2/Calls        : " << DhopComputeTime2/ DhopCalls << " us" << std::endl;
-
-    // Average the compute time
-    _grid->GlobalSum(DhopComputeTime);
-    DhopComputeTime/=NP;
-    RealD mflops = 1320*volume*DhopCalls/DhopComputeTime/2; // 2 for red black counting
-    std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per node       : " << mflops/NN << std::endl;
-
-    RealD Fullmflops = 1320*volume*DhopCalls/(DhopTotalTime)/2; // 2 for red black counting
-    std::cout << GridLogMessage << "Average mflops/s per call (full)         : " << Fullmflops << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per rank (full): " << Fullmflops/NP << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per node (full): " << Fullmflops/NN << std::endl;
-
-   }
-
-  if ( DerivCalls > 0 ) {
-    std::cout << GridLogMessage << "#### Deriv calls report "<< std::endl;
-    std::cout << GridLogMessage << "WilsonFermion Number of Deriv Calls    : " <<DerivCalls <<std::endl;
-    std::cout << GridLogMessage << "WilsonFermion CommTime/Calls           : " <<DerivCommTime/DerivCalls<<" us" <<std::endl;
-    std::cout << GridLogMessage << "WilsonFermion ComputeTime/Calls        : " <<DerivComputeTime/DerivCalls<<" us" <<std::endl;
-    std::cout << GridLogMessage << "WilsonFermion Dhop ComputeTime/Calls   : " <<DerivDhopComputeTime/DerivCalls<<" us" <<std::endl;
-
-    // how to count flops here?
-    RealD mflops = 144*volume*DerivCalls/DerivDhopComputeTime;
-    std::cout << GridLogMessage << "Average mflops/s per call               ? : " << mflops << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per node      ? : " << mflops/NP << std::endl;
-
-    // how to count flops here?
-    RealD Fullmflops = 144*volume*DerivCalls/(DerivDhopComputeTime+DerivCommTime)/2; // 2 for red black counting
-    std::cout << GridLogMessage << "Average mflops/s per call (full)        ? : " << Fullmflops << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per node (full) ? : " << Fullmflops/NP << std::endl;  }
-
-  if (DerivCalls > 0 || DhopCalls > 0){
-    std::cout << GridLogMessage << "WilsonFermion Stencil"    <<std::endl;  Stencil.Report();
-    std::cout << GridLogMessage << "WilsonFermion StencilEven"<<std::endl;  StencilEven.Report();
-    std::cout << GridLogMessage << "WilsonFermion StencilOdd" <<std::endl;  StencilOdd.Report();
-  }
-  if ( DhopCalls > 0){
-    std::cout << GridLogMessage << "WilsonFermion Stencil     Reporti()"    <<std::endl;  Stencil.Reporti(DhopCalls);
-    std::cout << GridLogMessage << "WilsonFermion StencilEven Reporti()"<<std::endl;  StencilEven.Reporti(DhopCalls);
-    std::cout << GridLogMessage << "WilsonFermion StencilOdd  Reporti()" <<std::endl;  StencilOdd.Reporti(DhopCalls);
-  }
-}
-
-template<class Impl>
-void WilsonFermion<Impl>::ZeroCounters(void) {
-  DhopCalls       = 0; // ok
-  DhopCommTime    = 0;
-  DhopComputeTime = 0;
-  DhopComputeTime2= 0;
-  DhopFaceTime    = 0;
-  DhopTotalTime   = 0;
-
-  DerivCalls       = 0; // ok
-  DerivCommTime    = 0;
-  DerivComputeTime = 0;
-  DerivDhopComputeTime = 0;
-
-  Stencil.ZeroCounters();
-  StencilEven.ZeroCounters();
-  StencilOdd.ZeroCounters();
-  Stencil.ZeroCountersi();
-  StencilEven.ZeroCountersi();
-  StencilOdd.ZeroCountersi();
-}
-
 
 template <class Impl>
 void WilsonFermion<Impl>::ImportGauge(const GaugeField &_Umu)
@@ -319,7 +238,6 @@ template <class Impl>
 void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
                                         GaugeField &mat, const FermionField &A,
                                         const FermionField &B, int dag) {
-  DerivCalls++;
   assert((dag == DaggerNo) || (dag == DaggerYes));
 
   Compressor compressor(dag);
@@ -328,11 +246,8 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
   FermionField Atilde(B.Grid());
   Atilde = A;
 
-  DerivCommTime-=usecond();
   st.HaloExchange(B, compressor);
-  DerivCommTime+=usecond();
 
-  DerivComputeTime-=usecond();
   for (int mu = 0; mu < Nd; mu++) {
     ////////////////////////////////////////////////////////////////////////
     // Flip gamma (1+g)<->(1-g) if dag
@@ -340,7 +255,6 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
     int gamma = mu;
     if (!dag) gamma += Nd;
 
-    DerivDhopComputeTime -= usecond();
     int Ls=1;
     Kernels::DhopDirKernel(st, U, st.CommBuf(), Ls, B.Grid()->oSites(), B, Btilde, mu, gamma);
 
@@ -348,9 +262,7 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
     // spin trace outer product
     //////////////////////////////////////////////////
     Impl::InsertForce4D(mat, Btilde, Atilde, mu);
-    DerivDhopComputeTime += usecond();
   }
-  DerivComputeTime += usecond();
 }
 
 template <class Impl>
@@ -397,7 +309,6 @@ void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, co
 template <class Impl>
 void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int dag)
 {
-  DhopCalls+=2;
   conformable(in.Grid(), _grid);  // verifies full grid
   conformable(in.Grid(), out.Grid());
 
@@ -409,7 +320,6 @@ void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int da
 template <class Impl>
 void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int dag)
 {
-  DhopCalls++;
   conformable(in.Grid(), _cbgrid);    // verifies half grid
   conformable(in.Grid(), out.Grid());  // drops the cb check
 
@@ -422,7 +332,6 @@ void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int 
 template <class Impl>
 void WilsonFermion<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
 {
-  DhopCalls++;
   conformable(in.Grid(), _cbgrid);    // verifies half grid
   conformable(in.Grid(), out.Grid());  // drops the cb check
 
@@ -487,14 +396,12 @@ void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
                                        const FermionField &in,
                                        FermionField &out, int dag)
 {
-  DhopTotalTime-=usecond();
 #ifdef GRID_OMP
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute )
     DhopInternalOverlappedComms(st,lo,U,in,out,dag);
   else
 #endif
     DhopInternalSerial(st,lo,U,in,out,dag);
-  DhopTotalTime+=usecond();
 }
 
 template <class Impl>
@@ -503,6 +410,7 @@ void WilsonFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, LebesgueO
 						      const FermionField &in,
 						      FermionField &out, int dag)
 {
+  GRID_TRACE("DhopOverlapped");
   assert((dag == DaggerNo) || (dag == DaggerYes));
 
   Compressor compressor(dag);
@@ -513,53 +421,55 @@ void WilsonFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, LebesgueO
   /////////////////////////////
   std::vector<std::vector<CommsRequest_t> > requests;
   st.Prepare();
-  DhopFaceTime-=usecond();
-  st.HaloGather(in,compressor);
-  DhopFaceTime+=usecond();
+  {
+    GRID_TRACE("Gather");
+    st.HaloGather(in,compressor);
+  }
 
-  DhopCommTime -=usecond();
+  tracePush("Communication");
   st.CommunicateBegin(requests);
 
   /////////////////////////////
   // Overlap with comms
   /////////////////////////////
-  DhopFaceTime-=usecond();
-  st.CommsMergeSHM(compressor);
-  DhopFaceTime+=usecond();
+  {
+    GRID_TRACE("MergeSHM");
+    st.CommsMergeSHM(compressor);
+  }
 
   /////////////////////////////
   // do the compute interior
   /////////////////////////////
   int Opt = WilsonKernelsStatic::Opt;
-  DhopComputeTime-=usecond();
   if (dag == DaggerYes) {
+    GRID_TRACE("DhopDagInterior");
     Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out,1,0);
   } else {
+    GRID_TRACE("DhopInterior");
     Kernels::DhopKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out,1,0);
   }
-  DhopComputeTime+=usecond();
 
   /////////////////////////////
   // Complete comms
   /////////////////////////////
   st.CommunicateComplete(requests);
-  DhopCommTime   +=usecond();
+  tracePop("Communication");
 
-  DhopFaceTime-=usecond();
-  st.CommsMerge(compressor);
-  DhopFaceTime+=usecond();
-
+  {
+    GRID_TRACE("Merge");
+    st.CommsMerge(compressor);
+  }
   /////////////////////////////
   // do the compute exterior
   /////////////////////////////
 
-  DhopComputeTime2-=usecond();
   if (dag == DaggerYes) {
+    GRID_TRACE("DhopDagExterior");
     Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out,0,1);
   } else {
+    GRID_TRACE("DhopExterior");
     Kernels::DhopKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out,0,1);
   }
-  DhopComputeTime2+=usecond();
 };
 
 
@@ -569,20 +479,22 @@ void WilsonFermion<Impl>::DhopInternalSerial(StencilImpl &st, LebesgueOrder &lo,
                                        const FermionField &in,
                                        FermionField &out, int dag)
 {
+  GRID_TRACE("DhopSerial");
   assert((dag == DaggerNo) || (dag == DaggerYes));
   Compressor compressor(dag);
-  DhopCommTime-=usecond();
-  st.HaloExchange(in, compressor);
-  DhopCommTime+=usecond();
+  {
+    GRID_TRACE("HaloExchange");
+    st.HaloExchange(in, compressor);
+  }
 
-  DhopComputeTime-=usecond();
   int Opt = WilsonKernelsStatic::Opt;
   if (dag == DaggerYes) {
+    GRID_TRACE("DhopDag");
     Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out);
   } else {
+    GRID_TRACE("Dhop");
     Kernels::DhopKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out);
   }
-  DhopComputeTime+=usecond();
 };
 /*Change ends */
 
@@ -599,11 +511,47 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
                                                    Current curr_type,
                                                    unsigned int mu)
 {
+  if(curr_type != Current::Vector)
+  {
+    std::cout << GridLogError << "Only the conserved vector current is implemented so far." << std::endl;
+    exit(1);
+  }
+
   Gamma g5(Gamma::Algebra::Gamma5);
   conformable(_grid, q_in_1.Grid());
   conformable(_grid, q_in_2.Grid());
   conformable(_grid, q_out.Grid());
-  assert(0);
+  auto UGrid= this->GaugeGrid();
+
+  PropagatorField tmp_shifted(UGrid);
+  PropagatorField g5Lg5(UGrid);
+  PropagatorField R(UGrid);
+  PropagatorField gmuR(UGrid);
+
+    Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT,
+  };
+  Gamma gmu=Gamma(Gmu[mu]);
+
+  g5Lg5=g5*q_in_1*g5;
+  tmp_shifted=Cshift(q_in_2,mu,1);
+  Impl::multLinkField(R,this->Umu,tmp_shifted,mu);
+  gmuR=gmu*R;
+
+  q_out=adj(g5Lg5)*R;
+  q_out-=adj(g5Lg5)*gmuR;
+
+  tmp_shifted=Cshift(q_in_1,mu,1);
+  Impl::multLinkField(g5Lg5,this->Umu,tmp_shifted,mu);
+  g5Lg5=g5*g5Lg5*g5;
+  R=q_in_2;
+  gmuR=gmu*R;
+
+  q_out-=adj(g5Lg5)*R;
+  q_out-=adj(g5Lg5)*gmuR;
 }
 
 
@@ -617,9 +565,51 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                               unsigned int tmax,
 					      ComplexField &lattice_cmplx)
 {
+  if(curr_type != Current::Vector)
+  {
+    std::cout << GridLogError << "Only the conserved vector current is implemented so far." << std::endl;
+    exit(1);
+  }
+
+  int tshift = (mu == Nd-1) ? 1 : 0;
+  unsigned int LLt    = GridDefaultLatt()[Tp];
   conformable(_grid, q_in.Grid());
   conformable(_grid, q_out.Grid());
-  assert(0);
+  auto UGrid= this->GaugeGrid();
+
+  PropagatorField tmp(UGrid);
+  PropagatorField Utmp(UGrid);
+  PropagatorField L(UGrid);
+  PropagatorField zz (UGrid);
+  zz=Zero();
+  LatticeInteger lcoor(UGrid); LatticeCoordinate(lcoor,Nd-1);
+
+    Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT,
+  };
+  Gamma gmu=Gamma(Gmu[mu]);
+
+  tmp = Cshift(q_in,mu,1);
+  Impl::multLinkField(Utmp,this->Umu,tmp,mu);
+  tmp = ( Utmp*lattice_cmplx - gmu*Utmp*lattice_cmplx ); // Forward hop
+  tmp = where((lcoor>=tmin),tmp,zz); // Mask the time
+  q_out = where((lcoor<=tmax),tmp,zz); // Position of current complicated
+
+  tmp = q_in *lattice_cmplx;
+  tmp = Cshift(tmp,mu,-1);
+  Impl::multLinkField(Utmp,this->Umu,tmp,mu+Nd); // Adjoint link
+  tmp = -( Utmp + gmu*Utmp );
+  // Mask the time
+  if (tmax == LLt - 1 && tshift == 1){ // quick fix to include timeslice 0 if tmax + tshift is over the last timeslice
+    unsigned int t0 = 0;
+    tmp = where(((lcoor==t0) || (lcoor>=tmin+tshift)),tmp,zz);
+  } else {
+    tmp = where((lcoor>=tmin+tshift),tmp,zz);
+  }
+  q_out+= where((lcoor<=tmax+tshift),tmp,zz); // Position of current complicated
 }
 
 NAMESPACE_END(Grid);

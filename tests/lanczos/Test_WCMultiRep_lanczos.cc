@@ -28,19 +28,21 @@ directory
 /*  END LEGAL */
 #include <Grid/Grid.h>
 
+#ifdef ENABLE_FERMION_REPS
+
 using namespace std;
 using namespace Grid;
 
 
-//typedef WilsonCloverFermionR FermionOp;
-//typedef typename WilsonFermionR::FermionField FermionField;
+//typedef WilsonCloverFermionD FermionOp;
+//typedef typename WilsonFermionD::FermionField FermionField;
 
 typedef WilsonImplR FundImplPolicy;
-typedef WilsonCloverFermionR FundFermionAction; 
+typedef WilsonCloverFermionD FundFermionAction; 
 typedef typename FundFermionAction::FermionField FundFermionField;
 
 typedef WilsonTwoIndexAntiSymmetricImplR ASymmImplPolicy; 
-typedef WilsonCloverTwoIndexAntiSymmetricFermionR ASymmFermionAction; 
+typedef WilsonCloverTwoIndexAntiSymmetricFermionD ASymmFermionAction; 
 typedef typename ASymmFermionAction::FermionField ASymmFermionField;
 
 
@@ -175,3 +177,6 @@ NerscHmcCheckpointer<PeriodicGimplR> Checkpoint(CPparams);
 
   Grid_finalize();
 }
+#else
+int main(int argc,char **argv){ return 0;};
+#endif

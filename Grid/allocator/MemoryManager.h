@@ -35,6 +35,12 @@ NAMESPACE_BEGIN(Grid);
 // Move control to configure.ac and Config.h?
 
 #define GRID_ALLOC_SMALL_LIMIT (4096)
+#define GRID_ALLOC_HUGE_LIMIT  (2147483648)
+
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define FILE_LINE __FILE__ ":" TOSTRING(__LINE__)
+#define AUDIT(a) MemoryManager::Audit(FILE_LINE)
 
 /*Pinning pages is costly*/
 ////////////////////////////////////////////////////////////////////////////
@@ -65,6 +71,21 @@ enum ViewMode {
   CpuWriteDiscard = 0x10 // same for now
 };
 
+struct MemoryStatus {
+  uint64_t     DeviceBytes;
+  uint64_t     DeviceLRUBytes;
+  uint64_t     DeviceMaxBytes;
+  uint64_t     HostToDeviceBytes;
+  uint64_t     DeviceToHostBytes;
+  uint64_t     HostToDeviceXfer;
+  uint64_t     DeviceToHostXfer;
+  uint64_t     DeviceEvictions;
+  uint64_t     DeviceDestroy;
+  uint64_t     DeviceAllocCacheBytes;
+  uint64_t     HostAllocCacheBytes;
+};
+
+
 class MemoryManager {
 private:
 
@@ -78,7 +99,7 @@ private:
   } AllocationCacheEntry;
 
   static const int NallocCacheMax=128; 
-  static const int NallocType=6;
+  static const int NallocType=9;
   static AllocationCacheEntry Entries[NallocType][NallocCacheMax];
   static int Victim[NallocType];
   static int Ncache[NallocType];
@@ -92,8 +113,9 @@ private:
   static void *Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim,uint64_t &cbytes) ;
   static void *Lookup(size_t bytes,AllocationCacheEntry *entries,int ncache,uint64_t &cbytes) ;
 
-  static void PrintBytes(void);
  public:
+  static void PrintBytes(void);
+  static void Audit(std::string s);
   static void Init(void);
   static void InitMessage(void);
   static void *AcceleratorAllocate(size_t bytes);
@@ -113,7 +135,28 @@ private:
   static uint64_t     DeviceToHostBytes;
   static uint64_t     HostToDeviceXfer;
   static uint64_t     DeviceToHostXfer;
- 
+  static uint64_t     DeviceEvictions;
+  static uint64_t     DeviceDestroy;
+  
+  static uint64_t     DeviceCacheBytes();
+  static uint64_t     HostCacheBytes();
+
+  static MemoryStatus GetFootprint(void) {
+    MemoryStatus stat;
+    stat.DeviceBytes       = DeviceBytes;
+    stat.DeviceLRUBytes    = DeviceLRUBytes;
+    stat.DeviceMaxBytes    = DeviceMaxBytes;
+    stat.HostToDeviceBytes = HostToDeviceBytes;
+    stat.DeviceToHostBytes = DeviceToHostBytes;
+    stat.HostToDeviceXfer  = HostToDeviceXfer;
+    stat.DeviceToHostXfer  = DeviceToHostXfer;
+    stat.DeviceEvictions   = DeviceEvictions;
+    stat.DeviceDestroy     = DeviceDestroy;
+    stat.DeviceAllocCacheBytes = DeviceCacheBytes();
+    stat.HostAllocCacheBytes   = HostCacheBytes();
+    return stat;
+  };
+  
  private:
 #ifndef GRID_UVM
   //////////////////////////////////////////////////////////////////////
@@ -170,6 +213,8 @@ private:
 
  public:
   static void Print(void);
+  static void PrintAll(void);
+  static void PrintState( void* CpuPtr);
   static int   isOpen   (void* CpuPtr);
   static void  ViewClose(void* CpuPtr,ViewMode mode);
   static void *ViewOpen (void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint);

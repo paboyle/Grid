@@ -9,6 +9,7 @@ STAG5_IMPL_LIST=""
 WILSON_IMPL_LIST=" \
 	   WilsonImplF \
 	   WilsonImplD \
+       WilsonImplD2 \
        SpWilsonImplF \
        SpWilsonImplD \
 	   WilsonAdjImplF \
@@ -24,11 +25,16 @@ WILSON_IMPL_LIST=" \
 	   GparityWilsonImplF \
 	   GparityWilsonImplD "
 
+COMPACT_WILSON_IMPL_LIST=" \
+	   WilsonImplF \
+	   WilsonImplD "
+
 DWF_IMPL_LIST=" \
 	   WilsonImplF \
 	   WilsonImplD \
+	   WilsonImplD2 \
 	   ZWilsonImplF \
-	   ZWilsonImplD "
+	   ZWilsonImplD2 "
 
 GDWF_IMPL_LIST=" \
 	   GparityWilsonImplF \
@@ -52,7 +58,17 @@ for impl in $WILSON_IMPL_LIST
 do
 for f in $CC_LIST
 do
-  ln -f -s ../$f.cc.master $impl/$f$impl.cc 
+  ln -f -s ../$f.cc.master $impl/$f$impl.cc
+done
+done
+
+CC_LIST="CompactWilsonCloverFermionInstantiation"
+
+for impl in $COMPACT_WILSON_IMPL_LIST
+do
+for f in $CC_LIST
+do
+  ln -f -s ../$f.cc.master $impl/$f$impl.cc
 done
 done
 
@@ -69,14 +85,14 @@ for impl in $DWF_IMPL_LIST $GDWF_IMPL_LIST
 do
 for f in $CC_LIST
 do
-  ln -f -s ../$f.cc.master $impl/$f$impl.cc 
+  ln -f -s ../$f.cc.master $impl/$f$impl.cc
 done
 done
 
 # overwrite the .cc file in Gparity directories
 for impl in $GDWF_IMPL_LIST
 do
-  ln -f -s ../WilsonKernelsInstantiationGparity.cc.master $impl/WilsonKernelsInstantiation$impl.cc 
+  ln -f -s ../WilsonKernelsInstantiationGparity.cc.master $impl/WilsonKernelsInstantiation$impl.cc
 done
 
 
@@ -90,7 +106,7 @@ for impl in $STAG_IMPL_LIST
 do
 for f in $CC_LIST
 do
-  ln -f -s ../$f.cc.master $impl/$f$impl.cc 
+  ln -f -s ../$f.cc.master $impl/$f$impl.cc
 done
 done
 

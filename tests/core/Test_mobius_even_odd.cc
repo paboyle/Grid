@@ -108,8 +108,8 @@ int main (int argc, char ** argv)
   omegas.push_back( std::complex<double>(0.0686324988446592,-0.0550658530827402) );
 #endif
 
-  MobiusFermionR Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, 0.5,0.5);
-  //  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  MobiusFermionD Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, 0.5,0.5);
+  //  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
   LatticeFermion src_e (FrbGrid);
   LatticeFermion src_o (FrbGrid);
@@ -262,10 +262,9 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd ,chi_o,chi);
   pickCheckerboard(Even,phi_e,phi);
   pickCheckerboard(Odd ,phi_o,phi);
-  RealD t1,t2;
 
 
-  SchurDiagMooeeOperator<MobiusFermionR,LatticeFermion> HermOpEO(Ddwf);
+  SchurDiagMooeeOperator<MobiusFermionD,LatticeFermion> HermOpEO(Ddwf);
   HermOpEO.MpcDagMpc(chi_e,dchi_e);
   HermOpEO.MpcDagMpc(chi_o,dchi_o);
 

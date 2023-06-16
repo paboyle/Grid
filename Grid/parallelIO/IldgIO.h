@@ -31,6 +31,7 @@ directory
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include <map>
 
 #include <pwd.h>
@@ -576,7 +577,8 @@ class ScidacReader : public GridLimeReader {
     std::string rec_name(ILDG_BINARY_DATA);
     while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
       if ( !strncmp(limeReaderType(LimeR), rec_name.c_str(),strlen(rec_name.c_str()) )  ) {
-  skipPastObjectRecord(std::string(GRID_FIELD_NORM));
+  // in principle should do the line below, but that breaks backard compatibility with old data
+  // skipPastObjectRecord(std::string(GRID_FIELD_NORM));
 	skipPastObjectRecord(std::string(SCIDAC_CHECKSUM));
 	return;
       }
@@ -653,7 +655,8 @@ class IldgWriter : public ScidacWriter {
     // Fill ILDG header data struct
     //////////////////////////////////////////////////////
     ildgFormat ildgfmt ;
-    ildgfmt.field     = std::string("su3gauge");
+    const std::string stNC = std::to_string( Nc ) ;
+    ildgfmt.field          = std::string("su"+stNC+"gauge");
 
     if ( format == std::string("IEEE32BIG") ) { 
       ildgfmt.precision = 32;
@@ -870,7 +873,8 @@ class IldgReader : public GridLimeReader {
     } else { 
 
       assert(found_ildgFormat);
-      assert ( ildgFormat_.field == std::string("su3gauge") );
+      const std::string stNC = std::to_string( Nc ) ;
+      assert ( ildgFormat_.field == std::string("su"+stNC+"gauge") );
 
       ///////////////////////////////////////////////////////////////////////////////////////
       // Populate our Grid metadata as best we can
@@ -878,7 +882,7 @@ class IldgReader : public GridLimeReader {
 
       std::ostringstream vers; vers << ildgFormat_.version;
       FieldMetaData_.hdr_version = vers.str();
-      FieldMetaData_.data_type = std::string("4D_SU3_GAUGE_3X3");
+      FieldMetaData_.data_type = std::string("4D_SU"+stNC+"_GAUGE_"+stNC+"x"+stNC);
 
       FieldMetaData_.nd=4;
       FieldMetaData_.dimension.resize(4);

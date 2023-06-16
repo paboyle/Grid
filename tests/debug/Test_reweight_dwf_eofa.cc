@@ -105,10 +105,10 @@ int main(int argc, char **argv)
   SU<Nc>::HotConfiguration(RNG4, Umu);
 
   // Initialize RHMC fermion operators
-  DomainWallFermionR Ddwf_f(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, M5);
-  DomainWallFermionR Ddwf_b(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, M5);
-  SchurDiagMooeeOperator<DomainWallFermionR, LatticeFermion> MdagM(Ddwf_f);
-  SchurDiagMooeeOperator<DomainWallFermionR, LatticeFermion> VdagV(Ddwf_b);
+  DomainWallFermionD Ddwf_f(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, M5);
+  DomainWallFermionD Ddwf_b(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, M5);
+  SchurDiagMooeeOperator<DomainWallFermionD, LatticeFermion> MdagM(Ddwf_f);
+  SchurDiagMooeeOperator<DomainWallFermionD, LatticeFermion> VdagV(Ddwf_b);
 
   // Degree 12 rational approximations to x^(1/4) and x^(-1/4)
   double     lo = 0.0001;
@@ -153,10 +153,10 @@ int main(int argc, char **argv)
   RealD shift_L = 0.0;
   RealD shift_R = -1.0;
   int pm = 1;
-  DomainWallEOFAFermionR Deofa_L(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, mf, mb, shift_L, pm, M5);
-  DomainWallEOFAFermionR Deofa_R(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, mf, mb, shift_R, pm, M5);
-  MdagMLinearOperator<DomainWallEOFAFermionR, LatticeFermion> LdagL(Deofa_L);
-  MdagMLinearOperator<DomainWallEOFAFermionR, LatticeFermion> RdagR(Deofa_R);
+  DomainWallEOFAFermionD Deofa_L(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, mf, mb, shift_L, pm, M5);
+  DomainWallEOFAFermionD Deofa_R(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, mf, mb, shift_R, pm, M5);
+  MdagMLinearOperator<DomainWallEOFAFermionD, LatticeFermion> LdagL(Deofa_L);
+  MdagMLinearOperator<DomainWallEOFAFermionD, LatticeFermion> RdagR(Deofa_R);
 
   // Stochastically estimate reweighting factor via EOFA
   RealD k = Deofa_L.k;

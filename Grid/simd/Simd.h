@@ -69,6 +69,7 @@ typedef RealF  Real;
 typedef thrust::complex<RealF> ComplexF;
 typedef thrust::complex<RealD> ComplexD;
 typedef thrust::complex<Real>  Complex;
+typedef thrust::complex<uint16_t>  ComplexH;
 template<class T> using complex = thrust::complex<T>;
 
 accelerator_inline ComplexD pow(const ComplexD& r,RealD y){ return(thrust::pow(r,(double)y)); }
@@ -77,6 +78,7 @@ accelerator_inline ComplexF pow(const ComplexF& r,RealF y){ return(thrust::pow(r
 typedef std::complex<RealF> ComplexF;
 typedef std::complex<RealD> ComplexD;
 typedef std::complex<Real>  Complex;
+typedef std::complex<uint16_t>  ComplexH; // Hack
 template<class T> using complex = std::complex<T>;
 
 accelerator_inline ComplexD pow(const ComplexD& r,RealD y){ return(std::pow(r,y)); }
@@ -224,18 +226,14 @@ accelerator_inline void Gpermute(VectorSIMD &y,const VectorSIMD &b,int perm);
 NAMESPACE_END(Grid);
 
 #include <Grid/simd/Grid_vector_types.h>
+#include <Grid/simd/Grid_doubled_vector.h>
 #include <Grid/simd/Grid_vector_unops.h>
 
 NAMESPACE_BEGIN(Grid);
-// Default precision
-#ifdef GRID_DEFAULT_PRECISION_DOUBLE
+
+// Default precision is wired to double
 typedef vRealD vReal;
 typedef vComplexD vComplex;
-#else
-typedef vRealF vReal;
-typedef vComplexF vComplex;
-#endif
-
  
 inline std::ostream& operator<< (std::ostream& stream, const vComplexF &o){
   int nn=vComplexF::Nsimd();
@@ -259,6 +257,13 @@ inline std::ostream& operator<< (std::ostream& stream, const vComplexD &o){
     stream<<buf[i];
     if(i<nn-1) stream<<",";
   }
+  stream<<">";
+  return stream;
+}
+inline std::ostream& operator<< (std::ostream& stream, const vComplexD2 &o){
+  stream<<"<";
+  stream<<o.v[0];
+  stream<<o.v[1];
   stream<<">";
   return stream;
 }

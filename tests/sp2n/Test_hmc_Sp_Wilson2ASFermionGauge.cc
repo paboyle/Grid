@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
   typedef GenericSp2nHMCRunnerHirep<TheRepresentations, MinimumNorm2>
       HMCWrapper;
   typedef SpWilsonTwoIndexAntiSymmetricImplR FermionImplPolicy;
-  typedef SpWilsonTwoIndexAntiSymmetricFermionR FermionAction;
+  typedef SpWilsonTwoIndexAntiSymmetricFermionD FermionAction;
   typedef typename FermionAction::FermionField FermionField;
 
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

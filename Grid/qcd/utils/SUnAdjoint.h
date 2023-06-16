@@ -51,8 +51,11 @@ public:
   typedef Lattice<iVector<iScalar<iMatrix<vComplexF, Dimension> >, Nd> > LatticeAdjFieldF;
   typedef Lattice<iVector<iScalar<iMatrix<vComplexD, Dimension> >, Nd> > LatticeAdjFieldD;
 
+
   template <typename vtype>
   using iSUnMatrix = iScalar<iScalar<iMatrix<vtype, ncolour> > >;
+
+  typedef Lattice<iScalar<iScalar<iVector<vComplex, Dimension> > > >  LatticeAdjVector;
 
   template <class cplx>
   static void generator(int Index, iSUnAdjointMatrix<cplx> &iAdjTa) {

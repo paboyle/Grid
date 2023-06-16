@@ -37,6 +37,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 using namespace std;
 using namespace Grid;
 
+#ifdef HAVE_LIME
+
 template<class Fobj,class CComplex,int nbasis>
 class LocalCoherenceLanczosScidac : public LocalCoherenceLanczos<Fobj,CComplex,nbasis>
 { 
@@ -186,8 +188,8 @@ int main (int argc, char ** argv) {
   std::cout << GridLogMessage << "Lattice dimensions: " << GridDefaultLatt() << "   Ls: " << Ls << std::endl;
 
   // ZMobius EO Operator
-  ZMobiusFermionR Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, Params.omega,1.,0.);
-  SchurDiagTwoOperator<ZMobiusFermionR,LatticeFermion> HermOp(Ddwf);
+  ZMobiusFermionD Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, Params.omega,1.,0.);
+  SchurDiagTwoOperator<ZMobiusFermionD,LatticeFermion> HermOp(Ddwf);
 
   // Eigenvector storage
   LanczosParams fine  =Params.FineParams;  
@@ -249,3 +251,11 @@ int main (int argc, char ** argv) {
   Grid_finalize();
 }
 
+#else
+
+int main( void )
+{
+  return 0 ;
+}
+
+#endif // HAVE_LIME_H

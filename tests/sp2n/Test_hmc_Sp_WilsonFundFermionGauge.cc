@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
   Grid_init(&argc, &argv);
     
   typedef GenericSp2nHMCRunnerHirep<TheRepresentations, MinimumNorm2> HMCWrapper; // ok
-  typedef SpWilsonImplR FermionImplPolicy;                                    // ok
+  typedef SpWilsonImplD FermionImplPolicy;                                    // ok
   typedef SpWilsonFermionR FermionAction;                                     // ok
   typedef typename FermionAction::FermionField FermionField;                  // ok?
  

@@ -125,6 +125,56 @@ public:
     return sumplaq / vol / faces / Nc; // Nd , Nc dependent... FIXME
   }
 
+  //////////////////////////////////////////////////
+  // sum over all spatial planes of plaquette
+  //////////////////////////////////////////////////
+  static void siteSpatialPlaquette(ComplexField &Plaq,
+                            const std::vector<GaugeMat> &U) {
+    ComplexField sitePlaq(U[0].Grid());
+    Plaq = Zero();
+    for (int mu = 1; mu < Nd-1; mu++) {
+      for (int nu = 0; nu < mu; nu++) {
+        traceDirPlaquette(sitePlaq, U, mu, nu);
+        Plaq = Plaq + sitePlaq;
+      }
+    }
+  }
+
+  ////////////////////////////////////
+  // sum over all x,y,z and over all spatial planes of plaquette
+  //////////////////////////////////////////////////
+  static std::vector<RealD> timesliceSumSpatialPlaquette(const GaugeLorentz &Umu) {
+    std::vector<GaugeMat> U(Nd, Umu.Grid());
+    // inefficient here
+    for (int mu = 0; mu < Nd; mu++) {
+      U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
+    }
+
+    ComplexField Plaq(Umu.Grid());
+
+    siteSpatialPlaquette(Plaq, U);
+    typedef typename ComplexField::scalar_object sobj;
+    std::vector<sobj> Tq;
+    sliceSum(Plaq, Tq, Nd-1);
+
+    std::vector<Real> out(Tq.size());
+    for(int t=0;t<Tq.size();t++) out[t] = TensorRemove(Tq[t]).real();
+    return out;
+  }
+  
+  //////////////////////////////////////////////////
+  // average over all x,y,z and over all spatial planes of plaquette
+  //////////////////////////////////////////////////
+  static std::vector<RealD> timesliceAvgSpatialPlaquette(const GaugeLorentz &Umu) {
+    std::vector<RealD> sumplaq = timesliceSumSpatialPlaquette(Umu);
+    int Lt = Umu.Grid()->FullDimensions()[Nd-1];
+    assert(sumplaq.size() == Lt);
+    double vol = Umu.Grid()->gSites() / Lt;
+    double faces = (1.0 * (Nd - 1)* (Nd - 2)) / 2.0;
+    for(int t=0;t<Lt;t++)
+      sumplaq[t] = sumplaq[t] / vol / faces / Nc; // Nd , Nc dependent... FIXME
+    return sumplaq;
+  }
 
   //////////////////////////////////////////////////
   // average over all x,y,z the temporal loop
@@ -165,7 +215,7 @@ public:
 
     double vol = Umu.Grid()->gSites();
 
-    return p.real() / vol / 4.0 / 3.0;
+    return p.real() / vol / (4.0 * Nc ) ;
   };
 
   //////////////////////////////////////////////////
@@ -363,11 +413,11 @@ public:
     GaugeMat u = PeekIndex<LorentzIndex>(Umu, mu);  // some redundant copies
     GaugeMat vu = v*u;
       //FS = 0.25*Ta(u*v + Cshift(vu, mu, -1));
-      FS = (u*v + Cshift(vu, mu, -1));
+      FS = (u*v + Gimpl::CshiftLink(vu, mu, -1));
       FS = 0.125*(FS - adj(FS));
   }
 
-  static Real TopologicalCharge(GaugeLorentz &U){
+  static Real TopologicalCharge(const GaugeLorentz &U){
     // 4d topological charge
     assert(Nd==4);
     // Bx = -iF(y,z), By = -iF(z,y), Bz = -iF(x,y)
@@ -388,6 +438,203 @@ public:
     auto Tq = sum(qfield);
     return TensorRemove(Tq).real();
   }
+
+
+  //Clover-leaf Wilson loop combination for arbitrary mu-extent M and nu extent N,  mu >= nu
+  //cf  https://arxiv.org/pdf/hep-lat/9701012.pdf Eq 7  for 1x2 Wilson loop    
+  //Clockwise ordering
+  static void CloverleafMxN(GaugeMat &FS, const GaugeMat &Umu, const GaugeMat &Unu, int mu, int nu, int M, int N){  
+#define Fmu(A) Gimpl::CovShiftForward(Umu, mu, A)
+#define Bmu(A) Gimpl::CovShiftBackward(Umu, mu, A)
+#define Fnu(A) Gimpl::CovShiftForward(Unu, nu, A)
+#define Bnu(A) Gimpl::CovShiftBackward(Unu, nu, A)
+#define FmuI Gimpl::CovShiftIdentityForward(Umu, mu)
+#define BmuI Gimpl::CovShiftIdentityBackward(Umu, mu)
+#define FnuI Gimpl::CovShiftIdentityForward(Unu, nu)
+#define BnuI Gimpl::CovShiftIdentityBackward(Unu, nu)
+
+    //Upper right loop
+    GaugeMat tmp = BmuI;
+    for(int i=1;i<M;i++)
+      tmp = Bmu(tmp);
+    for(int j=0;j<N;j++)
+      tmp = Bnu(tmp);
+    for(int i=0;i<M;i++)
+      tmp = Fmu(tmp);
+    for(int j=0;j<N;j++)
+      tmp = Fnu(tmp);
+      
+    FS = tmp;
+
+    //Upper left loop
+    tmp = BnuI;
+    for(int j=1;j<N;j++)
+      tmp = Bnu(tmp);
+    for(int i=0;i<M;i++)
+      tmp = Fmu(tmp);
+    for(int j=0;j<N;j++)
+      tmp = Fnu(tmp);
+    for(int i=0;i<M;i++)
+      tmp = Bmu(tmp);
+      
+    FS = FS + tmp;
+
+    //Lower right loop
+    tmp = FnuI;
+    for(int j=1;j<N;j++)
+      tmp = Fnu(tmp);
+    for(int i=0;i<M;i++)
+      tmp = Bmu(tmp);
+    for(int j=0;j<N;j++)
+      tmp = Bnu(tmp);
+    for(int i=0;i<M;i++)
+      tmp = Fmu(tmp);
+      
+    FS = FS + tmp;
+
+    //Lower left loop
+    tmp = FmuI;
+    for(int i=1;i<M;i++)
+      tmp = Fmu(tmp);
+    for(int j=0;j<N;j++)
+      tmp = Fnu(tmp);
+    for(int i=0;i<M;i++)
+      tmp = Bmu(tmp);
+    for(int j=0;j<N;j++)
+      tmp = Bnu(tmp);
+
+    FS = FS + tmp;
+
+#undef Fmu
+#undef Bmu
+#undef Fnu
+#undef Bnu
+#undef FmuI
+#undef BmuI
+#undef FnuI
+#undef BnuI
+  }
+
+  //Field strength from MxN Wilson loop
+  //Note F_numu = - F_munu
+  static void FieldStrengthMxN(GaugeMat &FS, const GaugeLorentz &U, int mu, int nu, int M, int N){  
+    GaugeMat Umu = PeekIndex<LorentzIndex>(U, mu);
+    GaugeMat Unu = PeekIndex<LorentzIndex>(U, nu);
+    if(M == N){
+      GaugeMat F(Umu.Grid());
+      CloverleafMxN(F, Umu, Unu, mu, nu, M, N);
+      FS = 0.125 * ( F - adj(F) );
+    }else{
+      //Average over both orientations
+      GaugeMat horizontal(Umu.Grid()), vertical(Umu.Grid());
+      CloverleafMxN(horizontal, Umu, Unu, mu, nu, M, N);
+      CloverleafMxN(vertical, Umu, Unu, mu, nu, N, M);
+      FS = 0.0625 * ( horizontal - adj(horizontal) + vertical - adj(vertical) );
+    }
+  }
+
+  //Topological charge contribution from MxN Wilson loops
+  //cf  https://arxiv.org/pdf/hep-lat/9701012.pdf  Eq 6
+  //output is the charge by timeslice: sum over timeslices to obtain the total
+  static std::vector<Real> TimesliceTopologicalChargeMxN(const GaugeLorentz &U, int M, int N){
+    assert(Nd == 4);
+    std::vector<std::vector<GaugeMat*> > F(Nd,std::vector<GaugeMat*>(Nd,nullptr));
+    //Note F_numu = - F_munu
+    //hence we only need to loop over mu,nu,rho,sigma that aren't related by permuting mu,nu  or rho,sigma
+    //Use nu > mu
+    for(int mu=0;mu<Nd-1;mu++){
+      for(int nu=mu+1; nu<Nd; nu++){
+	F[mu][nu] = new GaugeMat(U.Grid());
+	FieldStrengthMxN(*F[mu][nu], U, mu, nu, M, N);
+      }
+    }
+    Real coeff = -1./(32 * M_PI*M_PI * M*M * N*N); //overall sign to match CPS and Grid conventions, possibly related to time direction = 3 vs 0
+
+    static const int combs[3][4] = { {0,1,2,3}, {0,2,1,3}, {0,3,1,2} };
+    static const int signs[3] = { 1, -1, 1 }; //epsilon_{mu nu rho sigma}
+
+    ComplexField fsum(U.Grid());
+    fsum = Zero();
+    for(int c=0;c<3;c++){
+      int mu = combs[c][0], nu = combs[c][1], rho = combs[c][2], sigma = combs[c][3];
+      int eps = signs[c];
+      fsum = fsum + (8. * coeff * eps) * trace( (*F[mu][nu]) * (*F[rho][sigma]) ); 
+    }
+
+    for(int mu=0;mu<Nd-1;mu++)
+      for(int nu=mu+1; nu<Nd; nu++)
+	delete F[mu][nu];
+    
+    typedef typename ComplexField::scalar_object sobj;
+    std::vector<sobj> Tq;
+    sliceSum(fsum, Tq, Nd-1);
+
+    std::vector<Real> out(Tq.size());
+    for(int t=0;t<Tq.size();t++) out[t] = TensorRemove(Tq[t]).real();
+    return out;
+  }
+  static Real TopologicalChargeMxN(const GaugeLorentz &U, int M, int N){
+    std::vector<Real> Tq = TimesliceTopologicalChargeMxN(U,M,N);
+    Real out(0);
+    for(int t=0;t<Tq.size();t++) out += Tq[t];
+    return out;
+  }
+
+  //Generate the contributions to the 5Li topological charge from Wilson loops of the following sizes
+  //Use coefficients from hep-lat/9701012
+  //1x1 : c1=(19.-55.*c5)/9.
+  //2x2 : c2=(1-64.*c5)/9.
+  //1x2 : c3=(-64.+640.*c5)/45.
+  //1x3 : c4=1./5.-2.*c5
+  //3x3 : c5=1./20.
+  //Output array outer index contains the loops in the above order
+  //Inner index is the time coordinate
+  static std::vector<std::vector<Real> > TimesliceTopologicalCharge5LiContributions(const GaugeLorentz &U){
+    static const int exts[5][2] = { {1,1}, {2,2}, {1,2}, {1,3}, {3,3} };       
+    std::vector<std::vector<Real> > out(5);
+    for(int i=0;i<5;i++){	
+      out[i] = TimesliceTopologicalChargeMxN(U,exts[i][0],exts[i][1]);
+    }
+    return out;
+  }   
+
+  static std::vector<Real> TopologicalCharge5LiContributions(const GaugeLorentz &U){   
+    static const int exts[5][2] = { {1,1}, {2,2}, {1,2}, {1,3}, {3,3} };
+    std::vector<Real> out(5);
+    std::cout << GridLogMessage << "Computing topological charge" << std::endl;
+    for(int i=0;i<5;i++){
+      out[i] = TopologicalChargeMxN(U,exts[i][0],exts[i][1]);
+      std::cout << GridLogMessage << exts[i][0] << "x" << exts[i][1] << " Wilson loop contribution " << out[i] << std::endl;
+    }
+    return out;
+  }
+
+  //Compute the 5Li topological charge
+  static std::vector<Real> TimesliceTopologicalCharge5Li(const GaugeLorentz &U){
+    std::vector<std::vector<Real> > loops = TimesliceTopologicalCharge5LiContributions(U);
+
+    double c5=1./20.;
+    double c4=1./5.-2.*c5;
+    double c3=(-64.+640.*c5)/45.;
+    double c2=(1-64.*c5)/9.;
+    double c1=(19.-55.*c5)/9.;
+
+    int Lt = loops[0].size();
+    std::vector<Real> out(Lt,0.);
+    for(int t=0;t<Lt;t++)
+      out[t] += c1*loops[0][t] + c2*loops[1][t] + c3*loops[2][t] + c4*loops[3][t] + c5*loops[4][t];
+    return out;
+  }
+
+  static Real TopologicalCharge5Li(const GaugeLorentz &U){
+    std::vector<Real> Qt = TimesliceTopologicalCharge5Li(U);
+    Real Q = 0.;
+    for(int t=0;t<Qt.size();t++) Q += Qt[t];
+    std::cout << GridLogMessage << "5Li Topological charge: " << Q << std::endl;
+    return Q;
+  }
+
+
 
 
   //////////////////////////////////////////////////////

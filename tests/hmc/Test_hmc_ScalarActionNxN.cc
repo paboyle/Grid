@@ -34,7 +34,7 @@ class ScalarActionParameters : Serializable {
     double, lambda,
     double, g);
 
-  ScalarActionParameters() = default;
+  ScalarActionParameters() {};
 
     template <class ReaderClass >
   ScalarActionParameters(Reader<ReaderClass>& Reader){
@@ -45,7 +45,6 @@ class ScalarActionParameters : Serializable {
 }
 
 using namespace Grid;
- ;
 
 template <class Impl>
 class MagMeas : public HmcObservable<typename Impl::Field> {
@@ -132,8 +131,8 @@ int main(int argc, char **argv) {
 
   // Checkpointer definition
   CheckpointerParameters CPparams(Reader);
-  //TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
-  TheHMC.Resources.LoadScidacCheckpointer(CPparams, SPar);
+  TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
+  //TheHMC.Resources.LoadScidacCheckpointer(CPparams, SPar); this breaks for compilation without lime
 
   RNGModuleParameters RNGpar(Reader);
   TheHMC.Resources.SetRNGSeeds(RNGpar);

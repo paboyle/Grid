@@ -128,8 +128,8 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"DomainWallFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
-  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  TestConserved<DomainWallFermionR>(Ddwf,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  TestConserved<DomainWallFermionD>(Ddwf,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   RealD b=1.5;// Scale factor b+c=2, b-c=1
   RealD c=0.5;
@@ -138,23 +138,23 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"MobiusFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
-  MobiusFermionR Dmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c);
-  TestConserved<MobiusFermionR>(Dmob,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  MobiusFermionD Dmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c);
+  TestConserved<MobiusFermionD>(Dmob,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"ScaledShamirFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
-  ScaledShamirFermionR Dsham(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,2.0);
-  TestConserved<ScaledShamirFermionR>(Dsham,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  ScaledShamirFermionD Dsham(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,2.0);
+  TestConserved<ScaledShamirFermionD>(Dsham,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"ZMobiusFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   for(int s=0;s<Ls;s++) omegasrev[s]=conjugate(omegas[Ls-1-s]);
   //  for(int s=0;s<Ls;s++) omegasrev[s]=omegas[Ls-1-s];
-  ZMobiusFermionR ZDmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,omegas,b,c);
-  ZMobiusFermionR ZDmobrev(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,omegasrev,b,c);
-  TestConserved<ZMobiusFermionR>(ZDmob,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5,&ZDmobrev);
+  ZMobiusFermionD ZDmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,omegas,b,c);
+  ZMobiusFermionD ZDmobrev(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,omegasrev,b,c);
+  TestConserved<ZMobiusFermionD>(ZDmob,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5,&ZDmobrev);
 
   Grid_finalize();
 }
@@ -290,7 +290,7 @@ void  TestConserved(Action & Ddwf,
     const RealD DmuPAmu{real(TensorRemove(sumPA[t]-sumPA[(t-1+Nt)%Nt]))};
     std::cout<<GridLogMessage<<" t "<<t<<" DmuPAmu "<<DmuPAmu
              <<" PP "<<real(TensorRemove(sumPP[t]))<<" PJ5q "<<real(TensorRemove(sumPJ5q[t]))
-             <<" Ward Identity defect " <<(DmuPAmu - 2.*real(TensorRemove(Ddwf.mass*sumPP[t] + sumPJ5q[t])))<<std::endl;
+             <<" Ward Identity defect " <<(DmuPAmu - 2.*real(TensorRemove(Ddwf.Mass()*sumPP[t] + sumPJ5q[t])))<<std::endl;
   }
   
   ///////////////////////////////
@@ -539,7 +539,7 @@ void  TestConserved1(Action & Ddwf, Action & Ddwfrev,
   PA       = trace(g5*Axial_mu);
   PP       = trace(adj(prop4)*prop4);
 
-  Defect = Defect - 2.0*Ddwf.mass* PP;
+  Defect = Defect - 2.0*Ddwf.Mass()* PP;
   Defect = Defect - 2.0*PJ5q;
 
   std::vector<TComplex> sumPAref;
@@ -565,8 +565,8 @@ void  TestConserved1(Action & Ddwf, Action & Ddwfrev,
     std::cout    <<" PAc action    "<<real(TensorRemove(sumPA[t]));
     std::cout    <<" PJ5q ref      "<<real(TensorRemove(sumPJ5qref[t]));
     std::cout    <<" PJ5q action   "<<real(TensorRemove(sumPJ5q[t]));
-    std::cout <<"WTI defects "<<real(TensorRemove(sumPAref[t]-sumPAref[(t-1+Nt)%Nt] - 2.0*(Ddwf.mass*sumPP[t] + sumPJ5q[t]) ))<<",";
-    std::cout <<real(TensorRemove(sumPA[t]-sumPA[(t-1+Nt)%Nt] - 2.0*(Ddwf.mass*sumPP[t] + sumPJ5q[t]) ))<<"\n";
+    std::cout <<"WTI defects "<<real(TensorRemove(sumPAref[t]-sumPAref[(t-1+Nt)%Nt] - 2.0*(Ddwf.Mass()*sumPP[t] + sumPJ5q[t]) ))<<",";
+    std::cout <<real(TensorRemove(sumPA[t]-sumPA[(t-1+Nt)%Nt] - 2.0*(Ddwf.Mass()*sumPP[t] + sumPJ5q[t]) ))<<"\n";
   }
 }
 #endif
@@ -600,7 +600,7 @@ void  TestConserved1(Action & Ddwf, Action & Ddwfrev,
       // Dperp
       {
 	RealD diag = 5.0 - Ddwf.M5;
-	mass = Ddwf.mass;
+	mass = Ddwf.Mass();
 	autoView( psi,result5,CpuRead);
 	autoView( chi,tmp,   CpuWrite);
 	thread_for(sss,UGrid->oSites(),{

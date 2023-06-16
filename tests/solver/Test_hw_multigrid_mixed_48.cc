@@ -395,7 +395,7 @@ public:
   Geometry  geom;
   GridBase *Coarse5D;
   GridBase *Coarse4D;
-  CartesianStencil<siteVector,siteVector,int> Stencil; 
+  CartesianStencil<siteVector,siteVector,DefaultImplParams> Stencil; 
   CoarsenedMatrix<Fobj,CComplex,nbasis> &Dw;
 
   GridBase * Grid(void)         { return Coarse5D; };   // this is all the linalg routines need to know
@@ -409,7 +409,7 @@ public:
     Coarse5D(&CoarseGrid5),
     Dw(_Dw),
     geom(CoarseGrid5._ndimension),
-    Stencil( &CoarseGrid5,geom.npoint,Even,geom.directions,geom.displacements,0)
+    Stencil( &CoarseGrid5,geom.npoint,Even,geom.directions,geom.displacements,DefaultImplParams())
   { 
   };
 
@@ -456,8 +456,8 @@ public:
 
     siteVector *CBp=Stencil.CommBuf();			
 
-    int ptype;
-    int nb2=nbasis/2;
+    //    int ptype;
+    //    int nb2=nbasis/2;
     
     autoView(in_v ,   in, AcceleratorRead);
     autoView(st, Stencil, AcceleratorRead);
@@ -471,7 +471,7 @@ public:
 	  typedef decltype(coalescedRead(in_v[0])) calcVector;
 	  typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
 	  int sU = sF/Ls;
-	  int  s = sF%Ls;
+	  //	  int  s = sF%Ls;
 
 	  calcComplex res = Zero();
 	  calcVector  nbr;
@@ -517,14 +517,14 @@ public:
     autoView(st, Stencil, AcceleratorRead);
     siteVector *CBp=Stencil.CommBuf();			
 
-    int ptype;
-    int nb2=nbasis/2;
+    //    int ptype;
+    //    int nb2=nbasis/2;
     accelerator_for2d(sF, Coarse5D->oSites(), b, nbasis, Nsimd, {
 
       typedef decltype(coalescedRead(in_v[0])) calcVector;
       typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
       int sU = sF/Ls;
-      int  s = sF%Ls;
+      //      int  s = sF%Ls;
 
       calcComplex res = Zero();
 
@@ -650,7 +650,7 @@ private:
   OperatorFunction<Field> & _Solver;
   LinearFunction<Field>   & _Guess;
 public:
-
+  using LinearFunction<Field>::operator();
   /////////////////////////////////////////////////////
   // Wrap the usual normal equations trick
   /////////////////////////////////////////////////////
@@ -712,6 +712,7 @@ RealD InverseApproximation(RealD x){
 template<class Field,class Matrix> class ChebyshevSmoother : public LinearFunction<Field>
 {
 public:
+  using LinearFunction<Field>::operator();
   typedef LinearOperatorBase<Field>                            FineOperator;
   Matrix         & _SmootherMatrix;
   FineOperator   & _SmootherOperator;
@@ -735,6 +736,7 @@ public:
 template<class Fobj,class CComplex,int nbasis, class CoarseSolver>
 class MGPreconditioner : public LinearFunction< Lattice<Fobj> > {
 public:
+  using LinearFunction<Lattice<Fobj> >::operator();
 
   typedef Aggregation<Fobj,CComplex,nbasis> Aggregates;
   typedef typename Aggregation<Fobj,CComplex,nbasis>::CoarseVector CoarseVector;
@@ -831,6 +833,7 @@ public:
 template<class Fobj,class CComplex,int nbasis, class CoarseSolver>
 class HDCRPreconditioner : public LinearFunction< Lattice<Fobj> > {
 public:
+  using LinearFunction<Lattice<Fobj> >::operator();
 
   typedef Aggregation<Fobj,CComplex,nbasis> Aggregates;
   typedef typename Aggregation<Fobj,CComplex,nbasis>::CoarseVector CoarseVector;
@@ -978,9 +981,9 @@ int main (int argc, char ** argv)
 
   RealD mass=0.00078;
 
-  WilsonFermionR     Dw(Umu,*UGrid,*UrbGrid,-M5);
-  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  DomainWallFermionR Dpv (Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,M5);
+  WilsonFermionD     Dw(Umu,*UGrid,*UrbGrid,-M5);
+  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionD Dpv (Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,M5);
 
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis>              Subspace;
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>          CoarseOperator;
@@ -991,21 +994,21 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Calling Aggregation class to build subspace" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   // How to find criticall mass?
-  // WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.75); //   600 iters
-  // WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.80); //   800 iters
-  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.82); // 1023 iters
-  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.85); // 1428 iters
-  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.87); //  1900 iters
-  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.90); // 3900   iters
-  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.92); // 6200   iters
-  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.94);  // 8882 iters
-  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.95);  // 9170  iters
-  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.96);  // 8882   iters
-  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.97);  // 8406  iters
-  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.99); // 6900   iters
-  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-1.01); // 6397   iters
-  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-1.00); // 5900   iters
-  MdagMLinearOperator<WilsonFermionR,LatticeFermion> MdagM_Dw(Dw_null);
+  // WilsonFermionD     Dw_null(Umu,*UGrid,*UrbGrid,-0.75); //   600 iters
+  // WilsonFermionD     Dw_null(Umu,*UGrid,*UrbGrid,-0.80); //   800 iters
+  //  WilsonFermionD     Dw_null(Umu,*UGrid,*UrbGrid,-0.82); // 1023 iters
+  //  WilsonFermionD     Dw_null(Umu,*UGrid,*UrbGrid,-0.85); // 1428 iters
+  //  WilsonFermionD     Dw_null(Umu,*UGrid,*UrbGrid,-0.87); //  1900 iters
+  //  WilsonFermionD     Dw_null(Umu,*UGrid,*UrbGrid,-0.90); // 3900   iters
+  //  WilsonFermionD     Dw_null(Umu,*UGrid,*UrbGrid,-0.92); // 6200   iters
+  //  WilsonFermionD     Dw_null(Umu,*UGrid,*UrbGrid,-0.94);  // 8882 iters
+  WilsonFermionD     Dw_null(Umu,*UGrid,*UrbGrid,-0.95);  // 9170  iters
+  //  WilsonFermionD     Dw_null(Umu,*UGrid,*UrbGrid,-0.96);  // 8882   iters
+  //  WilsonFermionD     Dw_null(Umu,*UGrid,*UrbGrid,-0.97);  // 8406  iters
+  //  WilsonFermionD     Dw_null(Umu,*UGrid,*UrbGrid,-0.99); // 6900   iters
+  //  WilsonFermionD     Dw_null(Umu,*UGrid,*UrbGrid,-1.01); // 6397   iters
+  //  WilsonFermionD     Dw_null(Umu,*UGrid,*UrbGrid,-1.00); // 5900   iters
+  MdagMLinearOperator<WilsonFermionD,LatticeFermion> MdagM_Dw(Dw_null);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Testing Wilson criticality " <<std::endl;
@@ -1054,7 +1057,7 @@ int main (int argc, char ** argv)
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>    Level1Op4;
   typedef CoarseCayleyFermion<vSpinColourVector,vTComplex,nbasis> Level1Op5;
   Level1Op4 c_Dw    (*Coarse4d,0);
-  NonHermitianLinearOperator<WilsonFermionR,LatticeFermion>  LinOpDw(Dw);
+  NonHermitianLinearOperator<WilsonFermionD,LatticeFermion>  LinOpDw(Dw);
   c_Dw.CoarsenOperator(UGrid,LinOpDw,Aggregates4D); // contains the M5 from Dw(-M5)
   //  c_Dw.Test(Aggregates4D,UGrid,LinOpDw);
 
@@ -1124,8 +1127,8 @@ int main (int argc, char ** argv)
   ConjugateGradient<CoarseVector>            CoarseCG(tol,MaxIt);
   ConjugateGradient<LatticeFermion>          FineCG(tol,MaxIt);
   
-  NonHermitianLinearOperator<DomainWallFermionR,LatticeFermion> FineM(Ddwf);
-  MdagMLinearOperator<DomainWallFermionR,LatticeFermion>    FineMdagM(Ddwf);     //  M^\dag M
+  NonHermitianLinearOperator<DomainWallFermionD,LatticeFermion> FineM(Ddwf);
+  MdagMLinearOperator<DomainWallFermionD,LatticeFermion>    FineMdagM(Ddwf);     //  M^\dag M
 
   NonHermitianLinearOperator<Level1Op5,CoarseVector> CoarseM(c_Dwf);
   MdagMLinearOperator<Level1Op5,CoarseVector> CoarseMdagM(c_Dwf);
@@ -1174,18 +1177,18 @@ int main (int argc, char ** argv)
   PlainHermOp<CoarseCoarseVector> IRLOpL2    (IRLHermOpL2);
   ImplicitlyRestartedLanczos<CoarseCoarseVector> IRLL2(IRLOpChebyL2,IRLOpL2,cNstop,cNk,cNm,1.0e-3,20);
 
-  int cNconv;
   cNm=0;
   std::vector<RealD>          eval2(cNm);
   std::vector<CoarseCoarseVector>   evec2(cNm,CoarseCoarse5d);
   cc_src=1.0;
+  //  int cNconv;
   //  IRLL2.calc(eval2,evec2,cc_src,cNconv);
 
   ConjugateGradient<CoarseCoarseVector>  CoarseCoarseCG(0.02,10000);
   DeflatedGuesser<CoarseCoarseVector> DeflCoarseCoarseGuesser(evec2,eval2);
   NormalEquations<CoarseCoarseVector> DeflCoarseCoarseCGNE(cc_Dwf,CoarseCoarseCG,DeflCoarseCoarseGuesser);
 
-  ZeroGuesser<CoarseVector> CoarseZeroGuesser;
+  //  ZeroGuesser<CoarseVector> CoarseZeroGuesser;
   ZeroGuesser<CoarseCoarseVector>       CoarseCoarseZeroGuesser;
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
@@ -1230,39 +1233,39 @@ typedef HDCRPreconditioner<siteVector,iScalar<vTComplex>,nbasisc,NormalEquations
 
   // Wrap the 2nd level solver in a MultiGrid preconditioner acting on the fine space
 
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother1(0.5,60.0,14,FineM,Ddwf); // 26 iter, 39s
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother2(0.5,60.0,14,FineM,Ddwf);
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother1(0.5,60.0,14,FineM,Ddwf); // 26 iter, 39s
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother2(0.5,60.0,14,FineM,Ddwf);
 
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother1(0.5,60.0,12,FineM,Ddwf); // 25 iter, 38s
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother2(0.5,60.0,16,FineM,Ddwf);
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother1(0.5,60.0,12,FineM,Ddwf); // 25 iter, 38s
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother2(0.5,60.0,16,FineM,Ddwf);
 
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother1(0.5,60.0,12,FineM,Ddwf); // 23 iter, 39s
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother2(0.5,60.0,20,FineM,Ddwf);
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother1(0.5,60.0,12,FineM,Ddwf); // 23 iter, 39s
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother2(0.5,60.0,20,FineM,Ddwf);
 
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother1(0.5,60.0,10,FineM,Ddwf);24 iter, 44s
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother2(0.5,60.0,24,FineM,Ddwf);
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother1(0.5,60.0,10,FineM,Ddwf);24 iter, 44s
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother2(0.5,60.0,24,FineM,Ddwf);
 
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother1(0.5,60.0,12,FineM,Ddwf); // odd convergence tail at 10^-9 ish
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother2(0.1,60.0,24,FineM,Ddwf); // 33 iter, waas O(10-9 by 26)
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother1(0.5,60.0,12,FineM,Ddwf); // odd convergence tail at 10^-9 ish
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother2(0.1,60.0,24,FineM,Ddwf); // 33 iter, waas O(10-9 by 26)
 
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother1(0.5,60.0,12,FineM,Ddwf); // 25 iter, 39s
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother2(0.5,60.0,18,FineM,Ddwf); //
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother1(0.5,60.0,12,FineM,Ddwf); // 25 iter, 39s
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother2(0.5,60.0,18,FineM,Ddwf); //
 
-  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother1(0.5,60.0,16,FineM,Ddwf); 
-  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother2(0.5,60.0,16,FineM,Ddwf); //
+  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother1(0.5,60.0,16,FineM,Ddwf); 
+  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother2(0.5,60.0,16,FineM,Ddwf); //
 
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother1(0.5,60.0,11,FineM,Ddwf); // 33 iter, 49s
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother2(0.5,60.0,11,FineM,Ddwf);
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother1(0.5,60.0,12,FineM,Ddwf); // 26 iter, 37s
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother2(0.5,60.0,12,FineM,Ddwf);
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother1(0.4,60.0,12,FineM,Ddwf); //  iter 26 no change in final residual
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother2(0.4,60.0,12,FineM,Ddwf);
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother1(0.3,60.0,12,FineM,Ddwf); // 27 iter 39s.
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother2(0.3,60.0,12,FineM,Ddwf);
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother1(0.3,60.0,13,FineM,Ddwf); // 26 iter, but slower
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother2(0.3,60.0,13,FineM,Ddwf);
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother1(1.0,60.0,12,FineM,Ddwf); // 34 iter, slower
-  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother2(1.0,60.0,12,FineM,Ddwf);
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother1(0.5,60.0,11,FineM,Ddwf); // 33 iter, 49s
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother2(0.5,60.0,11,FineM,Ddwf);
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother1(0.5,60.0,12,FineM,Ddwf); // 26 iter, 37s
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother2(0.5,60.0,12,FineM,Ddwf);
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother1(0.4,60.0,12,FineM,Ddwf); //  iter 26 no change in final residual
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother2(0.4,60.0,12,FineM,Ddwf);
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother1(0.3,60.0,12,FineM,Ddwf); // 27 iter 39s.
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother2(0.3,60.0,12,FineM,Ddwf);
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother1(0.3,60.0,13,FineM,Ddwf); // 26 iter, but slower
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother2(0.3,60.0,13,FineM,Ddwf);
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother1(1.0,60.0,12,FineM,Ddwf); // 34 iter, slower
+  //  ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother2(1.0,60.0,12,FineM,Ddwf);
 
   ThreeLevelMG ThreeLevelPrecon(Aggregates4D,
 				FineM,

@@ -16,7 +16,11 @@
 
 #ifdef __NVCC__
 #pragma push
+#ifdef __NVCC_DIAG_PRAGMA_SUPPORT__
+#pragma nv_diag_suppress declared_but_not_referenced // suppress "function was declared but never referenced warning"
+#else
 #pragma diag_suppress declared_but_not_referenced // suppress "function was declared but never referenced warning"
+#endif
 #endif
 
 #include "pugixml.h"

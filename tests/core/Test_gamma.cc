@@ -181,8 +181,8 @@ void checkAdj(const Gamma::Algebra a)
 
 void checkProject(GridSerialRNG &rng)
 {
-  SpinVector     rv, recon, full;
-  HalfSpinVector hsp, hsm;
+  SpinVector     rv, recon;
+  HalfSpinVector hsm;
   
   random(rng, rv);
   
@@ -228,6 +228,59 @@ void checkGammaL(const Gamma::Algebra a, GridSerialRNG &rng)
   std::cout << std::endl;
 }
 
+void checkChargeConjMatrix(){
+  //Check the properties of the charge conjugation matrix
+  //In the Grid basis C = -\gamma^2 \gamma^4
+  SpinMatrix C = testAlgebra[Gamma::Algebra::MinusGammaY] * testAlgebra[Gamma::Algebra::GammaT];
+  SpinMatrix mC = -C;
+  SpinMatrix one = testAlgebra[Gamma::Algebra::Identity];
+
+  std::cout << "Testing properties of charge conjugation matrix C = -\\gamma^2 \\gamma^4 (in Grid's basis)" << std::endl;
+
+  //C^T = -C
+  SpinMatrix Ct = transpose(C);
+  std::cout << GridLogMessage << "C^T=-C ";
+  test(Ct, mC);
+  std::cout << std::endl;
+
+  //C^\dagger = -C
+  SpinMatrix Cdag = adj(C);
+  std::cout << GridLogMessage << "C^dag=-C ";
+  test(Cdag, mC);
+  std::cout << std::endl;
+
+  //C^* = C
+  SpinMatrix Cstar = conjugate(C);
+  std::cout << GridLogMessage << "C^*=C ";
+  test(Cstar, C);
+  std::cout << std::endl;
+
+  //C^{-1} = -C
+  SpinMatrix CinvC = mC * C;
+  std::cout << GridLogMessage << "C^{-1}=-C ";
+  test(CinvC, one);
+  std::cout << std::endl;
+
+  // C^{-1} \gamma^\mu C = -[\gamma^\mu]^T
+  Gamma::Algebra gmu_a[4] = { Gamma::Algebra::GammaX, Gamma::Algebra::GammaY, Gamma::Algebra::GammaZ, Gamma::Algebra::GammaT };
+  for(int mu=0;mu<4;mu++){
+    SpinMatrix gmu = testAlgebra[gmu_a[mu]];
+    SpinMatrix Cinv_gmu_C = mC * gmu * C;
+    SpinMatrix mgmu_T = -transpose(gmu);
+    std::cout << GridLogMessage << "C^{-1} \\gamma^" << mu << " C = -[\\gamma^" << mu << "]^T ";
+    test(Cinv_gmu_C, mgmu_T);
+    std::cout << std::endl;
+  }
+  
+  //[C, \gamma^5] = 0
+  SpinMatrix Cg5 = C * testAlgebra[Gamma::Algebra::Gamma5];
+  SpinMatrix g5C = testAlgebra[Gamma::Algebra::Gamma5] * C;
+  std::cout << GridLogMessage << "C \\gamma^5 = \\gamma^5 C";
+  test(Cg5, g5C);
+  std::cout << std::endl;
+}
+
+
 int main(int argc, char *argv[])
 {
   Grid_init(&argc,&argv);
@@ -270,6 +323,13 @@ int main(int argc, char *argv[])
   {
     checkGammaL(i, sRNG);
   }
+
+  std::cout << GridLogMessage << "======== Charge conjugation matrix check" << std::endl;
+  checkChargeConjMatrix();
+  std::cout << GridLogMessage << std::endl;
+  
+
+
   
   Grid_finalize();
   

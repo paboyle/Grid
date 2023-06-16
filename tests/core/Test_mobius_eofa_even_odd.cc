@@ -92,7 +92,7 @@ int main (int argc, char ** argv)
     RealD shift = 0.1234;
     RealD M5    = 1.8;
     int   pm    = 1;
-    MobiusEOFAFermionR Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mq1, mq2, mq3, shift, pm, M5, b, c);
+    MobiusEOFAFermionD Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mq1, mq2, mq3, shift, pm, M5, b, c);
 
     LatticeFermion src_e (FrbGrid);
     LatticeFermion src_o (FrbGrid);
@@ -217,9 +217,8 @@ int main (int argc, char ** argv)
     pickCheckerboard(Odd , chi_o, chi);
     pickCheckerboard(Even, phi_e, phi);
     pickCheckerboard(Odd , phi_o, phi);
-    RealD t1,t2;
 
-    SchurDiagMooeeOperator<MobiusEOFAFermionR,LatticeFermion> HermOpEO(Ddwf);
+    SchurDiagMooeeOperator<MobiusEOFAFermionD,LatticeFermion> HermOpEO(Ddwf);
     HermOpEO.MpcDagMpc(chi_e, dchi_e);
     HermOpEO.MpcDagMpc(chi_o, dchi_o);
 

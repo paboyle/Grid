@@ -93,15 +93,16 @@ int main(int argc, char** argv) {
   //                    Setup of Dirac Matrix and Operator                   //
   /////////////////////////////////////////////////////////////////////////////
 
-  LatticeGaugeField Umu(Grid_f); SU<Nc>::HotConfiguration(pRNG_f, Umu);
 
+  LatticeGaugeField Umu(Grid_f);
+  SU<Nc>::HotConfiguration(pRNG_f, Umu);
   RealD checkTolerance = (getPrecision<LatticeFermion>::value == 1) ? 1e-7 : 1e-15;
 
   RealD mass = -0.30;
   RealD csw  = 1.9192;
 
-  WilsonCloverFermionR Dwc(Umu, *Grid_f, *RBGrid_f, mass, csw, csw);
-  MdagMLinearOperator<WilsonCloverFermionR, LatticeFermion> MdagMOp_Dwc(Dwc);
+  WilsonCloverFermionD Dwc(Umu, *Grid_f, *RBGrid_f, mass, csw, csw);
+  MdagMLinearOperator<WilsonCloverFermionD, LatticeFermion> MdagMOp_Dwc(Dwc);
 
   /////////////////////////////////////////////////////////////////////////////
   //                             Type definitions                            //

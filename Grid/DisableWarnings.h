@@ -44,14 +44,22 @@ directory
 #ifdef __NVCC__
  //disables nvcc specific warning in json.hpp
 #pragma clang diagnostic ignored "-Wdeprecated-register"
+
+#ifdef __NVCC_DIAG_PRAGMA_SUPPORT__
+ //disables nvcc specific warning in json.hpp
+#pragma nv_diag_suppress unsigned_compare_with_zero
+#pragma nv_diag_suppress cast_to_qualified_type
+ //disables nvcc specific warning in many files
+#pragma nv_diag_suppress esa_on_defaulted_function_ignored
+#pragma nv_diag_suppress extra_semicolon
+#else
+ //disables nvcc specific warning in json.hpp
 #pragma diag_suppress unsigned_compare_with_zero
 #pragma diag_suppress cast_to_qualified_type
-
  //disables nvcc specific warning in many files
 #pragma diag_suppress esa_on_defaulted_function_ignored
 #pragma diag_suppress extra_semicolon
-
-//Eigen only
+#endif
 #endif
 
 // Disable vectorisation in Eigen on the Power8/9 and PowerPC

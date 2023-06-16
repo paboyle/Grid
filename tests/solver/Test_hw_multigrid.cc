@@ -292,9 +292,9 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   RealD mass=0.001;
   RealD M5=1.8;
-  WilsonFermionR    Dw(Umu,*UGrid,*UrbGrid,-M5);
-  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  DomainWallFermionR Dpv (Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,M5);
+  WilsonFermionD    Dw(Umu,*UGrid,*UrbGrid,-M5);
+  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionD Dpv (Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,M5);
 
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis>              Subspace;
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>          CoarseOperator;
@@ -304,7 +304,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Calling Aggregation class to build subspace" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  MdagMLinearOperator<WilsonFermionR,LatticeFermion> SubspaceOp(Dw);
+  MdagMLinearOperator<WilsonFermionD,LatticeFermion> SubspaceOp(Dw);
 
   Subspace Aggregates4D(Coarse4d,UGrid,0);
   Subspace Aggregates5D(Coarse5d,FGrid,0);
@@ -335,7 +335,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>    Level1Op;
 
-  NonHermitianLinearOperator<DomainWallFermionR,LatticeFermion>  LinOpDwf(Ddwf);
+  NonHermitianLinearOperator<DomainWallFermionD,LatticeFermion>  LinOpDwf(Ddwf);
 
   Level1Op LDOp  (*Coarse5d,*Coarse5dRB,0);   
   

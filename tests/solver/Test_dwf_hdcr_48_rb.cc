@@ -57,7 +57,7 @@ private:
   CheckerBoardedSparseMatrixBase<Field> & _Matrix;
   SchurRedBlackBase<Field> & _Solver;
 public:
-
+  using LinearFunction<Field>::operator();
   /////////////////////////////////////////////////////
   // Wrap the usual normal equations trick
   /////////////////////////////////////////////////////
@@ -75,6 +75,7 @@ public:
 template<class Field,class Matrix> class ChebyshevSmoother : public LinearFunction<Field>
 {
 public:
+  using LinearFunction<Field>::operator();
   typedef LinearOperatorBase<Field>                            FineOperator;
   Matrix         & _SmootherMatrix;
   FineOperator   & _SmootherOperator;
@@ -98,6 +99,7 @@ public:
 template<class Field,class Matrix> class MirsSmoother : public LinearFunction<Field>
 {
 public:
+  using LinearFunction<Field>::operator();
   typedef LinearOperatorBase<Field>                            FineOperator;
   Matrix         & SmootherMatrix;
   FineOperator   & SmootherOperator;
@@ -128,6 +130,7 @@ public:
 template<class Fobj,class CComplex,int nbasis, class Matrix, class Guesser, class CoarseSolver>
 class MultiGridPreconditioner : public LinearFunction< Lattice<Fobj> > {
 public:
+  using LinearFunction<Lattice<Fobj> >::operator();
 
   typedef Aggregation<Fobj,CComplex,nbasis> Aggregates;
   typedef CoarsenedMatrix<Fobj,CComplex,nbasis> CoarseOperator;
@@ -261,7 +264,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   RealD mass=0.00078;
   RealD M5=1.8;
-  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis>              Subspace;
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>          CoarseOperator;
@@ -270,7 +273,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Calling Aggregation class to build subspace" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermDefOp(Ddwf);
+  MdagMLinearOperator<DomainWallFermionD,LatticeFermion> HermDefOp(Ddwf);
 
   Subspace Aggregates(Coarse5d,FGrid,0);
 
@@ -303,7 +306,7 @@ int main (int argc, char ** argv)
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>    Level1Op;
   typedef CoarsenedMatrix<siteVector,iScalar<vTComplex>,nbasisc> Level2Op;
 
-  Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> HermIndefOp(Ddwf);
+  Gamma5R5HermitianLinearOperator<DomainWallFermionD,LatticeFermion> HermIndefOp(Ddwf);
 
   
   GridRedBlackCartesian * Coarse4dRB = SpaceTimeGrid::makeFourDimRedBlackGrid(Coarse4d);
@@ -329,9 +332,9 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Building 3 level Multigrid            "<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
 
-  typedef MultiGridPreconditioner<vSpinColourVector,  vTComplex,nbasis, DomainWallFermionR,ZeroGuesser<CoarseVector> , SolverWrapper<CoarseVector> >   TwoLevelMG;
+  typedef MultiGridPreconditioner<vSpinColourVector,  vTComplex,nbasis, DomainWallFermionD,ZeroGuesser<CoarseVector> , SolverWrapper<CoarseVector> >   TwoLevelMG;
   typedef MultiGridPreconditioner<siteVector,iScalar<vTComplex>,nbasisc,Level1Op, DeflatedGuesser<CoarseCoarseVector>, NormalEquations<CoarseCoarseVector> > CoarseMG;
-  typedef MultiGridPreconditioner<vSpinColourVector,  vTComplex,nbasis, DomainWallFermionR,ZeroGuesser<CoarseVector>, LinearFunction<CoarseVector> >     ThreeLevelMG;
+  typedef MultiGridPreconditioner<vSpinColourVector,  vTComplex,nbasis, DomainWallFermionD,ZeroGuesser<CoarseVector>, LinearFunction<CoarseVector> >     ThreeLevelMG;
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Calling 2 level Multigrid            "<< std::endl;
@@ -346,7 +349,7 @@ int main (int argc, char ** argv)
     result=Zero();
 
     std::cout << GridLogMessage <<" tol  " << tols[t] << " cheby order " <<ords[o]<< " lo "<<los[l] <<std::endl;
-    ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother(los[l],60.0,ords[o],HermIndefOp,Ddwf);
+    ChebyshevSmoother<LatticeFermion,DomainWallFermionD> FineSmoother(los[l],60.0,ords[o],HermIndefOp,Ddwf);
     ZeroGuesser<CoarseVector> CoarseZeroGuesser;
     ConjugateGradient<CoarseVector>  CoarseCG(tols[t],10000);
     SchurRedBlackDiagMooeeSolve<CoarseVector> CoarseRBCG(CoarseCG);
@@ -373,7 +376,7 @@ int main (int argc, char ** argv)
     LatticeFermion result_o(FrbGrid);
     pickCheckerboard(Odd,src_o,src);
     result_o=Zero();
-    SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOpEO(Ddwf);
+    SchurDiagMooeeOperator<DomainWallFermionD,LatticeFermion> HermOpEO(Ddwf);
     pCG(HermOpEO,src_o,result_o);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
