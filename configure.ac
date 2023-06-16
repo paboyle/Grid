@@ -202,9 +202,9 @@ case ${ac_Nc} in
 esac
 
 ############### Symplectic group
-AC_ARG_ENABLE([symplectic],
-    [AC_HELP_STRING([--enable-symplectic=yes|no], [enable gauge group Sp2n])],
-    [ac_ENABLE_SP=${enable_symplectic}], [ac_ENABLE_SP=no])
+AC_ARG_ENABLE([Sp],
+    [AC_HELP_STRING([--enable-Sp=yes|no], [enable gauge group Sp2n])],
+    [ac_ENABLE_SP=${enable_Sp}], [ac_ENABLE_SP=no])
 
 AM_CONDITIONAL(BUILD_SP, [ test "${ac_ENABLE_SP}X" == "yesX" ])
 
@@ -214,7 +214,7 @@ case ${ac_ENABLE_SP} in
    no)
         AC_DEFINE([Sp2n_config],[0],[gauge group SUn], [have_sp2n=false]);;
     *)
-        AC_MSG_ERROR(["--enable-symplectic is either yes or no"]);;
+        AC_MSG_ERROR(["--enable-Sp is either yes or no"]);;
 esac
 
 ############### FP16 conversions
