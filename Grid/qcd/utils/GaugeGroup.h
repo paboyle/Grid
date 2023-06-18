@@ -324,7 +324,7 @@ class GaugeGroup {
   }
     
   template <int N>                  // Projects on the general groups U(N), Sp(2N)xZ2 i.e. determinant il allowed a complex phase.
-  accelerator_inline static void ProjectOnGeneralGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
+  static void ProjectOnGeneralGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
     for (int mu = 0; mu < Nd; mu++) {
       auto Umu = PeekIndex<LorentzIndex>(U, mu);
       ProjectOnGeneralGroup(Umu);
