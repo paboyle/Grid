@@ -327,7 +327,7 @@ class GaugeGroup {
   static void ProjectOnGeneralGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
     for (int mu = 0; mu < Nd; mu++) {
       auto Umu = PeekIndex<LorentzIndex>(U, mu);
-      ProjectOnGeneralGroup(Umu);
+      Umu = ProjectOnGeneralGroup(Umu);
     }
   }
        
@@ -353,7 +353,7 @@ class GaugeGroup {
 
   template <int N>       // Projects on SU(N), Sp(2N)
   static void ProjectOnSpecialGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
-       ProjectOnGeneralGroup(Umu);
+       Umu = ProjectOnGeneralGroup(Umu);
        auto det = Determinant(Umu);
 
        det = conjugate(det);
