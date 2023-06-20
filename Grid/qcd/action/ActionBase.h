@@ -44,7 +44,7 @@ public:
   ConfigurationBase() {}
   virtual ~ConfigurationBase() {}
   virtual void set_Field(Field& U) =0;
-  virtual void smeared_force(Field&) const = 0;
+  virtual void smeared_force(Field&) = 0;
   virtual Field& get_SmearedU() =0;
   virtual Field &get_U(bool smeared = false) = 0;
 };

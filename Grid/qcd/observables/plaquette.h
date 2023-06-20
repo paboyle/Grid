@@ -42,6 +42,18 @@ public:
   // necessary for HmcObservable compatibility
   typedef typename Impl::Field Field;
 
+  virtual void TrajectoryComplete(int traj,
+                                  ConfigurationBase<Field> &SmartConfig,
+                                  GridSerialRNG &sRNG,
+                                  GridParallelRNG &pRNG)
+  {
+    std::cout << GridLogMessage << "+++++++++++++++++++"<<std::endl;
+    std::cout << GridLogMessage << "Unsmeared plaquette"<<std::endl;
+    TrajectoryComplete(traj,SmartConfig.get_U(false),sRNG,pRNG); // Unsmeared observable
+    std::cout << GridLogMessage << "Smeared plaquette"<<std::endl;
+    TrajectoryComplete(traj,SmartConfig.get_U(true),sRNG,pRNG); // Unsmeared observable
+    std::cout << GridLogMessage << "+++++++++++++++++++"<<std::endl;
+  };
   void TrajectoryComplete(int traj,
                           Field &U,
                           GridSerialRNG &sRNG,

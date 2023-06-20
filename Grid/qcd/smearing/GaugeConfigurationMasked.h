@@ -131,6 +131,7 @@ public:
     AdjMatrixField  X(grid);
     Complex ci(0,1);
 
+    RealD t0 = usecond();
     Ident = ComplexD(1.0);
     for(int d=0;d<Nd;d++){
       Umu[d] = peekLorentz(U, d);
@@ -161,6 +162,8 @@ public:
     // Assemble the N matrix
     //////////////////////////////////////////////////////////////////
     // Computes ALL the staples -- could compute one only and do it here
+    RealD time;
+    time=-usecond();
     this->StoutSmearing->BaseSmear(C, U);
     Cmu = peekLorentz(C, mu);
 
@@ -169,7 +172,10 @@ public:
     //////////////////////////////////////////////////////////////////
     // Ta so Z lives in Lie algabra
     Zx  = Ta(Cmu * adj(Umu[mu]));
+    time+=usecond();
+    std::cout << GridLogMessage << "Z took "<<time<< " us"<<std::endl;
 
+    time=-usecond();
     // Move Z to the Adjoint Rep == make_adjoint_representation
     ZxAd = Zero();
     for(int b=0;b<8;b++) {
@@ -180,10 +186,13 @@ public:
       cplx = 2.0*trace(ci*tb*Zx); // my convention 1/2 delta ba
       ZxAd = ZxAd + cplx * TRb; // is this right? YES - Guido used Anti herm Ta's and with bloody wrong sign.
     }
+    time+=usecond();
+    std::cout << GridLogMessage << "ZxAd took "<<time<< " us"<<std::endl;
 
     //////////////////////////////////////
     // J(x) = 1 + Sum_k=1..N (-Zac)^k/(k+1)!
     //////////////////////////////////////
+    time=-usecond();
     X=1.0; 
     JxAd = X;
     mZxAd = (-1.0)*ZxAd; 
@@ -193,10 +202,13 @@ public:
       kpfac = kpfac /(k+1);
       JxAd = JxAd + X * kpfac;
     }
+    time+=usecond();
+    std::cout << GridLogMessage << "Jx took "<<time<< " us"<<std::endl;
 
     //////////////////////////////////////
     // dJ(x)/dxe
     //////////////////////////////////////
+    time=-usecond();
     std::vector<AdjMatrixField>  dJdX;    dJdX.resize(8,grid);
     AdjMatrixField tbXn(grid);
     AdjMatrixField sumXtbX(grid);
@@ -220,12 +232,17 @@ public:
       }
       dJdX[b] = -dt2; 
     }
+    time+=usecond();
+    std::cout << GridLogMessage << "dJx took "<<time<< " us"<<std::endl;
     /////////////////////////////////////////////////////////////////
     // Mask Umu for this link
     /////////////////////////////////////////////////////////////////
+    time=-usecond();
     PlaqL = Ident;
     PlaqR = Utmp*adj(Cmu);
     ComputeNxy(PlaqL,PlaqR,NxxAd);
+    time+=usecond();
+    std::cout << GridLogMessage << "ComputeNxy took "<<time<< " us"<<std::endl;
     
     ////////////////////////////
     // Mab
@@ -236,8 +253,12 @@ public:
     /////////////////////////
     // invert the 8x8
     /////////////////////////
+    time=-usecond();
     MpAdInv = Inverse(MpAd);
+    time+=usecond();
+    std::cout << GridLogMessage << "MpAdInv took "<<time<< " us"<<std::endl;
     
+    RealD t3a = usecond();
     /////////////////////////////////////////////////////////////////
     // Nxx Mp^-1
     /////////////////////////////////////////////////////////////////
@@ -283,6 +304,7 @@ public:
     GaugeField Fdet2(grid);
     GaugeLinkField Fdet_pol(grid); // one polarisation
 
+    RealD t4 = usecond();
     for(int nu=0;nu<Nd;nu++){
 
       if (nu!=mu) {
@@ -291,20 +313,29 @@ public:
 	//    |  |
 	//    x==    // nu polarisation -- clockwise
 
+	time=-usecond();
 	PlaqL=Ident;
 
 	PlaqR=(-rho)*Gimpl::CovShiftForward(Umu[nu], nu,
  	       Gimpl::CovShiftForward(Umu[mu], mu,
 	         Gimpl::CovShiftBackward(Umu[nu], nu,
 		   Gimpl::CovShiftIdentityBackward(Utmp, mu))));
+	time+=usecond();
+	std::cout << GridLogMessage << "PlaqLR took "<<time<< " us"<<std::endl;
 
+	time=-usecond();
 	dJdXe_nMpInv_y =   dJdXe_nMpInv;
 	ComputeNxy(PlaqL,PlaqR,Nxy);
 	Fdet1_nu = transpose(Nxy)*dJdXe_nMpInv_y;
+	time+=usecond();
+	std::cout << GridLogMessage << "ComputeNxy (occurs 6x) took "<<time<< " us"<<std::endl;
 
+	time=-usecond();
 	PlaqR=(-1.0)*PlaqR;
 	Compute_MpInvJx_dNxxdSy(PlaqL,PlaqR,MpInvJx,FdetV);
 	Fdet2_nu = FdetV;
+	time+=usecond();
+	std::cout << GridLogMessage << "Compute_MpInvJx_dNxxSy (occurs 6x) took "<<time<< " us"<<std::endl;
 	
 	//    x==
 	//    |  |
@@ -416,6 +447,7 @@ public:
 	
       }
     }
+    RealD t5 = usecond();
 
     Fdet1_mu = Fdet1_mu + transpose(NxxAd)*dJdXe_nMpInv;
 
@@ -423,6 +455,13 @@ public:
     InsertForce(Fdet2,Fdet2_mu,mu);
 
     force= (-0.5)*( Fdet1 + Fdet2);
+    RealD t1 = usecond();
+    std::cout << GridLogMessage << " logDetJacobianForce level took "<<t1-t0<<" us "<<std::endl;
+    std::cout << GridLogMessage << " logDetJacobianForce t3-t0 "<<t3a-t0<<" us "<<std::endl;
+    std::cout << GridLogMessage << " logDetJacobianForce t4-t3 dJdXe_nMpInv "<<t4-t3a<<" us "<<std::endl;
+    std::cout << GridLogMessage << " logDetJacobianForce t5-t4 mu nu loop "<<t5-t4<<" us "<<std::endl;
+    std::cout << GridLogMessage << " logDetJacobianForce t1-t5 "<<t1-t5<<" us "<<std::endl;
+    std::cout << GridLogMessage << " logDetJacobianForce level took "<<t1-t0<<" us "<<std::endl;
   }
   RealD logDetJacobianLevel(const GaugeField &U,int smr)
   {
@@ -696,10 +735,10 @@ private:
 public:
 
   /* Standard constructor */
-  SmearedConfigurationMasked(GridCartesian* _UGrid, unsigned int Nsmear, Smear_Stout<Gimpl>& Stout,bool domask=false)
+  SmearedConfigurationMasked(GridCartesian* _UGrid, unsigned int Nsmear, Smear_Stout<Gimpl>& Stout)
     : SmearedConfiguration<Gimpl>(_UGrid, Nsmear,Stout)
   {
-    if(domask) assert(Nsmear%(2*Nd)==0); // Or multiply by 8??
+    assert(Nsmear%(2*Nd)==0); // Or multiply by 8??
 
     // was resized in base class
     assert(this->SmearedSet.size()==Nsmear);
@@ -712,26 +751,20 @@ public:
     for (unsigned int i = 0; i < this->smearingLevels; ++i) {
 
       masks.push_back(*(new LatticeLorentzComplex(_UGrid)));
-      if (domask) {
 
-	int mu= (i/2) %Nd;
-	int cb= (i%2);
-	LatticeComplex tmpcb(UrbGrid);
+      int mu= (i/2) %Nd;
+      int cb= (i%2);
+      LatticeComplex tmpcb(UrbGrid);
 	
-	masks[i]=Zero();
-	////////////////////
-	// Setup the mask
-	////////////////////
-	tmp = Zero();
-	pickCheckerboard(cb,tmpcb,one);
-	setCheckerboard(tmp,tmpcb);
-	PokeIndex<LorentzIndex>(masks[i],tmp, mu);
+      masks[i]=Zero();
+      ////////////////////
+      // Setup the mask
+      ////////////////////
+      tmp = Zero();
+      pickCheckerboard(cb,tmpcb,one);
+      setCheckerboard(tmp,tmpcb);
+      PokeIndex<LorentzIndex>(masks[i],tmp, mu);
 	
-      } else {
-	for(int mu=0;mu<Nd;mu++){
-	  PokeIndex<LorentzIndex>(masks[i],one, mu);
-	}
-      }
     }
     delete UrbGrid;
   }
@@ -764,10 +797,14 @@ public:
         tmp_mu = peekLorentz(*this->ThinLinks, mu) * peekLorentz(force, mu);
         pokeLorentz(SigmaTilde, tmp_mu, mu);
       }
+
+
       double end = usecond();
       double time = (end - start)/ 1e3;
-      std::cout << GridLogMessage << " GaugeConfigurationMasked: Smeared Force chain rule took " << time << " ms" << std::endl;  
+      std::cout << GridLogMessage << " GaugeConfigurationMasked: Smeared Force chain rule took " << time << " ms" << std::endl;
+
     }  // if smearingLevels = 0 do nothing
+    SigmaTilde=Gimpl::projectForce(SigmaTilde); // Ta
   }
 
 };
