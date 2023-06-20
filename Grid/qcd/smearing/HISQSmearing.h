@@ -76,21 +76,21 @@ class Smear_HISQ_fat {
 
 private:
     GridCartesian* const _grid;
-    SmearingParameters _LVL1;
+    SmearingParameters _linkTreatment;
 
 public:
 
     // Don't allow default values here.
     Smear_HISQ_fat(GridCartesian* grid, Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) 
         : _grid(grid), 
-          _LVL1(c1,cnaik,c3,c5,c7,clp) {
+          _linkTreatment(c1,cnaik,c3,c5,c7,clp) {
         assert(Nc == 3 && "HISQ smearing currently implemented only for Nc==3");
     }
 
     // Allow to pass a pointer to a C-style, double array for MILC convenience
     Smear_HISQ_fat(GridCartesian* grid, double* coeff) 
         : _grid(grid), 
-          _LVL1(coeff[0],coeff[1],coeff[2],coeff[3],coeff[4],coeff[5]) {
+          _linkTreatment(coeff[0],coeff[1],coeff[2],coeff[3],coeff[4],coeff[5]) {
         assert(Nc == 3 && "HISQ smearing currently implemented only for Nc==3");
     }
 
@@ -98,7 +98,7 @@ public:
 
     void smear(LGF& u_smr, LGF& u_thin) const {
 
-        SmearingParameters lvl1 = this->_LVL1;
+        SmearingParameters lt = this->_linkTreatment;
 
         // Create a padded cell of extra padding depth=1
         int depth = 1;
@@ -199,7 +199,7 @@ public:
             }
         }
     
-        u_smr = lvl1.c_3*Ghost.Extract(Ughost_fat) + lvl1.c_1*u_thin;
+        u_smr = lt.c_3*Ghost.Extract(Ughost_fat) + lt.c_1*u_thin;
     };
 
     // I guess the way this will go is:
