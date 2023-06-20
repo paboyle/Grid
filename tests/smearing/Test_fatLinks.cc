@@ -70,15 +70,14 @@ int main (int argc, char **argv)
     NerscIO::readConfiguration(Umu, header, param.conf_in);
 
     // Smear Umu and store result in U_smr
-    Smear_HISQ_fat hisq_fat(&GRID);
+    Smear_HISQ_fat<LatticeGaugeField> hisq_fat(&GRID,1/8.,0.,1/16.,1/64.,1/384.,0.);
     hisq_fat.smear(U_smr,Umu);
 
     NerscIO::writeConfiguration(U_smr,param.conf_out,"HISQ");
 
-    // In the following, we test instantiation of Smear_HISQ_fat in different ways:
-    Smear_HISQ_fat hisq_fat_typical(&GRID,1,2,3,4,5,6);
+    // Test a C-style instantiation 
     double path_coeff[6] = {1, 2, 3, 4, 5, 6};
-    Smear_HISQ_fat hisq_fat_Cstyle(&GRID,path_coeff);
+    Smear_HISQ_fat<LatticeGaugeField> hisq_fat_Cstyle(&GRID,path_coeff);
 
     Grid_finalize();
 }

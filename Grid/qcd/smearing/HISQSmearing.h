@@ -71,6 +71,7 @@ struct SmearingParameters{
 
 
 /*!  @brief create fat links from link variables */
+template<class LGF> // TODO: change to Gimpl?
 class Smear_HISQ_fat {
 
 private:
@@ -79,7 +80,8 @@ private:
 
 public:
 
-    Smear_HISQ_fat(GridCartesian* grid, Real c1=1/8., Real cnaik=0., Real c3=1/16., Real c5=1/64., Real c7=1/384., Real clp=0.) 
+    // Don't allow default values here.
+    Smear_HISQ_fat(GridCartesian* grid, Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) 
         : _grid(grid), 
           _LVL1(c1,cnaik,c3,c5,c7,clp) {
         assert(Nc == 3 && "HISQ smearing currently implemented only for Nc==3");
@@ -94,19 +96,21 @@ public:
 
     ~Smear_HISQ_fat() {}
 
-    void smear(LatticeGaugeField& u_smr, const LatticeGaugeField& U) const {
-        
+    void smear(LGF& u_smr, LGF& u_thin) const {
+
+        SmearingParameters lvl1 = this->_LVL1;
+
         // Create a padded cell of extra padding depth=1
         int depth = 1;
         PaddedCell Ghost(depth,this->_grid);
-        LatticeGaugeField Ughost = Ghost.Exchange(u_smr);
+        LGF Ughost = Ghost.Exchange(u_thin);
     
         // Array for <tr U_mu_nu>(x)
         GridBase *GhostGrid = Ughost.Grid();
         LatticeComplex gplaq(GhostGrid); 
     
         // This is where the 3-link constructs will be stored
-        LatticeGaugeField Ughost_fat(Ughost.Grid());
+        LGF Ughost_fat(Ughost.Grid());
 
         // Create 3-link stencil (class will build its own stencils)
         // writing your own stencil, you're hard-coding the periodic BCs, so you don't need
@@ -136,7 +140,7 @@ public:
         Ughost_fat=Zero();
     
         // Create the accessors, here U_v and U_fat_v 
-        autoView(U_v      , Ughost      , CpuRead);
+        autoView(U_v    , Ughost    , CpuRead);
         autoView(U_fat_v, Ughost_fat, CpuWrite);
     
         // This is a loop over local sites.
@@ -186,12 +190,8 @@ public:
                     gpermute(U4,SE4->_permute);
                     gpermute(U5,SE5->_permute);
     
-                    // Forward contribution from this orientation
-                    auto W = U0*U1*U2;
-                    U_fat_v[ss](mu) = U_fat_v[ss](mu) + W;
-    
-                    // Backward contribution from this orientation
-                    W = U3*U4*U5;
+                    //       forward    backward
+                    auto W = U0*U1*U2 + U3*U4*U5;
                     U_fat_v[ss](mu) = U_fat_v[ss](mu) + W;
     
                     s=s+6;
@@ -199,13 +199,8 @@ public:
             }
         }
     
-        // Here is my understanding of this part: The padded cell has its own periodic BCs, so
-        // if I take a step to the right at the right-most side of the cell, I end up on the
-        // left-most side. This means that the plaquettes in the padding are wrong. Luckily
-        // all we care about are the plaquettes in the cell, which we obtain from Extract.
-        u_smr = Ghost.Extract(Ughost_fat);
+        u_smr = lvl1.c_3*Ghost.Extract(Ughost_fat) + lvl1.c_1*u_thin;
     };
-
 
     // I guess the way this will go is:
     // 1. 3-link smear
@@ -219,6 +214,7 @@ public:
 
 
 /*!  @brief create long links from link variables. */
+template<class LGF>
 class Smear_HISQ_Naik {
 
 private:
@@ -233,16 +229,16 @@ public:
 
     ~Smear_HISQ_Naik() {}
 
-    void smear(LatticeGaugeField& u_smr, const LatticeGaugeField& U) const {
+    void smear(LGF& u_smr, const LGF& U) const {
         
         int depth = 1;
         PaddedCell Ghost(depth,this->_grid);
-        LatticeGaugeField Ughost = Ghost.Exchange(u_smr);
+        LGF Ughost = Ghost.Exchange(u_smr);
     
         GridBase *GhostGrid = Ughost.Grid();
         LatticeComplex gplaq(GhostGrid); 
     
-        LatticeGaugeField Ughost_naik(Ughost.Grid());
+        LGF Ughost_naik(Ughost.Grid());
 
         std::vector<Coordinate> shifts;
         for(int mu=0;mu<Nd;mu++){
