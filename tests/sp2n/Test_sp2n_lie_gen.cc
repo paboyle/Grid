@@ -1,53 +1,65 @@
 #include <Grid/Grid.h>
 
+#include <iostream>
+
 using namespace Grid;
 
-template<int ncolour>
-void run_checks(bool print_generators = 0) {
-    std::cout << GridLogMessage << "*********************************************"
-                << std::endl;
-    std::cout << GridLogMessage << "* Generators for Sp(" << ncolour << ")" << "Fundamental" << std::endl;
-    std::cout << GridLogMessage << "*********************************************"
-                << std::endl;
-    
-    if (print_generators)
-    {
-        Sp<ncolour>::printGenerators();
-    }
-    Sp<ncolour>::testGenerators();
-    
-    if (Sp_TwoIndex<ncolour, Symmetric>::Dimension > 1) {
-        std::cout << GridLogMessage << "*********************************************"
-                    << std::endl;
-        std::cout << GridLogMessage << "* Generators for Sp(" << ncolour << ")" << "TwoIndex Symmetric: " << std::endl;
-        std::cout << GridLogMessage << "*********************************************"
-                    << std::endl;
-        if (print_generators) {
-            Sp_TwoIndex<ncolour, Symmetric>::printGenerators();
-        }
-        Sp_TwoIndex<ncolour, Symmetric>::testGenerators();
-    }
-    
-    if (Sp_TwoIndex<ncolour, AntiSymmetric>::Dimension > 1) {
-        std::cout << GridLogMessage << "*********************************************"
-                    << std::endl;
-        std::cout << GridLogMessage << "* Generators for Sp(" << ncolour << ")" << "TwoIndex AntiSymmetric: " << std::endl;
-        std::cout << GridLogMessage << "*********************************************"
-                    << std::endl;
-        if (print_generators) {
-            Sp_TwoIndex<ncolour, AntiSymmetric>::printGenerators();
-        }
-        Sp_TwoIndex<ncolour, AntiSymmetric>::testGenerators();
-    }
+template <int ngroup>
+std::ostream& operator<<(std::ostream& o, Sp<ngroup> g) {
+  return o << "Sp(" << ngroup << ") Fundamental";
 }
-  
+
+template <int ngroup, TwoIndexSymmetry S>
+std::ostream& operator<<(std::ostream& o, Sp_TwoIndex<ngroup, S> g) {
+  return o << "Sp(" << ngroup << ") TwoIndex "
+           << (S == Symmetric ? "Symmetric" : "AntiSymmetric");
+}
+
+template <class Group>
+void run_check_on(bool print_generators = false) {
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+  std::cout << GridLogMessage << "* Generators for " << Group() << std::endl;
+  std::cout << GridLogMessage << "*********************************************"
+            << std::endl;
+
+  if (print_generators) {
+    Group::printGenerators();
+  }
+  Group::testGenerators();
+}
+
+template <int ngroup>
+void run_checks() {
+  run_check_on<Sp<ngroup>>();
+  run_check_on<Sp_TwoIndex<ngroup, Symmetric>>();
+  run_check_on<Sp_TwoIndex<ngroup, AntiSymmetric>>();
+}
+
+template <>
+void run_checks<2>() {
+  // Print generators because they are small enough to be actually helpful.
+  run_check_on<Sp<2>>(true);
+  run_check_on<Sp_TwoIndex<2, Symmetric>>(true);
+  // The AntiSymmetric representation is 0 dimensional. This makes problems in
+  // device code.
+}
+
+template <>
+void run_checks<4>() {
+  // Print generators because they are small enough to be actually helpful.
+  run_check_on<Sp<4>>(true);
+  run_check_on<Sp_TwoIndex<4, Symmetric>>(true);
+  run_check_on<Sp_TwoIndex<4, AntiSymmetric>>(true);
+}
+
 int main(int argc, char** argv) {
   Grid_init(&argc, &argv);
-    
-  run_checks<2>(1); //  check and print Nc=2
-  run_checks<4>(1); //  check and print Nc=4
-  run_checks<6>();  //  check Nc=6
-  run_checks<8>();  //  check Nc=8
+
+  run_checks<2>();
+  run_checks<4>();
+  run_checks<6>();
+  run_checks<8>();
 
   Grid_finalize();
 }

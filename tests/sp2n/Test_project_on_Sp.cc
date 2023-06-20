@@ -93,7 +93,7 @@ void test_group_projections(T U) {
   std::cout << GridLogMessage << "Apply to deformed matrix" << std::endl;
 
   U = U + Delta * identity;
-  Sp<Nc>::ProjectOnGeneralGroup(U);
+  U = Sp<Nc>::ProjectOnGeneralGroup(U);
   assert(is_element_of_sp2n_group(U));
 
   name = "ProjectOnSpecialGroup";

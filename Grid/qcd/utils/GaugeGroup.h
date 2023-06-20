@@ -326,33 +326,33 @@ class GaugeGroup {
   static void ProjectOnGeneralGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
     for (int mu = 0; mu < Nd; mu++) {
       auto Umu = PeekIndex<LorentzIndex>(U, mu);
-      ProjectOnGeneralGroup(Umu);
+      Umu = ProjectOnGeneralGroup(Umu);
     }
   }
        
   template <int N>
-  static void ProjectOnGeneralGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
-      ProjectOnGeneralGroup(Umu, group_name());
+  static Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > ProjectOnGeneralGroup(const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
+      return ProjectOnGeneralGroup(Umu, group_name());
   }
     
   template <class vtype>
-  static void ProjectOnGeneralGroup(iScalar<vtype> &r) {
-      ProjectOnGeneralGroup(r, group_name());
+  accelerator_inline static iScalar<vtype> ProjectOnGeneralGroup(const iScalar<vtype> &r) {
+      return ProjectOnGeneralGroup(r, group_name());
   }
 
   template <class vtype, int N>
-  static void ProjectOnGeneralGroup(iVector<vtype,N> &r) {
-      ProjectOnGeneralGroup(r, group_name());
+  accelerator_inline static iVector<vtype,N> ProjectOnGeneralGroup(const iVector<vtype,N> &r) {
+      return ProjectOnGeneralGroup(r, group_name());
   }
 
   template <class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr>
-  static void ProjectOnGeneralGroup(iMatrix<vtype,N> &arg) {
-      ProjectOnGeneralGroup(arg, group_name());
+  accelerator_inline static iMatrix<vtype,N> ProjectOnGeneralGroup(const iMatrix<vtype,N> &arg) {
+      return ProjectOnGeneralGroup(arg, group_name());
   }
 
   template <int N>       // Projects on SU(N), Sp(2N)
   static void ProjectOnSpecialGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
-       ProjectOnGeneralGroup(Umu);
+       Umu = ProjectOnGeneralGroup(Umu);
        auto det = Determinant(Umu);
 
        det = conjugate(det);
