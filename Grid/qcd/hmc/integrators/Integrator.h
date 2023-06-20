@@ -66,6 +66,7 @@ public:
 template <class FieldImplementation_, class SmearingPolicy, class RepresentationPolicy>
 class Integrator {
 protected:
+public:
   typedef FieldImplementation_ FieldImplementation;
   typedef typename FieldImplementation::Field MomentaField;  //for readability
   typedef typename FieldImplementation::Field Field;
@@ -96,7 +97,6 @@ protected:
   {
     t_P[level] += ep;
     update_P(P, U, level, ep);
-
     std::cout << GridLogIntegrator << "[" << level << "] P " << " dt " << ep << " : t_P " << t_P[level] << std::endl;
   }
 
@@ -130,28 +130,20 @@ protected:
       Field force(U.Grid());
       conformable(U.Grid(), Mom.Grid());
 
-      Field& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
       double start_force = usecond();
 
-      std::cout << GridLogMessage << "AuditForce["<<level<<"]["<<a<<"] before"<<std::endl;
-      
       as[level].actions.at(a)->deriv_timer_start();
-      as[level].actions.at(a)->deriv(Us, force);  // deriv should NOT include Ta
+      as[level].actions.at(a)->deriv(Smearer, force);  // deriv should NOT include Ta
       as[level].actions.at(a)->deriv_timer_stop();
 
-      std::cout << GridLogMessage << "AuditForce["<<level<<"]["<<a<<"] after"<<std::endl;
-
-      std::cout << GridLogIntegrator << "Smearing (on/off): " << as[level].actions.at(a)->is_smeared << std::endl;
       auto name = as[level].actions.at(a)->action_name();
-      if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
 
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
       double end_force = usecond();
-
-      //      DumpSliceNorm("force ",force,Nd-1);
+      
       MomFilter->applyFilter(force);
+
       std::cout << GridLogIntegrator << " update_P : Level [" << level <<"]["<<a <<"] "<<name<<" dt "<<ep<<  std::endl;
-      DumpSliceNorm("force filtered ",force,Nd-1);
       
       Real force_abs   = std::sqrt(norm2(force)/U.Grid()->gSites()); //average per-site norm.  nb. norm2(latt) = \sum_x norm2(latt[x]) 
       Real impulse_abs = force_abs * ep * HMC_MOMENTUM_DENOMINATOR;    
@@ -377,14 +369,9 @@ public:
 	auto name = as[level].actions.at(actionID)->action_name();
         std::cout << GridLogMessage << "refresh [" << level << "][" << actionID << "] "<<name << std::endl;
 
-        Field& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
-
-	std::cout << GridLogMessage << "AuditRefresh["<<level<<"]["<<actionID<<"] before"<<std::endl;
-
 	as[level].actions.at(actionID)->refresh_timer_start();
-        as[level].actions.at(actionID)->refresh(Us, sRNG, pRNG);
+        as[level].actions.at(actionID)->refresh(Smearer, sRNG, pRNG);
 	as[level].actions.at(actionID)->refresh_timer_stop();
-	std::cout << GridLogMessage << "AuditRefresh["<<level<<"]["<<actionID<<"] after"<<std::endl;
 
       }
 
@@ -425,10 +412,9 @@ public:
 
         // get gauge field from the SmearingPolicy and
         // based on the boolean is_smeared in actionID
-        Field& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
         std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] action eval " << std::endl;
 	        as[level].actions.at(actionID)->S_timer_start();
-        Hterm = as[level].actions.at(actionID)->S(Us);
+        Hterm = as[level].actions.at(actionID)->S(Smearer);
    	        as[level].actions.at(actionID)->S_timer_stop();
         std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] H = " << Hterm << std::endl;
         H += Hterm;
@@ -469,12 +455,11 @@ public:
       for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
         // get gauge field from the SmearingPolicy and
         // based on the boolean is_smeared in actionID
-        Field& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
         std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] action eval " << std::endl;
-	        as[level].actions.at(actionID)->S_timer_start();
 
-        Hterm = as[level].actions.at(actionID)->Sinitial(Us);
-   	        as[level].actions.at(actionID)->S_timer_stop();
+	as[level].actions.at(actionID)->S_timer_start();
+        Hterm = as[level].actions.at(actionID)->S(Smearer);
+	as[level].actions.at(actionID)->S_timer_stop();
 
         std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] H = " << Hterm << std::endl;
         H += Hterm;

@@ -19,13 +19,13 @@ public:
 
   NoSmearing(): ThinLinks(NULL) {}
 
-  void set_Field(Field& U) { ThinLinks = &U; }
+  virtual void set_Field(Field& U) { ThinLinks = &U; }
 
-  void smeared_force(Field&) const {}
+  virtual void smeared_force(Field&) {}
 
-  Field& get_SmearedU() { return *ThinLinks; }
+  virtual Field& get_SmearedU() { return *ThinLinks; }
 
-  Field &get_U(bool smeared = false)
+  virtual Field &get_U(bool smeared = false)
   {
     return *ThinLinks;
   }
@@ -235,7 +235,7 @@ public:
     : smearingLevels(0), StoutSmearing(nullptr), SmearedSet(), ThinLinks(NULL) {}
 
   // attach the smeared routines to the thin links U and fill the smeared set
-  void set_Field(GaugeField &U)
+  virtual void set_Field(GaugeField &U)
   {
     double start = usecond();
     fill_smearedSet(U);
@@ -245,7 +245,7 @@ public:
   }
 
   //====================================================================
-  void smeared_force(GaugeField &SigmaTilde) const
+  virtual void smeared_force(GaugeField &SigmaTilde) 
   {
     if (smearingLevels > 0)
     {
@@ -272,14 +272,16 @@ public:
       }
       double end = usecond();
       double time = (end - start)/ 1e3;
-      std::cout << GridLogMessage << "Smearing force in " << time << " ms" << std::endl;  
+      std::cout << GridLogMessage << " GaugeConfiguration: Smeared Force chain rule took " << time << " ms" << std::endl;
     }  // if smearingLevels = 0 do nothing
+    SigmaTilde=Gimpl::projectForce(SigmaTilde); // Ta
+      
   }
   //====================================================================
 
-  GaugeField& get_SmearedU() { return SmearedSet[smearingLevels - 1]; }
+  virtual GaugeField& get_SmearedU() { return SmearedSet[smearingLevels - 1]; }
 
-  GaugeField &get_U(bool smeared = false)
+  virtual GaugeField &get_U(bool smeared = false)
   {
     // get the config, thin links by default
     if (smeared)

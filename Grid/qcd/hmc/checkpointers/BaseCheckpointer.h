@@ -35,13 +35,16 @@ class CheckpointerParameters : Serializable {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(CheckpointerParameters, 
 				  std::string, config_prefix, 
+				  std::string, smeared_prefix, 
 				  std::string, rng_prefix, 
 				  int, saveInterval, 
+				  bool, saveSmeared, 
 				  std::string, format, );
 
-  CheckpointerParameters(std::string cf = "cfg", std::string rn = "rng",
+  CheckpointerParameters(std::string cf = "cfg", std::string sf="cfg_smr" , std::string rn = "rng",
 			 int savemodulo = 1, const std::string &f = "IEEE64BIG")
     : config_prefix(cf),
+      smeared_prefix(sf),
       rng_prefix(rn),
       saveInterval(savemodulo),
       format(f){};
@@ -61,11 +64,19 @@ template <class Impl>
 class BaseHmcCheckpointer : public HmcObservable<typename Impl::Field> {
 public:
   void build_filenames(int traj, CheckpointerParameters &Params,
-                       std::string &conf_file, std::string &rng_file) {
+                       std::string &conf_file,
+                       std::string &smear_file,
+		       std::string &rng_file) {
     {
       std::ostringstream os;
       os << Params.rng_prefix << "." << traj;
       rng_file = os.str();
+    }
+
+    {
+      std::ostringstream os;
+      os << Params.smeared_prefix << "." << traj;
+      smear_file = os.str();
     }
 
     {
@@ -84,6 +95,11 @@ public:
   }
   virtual void initialize(const CheckpointerParameters &Params) = 0;
 
+  virtual void TrajectoryComplete(int traj,
+                                  typename Impl::Field &U,
+                                  GridSerialRNG &sRNG,
+                                  GridParallelRNG &pRNG) { assert(0); } ; // HMC should pass the smart config with smeared and unsmeared
+  
   virtual void CheckpointRestore(int traj, typename Impl::Field &U,
                                  GridSerialRNG &sRNG,
                                  GridParallelRNG &pRNG) = 0;

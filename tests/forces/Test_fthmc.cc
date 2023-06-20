@@ -32,9 +32,12 @@ Author: Peter Boyle <pboyle@bnl.gov>
 using namespace std;
 using namespace Grid;
 
+typedef MobiusFermionD FermionAction;
+typedef WilsonImplD FimplD;
+typedef WilsonImplD FermionImplPolicy;
 
 template<class Gimpl>
-void ForceTest(Action<LatticeGaugeField> &action,SmearedConfigurationMasked<PeriodicGimplR> & smU,MomentumFilterBase<LatticeGaugeField> &Filter)
+void ForceTest(Action<LatticeGaugeField> &action,ConfigurationBase<LatticeGaugeField> & smU,MomentumFilterBase<LatticeGaugeField> &Filter)
 {
   LatticeGaugeField U = smU.get_U(false); // unsmeared config
   GridBase *UGrid = U.Grid();
@@ -51,14 +54,14 @@ void ForceTest(Action<LatticeGaugeField> &action,SmearedConfigurationMasked<Peri
   std::cout << GridLogMessage << " Force test for "<<action.action_name()<<std::endl;
   std::cout << GridLogMessage << "*********************************************************"<<std::endl;
   
-  RealD eps=0.005;
+  RealD eps=0.01;
 
   std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
   std::cout << GridLogMessage << " Refresh "<<action.action_name()<<std::endl;
   std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
   
   Gimpl::generate_momenta(P,sRNG,RNG4);
-  Filter.applyFilter(P);
+  //  Filter.applyFilter(P);
 
   action.refresh(smU,sRNG,RNG4);
 
@@ -76,7 +79,7 @@ void ForceTest(Action<LatticeGaugeField> &action,SmearedConfigurationMasked<Peri
   std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
   action.deriv(smU,UdSdU);
   UdSdU = Ta(UdSdU);
-  Filter.applyFilter(UdSdU);
+  //  Filter.applyFilter(UdSdU);
 
   DumpSliceNorm("Force",UdSdU,Nd-1);
   
@@ -94,7 +97,7 @@ void ForceTest(Action<LatticeGaugeField> &action,SmearedConfigurationMasked<Peri
   for(int mu=0;mu<Nd;mu++){
     auto UdSdUmu = PeekIndex<LorentzIndex>(UdSdU,mu);
     Pmu= PeekIndex<LorentzIndex>(P,mu);
-    dS = dS - trace(Pmu*UdSdUmu)*eps*2.0*2.0;
+    dS = dS - trace(Pmu*UdSdUmu)*eps*2.0*HMC_MOMENTUM_DENOMINATOR;
   }
   ComplexD dSpred    = sum(dS);
   RealD diff =  S2-S1-dSpred.real();
@@ -125,8 +128,11 @@ int main (int argc, char ** argv)
   const int Ls=12;
   const int Nt = latt_size[3];
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
+  GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
+  GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
+  
   ///////////////////// Gauge Field and Gauge Forces ////////////////////////////
   LatticeGaugeField U(UGrid);
 
@@ -141,17 +147,40 @@ int main (int argc, char ** argv)
 #endif
 
   
-  RealD beta=6.0;
-  WilsonGaugeActionR  PlaqAction(beta);
-  IwasakiGaugeActionR RectAction(beta);
+  WilsonGaugeActionR  PlaqAction(6.0);
+  IwasakiGaugeActionR RectAction(2.13);
+  PlaqAction.is_smeared = true;  
+  RectAction.is_smeared = true;  
 
+  ////////////////////////////////////
+  // Fermion Action
+  ////////////////////////////////////
+  RealD mass=0.01; 
+  RealD pvmass=1.0; 
+  RealD M5=1.8; 
+  RealD b=1.5;
+  RealD c=0.5;
+  
+  // Double versions
+  std::vector<Complex> boundary = {1,1,1,-1};
+  FermionAction::ImplParams Params(boundary);
+  FermionAction DdwfPeriodic(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c,Params);
+  FermionAction PVPeriodic  (U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,pvmass,M5,b,c,Params);
 
+  double StoppingCondition = 1.0e-8;
+  double MaxCGIterations = 50000;
+  ConjugateGradient<LatticeFermion>  CG(StoppingCondition,MaxCGIterations);
+
+  TwoFlavourRatioPseudoFermionAction<FimplD> Nf2(PVPeriodic, DdwfPeriodic,CG,CG);
+  Nf2.is_smeared = true;  
+  
   ////////////////////////////////////////////////
   // Plaquette only FTHMC smearer
   ////////////////////////////////////////////////
   double rho = 0.1;
   Smear_Stout<PeriodicGimplR> Smearer(rho);
-  SmearedConfigurationMasked<PeriodicGimplR> SmartConfig(UGrid,2*Nd,Smearer,true);
+  SmearedConfigurationMasked<PeriodicGimplR> SmartConfig(UGrid,2*Nd,Smearer);
+  SmearedConfiguration<PeriodicGimplR> StoutConfig(UGrid,1,Smearer);
 
   JacobianAction<PeriodicGimplR> Jacobian(&SmartConfig);
   
@@ -159,12 +188,32 @@ int main (int argc, char ** argv)
   // Run some tests
   ////////////////////////////////////////////////
   MomentumFilterNone<LatticeGaugeField> FilterNone;
+
+  std::cout << " *********  FIELD TRANSFORM SMEARING ***** "<<std::endl;
+
   SmartConfig.set_Field(U);
   ForceTest<GimplTypesR>(PlaqAction,SmartConfig,FilterNone);
+
   SmartConfig.set_Field(U);
   ForceTest<GimplTypesR>(RectAction,SmartConfig,FilterNone);
+
   SmartConfig.set_Field(U);
   ForceTest<GimplTypesR>(Jacobian,SmartConfig,FilterNone);
+
+  SmartConfig.set_Field(U);
+  ForceTest<GimplTypesR>(Nf2,SmartConfig,FilterNone);
+
+  std::cout << " *********    STOUT SMEARING ***** "<<std::endl;
+
+  StoutConfig.set_Field(U);
+  ForceTest<GimplTypesR>(PlaqAction,StoutConfig,FilterNone);
+
+  StoutConfig.set_Field(U);
+  ForceTest<GimplTypesR>(RectAction,StoutConfig,FilterNone);
+  
+  StoutConfig.set_Field(U);
+  ForceTest<GimplTypesR>(Nf2,StoutConfig,FilterNone);
+  
 
   Grid_finalize();
 }
