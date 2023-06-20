@@ -73,6 +73,16 @@ vobj coalescedReadPermute(const vobj & __restrict__ vec,int ptype,int doperm,int
     return vec;
   }
 }
+//'perm_mask' acts as a bitmask
+template<class vobj> accelerator_inline
+vobj coalescedReadGeneralPermute(const vobj & __restrict__ vec,int perm_mask,int nd,int lane=0)
+{
+  auto obj = vec, tmp = vec;
+  for (int d=0;d<nd;d++)
+    if (perm_mask & (0x1 << d)) { permute(obj,tmp,d); tmp=obj;}
+  return obj;
+}
+
 template<class vobj> accelerator_inline
 void coalescedWrite(vobj & __restrict__ vec,const vobj & __restrict__ extracted,int lane=0)
 {
