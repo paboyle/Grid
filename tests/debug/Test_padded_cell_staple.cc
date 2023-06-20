@@ -106,9 +106,10 @@ public:
 
     GaugeMat U_mu = PeekIndex<LorentzIndex>(U, mu);
     GaugeMat U_nu = PeekIndex<LorentzIndex>(U, nu);
-  
-    GaugeMat Ug_mu = Ghost.Exchange(U_mu);
-    GaugeMat Ug_nu = Ghost.Exchange(U_nu);
+
+    CshiftImplGauge<Gimpl> cshift_impl;
+    GaugeMat Ug_mu = Ghost.Exchange(U_mu, cshift_impl);
+    GaugeMat Ug_nu = Ghost.Exchange(U_nu, cshift_impl);
     GridBase *ggrid = Ug_mu.Grid();
 
     GaugeMat gStaple(ggrid);
@@ -299,11 +300,11 @@ public:
   static void RectStaplePadded(GaugeMat &Stap, const GaugeLorentz &U,
 			       int mu) {
     PaddedCell Ghost(2,U.Grid());
-    GaugeLorentz Ug = Ghost.Exchange(const_cast<GaugeLorentz&>(U));
-    GridBase *ggrid = Ug.Grid();
-
+    GridBase *ggrid = Ghost.grids.back();
+    
+    CshiftImplGauge<Gimpl> cshift_impl;
     std::vector<GaugeMat> Ug_dirs(Nd,ggrid);
-    for(int i=0;i<Nd;i++) Ug_dirs[i] = PeekIndex<LorentzIndex>(Ug, i);
+    for(int i=0;i<Nd;i++) Ug_dirs[i] = Ghost.Exchange(PeekIndex<LorentzIndex>(U, i), cshift_impl);
 
     GaugeMat gStaple(ggrid);
 
@@ -495,11 +496,14 @@ int main (int argc, char ** argv)
 
   SU<Nc>::HotConfiguration(pRNG,U);
 
-  typedef PeriodicGimplD Gimpl;
+  //typedef PeriodicGimplD Gimpl;
+  typedef ConjugateGimplD Gimpl;
+  std::vector<int> conj_dirs(Nd,0); conj_dirs[0]=1; conj_dirs[3]=1;
+  Gimpl::setDirections(conj_dirs);
+
   typedef typename WilsonLoopsTest<Gimpl>::GaugeMat GaugeMat;
   typedef typename WilsonLoopsTest<Gimpl>::GaugeLorentz GaugeLorentz;
 
-#if 0
   std::cout << "Checking Staple" << std::endl;
   for(int mu=0;mu<Nd;mu++){
     for(int nu=0;nu<Nd;nu++){
@@ -514,7 +518,6 @@ int main (int argc, char ** argv)
       }
     }
   }
-#endif
 
   std::cout << "Checking RectStaple" << std::endl;
   for(int mu=0;mu<Nd;mu++){

@@ -28,12 +28,28 @@ Author: Peter Boyle pboyle@bnl.gov
 
 NAMESPACE_BEGIN(Grid);
 
+//Allow the user to specify how the C-shift is performed, e.g. to respect the appropriate boundary conditions
+template<typename vobj>
+struct CshiftImplBase{
+  virtual Lattice<vobj> Cshift(const Lattice<vobj> &in, int dir, int shift) const = 0;
+  virtual ~CshiftImplBase(){}
+};
+template<typename vobj>
+struct CshiftImplDefault: public CshiftImplBase<vobj>{
+  Lattice<vobj> Cshift(const Lattice<vobj> &in, int dir, int shift) const override{ return Grid::Cshift(in,dir,shift); }
+};
+template<typename Gimpl>
+struct CshiftImplGauge: public CshiftImplBase<typename Gimpl::GaugeLinkField::vector_object>{
+  typename Gimpl::GaugeLinkField Cshift(const typename Gimpl::GaugeLinkField &in, int dir, int shift) const override{ return Gimpl::CshiftLink(in,dir,shift); }
+};  
+
 class PaddedCell {
 public:
   GridCartesian * unpadded_grid;
   int dims;
   int depth;
   std::vector<GridCartesian *> grids;
+
   ~PaddedCell()
   {
     DeleteGrids();
@@ -77,7 +93,7 @@ public:
     }
   };
   template<class vobj>
-  inline Lattice<vobj> Extract(Lattice<vobj> &in)
+  inline Lattice<vobj> Extract(const Lattice<vobj> &in)
   {
     Lattice<vobj> out(unpadded_grid);
 
@@ -88,19 +104,19 @@ public:
     return out;
   }
   template<class vobj>
-  inline Lattice<vobj> Exchange(Lattice<vobj> &in)
+  inline Lattice<vobj> Exchange(const Lattice<vobj> &in, const CshiftImplBase<vobj> &cshift = CshiftImplDefault<vobj>())
   {
     GridBase *old_grid = in.Grid();
     int dims = old_grid->Nd();
     Lattice<vobj> tmp = in;
     for(int d=0;d<dims;d++){
-      tmp = Expand(d,tmp); // rvalue && assignment
+      tmp = Expand(d,tmp,cshift); // rvalue && assignment
     }
     return tmp;
   }
   // expand up one dim at a time
   template<class vobj>
-  inline Lattice<vobj> Expand(int dim,Lattice<vobj> &in)
+  inline Lattice<vobj> Expand(int dim, const Lattice<vobj> &in, const CshiftImplBase<vobj> &cshift = CshiftImplDefault<vobj>())
   {
     GridBase *old_grid = in.Grid();
     GridCartesian *new_grid = grids[dim];//These are new grids
@@ -117,12 +133,12 @@ public:
       InsertSliceLocal(in,padded,x,depth+x,dim);
     }
     // High bit
-    shifted = Cshift(in,dim,depth);
+    shifted = cshift.Cshift(in,dim,depth);
     for(int x=0;x<depth;x++){
       InsertSliceLocal(shifted,padded,local[dim]-depth+x,depth+local[dim]+x,dim);
     }
     // Low bit
-    shifted = Cshift(in,dim,-depth);
+    shifted = cshift.Cshift(in,dim,-depth);
     for(int x=0;x<depth;x++){
       InsertSliceLocal(shifted,padded,x,x,dim);
     }
