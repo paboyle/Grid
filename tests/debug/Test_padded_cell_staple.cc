@@ -102,18 +102,31 @@ public:
       staple = Zero();
       return;
     }
-    PaddedCell Ghost(1,U.Grid());
+    double peek = 0, construct = 0, exchange = 0, coord = 0, stencil =0, kernel = 0, extract = 0, total = 0;
+    
+    double tstart = usecond();
+    double t=tstart;
+    
+    PaddedCell Ghost(1, (GridCartesian*)U.Grid());
 
+    construct += usecond() - t;
+      
+    t=usecond();      
     GaugeMat U_mu = PeekIndex<LorentzIndex>(U, mu);
     GaugeMat U_nu = PeekIndex<LorentzIndex>(U, nu);
+    peek += usecond() - t;
 
+    t=usecond();
     CshiftImplGauge<Gimpl> cshift_impl;
     GaugeMat Ug_mu = Ghost.Exchange(U_mu, cshift_impl);
     GaugeMat Ug_nu = Ghost.Exchange(U_nu, cshift_impl);
+    exchange += usecond() - t;
+    
     GridBase *ggrid = Ug_mu.Grid();
 
     GaugeMat gStaple(ggrid);
 
+    t=usecond();
     Coordinate shift_0(Nd,0);
     Coordinate shift_mu(Nd,0); shift_mu[mu]=1;
     Coordinate shift_nu(Nd,0); shift_nu[nu]=1;
@@ -131,37 +144,50 @@ public:
     shifts.push_back(shift_mnu);
     shifts.push_back(shift_mnu);
     shifts.push_back(shift_mnu_pmu);
+    coord += usecond()-t;
 
+    t=usecond();
     GeneralLocalStencil gStencil(ggrid,shifts);
-    autoView( gStaple_v , gStaple, AcceleratorWrite);
-    auto gStencil_v = gStencil.View();
-    autoView( Ug_mu_v , Ug_mu, AcceleratorRead);
-    autoView( Ug_nu_v , Ug_nu, AcceleratorRead);
-  
-    accelerator_for(ss, ggrid->oSites(), ggrid->Nsimd(), {
-	GeneralStencilEntry const* e = gStencil_v.GetEntry(0,ss);
-	auto Udag_nu_x = adj(coalescedReadGeneralPermute(Ug_nu_v[e->_offset], e->_permute, Nd));
-	e = gStencil_v.GetEntry(1,ss);
-	auto Udag_mu_xpnu = adj(coalescedReadGeneralPermute(Ug_mu_v[e->_offset], e->_permute, Nd));
-	e = gStencil_v.GetEntry(2,ss);
-	auto U_nu_xpmu = coalescedReadGeneralPermute(Ug_nu_v[e->_offset], e->_permute, Nd);
-      
-	auto stencil_ss = U_nu_xpmu * Udag_mu_xpnu * Udag_nu_x;
+    stencil += usecond() -t;
 
-	e = gStencil_v.GetEntry(3,ss);
-	auto U_nu_xmnu = coalescedReadGeneralPermute(Ug_nu_v[e->_offset], e->_permute, Nd);
-	e = gStencil_v.GetEntry(4,ss);
-	auto Udag_mu_xmnu = adj(coalescedReadGeneralPermute(Ug_mu_v[e->_offset], e->_permute, Nd));
-	e = gStencil_v.GetEntry(5,ss);
-	auto Udag_nu_xmnu_pmu = adj(coalescedReadGeneralPermute(Ug_nu_v[e->_offset], e->_permute, Nd));
-
-	stencil_ss = stencil_ss + Udag_nu_xmnu_pmu * Udag_mu_xmnu * U_nu_xmnu;
-      
-	coalescedWrite(gStaple_v[ss],stencil_ss);
-      }
-      );
+    t=usecond();
+    {
+      autoView( gStaple_v , gStaple, AcceleratorWrite);
+      auto gStencil_v = gStencil.View();
+      autoView( Ug_mu_v , Ug_mu, AcceleratorRead);
+      autoView( Ug_nu_v , Ug_nu, AcceleratorRead);
   
+      accelerator_for(ss, ggrid->oSites(), ggrid->Nsimd(), {
+	  GeneralStencilEntry const* e = gStencil_v.GetEntry(0,ss);
+	  auto Udag_nu_x = adj(coalescedReadGeneralPermute(Ug_nu_v[e->_offset], e->_permute, Nd));
+	  e = gStencil_v.GetEntry(1,ss);
+	  auto Udag_mu_xpnu = adj(coalescedReadGeneralPermute(Ug_mu_v[e->_offset], e->_permute, Nd));
+	  e = gStencil_v.GetEntry(2,ss);
+	  auto U_nu_xpmu = coalescedReadGeneralPermute(Ug_nu_v[e->_offset], e->_permute, Nd);
+      
+	  auto stencil_ss = U_nu_xpmu * Udag_mu_xpnu * Udag_nu_x;
+
+	  e = gStencil_v.GetEntry(3,ss);
+	  auto U_nu_xmnu = coalescedReadGeneralPermute(Ug_nu_v[e->_offset], e->_permute, Nd);
+	  e = gStencil_v.GetEntry(4,ss);
+	  auto Udag_mu_xmnu = adj(coalescedReadGeneralPermute(Ug_mu_v[e->_offset], e->_permute, Nd));
+	  e = gStencil_v.GetEntry(5,ss);
+	  auto Udag_nu_xmnu_pmu = adj(coalescedReadGeneralPermute(Ug_nu_v[e->_offset], e->_permute, Nd));
+
+	  stencil_ss = stencil_ss + Udag_nu_xmnu_pmu * Udag_mu_xmnu * U_nu_xmnu;
+      
+	  coalescedWrite(gStaple_v[ss],stencil_ss);
+	}
+	);
+    } //ensure views are all closed!
+    kernel += usecond() - t;
+
+    t=usecond();
     staple = Ghost.Extract(gStaple);
+    extract += usecond()-t;
+    
+    total += usecond() - tstart;
+    std::cout << GridLogMessage << "StaplePadded timings peek:" << peek << " construct:" << construct << " exchange:" << exchange << " coord:" << coord << " stencil:" << stencil << " kernel:" << kernel << " extract:" << extract << " total:" << total << std::endl;
   }
 
   static void RectStapleOrig(GaugeMat &Stap, const GaugeLorentz &Umu,
@@ -299,7 +325,7 @@ public:
 
   static void RectStaplePadded(GaugeMat &Stap, const GaugeLorentz &U,
 			       int mu) {
-    PaddedCell Ghost(2,U.Grid());
+    PaddedCell Ghost(2,(GridCartesian*)U.Grid());
     GridBase *ggrid = Ghost.grids.back();
     
     CshiftImplGauge<Gimpl> cshift_impl;
@@ -361,117 +387,119 @@ public:
     size_t nshift = shifts.size();
 
     GeneralLocalStencil gStencil(ggrid,shifts);
-    autoView( gStaple_v , gStaple, AcceleratorWrite);
-    auto gStencil_v = gStencil.View();
+    {
+      autoView( gStaple_v , gStaple, AcceleratorWrite);
+      auto gStencil_v = gStencil.View();
 
-    typedef LatticeView<typename GaugeMat::vector_object> GaugeViewType;
-    size_t vsize = Nd*sizeof(GaugeViewType);
-    GaugeViewType* Ug_dirs_v_host = (GaugeViewType*)malloc(vsize);
-    for(int i=0;i<Nd;i++) Ug_dirs_v_host[i] = Ug_dirs[i].View(AcceleratorRead);
-    GaugeViewType* Ug_dirs_v = (GaugeViewType*)acceleratorAllocDevice(vsize);
-    acceleratorCopyToDevice(Ug_dirs_v_host,Ug_dirs_v,vsize);
+      typedef LatticeView<typename GaugeMat::vector_object> GaugeViewType;
+      size_t vsize = Nd*sizeof(GaugeViewType);
+      GaugeViewType* Ug_dirs_v_host = (GaugeViewType*)malloc(vsize);
+      for(int i=0;i<Nd;i++) Ug_dirs_v_host[i] = Ug_dirs[i].View(AcceleratorRead);
+      GaugeViewType* Ug_dirs_v = (GaugeViewType*)acceleratorAllocDevice(vsize);
+      acceleratorCopyToDevice(Ug_dirs_v_host,Ug_dirs_v,vsize);
 
-    accelerator_for(ss, ggrid->oSites(), ggrid->Nsimd(), {
-	decltype(coalescedRead(Ug_dirs_v[0][0])) stencil_ss;
-	stencil_ss = Zero();
-	int s=0;
-	for(int nu=0;nu<Nd;nu++){
-	  if(nu != mu){
-	    //tmp6 = tmp5(x+mu) = U_mu(x+mu)U_nu(x+2mu)U_mu^dag(x+nu+mu) U_mu^dag(x+nu) U_nu^dag(x)
-	    GeneralStencilEntry const* e = gStencil_v.GetEntry(s++,ss);
-	    auto U0 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
-	    e = gStencil_v.GetEntry(s++,ss);
-	    auto U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
-	    e = gStencil_v.GetEntry(s++,ss);
-	    auto U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
-	    e = gStencil_v.GetEntry(s++,ss);
-	    auto U3 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
-	    e = gStencil_v.GetEntry(s++,ss);
-	    auto U4 = coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd);
+      accelerator_for(ss, ggrid->oSites(), ggrid->Nsimd(), {
+	  decltype(coalescedRead(Ug_dirs_v[0][0])) stencil_ss;
+	  stencil_ss = Zero();
+	  int s=0;
+	  for(int nu=0;nu<Nd;nu++){
+	    if(nu != mu){
+	      //tmp6 = tmp5(x+mu) = U_mu(x+mu)U_nu(x+2mu)U_mu^dag(x+nu+mu) U_mu^dag(x+nu) U_nu^dag(x)
+	      GeneralStencilEntry const* e = gStencil_v.GetEntry(s++,ss);
+	      auto U0 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+	      e = gStencil_v.GetEntry(s++,ss);
+	      auto U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+	      e = gStencil_v.GetEntry(s++,ss);
+	      auto U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+	      e = gStencil_v.GetEntry(s++,ss);
+	      auto U3 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+	      e = gStencil_v.GetEntry(s++,ss);
+	      auto U4 = coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd);
 	    
-	    stencil_ss = stencil_ss + U4*U3*U2*U1*U0;
+	      stencil_ss = stencil_ss + U4*U3*U2*U1*U0;
 
-	    //tmp5 = tmp4(x+mu) = U_mu(x+mu)U^dag_nu(x-nu+2mu)U^dag_mu(x-nu+mu)U^dag_mu(x-nu)U_nu(x-nu)
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U0 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U3 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U4 = coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd);
+	      //tmp5 = tmp4(x+mu) = U_mu(x+mu)U^dag_nu(x-nu+2mu)U^dag_mu(x-nu+mu)U^dag_mu(x-nu)U_nu(x-nu)
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U0 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U3 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U4 = coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd);
 
-	    stencil_ss = stencil_ss + U4*U3*U2*U1*U0;
+	      stencil_ss = stencil_ss + U4*U3*U2*U1*U0;
 
-	    //tmp5 = tmp4(x+mu) = U^dag_nu(x-nu+mu)U^dag_mu(x-nu)U^dag_mu(x-mu-nu)U_nu(x-mu-nu)U_mu(x-mu)
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U0 = coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd);
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U1 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U3 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U4 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+	      //tmp5 = tmp4(x+mu) = U^dag_nu(x-nu+mu)U^dag_mu(x-nu)U^dag_mu(x-mu-nu)U_nu(x-mu-nu)U_mu(x-mu)
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U0 = coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd);
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U1 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U3 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U4 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
 
-	    stencil_ss = stencil_ss + U4*U3*U2*U1*U0;
+	      stencil_ss = stencil_ss + U4*U3*U2*U1*U0;
 
-	    //tmp5 = tmp4(x+mu) = U_nu(x+mu)U_mu^dag(x+nu)U_mu^dag(x-mu+nu)U_nu^dag(x-mu)U_mu(x-mu)
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U0 = coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd);
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U3 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U4 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+	      //tmp5 = tmp4(x+mu) = U_nu(x+mu)U_mu^dag(x+nu)U_mu^dag(x-mu+nu)U_nu^dag(x-mu)U_mu(x-mu)
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U0 = coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd);
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U3 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U4 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
 
-	    stencil_ss = stencil_ss + U4*U3*U2*U1*U0;
+	      stencil_ss = stencil_ss + U4*U3*U2*U1*U0;
 
-	    //tmp6 = tmp5(x+mu) = U_nu(x+mu)U_nu(x+mu+nu)U_mu^dag(x+2nu)U_nu^dag(x+nu)U_nu^dag(x)
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U0 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U3 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U4 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+	      //tmp6 = tmp5(x+mu) = U_nu(x+mu)U_nu(x+mu+nu)U_mu^dag(x+2nu)U_nu^dag(x+nu)U_nu^dag(x)
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U0 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U3 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U4 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
 
-	    stencil_ss = stencil_ss + U4*U3*U2*U1*U0;   
+	      stencil_ss = stencil_ss + U4*U3*U2*U1*U0;   
 
-	    //tmp5 = tmp4(x+mu) = U_nu^dag(x+mu-nu)U_nu^dag(x+mu-2nu)U_mu^dag(x-2nu)U_nu(x-2nu)U_nu(x-nu)
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U0 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U1 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U3 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
-	    e = gStencil_v.GetEntry(s++,ss);
-	    U4 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+	      //tmp5 = tmp4(x+mu) = U_nu^dag(x+mu-nu)U_nu^dag(x+mu-2nu)U_mu^dag(x-2nu)U_nu(x-2nu)U_nu(x-nu)
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U0 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U1 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U3 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+	      e = gStencil_v.GetEntry(s++,ss);
+	      U4 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
 
-	    stencil_ss = stencil_ss + U4*U3*U2*U1*U0;   
+	      stencil_ss = stencil_ss + U4*U3*U2*U1*U0;   
 
+	    }
 	  }
+	  assert(s==nshift);
+	  coalescedWrite(gStaple_v[ss],stencil_ss);
 	}
-	assert(s==nshift);
-	coalescedWrite(gStaple_v[ss],stencil_ss);
-      }
-      );
+	);
   
-    Stap = Ghost.Extract(gStaple);
-    for(int i=0;i<Nd;i++) Ug_dirs_v_host[i].ViewClose();
-    free(Ug_dirs_v_host);
-    acceleratorFreeDevice(Ug_dirs_v);
+      for(int i=0;i<Nd;i++) Ug_dirs_v_host[i].ViewClose();
+      free(Ug_dirs_v_host);
+      acceleratorFreeDevice(Ug_dirs_v);
+    }   
+    Stap = Ghost.Extract(gStaple);    
   }
 
 
@@ -504,31 +532,49 @@ int main (int argc, char ** argv)
   typedef typename WilsonLoopsTest<Gimpl>::GaugeMat GaugeMat;
   typedef typename WilsonLoopsTest<Gimpl>::GaugeLorentz GaugeLorentz;
 
-  std::cout << "Checking Staple" << std::endl;
+  std::cout << GridLogMessage << "Checking Staple" << std::endl;
+  int count = 0;
+  double torig=0, tpadded=0;
+  
   for(int mu=0;mu<Nd;mu++){
     for(int nu=0;nu<Nd;nu++){
       if(mu != nu){
 	GaugeMat staple_orig(&GRID), staple_padded(&GRID);
-	WilsonLoopsTest<Gimpl>::StapleOrig(staple_orig,U,mu,nu);	
+	double t0 = usecond();
+	WilsonLoopsTest<Gimpl>::StapleOrig(staple_orig,U,mu,nu);
+	double t1 = usecond();
 	WilsonLoopsTest<Gimpl>::StaplePadded(staple_padded,U,mu,nu);
+	double t2 = usecond();
+	torig += t1-t0;  tpadded += t2-t1;
+	++count;
+	
 	GaugeMat diff = staple_orig - staple_padded;
 	double n = norm2(diff);
-	std::cout << mu << " " << nu << " " << n << std::endl;
+	std::cout << GridLogMessage << mu << " " << nu << " " << n << std::endl;
 	assert(n<1e-10);
       }
     }
   }
-
-  std::cout << "Checking RectStaple" << std::endl;
+  std::cout << GridLogMessage << "Staple timings orig: " << torig/1000/count << "ms,  padded: " << tpadded/1000/count << "ms" << std::endl;
+  count=0; torig=tpadded=0;
+    
+  std::cout << GridLogMessage << "Checking RectStaple" << std::endl;
   for(int mu=0;mu<Nd;mu++){
     GaugeMat staple_orig(&GRID), staple_padded(&GRID);
-    WilsonLoopsTest<Gimpl>::RectStapleOrig(staple_orig,U,mu);	
+    double t0 = usecond();
+    WilsonLoopsTest<Gimpl>::RectStapleOrig(staple_orig,U,mu);
+    double t1 = usecond();
     WilsonLoopsTest<Gimpl>::RectStaplePadded(staple_padded,U,mu);
+    double t2 = usecond();
+    torig += t1-t0;  tpadded += t2-t1;
+    ++count;
+    
     GaugeMat diff = staple_orig - staple_padded;
     double n = norm2(diff);
-    std::cout << mu << " " << n << std::endl;
+    std::cout << GridLogMessage << mu << " " << n << std::endl;
     assert(n<1e-10);
   }
-
+  std::cout << GridLogMessage << "RectStaple timings orig: " << torig/1000/count << "ms,  padded: " << tpadded/1000/count << "ms" << std::endl;
+  
   Grid_finalize();
 }
