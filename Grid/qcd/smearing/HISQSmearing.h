@@ -104,101 +104,106 @@ public:
         int depth = 1;
         PaddedCell Ghost(depth,this->_grid);
         LGF Ughost = Ghost.Exchange(u_thin);
-    
+
         // Array for <tr U_mu_nu>(x)
         GridBase *GhostGrid = Ughost.Grid();
         LatticeComplex gplaq(GhostGrid); 
-    
+
         // This is where the 3-link constructs will be stored
         LGF Ughost_fat(Ughost.Grid());
 
-        // Create 3-link stencil (class will build its own stencils)
-        // writing your own stencil, you're hard-coding the periodic BCs, so you don't need
-        // the policy-based stuff, at least for now
+        // Create 3-link stencil. Writing your own stencil, you're hard-coding the 
+        // periodic BCs, so you don't need the policy-based stuff, at least for now.
+        // Loop over all orientations, i.e. demand mu != nu.
         std::vector<Coordinate> shifts;
-        for(int mu=0;mu<Nd;mu++){
-            for(int nu=mu+1;nu<Nd;nu++){
-                // forward shifts
-                Coordinate shift_0(Nd,0);
-                Coordinate shift_mu(Nd,0); shift_mu[mu]=1;
-                Coordinate shift_nu(Nd,0); shift_nu[nu]=1;
-                // push_back creates an element at the end of shifts and
-                // assigns the data in the argument to it.
-                shifts.push_back(shift_mu);
-                shifts.push_back(shift_nu);
-                shifts.push_back(shift_0);
-                // reverse shifts
-                shift_nu[nu]=-1;
-                Coordinate shift_munu(Nd,0); shift_munu[mu]=1; shift_munu[nu]=-1;
-                shifts.push_back(shift_munu);
-                shifts.push_back(shift_nu); // in principle you don't need both of these grid points,
-                shifts.push_back(shift_nu); // but it helps the reader keep track of offsets
-            }
+        for(int mu=0;mu<Nd;mu++)
+        for(int nu=0;nu<Nd;nu++) {
+            if(mu==nu) continue;
+            // forward shifts
+            Coordinate shift_0(Nd,0);
+            Coordinate shift_mu(Nd,0); shift_mu[mu]=1;
+            Coordinate shift_nu(Nd,0); shift_nu[nu]=1;
+            // push_back creates an element at the end of shifts and
+            // assigns the data in the argument to it.
+            shifts.push_back(shift_mu);
+            shifts.push_back(shift_nu);
+            shifts.push_back(shift_0);
+            // reverse shifts
+            shift_nu[nu]=-1;
+            Coordinate shift_munu(Nd,0); shift_munu[mu]=1; shift_munu[nu]=-1;
+            shifts.push_back(shift_munu);
+            shifts.push_back(shift_nu); // in principle you don't need both of these grid points,
+            shifts.push_back(shift_nu); // but it helps the reader keep track of offsets
         }
+
         GeneralLocalStencil gStencil(GhostGrid,shifts);
-    
+
         Ughost_fat=Zero();
-    
+
         // Create the accessors, here U_v and U_fat_v 
         autoView(U_v    , Ughost    , CpuRead);
         autoView(U_fat_v, Ughost_fat, CpuWrite);
-    
+
         // This is a loop over local sites.
         for(int ss=0;ss<U_v.size();ss++){
-    
+
             // This is the stencil index. It increases as we make our way through the spacetime sites,
             // plaquette orientations, and as we travel around a plaquette.
             int s=0;
-        
-            for(int mu=0;mu<Nd;mu++){
-                for(int nu=mu+1;nu<Nd;nu++){
-    
-                    // shift_mu; shift_mu[mu]=1
-                    // shift_nu; shift_nu[nu]=1
-                    // shift_0
-                    // shift_munu; shift_munu[mu]= 1; shift_munu[nu]=-1;
-                    // shift_nu  ;   shift_nu[nu]=-1;
-                    // shift_nu  ;   shift_nu[nu]=-1;
-                    auto SE0 = gStencil.GetEntry(s+0,ss);
-                    auto SE1 = gStencil.GetEntry(s+1,ss);
-                    auto SE2 = gStencil.GetEntry(s+2,ss);
-                    auto SE3 = gStencil.GetEntry(s+3,ss);
-                    auto SE4 = gStencil.GetEntry(s+4,ss);
-                    auto SE5 = gStencil.GetEntry(s+5,ss);
-        
-                    // Each offset corresponds to a site around the plaquette.
-                    int o0 = SE0->_offset;
-                    int o1 = SE1->_offset;
-                    int o2 = SE2->_offset;
-                    int o3 = SE3->_offset;
-                    int o4 = SE4->_offset;
-                    int o5 = SE5->_offset;
-                    
-                    auto U0 = U_v[o0](nu);
-                    auto U1 = adj(U_v[o1](mu));
-                    auto U2 = adj(U_v[o2](nu));
-        
-                    gpermute(U0,SE0->_permute);
-                    gpermute(U1,SE1->_permute);
-                    gpermute(U2,SE2->_permute);
-    
-                    auto U3 = adj(U_v[o3](nu));
-                    auto U4 = adj(U_v[o4](mu));
-                    auto U5 = U_v[o5](nu); 
-    
-                    gpermute(U3,SE3->_permute);
-                    gpermute(U4,SE4->_permute);
-                    gpermute(U5,SE5->_permute);
-    
-                    //       forward    backward
-                    auto W = U0*U1*U2 + U3*U4*U5;
-                    U_fat_v[ss](mu) = U_fat_v[ss](mu) + W;
-    
-                    s=s+6;
-                }
+
+            for(int mu=0;mu<Nd;mu++)
+            for(int nu=0;nu<Nd;nu++) {
+                if(mu==nu) continue;
+
+                // shift_mu; shift_mu[mu]=1
+                // shift_nu; shift_nu[nu]=1
+                // shift_0
+                // shift_munu; shift_munu[mu]= 1; shift_munu[nu]=-1;
+                // shift_nu  ;   shift_nu[nu]=-1;
+                // shift_nu  ;   shift_nu[nu]=-1;
+                auto SE0 = gStencil.GetEntry(s+0,ss);
+                auto SE1 = gStencil.GetEntry(s+1,ss);
+                auto SE2 = gStencil.GetEntry(s+2,ss);
+                auto SE3 = gStencil.GetEntry(s+3,ss);
+                auto SE4 = gStencil.GetEntry(s+4,ss);
+                auto SE5 = gStencil.GetEntry(s+5,ss);
+
+                // Each offset corresponds to a site around the plaquette.
+                int o0 = SE0->_offset;
+                int o1 = SE1->_offset;
+                int o2 = SE2->_offset;
+                int o3 = SE3->_offset;
+                int o4 = SE4->_offset;
+                int o5 = SE5->_offset;
+
+                // When you're deciding whether to take an adjoint, the question is: how is the
+                // stored link oriented compared to the one you want? If I imagine myself travelling
+                // with the to-be-updated link, I have two possible, alternative 3-link paths I can
+                // take, one starting by going to the left, the other starting by going to the right.
+                auto U0 = adj(U_v[o0](nu));
+                auto U1 = U_v[o1](mu);
+                auto U2 = U_v[o2](nu);
+
+                gpermute(U0,SE0->_permute);
+                gpermute(U1,SE1->_permute);
+                gpermute(U2,SE2->_permute);
+
+                auto U3 = U_v[o3](nu);
+                auto U4 = U_v[o4](mu);
+                auto U5 = adj(U_v[o5](nu)); 
+
+                gpermute(U3,SE3->_permute);
+                gpermute(U4,SE4->_permute);
+                gpermute(U5,SE5->_permute);
+
+                //       "left"     "right"
+                auto W = U2*U1*U0 + U5*U4*U3;
+                U_fat_v[ss](mu) = U_fat_v[ss](mu) + W;
+
+                s=s+6;
             }
         }
-    
+
         u_smr = lt.c_3*Ghost.Extract(Ughost_fat) + lt.c_1*u_thin;
     };
 
@@ -261,23 +266,23 @@ public:
             }
         }
         GeneralLocalStencil gStencil(GhostGrid,shifts);
-    
+
         Ughost_naik=Zero();
-    
+
         // Create the accessors, here U_v and U_fat_v 
         autoView(U_v     , Ughost     , CpuRead);
         autoView(U_naik_v, Ughost_naik, CpuWrite);
-    
+
         // This is a loop over local sites.
         for(int ss=0;ss<U_v.size();ss++){
-    
+
             // This is the stencil index. It increases as we make our way through the spacetime sites,
             // plaquette orientations, and as we travel around a plaquette.
             int s=0;
-        
+
             for(int mu=0;mu<Nd;mu++){
                 for(int nu=mu+1;nu<Nd;nu++){
-    
+
                     // shift_mu; shift_mu[mu]=1
                     // shift_nu; shift_nu[nu]=1
                     // shift_0
@@ -290,7 +295,7 @@ public:
                     auto SE3 = gStencil.GetEntry(s+3,ss);
                     auto SE4 = gStencil.GetEntry(s+4,ss);
                     auto SE5 = gStencil.GetEntry(s+5,ss);
-        
+
                     // Each offset corresponds to a site around the plaquette.
                     int o0 = SE0->_offset;
                     int o1 = SE1->_offset;
@@ -298,36 +303,36 @@ public:
                     int o3 = SE3->_offset;
                     int o4 = SE4->_offset;
                     int o5 = SE5->_offset;
-                    
+
                     auto U0 = U_v[o0](nu);
                     auto U1 = adj(U_v[o1](mu));
                     auto U2 = adj(U_v[o2](nu));
-        
+
                     gpermute(U0,SE0->_permute);
                     gpermute(U1,SE1->_permute);
                     gpermute(U2,SE2->_permute);
-    
+
                     auto U3 = adj(U_v[o3](nu));
                     auto U4 = adj(U_v[o4](mu));
                     auto U5 = U_v[o5](nu); 
-    
+
                     gpermute(U3,SE3->_permute);
                     gpermute(U4,SE4->_permute);
                     gpermute(U5,SE5->_permute);
-    
+
                     // Forward contribution from this orientation
                     auto W = U0*U1*U2;
                     U_naik_v[ss](mu) = U_naik_v[ss](mu) + W;
-    
+
                     // Backward contribution from this orientation
                     W = U3*U4*U5;
                     U_naik_v[ss](mu) = U_naik_v[ss](mu) + W;
-    
+
                     s=s+6;
                 }
             }
         }
-    
+
         // Here is my understanding of this part: The padded cell has its own periodic BCs, so
         // if I take a step to the right at the right-most side of the cell, I end up on the
         // left-most side. This means that the plaquettes in the padding are wrong. Luckily
