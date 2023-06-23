@@ -429,10 +429,20 @@ template <int N>
 static void ProjectSUn(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
     GaugeGroup<N,GroupName::SU>::ProjectOnSpecialGroup(Umu);
 }
+  
+template <int N>
+static void ProjectSUn(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >,Nd> > &U) {
+    GaugeGroup<N,GroupName::SU>::ProjectOnSpecialGroup(U);
+}
     
 template <int N>
 static void ProjectSpn(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
     GaugeGroup<N,GroupName::Sp>::ProjectOnSpecialGroup(Umu);
+}
+    
+template <int N>
+static void ProjectSpn(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >,Nd> > &U) {
+    GaugeGroup<N,GroupName::Sp>::ProjectOnSpecialGroup(U);
 }
 
 // Explicit specialisation for SU(3).
