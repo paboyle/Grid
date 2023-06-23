@@ -426,10 +426,14 @@ LatticeComplexD Determinant(
 }
 
 template <int N>
-using ProjectSUn = typename GaugeGroup<N,GroupName::SU>::ProjectOnSpecialGroup;
+static void ProjectSUn(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
+    GaugeGroup<N,GroupName::SU>::ProjectOnSpecialGroup(Umu);
+}
     
 template <int N>
-using ProjectSpn = typename GaugeGroup<N,GroupName::Sp>::ProjectOnSpecialGroup;
+static void ProjectSpn(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
+    GaugeGroup<N,GroupName::Sp>::ProjectOnSpecialGroup(Umu);
+}
 
 // Explicit specialisation for SU(3).
 static void ProjectSU3(
