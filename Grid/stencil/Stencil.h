@@ -705,7 +705,7 @@ public:
 	}
       }
     }
-    std::cout << "BuildSurfaceList size is "<<surface_list.size()<<std::endl;
+    std::cout << GridLogDebug << "BuildSurfaceList size is "<<surface_list.size()<<std::endl;
   }
   /// Introduce a block structure and switch off comms on boundaries
   void DirichletBlock(const Coordinate &dirichlet_block)
