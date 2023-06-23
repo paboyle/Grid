@@ -220,8 +220,7 @@ public:
     for (int a = 0; a < Dimension; a++) {
       tmp = transpose(eij[a]*ta[Index]) + transpose(eij[a]) * ta[Index];
       for (int b = 0; b < Dimension; b++) {
-        iGroupMatrix<cplx> tmp1 = tmp * eij[b];
-        Complex iTr = TensorRemove(timesI(trace(tmp1)));
+        Complex iTr = TensorRemove(timesI(trace(tmp * eij[b])));
         i2indTa()()(a, b) = iTr;
       }
     }
