@@ -22,14 +22,14 @@
 
 // Authors: David Preti, Guido Cossu
 
-#ifndef QCD_UTIL_SUN2INDEX_H
-#define QCD_UTIL_SUN2INDEX_H
+#ifndef QCD_UTIL_GAUGEGROUPTWOINDEX_H
+#define QCD_UTIL_GAUGEGROUPTWOINDEX_H
 
 NAMESPACE_BEGIN(Grid);
 
 enum TwoIndexSymmetry { Symmetric = 1, AntiSymmetric = -1 };
 
-inline Real delta(int a, int b) { return (a == b) ? 1.0 : 0.0; }
+constexpr inline Real delta(int a, int b) { return (a == b) ? 1.0 : 0.0; }
 
 namespace detail {
 
@@ -44,18 +44,14 @@ struct baseOffDiagonalSpHelper<cplx, nc, AntiSymmetric> {
     RealD tmp;
 
     if ((i == ngroup + j) && (1 <= j) && (j < ngroup)) {
-      for (int k = 0; k < ngroup; k++) {
+      for (int k = 0; k < j+1; k++) {
         if (k < j) {
-          tmp = sqrt(2 * j * (j + 1));
-          tmp = 1 / tmp;
-          tmp *= std::sqrt(2.0);
+          tmp = 1 / sqrt(j * (j + 1));
           eij()()(k, k + ngroup) = tmp;
           eij()()(k + ngroup, k) = -tmp;
         }
         if (k == j) {
-          tmp = sqrt(2 * j * (j + 1));
-          tmp = -j / tmp;
-          tmp *= std::sqrt(2.0);
+          tmp = -j / sqrt(j * (j + 1));
           eij()()(k, k + ngroup) = tmp;
           eij()()(k + ngroup, k) = -tmp;
         }
@@ -70,7 +66,6 @@ struct baseOffDiagonalSpHelper<cplx, nc, AntiSymmetric> {
               delta(i, k) * delta(j, l) - delta(j, k) * delta(i, l);
         }
     }
-
     RealD nrm = 1. / std::sqrt(2.0);
     eij = eij * nrm;
   }
@@ -216,7 +211,6 @@ public:
     Vector<iGroupMatrix<cplx> > ta(NumGenerators);
     Vector<iGroupMatrix<cplx> > eij(Dimension);
     iGroupMatrix<cplx> tmp;
-    i2indTa = Zero();
 
     for (int a = 0; a < NumGenerators; a++)
       GaugeGroup<ncolour, group_name>::generator(a, ta[a]);
@@ -224,7 +218,7 @@ public:
     for (int a = 0; a < Dimension; a++) base(a, eij[a]);
 
     for (int a = 0; a < Dimension; a++) {
-      tmp = transpose(ta[Index]) * adj(eij[a]) + adj(eij[a]) * ta[Index];
+      tmp = transpose(eij[a]*ta[Index]) + transpose(eij[a]) * ta[Index];
       for (int b = 0; b < Dimension; b++) {
         iGroupMatrix<cplx> tmp1 = tmp * eij[b];
         Complex iTr = TensorRemove(timesI(trace(tmp1)));
@@ -276,12 +270,11 @@ public:
         std::cout << GridLogMessage << "a=" << a << "b=" << b << "Tr=" << Tr
                   << std::endl;
         if (a == b) {
-          assert(imag(Tr) < 1e-8);
           assert(real(Tr) - ((ncolour + S * 2) * 0.5) < 1e-8);
         } else {
-          assert(imag(Tr) < 1e-8);
           assert(real(Tr) < 1e-8);
         }
+        assert(imag(Tr) < 1e-8);
       }
     }
     std::cout << GridLogMessage << std::endl;
