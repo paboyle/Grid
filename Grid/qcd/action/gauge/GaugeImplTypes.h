@@ -61,7 +61,6 @@ NAMESPACE_BEGIN(Grid);
   typedef typename Impl::Field Field;
 
 // hardcodes the exponential approximation in the template
-//template <class S, int Nrepresentation = Nc, int Nexp = 12 > class GaugeImplTypes {
 template <class S, int Nrepresentation = Nc, int Nexp = 12, class Group = SU<Nc> > class GaugeImplTypes {
 public:
   typedef S Simd;
@@ -70,7 +69,6 @@ public:
   template <typename vtype> using iImplScalar     = iScalar<iScalar<iScalar<vtype> > >;
   template <typename vtype> using iImplGaugeLink  = iScalar<iScalar<iMatrix<vtype, Nrepresentation> > >;
   template <typename vtype> using iImplGaugeField = iVector<iScalar<iMatrix<vtype, Nrepresentation> >, Nd>;
-
 
   typedef iImplScalar<Simd>     SiteComplex;
   typedef iImplGaugeLink<Simd>  SiteLink;
@@ -120,8 +118,7 @@ public:
     LinkField Pmu(P.Grid());
     Pmu = Zero();
 
-    for (int mu = 0; mu < Nd; mu++)
-    {
+    for (int mu = 0; mu < Nd; mu++) {
       Group::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
       RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR) ;
       Pmu = Pmu*scale;
@@ -129,11 +126,10 @@ public:
     }
   }
     
-  static inline Field projectForce(Field &P)
-    {
-        Field ret(P.Grid());
-        Group::taProj(P, ret);
-        return ret;
+  static inline Field projectForce(Field &P) {
+      Field ret(P.Grid());
+      Group::taProj(P, ret);
+      return ret;
     }
 
   static inline void update_field(Field& P, Field& U, double ep){
@@ -164,23 +160,19 @@ public:
     return Hsum.real();
   }
 
-  static inline void Project(Field &U)
-  {
-      Group::ProjectOnSpecialGroup(U);
+  static inline void Project(Field &U) {
+    Group::ProjectOnSpecialGroup(U);
   }
 
-  static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U)
-  {
-      Group::HotConfiguration(pRNG, U);
+  static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U) {
+    Group::HotConfiguration(pRNG, U);
   }
 
-  static inline void TepidConfiguration(GridParallelRNG &pRNG, Field &U)
-  {
+  static inline void TepidConfiguration(GridParallelRNG &pRNG, Field &U) {
     Group::TepidConfiguration(pRNG, U);
   }
 
-  static inline void ColdConfiguration(GridParallelRNG &pRNG, Field &U)
-  {
+  static inline void ColdConfiguration(GridParallelRNG &pRNG, Field &U) {
     Group::ColdConfiguration(pRNG, U);
   }
 

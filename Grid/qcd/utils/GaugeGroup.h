@@ -29,8 +29,8 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef QCD_UTIL_SUN_H
-#define QCD_UTIL_SUN_H
+#ifndef QCD_UTIL_GAUGEGROUP_H
+#define QCD_UTIL_GAUGEGROUP_H
 
 // Important detail: nvcc requires all template parameters to have names.
 // This is the only reason why the second template parameter has a name.
@@ -145,6 +145,12 @@ class GaugeGroup {
   typedef Lattice<vSU2MatrixF> LatticeSU2MatrixF;
   typedef Lattice<vSU2MatrixD> LatticeSU2MatrixD;
 
+  // Private implementation details are specified in the following files:
+  // Grid/qcd/utils/SUn.impl
+  // Grid/qcd/utils/SUn.impl
+  // The public part of the interface follows below and refers to these
+  // private member functions.
+
 #include "Grid/qcd/utils/SUn.impl"
 #include "Grid/qcd/utils/Sp2n.impl"
 
@@ -161,7 +167,7 @@ class GaugeGroup {
   static void testGenerators(void) { testGenerators(group_name()); }
 
   static void printGenerators(void) {
-    for (int gen = 0; gen < AdjointDimension; gen++) {
+    for (int gen = 0; gen < AlgebraDimension; gen++) {
       Matrix ta;
       generator(gen, ta);
       std::cout << GridLogMessage << "Nc = " << ncolour << " t_" << gen
@@ -187,12 +193,11 @@ class GaugeGroup {
     LatticeMatrixType lie(grid);
     LatticeMatrixType la(grid);
     ComplexD ci(0.0, scale);
-    //    ComplexD cone(1.0, 0.0);
     MatrixType ta;
 
     lie = Zero();
 
-    for (int a = 0; a < AdjointDimension; a++) {
+    for (int a = 0; a < AlgebraDimension; a++) {
       random(pRNG, ca);
 
       ca = (ca + conjugate(ca)) * 0.5;
@@ -217,7 +222,7 @@ class GaugeGroup {
     Matrix ta;
 
     out = Zero();
-    for (int a = 0; a < AdjointDimension; a++) {
+    for (int a = 0; a < AlgebraDimension; a++) {
       gaussian(pRNG, ca);
       generator(a, ta);
       la = toComplex(ca) * ta;
@@ -235,7 +240,7 @@ class GaugeGroup {
     Matrix ta;
 
     out = Zero();
-    for (int a = 0; a < AdjointDimension; a++) {
+    for (int a = 0; a < AlgebraDimension; a++) {
       generator(a, ta);
       la = peekColour(h, a) * timesI(ta) * scale;
       out += la;
@@ -250,7 +255,7 @@ class GaugeGroup {
     h_out = Zero();
     Matrix Ta;
 
-    for (int a = 0; a < AdjointDimension; a++) {
+    for (int a = 0; a < AlgebraDimension; a++) {
       generator(a, Ta);
       pokeColour(h_out, -2.0 * (trace(timesI(Ta) * in)) * scale, a);
     }
@@ -322,7 +327,7 @@ class GaugeGroup {
     }
   }
     
-  template <int N>                  // Projects on the general groups U(N), Sp(2N)xZ2 i.e. determinant il allowed a complex phase.
+  template <int N>                  // Projects on the general groups U(N), Sp(2N)xZ2 i.e. determinant is allowed a complex phase.
   static void ProjectOnGeneralGroup(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
     for (int mu = 0; mu < Nd; mu++) {
       auto Umu = PeekIndex<LorentzIndex>(U, mu);
@@ -350,7 +355,7 @@ class GaugeGroup {
       return ProjectOnGeneralGroup(arg, group_name());
   }
 
-  template <int N>       // Projects on SU(N), Sp(2N)
+  template <int N>       // Projects on SU(N), Sp(2N), with unit determinant, by first projecting on general group and then enforcing unit determinant
   static void ProjectOnSpecialGroup(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
        Umu = ProjectOnGeneralGroup(Umu);
        auto det = Determinant(Umu);
@@ -375,6 +380,24 @@ class GaugeGroup {
     }
 
 };
+    
+template <int ncolour>
+using SU = GaugeGroup<ncolour, GroupName::SU>;
+
+template <int ncolour>
+using Sp = GaugeGroup<ncolour, GroupName::Sp>;
+
+typedef SU<2> SU2;
+typedef SU<3> SU3;
+typedef SU<4> SU4;
+typedef SU<5> SU5;
+
+typedef SU<Nc> FundamentalMatrices;
+    
+typedef Sp<2> Sp2;
+typedef Sp<4> Sp4;
+typedef Sp<6> Sp6;
+typedef Sp<8> Sp8;
 
 template <int N>
 LatticeComplexD Determinant(
@@ -403,32 +426,10 @@ LatticeComplexD Determinant(
 }
 
 template <int N>
-static void ProjectSUn(
-    Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
-  Umu = ProjectOnGroup(Umu);
-  auto det = Determinant(Umu);
-
-  det = conjugate(det);
-
-  for (int i = 0; i < N; i++) {
-    auto element = PeekIndex<ColourIndex>(Umu, N - 1, i);
-    element = element * det;
-    PokeIndex<ColourIndex>(Umu, element, Nc - 1, i);
-  }
-}
-
+using ProjectSUn = typename GaugeGroup<N,GroupName::SU>::ProjectOnSpecialGroup;
+    
 template <int N>
-static void ProjectSUn(
-    Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
-  GridBase *grid = U.Grid();
-  // Reunitarise
-  for (int mu = 0; mu < Nd; mu++) {
-    auto Umu = PeekIndex<LorentzIndex>(U, mu);
-    Umu = ProjectOnGroup(Umu);
-    ProjectSUn(Umu);
-    PokeIndex<LorentzIndex>(U, Umu, mu);
-  }
-}
+using ProjectSpn = typename GaugeGroup<N,GroupName::Sp>::ProjectOnSpecialGroup;
 
 // Explicit specialisation for SU(3).
 static void ProjectSU3(
@@ -462,51 +463,6 @@ static void ProjectSU3(
     PokeIndex<LorentzIndex>(U, Umu, mu);
   }
 }
-
-template <int ncolour>
-using SU = GaugeGroup<ncolour, GroupName::SU>;
-
-template <int ncolour>
-using Sp = GaugeGroup<ncolour, GroupName::Sp>;
-
-typedef SU<2> SU2;
-typedef SU<3> SU3;
-typedef SU<4> SU4;
-typedef SU<5> SU5;
-
-typedef SU<Nc> FundamentalMatrices;
-
-template <int N>
-static void ProjectSp2n(
-    Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu) {
-  Umu = ProjectOnSpGroup(Umu);
-  auto det = Determinant(Umu);  // ok ?
-
-  det = conjugate(det);
-
-  for (int i = 0; i < N; i++) {
-    auto element = PeekIndex<ColourIndex>(Umu, N - 1, i);
-    element = element * det;
-    PokeIndex<ColourIndex>(Umu, element, Nc - 1, i);
-  }
-}
-template <int N>
-static void ProjectSp2n(
-    Lattice<iVector<iScalar<iMatrix<vComplexD, N> >, Nd> > &U) {
-  GridBase *grid = U.Grid();
-  for (int mu = 0; mu < Nd; mu++) {
-    auto Umu = PeekIndex<LorentzIndex>(U, mu);
-    Umu = ProjectOnSpGroup(Umu);
-    ProjectSp2n(Umu);
-    PokeIndex<LorentzIndex>(U, Umu, mu);
-  }
-}
-
-typedef Sp<2> Sp2;
-typedef Sp<4> Sp4;
-typedef Sp<6> Sp6;
-typedef Sp<8> Sp8;
-
 
 NAMESPACE_END(Grid);
 #endif

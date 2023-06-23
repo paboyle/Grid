@@ -7,7 +7,7 @@ int main(int argc, char **argv) {
 
   Grid_init(&argc, &argv);
     
-  typedef GenericSp2nHMCRunnerHirep<TheRepresentations, MinimumNorm2> HMCWrapper;
+  typedef GenericSpHMCRunnerHirep<TheRepresentations, MinimumNorm2> HMCWrapper;
     
   typedef SpWilsonTwoIndexAntiSymmetricImplR TwoIndexFermionImplPolicy;
   typedef SpWilsonTwoIndexAntiSymmetricFermionD TwoIndexFermionAction;

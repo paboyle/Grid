@@ -37,7 +37,7 @@ int main(int argc, char **argv)
   Grid_init(&argc, &argv);
   GridLogLayout();
 
-  typedef GenericSp2nHMCRunner<MinimumNorm2> HMCWrapper;
+  typedef GenericSpHMCRunner<MinimumNorm2> HMCWrapper;
   HMCWrapper TheHMC;
 
 
