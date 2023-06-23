@@ -10,6 +10,7 @@
 // doesn't get found by the scripts/filelist during bootstrapping.
 
 private:
+template <ONLY_IF_Sp>
 static int su2subgroups(GroupName::Sp) { return (ncolour/2 * (ncolour/2 - 1)) / 2; }
 
 // Sp(2N) has N(2N+1) = 2N^2+N generators
@@ -280,82 +281,6 @@ static void taProj(const LatticeMatrixType &in, LatticeMatrixType &out, GroupNam
 }
 
 public:
-template <ONLY_IF_Sp>
-static void OmegaInvariance(ColourMatrix &in) {
-  ColourMatrix Omega;
-  Omega = Zero();
-  const int nsp=ncolour/2;
-
-  for (int i = 0; i < nsp; i++) {
-    Omega()()(i, nsp + i) = 1.;
-    Omega()()(nsp + i, i) = -1;
-  }
-
-  auto diff = Omega - (in * Omega * transpose(in));
-  auto sdiff = norm2(diff);
-  if (norm2(sdiff) < 1e-8) {
-    std::cout << GridLogMessage
-              << "Symplectic condition satisfied: Omega invariant" << std::endl;
-  } else {
-    std::cout << GridLogMessage
-              << "WARNING!!!!!! Matrix Omega NOT left invariant by "
-              << norm2(sdiff) << std::endl;
-  }
-}
-
-template <typename GaugeField, ONLY_IF_Sp>
-static void OmegaInvariance(GaugeField &in) {
-  typedef typename GaugeField::vector_type vector_type;
-  typedef iGroupMatrix<vector_type> vMatrixType;
-  typedef Lattice<vMatrixType> LatticeMatrixType;
-
-  LatticeMatrixType U(in.Grid());
-  LatticeMatrixType OmegaLatt(in.Grid());
-  LatticeMatrixType identity(in.Grid());
-  RealD vol = in.Grid()->gSites();
-  ColourMatrix Omega;
-
-  OmegaLatt = Zero();
-  Omega = Zero();
-  identity = 1.;
-
-  U = PeekIndex<LorentzIndex>(in, 1);
-
-  OmegaInvariance(U);
-}
-
-template <ONLY_IF_Sp>
-static void OmegaInvariance(LatticeColourMatrixD &in) {
-  const int nsp=ncolour/2;
-  LatticeColourMatrixD OmegaLatt(in.Grid());
-  LatticeColourMatrixD identity(in.Grid());
-  RealD vol = in.Grid()->gSites();
-  ColourMatrix Omega;
-
-  OmegaLatt = Zero();
-  Omega = Zero();
-  identity = 1.;
-
-  for (int i = 0; i < nsp; i++) {
-    Omega()()(i, nsp + i) = 1.;
-    Omega()()(nsp + i, i) = -1;
-  }
-
-  std::cout << GridLogMessage << "Omega = " << Omega()() << std::endl;
-  OmegaLatt = OmegaLatt + (identity * Omega);
-
-  auto diff = OmegaLatt - (in * OmegaLatt * transpose(in));
-  auto sdiff = sum(diff);
-  // assert( norm2(sdiff) < 1e-8 );
-  if (norm2(sdiff) < 1e-8) {
-    std::cout << GridLogMessage
-              << "Symplectic condition satisfied: Omega invariant" << std::endl;
-  } else {
-    std::cout << GridLogMessage
-              << "WARNING!!!!!! Matrix Omega NOT left invariant by "
-              << norm2(sdiff) << std::endl;
-  }
-}
 
 template <ONLY_IF_Sp>
 static void Omega(LatticeColourMatrixD &in) {

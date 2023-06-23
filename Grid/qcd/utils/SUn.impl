@@ -10,6 +10,7 @@
 // doesn't get found by the scripts/filelist during bootstrapping.
 
 private:
+template <ONLY_IF_SU>
 static int su2subgroups(GroupName::SU) { return (ncolour * (ncolour - 1)) / 2; }
 ////////////////////////////////////////////////////////////////////////
 // There are N^2-1 generators for SU(N).
@@ -59,7 +60,7 @@ static int su2subgroups(GroupName::SU) { return (ncolour * (ncolour - 1)) / 2; }
 //   (      -2)
 //
 ////////////////////////////////////////////////////////////////////////
-template <class cplx>
+template <class cplx, ONLY_IF_SU>
 static void generator(int lieIndex, iGroupMatrix<cplx> &ta, GroupName::SU) {
   // map lie index to which type of generator
   int diagIndex;
