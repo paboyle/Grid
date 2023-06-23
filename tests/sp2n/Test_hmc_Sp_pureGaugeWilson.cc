@@ -40,10 +40,7 @@ int main(int argc, char **argv)
   typedef GenericSpHMCRunner<MinimumNorm2> HMCWrapper;
   HMCWrapper TheHMC;
 
-
   TheHMC.Resources.AddFourDimGrid("gauge");
-
-
 
   // Checkpointer definition
   CheckpointerParameters CPparams;  

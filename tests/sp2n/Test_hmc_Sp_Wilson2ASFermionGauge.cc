@@ -79,4 +79,3 @@ int main(int argc, char **argv) {
 
   Grid_finalize();
 }
-
