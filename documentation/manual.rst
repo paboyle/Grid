@@ -2811,18 +2811,16 @@ Specific aliases are then defined::
   typedef Sp<6> Sp6;
   typedef Sp<8> Sp8;
 
-Some methods are common to both gauge groups. The most important common external methods are::
+Some methods are common to both gauge groups. Common external methods are::
 
-  static void printGenerators(void) ;
   template <class cplx>  static void generator(int lieIndex, iSUnMatrix<cplx> &ta) ;
-  static void GaussianFundamentalLieAlgebraMatrix(GridParallelRNG &pRNG,
-  LatticeMatrix &out,
-  Real scale = 1.0) ;
+  static void GaussianFundamentalLieAlgebraMatrix(GridParallelRNG &pRNG, LatticeMatrix &out, Real scale = 1.0) ;
   static void HotConfiguration(GridParallelRNG &pRNG, GaugeField &out) ;
   static void TepidConfiguration(GridParallelRNG &pRNG,GaugeField &out);
   static void ColdConfiguration(GaugeField &out);
   static void taProj( const LatticeMatrixType &in,  LatticeMatrixType &out);
   static void taExp(const LatticeMatrixType &x, LatticeMatrixType &ex) ;
+  static void printGenerators(void) ;
    
 Whenever needed, a different implementation of these methods for the gauge groups is achieved by overloading. For example,::
 
@@ -2846,7 +2844,7 @@ Gauge Group: SU(N)
 The specialisation of GaugeGroup to SU(N), formally part of qcd/utils/GaugeGroup.h, is found in the file qcd/utils/SUn.impl
 It contains methods that are only implemented for SU(N), and specialisations of shared methods to the special unitary group
 
-The most important external methods are::
+Public methods are::
 
   static void SubGroupHeatBath(GridSerialRNG &sRNG, GridParallelRNG &pRNG, RealD beta,  // coeff multiplying staple in action (with no 1/Nc)
                                LatticeMatrix &link,
@@ -2898,7 +2896,7 @@ Gauge Group: Sp(2N)
 The specialisation of GaugeGroup to Sp(2N), formally part of qcd/utils/GaugeGroup.h, is found in the file qcd/utils/Sp(2N).impl
 It contains methods that are only implemented for Sp(2N), and specialisations of shared methods to the special unitary group
 
-The most important external methods are::
+External methods are::
 
   static void Omega(LatticeColourMatrixD &in) // Symplectic matrix left invariant by Sp(2N)
 

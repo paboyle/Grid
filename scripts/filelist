@@ -16,7 +16,7 @@ GP_FERMION_FILES=`    find . -name '*.cc' -path '*/instantiation/*' -path '*/ins
 ADJ_FERMION_FILES=`   find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/WilsonAdj*' `
 TWOIND_FERMION_FILES=`find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/WilsonTwoIndex*'`
 SP_FERMION_FILES=`find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/SpWilsonImpl*'`
-SP_TWOIND_FILES=`find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/SpWilsonTwo*'`
+SP_TWOIND_FERMION_FILES=`find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/SpWilsonTwo*'`
 
 HPPFILES=`find . -type f -name '*.hpp'`
 echo HFILES=$HFILES $HPPFILES > Make.inc
@@ -30,7 +30,7 @@ echo GP_FERMION_FILES=$GP_FERMION_FILES   >> Make.inc
 echo ADJ_FERMION_FILES=$ADJ_FERMION_FILES   >> Make.inc
 echo TWOIND_FERMION_FILES=$TWOIND_FERMION_FILES   >> Make.inc
 echo SP_FERMION_FILES=$SP_FERMION_FILES >> Make.inc
-echo SP_TWOIND_FILES=$SP_TWOIND_FILES >> Make.inc
+echo SP_TWOIND_FERMION_FILES=$SP_TWOIND_FERMION_FILES >> Make.inc
 
 # tests Make.inc
 cd $home/tests
