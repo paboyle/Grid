@@ -707,15 +707,11 @@ public:
   // the sum over all staples on each site
   //////////////////////////////////////////////////
   static void RectStapleDouble(GaugeMat &U2, const GaugeMat &U, int mu) {
-    U2 = U * Cshift(U, mu, 1);
+    U2 = U * CshiftLink(U, mu, 1);
   }
 
   ////////////////////////////////////////////////////////////////////////////
-  // Hop by two optimisation strategy does not work nicely with Gparity. (could
-  // do,
-  // but need to track two deep where cross boundary and apply a conjugation).
-  // Must differentiate this in Gimpl, and use Gimpl::isPeriodicGaugeField to do
-  // so .
+  // Hop by two optimisation strategy. Use RectStapleDouble to obtain 'U2'
   ////////////////////////////////////////////////////////////////////////////
   static void RectStapleOptimised(GaugeMat &Stap, std::vector<GaugeMat> &U2,
                                   std::vector<GaugeMat> &U, int mu) {
@@ -732,9 +728,9 @@ public:
 
         // Up staple    ___ ___
         //             |       |
-        tmp = Cshift(adj(U[nu]), nu, -1);
+        tmp = CshiftLink(adj(U[nu]), nu, -1);
         tmp = adj(U2[mu]) * tmp;
-        tmp = Cshift(tmp, mu, -2);
+        tmp = CshiftLink(tmp, mu, -2);
 
         Staple2x1 = Gimpl::CovShiftForward(U[nu], nu, tmp);
 
@@ -742,14 +738,14 @@ public:
         //             |___ ___|
         //
         tmp = adj(U2[mu]) * U[nu];
-        Staple2x1 += Gimpl::CovShiftBackward(U[nu], nu, Cshift(tmp, mu, -2));
+        Staple2x1 += Gimpl::CovShiftBackward(U[nu], nu, CshiftLink(tmp, mu, -2));
 
         //              ___ ___
         //             |    ___|
         //             |___ ___|
         //
 
-        Stap += Cshift(Gimpl::CovShiftForward(U[mu], mu, Staple2x1), mu, 1);
+        Stap += CshiftLink(Gimpl::CovShiftForward(U[mu], mu, Staple2x1), mu, 1);
 
         //              ___ ___
         //             |___    |
@@ -758,7 +754,7 @@ public:
 
         //  tmp= Staple2x1* Cshift(U[mu],mu,-2);
         //  Stap+= Cshift(tmp,mu,1) ;
-        Stap += Cshift(Staple2x1, mu, 1) * Cshift(U[mu], mu, -1);
+        Stap += CshiftLink(Staple2x1, mu, 1) * CshiftLink(U[mu], mu, -1);
         ;
 
         //       --
@@ -766,10 +762,10 @@ public:
         //
         //      |  |
 
-        tmp = Cshift(adj(U2[nu]), nu, -2);
+        tmp = CshiftLink(adj(U2[nu]), nu, -2);
         tmp = Gimpl::CovShiftBackward(U[mu], mu, tmp);
-        tmp = U2[nu] * Cshift(tmp, nu, 2);
-        Stap += Cshift(tmp, mu, 1);
+        tmp = U2[nu] * CshiftLink(tmp, nu, 2);
+        Stap += CshiftLink(tmp, mu, 1);
 
         //      |  |
         //
@@ -778,8 +774,8 @@ public:
 
         tmp = Gimpl::CovShiftBackward(U[mu], mu, U2[nu]);
         tmp = adj(U2[nu]) * tmp;
-        tmp = Cshift(tmp, nu, -2);
-        Stap += Cshift(tmp, mu, 1);
+        tmp = CshiftLink(tmp, nu, -2);
+        Stap += CshiftLink(tmp, mu, 1);
       }
     }
   }
@@ -790,11 +786,7 @@ public:
   static void RectStaple(const GaugeLorentz &Umu, GaugeMat &Stap,
                          std::vector<GaugeMat> &U2, std::vector<GaugeMat> &U,
                          int mu) {
-    if (Gimpl::isPeriodicGaugeField()) {
-      RectStapleOptimised(Stap, U2, U, mu);
-    } else {
-      RectStapleUnoptimised(Stap, Umu, mu);
-    }
+    RectStapleOptimised(Stap, U2, U, mu);
   }
 
   static void RectStapleUnoptimised(GaugeMat &Stap, const GaugeLorentz &Umu,
