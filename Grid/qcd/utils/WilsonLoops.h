@@ -290,7 +290,7 @@ public:
   }
 */
   //////////////////////////////////////////////////
-  // the sum over all staples on each site
+  // the sum over all nu-oriented staples for nu != mu on each site
   //////////////////////////////////////////////////
   static void Staple(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
 
@@ -300,6 +300,10 @@ public:
     for (int d = 0; d < Nd; d++) {
       U[d] = PeekIndex<LorentzIndex>(Umu, d);
     }
+    Staple(staple, U, mu);
+  }
+
+  static void Staple(GaugeMat &staple, const std::vector<GaugeMat> &U, int mu) {
     staple = Zero();
 
     for (int nu = 0; nu < Nd; nu++) {
@@ -335,6 +339,16 @@ public:
     }
   }
 
+  /////////////
+  //Staples for each direction mu, summed over nu != mu
+  //staple: output staples for each mu (Nd)
+  //U: link array (Nd)
+  /////////////
+  static void StapleAll(std::vector<GaugeMat> &staple, const std::vector<GaugeMat> &U) {
+    assert(staple.size() == Nd); assert(U.size() == Nd);
+    for(int mu=0;mu<Nd;mu++) Staple(staple[mu], U, mu);
+  }
+    
   //////////////////////////////////////////////////
   // the sum over all staples on each site in direction mu,nu, upper part
   //////////////////////////////////////////////////
@@ -713,8 +727,8 @@ public:
   ////////////////////////////////////////////////////////////////////////////
   // Hop by two optimisation strategy. Use RectStapleDouble to obtain 'U2'
   ////////////////////////////////////////////////////////////////////////////
-  static void RectStapleOptimised(GaugeMat &Stap, std::vector<GaugeMat> &U2,
-                                  std::vector<GaugeMat> &U, int mu) {
+  static void RectStapleOptimised(GaugeMat &Stap, const std::vector<GaugeMat> &U2,
+                                  const std::vector<GaugeMat> &U, int mu) {
 
     Stap = Zero();
 
@@ -778,15 +792,6 @@ public:
         Stap += CshiftLink(tmp, mu, 1);
       }
     }
-  }
-
-  static void RectStaple(GaugeMat &Stap, const GaugeLorentz &Umu, int mu) {
-    RectStapleUnoptimised(Stap, Umu, mu);
-  }
-  static void RectStaple(const GaugeLorentz &Umu, GaugeMat &Stap,
-                         std::vector<GaugeMat> &U2, std::vector<GaugeMat> &U,
-                         int mu) {
-    RectStapleOptimised(Stap, U2, U, mu);
   }
 
   static void RectStapleUnoptimised(GaugeMat &Stap, const GaugeLorentz &Umu,
@@ -885,6 +890,26 @@ public:
 				   mu);
       }
     }
+  }
+
+  static void RectStaple(GaugeMat &Stap, const GaugeLorentz &Umu, int mu) {
+    RectStapleUnoptimised(Stap, Umu, mu);
+  }
+  static void RectStaple(const GaugeLorentz &Umu, GaugeMat &Stap,
+                         std::vector<GaugeMat> &U2, std::vector<GaugeMat> &U,
+                         int mu) {
+    RectStapleOptimised(Stap, U2, U, mu);
+  }
+  //////////////////////////////////////////////////////
+  //Compute the rectangular staples for all orientations
+  //Stap : Array of staples (Nd)
+  //U: Gauge links in each direction (Nd)
+  /////////////////////////////////////////////////////
+  static void RectStapleAll(std::vector<GaugeMat> &Stap, const std::vector<GaugeMat> &U){
+    assert(Stap.size() == Nd); assert(U.size() == Nd);
+    std::vector<GaugeMat> U2(Nd,U[0].Grid());
+    for(int mu=0;mu<Nd;mu++) RectStapleDouble(U2[mu], U[mu], mu);
+    for(int mu=0;mu<Nd;mu++) RectStapleOptimised(Stap[mu], U2, U, mu);
   }
 
   //////////////////////////////////////////////////

@@ -2,7 +2,7 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_padded_cell_staple.cc
+    Source file: ./tests/Test_optimized_staple_gaugebc.cc
 
     Copyright (C) 2015
 
