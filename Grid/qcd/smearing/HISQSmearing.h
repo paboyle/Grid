@@ -51,8 +51,17 @@ template<class vobj> void gpermute(vobj & inout,int perm) {
 }
 
 
+void appendShift(std::vector<Coordinate>& shifts, int mu, int steps=1) {
+    Coordinate shift(Nd,0); 
+    shift[mu]=steps;
+    // push_back creates an element at the end of shifts and
+    // assigns the data in the argument to it.
+    shifts.push_back(shift);
+}
+
+
 /*!  @brief structure holding the link treatment */
-struct SmearingParameters{
+struct SmearingParameters {
     SmearingParameters(){}
     Real c_1;               // 1 link
     Real c_naik;            // Naik term
@@ -100,8 +109,10 @@ public:
 
         SmearingParameters lt = this->_linkTreatment;
 
-        // Create a padded cell of extra padding depth=1
-        int depth = 1;
+        // We create a cell with extra padding 2. This allows us to capture the LePage
+        // term without needing to save intermediate gauge fields or extra halo exchanges.
+        // The tradeoff is that we compute extra constructs in the padding. 
+        int depth = 2;
         PaddedCell Ghost(depth,this->_grid);
         LGF Ughost = Ghost.Exchange(u_thin);
 
@@ -112,28 +123,20 @@ public:
         // This is where the 3-link constructs will be stored
         LGF Ughost_fat(Ughost.Grid());
 
-        // Create 3-link stencil. Writing your own stencil, you're hard-coding the 
+        // Next we make the stencils. Writing your own stencil, you're hard-coding the 
         // periodic BCs, so you don't need the policy-based stuff, at least for now.
         // Loop over all orientations, i.e. demand mu != nu.
         std::vector<Coordinate> shifts;
         for(int mu=0;mu<Nd;mu++)
         for(int nu=0;nu<Nd;nu++) {
             if(mu==nu) continue;
-            // forward shifts
-            Coordinate shift_0(Nd,0);
-            Coordinate shift_mu(Nd,0); shift_mu[mu]=1;
-            Coordinate shift_nu(Nd,0); shift_nu[nu]=1;
-            // push_back creates an element at the end of shifts and
-            // assigns the data in the argument to it.
-            shifts.push_back(shift_mu);
-            shifts.push_back(shift_nu);
-            shifts.push_back(shift_0);
-            // reverse shifts
-            shift_nu[nu]=-1;
+            appendShift(shifts,mu);
+            appendShift(shifts,nu);
+            appendShift(shifts,0,0);
             Coordinate shift_munu(Nd,0); shift_munu[mu]=1; shift_munu[nu]=-1;
             shifts.push_back(shift_munu);
-            shifts.push_back(shift_nu); // in principle you don't need both of these grid points,
-            shifts.push_back(shift_nu); // but it helps the reader keep track of offsets
+            appendShift(shifts,nu,-1);
+            appendShift(shifts,nu,-1);
         }
 
         GeneralLocalStencil gStencil(GhostGrid,shifts);
@@ -157,7 +160,7 @@ public:
 
                 // shift_mu; shift_mu[mu]=1
                 // shift_nu; shift_nu[nu]=1
-                // shift_0
+                // x
                 // shift_munu; shift_munu[mu]= 1; shift_munu[nu]=-1;
                 // shift_nu  ;   shift_nu[nu]=-1;
                 // shift_nu  ;   shift_nu[nu]=-1;
@@ -207,10 +210,6 @@ public:
         u_smr = lt.c_3*Ghost.Extract(Ughost_fat) + lt.c_1*u_thin;
     };
 
-    // I guess the way this will go is:
-    // 1. 3-link smear
-    // 2. exchange
-    // 3. 5-link calculated from 3-link
 
 //    void derivative(const GaugeField& Gauge) const {
 //    };
@@ -249,14 +248,14 @@ public:
         for(int mu=0;mu<Nd;mu++){
             for(int nu=mu+1;nu<Nd;nu++){
                 // forward shifts
-                Coordinate shift_0(Nd,0);
+                Coordinate x(Nd,0);
                 Coordinate shift_mu(Nd,0); shift_mu[mu]=1;
                 Coordinate shift_nu(Nd,0); shift_nu[nu]=1;
                 // push_back creates an element at the end of shifts and
                 // assigns the data in the argument to it.
                 shifts.push_back(shift_mu);
                 shifts.push_back(shift_nu);
-                shifts.push_back(shift_0);
+                shifts.push_back(x);
                 // reverse shifts
                 shift_nu[nu]=-1;
                 Coordinate shift_munu(Nd,0); shift_munu[mu]=1; shift_munu[nu]=-1;
@@ -285,7 +284,7 @@ public:
 
                     // shift_mu; shift_mu[mu]=1
                     // shift_nu; shift_nu[nu]=1
-                    // shift_0
+                    // x
                     // shift_munu; shift_munu[mu]= 1; shift_munu[nu]=-1;
                     // shift_nu  ;   shift_nu[nu]=-1;
                     // shift_nu  ;   shift_nu[nu]=-1;

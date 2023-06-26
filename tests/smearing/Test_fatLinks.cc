@@ -79,5 +79,12 @@ int main (int argc, char **argv)
     double path_coeff[6] = {1, 2, 3, 4, 5, 6};
     Smear_HISQ_fat<LatticeGaugeField> hisq_fat_Cstyle(&GRID,path_coeff);
 
+    // Make sure result doesn't change w.r.t. a trusted lattice
+    NerscIO::readConfiguration(Umu, header, "nersc.l8t4b3360.3link.control");
+    LatticeGaugeField diff(&GRID);
+    diff = Umu-U_smr;
+    auto absDiff = norm2(diff)/norm2(Umu);
+    Grid_log(" |Umu-U|/|Umu| =",absDiff);
+
     Grid_finalize();
 }
