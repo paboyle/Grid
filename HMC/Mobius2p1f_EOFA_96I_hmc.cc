@@ -146,6 +146,8 @@ NAMESPACE_END(Grid);
 int main(int argc, char **argv) {
   using namespace Grid;
 
+  std::cout << " Grid Initialise "<<std::endl;
+  
   Grid_init(&argc, &argv);
 
   CartesianCommunicator::BarrierWorld();
@@ -170,24 +172,24 @@ int main(int argc, char **argv) {
   IntegratorParameters MD;
   //  typedef GenericHMCRunner<LeapFrog> HMCWrapper;
   //  MD.name    = std::string("Leap Frog");
-  typedef GenericHMCRunner<ForceGradient> HMCWrapper;
-  MD.name    = std::string("Force Gradient");
-  //typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;
-  // MD.name    = std::string("MinimumNorm2");
+  //  typedef GenericHMCRunner<ForceGradient> HMCWrapper;
+  //  MD.name    = std::string("Force Gradient");
+  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;
+  MD.name    = std::string("MinimumNorm2");
   // TrajL = 2
   // 4/2 => 0.6 dH
   // 3/3 => 0.8 dH .. depth 3, slower
   //MD.MDsteps =  4;
-  MD.MDsteps =  12;
+  MD.MDsteps =  14;
   MD.trajL   = 0.5;
 
   HMCparameters HMCparams;
   HMCparams.StartTrajectory  = 1077;
-  HMCparams.Trajectories     = 1;
+  HMCparams.Trajectories     = 20;
   HMCparams.NoMetropolisUntil=  0;
   // "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
-  //  HMCparams.StartingType     =std::string("ColdStart");
-  HMCparams.StartingType     =std::string("CheckpointStart");
+  HMCparams.StartingType     =std::string("ColdStart");
+  //  HMCparams.StartingType     =std::string("CheckpointStart");
   HMCparams.MD = MD;
   HMCWrapper TheHMC(HMCparams);
 
@@ -223,7 +225,7 @@ int main(int argc, char **argv) {
   Real pv_mass      = 1.0;
   //  std::vector<Real> hasenbusch({ 0.01, 0.045, 0.108, 0.25, 0.51 , pv_mass });
   //  std::vector<Real> hasenbusch({ light_mass, 0.01, 0.045, 0.108, 0.25, 0.51 , pv_mass });
-  std::vector<Real> hasenbusch({ 0.005, 0.0145, 0.045, 0.108, 0.25, 0.51 , pv_mass }); // Updated
+  std::vector<Real> hasenbusch({ 0.005, 0.0145, 0.045, 0.108, 0.25, 0.51 }); // Updated
   //  std::vector<Real> hasenbusch({ light_mass, 0.0145, 0.045, 0.108, 0.25, 0.51 , 0.75 , pv_mass });
 
   auto GridPtr   = TheHMC.Resources.GetCartesian();
@@ -275,10 +277,10 @@ int main(int argc, char **argv) {
 
   //  double StoppingCondition = 1e-14;
   //  double MDStoppingCondition = 1e-9;
-  double StoppingCondition = 1e-8;
-  double MDStoppingCondition = 1e-7;
-  double MDStoppingConditionLoose = 1e-7;
-  double MDStoppingConditionStrange = 1e-7;
+  double StoppingCondition = 1e-9;
+  double MDStoppingCondition = 1e-8;
+  double MDStoppingConditionLoose = 1e-8;
+  double MDStoppingConditionStrange = 1e-8;
   double MaxCGIterations = 300000;
   ConjugateGradient<FermionField>  CG(StoppingCondition,MaxCGIterations);
   ConjugateGradient<FermionField>  MDCG(MDStoppingCondition,MaxCGIterations);
