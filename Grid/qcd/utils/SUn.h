@@ -40,18 +40,20 @@ Lattice<iScalar<iScalar<iScalar<Vec> > > > Determinant(const Lattice<iScalar<iSc
   GridBase *grid=Umu.Grid();
   auto lvol = grid->lSites();
   Lattice<iScalar<iScalar<iScalar<Vec> > > > ret(grid);
-
+  typedef typename Vec::scalar_type scalar;
   autoView(Umu_v,Umu,CpuRead);
   autoView(ret_v,ret,CpuWrite);
   thread_for(site,lvol,{
     Eigen::MatrixXcd EigenU = Eigen::MatrixXcd::Zero(N,N);
     Coordinate lcoor;
     grid->LocalIndexToLocalCoor(site, lcoor);
-    iScalar<iScalar<iMatrix<ComplexD, N> > > Us;
+    iScalar<iScalar<iMatrix<scalar, N> > > Us;
     peekLocalSite(Us, Umu_v, lcoor);
     for(int i=0;i<N;i++){
       for(int j=0;j<N;j++){
-	EigenU(i,j) = Us()()(i,j);
+	scalar tmp= Us()()(i,j);
+	ComplexD ztmp(real(tmp),imag(tmp));
+	EigenU(i,j)=ztmp;
       }}
     ComplexD detD  = EigenU.determinant();
     typename Vec::scalar_type det(detD.real(),detD.imag());
