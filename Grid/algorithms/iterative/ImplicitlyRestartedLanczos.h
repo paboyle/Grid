@@ -284,7 +284,6 @@ until convergence
     int iter;
     for(iter = 0; iter<MaxIter; ++iter){
       
-  notYetConverged:
       OrthoTime=0.;
 
       std::cout<< GridLogMessage <<" **********************"<< std::endl;
@@ -422,15 +421,13 @@ until convergence
 
       if ( Nconv < Nstop ) {
 	std::cout << GridLogIRL << "Nconv ("<<Nconv<<") < Nstop ("<<Nstop<<")"<<std::endl;
-	std::cout << GridLogIRL << "starting one more iteration"<<std::endl;
-	iter++;
- 	goto notYetConverged;
+	std::cout << GridLogIRL << "returning Nstop vectors, the last "<< Nstop-Nconv << "of which might meet convergence criterion only approximately" <<std::endl;
       }
       eval=eval2;
       
       //Keep only converged
-      eval.resize(Nconv);// Nstop?
-      evec.resize(Nconv,grid);// Nstop?
+      eval.resize(Nstop);// was Nconv
+      evec.resize(Nstop,grid);// was Nconv
       basisSortInPlace(evec,eval,reverse);
       
     }
