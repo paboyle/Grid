@@ -83,8 +83,7 @@ public:
       U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
     }
     std::vector<GaugeLinkField> RectStaple(Nd,grid), Staple(Nd,grid);
-    WilsonLoops<Gimpl>::StapleAll(Staple, U);
-    WilsonLoops<Gimpl>::RectStapleAll(RectStaple, U);
+    WilsonLoops<Gimpl>::StapleAndRectStapleAll(Staple, RectStaple, U);
 
     GaugeLinkField dSdU_mu(grid);
     GaugeLinkField staple(grid);

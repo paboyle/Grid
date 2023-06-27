@@ -348,7 +348,91 @@ public:
     assert(staple.size() == Nd); assert(U.size() == Nd);
     for(int mu=0;mu<Nd;mu++) Staple(staple[mu], U, mu);
   }
-    
+
+  //Padded cell implementation of the staple method for all mu, summed over nu != mu
+  //staple: output staple for each mu, summed over nu != mu (Nd)
+  //U_padded: the gauge link fields padded out using the PaddedCell class
+  //Cell: the padded cell class
+  static void StaplePaddedAll(std::vector<GaugeMat> &staple, const std::vector<GaugeMat> &U_padded, const PaddedCell &Cell) {
+    assert(U_padded.size() == Nd); assert(staple.size() == Nd);
+    assert(U_padded[0].Grid() == (GridBase*)Cell.grids.back());
+    assert(Cell.depth >= 1);
+    GridBase *ggrid = U_padded[0].Grid(); //padded cell grid
+
+    //Generate shift arrays
+    std::vector<Coordinate> shifts;
+    for(int mu=0;mu<Nd;mu++){
+      for(int nu=0;nu<Nd;nu++){
+	if(nu != mu){
+	  Coordinate shift_0(Nd,0);
+	  Coordinate shift_mu(Nd,0); shift_mu[mu]=1;
+	  Coordinate shift_nu(Nd,0); shift_nu[nu]=1;
+	  Coordinate shift_mnu(Nd,0); shift_mnu[nu]=-1;
+	  Coordinate shift_mnu_pmu(Nd,0); shift_mnu_pmu[nu]=-1; shift_mnu_pmu[mu]=1;
+      
+	  //U_nu(x+mu)U^dag_mu(x+nu) U^dag_nu(x)
+	  shifts.push_back(shift_0);
+	  shifts.push_back(shift_nu);
+	  shifts.push_back(shift_mu);
+      
+	  //U_nu^dag(x-nu+mu) U_mu^dag(x-nu) U_nu(x-nu)
+	  shifts.push_back(shift_mnu);
+	  shifts.push_back(shift_mnu);
+	  shifts.push_back(shift_mnu_pmu);
+	}
+      }
+    }
+    //Generate local stencil
+    GeneralLocalStencil gStencil(ggrid,shifts);
+    GaugeMat gStaple(ggrid);
+
+    int off = 0;
+    for(int mu=0;mu<Nd;mu++){
+      gStaple = Zero();
+
+      for(int nu=0;nu<Nd;nu++){
+	if(nu != mu){	  
+	  {
+	    autoView( rgStaple_v , gStaple, AcceleratorRead);
+	    autoView( gStaple_v , gStaple, AcceleratorWrite);
+	    auto gStencil_v = gStencil.View();
+	    autoView( Ug_mu_v , U_padded[mu], AcceleratorRead);
+	    autoView( Ug_nu_v , U_padded[nu], AcceleratorRead);
+  
+	    accelerator_for(ss, ggrid->oSites(), ggrid->Nsimd(), {
+		auto stencil_ss = coalescedRead(rgStaple_v[ss]);
+
+		GeneralStencilEntry const* e = gStencil_v.GetEntry(off,ss);
+		auto Udag_nu_x = adj(coalescedReadGeneralPermute(Ug_nu_v[e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(off+1,ss);
+		auto Udag_mu_xpnu = adj(coalescedReadGeneralPermute(Ug_mu_v[e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(off+2,ss);
+		auto U_nu_xpmu = coalescedReadGeneralPermute(Ug_nu_v[e->_offset], e->_permute, Nd);
+      
+		stencil_ss = stencil_ss + U_nu_xpmu * Udag_mu_xpnu * Udag_nu_x;
+
+		e = gStencil_v.GetEntry(off+3,ss);
+		auto U_nu_xmnu = coalescedReadGeneralPermute(Ug_nu_v[e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(off+4,ss);
+		auto Udag_mu_xmnu = adj(coalescedReadGeneralPermute(Ug_mu_v[e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(off+5,ss);
+		auto Udag_nu_xmnu_pmu = adj(coalescedReadGeneralPermute(Ug_nu_v[e->_offset], e->_permute, Nd));
+
+		stencil_ss = stencil_ss + Udag_nu_xmnu_pmu * Udag_mu_xmnu * U_nu_xmnu;
+      
+		coalescedWrite(gStaple_v[ss],stencil_ss);
+	      }
+	      );
+	  } //ensure views are all closed!
+	  off += 6;
+	}//nu!=mu
+      }//nu loop
+      staple[mu] = Cell.Extract(gStaple);
+    }//mu loop
+
+  }
+
+   
   //////////////////////////////////////////////////
   // the sum over all staples on each site in direction mu,nu, upper part
   //////////////////////////////////////////////////
@@ -911,6 +995,220 @@ public:
     for(int mu=0;mu<Nd;mu++) RectStapleDouble(U2[mu], U[mu], mu);
     for(int mu=0;mu<Nd;mu++) RectStapleOptimised(Stap[mu], U2, U, mu);
   }
+
+  //Padded cell implementation of the rectangular staple method for all mu, summed over nu != mu
+  //staple: output staple for each mu, summed over nu != mu (Nd)
+  //U_padded: the gauge link fields padded out using the PaddedCell class
+  //Cell: the padded cell class
+  static void RectStaplePaddedAll(std::vector<GaugeMat> &staple, const std::vector<GaugeMat> &U_padded, const PaddedCell &Cell) {
+    assert(U_padded.size() == Nd); assert(staple.size() == Nd);
+    assert(U_padded[0].Grid() == (GridBase*)Cell.grids.back());
+    assert(Cell.depth >= 2);
+    GridBase *ggrid = U_padded[0].Grid(); //padded cell grid
+
+    std::vector<Coordinate> shifts;
+    for (int mu = 0; mu < Nd; mu++){
+      for (int nu = 0; nu < Nd; nu++) {
+	if (nu != mu) {
+	  auto genShift = [&](int mushift,int nushift){
+	    Coordinate out(Nd,0); out[mu]=mushift; out[nu]=nushift; return out;
+	  };
+
+	  //tmp6 = tmp5(x+mu) = U_mu(x+mu)U_nu(x+2mu)U_mu^dag(x+nu+mu) U_mu^dag(x+nu) U_nu^dag(x)
+	  shifts.push_back(genShift(0,0));
+	  shifts.push_back(genShift(0,+1));
+	  shifts.push_back(genShift(+1,+1));
+	  shifts.push_back(genShift(+2,0));
+	  shifts.push_back(genShift(+1,0));
+
+	  //tmp5 = tmp4(x+mu) = U_mu(x+mu)U^dag_nu(x-nu+2mu)U^dag_mu(x-nu+mu)U^dag_mu(x-nu)U_nu(x-nu)
+	  shifts.push_back(genShift(0,-1));
+	  shifts.push_back(genShift(0,-1));
+	  shifts.push_back(genShift(+1,-1));
+	  shifts.push_back(genShift(+2,-1));
+	  shifts.push_back(genShift(+1,0));
+
+	  //tmp5 = tmp4(x+mu) = U^dag_nu(x-nu+mu)U^dag_mu(x-nu)U^dag_mu(x-mu-nu)U_nu(x-mu-nu)U_mu(x-mu)
+	  shifts.push_back(genShift(-1,0));
+	  shifts.push_back(genShift(-1,-1));
+	  shifts.push_back(genShift(-1,-1));
+	  shifts.push_back(genShift(0,-1));
+	  shifts.push_back(genShift(+1,-1));
+
+	  //tmp5 = tmp4(x+mu) = U_nu(x+mu)U_mu^dag(x+nu)U_mu^dag(x-mu+nu)U_nu^dag(x-mu)U_mu(x-mu)
+	  shifts.push_back(genShift(-1,0));
+	  shifts.push_back(genShift(-1,0));
+	  shifts.push_back(genShift(-1,+1));
+	  shifts.push_back(genShift(0,+1));
+	  shifts.push_back(genShift(+1,0));
+
+	  //tmp6 = tmp5(x+mu) = U_nu(x+mu)U_nu(x+mu+nu)U_mu^dag(x+2nu)U_nu^dag(x+nu)U_nu^dag(x)
+	  shifts.push_back(genShift(0,0));
+	  shifts.push_back(genShift(0,+1));
+	  shifts.push_back(genShift(0,+2));
+	  shifts.push_back(genShift(+1,+1));
+	  shifts.push_back(genShift(+1,0));
+
+	  //tmp5 = tmp4(x+mu) = U_nu^dag(x+mu-nu)U_nu^dag(x+mu-2nu)U_mu^dag(x-2nu)U_nu(x-2nu)U_nu(x-nu)
+	  shifts.push_back(genShift(0,-1));
+	  shifts.push_back(genShift(0,-2));
+	  shifts.push_back(genShift(0,-2));
+	  shifts.push_back(genShift(+1,-2));
+	  shifts.push_back(genShift(+1,-1));
+	}
+      }
+    }
+    size_t nshift = shifts.size();
+    int mu_off_delta = nshift / Nd;
+    GeneralLocalStencil gStencil(ggrid,shifts);
+
+    //Open views to padded gauge links and keep open over mu loop
+    typedef LatticeView<typename GaugeMat::vector_object> GaugeViewType;
+    size_t vsize = Nd*sizeof(GaugeViewType);
+    GaugeViewType* Ug_dirs_v_host = (GaugeViewType*)malloc(vsize);
+    for(int i=0;i<Nd;i++) Ug_dirs_v_host[i] = U_padded[i].View(AcceleratorRead);
+    GaugeViewType* Ug_dirs_v = (GaugeViewType*)acceleratorAllocDevice(vsize);
+    acceleratorCopyToDevice(Ug_dirs_v_host,Ug_dirs_v,vsize);
+
+    GaugeMat gStaple(ggrid); //temp staple object on padded grid
+
+    int offset = 0;
+    for(int mu=0; mu<Nd; mu++){
+
+      { //view scope
+	autoView( gStaple_v , gStaple, AcceleratorWrite);
+	auto gStencil_v = gStencil.View();
+
+	accelerator_for(ss, ggrid->oSites(), ggrid->Nsimd(), {
+	    decltype(coalescedRead(Ug_dirs_v[0][0])) stencil_ss;
+	    stencil_ss = Zero();
+	    int s=offset;
+	    for(int nu=0;nu<Nd;nu++){
+	      if(nu != mu){
+		//tmp6 = tmp5(x+mu) = U_mu(x+mu)U_nu(x+2mu)U_mu^dag(x+nu+mu) U_mu^dag(x+nu) U_nu^dag(x)
+		GeneralStencilEntry const* e = gStencil_v.GetEntry(s++,ss);
+		auto U0 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		auto U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		auto U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		auto U3 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(s++,ss);
+		auto U4 = coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd);
+	    
+		stencil_ss = stencil_ss + U4*U3*U2*U1*U0;
+
+		//tmp5 = tmp4(x+mu) = U_mu(x+mu)U^dag_nu(x-nu+2mu)U^dag_mu(x-nu+mu)U^dag_mu(x-nu)U_nu(x-nu)
+		e = gStencil_v.GetEntry(s++,ss);
+		U0 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(s++,ss);
+		U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U3 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U4 = coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd);
+
+		stencil_ss = stencil_ss + U4*U3*U2*U1*U0;
+
+		//tmp5 = tmp4(x+mu) = U^dag_nu(x-nu+mu)U^dag_mu(x-nu)U^dag_mu(x-mu-nu)U_nu(x-mu-nu)U_mu(x-mu)
+		e = gStencil_v.GetEntry(s++,ss);
+		U0 = coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(s++,ss);
+		U1 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(s++,ss);
+		U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U3 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U4 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+
+		stencil_ss = stencil_ss + U4*U3*U2*U1*U0;
+
+		//tmp5 = tmp4(x+mu) = U_nu(x+mu)U_mu^dag(x+nu)U_mu^dag(x-mu+nu)U_nu^dag(x-mu)U_mu(x-mu)
+		e = gStencil_v.GetEntry(s++,ss);
+		U0 = coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(s++,ss);
+		U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U3 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U4 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+
+		stencil_ss = stencil_ss + U4*U3*U2*U1*U0;
+
+		//tmp6 = tmp5(x+mu) = U_nu(x+mu)U_nu(x+mu+nu)U_mu^dag(x+2nu)U_nu^dag(x+nu)U_nu^dag(x)
+		e = gStencil_v.GetEntry(s++,ss);
+		U0 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U3 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(s++,ss);
+		U4 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+
+		stencil_ss = stencil_ss + U4*U3*U2*U1*U0;   
+
+		//tmp5 = tmp4(x+mu) = U_nu^dag(x+mu-nu)U_nu^dag(x+mu-2nu)U_mu^dag(x-2nu)U_nu(x-2nu)U_nu(x-nu)
+		e = gStencil_v.GetEntry(s++,ss);
+		U0 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(s++,ss);
+		U1 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(s++,ss);
+		U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U3 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U4 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+
+		stencil_ss = stencil_ss + U4*U3*U2*U1*U0;   
+
+	      }
+	    }
+	    coalescedWrite(gStaple_v[ss],stencil_ss);
+	  }
+	  );
+	offset += mu_off_delta;
+      }//kernel/view scope
+
+      staple[mu] = Cell.Extract(gStaple);    
+    }//mu loop
+  
+    for(int i=0;i<Nd;i++) Ug_dirs_v_host[i].ViewClose();
+    free(Ug_dirs_v_host);
+    acceleratorFreeDevice(Ug_dirs_v);
+  }
+
+
+
+  //////////////////////////////////////////////////////
+  //Compute the 1x1 and 1x2 staples for all orientations
+  //Stap : Array of staples (Nd)
+  //RectStap: Array of rectangular staples (Nd)
+  //U: Gauge links in each direction (Nd)
+  /////////////////////////////////////////////////////
+  static void StapleAndRectStapleAll(std::vector<GaugeMat> &Stap, std::vector<GaugeMat> &RectStap, const std::vector<GaugeMat> &U){
+#if 0
+    StapleAll(Stap, U);
+    RectStapleAll(RectStap, U);
+#else
+    //Use the padded cell with maximal reuse
+    PaddedCell Ghost(2, dynamic_cast<GridCartesian*>(U[0].Grid()));
+    CshiftImplGauge<Gimpl> cshift_impl;
+    std::vector<GaugeMat> U_pad(Nd, Ghost.grids.back());
+    for(int mu=0;mu<Nd;mu++) U_pad[mu] = Ghost.Exchange(U[mu], cshift_impl);
+    StaplePaddedAll(Stap, U_pad, Ghost);
+    RectStaplePaddedAll(RectStap, U_pad, Ghost);
+#endif
+  }
+
+
 
   //////////////////////////////////////////////////
   // Wilson loop of size (R1, R2), oriented in mu,nu plane

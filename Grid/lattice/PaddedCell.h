@@ -26,6 +26,8 @@ Author: Peter Boyle pboyle@bnl.gov
 /*  END LEGAL */
 #pragma once
 
+#include<Grid/cshift/Cshift.h>
+
 NAMESPACE_BEGIN(Grid);
 
 //Allow the user to specify how the C-shift is performed, e.g. to respect the appropriate boundary conditions
