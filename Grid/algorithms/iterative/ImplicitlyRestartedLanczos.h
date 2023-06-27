@@ -284,6 +284,7 @@ until convergence
     int iter;
     for(iter = 0; iter<MaxIter; ++iter){
       
+  notYetConverged:
       OrthoTime=0.;
 
       std::cout<< GridLogMessage <<" **********************"<< std::endl;
@@ -419,9 +420,12 @@ until convergence
 	}
       }
 
-      if ( Nconv < Nstop )
+      if ( Nconv < Nstop ) {
 	std::cout << GridLogIRL << "Nconv ("<<Nconv<<") < Nstop ("<<Nstop<<")"<<std::endl;
-
+	std::cout << GridLogIRL << "starting one more iteration"<<std::endl;
+    iter++;
+    goto notYetConverged;
+      }
       eval=eval2;
       
       //Keep only converged
