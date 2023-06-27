@@ -359,6 +359,7 @@ public:
     assert(Cell.depth >= 1);
     GridBase *ggrid = U_padded[0].Grid(); //padded cell grid
 
+    double t0 = usecond();
     //Generate shift arrays
     std::vector<Coordinate> shifts;
     for(int mu=0;mu<Nd;mu++){
@@ -382,54 +383,73 @@ public:
 	}
       }
     }
+    int shift_mu_off = shifts.size()/Nd;
+    
+    double t1 = usecond();
     //Generate local stencil
     GeneralLocalStencil gStencil(ggrid,shifts);
+
+    double t2 = usecond();
+    
+    //Open views to padded gauge links and keep open over mu loop
+    typedef LatticeView<typename GaugeMat::vector_object> GaugeViewType;
+    size_t vsize = Nd*sizeof(GaugeViewType);
+    GaugeViewType* Ug_dirs_v_host = (GaugeViewType*)malloc(vsize);
+    for(int i=0;i<Nd;i++) Ug_dirs_v_host[i] = U_padded[i].View(AcceleratorRead);
+    GaugeViewType* Ug_dirs_v = (GaugeViewType*)acceleratorAllocDevice(vsize);
+    acceleratorCopyToDevice(Ug_dirs_v_host,Ug_dirs_v,vsize);
+    
     GaugeMat gStaple(ggrid);
 
-    int off = 0;
+    int outer_off = 0;
     for(int mu=0;mu<Nd;mu++){
-      gStaple = Zero();
-
-      for(int nu=0;nu<Nd;nu++){
-	if(nu != mu){	  
-	  {
-	    autoView( rgStaple_v , gStaple, AcceleratorRead);
-	    autoView( gStaple_v , gStaple, AcceleratorWrite);
-	    auto gStencil_v = gStencil.View();
-	    autoView( Ug_mu_v , U_padded[mu], AcceleratorRead);
-	    autoView( Ug_nu_v , U_padded[nu], AcceleratorRead);
-  
-	    accelerator_for(ss, ggrid->oSites(), ggrid->Nsimd(), {
-		auto stencil_ss = coalescedRead(rgStaple_v[ss]);
-
-		GeneralStencilEntry const* e = gStencil_v.GetEntry(off,ss);
-		auto Udag_nu_x = adj(coalescedReadGeneralPermute(Ug_nu_v[e->_offset], e->_permute, Nd));
-		e = gStencil_v.GetEntry(off+1,ss);
-		auto Udag_mu_xpnu = adj(coalescedReadGeneralPermute(Ug_mu_v[e->_offset], e->_permute, Nd));
-		e = gStencil_v.GetEntry(off+2,ss);
-		auto U_nu_xpmu = coalescedReadGeneralPermute(Ug_nu_v[e->_offset], e->_permute, Nd);
+      { //view scope
+	autoView( gStaple_v , gStaple, AcceleratorWrite);
+	auto gStencil_v = gStencil.View();
+	
+	accelerator_for(ss, ggrid->oSites(), ggrid->Nsimd(), {
+	    decltype(coalescedRead(Ug_dirs_v[0][0])) stencil_ss;
+	    stencil_ss = Zero();
+	    int off = outer_off;
+	    
+	    for(int nu=0;nu<Nd;nu++){
+	      if(nu != mu){	  
+		GeneralStencilEntry const* e = gStencil_v.GetEntry(off++,ss);
+		auto U0 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(off++,ss);
+		auto U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(off++,ss);
+		auto U2 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
       
-		stencil_ss = stencil_ss + U_nu_xpmu * Udag_mu_xpnu * Udag_nu_x;
+		stencil_ss = stencil_ss + U2 * U1 * U0;
 
-		e = gStencil_v.GetEntry(off+3,ss);
-		auto U_nu_xmnu = coalescedReadGeneralPermute(Ug_nu_v[e->_offset], e->_permute, Nd);
-		e = gStencil_v.GetEntry(off+4,ss);
-		auto Udag_mu_xmnu = adj(coalescedReadGeneralPermute(Ug_mu_v[e->_offset], e->_permute, Nd));
-		e = gStencil_v.GetEntry(off+5,ss);
-		auto Udag_nu_xmnu_pmu = adj(coalescedReadGeneralPermute(Ug_nu_v[e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(off++,ss);
+		U0 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(off++,ss);
+		U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(off++,ss);
+		U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
 
-		stencil_ss = stencil_ss + Udag_nu_xmnu_pmu * Udag_mu_xmnu * U_nu_xmnu;
-      
-		coalescedWrite(gStaple_v[ss],stencil_ss);
+		stencil_ss = stencil_ss + U2 * U1 * U0;
 	      }
-	      );
-	  } //ensure views are all closed!
-	  off += 6;
-	}//nu!=mu
-      }//nu loop
+	    }
+		
+	    coalescedWrite(gStaple_v[ss],stencil_ss);
+	  }
+	  );
+      } //ensure views are all closed!
+      
       staple[mu] = Cell.Extract(gStaple);
+      outer_off += shift_mu_off;
     }//mu loop
 
+    for(int i=0;i<Nd;i++) Ug_dirs_v_host[i].ViewClose();
+    free(Ug_dirs_v_host);
+    acceleratorFreeDevice(Ug_dirs_v);
+    
+    double t3=usecond();
+    
+    std::cout << GridLogPerformance << "StaplePaddedAll timings: coord:" << (t1-t0)/1000 << "ms, stencil:" << (t2-t1)/1000 << "ms, kernel:" << (t3-t2)/1000 << "ms" << std::endl;   
   }
 
    
@@ -805,7 +825,7 @@ public:
   // the sum over all staples on each site
   //////////////////////////////////////////////////
   static void RectStapleDouble(GaugeMat &U2, const GaugeMat &U, int mu) {
-    U2 = U * CshiftLink(U, mu, 1);
+    U2 = U * Gimpl::CshiftLink(U, mu, 1);
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -826,9 +846,9 @@ public:
 
         // Up staple    ___ ___
         //             |       |
-        tmp = CshiftLink(adj(U[nu]), nu, -1);
+        tmp = Gimpl::CshiftLink(adj(U[nu]), nu, -1);
         tmp = adj(U2[mu]) * tmp;
-        tmp = CshiftLink(tmp, mu, -2);
+        tmp = Gimpl::CshiftLink(tmp, mu, -2);
 
         Staple2x1 = Gimpl::CovShiftForward(U[nu], nu, tmp);
 
@@ -836,14 +856,14 @@ public:
         //             |___ ___|
         //
         tmp = adj(U2[mu]) * U[nu];
-        Staple2x1 += Gimpl::CovShiftBackward(U[nu], nu, CshiftLink(tmp, mu, -2));
+        Staple2x1 += Gimpl::CovShiftBackward(U[nu], nu, Gimpl::CshiftLink(tmp, mu, -2));
 
         //              ___ ___
         //             |    ___|
         //             |___ ___|
         //
 
-        Stap += CshiftLink(Gimpl::CovShiftForward(U[mu], mu, Staple2x1), mu, 1);
+        Stap += Gimpl::CshiftLink(Gimpl::CovShiftForward(U[mu], mu, Staple2x1), mu, 1);
 
         //              ___ ___
         //             |___    |
@@ -852,7 +872,7 @@ public:
 
         //  tmp= Staple2x1* Cshift(U[mu],mu,-2);
         //  Stap+= Cshift(tmp,mu,1) ;
-        Stap += CshiftLink(Staple2x1, mu, 1) * CshiftLink(U[mu], mu, -1);
+        Stap += Gimpl::CshiftLink(Staple2x1, mu, 1) * Gimpl::CshiftLink(U[mu], mu, -1);
         ;
 
         //       --
@@ -860,10 +880,10 @@ public:
         //
         //      |  |
 
-        tmp = CshiftLink(adj(U2[nu]), nu, -2);
+        tmp = Gimpl::CshiftLink(adj(U2[nu]), nu, -2);
         tmp = Gimpl::CovShiftBackward(U[mu], mu, tmp);
-        tmp = U2[nu] * CshiftLink(tmp, nu, 2);
-        Stap += CshiftLink(tmp, mu, 1);
+        tmp = U2[nu] * Gimpl::CshiftLink(tmp, nu, 2);
+        Stap += Gimpl::CshiftLink(tmp, mu, 1);
 
         //      |  |
         //
@@ -872,8 +892,8 @@ public:
 
         tmp = Gimpl::CovShiftBackward(U[mu], mu, U2[nu]);
         tmp = adj(U2[nu]) * tmp;
-        tmp = CshiftLink(tmp, nu, -2);
-        Stap += CshiftLink(tmp, mu, 1);
+        tmp = Gimpl::CshiftLink(tmp, nu, -2);
+        Stap += Gimpl::CshiftLink(tmp, mu, 1);
       }
     }
   }
@@ -1006,6 +1026,7 @@ public:
     assert(Cell.depth >= 2);
     GridBase *ggrid = U_padded[0].Grid(); //padded cell grid
 
+    double t0 = usecond();
     std::vector<Coordinate> shifts;
     for (int mu = 0; mu < Nd; mu++){
       for (int nu = 0; nu < Nd; nu++) {
@@ -1060,8 +1081,11 @@ public:
     }
     size_t nshift = shifts.size();
     int mu_off_delta = nshift / Nd;
+    double t1 = usecond();
+    
     GeneralLocalStencil gStencil(ggrid,shifts);
-
+    double t2 = usecond();
+    
     //Open views to padded gauge links and keep open over mu loop
     typedef LatticeView<typename GaugeMat::vector_object> GaugeViewType;
     size_t vsize = Nd*sizeof(GaugeViewType);
@@ -1183,6 +1207,10 @@ public:
     for(int i=0;i<Nd;i++) Ug_dirs_v_host[i].ViewClose();
     free(Ug_dirs_v_host);
     acceleratorFreeDevice(Ug_dirs_v);
+    
+    double t3 = usecond();
+    
+    std::cout << GridLogPerformance << "RectStaplePaddedAll timings: coord:" << (t1-t0)/1000 << "ms, stencil:" << (t2-t1)/1000 << "ms, kernel:" << (t3-t2)/1000 << "ms" << std::endl;   
   }
 
 
@@ -1198,13 +1226,18 @@ public:
     StapleAll(Stap, U);
     RectStapleAll(RectStap, U);
 #else
+    double t0 = usecond();
     //Use the padded cell with maximal reuse
     PaddedCell Ghost(2, dynamic_cast<GridCartesian*>(U[0].Grid()));
     CshiftImplGauge<Gimpl> cshift_impl;
     std::vector<GaugeMat> U_pad(Nd, Ghost.grids.back());
     for(int mu=0;mu<Nd;mu++) U_pad[mu] = Ghost.Exchange(U[mu], cshift_impl);
+    double t1 = usecond();
     StaplePaddedAll(Stap, U_pad, Ghost);
+    double t2 = usecond();
     RectStaplePaddedAll(RectStap, U_pad, Ghost);
+    double t3 = usecond();
+    std::cout << GridLogPerformance << "StapleAndRectStapleAll timings: pad:" << (t1-t0)/1000 << "ms, staple:" << (t2-t1)/1000 << "ms, rect-staple:" << (t3-t2)/1000 << "ms" << std::endl;
 #endif
   }
 

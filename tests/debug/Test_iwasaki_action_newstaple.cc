@@ -165,18 +165,24 @@ int main (int argc, char ** argv)
   IwasakiGaugeActionOrig<Gimpl> action_orig(beta);
   IwasakiGaugeAction<Gimpl> action_new(beta);
 
-  double t0 = usecond();
-  action_orig.deriv(U, derivOrig);
-  double t1 = usecond();
-  action_new.deriv(U, derivNew);
-  double t2 = usecond();
+  double torig=0, tnew=0;
+  int ntest = 10;
+  for(int i=0;i<ntest;i++){
+    double t0 = usecond();
+    action_orig.deriv(U, derivOrig);
+    double t1 = usecond();
+    action_new.deriv(U, derivNew);
+    double t2 = usecond();
 
-  GaugeLorentz diff = derivOrig - derivNew;
-  double n = norm2(diff);
-  std::cout << GridLogMessage << "Difference " << n << " (expect 0)" << std::endl;
-  assert(n<1e-10);
+    GaugeLorentz diff = derivOrig - derivNew;
+    double n = norm2(diff);
+    std::cout << GridLogMessage << "Difference " << n << " (expect 0)" << std::endl;
+    assert(n<1e-10);
 
-  std::cout << GridLogMessage << "Timings orig: " << (t1-t0)/1000 << "ms,  new: " << (t2-t1)/1000 << "ms" << std::endl;
+    std::cout << GridLogMessage << "Timings orig: " << (t1-t0)/1000 << "ms,  new: " << (t2-t1)/1000 << "ms" << std::endl;
+    torig += (t1-t0)/1000; tnew += (t2-t1)/1000;
+  }
+  std::cout << GridLogMessage << "Avg timings " << ntest << " iterations: orig:" << torig/ntest << "ms,   new:" << tnew/ntest << "ms" << std::endl;
   
   Grid_finalize();
 }

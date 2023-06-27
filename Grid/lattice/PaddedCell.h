@@ -95,7 +95,7 @@ public:
     }
   };
   template<class vobj>
-  inline Lattice<vobj> Extract(const Lattice<vobj> &in)
+  inline Lattice<vobj> Extract(const Lattice<vobj> &in) const
   {
     Lattice<vobj> out(unpadded_grid);
 
@@ -106,7 +106,7 @@ public:
     return out;
   }
   template<class vobj>
-  inline Lattice<vobj> Exchange(const Lattice<vobj> &in, const CshiftImplBase<vobj> &cshift = CshiftImplDefault<vobj>())
+  inline Lattice<vobj> Exchange(const Lattice<vobj> &in, const CshiftImplBase<vobj> &cshift = CshiftImplDefault<vobj>()) const
   {
     GridBase *old_grid = in.Grid();
     int dims = old_grid->Nd();
@@ -118,7 +118,7 @@ public:
   }
   // expand up one dim at a time
   template<class vobj>
-  inline Lattice<vobj> Expand(int dim, const Lattice<vobj> &in, const CshiftImplBase<vobj> &cshift = CshiftImplDefault<vobj>())
+  inline Lattice<vobj> Expand(int dim, const Lattice<vobj> &in, const CshiftImplBase<vobj> &cshift = CshiftImplDefault<vobj>()) const
   {
     GridBase *old_grid = in.Grid();
     GridCartesian *new_grid = grids[dim];//These are new grids
@@ -130,20 +130,40 @@ public:
     else       conformable(old_grid,grids[dim-1]);
 
     std::cout << " dim "<<dim<<" local "<<local << " padding to "<<plocal<<std::endl;
+
+    double tins=0, tshift=0;
+    
     // Middle bit
+    double t = usecond();
     for(int x=0;x<local[dim];x++){
       InsertSliceLocal(in,padded,x,depth+x,dim);
     }
+    tins += usecond() - t;
+    
     // High bit
+    t = usecond();
     shifted = cshift.Cshift(in,dim,depth);
+    tshift += usecond() - t;
+
+    t=usecond();
     for(int x=0;x<depth;x++){
       InsertSliceLocal(shifted,padded,local[dim]-depth+x,depth+local[dim]+x,dim);
     }
+    tins += usecond() - t;
+    
     // Low bit
+    t = usecond();
     shifted = cshift.Cshift(in,dim,-depth);
+    tshift += usecond() - t;
+    
+    t = usecond();
     for(int x=0;x<depth;x++){
       InsertSliceLocal(shifted,padded,x,x,dim);
     }
+    tins += usecond() - t;
+
+    std::cout << GridLogPerformance << "PaddedCell::Expand timings: cshift:" << tshift/1000 << "ms, insert-slice:" << tins/1000 << "ms" << std::endl;
+    
     return padded;
   }
 
