@@ -423,8 +423,8 @@ until convergence
       if ( Nconv < Nstop ) {
 	std::cout << GridLogIRL << "Nconv ("<<Nconv<<") < Nstop ("<<Nstop<<")"<<std::endl;
 	std::cout << GridLogIRL << "starting one more iteration"<<std::endl;
-    iter++;
-    goto notYetConverged;
+	iter++;
+ 	goto notYetConverged;
       }
       eval=eval2;
       
