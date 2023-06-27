@@ -15,13 +15,13 @@ using namespace Grid;
 
 
 // Make the logger work like Python print()
-template<typename ... Args>
+template<typename... Args>
 inline std::string sjoin(Args&&... args) noexcept {
     std::ostringstream msg;
     (msg << ... << args);
     return msg.str();
 }
-template <typename ... Args>
+template <typename... Args>
 inline void Grid_log(Args&&... args) {
     std::string msg = sjoin(std::forward<Args>(args)...);
     std::cout << GridLogMessage << msg << std::endl;

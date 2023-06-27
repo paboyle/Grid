@@ -30,13 +30,15 @@ directory
     @brief Declares classes related to HISQ smearing 
 */
 
-// things like @brief are seen by things like doxygen and javadocs
 
 #pragma once
 
 #include <Grid/Grid.h>
 #include <Grid/lattice/PaddedCell.h>
 #include <Grid/stencil/GeneralLocalStencil.h>
+
+#define BACKWARD_CONST 16
+#define NO_SHIFT -1
 
 NAMESPACE_BEGIN(Grid);
 
@@ -51,9 +53,47 @@ template<class vobj> void gpermute(vobj & inout,int perm) {
 }
 
 
-void appendShift(std::vector<Coordinate>& shifts, int mu, int steps=1) {
-    Coordinate shift(Nd,0); 
-    shift[mu]=steps;
+/*!  @brief signals that you want to go backwards in direction dir */
+inline int Back(const int dir) {
+    // generalShift will use BACKWARD_CONST to determine whether we step forward or 
+    // backward. Should work as long as BACKWARD_CONST > Nd. 
+    return dir + BACKWARD_CONST;
+}
+
+
+/*!  @brief shift one unit in direction dir */
+void generalShift(Coordinate& shift, int dir) {
+    if (dir >= BACKWARD_CONST) {
+        dir -= BACKWARD_CONST;
+        shift[dir]+=-1;
+    } else if (dir == NO_SHIFT) {
+        ; // do nothing
+    } else {
+        shift[dir]+=1;
+    }
+}
+
+
+/*!  @brief follow a path of directions, shifting one unit in each direction */
+template<typename... Args>
+void generalShift(Coordinate& shift, int dir, Args... args) {
+    if (dir >= BACKWARD_CONST) {
+        dir -= BACKWARD_CONST;
+        shift[dir]+=-1;
+    } else if (dir == NO_SHIFT) {
+        ; // do nothing
+    } else {
+        shift[dir]+=1;
+    }
+    generalShift(shift, args...);
+}
+
+
+/*!  @brief append arbitrary shift path to shifts */
+template<typename... Args>
+void appendShift(std::vector<Coordinate>& shifts, int dir, Args... args) {
+    Coordinate shift(Nd,0);
+    generalShift(shift, dir, args...); 
     // push_back creates an element at the end of shifts and
     // assigns the data in the argument to it.
     shifts.push_back(shift);
@@ -123,22 +163,17 @@ public:
         // This is where the 3-link constructs will be stored
         LGF Ughost_fat(Ughost.Grid());
 
-        // Next we make the stencils. Writing your own stencil, you're hard-coding the 
-        // periodic BCs, so you don't need the policy-based stuff, at least for now.
-        // Loop over all orientations, i.e. demand mu != nu.
+        // Create a stencil, which is a collection of sites neighboring some initial site.
         std::vector<Coordinate> shifts;
         for(int mu=0;mu<Nd;mu++)
         for(int nu=0;nu<Nd;nu++) {
             if(mu==nu) continue;
             appendShift(shifts,mu);
             appendShift(shifts,nu);
-            appendShift(shifts,0,0);
-            Coordinate shift_munu(Nd,0); shift_munu[mu]=1; shift_munu[nu]=-1;
-            shifts.push_back(shift_munu);
-            appendShift(shifts,nu,-1);
-            appendShift(shifts,nu,-1);
+            appendShift(shifts,NO_SHIFT);
+            appendShift(shifts,mu,Back(nu));
+            appendShift(shifts,Back(nu));
         }
-
         GeneralLocalStencil gStencil(GhostGrid,shifts);
 
         Ughost_fat=Zero();
@@ -158,18 +193,16 @@ public:
             for(int nu=0;nu<Nd;nu++) {
                 if(mu==nu) continue;
 
-                // shift_mu; shift_mu[mu]=1
-                // shift_nu; shift_nu[nu]=1
+                // x+mu 
+                // m+nu 
                 // x
                 // shift_munu; shift_munu[mu]= 1; shift_munu[nu]=-1;
-                // shift_nu  ;   shift_nu[nu]=-1;
-                // shift_nu  ;   shift_nu[nu]=-1;
+                // x-nu 
                 auto SE0 = gStencil.GetEntry(s+0,ss);
                 auto SE1 = gStencil.GetEntry(s+1,ss);
                 auto SE2 = gStencil.GetEntry(s+2,ss);
                 auto SE3 = gStencil.GetEntry(s+3,ss);
                 auto SE4 = gStencil.GetEntry(s+4,ss);
-                auto SE5 = gStencil.GetEntry(s+5,ss);
 
                 // Each offset corresponds to a site around the plaquette.
                 int o0 = SE0->_offset;
@@ -177,7 +210,6 @@ public:
                 int o2 = SE2->_offset;
                 int o3 = SE3->_offset;
                 int o4 = SE4->_offset;
-                int o5 = SE5->_offset;
 
                 // When you're deciding whether to take an adjoint, the question is: how is the
                 // stored link oriented compared to the one you want? If I imagine myself travelling
@@ -193,17 +225,17 @@ public:
 
                 auto U3 = U_v[o3](nu);
                 auto U4 = U_v[o4](mu);
-                auto U5 = adj(U_v[o5](nu)); 
+                auto U5 = adj(U_v[o4](nu)); 
 
                 gpermute(U3,SE3->_permute);
                 gpermute(U4,SE4->_permute);
-                gpermute(U5,SE5->_permute);
+                gpermute(U4,SE4->_permute);
 
                 //       "left"     "right"
                 auto W = U2*U1*U0 + U5*U4*U3;
                 U_fat_v[ss](mu) = U_fat_v[ss](mu) + W;
 
-                s=s+6;
+                s=s+5;
             }
         }
 
