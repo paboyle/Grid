@@ -2,9 +2,9 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./lib/qcd/smearing/StoutSmearing.h
+Source file: ./lib/qcd/smearing/HISQSmearing.h
 
-Copyright (C) 2019
+Copyright (C) 2023
 
 Author: D. A. Clarke <clarke.davida@gmail.com> 
 
@@ -56,7 +56,7 @@ template<class vobj> void gpermute(vobj & inout,int perm) {
 /*!  @brief signals that you want to go backwards in direction dir */
 inline int Back(const int dir) {
     // generalShift will use BACKWARD_CONST to determine whether we step forward or 
-    // backward. Should work as long as BACKWARD_CONST > Nd. 
+    // backward. Should work as long as BACKWARD_CONST > Nd. Trick inspired by SIMULATeQCD. 
     return dir + BACKWARD_CONST;
 }
 
@@ -191,44 +191,32 @@ public:
 
             for(int mu=0;mu<Nd;mu++)
             for(int nu=0;nu<Nd;nu++) {
+
                 if(mu==nu) continue;
 
-                // x+mu 
-                // m+nu 
-                // x
-                // shift_munu; shift_munu[mu]= 1; shift_munu[nu]=-1;
-                // x-nu 
-                auto SE0 = gStencil.GetEntry(s+0,ss);
-                auto SE1 = gStencil.GetEntry(s+1,ss);
-                auto SE2 = gStencil.GetEntry(s+2,ss);
-                auto SE3 = gStencil.GetEntry(s+3,ss);
-                auto SE4 = gStencil.GetEntry(s+4,ss);
-
-                // Each offset corresponds to a site around the plaquette.
-                int o0 = SE0->_offset;
-                int o1 = SE1->_offset;
-                int o2 = SE2->_offset;
-                int o3 = SE3->_offset;
-                int o4 = SE4->_offset;
+                auto SE0 = gStencil.GetEntry(s+0,ss); int x_p_mu      = SE0->_offset;
+                auto SE1 = gStencil.GetEntry(s+1,ss); int x_p_nu      = SE1->_offset;
+                auto SE2 = gStencil.GetEntry(s+2,ss); int x           = SE2->_offset;
+                auto SE3 = gStencil.GetEntry(s+3,ss); int x_p_mu_m_nu = SE3->_offset;
+                auto SE4 = gStencil.GetEntry(s+4,ss); int x_m_nu      = SE4->_offset;
 
                 // When you're deciding whether to take an adjoint, the question is: how is the
                 // stored link oriented compared to the one you want? If I imagine myself travelling
                 // with the to-be-updated link, I have two possible, alternative 3-link paths I can
                 // take, one starting by going to the left, the other starting by going to the right.
-                auto U0 = adj(U_v[o0](nu));
-                auto U1 = U_v[o1](mu);
-                auto U2 = U_v[o2](nu);
+                auto U0 = adj(U_v[x_p_mu](nu));
+                auto U1 =     U_v[x_p_nu](mu) ;
+                auto U2 =     U_v[x     ](nu) ;
 
                 gpermute(U0,SE0->_permute);
                 gpermute(U1,SE1->_permute);
                 gpermute(U2,SE2->_permute);
 
-                auto U3 = U_v[o3](nu);
-                auto U4 = U_v[o4](mu);
-                auto U5 = adj(U_v[o4](nu)); 
+                auto U3 =     U_v[x_p_mu_m_nu](nu) ;
+                auto U4 =     U_v[x_m_nu     ](mu) ;
+                auto U5 = adj(U_v[x_m_nu     ](nu)); 
 
                 gpermute(U3,SE3->_permute);
-                gpermute(U4,SE4->_permute);
                 gpermute(U4,SE4->_permute);
 
                 //       "left"     "right"
@@ -265,111 +253,8 @@ public:
 
     ~Smear_HISQ_Naik() {}
 
-    void smear(LGF& u_smr, const LGF& U) const {
-        
-        int depth = 1;
-        PaddedCell Ghost(depth,this->_grid);
-        LGF Ughost = Ghost.Exchange(u_smr);
-    
-        GridBase *GhostGrid = Ughost.Grid();
-        LatticeComplex gplaq(GhostGrid); 
-    
-        LGF Ughost_naik(Ughost.Grid());
-
-        std::vector<Coordinate> shifts;
-        for(int mu=0;mu<Nd;mu++){
-            for(int nu=mu+1;nu<Nd;nu++){
-                // forward shifts
-                Coordinate x(Nd,0);
-                Coordinate shift_mu(Nd,0); shift_mu[mu]=1;
-                Coordinate shift_nu(Nd,0); shift_nu[nu]=1;
-                // push_back creates an element at the end of shifts and
-                // assigns the data in the argument to it.
-                shifts.push_back(shift_mu);
-                shifts.push_back(shift_nu);
-                shifts.push_back(x);
-                // reverse shifts
-                shift_nu[nu]=-1;
-                Coordinate shift_munu(Nd,0); shift_munu[mu]=1; shift_munu[nu]=-1;
-                shifts.push_back(shift_munu);
-                shifts.push_back(shift_nu); // in principle you don't need both of these grid points,
-                shifts.push_back(shift_nu); // but it helps the reader keep track of offsets
-            }
-        }
-        GeneralLocalStencil gStencil(GhostGrid,shifts);
-
-        Ughost_naik=Zero();
-
-        // Create the accessors, here U_v and U_fat_v 
-        autoView(U_v     , Ughost     , CpuRead);
-        autoView(U_naik_v, Ughost_naik, CpuWrite);
-
-        // This is a loop over local sites.
-        for(int ss=0;ss<U_v.size();ss++){
-
-            // This is the stencil index. It increases as we make our way through the spacetime sites,
-            // plaquette orientations, and as we travel around a plaquette.
-            int s=0;
-
-            for(int mu=0;mu<Nd;mu++){
-                for(int nu=mu+1;nu<Nd;nu++){
-
-                    // shift_mu; shift_mu[mu]=1
-                    // shift_nu; shift_nu[nu]=1
-                    // x
-                    // shift_munu; shift_munu[mu]= 1; shift_munu[nu]=-1;
-                    // shift_nu  ;   shift_nu[nu]=-1;
-                    // shift_nu  ;   shift_nu[nu]=-1;
-                    auto SE0 = gStencil.GetEntry(s+0,ss);
-                    auto SE1 = gStencil.GetEntry(s+1,ss);
-                    auto SE2 = gStencil.GetEntry(s+2,ss);
-                    auto SE3 = gStencil.GetEntry(s+3,ss);
-                    auto SE4 = gStencil.GetEntry(s+4,ss);
-                    auto SE5 = gStencil.GetEntry(s+5,ss);
-
-                    // Each offset corresponds to a site around the plaquette.
-                    int o0 = SE0->_offset;
-                    int o1 = SE1->_offset;
-                    int o2 = SE2->_offset;
-                    int o3 = SE3->_offset;
-                    int o4 = SE4->_offset;
-                    int o5 = SE5->_offset;
-
-                    auto U0 = U_v[o0](nu);
-                    auto U1 = adj(U_v[o1](mu));
-                    auto U2 = adj(U_v[o2](nu));
-
-                    gpermute(U0,SE0->_permute);
-                    gpermute(U1,SE1->_permute);
-                    gpermute(U2,SE2->_permute);
-
-                    auto U3 = adj(U_v[o3](nu));
-                    auto U4 = adj(U_v[o4](mu));
-                    auto U5 = U_v[o5](nu); 
-
-                    gpermute(U3,SE3->_permute);
-                    gpermute(U4,SE4->_permute);
-                    gpermute(U5,SE5->_permute);
-
-                    // Forward contribution from this orientation
-                    auto W = U0*U1*U2;
-                    U_naik_v[ss](mu) = U_naik_v[ss](mu) + W;
-
-                    // Backward contribution from this orientation
-                    W = U3*U4*U5;
-                    U_naik_v[ss](mu) = U_naik_v[ss](mu) + W;
-
-                    s=s+6;
-                }
-            }
-        }
-
-        // Here is my understanding of this part: The padded cell has its own periodic BCs, so
-        // if I take a step to the right at the right-most side of the cell, I end up on the
-        // left-most side. This means that the plaquettes in the padding are wrong. Luckily
-        // all we care about are the plaquettes in the cell, which we obtain from Extract.
-        u_smr = Ghost.Extract(Ughost_naik);
-    };
+//    void smear(LGF& u_smr, const LGF& U) const {
+//    };
 
 //    void derivative(const GaugeField& Gauge) const {
 //    };
