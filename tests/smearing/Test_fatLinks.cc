@@ -98,7 +98,7 @@ int main (int argc, char** argv) {
     LatticeGaugeField diff(&GRID);
     diff = Umu-U_smr;
     auto absDiff = norm2(diff)/norm2(Umu);
-    Grid_log(" |Umu-U|/|Umu| =",absDiff);
+    Grid_log(" |Umu-U|/|Umu| = ",absDiff);
 
     Grid_finalize();
 }

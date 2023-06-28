@@ -62,6 +62,7 @@ inline int Back(const int dir) {
 
 
 /*!  @brief shift one unit in direction dir */
+template<typename... Args>
 void generalShift(Coordinate& shift, int dir) {
     if (dir >= BACKWARD_CONST) {
         dir -= BACKWARD_CONST;
@@ -101,7 +102,7 @@ void appendShift(std::vector<Coordinate>& shifts, int dir, Args... args) {
 
 
 /*!  @brief structure holding the link treatment */
-struct SmearingParameters {
+struct SmearingParameters{
     SmearingParameters(){}
     Real c_1;               // 1 link
     Real c_naik;            // Naik term
@@ -149,10 +150,8 @@ public:
 
         SmearingParameters lt = this->_linkTreatment;
 
-        // We create a cell with extra padding 2. This allows us to capture the LePage
-        // term without needing to save intermediate gauge fields or extra halo exchanges.
-        // The tradeoff is that we compute extra constructs in the padding. 
-        int depth = 2;
+        // Create a padded cell of extra padding depth=1
+        int depth = 1;
         PaddedCell Ghost(depth,this->_grid);
         LGF Ughost = Ghost.Exchange(u_thin);
 
@@ -163,7 +162,9 @@ public:
         // This is where the 3-link constructs will be stored
         LGF Ughost_fat(Ughost.Grid());
 
-        // Create a stencil, which is a collection of sites neighboring some initial site.
+        // Create 3-link stencil. Writing your own stencil, you're hard-coding the 
+        // periodic BCs, so you don't need the policy-based stuff, at least for now.
+        // Loop over all orientations, i.e. demand mu != nu.
         std::vector<Coordinate> shifts;
         for(int mu=0;mu<Nd;mu++)
         for(int nu=0;nu<Nd;nu++) {
@@ -174,6 +175,7 @@ public:
             appendShift(shifts,mu,Back(nu));
             appendShift(shifts,Back(nu));
         }
+
         GeneralLocalStencil gStencil(GhostGrid,shifts);
 
         Ughost_fat=Zero();
@@ -204,23 +206,15 @@ public:
                 // stored link oriented compared to the one you want? If I imagine myself travelling
                 // with the to-be-updated link, I have two possible, alternative 3-link paths I can
                 // take, one starting by going to the left, the other starting by going to the right.
-                auto U0 = adj(U_v[x_p_mu](nu));
-                auto U1 =     U_v[x_p_nu](mu) ;
-                auto U2 =     U_v[x     ](nu) ;
+                auto U0 = U_v[x_p_mu     ](nu); gpermute(U0,SE0->_permute);
+                auto U1 = U_v[x_p_nu     ](mu); gpermute(U1,SE1->_permute);
+                auto U2 = U_v[x          ](nu); gpermute(U2,SE2->_permute);
+                auto U3 = U_v[x_p_mu_m_nu](nu); gpermute(U3,SE3->_permute);
+                auto U4 = U_v[x_m_nu     ](mu); gpermute(U4,SE4->_permute);
+                auto U5 = U_v[x_m_nu     ](nu); gpermute(U5,SE4->_permute);
 
-                gpermute(U0,SE0->_permute);
-                gpermute(U1,SE1->_permute);
-                gpermute(U2,SE2->_permute);
-
-                auto U3 =     U_v[x_p_mu_m_nu](nu) ;
-                auto U4 =     U_v[x_m_nu     ](mu) ;
-                auto U5 = adj(U_v[x_m_nu     ](nu)); 
-
-                gpermute(U3,SE3->_permute);
-                gpermute(U4,SE4->_permute);
-
-                //       "left"     "right"
-                auto W = U2*U1*U0 + U5*U4*U3;
+                //       "left"          "right"
+                auto W = U2*U1*adj(U0) + adj(U5)*U4*U3;
                 U_fat_v[ss](mu) = U_fat_v[ss](mu) + W;
 
                 s=s+5;
@@ -234,8 +228,6 @@ public:
 //    void derivative(const GaugeField& Gauge) const {
 //    };
 };
-
-
 
 /*!  @brief create long links from link variables. */
 template<class LGF>
