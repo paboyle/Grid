@@ -43,7 +43,7 @@ public:
 private:
   RealD c_plaq;
   RealD c_rect;
-
+  typename WilsonLoops<Gimpl>::StapleAndRectStapleAllWorkspace workspace;
 public:
   PlaqPlusRectangleAction(RealD b,RealD c): c_plaq(b),c_rect(c){};
 
@@ -83,7 +83,7 @@ public:
       U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
     }
     std::vector<GaugeLinkField> RectStaple(Nd,grid), Staple(Nd,grid);
-    WilsonLoops<Gimpl>::StapleAndRectStapleAll(Staple, RectStaple, U);
+    WilsonLoops<Gimpl>::StapleAndRectStapleAll(Staple, RectStaple, U, workspace);
 
     GaugeLinkField dSdU_mu(grid);
     GaugeLinkField staple(grid);
