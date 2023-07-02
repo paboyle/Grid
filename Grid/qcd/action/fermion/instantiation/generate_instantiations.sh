@@ -9,19 +9,19 @@ STAG5_IMPL_LIST=""
 WILSON_IMPL_LIST=" \
 	   WilsonImplF \
 	   WilsonImplD \
-       WilsonImplD2 \
-       SpWilsonImplF \
-       SpWilsonImplD \
+	   WilsonImplD2 \
+	   SpWilsonImplF \
+	   SpWilsonImplD \
 	   WilsonAdjImplF \
 	   WilsonAdjImplD \
 	   WilsonTwoIndexSymmetricImplF \
 	   WilsonTwoIndexSymmetricImplD \
 	   WilsonTwoIndexAntiSymmetricImplF \
 	   WilsonTwoIndexAntiSymmetricImplD \
-       SpWilsonTwoIndexAntiSymmetricImplF \
-       SpWilsonTwoIndexAntiSymmetricImplD \
-       SpWilsonTwoIndexSymmetricImplF \
-       SpWilsonTwoIndexSymmetricImplD \
+	   SpWilsonTwoIndexAntiSymmetricImplF \
+	   SpWilsonTwoIndexAntiSymmetricImplD \
+	   SpWilsonTwoIndexSymmetricImplF \
+	   SpWilsonTwoIndexSymmetricImplD \
 	   GparityWilsonImplF \
 	   GparityWilsonImplD "
 

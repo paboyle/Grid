@@ -300,3 +300,18 @@ static void Omega(LatticeColourMatrixD &in) {
   OmegaLatt = OmegaLatt + (identity * Omega);
   in = OmegaLatt;
 }
+
+template <ONLY_IF_Sp, class vtype, int N>
+static void Omega(iScalar<iScalar<iMatrix<vtype, N> > > &in) {
+  const int nsp=ncolour/2;
+    
+  iScalar<iScalar<iMatrix<vtype, N> > > Omega;
+  Omega = Zero();
+
+  for (int i = 0; i < nsp; i++) {
+    Omega()()(i, nsp + i) = 1.;
+    Omega()()(nsp + i, i) = -1;
+  }
+    
+  in = Omega;
+}
