@@ -275,6 +275,8 @@ typedef WilsonImpl<vComplex,  SpTwoIndexSymmetricRepresentation, CoeffReal > SpW
 typedef WilsonImpl<vComplexF, SpTwoIndexSymmetricRepresentation, CoeffReal > SpWilsonTwoIndexSymmetricImplF;  // Float
 typedef WilsonImpl<vComplexD, SpTwoIndexSymmetricRepresentation, CoeffReal > SpWilsonTwoIndexSymmetricImplD;  // Double
 
+typedef WilsonImpl<vComplex,  SpTwoIndexSymmetricRepresentation, CoeffReal > SpWilsonAdjImplR;  // Real.. whichever prec    // adj = 2indx symmetric for Sp(2N)
+typedef WilsonImpl<vComplexF, SpTwoIndexSymmetricRepresentation, CoeffReal > SpWilsonAdjImplF;  // Float     // adj = 2indx symmetric for Sp(2N)
+typedef WilsonImpl<vComplexD, SpTwoIndexSymmetricRepresentation, CoeffReal > SpWilsonAdjImplD;  // Double    // adj = 2indx symmetric for Sp(2N)
 
 NAMESPACE_END(Grid);
-
