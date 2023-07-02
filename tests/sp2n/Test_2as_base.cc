@@ -69,11 +69,11 @@ static void run_traces_checks() {
             std::cout << GridLogMessage << "Checking orthonormality for e_{ab = " << a << "} " << std::endl;
             if (a==b) {
                 assert(real(d_ab) - realS < 1e-8);
-                assert(imag(d_ab) < 1e-8);
             } else {
                 assert(real(d_ab) < 1e-8);
-                assert(imag(d_ab) < 1e-8);
             }
+            assert(imag(d_ab) < 1e-8);
+            assert(imag(d_ab) < 1e-8);
         }
     }
     
@@ -93,11 +93,11 @@ static void run_generators_checks() {
     Matrix tmp_r;
     for (int n = 0; n < this_algebra_dim; n++)
     {
-        Sp<this_nc>::generator(n, ta_fund[n]);
+        Sp<this_nc>::generator(n, ta_fund[n]);  // generators in the fundamental
     }
       for (int a = 0; a < this_irrep_dim; a++)
     {
-        Sp_TwoIndex<this_nc, S>::base(a, eij[a]);
+        Sp_TwoIndex<this_nc, S>::base(a, eij[a]);   // base functions e_ij^a for upgrading gauge links from fund to 2-index
     }
     for (int gen_id = 0; gen_id < this_algebra_dim; gen_id++)
     {
@@ -139,7 +139,7 @@ int main(int argc, char** argv) {
     check_dimensions<6>();
     check_dimensions<8>();
     
-    run_base_checks<2, Symmetric>();
+    run_base_checks<2, Symmetric>();    // For Nc=2 the AS is the singlet
     run_base_checks<4, Symmetric>();
     run_base_checks<4, AntiSymmetric>();
     run_base_checks<6, Symmetric>();
