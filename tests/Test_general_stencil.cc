@@ -115,6 +115,7 @@ int main(int argc, char ** argv)
 	  if (SE->_permute & 0x2 ) { permute(check[i],tmp,1); tmp=check[i];}
 	  if (SE->_permute & 0x4 ) { permute(check[i],tmp,2); tmp=check[i];}
 	  if (SE->_permute & 0x8 ) { permute(check[i],tmp,3); tmp=check[i];}
+	  //	  std::cout<<GridLogMessage<<"stencil["<<i<<"] "<< check[i]<< " perm "<<(uint32_t)SE->_permute <<std::endl;
 	}
 
 	Real nrmC = norm2(Check);
@@ -138,10 +139,9 @@ int main(int argc, char ** argv)
 	  ddiff = check -bar;
 	  diff =norm2(ddiff);
 	  if ( diff > 0){
-	    std::cout <<"Coor (" << coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]
-		      <<") " <<check<<" vs "<<bar<<std::endl;
+	    std::cout <<"Diff at Coor (" << coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]
+		      <<") stencil " <<check<<" vs cshift "<<bar<<std::endl;
 	  }
-
 
 	}}}}
 
@@ -149,7 +149,7 @@ int main(int argc, char ** argv)
 	  autoView( check , Check, CpuRead);
 	  autoView(   bar ,   Bar, CpuRead);
 	  for(int i=0;i<check.size();i++){
-	    std::cout << i<<" Check "<<check[i]<< "\n"<<i<<" Bar "<<bar[i]<<std::endl;
+	    std::cout << i<<" ERROR Check \n"<<check[i]<< "\n"<<i<<" Bar \n"<<bar[i]<<std::endl;
 	  }
 	}
 	if (nrm > 1.0e-4) exit(-1);

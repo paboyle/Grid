@@ -123,7 +123,7 @@ int main (int argc, char ** argv)
 		 RealD _mass,RealD _M5,
 		 std::vector<ComplexD> &gamma, RealD b,RealD c,const ImplParams &p= ImplParams()) : 
   */
-  ZMobiusFermionR Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, omegas,RealD(1.),RealD(0.));
+  ZMobiusFermionD Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, omegas,RealD(1.),RealD(0.));
 
   LatticeFermion src_e (FrbGrid);
   LatticeFermion src_o (FrbGrid);
@@ -278,7 +278,7 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd ,phi_o,phi);
 
 
-  SchurDiagMooeeOperator<ZMobiusFermionR,LatticeFermion> HermOpEO(Ddwf);
+  SchurDiagMooeeOperator<ZMobiusFermionD,LatticeFermion> HermOpEO(Ddwf);
   HermOpEO.MpcDagMpc(chi_e,dchi_e);
   HermOpEO.MpcDagMpc(chi_o,dchi_o);
 

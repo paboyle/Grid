@@ -29,8 +29,7 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 			   /*  END LEGAL */
-#ifndef GRID_VECTOR_UNOPS
-#define GRID_VECTOR_UNOPS
+#pragma once
 
 #include <cmath>
 
@@ -112,6 +111,9 @@ template <class scalar>
 struct ImagFunctor {
   accelerator scalar operator()(const scalar &a) const { return imag(a); }
 };
+/////////////
+// Unary operations
+/////////////
 template <class S, class V>
 accelerator_inline Grid_simd<S, V> real(const Grid_simd<S, V> &r) {
   return SimdApply(RealFunctor<S>(), r);
@@ -168,6 +170,65 @@ template <class S, class V>
 accelerator_inline Grid_simd<S, V> div(const Grid_simd<S, V> &r, Integer y) {
   return SimdApply(DivIntFunctor<S>(y), r);
 }
+/// Double 2 cases
+template <class S, class V>
+accelerator_inline Grid_simd2<S, V> real(const Grid_simd2<S, V> &r) {
+  return SimdApply(RealFunctor<S>(), r);
+}
+template <class S, class V>
+accelerator_inline Grid_simd2<S, V> imag(const Grid_simd2<S, V> &r) {
+  return SimdApply(ImagFunctor<S>(), r);
+}
+template <class S, class V>
+accelerator_inline Grid_simd2<S, V> sqrt(const Grid_simd2<S, V> &r) {
+  return SimdApply(SqrtRealFunctor<S>(), r);
+}
+template <class S, class V>
+accelerator_inline Grid_simd2<S, V> cos(const Grid_simd2<S, V> &r) {
+  return SimdApply(CosRealFunctor<S>(), r);
+}
+template <class S, class V>
+accelerator_inline Grid_simd2<S, V> sin(const Grid_simd2<S, V> &r) {
+  return SimdApply(SinRealFunctor<S>(), r);
+}
+template <class S, class V>
+accelerator_inline Grid_simd2<S, V> acos(const Grid_simd2<S, V> &r) {
+  return SimdApply(AcosRealFunctor<S>(), r);
+}
+template <class S, class V>
+accelerator_inline Grid_simd2<S, V> asin(const Grid_simd2<S, V> &r) {
+  return SimdApply(AsinRealFunctor<S>(), r);
+}
+template <class S, class V>
+accelerator_inline Grid_simd2<S, V> log(const Grid_simd2<S, V> &r) {
+  return SimdApply(LogRealFunctor<S>(), r);
+}
+template <class S, class V>
+accelerator_inline Grid_simd2<S, V> abs(const Grid_simd2<S, V> &r) {
+  return SimdApply(AbsRealFunctor<S>(), r);
+}
+template <class S, class V>
+accelerator_inline Grid_simd2<S, V> exp(const Grid_simd2<S, V> &r) {
+  return SimdApply(ExpFunctor<S>(), r);
+}
+template <class S, class V>
+accelerator_inline Grid_simd2<S, V> Not(const Grid_simd2<S, V> &r) {
+  return SimdApply(NotFunctor<S>(), r);
+}
+template <class S, class V>
+accelerator_inline Grid_simd2<S, V> pow(const Grid_simd2<S, V> &r, double y) {
+  return SimdApply(PowRealFunctor<S>(y), r);
+}
+template <class S, class V>
+accelerator_inline Grid_simd2<S, V> mod(const Grid_simd2<S, V> &r, Integer y) {
+  return SimdApply(ModIntFunctor<S>(y), r);
+}
+template <class S, class V>
+accelerator_inline Grid_simd2<S, V> div(const Grid_simd2<S, V> &r, Integer y) {
+  return SimdApply(DivIntFunctor<S>(y), r);
+}
+
+
 ////////////////////////////////////////////////////////////////////////////
 // Allows us to assign into **conformable** real vectors from complex
 ////////////////////////////////////////////////////////////////////////////
@@ -193,23 +254,22 @@ struct OrOrFunctor {
 ////////////////////////////////
 template <class S, class V>
 accelerator_inline Grid_simd<S, V> operator&(const Grid_simd<S, V> &x,
-				 const Grid_simd<S, V> &y) {
+					     const Grid_simd<S, V> &y) {
   return SimdApplyBinop(AndFunctor<S>(), x, y);
 }
 template <class S, class V>
 accelerator_inline Grid_simd<S, V> operator&&(const Grid_simd<S, V> &x,
-				  const Grid_simd<S, V> &y) {
+					      const Grid_simd<S, V> &y) {
   return SimdApplyBinop(AndAndFunctor<S>(), x, y);
 }
 template <class S, class V>
 accelerator_inline Grid_simd<S, V> operator|(const Grid_simd<S, V> &x,
-				 const Grid_simd<S, V> &y) {
+					     const Grid_simd<S, V> &y) {
   return SimdApplyBinop(OrFunctor<S>(), x, y);
 }
 template <class S, class V>
 accelerator_inline Grid_simd<S, V> operator||(const Grid_simd<S, V> &x,
-				  const Grid_simd<S, V> &y) {
+					      const Grid_simd<S, V> &y) {
   return SimdApplyBinop(OrOrFunctor<S>(), x, y);
 }
 NAMESPACE_END(Grid);
-#endif

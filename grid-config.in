@@ -60,7 +60,7 @@ while test $# -gt 0; do
     ;;
     
     --cxxflags)
-      echo @GRID_CXXFLAGS@
+      echo @GRID_CXXFLAGS@ -I@prefix@/include
     ;;
     
     --cxx)
@@ -72,11 +72,11 @@ while test $# -gt 0; do
     ;;
     
     --ldflags)
-      echo @GRID_LDFLAGS@
+      echo @GRID_LDFLAGS@ -L@prefix@/lib
     ;;
     
     --libs)
-      echo @GRID_LIBS@
+      echo @GRID_LIBS@ -lGrid
     ;;
     
     --summary)

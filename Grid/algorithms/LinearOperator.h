@@ -526,6 +526,7 @@ public:
       (*this)(Linop,in[k],out[k]);
     }
   };
+  virtual ~OperatorFunction(){};
 };
 
 template<class Field> class LinearFunction {
@@ -541,6 +542,7 @@ public:
       (*this)(in[i], out[i]);
     }
   }
+  virtual ~LinearFunction(){};
 };
 
 template<class Field> class IdentityLinearFunction : public LinearFunction<Field> {

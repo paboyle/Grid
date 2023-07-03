@@ -33,8 +33,8 @@ using namespace Grid;
 const int TSRC = 0;  //timeslice where rho is nonzero
 const int VDIM = 5; //length of each vector
 
-typedef typename DomainWallFermionR::ComplexField ComplexField;
-typedef typename DomainWallFermionR::FermionField FermionField;
+typedef typename DomainWallFermionD::ComplexField ComplexField;
+typedef typename DomainWallFermionD::FermionField FermionField;
 
 int main(int argc, char *argv[])
 {

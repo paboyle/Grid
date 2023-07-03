@@ -46,8 +46,8 @@ struct scal {
 
 int main (int argc, char ** argv)
 {
-  typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
-  typename ImprovedStaggeredFermionR::ImplParams params; 
+  typedef typename ImprovedStaggeredFermionD::FermionField FermionField; 
+  typename ImprovedStaggeredFermionD::ImplParams params; 
 
   Grid_init(&argc,&argv);
 
@@ -90,8 +90,8 @@ int main (int argc, char ** argv)
   RealD c2=-1.0/24.0;
   RealD u0=1.0;
 
-  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0);
-  SchurStaggeredOperator<ImprovedStaggeredFermionR,FermionField> HermOpEO(Ds);
+  ImprovedStaggeredFermionD Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0);
+  SchurStaggeredOperator<ImprovedStaggeredFermionD,FermionField> HermOpEO(Ds);
 
   FermionField src(&Grid); random(pRNG,src);
   FermionField src_o(&RBGrid); 

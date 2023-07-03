@@ -1,14 +1,23 @@
 #include <Grid/GridCore.h>
 
 NAMESPACE_BEGIN(Grid);
+int      world_rank; // Use to control world rank for print guarding
 int      acceleratorAbortOnGpuError=1;
 uint32_t accelerator_threads=2;
 uint32_t acceleratorThreads(void)       {return accelerator_threads;};
 void     acceleratorThreads(uint32_t t) {accelerator_threads = t;};
 
+#define ENV_LOCAL_RANK_OMPI    "OMPI_COMM_WORLD_LOCAL_RANK"
+#define ENV_RANK_OMPI          "OMPI_COMM_WORLD_RANK"
+#define ENV_LOCAL_RANK_SLURM   "SLURM_LOCALID"
+#define ENV_RANK_SLURM         "SLURM_PROCID"
+#define ENV_LOCAL_RANK_MVAPICH "MV2_COMM_WORLD_LOCAL_RANK"
+#define ENV_RANK_MVAPICH       "MV2_COMM_WORLD_RANK"
+
 #ifdef GRID_CUDA
 cudaDeviceProp *gpu_props;
 cudaStream_t copyStream;
+cudaStream_t computeStream;
 void acceleratorInit(void)
 {
   int nDevices = 1;
@@ -16,13 +25,8 @@ void acceleratorInit(void)
   gpu_props = new cudaDeviceProp[nDevices];
 
   char * localRankStr = NULL;
-  int rank = 0, world_rank=0; 
-#define ENV_LOCAL_RANK_OMPI    "OMPI_COMM_WORLD_LOCAL_RANK"
-#define ENV_RANK_OMPI          "OMPI_COMM_WORLD_RANK"
-#define ENV_LOCAL_RANK_SLURM   "SLURM_LOCALID"
-#define ENV_RANK_SLURM         "SLURM_PROCID"
-#define ENV_LOCAL_RANK_MVAPICH "MV2_COMM_WORLD_LOCAL_RANK"
-#define ENV_RANK_MVAPICH       "MV2_COMM_WORLD_RANK"
+  int rank = 0;
+  world_rank=0; 
   if ((localRankStr = getenv(ENV_RANK_OMPI   )) != NULL) { world_rank = atoi(localRankStr);}
   if ((localRankStr = getenv(ENV_RANK_MVAPICH)) != NULL) { world_rank = atoi(localRankStr);}
   if ((localRankStr = getenv(ENV_RANK_SLURM  )) != NULL) { world_rank = atoi(localRankStr);}
@@ -97,6 +101,7 @@ void acceleratorInit(void)
 
   cudaSetDevice(device);
   cudaStreamCreate(&copyStream);
+  cudaStreamCreate(&computeStream);
   const int len=64;
   char busid[len];
   if( rank == world_rank ) { 
@@ -111,6 +116,7 @@ void acceleratorInit(void)
 #ifdef GRID_HIP
 hipDeviceProp_t *gpu_props;
 hipStream_t copyStream;
+hipStream_t computeStream;
 void acceleratorInit(void)
 {
   int nDevices = 1;
@@ -118,11 +124,8 @@ void acceleratorInit(void)
   gpu_props = new hipDeviceProp_t[nDevices];
 
   char * localRankStr = NULL;
-  int rank = 0, world_rank=0; 
-#define ENV_LOCAL_RANK_OMPI    "OMPI_COMM_WORLD_LOCAL_RANK"
-#define ENV_LOCAL_RANK_MVAPICH "MV2_COMM_WORLD_LOCAL_RANK"
-#define ENV_RANK_OMPI          "OMPI_COMM_WORLD_RANK"
-#define ENV_RANK_MVAPICH       "MV2_COMM_WORLD_RANK"
+  int rank = 0;
+  world_rank=0; 
   // We extract the local rank initialization using an environment variable
   if ((localRankStr = getenv(ENV_LOCAL_RANK_OMPI)) != NULL)
   {
@@ -134,8 +137,10 @@ void acceleratorInit(void)
   }
   if ((localRankStr = getenv(ENV_RANK_OMPI   )) != NULL) { world_rank = atoi(localRankStr);}
   if ((localRankStr = getenv(ENV_RANK_MVAPICH)) != NULL) { world_rank = atoi(localRankStr);}
+  if ((localRankStr = getenv(ENV_RANK_SLURM  )) != NULL) { world_rank = atoi(localRankStr);}
 
-  printf("world_rank %d has %d devices\n",world_rank,nDevices);
+  if ( world_rank == 0 ) 
+    printf("world_rank %d has %d devices\n",world_rank,nDevices);
   size_t totalDeviceMem=0;
   for (int i = 0; i < nDevices; i++) {
 
@@ -181,6 +186,7 @@ void acceleratorInit(void)
 #endif
   hipSetDevice(device);
   hipStreamCreate(&copyStream);
+  hipStreamCreate(&computeStream);
   const int len=64;
   char busid[len];
   if( rank == world_rank ) { 
@@ -210,11 +216,9 @@ void acceleratorInit(void)
 #endif
   
   char * localRankStr = NULL;
-  int rank = 0, world_rank=0; 
-#define ENV_LOCAL_RANK_OMPI    "OMPI_COMM_WORLD_LOCAL_RANK"
-#define ENV_LOCAL_RANK_MVAPICH "MV2_COMM_WORLD_LOCAL_RANK"
-#define ENV_RANK_OMPI          "OMPI_COMM_WORLD_RANK"
-#define ENV_RANK_MVAPICH       "MV2_COMM_WORLD_RANK"
+  int rank = 0;
+  world_rank=0; 
+
   // We extract the local rank initialization using an environment variable
   if ((localRankStr = getenv(ENV_LOCAL_RANK_OMPI)) != NULL)
   {

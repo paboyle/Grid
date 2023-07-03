@@ -77,12 +77,12 @@ int main (int argc, char ** argv)
   
   RealD mass=0.5;
   RealD M5=1.8;
-  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
-  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
+  MdagMLinearOperator<DomainWallFermionD,LatticeFermion> HermOp(Ddwf);
   MCR(HermOp,src,result);
 
-  Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> g5HermOp(Ddwf);
+  Gamma5R5HermitianLinearOperator<DomainWallFermionD,LatticeFermion> g5HermOp(Ddwf);
   MCR(g5HermOp,src,result);
 
 

@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
    // Typedefs to simplify notation
   typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
   typedef WilsonImplR FermionImplPolicy;
-  typedef MobiusFermionR FermionAction;
+  typedef MobiusFermionD FermionAction;
   typedef typename FermionAction::FermionField FermionField;
   // Serialiser
   typedef Grid::XmlReader       Serialiser;
@@ -211,8 +211,6 @@ int main(int argc, char **argv) {
   */
 
   // Reset performance counters 
-  NumOp.ZeroCounters();
-  DenOp.ZeroCounters();
 
   if (ApplySmearing){
     SmearingParameters SmPar(Reader);
@@ -224,11 +222,6 @@ int main(int argc, char **argv) {
   } else {
     TheHMC.Run();  // no smearing
   }
-
-  std::cout << GridLogMessage << "Numerator report, Pauli-Villars term         : " << std::endl;
-  NumOp.Report();
-  std::cout << GridLogMessage << "Denominator report, Dw(m) term (includes CG) : " << std::endl;
-  DenOp.Report();
 
   Grid_finalize();
 } // main

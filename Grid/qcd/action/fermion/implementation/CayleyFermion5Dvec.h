@@ -94,10 +94,6 @@ CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
       d_p[ss] = diag[s];
     }}
 
-
-  M5Dcalls++;
-  M5Dtime-=usecond();
-
   assert(Nc==3);
 
   thread_loop( (int ss=0;ss<grid->oSites();ss+=LLs),{ // adds LLs
@@ -198,7 +194,6 @@ CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
     }
 #endif
   });
-  M5Dtime+=usecond();
 }
 
 template<class Impl>  
@@ -242,8 +237,6 @@ CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
       d_p[ss] = diag[s];
     }}
 
-  M5Dcalls++;
-  M5Dtime-=usecond();
   thread_loop( (int ss=0;ss<grid->oSites();ss+=LLs),{ // adds LLs
 #if 0
     alignas(64) SiteHalfSpinor hp;
@@ -339,7 +332,6 @@ CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
     }
 #endif
   });
-  M5Dtime+=usecond();
 }
 
 
@@ -813,9 +805,6 @@ CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField &chi,
   }
   assert(_Matp->size()==Ls*LLs);
 
-  MooeeInvCalls++;
-  MooeeInvTime-=usecond();
-
   if ( switcheroo<Coeff_t>::iscomplex() ) {
     thread_loop( (auto site=0;site<vol;site++),{
       MooeeInternalZAsm(psi,chi,LLs,site,*_Matp,*_Matm);
@@ -825,7 +814,7 @@ CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField &chi,
       MooeeInternalAsm(psi,chi,LLs,site,*_Matp,*_Matm);
     });
   }
-  MooeeInvTime+=usecond();
+
 }
 
 NAMESPACE_END(Grid);

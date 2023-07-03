@@ -7,21 +7,19 @@
 #SBATCH -o DWF.%J
 #SBATCH -e DWF.%J
 #SBATCH -N 1
-#SBATCH -n 4
-#SBATCH --exclusive
+#SBATCH -n 2
+#SBATCH --gpu-bind=map_gpu:0,1
 
 DIR=.
-module list
+source setup.sh
+
+export MPICH_OFI_NIC_POLICY=GPU
 export MPIR_CVAR_GPU_EAGER_DEVICE_MEM=0
 export MPICH_GPU_SUPPORT_ENABLED=1
-#export MPICH_SMP_SINGLE_COPY_MODE=XPMEM
-export MPICH_SMP_SINGLE_COPY_MODE=NONE
-#export MPICH_SMP_SINGLE_COPY_MODE=CMA
-export OMP_NUM_THREADS=4
+export OMP_NUM_THREADS=16
 
 echo MPICH_SMP_SINGLE_COPY_MODE $MPICH_SMP_SINGLE_COPY_MODE
-PARAMS=" --accelerator-threads 8 --grid 32.32.64.64 --mpi 1.1.2.2 --comms-overlap --shm 2048 --shm-mpi 0"
 
-srun --gpus-per-task 1 -n4 ./mpiwrapper.sh ./benchmarks/Benchmark_dwf_fp32 $PARAMS
+srun --gpus-per-task 1 -N1 -n2  ./benchmarks/Benchmark_dwf_fp32 --mpi 1.1.1.2 --grid 16.16.32.64 --shm-mpi 1 --shm 2048 --comms-sequential --accelerator-threads 8
 
 

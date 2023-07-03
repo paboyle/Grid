@@ -44,7 +44,7 @@ public:
 
   using OperatorFunction<Field>::operator();
 
-  RealD   Tolerance;
+  //  RealD   Tolerance;
   Integer MaxIterations;
   Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
   std::vector<int> IterationsToCompleteShift;  // Iterations for this shift
@@ -52,7 +52,7 @@ public:
   MultiShiftFunction shifts;
   std::vector<RealD> TrueResidualShift;
 
-  ConjugateGradientMultiShift(Integer maxit,MultiShiftFunction &_shifts) : 
+  ConjugateGradientMultiShift(Integer maxit, const MultiShiftFunction &_shifts) : 
     MaxIterations(maxit),
     shifts(_shifts)
   { 
@@ -84,6 +84,7 @@ public:
 
   void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector<Field> &psi)
   {
+    GRID_TRACE("ConjugateGradientMultiShift");
   
     GridBase *grid = src.Grid();
   
@@ -182,6 +183,9 @@ public:
     for(int s=0;s<nshift;s++) {
       axpby(psi[s],0.,-bs[s]*alpha[s],src,src);
     }
+
+    std::cout << GridLogIterative << "ConjugateGradientMultiShift: initial rn (|src|^2) =" << rn << " qq (|MdagM src|^2) =" << qq << " d ( dot(src, [MdagM + m_0]src) ) =" << d << " c=" << c << std::endl;
+    
   
   ///////////////////////////////////////
   // Timers
@@ -321,8 +325,8 @@ public:
 
       std::cout << GridLogMessage << "Time Breakdown "<<std::endl;
       std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed()     <<std::endl;
-      std::cout << GridLogMessage << "\tAXPY    " << AXPYTimer.Elapsed()     <<std::endl;
-      std::cout << GridLogMessage << "\tMarix    " << MatrixTimer.Elapsed()     <<std::endl;
+      std::cout << GridLogMessage << "\tAXPY     " << AXPYTimer.Elapsed()     <<std::endl;
+      std::cout << GridLogMessage << "\tMatrix   " << MatrixTimer.Elapsed()     <<std::endl;
       std::cout << GridLogMessage << "\tShift    " << ShiftTimer.Elapsed()     <<std::endl;
 
       IterationsToComplete = k;	
