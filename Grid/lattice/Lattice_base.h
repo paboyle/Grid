@@ -78,6 +78,7 @@ private:
       else 
 	this->_odata      = nullptr;
     }
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
   }
 public:
 
@@ -85,13 +86,17 @@ public:
   // Can use to make accelerator dirty without copy from host ; useful for temporaries "dont care" prev contents
   /////////////////////////////////////////////////////////////////////////////////
   void SetViewMode(ViewMode mode) {
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     LatticeView<vobj> accessor(*( (LatticeAccelerator<vobj> *) this),mode);
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     accessor.ViewClose();
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
   }
 
   // Helper function to print the state of this object in the AccCache
   void PrintCacheState(void)
   {
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     MemoryManager::PrintState(this->_odata);
   }
 
@@ -103,6 +108,7 @@ public:
 
   LatticeView<vobj> View (ViewMode mode) const 
   {
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     LatticeView<vobj> accessor(*( (LatticeAccelerator<vobj> *) this),mode);
     return accessor;
   }
@@ -117,6 +123,7 @@ public:
   ////////////////////////////////////////////////////////////////////////////////
   template <typename Op, typename T1> inline Lattice<vobj> & operator=(const LatticeUnaryExpression<Op,T1> &expr)
   {
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     GridBase *egrid(nullptr);
     GridFromExpression(egrid,expr);
     assert(egrid!=nullptr);
@@ -140,6 +147,7 @@ public:
   }
   template <typename Op, typename T1,typename T2> inline Lattice<vobj> & operator=(const LatticeBinaryExpression<Op,T1,T2> &expr)
   {
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     GridBase *egrid(nullptr);
     GridFromExpression(egrid,expr);
     assert(egrid!=nullptr);
@@ -163,6 +171,7 @@ public:
   }
   template <typename Op, typename T1,typename T2,typename T3> inline Lattice<vobj> & operator=(const LatticeTrinaryExpression<Op,T1,T2,T3> &expr)
   {
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     GridBase *egrid(nullptr);
     GridFromExpression(egrid,expr);
     assert(egrid!=nullptr);
@@ -186,6 +195,7 @@ public:
   //GridFromExpression is tricky to do
   template<class Op,class T1>
   Lattice(const LatticeUnaryExpression<Op,T1> & expr) {
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     this->_grid = nullptr;
     GridFromExpression(this->_grid,expr);
     assert(this->_grid!=nullptr);
@@ -201,6 +211,7 @@ public:
   }
   template<class Op,class T1, class T2>
   Lattice(const LatticeBinaryExpression<Op,T1,T2> & expr) {
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     this->_grid = nullptr;
     GridFromExpression(this->_grid,expr);
     assert(this->_grid!=nullptr);
@@ -216,6 +227,7 @@ public:
   }
   template<class Op,class T1, class T2, class T3>
   Lattice(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr) {
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     this->_grid = nullptr;
     GridFromExpression(this->_grid,expr);
     assert(this->_grid!=nullptr);
@@ -231,6 +243,7 @@ public:
   }
 
   template<class sobj> inline Lattice<vobj> & operator = (const sobj & r){
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     auto me  = View(CpuWrite);
     thread_for(ss,me.size(),{
 	me[ss]= r;
@@ -246,16 +259,19 @@ public:
   // user defined constructor
   ///////////////////////////////////////////
   Lattice(GridBase *grid,ViewMode mode=AcceleratorWriteDiscard) { 
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     this->_grid = grid;
     resize(this->_grid->oSites());
     assert((((uint64_t)&this->_odata[0])&0xF) ==0);
     this->checkerboard=0;
     SetViewMode(mode);
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
   }
   
   //  virtual ~Lattice(void) = default;
     
   void reset(GridBase* grid) {
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     if (this->_grid != grid) {
       this->_grid = grid;
       this->resize(grid->oSites());
@@ -266,6 +282,7 @@ public:
   // copy constructor
   ///////////////////////////////////////////
   Lattice(const Lattice& r){ 
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     this->_grid = r.Grid();
     resize(this->_grid->oSites());
     *this = r;
@@ -274,6 +291,7 @@ public:
   // move constructor
   ///////////////////////////////////////////
   Lattice(Lattice && r){ 
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     this->_grid = r.Grid();
     this->_odata      = r._odata;
     this->_odata_size = r._odata_size;
@@ -285,6 +303,7 @@ public:
   // assignment template
   ///////////////////////////////////////////
   template<class robj> inline Lattice<vobj> & operator = (const Lattice<robj> & r){
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     typename std::enable_if<!std::is_same<robj,vobj>::value,int>::type i=0;
     conformable(*this,r);
     this->checkerboard = r.Checkerboard();
@@ -301,6 +320,7 @@ public:
   // Copy assignment 
   ///////////////////////////////////////////
   inline Lattice<vobj> & operator = (const Lattice<vobj> & r){
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     this->checkerboard = r.Checkerboard();
     conformable(*this,r);
     auto me =   View(AcceleratorWriteDiscard);
@@ -315,6 +335,7 @@ public:
   // Move assignment possible if same type
   ///////////////////////////////////////////
   inline Lattice<vobj> & operator = (Lattice<vobj> && r){
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
 
     resize(0); // deletes if appropriate
     this->_grid       = r.Grid();
@@ -332,20 +353,24 @@ public:
   // *=,+=,-= operators inherit behvour from correspond */+/- operation
   /////////////////////////////////////////////////////////////////////////////
   template<class T> inline Lattice<vobj> &operator *=(const T &r) {
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     *this = (*this)*r;
     return *this;
   }
   
   template<class T> inline Lattice<vobj> &operator -=(const T &r) {
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     *this = (*this)-r;
     return *this;
   }
   template<class T> inline Lattice<vobj> &operator +=(const T &r) {
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     *this = (*this)+r;
     return *this;
   }
 
   friend inline void swap(Lattice &l, Lattice &r) { 
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
     conformable(l,r);
     LatticeAccelerator<vobj> tmp;
     LatticeAccelerator<vobj> *lp = (LatticeAccelerator<vobj> *)&l;
@@ -356,6 +381,7 @@ public:
 }; // class Lattice
 
 template<class vobj> std::ostream& operator<< (std::ostream& stream, const Lattice<vobj> &o){
+      std::cout << __FILE__ << " " << __LINE__ << std::endl;
   typedef typename vobj::scalar_object sobj;
   for(int g=0;g<o.Grid()->_gsites;g++){
 

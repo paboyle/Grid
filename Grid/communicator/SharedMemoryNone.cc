@@ -67,7 +67,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Each MPI rank should allocate our own buffer
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ShmCommBuf = acceleratorAllocDevice(bytes);
+  ShmCommBuf = acceleratorAllocShared(bytes);
+  //ShmCommBuf = acceleratorAllocDevice(bytes);
 
   if (ShmCommBuf == (void *)NULL ) {
     std::cerr << " SharedMemoryNone.cc acceleratorAllocDevice failed NULL pointer for " << bytes<<" bytes " << std::endl;

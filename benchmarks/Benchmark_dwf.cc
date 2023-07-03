@@ -84,7 +84,7 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedUniqueString(std::string("The 5D RNG"));
   std::cout << GridLogMessage << "Initialised RNGs" << std::endl;
 
-  LatticeFermion src   (FGrid); random(RNG5,src);
+  LatticeFermion src   (FGrid);  random(RNG5,src);
 #if 0
   src = Zero();
   {
@@ -96,7 +96,9 @@ int main (int argc, char ** argv)
     pokeSite(tmp,src,origin);
   }
 #else
+  std::cout << GridLogMessage << "Drawing gauge field1" << std::endl;
   RealD N2 = 1.0/::sqrt(norm2(src));
+  std::cout << GridLogMessage << "Drawing gauge field3" << std::endl;
   src = src*N2;
 #endif
 
@@ -218,8 +220,12 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NN<<std::endl;
     std::cout<<GridLogMessage << "RF  GiB/s (base 2) =   "<< 1000000. * data_rf/((t1-t0))<<std::endl;
     std::cout<<GridLogMessage << "mem GiB/s (base 2) =   "<< 1000000. * data_mem/((t1-t0))<<std::endl;
-    err = ref-result;
-    std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
+//#pragma omp target is_device_ptr ( err.View(CpuWrite), ref.View(CpuWrite), result.View(CpuWrite) )
+    ref-result;
+    //err = ref-result;
+    
+    std::cout<<GridLogMessage << "norm diff 0  "<<std::endl;
+    std::cout<<GridLogMessage << "norm diff   "<< norm2(err) << " norm diff 1 " <<std::endl;
     //exit(0);
 
     if(( norm2(err)>1.0e-4) ) {

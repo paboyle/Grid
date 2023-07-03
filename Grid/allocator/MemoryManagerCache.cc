@@ -200,20 +200,26 @@ void MemoryManager::ViewClose(void* Ptr,ViewMode mode)
 }
 void *MemoryManager::ViewOpen(void* _CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint)
 {
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
   uint64_t CpuPtr = (uint64_t)_CpuPtr;
   if( (mode==AcceleratorRead)||(mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard) ){
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
     return (void *) AcceleratorViewOpen(CpuPtr,bytes,mode,hint);
   } else if( (mode==CpuRead)||(mode==CpuWrite)){
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
     return (void *)CpuViewOpen(CpuPtr,bytes,mode,hint);
   } else { 
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
     assert(0);
     return NULL;
   }
 }
 void  MemoryManager::EvictVictims(uint64_t bytes)
 {
+  std::cout << __FILE__ << " " << __LINE__ << " " << bytes << " " << DeviceLRUBytes << " " << DeviceMaxBytes <<  std::endl;
   while(bytes+DeviceLRUBytes > DeviceMaxBytes){
     if ( DeviceLRUBytes > 0){
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
       assert(LRU.size()>0);
       uint64_t victim = LRU.back();
       auto AccCacheIterator = EntryLookup(victim);
@@ -221,6 +227,7 @@ void  MemoryManager::EvictVictims(uint64_t bytes)
       Evict(AccCache);
     }
   }
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
 }
 uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint)
 {
@@ -230,13 +237,18 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
   if ( EntryPresent(CpuPtr)==0 ){
     EntryCreate(CpuPtr,bytes,mode,hint);
   }
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
 
   auto AccCacheIterator = EntryLookup(CpuPtr);
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
   auto & AccCache = AccCacheIterator->second;
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
   if (!AccCache.AccPtr) {
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
     EvictVictims(bytes); 
   } 
   assert((mode==AcceleratorRead)||(mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard));
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
 
   assert(AccCache.cpuLock==0);  // Programming error
 
@@ -249,6 +261,7 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
     assert(AccCache.CpuPtr == CpuPtr);
     assert(AccCache.bytes  ==bytes);
   }
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
 /*
  *  State transitions and actions
  *
@@ -264,6 +277,7 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
  *  AccWrite AccDirty   AccDirty       -        - 
  */
   if(AccCache.state==Empty) {
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
     assert(AccCache.LRU_valid==0);
     AccCache.CpuPtr = CpuPtr;
     AccCache.AccPtr = (uint64_t)NULL;
@@ -281,6 +295,7 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
     }
     AccCache.accLock= 1;
   } else if(AccCache.state==CpuDirty ){
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
     if(mode==AcceleratorWriteDiscard) {
       CpuDiscard(AccCache);
       AccCache.state  = AccDirty;   // CpuDirty + AcceleratorWrite=> AccDirty
@@ -294,6 +309,7 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
     AccCache.accLock++;
     dprintf("Copied CpuDirty entry into device accLock %d\n",AccCache.accLock);
   } else if(AccCache.state==Consistent) {
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
     if((mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard))
       AccCache.state  = AccDirty;   // Consistent + AcceleratorWrite=> AccDirty
     else
@@ -301,6 +317,7 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
     AccCache.accLock++;
     dprintf("Consistent entry into device accLock %d\n",AccCache.accLock);
   } else if(AccCache.state==AccDirty) {
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
     if((mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard))
       AccCache.state  = AccDirty; // AccDirty + AcceleratorWrite=> AccDirty
     else
@@ -308,11 +325,13 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
     AccCache.accLock++;
     dprintf("AccDirty entry into device accLock %d\n",AccCache.accLock);
   } else {
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
     assert(0);
   }
 
   // If view is opened on device remove from LRU
   if(AccCache.LRU_valid==1){
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
     // must possibly remove from LRU as now locked on GPU
     LRUremove(AccCache);
   }
@@ -320,6 +339,7 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
   int transient =hint;
   AccCache.transient= transient? EvictNext : 0;
 
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
   return AccCache.AccPtr;
 }
 ////////////////////////////////////
