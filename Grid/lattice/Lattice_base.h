@@ -124,6 +124,7 @@ public:
   template <typename Op, typename T1> inline Lattice<vobj> & operator=(const LatticeUnaryExpression<Op,T1> &expr)
   {
       std::cout << __FILE__ << " " << __LINE__ << std::endl;
+    GRID_TRACE("ExpressionTemplateEval");
     GridBase *egrid(nullptr);
     GridFromExpression(egrid,expr);
     assert(egrid!=nullptr);
@@ -148,6 +149,7 @@ public:
   template <typename Op, typename T1,typename T2> inline Lattice<vobj> & operator=(const LatticeBinaryExpression<Op,T1,T2> &expr)
   {
       std::cout << __FILE__ << " " << __LINE__ << std::endl;
+    GRID_TRACE("ExpressionTemplateEval");
     GridBase *egrid(nullptr);
     GridFromExpression(egrid,expr);
     assert(egrid!=nullptr);
@@ -172,6 +174,7 @@ public:
   template <typename Op, typename T1,typename T2,typename T3> inline Lattice<vobj> & operator=(const LatticeTrinaryExpression<Op,T1,T2,T3> &expr)
   {
       std::cout << __FILE__ << " " << __LINE__ << std::endl;
+    GRID_TRACE("ExpressionTemplateEval");
     GridBase *egrid(nullptr);
     GridFromExpression(egrid,expr);
     assert(egrid!=nullptr);
@@ -307,8 +310,8 @@ public:
     typename std::enable_if<!std::is_same<robj,vobj>::value,int>::type i=0;
     conformable(*this,r);
     this->checkerboard = r.Checkerboard();
-    auto me =   View(AcceleratorWriteDiscard);
     auto him= r.View(AcceleratorRead);
+    auto me =   View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       coalescedWrite(me[ss],him(ss));
     });
@@ -323,8 +326,8 @@ public:
       std::cout << __FILE__ << " " << __LINE__ << std::endl;
     this->checkerboard = r.Checkerboard();
     conformable(*this,r);
-    auto me =   View(AcceleratorWriteDiscard);
     auto him= r.View(AcceleratorRead);
+    auto me =   View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       coalescedWrite(me[ss],him(ss));
     });

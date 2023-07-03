@@ -70,19 +70,37 @@ class ScidacHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
     }
   }
 
-  void TrajectoryComplete(int traj, Field &U, GridSerialRNG &sRNG,
+  void TrajectoryComplete(int traj, 
+			  ConfigurationBase<Field> &SmartConfig,
+			  GridSerialRNG &sRNG,
                           GridParallelRNG &pRNG) {
     if ((traj % Params.saveInterval) == 0) {
-      std::string config, rng;
-      this->build_filenames(traj, Params, config, rng);
-      GridBase *grid = U.Grid();
+      std::string config, rng,smr;
+      this->build_filenames(traj, Params, config, smr, rng);
+      GridBase *grid = SmartConfig.get_U(false).Grid();
       uint32_t nersc_csum,scidac_csuma,scidac_csumb;
       BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
-      ScidacWriter _ScidacWriter(grid->IsBoss());
-      _ScidacWriter.open(config);
-      _ScidacWriter.writeScidacFieldRecord(U, MData);
-      _ScidacWriter.close();
+      std::cout << GridLogMessage << "Written Binary RNG " << rng
+                << " checksum " << std::hex 
+		<< nersc_csum   <<"/"
+		<< scidac_csuma   <<"/"
+		<< scidac_csumb 
+		<< std::dec << std::endl;
 
+
+      {
+	ScidacWriter _ScidacWriter(grid->IsBoss());
+	_ScidacWriter.open(config);
+	_ScidacWriter.writeScidacFieldRecord(SmartConfig.get_U(false), MData);
+	_ScidacWriter.close();
+      }
+      
+      if ( Params.saveSmeared ) {
+	ScidacWriter _ScidacWriter(grid->IsBoss());
+	_ScidacWriter.open(smr);
+	_ScidacWriter.writeScidacFieldRecord(SmartConfig.get_U(true), MData);
+	_ScidacWriter.close();
+      }
       std::cout << GridLogMessage << "Written Scidac Configuration on " << config << std::endl;
     }
   };

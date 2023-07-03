@@ -356,7 +356,7 @@ struct Conj{
   
 struct TimesMinusI{
   //Complex double
-  inline vector4double operator()(vector4double v, vector4double ret){
+  inline vector4double operator()(vector4double v){
     return vec_xxcpnmadd(v, (vector4double){1., 1., 1., 1.},
 			 (vector4double){0., 0., 0., 0.});
   }
@@ -367,7 +367,7 @@ struct TimesMinusI{
   
 struct TimesI{
   //Complex double
-  inline vector4double operator()(vector4double v, vector4double ret){
+  inline vector4double operator()(vector4double v){
     return vec_xxcpnmadd(v, (vector4double){-1., -1., -1., -1.},
 			 (vector4double){0., 0., 0., 0.});
   }

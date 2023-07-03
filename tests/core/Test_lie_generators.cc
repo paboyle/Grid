@@ -63,7 +63,9 @@ int main(int argc, char** argv) {
   std::cout << "Dimension of adjoint representation: "<< SU2Adjoint::Dimension << std::endl;
 
   // guard as this code fails to compile for Nc != 3
-#if (Nc == 3)
+#if 1
+
+  std::cout << " Printing  Adjoint Generators"<< std::endl;
     
   SU2Adjoint::printGenerators();
   SU2::testGenerators();
@@ -148,10 +150,33 @@ int main(int argc, char** argv) {
     typename AdjointRep<Nc>::LatticeMatrix Vrmu = peekLorentz(Vr,mu);
     pokeLorentz(UrVr,Urmu*Vrmu, mu);
   }
-    
+
+  typedef typename SU_Adjoint<Nc>::AMatrix AdjointMatrix;
   typename AdjointRep<Nc>::LatticeField Diff_check = UVr - UrVr;
   std::cout << GridLogMessage << "Group structure SU("<<Nc<<") check difference (Adjoint representation) : " << norm2(Diff_check) << std::endl;
-    
+
+  std::cout << GridLogMessage << "****************************************** " << std::endl;
+  std::cout << GridLogMessage << " MAP BETWEEN FUNDAMENTAL AND ADJOINT CHECK " << std::endl;
+  std::cout << GridLogMessage << "****************************************** " << std::endl;
+  for(int a=0;a<Nc*Nc-1;a++){
+  for(int b=0;b<Nc*Nc-1;b++){
+  for(int c=0;c<Nc*Nc-1;c++){
+    ColourMatrix Ta;
+    ColourMatrix Tb;
+    ColourMatrix Tc;
+    SU3::generator(a, Ta);
+    SU3::generator(b, Tb);
+    SU3::generator(c, Tc);
+    AdjointMatrix TRa;
+    SU3Adjoint::generator(a,TRa);
+    Complex tr1 = trace ( Tc * ( Ta*Tb-Tb*Ta)); // i/2 fabc
+    Complex tr2 = TRa()()(b,c) * Complex(0,1);
+    std::cout << " 2 Tr( Tc[Ta,Tb]) " << 2.0*tr1<<std::endl;
+    std::cout << " - TRa_bc " << tr2<<std::endl;
+    assert(abs( (2.0*tr1-tr2) ) < 1.0e-7);
+    std::cout << "------------------"<<std::endl;
+  }}}
+  
   // Check correspondence of algebra and group transformations
   // Create a random vector
   SU3::LatticeAlgebraVector h_adj(grid);

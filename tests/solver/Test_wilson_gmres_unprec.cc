@@ -55,9 +55,9 @@ int main (int argc, char ** argv)
   }
 
   RealD mass=0.5;
-  WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
+  WilsonFermionD Dw(Umu,Grid,RBGrid,mass);
 
-  MdagMLinearOperator<WilsonFermionR,LatticeFermion> HermOp(Dw);
+  MdagMLinearOperator<WilsonFermionD,LatticeFermion> HermOp(Dw);
   GeneralisedMinimalResidual<LatticeFermion> GMRES(1.0e-8, 10000, 25);
   GMRES(HermOp,src,result);
 

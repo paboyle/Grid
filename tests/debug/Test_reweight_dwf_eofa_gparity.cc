@@ -33,7 +33,7 @@ using namespace std;
 using namespace Grid;
  ;
 
-typedef typename GparityDomainWallFermionR::FermionField FermionField;
+typedef typename GparityDomainWallFermionD::FermionField FermionField;
 
 // parameters for test
 const std::vector<int> grid_dim = { 8, 8, 8, 8 };
@@ -107,11 +107,11 @@ int main(int argc, char **argv)
   SU<Nc>::HotConfiguration(RNG4, Umu);
 
   // Initialize RHMC fermion operators
-  GparityDomainWallFermionR::ImplParams params;
-  GparityDomainWallFermionR Ddwf_f(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, M5, params);
-  GparityDomainWallFermionR Ddwf_b(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, M5, params);
-  SchurDiagMooeeOperator<GparityDomainWallFermionR, FermionField> MdagM(Ddwf_f);
-  SchurDiagMooeeOperator<GparityDomainWallFermionR, FermionField> VdagV(Ddwf_b);
+  GparityDomainWallFermionD::ImplParams params;
+  GparityDomainWallFermionD Ddwf_f(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, M5, params);
+  GparityDomainWallFermionD Ddwf_b(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, M5, params);
+  SchurDiagMooeeOperator<GparityDomainWallFermionD, FermionField> MdagM(Ddwf_f);
+  SchurDiagMooeeOperator<GparityDomainWallFermionD, FermionField> VdagV(Ddwf_b);
 
   // Degree 12 rational approximations to x^(1/4) and x^(-1/4)
   double     lo = 0.0001;
@@ -156,10 +156,10 @@ int main(int argc, char **argv)
   RealD shift_L = 0.0;
   RealD shift_R = -1.0;
   int pm = 1;
-  GparityDomainWallEOFAFermionR Deofa_L(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, mf, mb, shift_L, pm, M5, params);
-  GparityDomainWallEOFAFermionR Deofa_R(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, mf, mb, shift_R, pm, M5, params);
-  MdagMLinearOperator<GparityDomainWallEOFAFermionR, FermionField> LdagL(Deofa_L);
-  MdagMLinearOperator<GparityDomainWallEOFAFermionR, FermionField> RdagR(Deofa_R);
+  GparityDomainWallEOFAFermionD Deofa_L(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, mf, mb, shift_L, pm, M5, params);
+  GparityDomainWallEOFAFermionD Deofa_R(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, mf, mb, shift_R, pm, M5, params);
+  MdagMLinearOperator<GparityDomainWallEOFAFermionD, FermionField> LdagL(Deofa_L);
+  MdagMLinearOperator<GparityDomainWallEOFAFermionD, FermionField> RdagR(Deofa_R);
 
   // Stochastically estimate reweighting factor via EOFA
   RealD k = Deofa_L.k;

@@ -78,13 +78,13 @@ static Registrar<OneFlavourRatioEOFModule<FermionImplementationPolicy>,
 // Now a specific registration with a fermion field
 // here must instantiate CG and CR for every new fermion field type (macro!!)
 
-static Registrar< ConjugateGradientModule<WilsonFermionR::FermionField>,   
-                  HMC_SolverModuleFactory<solver_string, WilsonFermionR::FermionField, Serialiser> > __CGWFmodXMLInit("ConjugateGradient"); 
+static Registrar< ConjugateGradientModule<WilsonFermionD::FermionField>,   
+                  HMC_SolverModuleFactory<solver_string, WilsonFermionD::FermionField, Serialiser> > __CGWFmodXMLInit("ConjugateGradient"); 
 
-static Registrar< BiCGSTABModule<WilsonFermionR::FermionField>,   
-                  HMC_SolverModuleFactory<solver_string, WilsonFermionR::FermionField, Serialiser> > __BiCGWFmodXMLInit("BiCGSTAB"); 
-static Registrar< ConjugateResidualModule<WilsonFermionR::FermionField>,   
-                  HMC_SolverModuleFactory<solver_string, WilsonFermionR::FermionField, Serialiser> > __CRWFmodXMLInit("ConjugateResidual"); 
+static Registrar< BiCGSTABModule<WilsonFermionD::FermionField>,   
+                  HMC_SolverModuleFactory<solver_string, WilsonFermionD::FermionField, Serialiser> > __BiCGWFmodXMLInit("BiCGSTAB"); 
+static Registrar< ConjugateResidualModule<WilsonFermionD::FermionField>,   
+                  HMC_SolverModuleFactory<solver_string, WilsonFermionD::FermionField, Serialiser> > __CRWFmodXMLInit("ConjugateResidual"); 
 
 // add the staggered, scalar versions here
 

@@ -178,6 +178,7 @@ public:
     stream << "S {" << o._internal << "}";
     return stream;
   };
+  // FIXME These will break with change of data layout
   strong_inline const scalar_type * begin() const { return reinterpret_cast<const scalar_type *>(&_internal); }
   strong_inline       scalar_type * begin()       { return reinterpret_cast<      scalar_type *>(&_internal); }
   strong_inline const scalar_type * end()   const { return begin() + Traits::count; }
@@ -288,6 +289,7 @@ public:
   //      return _internal[i];
   //    }
 
+  // FIXME These will break with change of data layout
   strong_inline const scalar_type * begin() const { return reinterpret_cast<const scalar_type *>(_internal); }
   strong_inline       scalar_type * begin()       { return reinterpret_cast<      scalar_type *>(_internal); }
   strong_inline const scalar_type * end()   const { return begin() + Traits::count; }
@@ -430,6 +432,7 @@ public:
   //    return _internal[i][j];
   //  }
 
+  // FIXME These will break with change of data layout
   strong_inline const scalar_type * begin() const { return reinterpret_cast<const scalar_type *>(_internal[0]); }
   strong_inline       scalar_type * begin()       { return reinterpret_cast<      scalar_type *>(_internal[0]); }
   strong_inline const scalar_type * end()   const { return begin() + Traits::count; }

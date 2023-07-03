@@ -340,13 +340,13 @@ int main (int argc, char ** argv)
 
   int nmass = masses.size();
 
-  std::vector<MobiusFermionR *> FermActs;
+  std::vector<MobiusFermionD *> FermActs;
   
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"MobiusFermion action as Scaled Shamir kernel"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::vector<Complex> boundary = {1,1,1,-1};
-  typedef MobiusFermionR FermionAction;
+  typedef MobiusFermionD FermionAction;
   FermionAction::ImplParams Params(boundary);
 
   for(int m=0;m<masses.size();m++) {
@@ -363,7 +363,7 @@ int main (int argc, char ** argv)
     FGrids.push_back(SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid));
     FrbGrids.push_back(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid));
 
-    FermActs.push_back(new MobiusFermionR(Utmp,*FGrids[m],*FrbGrids[m],*UGrid,*UrbGrid,mass,M5,b,c,Params));
+    FermActs.push_back(new MobiusFermionD(Utmp,*FGrids[m],*FrbGrids[m],*UGrid,*UrbGrid,mass,M5,b,c,Params));
   }
 
   LatticePropagator z2wall_source(UGrid);

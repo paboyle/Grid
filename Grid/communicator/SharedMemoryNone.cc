@@ -48,9 +48,10 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
   _ShmSetup=1;
 }
 
-void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
+void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_MPI_Comm & optimal_comm,Coordinate &SHM)
 {
   optimal_comm = WorldComm;
+  SHM = Coordinate(processors.size(),1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////

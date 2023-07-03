@@ -74,7 +74,7 @@ int main (int argc, char ** argv)
     SU<Nc>::HotConfiguration(RNG4,Umu);
   }
 
-  typename WilsonCloverFermionR::ImplParams params;
+  typename WilsonCloverFermionD::ImplParams params;
   WilsonAnisotropyCoefficients anis;
   RealD mass = 0.1;
   RealD csw_r = 1.0;
@@ -83,32 +83,32 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage <<"=================================="<<std::endl;
   std::cout<<GridLogMessage <<"WilsonFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"=================================="<<std::endl;
-  WilsonFermionR Dw(Umu,*UGrid,*UrbGrid,mass,params);
-  TestConserved<WilsonFermionR>(Dw,Umu,UGrid,UrbGrid,&RNG4);
+  WilsonFermionD Dw(Umu,*UGrid,*UrbGrid,mass,params);
+  TestConserved<WilsonFermionD>(Dw,Umu,UGrid,UrbGrid,&RNG4);
 
   std::cout<<GridLogMessage <<"=================================="<<std::endl;
   std::cout<<GridLogMessage <<"WilsonCloverFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"=================================="<<std::endl;
-  WilsonCloverFermionR Dwc(Umu, *UGrid, *UrbGrid, mass, csw_r, csw_t, anis, params);
-  TestConserved<WilsonCloverFermionR>(Dwc,Umu,UGrid,UrbGrid,&RNG4);
+  WilsonCloverFermionD Dwc(Umu, *UGrid, *UrbGrid, mass, csw_r, csw_t, anis, params);
+  TestConserved<WilsonCloverFermionD>(Dwc,Umu,UGrid,UrbGrid,&RNG4);
 
   std::cout<<GridLogMessage <<"=================================="<<std::endl;
   std::cout<<GridLogMessage <<"CompactWilsonCloverFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"=================================="<<std::endl;
-  CompactWilsonCloverFermionR Dwcc(Umu, *UGrid, *UrbGrid, mass, csw_r, csw_t, 1.0, anis, params);
-  TestConserved<CompactWilsonCloverFermionR>(Dwcc,Umu,UGrid,UrbGrid,&RNG4);
+  CompactWilsonCloverFermionD Dwcc(Umu, *UGrid, *UrbGrid, mass, csw_r, csw_t, 1.0, anis, params);
+  TestConserved<CompactWilsonCloverFermionD>(Dwcc,Umu,UGrid,UrbGrid,&RNG4);
 
   std::cout<<GridLogMessage <<"=================================="<<std::endl;
   std::cout<<GridLogMessage <<"WilsonExpCloverFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"=================================="<<std::endl;
-  WilsonExpCloverFermionR Dewc(Umu, *UGrid, *UrbGrid, mass, csw_r, csw_t, anis, params);
-  TestConserved<WilsonExpCloverFermionR>(Dewc,Umu,UGrid,UrbGrid,&RNG4);
+  WilsonExpCloverFermionD Dewc(Umu, *UGrid, *UrbGrid, mass, csw_r, csw_t, anis, params);
+  TestConserved<WilsonExpCloverFermionD>(Dewc,Umu,UGrid,UrbGrid,&RNG4);
 
   std::cout<<GridLogMessage <<"=================================="<<std::endl;
   std::cout<<GridLogMessage <<"CompactWilsonExpCloverFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"=================================="<<std::endl;
-  CompactWilsonExpCloverFermionR Dewcc(Umu, *UGrid, *UrbGrid, mass, csw_r, csw_t, 1.0, anis, params);
-  TestConserved<CompactWilsonExpCloverFermionR>(Dewcc,Umu,UGrid,UrbGrid,&RNG4);
+  CompactWilsonExpCloverFermionD Dewcc(Umu, *UGrid, *UrbGrid, mass, csw_r, csw_t, 1.0, anis, params);
+  TestConserved<CompactWilsonExpCloverFermionD>(Dewcc,Umu,UGrid,UrbGrid,&RNG4);
 
   Grid_finalize();
 }

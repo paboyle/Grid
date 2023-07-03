@@ -1,6 +1,7 @@
-# Grid [![Teamcity status](http://ci.cliath.ph.ed.ac.uk/app/rest/builds/aggregated/strob:(buildType:(affectedProject(id:GridBasedSoftware_Grid)),branch:name:develop)/statusIcon.svg)](http://ci.cliath.ph.ed.ac.uk/project.html?projectId=GridBasedSoftware_Grid&tab=projectOverview) 
-
+# Grid 
 **Data parallel C++ mathematical object library.**
+
+[![Teamcity status](https://ci.dev.dirac.ed.ac.uk/guestAuth/app/rest/builds/aggregated/strob:(buildType:(affectedProject(id:GridBasedSoftware_Grid)),branch:default:true)/statusIcon.svg)](https://ci.dev.dirac.ed.ac.uk/project/GridBasedSoftware_Grid?mode=builds) 
 
 License: GPL v2.
 

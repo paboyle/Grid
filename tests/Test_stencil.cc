@@ -31,7 +31,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
 int main(int argc, char ** argv) {
   Grid_init(&argc, &argv);
@@ -80,7 +79,8 @@ int main(int argc, char ** argv) {
     Foo=lex;
   }
 
-  typedef CartesianStencil<vobj,vobj,int> Stencil;
+  typedef CartesianStencil<vobj,vobj,SimpleStencilParams> Stencil;
+  SimpleStencilParams p;
     for(int dir=0;dir<4;dir++){
       for(int disp=0;disp<Fine._fdimensions[dir];disp++){
 
@@ -90,7 +90,7 @@ int main(int argc, char ** argv) {
 	std::vector<int> directions(npoint,dir);
 	std::vector<int> displacements(npoint,disp);
 
-	Stencil myStencil(&Fine,npoint,0,directions,displacements,0);
+	Stencil myStencil(&Fine,npoint,0,directions,displacements,p);
 	Coordinate ocoor(4);
 	for(int o=0;o<Fine.oSites();o++){
 	  Fine.oCoorFromOindex(ocoor,o);
@@ -183,8 +183,8 @@ int main(int argc, char ** argv) {
 	std::vector<int> directions(npoint,dir);
 	std::vector<int> displacements(npoint,disp);
 
-	Stencil EStencil(&rbFine,npoint,Even,directions,displacements,0);
-	Stencil OStencil(&rbFine,npoint,Odd,directions,displacements,0);
+	Stencil EStencil(&rbFine,npoint,Even,directions,displacements,p);
+	Stencil OStencil(&rbFine,npoint,Odd,directions,displacements,p);
 
 	Coordinate ocoor(4);
 	for(int o=0;o<Fine.oSites();o++){

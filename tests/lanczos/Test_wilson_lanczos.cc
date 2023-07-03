@@ -32,8 +32,8 @@ using namespace std;
 using namespace Grid;
  ;
 
-typedef WilsonFermionR FermionOp;
-typedef typename WilsonFermionR::FermionField FermionField;
+typedef WilsonFermionD FermionOp;
+typedef typename WilsonFermionD::FermionField FermionField;
 
 
 RealD AllZero(RealD x) { return 0.; }

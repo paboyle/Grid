@@ -297,6 +297,30 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
   }
 }
 
+#if (defined(GRID_CUDA) || defined(GRID_HIP)) && defined(ACCELERATOR_CSHIFT)
+
+template <typename T>
+T iDivUp(T a, T b) // Round a / b to nearest higher integer value
+{ return (a % b != 0) ? (a / b + 1) : (a / b); }
+
+template <typename T>
+__global__ void populate_Cshift_table(T* vector, T lo, T ro, T e1, T e2, T stride)
+{
+    int idx = blockIdx.x*blockDim.x + threadIdx.x;
+    if (idx >= e1*e2) return;
+
+    int n, b, o;
+
+    n = idx / e2;
+    b = idx % e2;
+    o = n*stride + b;
+
+    vector[2*idx + 0] = lo + o;
+    vector[2*idx + 1] = ro + o;
+}
+
+#endif
+
 //////////////////////////////////////////////////////
 // local to node block strided copies
 //////////////////////////////////////////////////////
@@ -321,12 +345,20 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
   int ent=0;
 
   if(cbmask == 0x3 ){
+#if (defined(GRID_CUDA) || defined(GRID_HIP)) && defined(ACCELERATOR_CSHIFT)
+    ent = e1*e2;
+    dim3 blockSize(acceleratorThreads());
+    dim3 gridSize(iDivUp((unsigned int)ent, blockSize.x));
+    populate_Cshift_table<<<gridSize, blockSize>>>(&Cshift_table[0].first, lo, ro, e1, e2, stride);
+    accelerator_barrier();
+#else
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
         int o =n*stride+b;
 	Cshift_table[ent++] = std::pair<int,int>(lo+o,ro+o);
       }
     }
+#endif
   } else { 
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
@@ -377,11 +409,19 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
   int ent=0;
 
   if ( cbmask == 0x3 ) {
+#if (defined(GRID_CUDA) || defined(GRID_HIP)) && defined(ACCELERATOR_CSHIFT)
+    ent = e1*e2;
+    dim3 blockSize(acceleratorThreads());
+    dim3 gridSize(iDivUp((unsigned int)ent, blockSize.x));
+    populate_Cshift_table<<<gridSize, blockSize>>>(&Cshift_table[0].first, lo, ro, e1, e2, stride);
+    accelerator_barrier();
+#else
     for(int n=0;n<e1;n++){
     for(int b=0;b<e2;b++){
       int o  =n*stride;
       Cshift_table[ent++] = std::pair<int,int>(lo+o+b,ro+o+b);
     }}
+#endif
   } else {
     for(int n=0;n<e1;n++){
     for(int b=0;b<e2;b++){

@@ -14,7 +14,7 @@
 /* NVCC save and restore compile environment*/
 #ifdef __NVCC__
 #pragma push
-#if (__CUDACC_VER_MAJOR__ >= 11) && (__CUDACC_VER_MINOR__ >= 5)
+#ifdef __NVCC_DIAG_PRAGMA_SUPPORT__
 #pragma nv_diag_suppress code_is_unreachable
 #else
 #pragma diag_suppress code_is_unreachable

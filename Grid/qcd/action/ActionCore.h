@@ -30,12 +30,18 @@ directory
 #ifndef QCD_ACTION_CORE
 #define QCD_ACTION_CORE
 
+#include <Grid/qcd/action/gauge/GaugeImplementations.h>
+
 #include <Grid/qcd/action/ActionBase.h>
 NAMESPACE_CHECK(ActionBase);
 #include <Grid/qcd/action/ActionSet.h>
 NAMESPACE_CHECK(ActionSet);
 #include <Grid/qcd/action/ActionParams.h>
 NAMESPACE_CHECK(ActionParams);
+
+#include <Grid/qcd/action/filters/MomentumFilter.h>
+#include <Grid/qcd/action/filters/DirichletFilter.h>
+#include <Grid/qcd/action/filters/DDHMCFilter.h>
 
 ////////////////////////////////////////////
 // Gauge Actions

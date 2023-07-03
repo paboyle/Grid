@@ -66,17 +66,17 @@ int main (int argc, char ** argv)
   
   RealD mass=0.0;
   RealD M5=-1.8;
-  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
-  Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> g5HermOp(Ddwf);
+  Gamma5R5HermitianLinearOperator<DomainWallFermionD,LatticeFermion> g5HermOp(Ddwf);
   QMR(g5HermOp,src,result);
   GMR(g5HermOp,src,result);
 
-  NonHermitianLinearOperator<DomainWallFermionR,LatticeFermion> NonHermOp(Ddwf);
+  NonHermitianLinearOperator<DomainWallFermionD,LatticeFermion> NonHermOp(Ddwf);
   QMR(NonHermOp,src,result);
   GMR(NonHermOp,src,result);
 
-  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
+  MdagMLinearOperator<DomainWallFermionD,LatticeFermion> HermOp(Ddwf);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
   CG(HermOp,src,result);
 

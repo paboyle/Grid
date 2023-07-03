@@ -418,7 +418,7 @@ struct Conj{
 
 struct TimesMinusI{
   // Complex float
-  inline vecf operator()(vecf a, vecf b){
+  inline vecf operator()(vecf a){
     lutf tbl_swap = acle<float>::tbl_swap();
     pred pg1 = acle<float>::pg1();
     pred pg_odd = acle<float>::pg_odd();
@@ -428,7 +428,7 @@ struct TimesMinusI{
     return svneg_m(a_v, pg_odd, a_v);
   }
   // Complex double
-  inline vecd operator()(vecd a, vecd b){
+  inline vecd operator()(vecd a){
     lutd tbl_swap = acle<double>::tbl_swap();
     pred pg1 = acle<double>::pg1();
     pred pg_odd = acle<double>::pg_odd();
@@ -441,7 +441,7 @@ struct TimesMinusI{
 
 struct TimesI{
   // Complex float
-  inline vecf operator()(vecf a, vecf b){
+  inline vecf operator()(vecf a){
     lutf tbl_swap = acle<float>::tbl_swap();
     pred pg1 = acle<float>::pg1();
     pred pg_even = acle<float>::pg_even();
@@ -451,7 +451,7 @@ struct TimesI{
     return svneg_m(a_v, pg_even, a_v);
   }
   // Complex double
-  inline vecd operator()(vecd a, vecd b){
+  inline vecd operator()(vecd a){
     lutd tbl_swap = acle<double>::tbl_swap();
     pred pg1 = acle<double>::pg1();
     pred pg_even = acle<double>::pg_even();

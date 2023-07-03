@@ -169,7 +169,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< "* Kernel options --dslash-generic, --dslash-unroll, --dslash-asm" <<std::endl;
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
-  std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionR::Dhop                  "<<std::endl;
+  std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionD::Dhop                  "<<std::endl;
   std::cout << GridLogMessage<< "* Vectorising space-time by "<<vComplex::Nsimd()<<std::endl;
   std::cout << GridLogMessage<< "* VComplex size is "<<sizeof(vComplex)<< " B"<<std::endl;
   if ( sizeof(Real)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
@@ -183,19 +183,16 @@ int main (int argc, char ** argv)
   if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
 
-  DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionD Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   int ncall =1000;
 
   if (1) {
     FGrid->Barrier();
-    Dw.ZeroCounters();
     Dw.Dhop(src,result,0);
     std::cout<<GridLogMessage<<"Called warmup"<<std::endl;
     double t0=usecond();
     for(int i=0;i<ncall;i++){
-      __SSC_START;
       Dw.Dhop(src,result,0);
-      __SSC_STOP;
     }
     double t1=usecond();
     FGrid->Barrier();
@@ -239,7 +236,6 @@ int main (int argc, char ** argv)
       exit(-1);
     }
     assert (norm2(err)< 1.0e-4 );
-    Dw.Report();
   }
 
   if (1)
@@ -301,7 +297,7 @@ int main (int argc, char ** argv)
 
   // S-direction is INNERMOST and takes no part in the parity.
   std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
-  std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionR::DhopEO                "<<std::endl;
+  std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionD::DhopEO                "<<std::endl;
   std::cout << GridLogMessage<< "* Vectorising space-time by "<<vComplex::Nsimd()<<std::endl;
   if ( sizeof(Real)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
   if ( sizeof(Real)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
@@ -314,7 +310,6 @@ int main (int argc, char ** argv)
   if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
   std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
   {
-    Dw.ZeroCounters();
     FGrid->Barrier();
     Dw.DhopEO(src_o,r_e,DaggerNo);
     double t0=usecond();
@@ -336,7 +331,6 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "Deo mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "Deo mflop/s per rank   "<< flops/(t1-t0)/NP<<std::endl;
     std::cout<<GridLogMessage << "Deo mflop/s per node   "<< flops/(t1-t0)/NN<<std::endl;
-    Dw.Report();
   }
   Dw.DhopEO(src_o,r_e,DaggerNo);
   Dw.DhopOE(src_e,r_o,DaggerNo);

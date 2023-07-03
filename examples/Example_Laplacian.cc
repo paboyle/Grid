@@ -93,14 +93,14 @@ template<class Field> class FreeLaplacianStencil : public SparseMatrixBase<Field
 {
 public:
   typedef typename Field::vector_object siteObject;
-  typedef CartesianStencil<siteObject, siteObject, int> StencilImpl;
+  typedef CartesianStencil<siteObject, siteObject, SimpleStencilParams> StencilImpl;
 
   GridBase *grid;
   StencilImpl Stencil;
   SimpleCompressor<siteObject> Compressor;
   
   FreeLaplacianStencil(GridBase *_grid)
-    : Stencil    (_grid,6,Even,directions,displacements,0), grid(_grid)
+    : Stencil    (_grid,6,Even,directions,displacements,SimpleStencilParams()), grid(_grid)
   {  };
   
   virtual GridBase *Grid(void) { return grid; };
@@ -168,7 +168,8 @@ public:
   typedef iImplDoubledGaugeField<Simd> SiteDoubledGaugeField;
   typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
 
-  typedef CartesianStencil<siteObject, siteObject, int> StencilImpl;
+  typedef CartesianStencil<siteObject, siteObject,SimpleStencilParams> StencilImpl;
+  SimpleStencilParams p;
 
   GridBase *grid;
   StencilImpl Stencil;
@@ -177,7 +178,7 @@ public:
   CovariantLaplacianStencil(GaugeField &Umu)
     :
       grid(Umu.Grid()),
-      Stencil    (grid,6,Even,directions,displacements,0),
+      Stencil    (grid,6,Even,directions,displacements,p),
       Uds(grid)
   {
     for (int mu = 0; mu < Nd; mu++) {
@@ -324,7 +325,7 @@ int main(int argc, char ** argv)
 
   U_GT = U;
   // Make a random xform to teh gauge field
-  SU<Nc>::RandomGaugeTransform(RNG,U_GT,g); // Unit gauge
+  SU<Nc>::RandomGaugeTransform<PeriodicGimplR>(RNG,U_GT,g); // Unit gauge
 
   Field in_GT(&Grid); 
   Field out_GT(&Grid);
