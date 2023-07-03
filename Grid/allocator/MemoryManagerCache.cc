@@ -223,11 +223,8 @@ void *MemoryManager::ViewOpen(void* _CpuPtr,size_t bytes,ViewMode mode,ViewAdvis
   std::cout << __FILE__ << " " << __LINE__ << std::endl;
   uint64_t CpuPtr = (uint64_t)_CpuPtr;
   if( (mode==AcceleratorRead)||(mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard) ){
-<<<<<<< HEAD
   std::cout << __FILE__ << " " << __LINE__ << std::endl;
-=======
     dprintf("AcceleratorViewOpen %lx\n",(uint64_t)CpuPtr);
->>>>>>> develop
     return (void *) AcceleratorViewOpen(CpuPtr,bytes,mode,hint);
   } else if( (mode==CpuRead)||(mode==CpuWrite)){
   std::cout << __FILE__ << " " << __LINE__ << std::endl;

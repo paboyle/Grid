@@ -544,7 +544,7 @@ inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes)
   std::cout << "D->H copy from device end "<<std::endl;
 };
 inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) { printf("TODO acceleratorCopyDeviceToDeviceAsynch");memcpy(to,from,bytes);}
-inline void acceleratorCopySynchronize(void) {printf("TODO acceleratorCopySynchronize");};
+inline void acceleratorCopySynchronise(void) {printf("TODO acceleratorCopySynchronize");};
 
 inline int  acceleratorIsCommunicable(void *ptr){ return 1; }
 inline void acceleratorMemSet(void *base,int value,size_t bytes)
