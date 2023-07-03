@@ -103,6 +103,14 @@ void test_group_projections(T U) {
   U = U + Delta * identity;
   Sp<Nc>::ProjectOnSpecialGroup(U);
   assert(is_element_of_sp2n_group(U));
+
+  name = "ProjectSpn";
+  std::cout << GridLogMessage << "Testing " << name << std::endl;
+  std::cout << GridLogMessage << "Apply to deformed matrix" << std::endl;
+
+  U = U + Delta * identity;
+  ProjectSpn(U);
+  assert(is_element_of_sp2n_group(U));
 }
 
 template <typename T>
