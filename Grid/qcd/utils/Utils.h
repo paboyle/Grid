@@ -8,9 +8,9 @@
 #include <Grid/qcd/utils/ScalarObjs.h>
 
 // Include representations
-#include <Grid/qcd/utils/SUn.h>
+#include <Grid/qcd/utils/GaugeGroup.h>
 #include <Grid/qcd/utils/SUnAdjoint.h>
-#include <Grid/qcd/utils/SUnTwoIndex.h>
+#include <Grid/qcd/utils/GaugeGroupTwoIndex.h>
 
 // All-to-all contraction kernels that touch the 
 // internal lattice structure

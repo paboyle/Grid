@@ -191,8 +191,26 @@ case ${ac_Nc} in
         AC_DEFINE([Config_Nc],[4],[Gauge group Nc]);;
     5)
         AC_DEFINE([Config_Nc],[5],[Gauge group Nc]);;
+    8)
+        AC_DEFINE([Config_Nc],[8],[Gauge group Nc]);;
     *)
       AC_MSG_ERROR(["Unsupport gauge group choice Nc = ${ac_Nc}"]);;
+esac
+
+############### Symplectic group
+AC_ARG_ENABLE([Sp],
+    [AC_HELP_STRING([--enable-Sp=yes|no], [enable gauge group Sp2n])],
+    [ac_ENABLE_SP=${enable_Sp}], [ac_ENABLE_SP=no])
+
+AM_CONDITIONAL(BUILD_SP, [ test "${ac_ENABLE_SP}X" == "yesX" ])
+
+case ${ac_ENABLE_SP} in
+   yes)
+        AC_DEFINE([Sp2n_config],[1],[gauge group Sp2n], [have_sp2n=true]);;
+   no)
+        AC_DEFINE([Sp2n_config],[0],[gauge group SUn], [have_sp2n=false]);;
+    *)
+        AC_MSG_ERROR(["--enable-Sp is either yes or no"]);;
 esac
 
 ############### FP16 conversions
@@ -819,6 +837,7 @@ FFTW                        : `if test "x$have_fftw" = xtrue; then echo yes; els
 LIME (ILDG support)         : `if test "x$have_lime" = xtrue; then echo yes; else echo no; fi`
 HDF5                        : `if test "x$have_hdf5" = xtrue; then echo yes; else echo no; fi`
 build DOXYGEN documentation : `if test "$DX_FLAG_doc" = '1'; then echo yes; else echo no; fi`
+Sp2n                        : ${ac_ENABLE_SP}
 ----- BUILD FLAGS -------------------------------------
 CXXFLAGS:
 `echo ${AM_CXXFLAGS} ${CXXFLAGS} | tr ' ' '\n' | sed 's/^-/    -/g'`
@@ -847,6 +866,7 @@ AC_CONFIG_FILES(tests/lanczos/Makefile)
 AC_CONFIG_FILES(tests/smearing/Makefile)
 AC_CONFIG_FILES(tests/qdpxx/Makefile)
 AC_CONFIG_FILES(tests/testu01/Makefile)
+AC_CONFIG_FILES(tests/sp2n/Makefile)
 AC_CONFIG_FILES(benchmarks/Makefile)
 AC_CONFIG_FILES(examples/Makefile)
 AC_OUTPUT
