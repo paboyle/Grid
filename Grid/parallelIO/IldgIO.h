@@ -311,6 +311,7 @@ class GridLimeReader : public BinaryIO {
     assert(0);
   }
 
+  // All ranks read the same data
   template<class serialisable_object>
   void readLimeObject(serialisable_object &object,std::string object_name,std::string record_name)
   {
@@ -320,7 +321,28 @@ class GridLimeReader : public BinaryIO {
     XmlReader RD(xmlstring, true, "");
     read(RD,object_name,object);
   }
+
+  // The boss rank reads the data and broadcasts them to all the ranks
+  template<class serialisable_object>
+  void readLimeObjectBroadcast(serialisable_object &object, std::string object_name,
+			       std::string record_name, GridBase *grid)
+  {
+    std::string xmlstring;
+    int len = 0;
+
+    // The boss node reads the file metadata.  Then broadcasts them
+    if(grid->IsBoss()){
+      readLimeObject(xmlstring, record_name);
+      len = xmlstring.size();
+    }
+    grid->Broadcast(grid->BossRank(), (void *)&len, sizeof(len));
+    xmlstring.resize(len);
+    grid->Broadcast(grid->BossRank(), (void *)xmlstring.c_str(), len);
+    XmlReader RD(xmlstring, true, "");
+    read(RD, object_name, object);
+  }
 };
+
 
 class GridLimeWriter : public BinaryIO 
 {
@@ -440,7 +462,6 @@ class GridLimeWriter : public BinaryIO
       createLimeRecordHeader(record_name, 0, 0, PayloadSize);
       fflush(File);
     }
-    
     //    std::cout << "W sizeof(sobj)"      <<sizeof(sobj)<<std::endl;
     //    std::cout << "W Gsites "           <<field.Grid()->_gsites<<std::endl;
     //    std::cout << "W Payload expected " <<PayloadSize<<std::endl;
@@ -452,7 +473,7 @@ class GridLimeWriter : public BinaryIO
     if ( boss_node ) {
       offset1 = ftello(File);    
     }
-    grid->Broadcast(0,(void *)&offset1,sizeof(offset1));
+    grid->Broadcast(grid->BossRank(),(void *)&offset1,sizeof(offset1));
 
     ///////////////////////////////////////////
     // The above is collective. Write by other means into the binary record
@@ -515,7 +536,6 @@ class ScidacWriter : public GridLimeWriter {
                               const unsigned int recordScientificPrec = 0) 
   {
     GridBase * grid = field.Grid();
-
     ////////////////////////////////////////
     // fill the Grid header
     ////////////////////////////////////////
@@ -546,11 +566,16 @@ class ScidacReader : public GridLimeReader {
    void readScidacFileRecord(GridBase *grid,SerialisableUserFile &_userFile)
    {
      scidacFile    _scidacFile(grid);
-     readLimeObject(_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML));
-     readLimeObject(_userFile,_userFile.SerialisableClassName(),std::string(SCIDAC_FILE_XML));
+     readLimeObjectBroadcast(_scidacFile,_scidacFile.SerialisableClassName(),
+			     std::string(SCIDAC_PRIVATE_FILE_XML), grid);
+     readLimeObjectBroadcast(_userFile,_userFile.SerialisableClassName(),
+			     std::string(SCIDAC_FILE_XML), grid);
+   // Synchronize the file position with the boss rank
+   synchronizeLimePosition(grid);
    }
+
   ////////////////////////////////////////////////
-  // Write generic lattice field in scidac format
+  // Read a generic lattice field in scidac format
   ////////////////////////////////////////////////
   template <class vobj, class userRecord>
   void readScidacFieldRecord(Lattice<vobj> &field,userRecord &_userRecord) 
@@ -559,18 +584,22 @@ class ScidacReader : public GridLimeReader {
     GridBase * grid = field.Grid();
 
     ////////////////////////////////////////
-    // fill the Grid header
+    // Space for the Grid header
     ////////////////////////////////////////
     FieldMetaData header;
     scidacRecord  _scidacRecord;
-    scidacFile    _scidacFile;
 
-    //////////////////////////////////////////////
-    // Fill the Lime file record by record
-    //////////////////////////////////////////////
-    readLimeObject(header ,std::string("FieldMetaData"),std::string(GRID_FORMAT)); // Open message 
-    readLimeObject(_userRecord,_userRecord.SerialisableClassName(),std::string(SCIDAC_RECORD_XML));
-    readLimeObject(_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML));
+
+    readLimeObjectBroadcast(header, std::string("FieldMetaData"),
+			    std::string(GRID_FORMAT), grid); // Open message        
+    readLimeObjectBroadcast(_userRecord,_userRecord.SerialisableClassName(),
+		   std::string(SCIDAC_RECORD_XML), grid);
+    readLimeObjectBroadcast(_scidacRecord,_scidacRecord.SerialisableClassName(),
+		   std::string(SCIDAC_PRIVATE_RECORD_XML), grid);
+    // Synchronize the file position to prepare for reading the binary payload
+    synchronizeLimePosition(grid);
+
+    // Read the binary data
     readLimeLatticeBinaryObject(field,std::string(ILDG_BINARY_DATA));
   }
   void skipPastBinaryRecord(void) {
@@ -587,7 +616,7 @@ class ScidacReader : public GridLimeReader {
   void skipPastObjectRecord(std::string rec_name) {
     while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
       if ( !strncmp(limeReaderType(LimeR), rec_name.c_str(),strlen(rec_name.c_str()) )  ) {
-	return;
+	break;
       }
     }
   }
@@ -596,6 +625,16 @@ class ScidacReader : public GridLimeReader {
     skipPastObjectRecord(std::string(SCIDAC_RECORD_XML));
     skipPastObjectRecord(std::string(SCIDAC_PRIVATE_RECORD_XML));
     skipPastBinaryRecord();
+  }
+
+  void synchronizeLimePosition(GridBase *grid){
+     // Synchronize the file position across ranks to prepare for reading the next record
+     off_t limeOffset = 0;
+     if ( grid->IsBoss()) {
+       limeOffset = limeGetReaderPointer(LimeR);
+     }
+     grid->Broadcast(grid->BossRank(),(void *)&limeOffset,sizeof(limeOffset));
+     limeSetReaderPointer(LimeR, limeOffset);
   }
 };
 
