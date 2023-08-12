@@ -51,6 +51,20 @@ inline void Grid_log(Args&&... args) {
     std::cout << GridLogMessage << msg << std::endl;
 }
 
+
+/*!  @brief parameter file to easily adjust Nloop */
+struct ConfParameters: Serializable {
+    GRID_SERIALIZABLE_CLASS_MEMBERS(
+        ConfParameters,
+        int, benchmark, 
+        int, Nloop);
+
+    template <class ReaderClass>
+    ConfParameters(Reader<ReaderClass>& Reader){
+        read(Reader, "parameters", *this);
+    }
+};
+
 //
 // one method: input --> fat
 // another   : input --> long (naik)
@@ -65,15 +79,21 @@ int main (int argc, char** argv) {
     Coordinate latt_size(Nd,0); latt_size[0]=Ns; latt_size[1]=Ns; latt_size[2]=Ns; latt_size[3]=Nt;
     std::string conf_in  = "nersc.l8t4b3360";
     std::string conf_out = "nersc.l8t4b3360.3link";
+    int threads          = GridThread::GetThreads();
 
     // Initialize the Grid
     Grid_init(&argc,&argv);
     Coordinate simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
     Coordinate mpi_layout  = GridDefaultMpi();
-    Grid_log(" mpi = ",mpi_layout);
-    Grid_log("simd = ",simd_layout);
-    Grid_log("latt = ",latt_size);
+    Grid_log("mpi     = ",mpi_layout);
+    Grid_log("simd    = ",simd_layout);
+    Grid_log("latt    = ",latt_size);
+    Grid_log("threads = ",threads);
     GridCartesian GRID(latt_size,simd_layout,mpi_layout);
+
+    XmlReader Reader("fatParams.xml",false,"grid");
+    ConfParameters param(Reader);
+    if(param.benchmark) Grid_log("  Nloop = ",param.Nloop);
 
     // Instantiate the LatticeGaugeField objects holding thin (Umu) and fat (U_smr) links
     LatticeGaugeField Umu(&GRID);
@@ -85,6 +105,7 @@ int main (int argc, char** argv) {
 
     // Smear Umu and store result in U_smr
     Smear_HISQ_fat<LatticeGaugeField> hisq_fat(&GRID,1/8.,0.,1/16.,1/64.,1/384.,0.);
+//    Smear_HISQ_fat<LatticeGaugeField> hisq_fat(&GRID,1/8.,0.,1/16.,0.,1/384.,0.);
     hisq_fat.smear(U_smr,Umu);
 
     NerscIO::writeConfiguration(U_smr,conf_out,"HISQ");
@@ -99,6 +120,44 @@ int main (int argc, char** argv) {
     diff = Umu-U_smr;
     auto absDiff = norm2(diff)/norm2(Umu);
     Grid_log(" |Umu-U|/|Umu| = ",absDiff);
+
+
+    if (param.benchmark) {
+
+        autoView(U_v, Umu, CpuRead); // Gauge accessor
+
+        // Read in lattice sequentially, Nloop times 
+        double lookupTime = 0.; 
+        for(int i=0;i<param.Nloop;i++) {
+            double start = usecond();
+            for(int ss=0;ss<U_v.size();ss++)
+                for(int mu=0;mu<Nd;mu++) {
+                    auto U1 = U_v[ss](mu);
+            }
+            double stop  = usecond();
+        	lookupTime += stop-start; // microseconds
+        }
+        Grid_log("Time to lookup: ",lookupTime,"[ms]");
+
+        // Raise a matrix to the power nmat, for each link. 
+        auto U1 = U_v[0](0);
+        for(int nmat=1;nmat<8;nmat++) {
+            double multTime = 0.; 
+            for(int i=0;i<param.Nloop;i++) {
+                double start=usecond();
+                for(int ss=0;ss<U_v.size();ss++)
+                    for(int mu=0;mu<Nd;mu++) {
+                        auto U2 = U1;
+                        for(int j=1;j<nmat;j++) {
+                            U2 *= U1;
+                        }
+                }
+                double stop=usecond();
+                multTime += stop-start;
+            }
+            Grid_log("Time to multiply ",nmat," matrices: ",multTime," [ms]");
+        }
+    }
 
     Grid_finalize();
 }

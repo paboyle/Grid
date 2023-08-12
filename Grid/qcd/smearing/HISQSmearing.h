@@ -61,6 +61,14 @@ inline int Back(const int dir) {
 }
 
 
+/*!  @brief figure out the stencil index from mu and nu */
+inline int stencilIndex(int mu, int nu) {
+    // Nshifts depends on how you built the stencil
+    int Nshifts = 5;
+    return Nshifts*nu + Nd*Nshifts*mu;
+}
+
+
 /*!  @brief shift one unit in direction dir */
 template<typename... Args>
 void generalShift(Coordinate& shift, int dir) {
@@ -135,6 +143,7 @@ public:
         : _grid(grid), 
           _linkTreatment(c1,cnaik,c3,c5,c7,clp) {
         assert(Nc == 3 && "HISQ smearing currently implemented only for Nc==3");
+        assert(Nd == 4 && "HISQ smearing only defined for Nd==4");
     }
 
     // Allow to pass a pointer to a C-style, double array for MILC convenience
@@ -142,6 +151,7 @@ public:
         : _grid(grid), 
           _linkTreatment(coeff[0],coeff[1],coeff[2],coeff[3],coeff[4],coeff[5]) {
         assert(Nc == 3 && "HISQ smearing currently implemented only for Nc==3");
+        assert(Nd == 4 && "HISQ smearing only defined for Nd==4");
     }
 
     ~Smear_HISQ_fat() {}
@@ -150,25 +160,20 @@ public:
 
         SmearingParameters lt = this->_linkTreatment;
 
-        // Create a padded cell of extra padding depth=1
+        // Create a padded cell of extra padding depth=1 and fill the padding.
         int depth = 1;
         PaddedCell Ghost(depth,this->_grid);
         LGF Ughost = Ghost.Exchange(u_thin);
 
-        // Array for <tr U_mu_nu>(x)
-        GridBase *GhostGrid = Ughost.Grid();
-        LatticeComplex gplaq(GhostGrid); 
-
-        // This is where the 3-link constructs will be stored
+        // This is where auxiliary N-link fields and the final smear will be stored. 
         LGF Ughost_fat(Ughost.Grid());
+        LGF Ughost_3link(Ughost.Grid());
 
-        // Create 3-link stencil. Writing your own stencil, you're hard-coding the 
-        // periodic BCs, so you don't need the policy-based stuff, at least for now.
-        // Loop over all orientations, i.e. demand mu != nu.
+        // Create 3-link stencil. We allow mu==nu just to make the indexing easier.
+        // Shifts with mu==nu will not be used. 
         std::vector<Coordinate> shifts;
         for(int mu=0;mu<Nd;mu++)
         for(int nu=0;nu<Nd;nu++) {
-            if(mu==nu) continue;
             appendShift(shifts,mu);
             appendShift(shifts,nu);
             appendShift(shifts,NO_SHIFT);
@@ -176,58 +181,93 @@ public:
             appendShift(shifts,Back(nu));
         }
 
-        GeneralLocalStencil gStencil(GhostGrid,shifts);
+        // A GeneralLocalStencil has two indices: a site and stencil index 
+        GeneralLocalStencil gStencil(Ughost.Grid(),shifts);
 
+        // This is where contributions from the smearing get added together
         Ughost_fat=Zero();
 
-        // Create the accessors, here U_v and U_fat_v 
-        autoView(U_v    , Ughost    , CpuRead);
-        autoView(U_fat_v, Ughost_fat, CpuWrite);
+        // Create the accessors
+        autoView(U_v      , Ughost      , CpuRead);
+        autoView(U_fat_v  , Ughost_fat  , CpuWrite);
+        autoView(U_3link_v, Ughost_3link, CpuWrite);
 
-        // This is a loop over local sites.
-        for(int ss=0;ss<U_v.size();ss++){
+        for(int mu=0;mu<Nd;mu++) {
 
-            // This is the stencil index. It increases as we make our way through the spacetime sites,
-            // plaquette orientations, and as we travel around a plaquette.
-            int s=0;
+            Ughost_3link=Zero();
 
-            for(int mu=0;mu<Nd;mu++)
-            for(int nu=0;nu<Nd;nu++) {
+            // 3-link
+            for(int site=0;site<U_v.size();site++){
+                for(int nu=0;nu<Nd;nu++) {
+                    if(nu==mu) continue;
+                    int s = stencilIndex(mu,nu);
 
-                if(mu==nu) continue;
+                    // The stencil gives us support points in the mu-nu plane that we will use to
+                    // grab the links we need.
+                    auto SE0 = gStencil.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
+                    auto SE1 = gStencil.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
+                    auto SE2 = gStencil.GetEntry(s+2,site); int x           = SE2->_offset;
+                    auto SE3 = gStencil.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
+                    auto SE4 = gStencil.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
 
-                auto SE0 = gStencil.GetEntry(s+0,ss); int x_p_mu      = SE0->_offset;
-                auto SE1 = gStencil.GetEntry(s+1,ss); int x_p_nu      = SE1->_offset;
-                auto SE2 = gStencil.GetEntry(s+2,ss); int x           = SE2->_offset;
-                auto SE3 = gStencil.GetEntry(s+3,ss); int x_p_mu_m_nu = SE3->_offset;
-                auto SE4 = gStencil.GetEntry(s+4,ss); int x_m_nu      = SE4->_offset;
+                    // When you're deciding whether to take an adjoint, the question is: how is the
+                    // stored link oriented compared to the one you want? If I imagine myself travelling
+                    // with the to-be-updated link, I have two possible, alternative 3-link paths I can
+                    // take, one starting by going to the left, the other starting by going to the right.
+                    auto U0 = U_v[x_p_mu     ](nu); gpermute(U0,SE0->_permute);
+                    auto U1 = U_v[x_p_nu     ](mu); gpermute(U1,SE1->_permute);
+                    auto U2 = U_v[x          ](nu); gpermute(U2,SE2->_permute);
+                    auto U3 = U_v[x_p_mu_m_nu](nu); gpermute(U3,SE3->_permute);
+                    auto U4 = U_v[x_m_nu     ](mu); gpermute(U4,SE4->_permute);
+                    auto U5 = U_v[x_m_nu     ](nu); gpermute(U5,SE4->_permute);
 
-                // When you're deciding whether to take an adjoint, the question is: how is the
-                // stored link oriented compared to the one you want? If I imagine myself travelling
-                // with the to-be-updated link, I have two possible, alternative 3-link paths I can
-                // take, one starting by going to the left, the other starting by going to the right.
-                auto U0 = U_v[x_p_mu     ](nu); gpermute(U0,SE0->_permute);
-                auto U1 = U_v[x_p_nu     ](mu); gpermute(U1,SE1->_permute);
-                auto U2 = U_v[x          ](nu); gpermute(U2,SE2->_permute);
-                auto U3 = U_v[x_p_mu_m_nu](nu); gpermute(U3,SE3->_permute);
-                auto U4 = U_v[x_m_nu     ](mu); gpermute(U4,SE4->_permute);
-                auto U5 = U_v[x_m_nu     ](nu); gpermute(U5,SE4->_permute);
+                    //       "left"          "right"
+                    auto W = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
-                //       "left"          "right"
-                auto W = U2*U1*adj(U0) + adj(U5)*U4*U3;
-                U_fat_v[ss](mu) = U_fat_v[ss](mu) + W;
+                    U_3link_v[site](nu) = W;
 
-                s=s+5;
+                    U_fat_v[site](mu) = U_fat_v[site](mu) + lt.c_3*W;
+                }
             }
+
+            // 5-link
+            for(int site=0;site<U_v.size();site++){
+                for(int nu=0;nu<Nd;nu++) {
+                    if(nu==mu) continue;
+                    int s = stencilIndex(mu,nu);
+                    for(int rho=0;rho<Nd;rho++) {
+                        if(rho==nu) continue;
+
+                        auto SE0 = gStencil.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
+                        auto SE1 = gStencil.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
+                        auto SE2 = gStencil.GetEntry(s+2,site); int x           = SE2->_offset;
+                        auto SE3 = gStencil.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
+                        auto SE4 = gStencil.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
+
+                        auto U0 =       U_v[x_p_mu     ](nu) ; gpermute(U0,SE0->_permute);
+                        auto U1 = U_3link_v[x_p_nu     ](rho); gpermute(U1,SE1->_permute);
+                        auto U2 =       U_v[x          ](nu) ; gpermute(U2,SE2->_permute);
+                        auto U3 =       U_v[x_p_mu_m_nu](nu) ; gpermute(U3,SE3->_permute);
+                        auto U4 = U_3link_v[x_m_nu     ](rho); gpermute(U4,SE4->_permute);
+                        auto U5 =       U_v[x_m_nu     ](nu) ; gpermute(U5,SE4->_permute);
+
+                        auto W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
+
+                        U_fat_v[site](mu) = U_fat_v[site](mu) + lt.c_5*W;
+                    }
+                }
+            }
+
         }
 
-        u_smr = lt.c_3*Ghost.Extract(Ughost_fat) + lt.c_1*u_thin;
+        u_smr = Ghost.Extract(Ughost_fat) + lt.c_1*u_thin;
     };
 
 
 //    void derivative(const GaugeField& Gauge) const {
 //    };
 };
+
 
 /*!  @brief create long links from link variables. */
 template<class LGF>
@@ -241,6 +281,7 @@ public:
     // Eventually this will take, e.g., coefficients as argument 
     Smear_HISQ_Naik(GridCartesian* grid) : _grid(grid) {
         assert(Nc == 3 && "HISQ smearing currently implemented only for Nc==3");
+        assert(Nd == 4 && "HISQ smearing only defined for Nd==4");
     }
 
     ~Smear_HISQ_Naik() {}
