@@ -158,6 +158,18 @@ public:
     blockPromote(CoarseVec,FineVec,subspace);
   }
 
+  virtual void CreateSubspaceRandom(GridParallelRNG  &RNG) {
+    int nn=nbasis;
+    RealD scale;
+    FineField noise(FineGrid);
+    for(int b=0;b<nn;b++){
+      subspace[b] = Zero();
+      gaussian(RNG,noise);
+      scale = std::pow(norm2(noise),-0.5); 
+      noise=noise*scale;
+      subspace[b] = noise;
+    }
+  }
   virtual void CreateSubspace(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,int nn=nbasis) {
 
     RealD scale;
