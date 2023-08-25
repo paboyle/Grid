@@ -90,9 +90,8 @@ public:
     order=_order;
       
     if(order < 2) exit(-1);
-    Coeffs.resize(order);
-    Coeffs.assign(0.,order);
-    Coeffs[order-1] = 1.;
+    Coeffs.resize(order,0.0);
+    Coeffs[order-1] = 1.0;
   };
   
   // PB - more efficient low pass drops high modes above the low as 1/x uses all Chebyshev's.
