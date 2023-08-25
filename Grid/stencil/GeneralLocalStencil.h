@@ -46,7 +46,7 @@ class GeneralLocalStencilView {
   accelerator_inline GeneralStencilEntry * GetEntry(int point,int osite) { 
     return & this->_entries_p[point+this->_npoints*osite]; 
   }
-
+  void ViewClose(void){};
 };
 ////////////////////////////////////////
 // The Stencil Class itself
@@ -61,7 +61,7 @@ protected:
 public: 
   GridBase *Grid(void) const { return _grid; }
 
-  View_type View(void) const {
+  View_type View(int mode) const {
     View_type accessor(*( (View_type *) this));
     return accessor;
   }
