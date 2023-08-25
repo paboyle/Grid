@@ -45,8 +45,9 @@ public:
     dims=_grid->Nd();
     AllocateGrids();
     Coordinate local     =unpadded_grid->LocalDimensions();
+    Coordinate procs     =unpadded_grid->ProcessorGrid();
     for(int d=0;d<dims;d++){
-      assert(local[d]>=depth);
+      if ( procs[d] > 1 ) assert(local[d]>=depth);
     }
   }
   void DeleteGrids(void)
@@ -111,7 +112,7 @@ public:
     if(dim==0) conformable(old_grid,unpadded_grid);
     else       conformable(old_grid,grids[dim-1]);
 
-    std::cout << " dim "<<dim<<" local "<<local << " padding to "<<plocal<<std::endl;
+    //    std::cout << " dim "<<dim<<" local "<<local << " padding to "<<plocal<<std::endl;
     // Middle bit
     for(int x=0;x<local[dim];x++){
       InsertSliceLocal(in,padded,x,depth+x,dim);
