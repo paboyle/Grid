@@ -267,18 +267,18 @@ inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &
     autoView( right_v,right, AcceleratorRead);
 
     // GPU - SIMT lane compliance...
-    accelerator_for( ss, sites, nsimd,{
-        auto x_l = left_v(ss);
-        auto y_l = right_v(ss);
+    //accelerator_for( ss, sites, nsimd,{
+    //    auto x_l = left_v(ss);
+    //    auto y_l = right_v(ss);
+    //    coalescedWrite(inner_tmp_v[ss],innerProduct(x_l,y_l));
+    //});
+    #pragma omp target map ( to:left_v, right_v ) map ( tofrom:inner_tmp_v )
+    #pragma omp teams distribute parallel for thread_limit(THREAD_LIMIT) //nowait
+    for ( uint64_t ss=0;ss<sites;ss++) { 
+        auto x_l = left_v[ss];
+        auto y_l = right_v[ss];
         coalescedWrite(inner_tmp_v[ss],innerProduct(x_l,y_l));
-    });
-    //#pragma omp target map ( to:left_v, right_v ) map ( tofrom:inner_tmp_v )
-    //#pragma omp teams distribute parallel for thread_limit(THREAD_LIMIT) //nowait
-    //for ( uint64_t ss=0;ss<sites;ss++) { 
-    //    auto x_l = left_v[ss];
-    //    auto y_l = right_v[ss];
-    //    inner_tmp_v[ss]=innerProductD(x_l,y_l);
-    //}
+    }
   }
 #endif
   // This is in single precision and fails some tests
