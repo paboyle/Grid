@@ -1,0 +1,25 @@
+module load rocm/5.5.1
+
+mkdir build-amd-err && cd build-amd-err
+
+../configure CXX=amdclang++ --enable-comms=none --enable-simd=GEN --enable-accelerator-cshift=no --enable-shm=no --disable-unified --enable-unified=no --enable-fermion-reps=no --enable-gen-simd-width=16 CXXFLAGS="-Wno-unknown-cuda-version -fopenmp --offload-arch=gfx90a -std=c++14 -fopenmp-cuda-mode -O3 -g -Wformat -DEIGEN_NO_CUDA -DEIGEN_DONT_VECTORIZE -DOMPTARGET"
+
+amdclang++ -c Test.cc -o Test.o -I/autofs/nccs-svm1_home1/atif/Grid -I/autofs/nccs-svm1_home1/atif/Grid/build-amd-err/Grid/ -O3 -Wno-unknown-cuda-version -fopenmp --offload-arch=gfx90a -std=c++14 -fopenmp-cuda-mode -O3 -Wformat -DEIGEN_NO_CUDA -DOMPTARGET -fno-strict-aliasing
+
+amdclang++ -c WilsonFermionInstantiationWilsonImplD.cc -o WilsonFails.o -I/autofs/nccs-svm1_home1/atif/Grid -I/autofs/nccs-svm1_home1/atif/Grid/build-amd-err/Grid/ -O3 -Wno-unknown-cuda-version -fopenmp --offload-arch=gfx90a -std=c++14 -fopenmp-cuda-mode -O3 -Wformat -DEIGEN_NO_CUDA -DOMPTARGET -fno-strict-aliasing
+
+ar cru libWilsonFails.a WilsonFails.o
+
+ranlib libWilsonFails.a
+
+amdclang++ -o Test -I/autofs/nccs-svm1_home1/atif/Grid -I/autofs/nccs-svm1_home1/atif/Grid/build-amd-err/Grid/   -O3 -Wno-unknown-cuda-version -fopenmp --offload-arch=gfx90a -std=c++14 -fopenmp-cuda-mode -O3 -Wformat -DEIGEN_NO_CUDA -DOMPTARGET  -fno-strict-aliasing Test.o -L./  -lWilsonFails
+
+error: stack frame size (149840) exceeds limit (131056) in function '__omp_offloading_72_1e118ab9__ZN4Grid7LatticeINS_7iScalarINS_7iMatrixINS2_INS_9Grid_simdISt7complexIdENS_12Optimization3vecIdEEEELi3EEELi4EEEEEEaSINS_12TrinaryWhereENS0_INS1_INS3_IjNS7_IjEEEEEEEESD_SD_EERSD_RKNS_24LatticeTrinaryExpressionIT_T0_T1_T2_EE_l190'
+error: stack frame size (149840) exceeds limit (131056) in function '__omp_offloading_72_1e118ab9__ZN4Grid7LatticeINS_7iScalarINS_7iMatrixINS2_INS_9Grid_simdISt7complexIdENS_12Optimization3vecIdEEEELi3EEELi4EEEEEEaSINS_12TrinaryWhereENS_23LatticeBinaryExpressionINS_10BinaryOrOrENS0_INS1_INS3_IjNS7_IjEEEEEEEESL_EESD_SD_EERSD_RKNS_24LatticeTrinaryExpressionIT_T0_T1_T2_EE_l190'
+error: stack frame size (149840) exceeds limit (131056) in function '__omp_offloading_72_1e118ab9__ZN4Grid7LatticeINS_7iScalarINS_7iMatrixINS2_INS_9Grid_simdISt7complexIdENS_12Optimization3vecIdEEEELi3EEELi4EEEEEEaSINS_9BinaryAddESD_NS_24LatticeTrinaryExpressionINS_12TrinaryWhereENS0_INS1_INS3_IjNS7_IjEEEEEEEESD_SD_EEEERSD_RKNS_23LatticeBinaryExpressionIT_T0_T1_EE_l166'
+clang-16: error: amdgcn-link command failed with exit code 1 (use -v to see invocation)
+
+
+llvm-objdump -t libWilsonFermionWorks2.a > objdump_works2.txt
+llvm-cxxfilt < objdump_works2.txt > cxxfilt_works2.txt
+
