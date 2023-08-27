@@ -19,3 +19,7 @@ error: stack frame size (149840) exceeds limit (131056) in function '__omp_offlo
 error: stack frame size (149840) exceeds limit (131056) in function '__omp_offloading_72_1e118ab9__ZN4Grid7LatticeINS_7iScalarINS_7iMatrixINS2_INS_9Grid_simdISt7complexIdENS_12Optimization3vecIdEEEELi3EEELi4EEEEEEaSINS_9BinaryAddESD_NS_24LatticeTrinaryExpressionINS_12TrinaryWhereENS0_INS1_INS3_IjNS7_IjEEEEEEEESD_SD_EEEERSD_RKNS_23LatticeBinaryExpressionIT_T0_T1_EE_l166'
 clang-16: error: amdgcn-link command failed with exit code 1 (use -v to see invocation)
 
+
+llvm-objdump -t libWilsonFermionWorks2.a > objdump_works2.txt
+llvm-cxxfilt < objdump_works2.txt > cxxfilt_works2.txt
+
