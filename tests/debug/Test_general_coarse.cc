@@ -81,14 +81,11 @@ public:
   }
   void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){    assert(0);  }
   void HermOp(const Field &in, Field &out){
-    std::cout << "HermOp"<<std::endl;
     Field tmp(in.Grid());
     _Mat.M(in,tmp);
     _PV.Mdag(tmp,out);
     _PV.M(out,tmp);
     _Mat.Mdag(tmp,out);
-    std::cout << "HermOp done "<<norm2(out)<<std::endl;
-    
   }
 };
 
@@ -106,7 +103,7 @@ public:
       scalesft = Cshift(scaletmp,d+1,1);
       scale = 100.0*scale + where( mod(x    ,2)==(Integer)0, scalesft,scaletmp);
     }
-    std::cout << " scale\n" << scale << std::endl;
+    //    std::cout << " scale\n" << scale << std::endl;
   }
   // Support for coarsening to a multigrid
   void OpDiag (const Field &in, Field &out) {};
@@ -223,7 +220,7 @@ int main (int argc, char ** argv)
   c_src = one;  // 1 in every element for vector 1.
   Coordinate coor(5,0);
   
-  std::cout << "c_src"<< c_src<< std::endl;
+  //  std::cout << "c_src"<< c_src<< std::endl;
   blockPromote(c_src,err,subspace);
 
   prom=Zero();
@@ -239,7 +236,7 @@ int main (int argc, char ** argv)
   //  blockPromote(c_src,prom,subspace);
 
   //  Diagonal.HermOp(prom,tmp);
-  HermDefOp.HermOp(prom,tmp);
+  HermDefOp.Op(prom,tmp);
   //  HermDefOp.Op(prom,tmp);
   blockProject(c_proj,tmp,subspace);
   std::cout<<GridLogMessage<<" Called Big Dirac Op "<<norm2(tmp)<<std::endl;
@@ -248,12 +245,12 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<" Called Little Dirac Op c_src "<< norm2(c_src) << "  c_res "<< norm2(c_res) <<std::endl;
 
   std::cout<<GridLogMessage<<"Little dop : "<<norm2(c_res)<<std::endl;
-  std::cout<<GridLogMessage<<" Little "<< c_res<<std::endl;
+  //  std::cout<<GridLogMessage<<" Little "<< c_res<<std::endl;
   std::cout<<GridLogMessage<<"Big dop in subspace : "<<norm2(c_proj)<<std::endl;
-  std::cout<<GridLogMessage<<" Big "<< c_proj<<std::endl;
+  //  std::cout<<GridLogMessage<<" Big "<< c_proj<<std::endl;
   c_proj = c_proj - c_res;
   std::cout<<GridLogMessage<<" ldop error: "<<norm2(c_proj)<<std::endl;
-  std::cout<<GridLogMessage<<" error "<< c_proj<<std::endl;
+  //  std::cout<<GridLogMessage<<" error "<< c_proj<<std::endl;
 
   std::cout<<GridLogMessage << "Testing Hermiticity stochastically "<< std::endl;
   CoarseVector phi(Coarse5d);
