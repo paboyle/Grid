@@ -361,9 +361,14 @@ public:
     _bernoulli.resize(_vol,std::discrete_distribution<int32_t>{1,1});
     _uid.resize(_vol,std::uniform_int_distribution<uint32_t>() );
   }
-
-  template <class vobj,class distribution> inline void fill(Lattice<vobj> &l,std::vector<distribution> &dist){
-
+  template <class vobj,class distribution> inline void fill(Lattice<vobj> &l,std::vector<distribution> &dist)
+  {
+    if ( l.Grid()->_isCheckerBoarded ) {
+      Lattice<vobj> tmp(_grid);
+      fill(tmp,dist);
+      pickCheckerboard(l.Checkerboard(),l,tmp);
+      return;
+    }
     typedef typename vobj::scalar_object scalar_object;
     typedef typename vobj::scalar_type scalar_type;
     typedef typename vobj::vector_type vector_type;
