@@ -487,10 +487,15 @@ inline void acceleratorCopySynchronise(void) { hipStreamSynchronize(copyStream);
 //OpenMP Target Offloading
 #ifdef OMPTARGET
 #include<omp.h>
+//extern "C" void *memcpy(void *a, const void* b, size_t count);
 extern "C" void *llvm_omp_target_alloc_host  (size_t Size, int DeviceNum);
 extern "C" void *llvm_omp_target_alloc_device(size_t Size, int DeviceNum);
 extern "C" void *llvm_omp_target_alloc_shared(size_t Size, int DeviceNum);
 //TODO: Dynamic Shared Memory
+
+#pragma omp begin declare variant match(device={kind(gpu)})
+void * memcpy ( void * d, const void * s, size_t num ) { return __builtin_memcpy(d, s, num); }
+#pragma omp end declare variant
 
 #define THREAD_LIMIT acceleratorThreads()
 
@@ -543,7 +548,11 @@ inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes)
   }
   std::cout << "D->H copy from device end "<<std::endl;
 };
-inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) { printf("TODO acceleratorCopyDeviceToDeviceAsynch");memcpy(to,from,bytes);}
+inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) 
+{ 
+	printf("TODO acceleratorCopyDeviceToDeviceAsynch");
+	//memcpy(to,from,bytes);
+}
 inline void acceleratorCopySynchronise(void) {printf("TODO acceleratorCopySynchronize");};
 
 inline int  acceleratorIsCommunicable(void *ptr){ return 1; }

@@ -2,6 +2,8 @@ module load rocm/5.5.1
 
 mkdir build-amd-err && cd build-amd-err
 
+cp ../amd-omp-stack-err/Test.cc ../amd-omp-stack-err/WilsonFermionInstantiationWilsonImplD.cc .
+
 ../configure CXX=amdclang++ --enable-comms=none --enable-simd=GEN --enable-accelerator-cshift=no --enable-shm=no --disable-unified --enable-unified=no --enable-fermion-reps=no --enable-gen-simd-width=16 CXXFLAGS="-Wno-unknown-cuda-version -fopenmp --offload-arch=gfx90a -std=c++14 -fopenmp-cuda-mode -O3 -g -Wformat -DEIGEN_NO_CUDA -DEIGEN_DONT_VECTORIZE -DOMPTARGET"
 
 amdclang++ -c Test.cc -o Test.o -I/autofs/nccs-svm1_home1/atif/Grid -I/autofs/nccs-svm1_home1/atif/Grid/build-amd-err/Grid/ -O3 -Wno-unknown-cuda-version -fopenmp --offload-arch=gfx90a -std=c++14 -fopenmp-cuda-mode -O3 -Wformat -DEIGEN_NO_CUDA -DOMPTARGET -fno-strict-aliasing
