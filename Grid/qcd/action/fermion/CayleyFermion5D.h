@@ -124,6 +124,11 @@ public:
   RealD                _b;
   RealD                _c;
 
+  // possible boost
+  std::vector<ComplexD> qmu;
+  void set_qmu(std::vector<ComplexD> _qmu) { qmu=_qmu; assert(qmu.size()==Nd);};
+  void addQmu(const FermionField &in, FermionField &out, int dag);
+  
   // Cayley form Moebius (tanh and zolotarev)
   Vector<Coeff_t> omega;
   Vector<Coeff_t> bs;    // S dependent coeffs
