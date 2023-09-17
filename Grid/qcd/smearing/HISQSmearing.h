@@ -129,7 +129,7 @@ struct SmearingParameters{
 
 
 /*!  @brief create fat links from link variables */
-template<class LGF> // TODO: change to Gimpl?
+template<class LGF> 
 class Smear_HISQ_fat {
 
 private:
@@ -168,6 +168,8 @@ public:
         // This is where auxiliary N-link fields and the final smear will be stored. 
         LGF Ughost_fat(Ughost.Grid());
         LGF Ughost_3link(Ughost.Grid());
+        LGF Ughost_5linkA(Ughost.Grid());
+        LGF Ughost_5linkB(Ughost.Grid());
 
         // Create 3-link stencil. We allow mu==nu just to make the indexing easier.
         // Shifts with mu==nu will not be used. 
@@ -188,13 +190,18 @@ public:
         Ughost_fat=Zero();
 
         // Create the accessors
-        autoView(U_v      , Ughost      , CpuRead);
-        autoView(U_fat_v  , Ughost_fat  , CpuWrite);
-        autoView(U_3link_v, Ughost_3link, CpuWrite);
+        autoView(U_v       , Ughost       , CpuRead);
+        autoView(U_fat_v   , Ughost_fat   , CpuWrite);
+        autoView(U_3link_v , Ughost_3link , CpuWrite);
+        autoView(U_5linkA_v, Ughost_5linkA, CpuWrite);
+        autoView(U_5linkB_v, Ughost_5linkB, CpuWrite);
 
         for(int mu=0;mu<Nd;mu++) {
 
-            Ughost_3link=Zero();
+            Ughost_3link =Zero();
+            Ughost_5linkA=Zero();
+            Ughost_5linkB=Zero();
+
 
             // 3-link
             for(int site=0;site<U_v.size();site++){
@@ -230,12 +237,15 @@ public:
                 }
             }
 
+
             // 5-link
             for(int site=0;site<U_v.size();site++){
+                int sigmaIndex = 0;
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
                     int s = stencilIndex(mu,nu);
                     for(int rho=0;rho<Nd;rho++) {
+                        if(rho==mu) continue;
                         if(rho==nu) continue;
 
                         auto SE0 = gStencil.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
@@ -253,7 +263,57 @@ public:
 
                         auto W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
+                        if(sigmaIndex<3) {
+                            U_5linkA_v[site](rho) = W;
+                        } else {
+                            U_5linkB_v[site](rho) = W;
+                        }    
+
                         U_fat_v[site](mu) = U_fat_v[site](mu) + lt.c_5*W;
+
+                        sigmaIndex++;
+                    }
+                }
+            }
+
+            // 7-link
+            for(int site=0;site<U_v.size();site++){
+                int sigmaIndex = 0;
+                for(int nu=0;nu<Nd;nu++) {
+                    if(nu==mu) continue;
+                    int s = stencilIndex(mu,nu);
+                    for(int rho=0;rho<Nd;rho++) {
+                        if(rho==mu) continue;
+                        if(rho==nu) continue;
+
+                        auto SE0 = gStencil.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
+                        auto SE1 = gStencil.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
+                        auto SE2 = gStencil.GetEntry(s+2,site); int x           = SE2->_offset;
+                        auto SE3 = gStencil.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
+                        auto SE4 = gStencil.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
+
+                        auto U0 = U_v[x_p_mu     ](nu) ; gpermute(U0,SE0->_permute);
+                        auto U1 = U0; 
+                        if(sigmaIndex<3) {
+                            U1 = U_5linkB_v[x_p_nu](rho); gpermute(U1,SE1->_permute);
+                        } else {
+                            U1 = U_5linkA_v[x_p_nu](rho); gpermute(U1,SE1->_permute);
+                        }  
+                        auto U2 = U_v[x          ](nu) ; gpermute(U2,SE2->_permute);
+                        auto U3 = U_v[x_p_mu_m_nu](nu) ; gpermute(U3,SE3->_permute);
+                        auto U4 = U0; 
+                        if(sigmaIndex<3) {
+                            U4 = U_5linkB_v[x_m_nu](rho); gpermute(U4,SE4->_permute);
+                        } else {
+                            U4 = U_5linkA_v[x_m_nu](rho); gpermute(U4,SE4->_permute);
+                        }  
+                        auto U5 = U_v[x_m_nu     ](nu) ; gpermute(U5,SE4->_permute);
+
+                        auto W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
+
+                        U_fat_v[site](mu) = U_fat_v[site](mu) + lt.c_7*W;
+
+                        sigmaIndex++;
                     }
                 }
             }
