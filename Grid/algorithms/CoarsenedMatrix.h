@@ -123,7 +123,7 @@ public:
 };
   
 template<class Fobj,class CComplex,int nbasis>
-class Aggregation   {
+class Aggregation {
 public:
   typedef iVector<CComplex,nbasis >             siteVector;
   typedef Lattice<siteVector>                 CoarseVector;
@@ -170,7 +170,8 @@ public:
       subspace[b] = noise;
     }
   }
-  virtual void CreateSubspace(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,int nn=nbasis) {
+  virtual void CreateSubspace(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,int nn=nbasis)
+  {
 
     RealD scale;
 
@@ -228,6 +229,11 @@ public:
     gaussian(RNG,noise);
     scale = std::pow(norm2(noise),-0.5); 
     noise=noise*scale;
+
+    std::cout << GridLogMessage<<" Chebyshev subspace pass-1 : ord "<<orderfilter<<" ["<<lo<<","<<hi<<"]"<<std::endl;
+    std::cout << GridLogMessage<<" Chebyshev subspace pass-2 : nbasis"<<nn<<" min "
+	      <<ordermin<<" step "<<orderstep
+	      <<" lo"<<filterlo<<std::endl;
 
     // Initial matrix element
     hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise <n|MdagM|n> "<<norm2(Mn)<<std::endl;
@@ -301,6 +307,43 @@ public:
       }
     }
     assert(b==nn);
+  }
+  virtual void CreateSubspaceChebyshev(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,
+				       int nn,
+				       double hi,
+				       double lo,
+				       int orderfilter
+				       ) {
+
+    RealD scale;
+
+    FineField noise(FineGrid);
+    FineField Mn(FineGrid);
+    FineField tmp(FineGrid);
+
+    // New normalised noise
+    std::cout << GridLogMessage<<" Chebyshev subspace pure noise : ord "<<orderfilter<<" ["<<lo<<","<<hi<<"]"<<std::endl;
+    std::cout << GridLogMessage<<" Chebyshev subspace pure noise  : nbasis"<<nn<<std::endl;
+
+
+    for(int b =0;b<nbasis;b++)
+    {
+      gaussian(RNG,noise);
+      scale = std::pow(norm2(noise),-0.5); 
+      noise=noise*scale;
+
+      // Initial matrix element
+      hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise <n|MdagM|n> "<<norm2(Mn)<<std::endl;
+      // Filter
+      Chebyshev<FineField> Cheb(lo,hi,orderfilter);
+      Cheb(hermop,noise,Mn);
+      // normalise
+      scale = std::pow(norm2(Mn),-0.5); 	Mn=Mn*scale;
+      subspace[b]   = Mn;
+      hermop.Op(Mn,tmp); 
+      std::cout<<GridLogMessage << "filt ["<<b<<"] <n|MdagM|n> "<<norm2(tmp)<<std::endl;
+    }
+
   }
 
 };
