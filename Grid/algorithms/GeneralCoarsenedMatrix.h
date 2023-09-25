@@ -34,6 +34,7 @@ Author: Peter Boyle <pboyle@bnl.gov>
 
 NAMESPACE_BEGIN(Grid);
 
+// Fixme need coalesced read gpermute
 template<class vobj> void gpermute(vobj & inout,int perm){
   vobj tmp=inout;
   if (perm & 0x1 ) { permute(inout,tmp,0); tmp=inout;}
@@ -50,175 +51,139 @@ template<class vobj> void gpermute(vobj & inout,int perm){
 class NonLocalStencilGeometry {
 public:
   int depth;
+  int hops;
   int npoint;
   std::vector<Coordinate> shifts;
-  virtual void BuildShifts(void) { assert(0); } ;
-  int Depth(void){return depth;};
-  NonLocalStencilGeometry(int _depth) : depth(_depth)
-  {
-  };
+  Coordinate stencil_size;
+  Coordinate stencil_lo;
+  Coordinate stencil_hi;
+  GridCartesian *grid;
+  GridCartesian *Grid() {return grid;};
+  int Depth(void){return 1;};   // Ghost zone depth
+  int Hops(void){return hops;}; // # of hops=> level of corner fill in in stencil
+
+  virtual int DimSkip(void) =0;
+
   virtual ~NonLocalStencilGeometry() {};
-};
-// Need to worry about red-black now
-class NextToNearestStencilGeometry4D : public NonLocalStencilGeometry {
-public:
-  NextToNearestStencilGeometry4D(void) : NonLocalStencilGeometry(1)
+
+  int  Reverse(int point)
   {
-      this->BuildShifts();
-  };
-  virtual ~NextToNearestStencilGeometry4D() {};
-  virtual void BuildShifts(void)
+    int Nd = Grid()->Nd();
+    Coordinate shft = shifts[point];
+    Coordinate rev(Nd);
+    for(int mu=0;mu<Nd;mu++) rev[mu]= -shft[mu];
+    for(int p=0;p<npoint;p++){
+      if(rev==shifts[p]){
+	return p;
+      }
+    }
+    assert(0);
+    return -1;
+  }
+  void BuildShifts(void)
   {
     this->shifts.resize(0);
-    // Like HDCG:  81 point stencil including self connection
-    this->shifts.push_back(Coordinate({0,0,0,0}));
-    // +-x, +-y, +-z, +-t  : 8
-    for(int s=-1;s<=1;s+=2){
-      this->shifts.push_back(Coordinate({s,0,0,0}));
-      this->shifts.push_back(Coordinate({0,s,0,0}));
-      this->shifts.push_back(Coordinate({0,0,s,0}));
-      this->shifts.push_back(Coordinate({0,0,0,s}));
-    }
-    // +-x+-y, +-x+-z, +-x+-t, +-y+-z, +-y+-t, +-z+-t : 24
-    for(int s1=-1;s1<=1;s1+=2){
-    for(int s2=-1;s2<=1;s2+=2){
-      this->shifts.push_back(Coordinate({s1,s2,0,0}));
-      this->shifts.push_back(Coordinate({s1,0,s2,0}));
-      this->shifts.push_back(Coordinate({s1,0,0,s2}));
-      this->shifts.push_back(Coordinate({0,s1,s2,0}));
-      this->shifts.push_back(Coordinate({0,s1,0,s2}));
-      this->shifts.push_back(Coordinate({0,0,s1,s2}));
-    }}
+    int Nd = this->grid->Nd();
+
+    int dd = this->DimSkip();
+    for(int s0=this->stencil_lo[dd+0];s0<=this->stencil_hi[dd+0];s0++){
+    for(int s1=this->stencil_lo[dd+1];s1<=this->stencil_hi[dd+1];s1++){
+    for(int s2=this->stencil_lo[dd+2];s2<=this->stencil_hi[dd+2];s2++){
+    for(int s3=this->stencil_lo[dd+3];s3<=this->stencil_hi[dd+3];s3++){
+      Coordinate sft(Nd,0);
+      sft[dd+0] = s0;
+      sft[dd+1] = s1;
+      sft[dd+2] = s2;
+      sft[dd+3] = s3;
+      int nhops = abs(s0)+abs(s1)+abs(s2)+abs(s3);
+      if(nhops<=this->hops) this->shifts.push_back(sft);
+    }}}}
     this->npoint = this->shifts.size();
+    std::cout << GridLogMessage << "NonLocalStencilGeometry has "<< this->npoint << " terms in stencil "<<std::endl;
   }
+  
+  NonLocalStencilGeometry(GridCartesian *_coarse_grid,int _hops) : grid(_coarse_grid), hops(_hops)
+  {
+    Coordinate latt = grid->GlobalDimensions();
+    stencil_size.resize(grid->Nd());
+    stencil_lo.resize(grid->Nd());
+    stencil_hi.resize(grid->Nd());
+    for(int d=0;d<grid->Nd();d++){
+     if ( latt[d] == 1 ) {
+      stencil_lo[d] = 0;
+      stencil_hi[d] = 0;
+      stencil_size[d]= 1;
+     } else if ( latt[d] == 2 ) {
+      stencil_lo[d] = -1;
+      stencil_hi[d] = 0;
+      stencil_size[d]= 2;
+     } else if ( latt[d] > 2 ) {
+       stencil_lo[d] = -1;
+       stencil_hi[d] =  1;
+       stencil_size[d]= 3;
+     }
+    }
+  };
+
 };
+
 // Need to worry about red-black now
-class NextToNextToNextToNearestStencilGeometry4D : public NonLocalStencilGeometry {
+class NonLocalStencilGeometry4D : public NonLocalStencilGeometry {
 public:
-  NextToNextToNextToNearestStencilGeometry4D(void) : NonLocalStencilGeometry(1)
+  virtual int DimSkip(void) { return 0;};
+  NonLocalStencilGeometry4D(GridCartesian *Coarse,int _hops) : NonLocalStencilGeometry(Coarse,_hops) { };
+  virtual ~NonLocalStencilGeometry4D() {};
+};
+class NonLocalStencilGeometry5D : public NonLocalStencilGeometry {
+public:
+  virtual int DimSkip(void) { return 1; }; 
+  NonLocalStencilGeometry5D(GridCartesian *Coarse,int _hops) : NonLocalStencilGeometry(Coarse,_hops)  { };
+  virtual ~NonLocalStencilGeometry5D() {};
+};
+/*
+ * Bunch of different options classes
+ */
+class NextToNextToNextToNearestStencilGeometry4D : public NonLocalStencilGeometry4D {
+public:
+  NextToNextToNextToNearestStencilGeometry4D(GridCartesian *Coarse) :  NonLocalStencilGeometry4D(Coarse,4)
   {
     this->BuildShifts();
   };
-  virtual ~NextToNextToNextToNearestStencilGeometry4D() {}
-  virtual void BuildShifts(void)
-  {
-    this->shifts.resize(0);
-    // Like HDCG:  81 point stencil including self connection
-    this->shifts.push_back(Coordinate({0,0,0,0}));
-    // +-x, +-y, +-z, +-t  : 8
-    for(int s=-1;s<=1;s+=2){
-      this->shifts.push_back(Coordinate({s,0,0,0}));
-      this->shifts.push_back(Coordinate({0,s,0,0}));
-      this->shifts.push_back(Coordinate({0,0,s,0}));
-      this->shifts.push_back(Coordinate({0,0,0,s}));
-    }
-    // +-x+-y, +-x+-z, +-x+-t, +-y+-z, +-y+-t, +-z+-t : 24
-    for(int s1=-1;s1<=1;s1+=2){
-    for(int s2=-1;s2<=1;s2+=2){
-      this->shifts.push_back(Coordinate({s1,s2,0,0}));
-      this->shifts.push_back(Coordinate({s1,0,s2,0}));
-      this->shifts.push_back(Coordinate({s1,0,0,s2}));
-      this->shifts.push_back(Coordinate({0,s1,s2,0}));
-      this->shifts.push_back(Coordinate({0,s1,0,s2}));
-      this->shifts.push_back(Coordinate({0,0,s1,s2}));
-    }}
-    // +-x+-y+-z, +-x+-y+-z, +-x+-y+-z,
-    for(int s1=-1;s1<=1;s1+=2){
-    for(int s2=-1;s2<=1;s2+=2){
-    for(int s3=-1;s3<=1;s3+=2){
-      this->shifts.push_back(Coordinate({s1,s2,s3,0})); // 8x4 = 32
-      this->shifts.push_back(Coordinate({s1,s2,0,s3}));
-      this->shifts.push_back(Coordinate({s1,0,s2,s3}));
-      this->shifts.push_back(Coordinate({0,s1,s2,s3}));
-    }}}
-    for(int s1=-1;s1<=1;s1+=2){
-    for(int s2=-1;s2<=1;s2+=2){
-    for(int s3=-1;s3<=1;s3+=2){
-    for(int s4=-1;s4<=1;s4+=2){
-      this->shifts.push_back(Coordinate({s1,s2,s3,s4})); // 16 
-    }}}}
-    this->npoint = this->shifts.size();
-  }
 };
-class NextToNearestStencilGeometry5D : public NonLocalStencilGeometry {
+class NextToNextToNextToNearestStencilGeometry5D : public  NonLocalStencilGeometry5D {
 public:
-  NextToNearestStencilGeometry5D(void) : NonLocalStencilGeometry(1)
-  {
-      this->BuildShifts();
-  };
-  virtual ~NextToNearestStencilGeometry5D() {};
-  virtual void BuildShifts(void)
-  {
-    this->shifts.resize(0);
-    // Like HDCG:  81 point stencil including self connection
-    this->shifts.push_back(Coordinate({0,0,0,0,0}));
-    // +-x, +-y, +-z, +-t  : 8
-    for(int s=-1;s<=1;s+=2){
-      this->shifts.push_back(Coordinate({0,s,0,0,0}));
-      this->shifts.push_back(Coordinate({0,0,s,0,0}));
-      this->shifts.push_back(Coordinate({0,0,0,s,0}));
-      this->shifts.push_back(Coordinate({0,0,0,0,s}));
-    }
-    // +-x+-y, +-x+-z, +-x+-t, +-y+-z, +-y+-t, +-z+-t : 24
-    for(int s1=-1;s1<=1;s1+=2){
-    for(int s2=-1;s2<=1;s2+=2){
-      this->shifts.push_back(Coordinate({0,s1,s2,0,0}));
-      this->shifts.push_back(Coordinate({0,s1,0,s2,0}));
-      this->shifts.push_back(Coordinate({0,s1,0,0,s2}));
-      this->shifts.push_back(Coordinate({0,0,s1,s2,0}));
-      this->shifts.push_back(Coordinate({0,0,s1,0,s2}));
-      this->shifts.push_back(Coordinate({0,0,0,s1,s2}));
-    }}
-    this->npoint = this->shifts.size();
-  }
-};
-// Need to worry about red-black now
-class NextToNextToNextToNearestStencilGeometry5D : public NonLocalStencilGeometry {
-public:
-  NextToNextToNextToNearestStencilGeometry5D(void) : NonLocalStencilGeometry(1)
+  NextToNextToNextToNearestStencilGeometry5D(GridCartesian *Coarse) :  NonLocalStencilGeometry5D(Coarse,4)
   {
     this->BuildShifts();
   };
-  virtual ~NextToNextToNextToNearestStencilGeometry5D() {}
-  virtual void BuildShifts(void)
+};
+class NextToNearestStencilGeometry4D : public  NonLocalStencilGeometry4D {
+public:
+  NextToNearestStencilGeometry4D(GridCartesian *Coarse) :  NonLocalStencilGeometry4D(Coarse,2)
   {
-    this->shifts.resize(0);
-    // Like HDCG:  81 point stencil including self connection
-    this->shifts.push_back(Coordinate({0,0,0,0,0}));
-    // +-x, +-y, +-z, +-t  : 8
-    for(int s=-1;s<=1;s+=2){
-      this->shifts.push_back(Coordinate({0,s,0,0,0}));
-      this->shifts.push_back(Coordinate({0,0,s,0,0}));
-      this->shifts.push_back(Coordinate({0,0,0,s,0}));
-      this->shifts.push_back(Coordinate({0,0,0,0,s}));
-    }
-    // +-x+-y, +-x+-z, +-x+-t, +-y+-z, +-y+-t, +-z+-t : 24
-    for(int s1=-1;s1<=1;s1+=2){
-    for(int s2=-1;s2<=1;s2+=2){
-      this->shifts.push_back(Coordinate({0,s1,s2,0,0}));
-      this->shifts.push_back(Coordinate({0,s1,0,s2,0}));
-      this->shifts.push_back(Coordinate({0,s1,0,0,s2}));
-      this->shifts.push_back(Coordinate({0,0,s1,s2,0}));
-      this->shifts.push_back(Coordinate({0,0,s1,0,s2}));
-      this->shifts.push_back(Coordinate({0,0,0,s1,s2}));
-    }}
-    // +-x+-y+-z, +-x+-y+-z, +-x+-y+-z,
-    for(int s1=-1;s1<=1;s1+=2){
-    for(int s2=-1;s2<=1;s2+=2){
-    for(int s3=-1;s3<=1;s3+=2){
-      this->shifts.push_back(Coordinate({0,s1,s2,s3,0})); // 8x4 = 32
-      this->shifts.push_back(Coordinate({0,s1,s2,0,s3}));
-      this->shifts.push_back(Coordinate({0,s1,0,s2,s3}));
-      this->shifts.push_back(Coordinate({0,0,s1,s2,s3}));
-    }}}
-    for(int s1=-1;s1<=1;s1+=2){
-    for(int s2=-1;s2<=1;s2+=2){
-    for(int s3=-1;s3<=1;s3+=2){
-    for(int s4=-1;s4<=1;s4+=2){
-      this->shifts.push_back(Coordinate({0,s1,s2,s3,s4})); // 16 
-    }}}}
-    this->npoint = this->shifts.size();
-  }
+    this->BuildShifts();
+  };
+};
+class NextToNearestStencilGeometry5D : public  NonLocalStencilGeometry5D {
+public:
+  NextToNearestStencilGeometry5D(GridCartesian *Coarse) :  NonLocalStencilGeometry5D(Coarse,2)
+  {
+    this->BuildShifts();
+  };
+};
+class NearestStencilGeometry4D : public  NonLocalStencilGeometry4D {
+public:
+  NearestStencilGeometry4D(GridCartesian *Coarse) :  NonLocalStencilGeometry4D(Coarse,1)
+  {
+    this->BuildShifts();
+  };
+};
+class NearestStencilGeometry5D : public  NonLocalStencilGeometry5D {
+public:
+  NearestStencilGeometry5D(GridCartesian *Coarse) :  NonLocalStencilGeometry5D(Coarse,1)
+  {
+    this->BuildShifts();
+  };
 };
 
 // Fine Object == (per site) type of fine field
@@ -228,7 +193,7 @@ class GeneralCoarsenedMatrix : public SparseMatrixBase<Lattice<iVector<CComplex,
 public:
     
   typedef iVector<CComplex,nbasis >           siteVector;
-  typedef Lattice<CComplex >                  CoarseComplexField;
+  typedef Lattice<iScalar<CComplex> >         CoarseComplexField;
   typedef Lattice<siteVector>                 CoarseVector;
   typedef Lattice<iMatrix<CComplex,nbasis > > CoarseMatrix;
   typedef iMatrix<CComplex,nbasis >  Cobj;
@@ -318,10 +283,9 @@ public:
     int osites=pin.Grid()->oSites();
 
     for(int point=0;point<npoint;point++){
-      conformable(_A[point],pin);
+      conformable(A[point],pin);
     }
     
-    // Should also exchange "A" and "Adag"
     accelerator_for(sss, osites*nbasis, 1, {
       int ss = sss/nbasis;
       int b  = sss%nbasis;
@@ -355,29 +319,24 @@ public:
     out = Cell.Extract(pout);
   };
 
-  void Test(LinearOperatorBase<Lattice<Fobj> > &linop,
-	    Aggregation<Fobj,CComplex,nbasis> & Subspace)
+  void PopulateAdag(void)
   {
-    // Create a random
-    GridBase *grid = FineGrid();
-    FineField MbV(grid);
-    FineField tmp(grid);
-    FineField f_src(grid);
-    FineField f_res(grid);
-    FineField f_ref(grid);
-    CoarseVector c_src(CoarseGrid());
-    CoarseVector c_res(CoarseGrid());
-    CoarseVector coarseInner(CoarseGrid());
-    GridParallelRNG RNG(CoarseGrid());  RNG.SeedUniqueString(std::string("Coarse RNG"));
-    random(RNG,c_src);
-    blockPromote(c_src,f_src,Subspace.subspace);
-    linop.op(f_src,f_ref);
-    this->Mult (_A,c_src,c_res);
-    blockPromote(c_res,f_res,Subspace.subspace);
-    std::cout << " GeneralCoarsenedMatrix comparison res  "<<norm2(f_res)<<std::endl;
-    std::cout << " GeneralCoarsenedMatrix comparison ref  "<<norm2(f_ref)<<std::endl;
-    f_res = f_res - f_ref;
-    std::cout << " GeneralCoarsenedMatrix comparison diff "<<norm2(f_res)<<std::endl;
+    for(int bidx=0;bidx<CoarseGrid()->gSites() ;bidx++){
+      Coordinate bcoor;
+      CoarseGrid()->GlobalIndexToGlobalCoor(bidx,bcoor);
+      
+      for(int p=0;p<geom.npoint;p++){
+	Coordinate scoor = bcoor;
+	for(int mu=0;mu<bcoor.size();mu++){
+	  int L = CoarseGrid()->GlobalDimensions()[mu];
+	  scoor[mu] = (bcoor[mu] - geom.shifts[p][mu] + L) % L; // Modulo arithmetic
+	}
+	// Flip to poke/peekLocalSite and not too bad
+	auto link = peekSite(_A[p],scoor);
+	int pp = geom.Reverse(p);
+	pokeSite(adj(link),_Adag[pp],bcoor);
+      }
+    }
   }
   void CoarsenOperator(LinearOperatorBase<Lattice<Fobj> > &linop,
 		       Aggregation<Fobj,CComplex,nbasis> & Subspace)
@@ -388,15 +347,17 @@ public:
     RealD tpeek=0.0;
     std::cout << GridLogMessage<< "CoarsenMatrix "<< std::endl;
     GridBase *grid = FineGrid();
+
+    ////////////////////////////////////////////////
     // Orthogonalise the subblocks over the basis
+    ////////////////////////////////////////////////
     CoarseScalar InnerProd(CoarseGrid()); 
-    for(int b=0;b<nbasis;b++){
-      std::cout << "subspace["<<b<<"] " <<norm2(Subspace.subspace[b])<<std::endl;
-    }
     blockOrthogonalise(InnerProd,Subspace.subspace);
 
+    ////////////////////////////////////////////////
     // Now compute the matrix elements of linop between this orthonormal
     // set of vectors.
+    ////////////////////////////////////////////////
     FineField bV(grid);
     FineField MbV(grid);
     FineField tmp(grid);
@@ -432,20 +393,25 @@ public:
 	  // Flip to pokeLocalSite
 	  auto ip    = peekSite(coarseInner,scoor);
 	  auto Ab    = peekSite(_A[p],scoor);
-	  auto Adagb = peekSite(_Adag[p],bcoor);
+	  int pp = geom.Reverse(p);
+	  auto Adagb = peekSite(_Adag[pp],bcoor);
 	  for(int bb=0;bb<nbasis;bb++){
 	    Ab(bb,b)    = ip(bb);
 	    Adagb(b,bb) = conjugate(ip(bb));
 	  }
 	  pokeSite(Ab,_A[p],scoor);
-	  pokeSite(Adagb,_Adag[p],bcoor);
+	  pokeSite(Adagb,_Adag[pp],bcoor);
 	}
 	tpeek+=usecond();
       }
     }
     for(int p=0;p<geom.npoint;p++){
+      Coordinate coor({0,0,0,0,0});
+      auto sval = peekSite(_A[p],coor);
+    }
+    for(int p=0;p<geom.npoint;p++){
       _A[p] = Cell.Exchange(_A[p]);
-      _Adag[p] = Cell.Exchange(_Adag[p]);
+      _Adag[p]= Cell.Exchange(_Adag[p]);
     }
     std::cout << GridLogMessage<<"CoarsenOperator pick "<<tpick<<" us"<<std::endl;
     std::cout << GridLogMessage<<"CoarsenOperator mat  "<<tmat <<" us"<<std::endl;
@@ -453,12 +419,56 @@ public:
     std::cout << GridLogMessage<<"CoarsenOperator peek/poke  "<<tpeek<<" us"<<std::endl;
   }
 
-#if 0
+  /////////////////////////////////////////////////////////////
+  // 
+  // A) Only reduced flops option is to use a padded cell of depth 4
+  // and apply MpcDagMpc in the padded cell.
+  //
+  // Makes for ONE application of MpcDagMpc per vector instead of 30 or 80.
+  // With the effective cell size around (B+8)^4 perhaps 12^4/4^4 ratio
+  // Cost is 81x more, same as stencil size.
+  //
+  // But: can eliminate comms and do as local dirichlet.
+  //
+  // Local exchange gauge field once.
+  // Apply to all vectors, local only computation.
+  // Must exchange ghost subcells in reverse process of PaddedCell to take inner products
+  //
+  // B) Can reduce cost: pad by 1, apply Deo      (4^4+6^4+8^4+8^4 )/ (4x 4^4)
+  //                     pad by 2, apply Doe
+  //                     pad by 3, apply Deo
+  //                     then break out 8x directions; cost is ~10x MpcDagMpc per vector
+  //
+  // => almost factor of 10 in setup cost, excluding data rearrangement
+  //
+  // Intermediates -- ignore the corner terms, leave approximate and force Hermitian
+  // Intermediates -- pad by 2 and apply 1+8+24 = 33 times.
+  /////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////
+    // BFM HDCG style approach: Solve a system of equations to get Aij
+    //////////////////////////////////////////////////////////
+    /*
+     *     Here, k,l index which possible shift within the 3^Nd "ball" connected by MdagM.
+     *
+     *     conj(phases[block]) proj[k][ block*Nvec+j ] =  \sum_ball  e^{i q_k . delta} < phi_{block,j} | MdagM | phi_{(block+delta),i} > 
+     *                                                 =  \sum_ball e^{iqk.delta} A_ji
+     *
+     *     Must invert matrix M_k,l = e^[i q_k . delta_l]
+     *
+     *     Where q_k = delta_k . (2*M_PI/global_nb[mu])
+     */
   void CoarsenOperatorColoured(LinearOperatorBase<Lattice<Fobj> > &linop,
-		       Aggregation<Fobj,CComplex,nbasis> & Subspace)
+			       Aggregation<Fobj,CComplex,nbasis> & Subspace)
   {
     std::cout << GridLogMessage<< "CoarsenMatrixColoured "<< std::endl;
     GridBase *grid = FineGrid();
+
+    RealD tproj=0.0;
+    RealD teigen=0.0;
+    RealD tmat=0.0;
+    RealD tphase=0.0;
+    RealD tinv=0.0;
 
     /////////////////////////////////////////////////////////////
     // Orthogonalise the subblocks over the basis
@@ -466,54 +476,134 @@ public:
     CoarseScalar InnerProd(CoarseGrid()); 
     blockOrthogonalise(InnerProd,Subspace.subspace);
 
-    const int npoint = geom.npoint
+    const int npoint = geom.npoint;
       
-    // Now compute the matrix elements of linop between this orthonormal
-    // set of vectors.
-    FineField bV(grid);
-    FineField MbV(grid);
-    FineField tmp(grid);
-    CoarseVector coarseInner(CoarseGrid());
     Coordinate clatt = CoarseGrid()->GlobalDimensions();
-    Coordinate steclatt = CoarseGrid()->GlobalDimensions();
-    for(int v=0;v<nbasis;v++){
-      for(int p=0;p<npoint;p++){ // Loop over momenta
-	/////////////////////////////////////////////////////
-	// Stick a different phase on every block
-	/////////////////////////////////////////////////////
-	CoarseVector pha(CoarseGrid());
-	std::vector<double> dmom = 
-	for(int mu=0;mu<5;mu++){
-	  dmom[mu] = imom[mu]*2*M_PI/global_nb[mu];
+    int Nd = CoarseGrid()->Nd();
+
+      /*
+       *     Here, k,l index which possible momentum/shift within the N-points connected by MdagM.
+       *     Matrix index i is mapped to this shift via 
+       *               geom.shifts[i]
+       *
+       *     conj(pha[block]) proj[k (which mom)][j (basis vec cpt)][block] 
+       *       =  \sum_{l in ball}  e^{i q_k . delta_l} < phi_{block,j} | MdagM | phi_{(block+delta_l),i} > 
+       *       =  \sum_{l in ball} e^{iqk.delta_l} A_ji^{b.b+l}
+       *       = M_{kl} A_ji^{b.b+l}
+       *
+       *     Must assemble and invert matrix M_k,l = e^[i q_k . delta_l]
+       *  
+       *     Where q_k = delta_k . (2*M_PI/global_nb[mu])
+       *
+       *     Then A{ji}^{b,b+l} = M^{-1}_{lm} ComputeProj_{m,b,i,j}
+       */
+    teigen-=usecond();
+    ComplexD ci(0.0,1.0);
+    Eigen::MatrixXcd Mkl    = Eigen::MatrixXcd::Zero(npoint,npoint);
+    Eigen::MatrixXcd invMkl = Eigen::MatrixXcd::Zero(npoint,npoint);
+    for(int k=0;k<npoint;k++){ // Loop over momenta
+
+      for(int l=0;l<npoint;l++){ // Loop over nbr relative
+	std::complex<double> phase(0.0,0.0);
+	for(int mu=0;mu<Nd;mu++){
+	  RealD TwoPiL =  M_PI * 2.0/ clatt[mu];
+	  phase=phase+TwoPiL*geom.shifts[k][mu]*geom.shifts[l][mu];
 	}
-	/*
-	 *     Here, k,l index which possible momentum/shift within the N-points connected by MdagM.
-	 *     Matrix index i is mapped to this shift via 
-	 *               GetDelta(imat_ball_idx[i]).
-	 *
-	 *     conj(phases[block]) proj[k][ block*Nvec+j ] =  \sum_{l in ball}  e^{i q_k . delta_l} < phi_{block,j} | MdagM | phi_{(block+delta_l),i} > 
-	 *                                                 =  \sum_{l in ball} e^{iqk.delta_l} A_ji^{b.b+l}
-	 *                                                 = M_{kl} A_ji^{b.b+l}
-	 *
-	 *     Must assemble and invert matrix M_k,l = e^[i q_k . delta_l]
-	 *  
-	 *     Where q_k = delta_k . (2*M_PI/global_nb[mu])
-	 *
-	 *     Then A{ji}^{b,b+l} = M^{-1}_{lm} ComputeProj_{m,b,i,j}
-	 */
+	phase=exp(phase*ci);
+	Mkl(k,l) = phase;
       }
     }
-    
+    invMkl = Mkl.inverse();
+    teigen+=usecond();
+
+    ///////////////////////////////////////////////////////////////////////
+    // Now compute the matrix elements of linop between the orthonormal
+    // set of vectors.
+    ///////////////////////////////////////////////////////////////////////
+    FineField phaV(grid); // Phased block basis vector
+    FineField MphaV(grid);// Matrix applied
+    CoarseVector coarseInner(CoarseGrid());
+
+    std::vector<CoarseVector> ComputeProj(npoint,CoarseGrid());
+    std::vector<CoarseVector>          FT(npoint,CoarseGrid());
+    for(int i=0;i<nbasis;i++){// Loop over basis vectors
+      std::cout << GridLogMessage<< "CoarsenMatrixColoured vec "<<i<<"/"<<nbasis<< std::endl;
+      for(int p=0;p<npoint;p++){ // Loop over momenta in npoint
+	/////////////////////////////////////////////////////
+	// Stick a phase on every block
+	/////////////////////////////////////////////////////
+	tphase-=usecond();
+	CoarseComplexField coor(CoarseGrid());
+	CoarseComplexField pha(CoarseGrid());	pha=Zero();
+	for(int mu=0;mu<Nd;mu++){
+	  LatticeCoordinate(coor,mu);
+	  RealD TwoPiL =  M_PI * 2.0/ clatt[mu];
+	  pha = pha + (TwoPiL * geom.shifts[p][mu]) * coor;
+	}
+	pha  =exp(pha*ci);
+	phaV=Zero();
+	blockZAXPY(phaV,pha,Subspace.subspace[i],phaV);
+	tphase+=usecond();
+
+	/////////////////////////////////////////////////////////////////////
+	// Multiple phased subspace vector by matrix and project to subspace
+	// Remove local bulk phase to leave relative phases
+	/////////////////////////////////////////////////////////////////////
+	tmat-=usecond();
+	linop.Op(phaV,MphaV);
+	tmat+=usecond();
+
+	tproj-=usecond();
+	blockProject(coarseInner,MphaV,Subspace.subspace);
+	coarseInner = conjugate(pha) * coarseInner;
+
+	ComputeProj[p] = coarseInner;
+	tproj+=usecond();
+
+      }
+
+      tinv-=usecond();
+      for(int k=0;k<npoint;k++){
+	FT[k] = Zero();
+	for(int l=0;l<npoint;l++){
+	  FT[k]= FT[k]+ invMkl(l,k)*ComputeProj[l];
+	}
+      
+	int osites=CoarseGrid()->oSites();
+	autoView( A_v  , _A[k], AcceleratorWrite);
+	autoView( FT_v  , FT[k], AcceleratorRead);
+	accelerator_for(sss, osites, 1, {
+	    for(int j=0;j<nbasis;j++){
+	      A_v[sss](j,i) = FT_v[sss](j);
+	    }
+        });
+      }
+      tinv+=usecond();
+    }
+
+    for(int p=0;p<geom.npoint;p++){
+      Coordinate coor({0,0,0,0,0});
+      auto sval = peekSite(_A[p],coor);
+    }
+
+    PopulateAdag();
+
+    // Need to write something to populate Adag from A
     for(int p=0;p<geom.npoint;p++){
       _A[p] = Cell.Exchange(_A[p]);
-      _Adag[p] = Cell.Exchange(_Adag[p]);
+      _Adag[p]= Cell.Exchange(_Adag[p]);
     }
+    std::cout << GridLogMessage<<"CoarsenOperator eigen  "<<teigen<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"CoarsenOperator phase  "<<tphase<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"CoarsenOperator mat    "<<tmat <<" us"<<std::endl;
+    std::cout << GridLogMessage<<"CoarsenOperator proj   "<<tproj<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"CoarsenOperator inv    "<<tinv<<" us"<<std::endl;
   }
-#endif
 
   virtual  void Mdiag    (const Field &in, Field &out){ assert(0);};
   virtual  void Mdir     (const Field &in, Field &out,int dir, int disp){assert(0);};
   virtual  void MdirAll  (const Field &in, std::vector<Field> &out){assert(0);};
 };
+
 
 NAMESPACE_END(Grid);
