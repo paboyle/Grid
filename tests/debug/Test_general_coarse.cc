@@ -37,6 +37,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 using namespace std;
 using namespace Grid;
 
+///////////////////////
+// Tells little dirac op to use MdagM as the .Op()
+///////////////////////
 template<class Field>
 class HermOpAdaptor : public LinearOperatorBase<Field>
 {
@@ -56,81 +59,6 @@ public:
   void HermOp(const Field &in, Field &out){
     wrapped.HermOp(in,out);
   }
-  
-};
-
-template<class Matrix,class Field>
-class PVdagMLinearOperator : public LinearOperatorBase<Field> {
-  Matrix &_Mat;
-  Matrix &_PV;
-public:
-  PVdagMLinearOperator(Matrix &Mat,Matrix &PV): _Mat(Mat),_PV(PV){};
-
-  void OpDiag (const Field &in, Field &out) {    assert(0);  }
-  void OpDir  (const Field &in, Field &out,int dir,int disp) {    assert(0);  }
-  void OpDirAll  (const Field &in, std::vector<Field> &out){    assert(0);  };
-  void Op     (const Field &in, Field &out){
-    Field tmp(in.Grid());
-    _Mat.M(in,tmp);
-    _PV.Mdag(tmp,out);
-  }
-  void AdjOp     (const Field &in, Field &out){
-    Field tmp(in.Grid());
-    _PV.M(tmp,out);
-    _Mat.Mdag(in,tmp);
-  }
-  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){    assert(0);  }
-  void HermOp(const Field &in, Field &out){
-    Field tmp(in.Grid());
-    _Mat.M(in,tmp);
-    _PV.Mdag(tmp,out);
-    _PV.M(out,tmp);
-    _Mat.Mdag(tmp,out);
-  }
-};
-
-template<class Field> class DumbOperator  : public LinearOperatorBase<Field> {
-public:
-  LatticeComplex scale;
-  DumbOperator(GridBase *grid) : scale(grid)
-  {
-    scale = 0.0;
-    LatticeComplex scalesft(grid);
-    LatticeComplex scaletmp(grid);
-    for(int d=0;d<4;d++){
-      Lattice<iScalar<vInteger> > x(grid); LatticeCoordinate(x,d+1);
-      LatticeCoordinate(scaletmp,d+1);
-      scalesft = Cshift(scaletmp,d+1,1);
-      scale = 100.0*scale + where( mod(x    ,2)==(Integer)0, scalesft,scaletmp);
-    }
-    //    std::cout << " scale\n" << scale << std::endl;
-  }
-  // Support for coarsening to a multigrid
-  void OpDiag (const Field &in, Field &out) {};
-  void OpDir  (const Field &in, Field &out,int dir,int disp){};
-  void OpDirAll  (const Field &in, std::vector<Field> &out) {};
-
-  void Op     (const Field &in, Field &out){
-    out = scale * in;
-  }
-  void AdjOp  (const Field &in, Field &out){
-    out = scale * in;
-  }
-  void HermOp(const Field &in, Field &out){
-    double n1, n2;
-    HermOpAndNorm(in,out,n1,n2);
-  }
-  void HermOpAndNorm(const Field &in, Field &out,double &n1,double &n2){
-    ComplexD dot;
-
-    out = scale * in;
-
-    dot= innerProduct(in,out);
-    n1=real(dot);
-
-    dot = innerProduct(out,out);
-    n2=real(dot);
-  }
 };
 
 
@@ -140,7 +68,9 @@ int main (int argc, char ** argv)
 
   const int Ls=4;
 
-  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
+  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(),
+								   GridDefaultSimd(Nd,vComplex::Nsimd()),
+								   GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
 
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
@@ -151,7 +81,10 @@ int main (int argc, char ** argv)
   for(int d=0;d<clatt.size();d++){
     clatt[d] = clatt[d]/2;
   }
-  GridCartesian *Coarse4d =  SpaceTimeGrid::makeFourDimGrid(clatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());;
+
+  GridCartesian *Coarse4d =  SpaceTimeGrid::makeFourDimGrid(clatt,
+							    GridDefaultSimd(Nd,vComplex::Nsimd()),
+							    GridDefaultMpi());;
   GridCartesian *Coarse5d =  SpaceTimeGrid::makeFiveDimGrid(1,Coarse4d);
 
   std::vector<int> seeds4({1,2,3,4});
@@ -167,19 +100,15 @@ int main (int argc, char ** argv)
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
   LatticeGaugeField Umu(UGrid);
-  //SU<Nc>::HotConfiguration(RNG4,Umu);
-  SU<Nc>::ColdConfiguration(Umu);
-  //  auto U = peekLorentz(Umu,0);
-  //  Umu=Zero(); // Make operator local for now
-  //  pokeLorentz(Umu,U,0);
+  SU<Nc>::HotConfiguration(RNG4,Umu);
+  //  Umu=Zero();
   
-  RealD mass=0.5;
+  RealD mass=0.1;
   RealD M5=1.8;
 
   DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  DomainWallFermionD Dpv(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,M5);
 
-  const int nbasis = 20;
+  const int nbasis = 4;
   const int cb = 0 ;
   LatticeFermion prom(FGrid);
 
@@ -187,40 +116,52 @@ int main (int argc, char ** argv)
 
   std::cout<<GridLogMessage<<"Calling Aggregation class" <<std::endl;
 
-  // Possible tactics -- with zero gauge field, verify block locality of dirac op
-  // Possible tactics -- with zero gauge field, take inner products
-  
-  // Squared operator
+  ///////////////////////////////////////////////////////////
+  // Squared operator is in HermOp
+  ///////////////////////////////////////////////////////////
   MdagMLinearOperator<DomainWallFermionD,LatticeFermion> HermDefOp(Ddwf);
-  DumbOperator<LatticeFermion> Diagonal(FGrid);
-  typedef Aggregation<vSpinColourVector,vTComplex,nbasis> Subspace;
 
+  ///////////////////////////////////////////////////
+  // Random aggregation space
+  ///////////////////////////////////////////////////
+  std::cout<<GridLogMessage << "Building random aggregation class"<< std::endl;
+  typedef Aggregation<vSpinColourVector,vTComplex,nbasis> Subspace;
   Subspace Aggregates(Coarse5d,FGrid,cb);
   Aggregates.CreateSubspaceRandom(RNG5);
 
-  std::cout<<GridLogMessage << "Called aggregation class"<< std::endl;
+  ///////////////////////////////////////////////////
+  // Build little dirac op
+  ///////////////////////////////////////////////////
+  std::cout<<GridLogMessage << "Building little Dirac operator"<< std::endl;
 
   typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
 
-  NextToNearestStencilGeometry5D geom;
+  NextToNearestStencilGeometry5D geom(Coarse5d);
   LittleDiracOperator LittleDiracOp(geom,FGrid,Coarse5d);
-  LittleDiracOp.CoarsenOperator(HermDefOp,Aggregates);
-  //  LittleDiracOp.CoarsenOperator(Diagonal,Aggregates);
+  LittleDiracOperator LittleDiracOpCol(geom,FGrid,Coarse5d);
 
-  std::cout<<GridLogMessage<<"Coarsened operator "<<std::endl;
+  HermOpAdaptor<LatticeFermionD> HOA(HermDefOp);
+
+  int pp=16;
+  //  LittleDiracOpCol.CoarsenOperator(HOA,Aggregates);
+  //  std::cout << "LittleDiracOp old " << LittleDiracOpCol._A[pp]<<std::endl;
+  LittleDiracOp.CoarsenOperatorColoured(HOA,Aggregates);
+  //  std::cout << "LittleDiracOp new " << LittleDiracOp._A[pp]<<std::endl;
   
+  ///////////////////////////////////////////////////
+  // Test the operator
+  ///////////////////////////////////////////////////
   CoarseVector c_src (Coarse5d);
   CoarseVector c_res (Coarse5d);
+  CoarseVector c_res_dag(Coarse5d);
   CoarseVector c_proj(Coarse5d);
 
   subspace=Aggregates.subspace;
 
-  Complex one(1.0);
-  c_src = one;  // 1 in every element for vector 1.
-  Coordinate coor(5,0);
-  
-  //  std::cout << "c_src"<< c_src<< std::endl;
+  //  random(CRNG,c_src);
+  c_src = 1.0;
+
   blockPromote(c_src,err,subspace);
 
   prom=Zero();
@@ -232,25 +173,23 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"c_src "<<norm2(c_src)<<std::endl;
   std::cout<<GridLogMessage<<"prom  "<<norm2(prom)<<std::endl;
 
-  //  blockPick(Coarse5d,c_src,c_src,coor);
-  //  blockPromote(c_src,prom,subspace);
+  HermDefOp.HermOp(prom,tmp);
 
-  //  Diagonal.HermOp(prom,tmp);
-  HermDefOp.Op(prom,tmp);
-  //  HermDefOp.Op(prom,tmp);
   blockProject(c_proj,tmp,subspace);
   std::cout<<GridLogMessage<<" Called Big Dirac Op "<<norm2(tmp)<<std::endl;
 
   LittleDiracOp.M(c_src,c_res);
-  std::cout<<GridLogMessage<<" Called Little Dirac Op c_src "<< norm2(c_src) << "  c_res "<< norm2(c_res) <<std::endl;
+  LittleDiracOp.Mdag(c_src,c_res_dag);
 
   std::cout<<GridLogMessage<<"Little dop : "<<norm2(c_res)<<std::endl;
-  //  std::cout<<GridLogMessage<<" Little "<< c_res<<std::endl;
+  std::cout<<GridLogMessage<<"Little dop dag : "<<norm2(c_res_dag)<<std::endl;
   std::cout<<GridLogMessage<<"Big dop in subspace : "<<norm2(c_proj)<<std::endl;
-  //  std::cout<<GridLogMessage<<" Big "<< c_proj<<std::endl;
+
   c_proj = c_proj - c_res;
   std::cout<<GridLogMessage<<" ldop error: "<<norm2(c_proj)<<std::endl;
-  //  std::cout<<GridLogMessage<<" error "<< c_proj<<std::endl;
+
+  c_res_dag = c_res_dag - c_res;
+  std::cout<<GridLogMessage<<"Little dopDag - dop: "<<norm2(c_res_dag)<<std::endl;
 
   std::cout<<GridLogMessage << "Testing Hermiticity stochastically "<< std::endl;
   CoarseVector phi(Coarse5d);
@@ -264,8 +203,10 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"Made randoms "<<norm2(phi)<<" " << norm2(chi)<<std::endl;
 
   LittleDiracOp.M(phi,Aphi);
+
   LittleDiracOp.Mdag(chi,Achi);
-  std::cout<<GridLogMessage<<"Aphi "<<norm2(Aphi)<<" Adag chi" << norm2(Achi)<<std::endl;
+
+  std::cout<<GridLogMessage<<"Aphi "<<norm2(Aphi)<<" A chi" << norm2(Achi)<<std::endl;
 
   ComplexD pAc = innerProduct(chi,Aphi);
   ComplexD cAp = innerProduct(phi,Achi);
@@ -273,7 +214,6 @@ int main (int argc, char ** argv)
   ComplexD pAp = innerProduct(phi,Aphi);
 
   std::cout<<GridLogMessage<< "pAc "<<pAc<<" cAp "<< cAp<< " diff "<<pAc-adj(cAp)<<std::endl;
-
   std::cout<<GridLogMessage<< "pAp "<<pAp<<" cAc "<< cAc<<"Should be real"<< std::endl;
 
   std::cout<<GridLogMessage<<"Testing linearity"<<std::endl;
@@ -292,35 +232,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
-  std::cout<<GridLogMessage<<std::endl;
-  std::cout<<GridLogMessage<<std::endl;
   
-  PVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> PVdagM(Ddwf,Dpv);
-  HermOpAdaptor<LatticeFermionD> HOA(PVdagM);
-
-  // Run power method on HOA??
-  PowerMethod<LatticeFermion>       PM;   PM(HOA,src);
- 
-  // Warning: This routine calls PVdagM.Op, not PVdagM.HermOp
-  Subspace AggregatesPD(Coarse5d,FGrid,cb);
-  AggregatesPD.CreateSubspaceChebyshev(RNG5,
-				     HOA,
-				     nbasis,
-				     5000.0,
-				     0.02,
-				     100,
-				     50,
-				     50,
-				     0.0);
-  
-  LittleDiracOperator LittleDiracOpPV(geom,FGrid,Coarse5d);
-  LittleDiracOpPV.CoarsenOperator(PVdagM,AggregatesPD);
-
-  std::cout<<GridLogMessage<<std::endl;
-  std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
-  std::cout<<GridLogMessage<<std::endl;
-  std::cout<<GridLogMessage << "Done "<< std::endl;
-
   Grid_finalize();
   return 0;
 }
