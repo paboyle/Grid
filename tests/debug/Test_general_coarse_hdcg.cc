@@ -2,11 +2,11 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_padded_cell.cc
+    Source file: ./tests/Test_general_coarse_hdcg.cc
 
     Copyright (C) 2023
 
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Peter Boyle <pboyle@bnl.gov>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,9 +29,21 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/lattice/PaddedCell.h>
 #include <Grid/stencil/GeneralLocalStencil.h>
 #include <Grid/algorithms/GeneralCoarsenedMatrix.h>
+#include <Grid/algorithms/iterative/AdefGeneric.h>
 
 using namespace std;
 using namespace Grid;
+
+template<class Field> class TestSolver : public LinearFunction<Field> {
+public:
+  TestSolver() {};
+  void operator() (const Field &in, Field &out){    out = Zero();  }     
+};
+
+
+RealD InverseApproximation(RealD x){
+  return 1.0/x;
+}
 
 // Want Op in CoarsenOp to call MatPcDagMatPc
 template<class Field>
@@ -40,20 +52,33 @@ class HermOpAdaptor : public LinearOperatorBase<Field>
   LinearOperatorBase<Field> & wrapped;
 public:
   HermOpAdaptor(LinearOperatorBase<Field> &wrapme) : wrapped(wrapme)  {};
-  void OpDiag (const Field &in, Field &out) {    assert(0);  }
+  void Op     (const Field &in, Field &out)   { wrapped.HermOp(in,out);  }
+  void HermOp(const Field &in, Field &out)    { wrapped.HermOp(in,out); }
+  void AdjOp     (const Field &in, Field &out){ wrapped.HermOp(in,out);  }
+  void OpDiag (const Field &in, Field &out)                  {    assert(0);  }
   void OpDir  (const Field &in, Field &out,int dir,int disp) {    assert(0);  }
-  void OpDirAll  (const Field &in, std::vector<Field> &out){    assert(0);  };
-  void Op     (const Field &in, Field &out){
-    wrapped.HermOp(in,out);
-  }
-  void AdjOp     (const Field &in, Field &out){
-    wrapped.HermOp(in,out);
-  }
+  void OpDirAll  (const Field &in, std::vector<Field> &out)  {    assert(0);  };
   void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){    assert(0);  }
-  void HermOp(const Field &in, Field &out){
-    wrapped.HermOp(in,out);
+};
+template<class Field,class Matrix> class ChebyshevSmoother : public LinearFunction<Field>
+{
+public:
+  using LinearFunction<Field>::operator();
+  typedef LinearOperatorBase<Field> FineOperator;
+  FineOperator   & _SmootherOperator;
+  Chebyshev<Field> Cheby;
+  ChebyshevSmoother(RealD _lo,RealD _hi,int _ord, FineOperator &SmootherOperator) :
+    _SmootherOperator(SmootherOperator),
+    Cheby(_lo,_hi,_ord,InverseApproximation)
+  {
+    std::cout << GridLogMessage<<" Chebyshev smoother order "<<_ord<<" ["<<_lo<<","<<_hi<<"]"<<std::endl;
+  };
+  void operator() (const Field &in, Field &out) 
+  {
+    Field tmp(in.Grid());
+    tmp = in;
+    Cheby(_SmootherOperator,tmp,out);
   }
-  
 };
 
 int main (int argc, char ** argv)
@@ -62,69 +87,68 @@ int main (int argc, char ** argv)
 
   const int Ls=16;
 
-  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
+  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(),
+								   GridDefaultSimd(Nd,vComplex::Nsimd()),
+								   GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
-
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
-  // Construct a coarsened grid
-  // 4^4 cell
+  // Construct a coarsened grid with 4^4 cell
   Coordinate clatt = GridDefaultLatt();
   for(int d=0;d<clatt.size();d++){
     clatt[d] = clatt[d]/4;
   }
-  GridCartesian *Coarse4d =  SpaceTimeGrid::makeFourDimGrid(clatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());;
+  GridCartesian *Coarse4d =  SpaceTimeGrid::makeFourDimGrid(clatt,
+							    GridDefaultSimd(Nd,vComplex::Nsimd()),
+							    GridDefaultMpi());;
   GridCartesian *Coarse5d =  SpaceTimeGrid::makeFiveDimGrid(1,Coarse4d);
 
+  ///////////////////////// RNGs /////////////////////////////////
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
   std::vector<int> cseeds({5,6,7,8});
+
   GridParallelRNG          RNG5(FGrid);   RNG5.SeedFixedIntegers(seeds5);
   GridParallelRNG          RNG4(UGrid);   RNG4.SeedFixedIntegers(seeds4);
   GridParallelRNG          CRNG(Coarse5d);CRNG.SeedFixedIntegers(cseeds);
 
+  ///////////////////////// Configuration /////////////////////////////////
   LatticeGaugeField Umu(UGrid);
 
   FieldMetaData header;
   std::string file("ckpoint_lat.4000");
   NerscIO::readConfiguration(Umu,header,file);
-  
+
+  //////////////////////// Fermion action //////////////////////////////////
   RealD mass=0.01;
   RealD M5=1.8;
-
   RealD b=1.5;
   RealD c=0.5;
   MobiusFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c);
-  MobiusFermionD Dpv(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,M5,b,c);
 
-  const int nbasis = 4;
+  SchurDiagMooeeOperator<MobiusFermionD, LatticeFermion> HermOpEO(Ddwf);
+
+  typedef HermOpAdaptor<LatticeFermionD> HermFineMatrix;
+  HermFineMatrix FineHermOp(HermOpEO);
+  
+  LatticeFermion result(FrbGrid); result=Zero();
+
+  LatticeFermion    src(FrbGrid); random(RNG5,src);
+
+  // Run power method on FineHermOp
+  PowerMethod<LatticeFermion>       PM;   PM(HermOpEO,src);
+
+ 
+  ////////////////////////////////////////////////////////////
+  ///////////// Coarse basis and Little Dirac Operator ///////
+  ////////////////////////////////////////////////////////////
+  const int nbasis = 40;
   const int cb = 0 ;
-  LatticeFermion prom(FrbGrid);
-
   typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
 
-  NextToNextToNextToNearestStencilGeometry5D geom;
-
-  std::cout<<GridLogMessage<<std::endl;
-  std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
-  std::cout<<GridLogMessage<<std::endl;
-  
-  SchurDiagMooeeOperator<MobiusFermionD, LatticeFermion> HermOpEO(Ddwf);
-  HermOpAdaptor<LatticeFermionD> HOA(HermOpEO);
-  
-  // Run power method on HOA??
-  LatticeFermion result(FrbGrid); result=Zero();
-  LatticeFermion    ref(FrbGrid); ref=Zero();
-  LatticeFermion    tmp(FrbGrid);
-  LatticeFermion    err(FrbGrid);
-
-  {
-    LatticeFermion    src(FrbGrid); random(RNG5,src);
-    PowerMethod<LatticeFermion>       PM;   PM(HermOpEO,src);
-  }
-  //  exit(0);
+  NextToNextToNextToNearestStencilGeometry5D geom(Coarse5d);
   
   // Warning: This routine calls PVdagM.Op, not PVdagM.HermOp
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis> Subspace;
@@ -132,72 +156,117 @@ int main (int argc, char ** argv)
   Aggregates.CreateSubspaceChebyshev(RNG5,
 				     HermOpEO,
 				     nbasis,
-				     90.0,
-				     0.1,
-				     500,
-				     500,
-				     100,
-				     0.0);
+				     //				     100.0,
+				     //	0.1, // Low pass is pretty high still -- 311 iters
+				     //				     250.0,
+				     //				     0.01, // subspace too low filter power wrong
+				     //				     250.0,
+				     //				     0.2, // slower
+				     95.0,
+				     //				     0.05, // nbasis 12 - 311 -- wrong coarse inv
+				     //				     0.05, // nbasis 12 - 154 -- right filt
+				     //				     0.1, // nbasis 12 - 169 oops
+				     //				     0.05, // nbasis 16 -- 127 iters
+				     //				     0.03, // nbasis 16 -- 13-
+				     //				     0.1,  // nbasis 16 -- 142; sloppy solve
+				     0.1,  // nbasis 24 
+				     300);
   ////////////////////////////////////////////////////////////
   // Need to check about red-black grid coarsening
   ////////////////////////////////////////////////////////////
   LittleDiracOperator LittleDiracOp(geom,FrbGrid,Coarse5d);
-  LittleDiracOp.CoarsenOperator(HOA,Aggregates);
+  LittleDiracOp.CoarsenOperatorColoured(FineHermOp,Aggregates);
 
-  std::cout<<GridLogMessage<<std::endl;
-  std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
+  typedef HermitianLinearOperator<LittleDiracOperator,CoarseVector> HermMatrix;
+  HermMatrix CoarseOp (LittleDiracOp);
 
-  std::cout<<GridLogMessage<<std::endl;
-  std::cout<<GridLogMessage<<"Testing coarsened operator "<<std::endl;
-  std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
+  //////////////////////////////////////////
+  // Build a coarse lanczos
+  //////////////////////////////////////////
+  Chebyshev<CoarseVector>      IRLCheby(0.02,50.0,71);  // 1 iter
+  FunctionHermOp<CoarseVector> IRLOpCheby(IRLCheby,CoarseOp);
+  PlainHermOp<CoarseVector>    IRLOp    (CoarseOp);
+  int Nk=64;
+  int Nm=128;
+  int Nstop=Nk;
+  ImplicitlyRestartedLanczos<CoarseVector> IRL(IRLOpCheby,IRLOp,Nstop,Nk,Nm,1.0e-5,20);
+
+  int Nconv;
+  std::vector<RealD>            eval(Nm);
+  std::vector<CoarseVector>     evec(Nm,Coarse5d);
+  CoarseVector c_src(Coarse5d); c_src=1.0;
+  IRL.calc(eval,evec,c_src,Nconv);
+  DeflatedGuesser<CoarseVector> DeflCoarseGuesser(evec,eval);
   
-  CoarseVector c_src (Coarse5d);
-  CoarseVector c_res (Coarse5d);
-  CoarseVector c_proj(Coarse5d);
-
-  std::vector<LatticeFermion> subspace(nbasis,FrbGrid);
-  subspace=Aggregates.subspace;
-
-  Complex one(1.0);
-  c_src = one;  // 1 in every element for vector 1.
-  blockPromote(c_src,err,subspace);
-
-  prom=Zero();
-  for(int b=0;b<nbasis;b++){
-    prom=prom+subspace[b];
-  }
-  err=err-prom; 
-  std::cout<<GridLogMessage<<"Promoted back from subspace: err "<<norm2(err)<<std::endl;
-  std::cout<<GridLogMessage<<"c_src "<<norm2(c_src)<<std::endl;
-  std::cout<<GridLogMessage<<"prom  "<<norm2(prom)<<std::endl;
-
-  HermOpEO.HermOp(prom,tmp);
-  blockProject(c_proj,tmp,subspace);
-  std::cout<<GridLogMessage<<" Called Big Dirac Op "<<norm2(tmp)<<std::endl;
-
-  LittleDiracOp.M(c_src,c_res);
-  std::cout<<GridLogMessage<<" Called Little Dirac Op c_src "<< norm2(c_src) << "  c_res "<< norm2(c_res) <<std::endl;
-
-  std::cout<<GridLogMessage<<"Little dop : "<<norm2(c_res)<<std::endl;
-
-  std::cout<<GridLogMessage<<"Big dop in subspace : "<<norm2(c_proj)<<std::endl;
-
-  c_proj = c_proj - c_res;
-  std::cout<<GridLogMessage<<" ldop error: "<<norm2(c_proj)<<std::endl;
-  
-  std::cout<<GridLogMessage<<std::endl;
-  std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
-  std::cout<<GridLogMessage << "Done "<< std::endl;
-
+  //////////////////////////////////////////
   // Build a coarse space solver
-  random(CRNG,c_src);
-  c_res=Zero();
-  //  ZeroGuesser<CoarseVector> Guess;
-  RealD tol = 1.0e-8;
-  int maxit=2000;
-  ConjugateGradient<CoarseVector>  CG(tol,maxit,false);
-  HermitianLinearOperator<LittleDiracOperator,CoarseVector> Hop (LittleDiracOp);
-  CG(Hop, c_src, c_res);
+  //////////////////////////////////////////
+  int maxit=20000;
+  ConjugateGradient<CoarseVector>  CG(1.0e-8,maxit,false);
+  ConjugateGradient<LatticeFermionD>  CGfine(1.0e-8,10000,false);
+  ZeroGuesser<CoarseVector> CoarseZeroGuesser;
+
+  //  HPDSolver<CoarseVector> HPDSolve(CoarseOp,CG,CoarseZeroGuesser);
+  HPDSolver<CoarseVector> HPDSolve(CoarseOp,CG,DeflCoarseGuesser);
+
+  //////////////////////////////////////////
+  // Build a smoother
+  //////////////////////////////////////////
+  //  ChebyshevSmoother<LatticeFermionD,HermFineMatrix > Smoother(10.0,100.0,10,FineHermOp); //499
+  //  ChebyshevSmoother<LatticeFermionD,HermFineMatrix > Smoother(3.0,100.0,10,FineHermOp);  //383
+  //  ChebyshevSmoother<LatticeFermionD,HermFineMatrix > Smoother(1.0,100.0,10,FineHermOp);  //328
+  //  std::vector<RealD> los({0.5,1.0,3.0}); // 147/142/146 nbasis 1
+  //  std::vector<RealD> los({1.0,2.0}); // Nbasis 24: 88,86 iterations
+  //  std::vector<RealD> los({2.0,4.0}); // Nbasis 32 == 52, iters
+  //  std::vector<RealD> los({2.0,4.0}); // Nbasis 40 == 36,36 iters
+
+  //
+  // Turns approx 2700 iterations into 340 fine multiplies with Nbasis 40
+  // Need to measure cost of coarse space.
+  //
+  // -- i) Reduce coarse residual   -- 0.04
+  // -- ii) Lanczos on coarse space -- done
+  // -- iii) Possible 1 hop project and/or preconditioning it - easy - PrecCG it and
+  //         use a limited stencil. Reread BFM code to check on evecs / deflation strategy with prec
+  //
+  std::vector<RealD> los({3.0}); // Nbasis 40 == 36,36 iters
+  std::vector<int> ords({7,8,10}); // Nbasis 40 == 40,38,36 iters (320,342,396 mults)
+
+  // Standard CG
+  //      result=Zero();
+  //      CGfine(HermOpEO, src, result);
+
+  for(int l=0;l<los.size();l++){
+
+    RealD lo = los[l];
+
+    for(int o=0;o<ords.size();o++){
+
+      ConjugateGradient<CoarseVector>  CGsloppy(4.0e-2,maxit,false);
+      HPDSolver<CoarseVector> HPDSolveSloppy(CoarseOp,CGsloppy,DeflCoarseGuesser);
+      
+      //    ChebyshevSmoother<LatticeFermionD,HermFineMatrix > Smoother(lo,92,10,FineHermOp); // 36 best case
+      ChebyshevSmoother<LatticeFermionD,HermFineMatrix > Smoother(lo,92,ords[o],FineHermOp);  // 311
+
+      //////////////////////////////////////////
+      // Build a HDCG solver
+      //////////////////////////////////////////
+      TwoLevelFlexiblePcg<LatticeFermion,CoarseVector,Subspace>
+	HDCG(1.0e-8, 3000,
+	     FineHermOp,
+	     Smoother,
+	     HPDSolveSloppy,
+	     HPDSolve,
+	     Aggregates);
+
+      //    result=Zero();
+      //    HDCG(src,result);
+    
+      result=Zero();
+      HDCG.Inflexible(src,result);
+    }
+  }
+  
   Grid_finalize();
   return 0;
 }
