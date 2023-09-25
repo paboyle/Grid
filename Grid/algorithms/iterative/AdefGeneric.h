@@ -33,15 +33,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
    * Script A = SolverMatrix 
    * Script P = Preconditioner
    *
-   * Deflation methods considered
-   *      -- Solve P A x = P b        [ like Luscher ]
-   * DEF-1        M P A x = M P b     [i.e. left precon]
-   * DEF-2        P^T M A x = P^T M b
-   * ADEF-1       Preconditioner = M P + Q      [ Q + M + M A Q]
-   * ADEF-2       Preconditioner = P^T M + Q
-   * BNN          Preconditioner = P^T M P + Q
-   * BNN2         Preconditioner = M P + P^TM +Q - M P A M 
-   * 
    * Implement ADEF-2
    *
    * Vstart = P^Tx + Qb
@@ -49,45 +40,157 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
    * M2=M3=1
    * Vout = x
    */
+NAMESPACE_BEGIN(Grid);
 
-// abstract base
-template<class Field, class CoarseField>
+template<class Field, class CoarseField, class Aggregation>
 class TwoLevelFlexiblePcg : public LinearFunction<Field>
 {
  public:
-  int verbose;
   RealD   Tolerance;
   Integer MaxIterations;
-  const int mmax = 5;
+  const int mmax = 1;
   GridBase *grid;
   GridBase *coarsegrid;
 
-  LinearOperatorBase<Field>   *_Linop
-  OperatorFunction<Field>     *_Smoother,
-  LinearFunction<CoarseField> *_CoarseSolver;
+  // Fine operator, Smoother, CoarseSolver
+  LinearOperatorBase<Field>   &_FineLinop;
+  LinearFunction<Field>   &_Smoother;
+  LinearFunction<CoarseField> &_CoarseSolver;
+  LinearFunction<CoarseField> &_CoarseSolverPrecise;
 
-  // Need somthing that knows how to get from Coarse to fine and back again
+  // Need something that knows how to get from Coarse to fine and back again
+  //  void ProjectToSubspace(CoarseVector &CoarseVec,const FineField &FineVec){
+  //  void PromoteFromSubspace(const CoarseVector &CoarseVec,FineField &FineVec){
+  Aggregation &_Aggregates;                    
   
   // more most opertor functions
   TwoLevelFlexiblePcg(RealD tol,
-		     Integer maxit,
-		     LinearOperatorBase<Field> *Linop,
-		     LinearOperatorBase<Field> *SmootherLinop,
-		     OperatorFunction<Field>   *Smoother,
-		     OperatorFunction<CoarseField>  CoarseLinop
+		      Integer maxit,
+		      LinearOperatorBase<Field>   &FineLinop,
+		      LinearFunction<Field>   &Smoother,
+		      LinearFunction<CoarseField>  &CoarseSolver,
+		      LinearFunction<CoarseField>  &CoarseSolverPrecise,
+		      Aggregation &Aggregates
 		     ) : 
       Tolerance(tol), 
       MaxIterations(maxit),
-      _Linop(Linop),
-      _PreconditionerLinop(PrecLinop),
-      _Preconditioner(Preconditioner)
-  { 
-    verbose=0;
+      _FineLinop(FineLinop),
+      _Smoother(Smoother),
+      _CoarseSolver(CoarseSolver),
+      _CoarseSolverPrecise(CoarseSolverPrecise),
+      _Aggregates(Aggregates)
+  {
+    coarsegrid = Aggregates.CoarseGrid;
+    grid       = Aggregates.FineGrid;
   };
 
+  void Inflexible(Field &src,Field &psi)
+  {
+    Field resid(grid);
+    RealD f;
+    RealD rtzp,rtz,a,d,b;
+    RealD rptzp;
+    
+    Field x(grid); 
+    Field p(grid);
+    Field z(grid);
+    Field tmp(grid);
+    Field mmp(grid);
+    Field r  (grid);
+    Field mu (grid);
+    Field rp (grid);
+
+    //Initial residual computation & set up
+    RealD guess = norm2(psi);
+    double tn;
+
+    //////////////////////////
+    // x0 = Vstart -- possibly modify guess
+    //////////////////////////
+    x=Zero();
+    Vstart(x,src);
+
+    // r0 = b -A x0
+    _FineLinop.HermOp(x,mmp);
+
+    axpy(r, -1.0, mmp, src);    // Recomputes r=src-x0
+    rp=r;
+
+    //////////////////////////////////
+    // Compute z = M1 x
+    //////////////////////////////////
+    PcgM1(r,z);
+    rtzp =real(innerProduct(r,z));
+
+    ///////////////////////////////////////
+    // Except Def2, M2 is trivial
+    ///////////////////////////////////////
+    p=z;
+
+    RealD ssq =  norm2(src);
+    RealD rsq =  ssq*Tolerance*Tolerance;
+
+    std::cout<<GridLogMessage<<"HDCG: k=0 residual "<<rtzp<<" target rsq "<<rsq<<" ssq "<<ssq<<std::endl;
+    
+    for (int k=1;k<=MaxIterations;k++){
+
+      rtz=rtzp;
+      d= PcgM3(p,mmp);
+      a = rtz/d;
+
+      axpy(x,a,p,x);
+      RealD rn = axpy_norm(r,-a,mmp,r);
+
+      PcgM1(r,z);
+
+      rtzp =real(innerProduct(r,z));
+
+      int ipcg=1; // almost free inexact preconditioned CG
+      if (ipcg) {
+	rptzp =real(innerProduct(rp,z));
+      } else {
+	rptzp =0;
+      }
+      b = (rtzp-rptzp)/rtz;
+
+      PcgM2(z,mu); // ADEF-2 this is identity. Axpy possible to eliminate
+
+      axpy(p,b,p,mu);  // mu = A r
+
+      RealD rrn=sqrt(rn/ssq);
+      RealD rtn=sqrt(rtz/ssq);
+      std::cout<<GridLogMessage<<"HDCG: Pcg k= "<<k<<" residual = "<<rrn<<std::endl;
+
+      if ( ipcg ) {
+	axpy(rp,0.0,r,r);
+      }
+
+      // Stopping condition
+      if ( rn <= rsq ) { 
+
+	std::cout<<GridLogMessage<<"HDCG: Pcg converged in "<<k<<" iterations"<<std::endl;;
+
+	_FineLinop.HermOp(x,mmp);			  
+	axpy(tmp,-1.0,src,mmp);
+
+	RealD  mmpnorm = sqrt(norm2(mmp));
+	RealD  psinorm = sqrt(norm2(x));
+	RealD  srcnorm = sqrt(norm2(src));
+	RealD  tmpnorm = sqrt(norm2(tmp));
+	RealD  true_residual = tmpnorm/srcnorm;
+	std::cout<<GridLogMessage<<"HDCG: true residual is "<<true_residual
+		 <<" solution "<<psinorm<<" source "<<srcnorm<<std::endl;
+
+	return;
+      }
+
+    }
+    std::cout << "HDCG: Pcg not converged"<<std::endl;
+    return ;
+  }
+  
   // The Pcg routine is common to all, but the various matrices differ from derived 
   // implementation to derived implmentation
-  void operator() (const Field &src, Field &psi){
   void operator() (const Field &src, Field &psi){
 
     psi.Checkerboard() = src.Checkerboard();
@@ -108,7 +211,7 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
     std::vector<Field> mmp(mmax,grid);
     std::vector<RealD> pAp(mmax);
 
-    Field x  (grid); x = psi;
+    Field x  (grid);
     Field z  (grid);
     Field tmp(grid);
     Field r  (grid);
@@ -117,25 +220,23 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
     //////////////////////////
     // x0 = Vstart -- possibly modify guess
     //////////////////////////
-    x=src;
+    x=Zero();
     Vstart(x,src);
 
     // r0 = b -A x0
-    HermOp(x,mmp); // Shouldn't this be something else?
+    _FineLinop.HermOp(x,mmp[0]); // Fine operator
     axpy (r, -1.0,mmp[0], src);    // Recomputes r=src-Ax0
 
     //////////////////////////////////
-    // Compute z = M1 x
+    // Compute z = M1 r
     //////////////////////////////////
-    M1(r,z,tmp,mp,SmootherMirs);
+    PcgM1(r,z);
     rtzp =real(innerProduct(r,z));
 
     ///////////////////////////////////////
     // Solve for Mss mu = P A z and set p = z-mu
-    // Def2: p = 1 - Q Az = Pright z 
-    // Other algos M2 is trivial
     ///////////////////////////////////////
-    M2(z,p[0]);
+    PcgM2(z,p[0]);
 
     for (int k=0;k<=MaxIterations;k++){
     
@@ -143,26 +244,38 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
       int peri_kp = (k+1) % mmax;
 
       rtz=rtzp;
-      d= M3(p[peri_k],mp,mmp[peri_k],tmp);
+      d= PcgM3(p[peri_k],mmp[peri_k]);
       a = rtz/d;
     
       // Memorise this
       pAp[peri_k] = d;
+      std::cout << GridLogMessage << " pCG d "<< d<<std::endl;
 
       axpy(x,a,p[peri_k],x);
+      //      std::cout << GridLogMessage << " pCG x "<< norm2(x)<<std::endl;
       RealD rn = axpy_norm(r,-a,mmp[peri_k],r);
 
+      std::cout << GridLogMessage << " pCG rn "<< rn<<std::endl;
+
       // Compute z = M x
-      M1(r,z,tmp,mp);
+      PcgM1(r,z);
+      //      std::cout << GridLogMessage << " pCG z "<< norm2(z)<<std::endl;
 
       rtzp =real(innerProduct(r,z));
+      std::cout << GridLogMessage << " pCG rtzp "<<rtzp<<std::endl;
+      //      std::cout << GridLogMessage << " pCG r "<<norm2(r)<<std::endl;
 
-      M2(z,mu); // ADEF-2 this is identity. Axpy possible to eliminate
+      PcgM2(z,mu); // ADEF-2 this is identity. Axpy possible to eliminate
 
-      p[peri_kp]=p[peri_k];
+      //      std::cout << GridLogMessage << " pCG mu "<<norm2(mu)<<std::endl;
+      
+      p[peri_kp]=mu;
 
-      // Standard search direction  p -> z + b p    ; b = 
+      //      std::cout << GridLogMessage << " pCG p[peri_kp] "<<norm2(p[peri_kp])<<std::endl;
+
+      // Standard search direction  p -> z + b p 
       b = (rtzp)/rtz;
+      std::cout << GridLogMessage << " pCG b "<< b<<std::endl;
 
       int northog;
       //    northog     = (peri_kp==0)?1:peri_kp; // This is the fCG(mmax) algorithm
@@ -174,6 +287,7 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
 	RealD beta = -pbApk/pAp[peri_back];
 	axpy(p[peri_kp],beta,p[peri_back],p[peri_kp]);
       }
+      //      std::cout << GridLogMessage << " pCG p[peri_kp] orthog "<< norm2(p[peri_kp])<<std::endl;
 
       RealD rrn=sqrt(rn/ssq);
       std::cout<<GridLogMessage<<"TwoLevelfPcg: k= "<<k<<" residual = "<<rrn<<std::endl;
@@ -181,7 +295,7 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
       // Stopping condition
       if ( rn <= rsq ) { 
 
-	HermOp(x,mmp); // Shouldn't this be something else?
+	_FineLinop.HermOp(x,mmp[0]); // Shouldn't this be something else?
 	axpy(tmp,-1.0,src,mmp[0]);
 	
 	RealD psinorm = sqrt(norm2(x));
@@ -190,7 +304,7 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
 	RealD true_residual = tmpnorm/srcnorm;
 	std::cout<<GridLogMessage<<"TwoLevelfPcg:   true residual is "<<true_residual<<std::endl;
 	std::cout<<GridLogMessage<<"TwoLevelfPcg: target residual was"<<Tolerance<<std::endl;
-	return k;
+	return;
       }
     }
     // Non-convergence
@@ -199,52 +313,42 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
 
  public:
 
-  virtual void M(Field & in,Field & out,Field & tmp) {
-
-  }
-
-  virtual void M1(Field & in, Field & out) {// the smoother
-
+  virtual void PcgM1(Field & in, Field & out)
+  {
     // [PTM+Q] in = [1 - Q A] M in + Q in = Min + Q [ in -A Min]
+
     Field tmp(grid);
     Field Min(grid);
+    CoarseField PleftProj(coarsegrid);
+    CoarseField PleftMss_proj(coarsegrid);
 
-    PcgM(in,Min); // Smoother call
+    _Smoother(in,Min);
 
-    HermOp(Min,out);
+    _FineLinop.HermOp(Min,out);
     axpy(tmp,-1.0,out,in);          // tmp  = in - A Min
 
-    ProjectToSubspace(tmp,PleftProj);     
-    ApplyInverse(PleftProj,PleftMss_proj); // Ass^{-1} [in - A Min]_s
-    PromoteFromSubspace(PleftMss_proj,tmp);// tmp = Q[in - A Min]  
+    _Aggregates.ProjectToSubspace(PleftProj,tmp);     
+    _CoarseSolver(PleftProj,PleftMss_proj); // Ass^{-1} [in - A Min]_s
+    _Aggregates.PromoteFromSubspace(PleftMss_proj,tmp);// tmp = Q[in - A Min]  
+
     axpy(out,1.0,Min,tmp); // Min+tmp
+
   }
 
-  virtual void M2(const Field & in, Field & out) {
+  virtual void PcgM2(const Field & in, Field & out) {
     out=in;
-    // Must override for Def2 only
-    //  case PcgDef2:
-    //    Pright(in,out);
-    //    break;
   }
 
-  virtual RealD M3(const Field & p, Field & mmp){
-    double d,dd;
-    HermOpAndNorm(p,mmp,d,dd);
+  virtual RealD PcgM3(const Field & p, Field & mmp){
+    RealD dd;
+    _FineLinop.HermOp(p,mmp);
+    ComplexD dot = innerProduct(p,mmp);
+    dd=real(dot);
     return dd;
-    // Must override for Def1 only
-    //  case PcgDef1:
-    //    d=linop_d->Mprec(p,mmp,tmp,0,1);// Dag no
-    //      linop_d->Mprec(mmp,mp,tmp,1);// Dag yes
-    //    Pleft(mp,mmp);
-    //    d=real(linop_d->inner(p,mmp));
   }
 
-  virtual void VstartDef2(Field & xconst Field & src){
-    //case PcgDef2:
-    //case PcgAdef2: 
-    //case PcgAdef2f:
-    //case PcgV11f:
+  virtual void Vstart(Field & x,const Field & src)
+  {
     ///////////////////////////////////
     // Choose x_0 such that 
     // x_0 = guess +  (A_ss^inv) r_s = guess + Ass_inv [src -Aguess]
@@ -258,140 +362,22 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
     ///////////////////////////////////
     Field r(grid);
     Field mmp(grid);
-    
-    HermOp(x,mmp);
-    axpy (r, -1.0, mmp, src);        // r_{-1} = src - A x
-    ProjectToSubspace(r,PleftProj);     
-    ApplyInverseCG(PleftProj,PleftMss_proj); // Ass^{-1} r_s
-    PromoteFromSubspace(PleftMss_proj,mmp);  
-    x=x+mmp;
+    CoarseField PleftProj(coarsegrid);
+    CoarseField PleftMss_proj(coarsegrid);
 
-  }
+    _Aggregates.ProjectToSubspace(PleftProj,src);     
+    _CoarseSolverPrecise(PleftProj,PleftMss_proj); // Ass^{-1} r_s
+    _Aggregates.PromoteFromSubspace(PleftMss_proj,x);  
 
-  virtual void Vstart(Field & x,const Field & src){
-    return;
   }
 
   /////////////////////////////////////////////////////////////////////
-  // Only Def1 has non-trivial Vout. Override in Def1
+  // Only Def1 has non-trivial Vout.
   /////////////////////////////////////////////////////////////////////
   virtual void   Vout  (Field & in, Field & out,Field & src){
     out = in;
-    //case PcgDef1:
-    //    //Qb + PT x
-    //    ProjectToSubspace(src,PleftProj);     
-    //    ApplyInverse(PleftProj,PleftMss_proj); // Ass^{-1} r_s
-    //    PromoteFromSubspace(PleftMss_proj,tmp);  
-    //    
-    //    Pright(in,out);
-    //    
-    //    linop_d->axpy(out,tmp,out,1.0);
-    //    break;
   }
+};
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////
-  // Pright and Pleft are common to all implementations
-  ////////////////////////////////////////////////////////////////////////////////////////////////
-  virtual void Pright(Field & in,Field & out){
-    // P_R  = [ 1              0 ] 
-    //        [ -Mss^-1 Msb    0 ] 
-    Field in_sbar(grid);
-
-    ProjectToSubspace(in,PleftProj);     
-    PromoteFromSubspace(PleftProj,out);  
-    axpy(in_sbar,-1.0,out,in);       // in_sbar = in - in_s 
-
-    HermOp(in_sbar,out);
-    ProjectToSubspace(out,PleftProj);           // Mssbar in_sbar  (project)
-
-    ApplyInverse     (PleftProj,PleftMss_proj); // Mss^{-1} Mssbar 
-    PromoteFromSubspace(PleftMss_proj,out);     // 
-
-    axpy(out,-1.0,out,in_sbar);     // in_sbar - Mss^{-1} Mssbar in_sbar
-  }
-  virtual void Pleft (Field & in,Field & out){
-    // P_L  = [ 1  -Mbs Mss^-1] 
-    //        [ 0   0         ] 
-    Field in_sbar(grid);
-    Field    tmp2(grid);
-    Field    Mtmp(grid);
-
-    ProjectToSubspace(in,PleftProj);     
-    PromoteFromSubspace(PleftProj,out);  
-    axpy(in_sbar,-1.0,out,in);      // in_sbar = in - in_s
-
-    ApplyInverse(PleftProj,PleftMss_proj); // Mss^{-1} in_s
-    PromoteFromSubspace(PleftMss_proj,out);
-
-    HermOp(out,Mtmp);
-
-    ProjectToSubspace(Mtmp,PleftProj);      // Msbar s Mss^{-1}
-    PromoteFromSubspace(PleftProj,tmp2);
-
-    axpy(out,-1.0,tmp2,Mtmp);
-    axpy(out,-1.0,out,in_sbar);     // in_sbar - Msbars Mss^{-1} in_s
-  }
-}
-
-template<class Field>
-class TwoLevelFlexiblePcgADef2 : public TwoLevelFlexiblePcg<Field> {
- public:
-  virtual void M(Field & in,Field & out,Field & tmp){
-
-  } 
-  virtual void M1(Field & in, Field & out,Field & tmp,Field & mp){
-
-  }
-  virtual void M2(Field & in, Field & out){
-
-  }
-  virtual RealD M3(Field & p, Field & mp,Field & mmp, Field & tmp){
-
-  }
-  virtual void Vstart(Field & in, Field & src, Field & r, Field & mp, Field & mmp, Field & tmp){
-
-  }
-}
-/*
-template<class Field>
-class TwoLevelFlexiblePcgAD : public TwoLevelFlexiblePcg<Field> {
- public:
-  virtual void M(Field & in,Field & out,Field & tmp); 
-  virtual void M1(Field & in, Field & out,Field & tmp,Field & mp);
-  virtual void M2(Field & in, Field & out);
-  virtual RealD M3(Field & p, Field & mp,Field & mmp, Field & tmp);
-  virtual void Vstart(Field & in, Field & src, Field & r, Field & mp, Field & mmp, Field & tmp);
-}
-
-template<class Field>
-class TwoLevelFlexiblePcgDef1 : public TwoLevelFlexiblePcg<Field> {
- public:
-  virtual void M(Field & in,Field & out,Field & tmp); 
-  virtual void M1(Field & in, Field & out,Field & tmp,Field & mp);
-  virtual void M2(Field & in, Field & out);
-  virtual RealD M3(Field & p, Field & mp,Field & mmp, Field & tmp);
-  virtual void Vstart(Field & in, Field & src, Field & r, Field & mp, Field & mmp, Field & tmp);
-  virtual void   Vout  (Field & in, Field & out,Field & src,Field & tmp);
-}
-
-template<class Field>
-class TwoLevelFlexiblePcgDef2 : public TwoLevelFlexiblePcg<Field> {
- public:
-  virtual void M(Field & in,Field & out,Field & tmp); 
-  virtual void M1(Field & in, Field & out,Field & tmp,Field & mp);
-  virtual void M2(Field & in, Field & out);
-  virtual RealD M3(Field & p, Field & mp,Field & mmp, Field & tmp);
-  virtual void Vstart(Field & in, Field & src, Field & r, Field & mp, Field & mmp, Field & tmp);
-}
-
-template<class Field>
-class TwoLevelFlexiblePcgV11: public TwoLevelFlexiblePcg<Field> {
- public:
-  virtual void M(Field & in,Field & out,Field & tmp); 
-  virtual void M1(Field & in, Field & out,Field & tmp,Field & mp);
-  virtual void M2(Field & in, Field & out);
-  virtual RealD M3(Field & p, Field & mp,Field & mmp, Field & tmp);
-  virtual void Vstart(Field & in, Field & src, Field & r, Field & mp, Field & mmp, Field & tmp);
-}
-*/
+NAMESPACE_END(Grid);
 #endif
