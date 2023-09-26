@@ -90,10 +90,12 @@ template<class vtype,int N> accelerator_inline iVector<vtype,N> ProjectOnGroup(c
 template<class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr> 
 accelerator_inline iMatrix<vtype,N> ProjectOnGroup(const iMatrix<vtype,N> &arg)
 {
+  typedef typename iMatrix<vtype,N>::scalar_type scalar;
   // need a check for the group type?
   iMatrix<vtype,N> ret(arg);
   vtype nrm;
   vtype inner;
+  scalar one(1.0);
   for(int c1=0;c1<N;c1++){
 
     // Normalises row c1
@@ -102,7 +104,7 @@ accelerator_inline iMatrix<vtype,N> ProjectOnGroup(const iMatrix<vtype,N> &arg)
       inner += innerProduct(ret._internal[c1][c2],ret._internal[c1][c2]);
 
     nrm = sqrt(inner);
-    nrm = 1.0/nrm;
+    nrm = one/nrm;
     for(int c2=0;c2<N;c2++)
       ret._internal[c1][c2]*= nrm;
       
@@ -127,7 +129,7 @@ accelerator_inline iMatrix<vtype,N> ProjectOnGroup(const iMatrix<vtype,N> &arg)
       inner += innerProduct(ret._internal[c1][c2],ret._internal[c1][c2]);
 
     nrm = sqrt(inner);
-    nrm = 1.0/nrm;
+    nrm = one/nrm;
     for(int c2=0;c2<N;c2++)
       ret._internal[c1][c2]*= nrm;
   }
