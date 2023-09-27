@@ -177,17 +177,21 @@ int main (int argc, char ** argv)
   LittleDiracOperator LittleDiracOp(geom,FrbGrid,Coarse5d);
   LittleDiracOp.CoarsenOperatorColoured(FineHermOp,Aggregates);
 
+  // Try projecting to one hop only
+  LittleDiracOperator LittleDiracOpProj(LittleDiracOp);
+  LittleDiracOpProj.ProjectNearestNeighbour(0.5);
+
   typedef HermitianLinearOperator<LittleDiracOperator,CoarseVector> HermMatrix;
   HermMatrix CoarseOp (LittleDiracOp);
 
   //////////////////////////////////////////
   // Build a coarse lanczos
   //////////////////////////////////////////
-  Chebyshev<CoarseVector>      IRLCheby(0.02,50.0,71);  // 1 iter
+  Chebyshev<CoarseVector>      IRLCheby(0.5,60.0,71);  // 1 iter
   FunctionHermOp<CoarseVector> IRLOpCheby(IRLCheby,CoarseOp);
   PlainHermOp<CoarseVector>    IRLOp    (CoarseOp);
-  int Nk=64;
-  int Nm=128;
+  int Nk=48;
+  int Nm=64;
   int Nstop=Nk;
   ImplicitlyRestartedLanczos<CoarseVector> IRL(IRLOpCheby,IRLOp,Nstop,Nk,Nm,1.0e-5,20);
 
@@ -195,6 +199,9 @@ int main (int argc, char ** argv)
   std::vector<RealD>            eval(Nm);
   std::vector<CoarseVector>     evec(Nm,Coarse5d);
   CoarseVector c_src(Coarse5d); c_src=1.0;
+
+  PowerMethod<CoarseVector>       cPM;   cPM(CoarseOp,c_src);
+
   IRL.calc(eval,evec,c_src,Nconv);
   DeflatedGuesser<CoarseVector> DeflCoarseGuesser(evec,eval);
   
@@ -230,7 +237,9 @@ int main (int argc, char ** argv)
   //         use a limited stencil. Reread BFM code to check on evecs / deflation strategy with prec
   //
   std::vector<RealD> los({3.0}); // Nbasis 40 == 36,36 iters
-  std::vector<int> ords({7,8,10}); // Nbasis 40 == 40,38,36 iters (320,342,396 mults)
+
+  //  std::vector<int> ords({7,8,10}); // Nbasis 40 == 40,38,36 iters (320,342,396 mults)
+  std::vector<int> ords({7}); // Nbasis 40 == 40 iters (320 mults)  
 
   // Standard CG
   //      result=Zero();
