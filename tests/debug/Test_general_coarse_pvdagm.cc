@@ -189,7 +189,7 @@ int main (int argc, char ** argv)
   typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
 
-  NextToNearestStencilGeometry5D geom;
+  NextToNearestStencilGeometry5D geom(Coarse5d);
 
   std::cout<<GridLogMessage<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
