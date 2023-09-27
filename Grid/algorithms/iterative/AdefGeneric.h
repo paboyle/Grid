@@ -83,8 +83,8 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
     coarsegrid = Aggregates.CoarseGrid;
     grid       = Aggregates.FineGrid;
   };
-
-  void Inflexible(Field &src,Field &psi)
+  
+  void Inflexible(const Field &src,Field &psi)
   {
     Field resid(grid);
     RealD f;
@@ -99,11 +99,13 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
     Field r  (grid);
     Field mu (grid);
     Field rp (grid);
-
+    
     //Initial residual computation & set up
     RealD guess = norm2(psi);
     double tn;
 
+    GridStopWatch HDCGTimer;
+    HDCGTimer.Start();
     //////////////////////////
     // x0 = Vstart -- possibly modify guess
     //////////////////////////
@@ -168,7 +170,8 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
       // Stopping condition
       if ( rn <= rsq ) { 
 
-	std::cout<<GridLogMessage<<"HDCG: Pcg converged in "<<k<<" iterations"<<std::endl;;
+	HDCGTimer.Stop();
+	std::cout<<GridLogMessage<<"HDCG: Pcg converged in "<<k<<" iterations and "<<HDCGTimer.Elapsed()<<std::endl;;
 
 	_FineLinop.HermOp(x,mmp);			  
 	axpy(tmp,-1.0,src,mmp);
@@ -189,126 +192,9 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
     return ;
   }
   
-  // The Pcg routine is common to all, but the various matrices differ from derived 
-  // implementation to derived implmentation
-  void operator() (const Field &src, Field &psi){
-
-    psi.Checkerboard() = src.Checkerboard();
-    grid             = src.Grid();
-
-    RealD f;
-    RealD rtzp,rtz,a,d,b;
-    RealD rptzp;
-    RealD tn;
-    RealD guess = norm2(psi);
-    RealD ssq   = norm2(src);
-    RealD rsq   = ssq*Tolerance*Tolerance;
-    
-    /////////////////////////////
-    // Set up history vectors
-    /////////////////////////////
-    std::vector<Field> p  (mmax,grid);
-    std::vector<Field> mmp(mmax,grid);
-    std::vector<RealD> pAp(mmax);
-
-    Field x  (grid);
-    Field z  (grid);
-    Field tmp(grid);
-    Field r  (grid);
-    Field mu (grid);
-  
-    //////////////////////////
-    // x0 = Vstart -- possibly modify guess
-    //////////////////////////
-    x=Zero();
-    Vstart(x,src);
-
-    // r0 = b -A x0
-    _FineLinop.HermOp(x,mmp[0]); // Fine operator
-    axpy (r, -1.0,mmp[0], src);    // Recomputes r=src-Ax0
-
-    //////////////////////////////////
-    // Compute z = M1 r
-    //////////////////////////////////
-    PcgM1(r,z);
-    rtzp =real(innerProduct(r,z));
-
-    ///////////////////////////////////////
-    // Solve for Mss mu = P A z and set p = z-mu
-    ///////////////////////////////////////
-    PcgM2(z,p[0]);
-
-    for (int k=0;k<=MaxIterations;k++){
-    
-      int peri_k  = k % mmax;
-      int peri_kp = (k+1) % mmax;
-
-      rtz=rtzp;
-      d= PcgM3(p[peri_k],mmp[peri_k]);
-      a = rtz/d;
-    
-      // Memorise this
-      pAp[peri_k] = d;
-      std::cout << GridLogMessage << " pCG d "<< d<<std::endl;
-
-      axpy(x,a,p[peri_k],x);
-      //      std::cout << GridLogMessage << " pCG x "<< norm2(x)<<std::endl;
-      RealD rn = axpy_norm(r,-a,mmp[peri_k],r);
-
-      std::cout << GridLogMessage << " pCG rn "<< rn<<std::endl;
-
-      // Compute z = M x
-      PcgM1(r,z);
-      //      std::cout << GridLogMessage << " pCG z "<< norm2(z)<<std::endl;
-
-      rtzp =real(innerProduct(r,z));
-      std::cout << GridLogMessage << " pCG rtzp "<<rtzp<<std::endl;
-      //      std::cout << GridLogMessage << " pCG r "<<norm2(r)<<std::endl;
-
-      PcgM2(z,mu); // ADEF-2 this is identity. Axpy possible to eliminate
-
-      //      std::cout << GridLogMessage << " pCG mu "<<norm2(mu)<<std::endl;
-      
-      p[peri_kp]=mu;
-
-      //      std::cout << GridLogMessage << " pCG p[peri_kp] "<<norm2(p[peri_kp])<<std::endl;
-
-      // Standard search direction  p -> z + b p 
-      b = (rtzp)/rtz;
-      std::cout << GridLogMessage << " pCG b "<< b<<std::endl;
-
-      int northog;
-      //    northog     = (peri_kp==0)?1:peri_kp; // This is the fCG(mmax) algorithm
-      northog     = (k>mmax-1)?(mmax-1):k;        // This is the fCG-Tr(mmax-1) algorithm
-    
-      for(int back=0; back < northog; back++){
-	int peri_back = (k-back)%mmax;
-	RealD pbApk= real(innerProduct(mmp[peri_back],p[peri_kp]));
-	RealD beta = -pbApk/pAp[peri_back];
-	axpy(p[peri_kp],beta,p[peri_back],p[peri_kp]);
-      }
-      //      std::cout << GridLogMessage << " pCG p[peri_kp] orthog "<< norm2(p[peri_kp])<<std::endl;
-
-      RealD rrn=sqrt(rn/ssq);
-      std::cout<<GridLogMessage<<"TwoLevelfPcg: k= "<<k<<" residual = "<<rrn<<std::endl;
-
-      // Stopping condition
-      if ( rn <= rsq ) { 
-
-	_FineLinop.HermOp(x,mmp[0]); // Shouldn't this be something else?
-	axpy(tmp,-1.0,src,mmp[0]);
-	
-	RealD psinorm = sqrt(norm2(x));
-	RealD srcnorm = sqrt(norm2(src));
-	RealD tmpnorm = sqrt(norm2(tmp));
-	RealD true_residual = tmpnorm/srcnorm;
-	std::cout<<GridLogMessage<<"TwoLevelfPcg:   true residual is "<<true_residual<<std::endl;
-	std::cout<<GridLogMessage<<"TwoLevelfPcg: target residual was"<<Tolerance<<std::endl;
-	return;
-      }
-    }
-    // Non-convergence
-    assert(0);
+  virtual void operator() (const Field &in, Field &out)
+  {
+    this->Inflexible(in,out);
   }
 
  public:
@@ -322,17 +208,37 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
     CoarseField PleftProj(coarsegrid);
     CoarseField PleftMss_proj(coarsegrid);
 
+    GridStopWatch SmootherTimer;
+    GridStopWatch MatrixTimer;
+    SmootherTimer.Start();
     _Smoother(in,Min);
+    SmootherTimer.Stop();
 
+    MatrixTimer.Start();
     _FineLinop.HermOp(Min,out);
+    MatrixTimer.Stop();
     axpy(tmp,-1.0,out,in);          // tmp  = in - A Min
 
+    GridStopWatch ProjTimer;
+    GridStopWatch CoarseTimer;
+    GridStopWatch PromTimer;
+    ProjTimer.Start();
     _Aggregates.ProjectToSubspace(PleftProj,tmp);     
+    ProjTimer.Stop();
+    CoarseTimer.Start();
     _CoarseSolver(PleftProj,PleftMss_proj); // Ass^{-1} [in - A Min]_s
+    CoarseTimer.Stop();
+    PromTimer.Start();
     _Aggregates.PromoteFromSubspace(PleftMss_proj,tmp);// tmp = Q[in - A Min]  
+    PromTimer.Stop();
+    std::cout << GridLogMessage << "PcgM1 breakdown "<<std::endl;
+    std::cout << GridLogMessage << "\tSmoother   " << SmootherTimer.Elapsed() <<std::endl;
+    std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
+    std::cout << GridLogMessage << "\tProj       " << ProjTimer.Elapsed() <<std::endl;
+    std::cout << GridLogMessage << "\tCoarse     " << CoarseTimer.Elapsed() <<std::endl;
+    std::cout << GridLogMessage << "\tProm       " << PromTimer.Elapsed() <<std::endl;
 
     axpy(out,1.0,Min,tmp); // Min+tmp
-
   }
 
   virtual void PcgM2(const Field & in, Field & out) {
