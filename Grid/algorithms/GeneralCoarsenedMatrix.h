@@ -220,6 +220,30 @@ public:
   GridBase      * FineGrid(void)       { return _FineGrid; };   // this is all the linalg routines need to know
   GridCartesian * CoarseGrid(void)     { return _CoarseGrid; };   // this is all the linalg routines need to know
 
+
+  void ProjectNearestNeighbour(RealD shift)
+  {
+    int Nd = geom.grid->Nd();
+    int point;
+    std::cout << "ProjectNearestNeighbour "<<std::endl;
+    for(int p=0;p<geom.npoint;p++){
+      int nhops = 0;
+      for(int s=0;s<Nd;s++){
+	nhops+=abs(geom.shifts[p][s]);
+      }
+      if(nhops>1) {
+	std::cout << "setting geom "<<p<<" shift "<<geom.shifts[p]<<" to zero "<<std::endl;
+	_A[p]=Zero();
+	_Adag[p]=Zero();
+      }
+      if(nhops==0) {
+	std::cout << " Adding IR shift "<<shift<<" to "<<geom.shifts[p]<<std::endl;
+	_A[p]=_A[p]+shift;
+	_Adag[p]=_Adag[p]+shift;
+      }
+    }
+  }
+  
   GeneralCoarsenedMatrix(NonLocalStencilGeometry &_geom,GridBase *FineGrid, GridCartesian * CoarseGrid)
     : geom(_geom),
       _FineGrid(FineGrid),
@@ -255,12 +279,19 @@ public:
   }
   void Mult (std::vector<CoarseMatrix> &A,const CoarseVector &in, CoarseVector &out)
   {
+    RealD ttot=0;
+    RealD tmult=0;
+    RealD texch=0;
+    RealD text=0;
+    ttot=-usecond();
     conformable(CoarseGrid(),in.Grid());
     conformable(in.Grid(),out.Grid());
     out.Checkerboard() = in.Checkerboard();
     CoarseVector tin=in;
 
+    texch-=usecond();
     CoarseVector pin  = Cell.Exchange(tin);
+    texch+=usecond();
 
     CoarseVector pout(pin.Grid());
     
@@ -281,11 +312,15 @@ public:
     typedef CComplex   calcComplex;
     
     int osites=pin.Grid()->oSites();
+    int gsites=pin.Grid()->gSites();
 
+    RealD flops = 1.0* npoint * nbasis * nbasis * 8 * gsites;
+      
     for(int point=0;point<npoint;point++){
       conformable(A[point],pin);
     }
     
+    tmult-=usecond();
     accelerator_for(sss, osites*nbasis, 1, {
       int ss = sss/nbasis;
       int b  = sss%nbasis;
@@ -313,10 +348,19 @@ public:
       }
       out_v[ss](b)=res;
     });
+    tmult+=usecond();
 
     for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer[p].ViewClose();
-
+    text-=usecond();
     out = Cell.Extract(pout);
+    text+=usecond();
+    ttot+=usecond();
+    std::cout << GridLogMessage<<"Coarse Mult exch "<<texch<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Mult mult "<<tmult<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Mult ext  "<<text<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Mult tot  "<<ttot<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Kernel flops/s "<< flops/tmult<<" mflop/s"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
   };
 
   void PopulateAdag(void)
