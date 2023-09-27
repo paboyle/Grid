@@ -323,7 +323,7 @@ public:
 
     // New normalised noise
     std::cout << GridLogMessage<<" Chebyshev subspace pure noise : ord "<<orderfilter<<" ["<<lo<<","<<hi<<"]"<<std::endl;
-    std::cout << GridLogMessage<<" Chebyshev subspace pure noise  : nbasis"<<nn<<std::endl;
+    std::cout << GridLogMessage<<" Chebyshev subspace pure noise  : nbasis "<<nn<<std::endl;
 
 
     for(int b =0;b<nbasis;b++)
@@ -333,7 +333,8 @@ public:
       noise=noise*scale;
 
       // Initial matrix element
-      hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise <n|MdagM|n> "<<norm2(Mn)<<std::endl;
+      hermop.Op(noise,Mn);
+      if(b==0) std::cout<<GridLogMessage << "noise <n|MdagM|n> "<<norm2(Mn)<<std::endl;
       // Filter
       Chebyshev<FineField> Cheb(lo,hi,orderfilter);
       Cheb(hermop,noise,Mn);
