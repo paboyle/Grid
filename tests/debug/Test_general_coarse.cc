@@ -108,7 +108,7 @@ int main (int argc, char ** argv)
 
   DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
-  const int nbasis = 4;
+  const int nbasis = 16;
   const int cb = 0 ;
   LatticeFermion prom(FGrid);
 
@@ -147,6 +147,8 @@ int main (int argc, char ** argv)
   //  LittleDiracOpCol.CoarsenOperator(HOA,Aggregates);
   //  std::cout << "LittleDiracOp old " << LittleDiracOpCol._A[pp]<<std::endl;
   LittleDiracOp.CoarsenOperatorColoured(HOA,Aggregates);
+  //  LittleDiracOp.ExchangeCoarseLinks();
+
   //  std::cout << "LittleDiracOp new " << LittleDiracOp._A[pp]<<std::endl;
   
   ///////////////////////////////////////////////////
@@ -178,6 +180,7 @@ int main (int argc, char ** argv)
   blockProject(c_proj,tmp,subspace);
   std::cout<<GridLogMessage<<" Called Big Dirac Op "<<norm2(tmp)<<std::endl;
 
+  std::cout<<GridLogMessage<<" Calling little Dirac Op "<<std::endl;
   LittleDiracOp.M(c_src,c_res);
   LittleDiracOp.Mdag(c_src,c_res_dag);
 
