@@ -193,6 +193,7 @@ class GeneralCoarsenedMatrix : public SparseMatrixBase<Lattice<iVector<CComplex,
 public:
     
   typedef iVector<CComplex,nbasis >           siteVector;
+  typedef iMatrix<CComplex,nbasis >           siteMatrix;
   typedef Lattice<iScalar<CComplex> >         CoarseComplexField;
   typedef Lattice<siteVector>                 CoarseVector;
   typedef Lattice<iMatrix<CComplex,nbasis > > CoarseMatrix;
@@ -254,7 +255,6 @@ public:
   {
     {
       int npoint = _geom.npoint;
-      StencilEntry *SE;
       autoView( Stencil_v  , Stencil, AcceleratorRead);
       int osites=Stencil.Grid()->oSites();
       for(int ss=0;ss<osites;ss++){
@@ -293,73 +293,64 @@ public:
     CoarseVector pin  = Cell.Exchange(tin);
     texch+=usecond();
 
-    CoarseVector pout(pin.Grid());
-    
-    autoView( in_v , pin, AcceleratorRead);
-    autoView( out_v , pout, AcceleratorWrite);
-    autoView( Stencil_v  , Stencil, AcceleratorRead);
+    CoarseVector pout(pin.Grid()); pout=Zero();
+
     int npoint = geom.npoint;
     typedef LatticeView<Cobj> Aview;
       
-    Vector<Aview> AcceleratorViewContainer;
-  
-    for(int p=0;p<npoint;p++) AcceleratorViewContainer.push_back(A[p].View(AcceleratorRead));
-    
-    Aview *Aview_p = & AcceleratorViewContainer[0];
-
     const int Nsimd = CComplex::Nsimd();
-    typedef siteVector calcVector;
-    typedef CComplex   calcComplex;
     
     int osites=pin.Grid()->oSites();
     int gsites=pin.Grid()->gSites();
 
     RealD flops = 1.0* npoint * nbasis * nbasis * 8 * gsites;
+    RealD bytes = (1.0*osites*sizeof(siteMatrix)+2.0*osites*sizeof(siteVector))*npoint;
       
     for(int point=0;point<npoint;point++){
       conformable(A[point],pin);
     }
-    
-    tmult-=usecond();
-    accelerator_for(sss, osites*nbasis, 1, {
-      int ss = sss/nbasis;
-      int b  = sss%nbasis;
-      assert(ss<osites);
-      calcComplex res;
-      res = Zero();
-      calcVector nbr;
-      int ptype;
-      StencilEntry *SE;
+
+    {
+      autoView( in_v , pin, AcceleratorRead);
+      autoView( out_v , pout, AcceleratorWrite);
+      autoView( Stencil_v  , Stencil, AcceleratorRead);
+
+      std::cout << "Calling accelerator for loop " <<std::endl;
       
       for(int point=0;point<npoint;point++){
+	autoView( A_v, A[point],AcceleratorRead);
+	tmult-=usecond();
+	prof_accelerator_for(ss, osites, Nsimd, {
 
-	auto SE = Stencil_v.GetEntry(point,ss);
-	
-	int o = SE->_offset;
+	  auto SE = Stencil_v.GetEntry(point,ss);
+	  int o = SE->_offset;
+	  
+	  // Junk load is annoying -- need to sort out the types better.
+	  //////////////////////////////
+	  // GPU chokes on gpermute - want coalescedReadPermute()
+	  //	gpermute(nbr,SE->_permute);
+	  //////////////////////////////
+	  coalescedWrite(out_v[ss],out_v(ss) + A_v(ss)*in_v(o));
 
-	assert( o < osites);
-	// gpermute etc..
-	nbr = in_v[o];
-	gpermute(nbr,SE->_permute);
-
-	for(int bb=0;bb<nbasis;bb++) {
-	  res = res + Aview_p[point][ss](b,bb)*nbr(bb);
-	}
+	});
+	tmult+=usecond();
       }
-      out_v[ss](b)=res;
-    });
-    tmult+=usecond();
-
-    for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer[p].ViewClose();
+      std::cout << "Called accelerator for loop " <<std::endl;
+    }
+    std::cout << "out"<< norm2(pout)<<std::endl;
+    std::cout << "in"<< norm2(pin)<<std::endl;
+    std::cout << "A"<< norm2(A[0])<<std::endl;
     text-=usecond();
     out = Cell.Extract(pout);
     text+=usecond();
     ttot+=usecond();
+
     std::cout << GridLogMessage<<"Coarse Mult exch "<<texch<<" us"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult mult "<<tmult<<" us"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult ext  "<<text<<" us"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult tot  "<<ttot<<" us"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Kernel flops/s "<< flops/tmult<<" mflop/s"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Kernel "<< flops/tmult<<" mflop/s"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Kernel "<< bytes/tmult<<" MB/s"<<std::endl;
     std::cout << GridLogMessage<<"Coarse flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
   };
 
@@ -453,10 +444,7 @@ public:
       Coordinate coor({0,0,0,0,0});
       auto sval = peekSite(_A[p],coor);
     }
-    for(int p=0;p<geom.npoint;p++){
-      _A[p] = Cell.Exchange(_A[p]);
-      _Adag[p]= Cell.Exchange(_Adag[p]);
-    }
+    ExchangeCoarseLinks();
     std::cout << GridLogMessage<<"CoarsenOperator pick "<<tpick<<" us"<<std::endl;
     std::cout << GridLogMessage<<"CoarsenOperator mat  "<<tmat <<" us"<<std::endl;
     std::cout << GridLogMessage<<"CoarsenOperator projection "<<tproj<<" us"<<std::endl;
@@ -542,13 +530,13 @@ public:
        *     Then A{ji}^{b,b+l} = M^{-1}_{lm} ComputeProj_{m,b,i,j}
        */
     teigen-=usecond();
-    ComplexD ci(0.0,1.0);
     Eigen::MatrixXcd Mkl    = Eigen::MatrixXcd::Zero(npoint,npoint);
     Eigen::MatrixXcd invMkl = Eigen::MatrixXcd::Zero(npoint,npoint);
+    ComplexD ci(0.0,1.0);
     for(int k=0;k<npoint;k++){ // Loop over momenta
 
       for(int l=0;l<npoint;l++){ // Loop over nbr relative
-	std::complex<double> phase(0.0,0.0);
+	ComplexD phase(0.0,0.0);
 	for(int mu=0;mu<Nd;mu++){
 	  RealD TwoPiL =  M_PI * 2.0/ clatt[mu];
 	  phase=phase+TwoPiL*geom.shifts[k][mu]*geom.shifts[l][mu];
@@ -633,17 +621,19 @@ public:
     PopulateAdag();
 
     // Need to write something to populate Adag from A
-    for(int p=0;p<geom.npoint;p++){
-      _A[p] = Cell.Exchange(_A[p]);
-      _Adag[p]= Cell.Exchange(_Adag[p]);
-    }
+    ExchangeCoarseLinks();
     std::cout << GridLogMessage<<"CoarsenOperator eigen  "<<teigen<<" us"<<std::endl;
     std::cout << GridLogMessage<<"CoarsenOperator phase  "<<tphase<<" us"<<std::endl;
     std::cout << GridLogMessage<<"CoarsenOperator mat    "<<tmat <<" us"<<std::endl;
     std::cout << GridLogMessage<<"CoarsenOperator proj   "<<tproj<<" us"<<std::endl;
     std::cout << GridLogMessage<<"CoarsenOperator inv    "<<tinv<<" us"<<std::endl;
   }
-
+  void ExchangeCoarseLinks(void){
+    for(int p=0;p<geom.npoint;p++){
+      _A[p] = Cell.Exchange(_A[p]);
+      _Adag[p]= Cell.Exchange(_Adag[p]);
+    }
+  }
   virtual  void Mdiag    (const Field &in, Field &out){ assert(0);};
   virtual  void Mdir     (const Field &in, Field &out,int dir, int disp){assert(0);};
   virtual  void MdirAll  (const Field &in, std::vector<Field> &out){assert(0);};
