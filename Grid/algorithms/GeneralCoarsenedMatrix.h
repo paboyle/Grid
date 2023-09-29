@@ -279,6 +279,7 @@ public:
   }
   void Mult (std::vector<CoarseMatrix> &A,const CoarseVector &in, CoarseVector &out)
   {
+    RealD tviews=0;
     RealD ttot=0;
     RealD tmult=0;
     RealD texch=0;
@@ -306,45 +307,62 @@ public:
     RealD flops = 1.0* npoint * nbasis * nbasis * 8 * gsites;
     RealD bytes = (1.0*osites*sizeof(siteMatrix)+2.0*osites*sizeof(siteVector))*npoint;
       
-    for(int point=0;point<npoint;point++){
-      conformable(A[point],pin);
-    }
+    //    for(int point=0;point<npoint;point++){
+    //      conformable(A[point],pin);
+    //    }
 
     {
+      tviews-=usecond();
       autoView( in_v , pin, AcceleratorRead);
       autoView( out_v , pout, AcceleratorWrite);
       autoView( Stencil_v  , Stencil, AcceleratorRead);
+      tviews+=usecond();
 
       std::cout << "Calling accelerator for loop " <<std::endl;
       
       for(int point=0;point<npoint;point++){
+	tviews-=usecond();
 	autoView( A_v, A[point],AcceleratorRead);
+	tviews+=usecond();
 	tmult-=usecond();
+#if 0
 	prof_accelerator_for(ss, osites, Nsimd, {
-
-	  auto SE = Stencil_v.GetEntry(point,ss);
-	  int o = SE->_offset;
-	  
 	  // Junk load is annoying -- need to sort out the types better.
 	  //////////////////////////////
 	  // GPU chokes on gpermute - want coalescedReadPermute()
 	  //	gpermute(nbr,SE->_permute);
 	  //////////////////////////////
+	  auto SE = Stencil_v.GetEntry(point,ss);
+	  int o = SE->_offset;
 	  coalescedWrite(out_v[ss],out_v(ss) + A_v(ss)*in_v(o));
-
 	});
+#else
+	prof_accelerator_for(sss, osites*nbasis, Nsimd, {
+
+	    typedef decltype(coalescedRead(in_v[0]))    calcVector;
+
+	    int ss = sss/nbasis;
+	    int b  = sss%nbasis;
+
+	    auto SE = Stencil_v.GetEntry(point,ss);
+	    auto nbr = coalescedRead(in_v[SE->_offset]);
+	    auto res = out_v(ss)(b);
+	    for(int bb=0;bb<nbasis;bb++) {
+	      res = res + coalescedRead(A_v[ss](b,bb))*nbr(bb);
+	    }
+	    coalescedWrite(out_v[ss](b),res);
+	});
+#endif
 	tmult+=usecond();
       }
       std::cout << "Called accelerator for loop " <<std::endl;
     }
-    std::cout << "out"<< norm2(pout)<<std::endl;
-    std::cout << "in"<< norm2(pin)<<std::endl;
-    std::cout << "A"<< norm2(A[0])<<std::endl;
     text-=usecond();
     out = Cell.Extract(pout);
     text+=usecond();
     ttot+=usecond();
 
+    std::cout << GridLogMessage<<"Coarse Mult Aviews "<<tviews<<" us"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult exch "<<texch<<" us"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult mult "<<tmult<<" us"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult ext  "<<text<<" us"<<std::endl;
@@ -352,6 +370,7 @@ public:
     std::cout << GridLogMessage<<"Coarse Kernel "<< flops/tmult<<" mflop/s"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Kernel "<< bytes/tmult<<" MB/s"<<std::endl;
     std::cout << GridLogMessage<<"Coarse flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse bytes   "<< bytes/1e6<<" MB"<<std::endl;
   };
 
   void PopulateAdag(void)
