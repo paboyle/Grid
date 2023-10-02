@@ -43,7 +43,7 @@ public:
 private:
   RealD c_plaq;
   RealD c_rect;
-
+  typename WilsonLoops<Gimpl>::StapleAndRectStapleAllWorkspace workspace;
 public:
   PlaqPlusRectangleAction(RealD b,RealD c): c_plaq(b),c_rect(c){};
 
@@ -79,27 +79,18 @@ public:
     GridBase *grid = Umu.Grid();
 
     std::vector<GaugeLinkField> U (Nd,grid);
-    std::vector<GaugeLinkField> U2(Nd,grid);
-
     for(int mu=0;mu<Nd;mu++){
       U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
-      WilsonLoops<Gimpl>::RectStapleDouble(U2[mu],U[mu],mu);
     }
+    std::vector<GaugeLinkField> RectStaple(Nd,grid), Staple(Nd,grid);
+    WilsonLoops<Gimpl>::StapleAndRectStapleAll(Staple, RectStaple, U, workspace);
 
     GaugeLinkField dSdU_mu(grid);
     GaugeLinkField staple(grid);
 
     for (int mu=0; mu < Nd; mu++){
-
-      // Staple in direction mu
-
-      WilsonLoops<Gimpl>::Staple(staple,Umu,mu);
-
-      dSdU_mu = Ta(U[mu]*staple)*factor_p;
-
-      WilsonLoops<Gimpl>::RectStaple(Umu,staple,U2,U,mu);
-
-      dSdU_mu = dSdU_mu + Ta(U[mu]*staple)*factor_r;
+      dSdU_mu = Ta(U[mu]*Staple[mu])*factor_p;
+      dSdU_mu = dSdU_mu + Ta(U[mu]*RectStaple[mu])*factor_r;
 	  
       PokeIndex<LorentzIndex>(dSdU, dSdU_mu, mu);
     }

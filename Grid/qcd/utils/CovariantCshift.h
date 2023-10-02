@@ -37,13 +37,14 @@ NAMESPACE_BEGIN(Grid);
 // Make these members of an Impl class for BC's.
 
 namespace PeriodicBC { 
-
+  //Out(x) = Link(x)*field(x+mu)
   template<class covariant,class gauge> Lattice<covariant> CovShiftForward(const Lattice<gauge> &Link, 
 									   int mu,
 									   const Lattice<covariant> &field)
   {
     return Link*Cshift(field,mu,1);// moves towards negative mu
   }
+  //Out(x) = Link^dag(x-mu)*field(x-mu)
   template<class covariant,class gauge> Lattice<covariant> CovShiftBackward(const Lattice<gauge> &Link, 
 									    int mu,
 									    const Lattice<covariant> &field)
@@ -52,19 +53,19 @@ namespace PeriodicBC {
     tmp = adj(Link)*field;
     return Cshift(tmp,mu,-1);// moves towards positive mu
   }
-
+  //Out(x) = Link^dag(x-mu)
   template<class gauge> Lattice<gauge>
   CovShiftIdentityBackward(const Lattice<gauge> &Link, int mu) 
   {
     return Cshift(adj(Link), mu, -1);
   }
-
+  //Out(x) = Link(x)
   template<class gauge> Lattice<gauge>
   CovShiftIdentityForward(const Lattice<gauge> &Link, int mu)
   {
     return Link;
   }
-
+  //Link(x) = Link(x+mu)
   template<class gauge> Lattice<gauge>
   ShiftStaple(const Lattice<gauge> &Link, int mu)
   {

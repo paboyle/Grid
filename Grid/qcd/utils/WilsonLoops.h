@@ -290,7 +290,7 @@ public:
   }
 */
   //////////////////////////////////////////////////
-  // the sum over all staples on each site
+  // the sum over all nu-oriented staples for nu != mu on each site
   //////////////////////////////////////////////////
   static void Staple(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
 
@@ -300,6 +300,10 @@ public:
     for (int d = 0; d < Nd; d++) {
       U[d] = PeekIndex<LorentzIndex>(Umu, d);
     }
+    Staple(staple, U, mu);
+  }
+
+  static void Staple(GaugeMat &staple, const std::vector<GaugeMat> &U, int mu) {
     staple = Zero();
 
     for (int nu = 0; nu < Nd; nu++) {
@@ -335,6 +339,202 @@ public:
     }
   }
 
+  /////////////
+  //Staples for each direction mu, summed over nu != mu
+  //staple: output staples for each mu (Nd)
+  //U: link array (Nd)
+  /////////////
+  static void StapleAll(std::vector<GaugeMat> &staple, const std::vector<GaugeMat> &U) {
+    assert(staple.size() == Nd); assert(U.size() == Nd);
+    for(int mu=0;mu<Nd;mu++) Staple(staple[mu], U, mu);
+  }
+
+
+  //A workspace class allowing reuse of the stencil
+  class WilsonLoopPaddedStencilWorkspace{
+    std::unique_ptr<GeneralLocalStencil> stencil;
+    size_t nshift;
+
+    void generateStencil(GridBase* padded_grid){
+      double t0 = usecond();
+      
+      //Generate shift arrays
+      std::vector<Coordinate> shifts = this->getShifts();
+      nshift = shifts.size();
+      
+      double t1 = usecond();
+      //Generate local stencil
+      stencil.reset(new GeneralLocalStencil(padded_grid,shifts));
+      double t2 = usecond();
+      std::cout << GridLogPerformance << " WilsonLoopPaddedWorkspace timings: coord:" << (t1-t0)/1000 << "ms, stencil:" << (t2-t1)/1000 << "ms" << std::endl;   
+    }
+  public:
+    //Get the stencil. If not already generated, or if generated using a different Grid than in PaddedCell, it will be created on-the-fly
+    const GeneralLocalStencil & getStencil(const PaddedCell &pcell){
+      assert(pcell.depth >= this->paddingDepth());
+      if(!stencil || stencil->Grid() != (GridBase*)pcell.grids.back() ) generateStencil((GridBase*)pcell.grids.back());
+      return *stencil;
+    }
+    size_t Nshift() const{ return nshift; }
+    
+    virtual std::vector<Coordinate> getShifts() const = 0;
+    virtual int paddingDepth() const = 0; //padding depth required
+    
+    virtual ~WilsonLoopPaddedStencilWorkspace(){}
+  };
+
+  //This workspace allows the sharing of a common PaddedCell object between multiple stencil workspaces
+  class WilsonLoopPaddedWorkspace{
+    std::vector<WilsonLoopPaddedStencilWorkspace*> stencil_wk;
+    std::unique_ptr<PaddedCell> pcell;
+
+    void generatePcell(GridBase* unpadded_grid){
+      assert(stencil_wk.size());
+      int max_depth = 0;
+      for(auto const &s : stencil_wk) max_depth=std::max(max_depth, s->paddingDepth());
+      
+      pcell.reset(new PaddedCell(max_depth, dynamic_cast<GridCartesian*>(unpadded_grid)));
+    }
+    
+  public:
+    //Add a stencil definition. This should be done before the first call to retrieve a stencil object.
+    //Takes ownership of the pointer
+    void addStencil(WilsonLoopPaddedStencilWorkspace *stencil){
+      assert(!pcell);
+      stencil_wk.push_back(stencil);
+    }
+
+    const GeneralLocalStencil & getStencil(const size_t stencil_idx, GridBase* unpadded_grid){
+      if(!pcell || pcell->unpadded_grid != unpadded_grid) generatePcell(unpadded_grid);
+      return stencil_wk[stencil_idx]->getStencil(*pcell);
+    }      
+    const PaddedCell & getPaddedCell(GridBase* unpadded_grid){
+      if(!pcell || pcell->unpadded_grid != unpadded_grid) generatePcell(unpadded_grid);
+      return *pcell;
+    }
+    
+    ~WilsonLoopPaddedWorkspace(){
+      for(auto &s : stencil_wk) delete s;
+    }
+  };
+
+  //A workspace class allowing reuse of the stencil
+  class StaplePaddedAllWorkspace: public WilsonLoopPaddedStencilWorkspace{
+  public:
+    std::vector<Coordinate> getShifts() const override{
+      std::vector<Coordinate> shifts;
+      for(int mu=0;mu<Nd;mu++){
+	for(int nu=0;nu<Nd;nu++){
+	  if(nu != mu){
+	    Coordinate shift_0(Nd,0);
+	    Coordinate shift_mu(Nd,0); shift_mu[mu]=1;
+	    Coordinate shift_nu(Nd,0); shift_nu[nu]=1;
+	    Coordinate shift_mnu(Nd,0); shift_mnu[nu]=-1;
+	    Coordinate shift_mnu_pmu(Nd,0); shift_mnu_pmu[nu]=-1; shift_mnu_pmu[mu]=1;
+      
+	    //U_nu(x+mu)U^dag_mu(x+nu) U^dag_nu(x)
+	    shifts.push_back(shift_0);
+	    shifts.push_back(shift_nu);
+	    shifts.push_back(shift_mu);
+      
+	    //U_nu^dag(x-nu+mu) U_mu^dag(x-nu) U_nu(x-nu)
+	    shifts.push_back(shift_mnu);
+	    shifts.push_back(shift_mnu);
+	    shifts.push_back(shift_mnu_pmu);
+	  }
+	}
+      }
+      return shifts;
+    }
+
+    int paddingDepth() const override{ return 1; }
+  }; 
+
+  //Padded cell implementation of the staple method for all mu, summed over nu != mu
+  //staple: output staple for each mu, summed over nu != mu (Nd)
+  //U_padded: the gauge link fields padded out using the PaddedCell class
+  //Cell: the padded cell class
+  static void StaplePaddedAll(std::vector<GaugeMat> &staple, const std::vector<GaugeMat> &U_padded, const PaddedCell &Cell) {
+    StaplePaddedAllWorkspace wk;
+    StaplePaddedAll(staple,U_padded,Cell,wk.getStencil(Cell));
+  }
+  
+  //Padded cell implementation of the staple method for all mu, summed over nu != mu
+  //staple: output staple for each mu, summed over nu != mu (Nd)
+  //U_padded: the gauge link fields padded out using the PaddedCell class
+  //Cell: the padded cell class
+  //gStencil: the precomputed generalized local stencil for the staple
+  static void StaplePaddedAll(std::vector<GaugeMat> &staple, const std::vector<GaugeMat> &U_padded, const PaddedCell &Cell, const GeneralLocalStencil &gStencil) {
+    double t0 = usecond();
+    assert(U_padded.size() == Nd); assert(staple.size() == Nd);
+    assert(U_padded[0].Grid() == (GridBase*)Cell.grids.back());
+    assert(Cell.depth >= 1);
+    GridBase *ggrid = U_padded[0].Grid(); //padded cell grid
+
+    int shift_mu_off = gStencil._npoints/Nd;
+    
+    //Open views to padded gauge links and keep open over mu loop
+    typedef LatticeView<typename GaugeMat::vector_object> GaugeViewType;
+    size_t vsize = Nd*sizeof(GaugeViewType);
+    GaugeViewType* Ug_dirs_v_host = (GaugeViewType*)malloc(vsize);
+    for(int i=0;i<Nd;i++) Ug_dirs_v_host[i] = U_padded[i].View(AcceleratorRead);
+    GaugeViewType* Ug_dirs_v = (GaugeViewType*)acceleratorAllocDevice(vsize);
+    acceleratorCopyToDevice(Ug_dirs_v_host,Ug_dirs_v,vsize);
+    
+    GaugeMat gStaple(ggrid);
+
+    int outer_off = 0;
+    for(int mu=0;mu<Nd;mu++){
+      { //view scope
+	autoView( gStaple_v , gStaple, AcceleratorWrite);
+	auto gStencil_v = gStencil.View();
+	
+	accelerator_for(ss, ggrid->oSites(), ggrid->Nsimd(), {
+	    decltype(coalescedRead(Ug_dirs_v[0][0])) stencil_ss;
+	    stencil_ss = Zero();
+	    int off = outer_off;
+	    
+	    for(int nu=0;nu<Nd;nu++){
+	      if(nu != mu){	  
+		GeneralStencilEntry const* e = gStencil_v.GetEntry(off++,ss);
+		auto U0 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(off++,ss);
+		auto U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(off++,ss);
+		auto U2 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+      
+		stencil_ss = stencil_ss + U2 * U1 * U0;
+
+		e = gStencil_v.GetEntry(off++,ss);
+		U0 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(off++,ss);
+		U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(off++,ss);
+		U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+
+		stencil_ss = stencil_ss + U2 * U1 * U0;
+	      }
+	    }
+		
+	    coalescedWrite(gStaple_v[ss],stencil_ss);
+	  }
+	  );
+      } //ensure views are all closed!
+      
+      staple[mu] = Cell.Extract(gStaple);
+      outer_off += shift_mu_off;
+    }//mu loop
+
+    for(int i=0;i<Nd;i++) Ug_dirs_v_host[i].ViewClose();
+    free(Ug_dirs_v_host);
+    acceleratorFreeDevice(Ug_dirs_v);
+    
+    double t1=usecond();
+    
+    std::cout << GridLogPerformance << "StaplePaddedAll timing:" << (t1-t0)/1000 << "ms" << std::endl;   
+  }
+
+   
   //////////////////////////////////////////////////
   // the sum over all staples on each site in direction mu,nu, upper part
   //////////////////////////////////////////////////
@@ -707,18 +907,14 @@ public:
   // the sum over all staples on each site
   //////////////////////////////////////////////////
   static void RectStapleDouble(GaugeMat &U2, const GaugeMat &U, int mu) {
-    U2 = U * Cshift(U, mu, 1);
+    U2 = U * Gimpl::CshiftLink(U, mu, 1);
   }
 
   ////////////////////////////////////////////////////////////////////////////
-  // Hop by two optimisation strategy does not work nicely with Gparity. (could
-  // do,
-  // but need to track two deep where cross boundary and apply a conjugation).
-  // Must differentiate this in Gimpl, and use Gimpl::isPeriodicGaugeField to do
-  // so .
+  // Hop by two optimisation strategy. Use RectStapleDouble to obtain 'U2'
   ////////////////////////////////////////////////////////////////////////////
-  static void RectStapleOptimised(GaugeMat &Stap, std::vector<GaugeMat> &U2,
-                                  std::vector<GaugeMat> &U, int mu) {
+  static void RectStapleOptimised(GaugeMat &Stap, const std::vector<GaugeMat> &U2,
+                                  const std::vector<GaugeMat> &U, int mu) {
 
     Stap = Zero();
 
@@ -732,9 +928,9 @@ public:
 
         // Up staple    ___ ___
         //             |       |
-        tmp = Cshift(adj(U[nu]), nu, -1);
+        tmp = Gimpl::CshiftLink(adj(U[nu]), nu, -1);
         tmp = adj(U2[mu]) * tmp;
-        tmp = Cshift(tmp, mu, -2);
+        tmp = Gimpl::CshiftLink(tmp, mu, -2);
 
         Staple2x1 = Gimpl::CovShiftForward(U[nu], nu, tmp);
 
@@ -742,14 +938,14 @@ public:
         //             |___ ___|
         //
         tmp = adj(U2[mu]) * U[nu];
-        Staple2x1 += Gimpl::CovShiftBackward(U[nu], nu, Cshift(tmp, mu, -2));
+        Staple2x1 += Gimpl::CovShiftBackward(U[nu], nu, Gimpl::CshiftLink(tmp, mu, -2));
 
         //              ___ ___
         //             |    ___|
         //             |___ ___|
         //
 
-        Stap += Cshift(Gimpl::CovShiftForward(U[mu], mu, Staple2x1), mu, 1);
+        Stap += Gimpl::CshiftLink(Gimpl::CovShiftForward(U[mu], mu, Staple2x1), mu, 1);
 
         //              ___ ___
         //             |___    |
@@ -758,7 +954,7 @@ public:
 
         //  tmp= Staple2x1* Cshift(U[mu],mu,-2);
         //  Stap+= Cshift(tmp,mu,1) ;
-        Stap += Cshift(Staple2x1, mu, 1) * Cshift(U[mu], mu, -1);
+        Stap += Gimpl::CshiftLink(Staple2x1, mu, 1) * Gimpl::CshiftLink(U[mu], mu, -1);
         ;
 
         //       --
@@ -766,10 +962,10 @@ public:
         //
         //      |  |
 
-        tmp = Cshift(adj(U2[nu]), nu, -2);
+        tmp = Gimpl::CshiftLink(adj(U2[nu]), nu, -2);
         tmp = Gimpl::CovShiftBackward(U[mu], mu, tmp);
-        tmp = U2[nu] * Cshift(tmp, nu, 2);
-        Stap += Cshift(tmp, mu, 1);
+        tmp = U2[nu] * Gimpl::CshiftLink(tmp, nu, 2);
+        Stap += Gimpl::CshiftLink(tmp, mu, 1);
 
         //      |  |
         //
@@ -778,22 +974,9 @@ public:
 
         tmp = Gimpl::CovShiftBackward(U[mu], mu, U2[nu]);
         tmp = adj(U2[nu]) * tmp;
-        tmp = Cshift(tmp, nu, -2);
-        Stap += Cshift(tmp, mu, 1);
+        tmp = Gimpl::CshiftLink(tmp, nu, -2);
+        Stap += Gimpl::CshiftLink(tmp, mu, 1);
       }
-    }
-  }
-
-  static void RectStaple(GaugeMat &Stap, const GaugeLorentz &Umu, int mu) {
-    RectStapleUnoptimised(Stap, Umu, mu);
-  }
-  static void RectStaple(const GaugeLorentz &Umu, GaugeMat &Stap,
-                         std::vector<GaugeMat> &U2, std::vector<GaugeMat> &U,
-                         int mu) {
-    if (Gimpl::isPeriodicGaugeField()) {
-      RectStapleOptimised(Stap, U2, U, mu);
-    } else {
-      RectStapleUnoptimised(Stap, Umu, mu);
     }
   }
 
@@ -893,6 +1076,288 @@ public:
 				   mu);
       }
     }
+  }
+
+  static void RectStaple(GaugeMat &Stap, const GaugeLorentz &Umu, int mu) {
+    RectStapleUnoptimised(Stap, Umu, mu);
+  }
+  static void RectStaple(const GaugeLorentz &Umu, GaugeMat &Stap,
+                         std::vector<GaugeMat> &U2, std::vector<GaugeMat> &U,
+                         int mu) {
+    RectStapleOptimised(Stap, U2, U, mu);
+  }
+  //////////////////////////////////////////////////////
+  //Compute the rectangular staples for all orientations
+  //Stap : Array of staples (Nd)
+  //U: Gauge links in each direction (Nd)
+  /////////////////////////////////////////////////////
+  static void RectStapleAll(std::vector<GaugeMat> &Stap, const std::vector<GaugeMat> &U){
+    assert(Stap.size() == Nd); assert(U.size() == Nd);
+    std::vector<GaugeMat> U2(Nd,U[0].Grid());
+    for(int mu=0;mu<Nd;mu++) RectStapleDouble(U2[mu], U[mu], mu);
+    for(int mu=0;mu<Nd;mu++) RectStapleOptimised(Stap[mu], U2, U, mu);
+  }
+
+  //A workspace class allowing reuse of the stencil
+  class RectStaplePaddedAllWorkspace: public WilsonLoopPaddedStencilWorkspace{
+  public:
+    std::vector<Coordinate> getShifts() const override{
+      std::vector<Coordinate> shifts;
+      for (int mu = 0; mu < Nd; mu++){
+	for (int nu = 0; nu < Nd; nu++) {
+	  if (nu != mu) {
+	    auto genShift = [&](int mushift,int nushift){
+	      Coordinate out(Nd,0); out[mu]=mushift; out[nu]=nushift; return out;
+	    };
+
+	    //tmp6 = tmp5(x+mu) = U_mu(x+mu)U_nu(x+2mu)U_mu^dag(x+nu+mu) U_mu^dag(x+nu) U_nu^dag(x)
+	    shifts.push_back(genShift(0,0));
+	    shifts.push_back(genShift(0,+1));
+	    shifts.push_back(genShift(+1,+1));
+	    shifts.push_back(genShift(+2,0));
+	    shifts.push_back(genShift(+1,0));
+
+	    //tmp5 = tmp4(x+mu) = U_mu(x+mu)U^dag_nu(x-nu+2mu)U^dag_mu(x-nu+mu)U^dag_mu(x-nu)U_nu(x-nu)
+	    shifts.push_back(genShift(0,-1));
+	    shifts.push_back(genShift(0,-1));
+	    shifts.push_back(genShift(+1,-1));
+	    shifts.push_back(genShift(+2,-1));
+	    shifts.push_back(genShift(+1,0));
+
+	    //tmp5 = tmp4(x+mu) = U^dag_nu(x-nu+mu)U^dag_mu(x-nu)U^dag_mu(x-mu-nu)U_nu(x-mu-nu)U_mu(x-mu)
+	    shifts.push_back(genShift(-1,0));
+	    shifts.push_back(genShift(-1,-1));
+	    shifts.push_back(genShift(-1,-1));
+	    shifts.push_back(genShift(0,-1));
+	    shifts.push_back(genShift(+1,-1));
+
+	    //tmp5 = tmp4(x+mu) = U_nu(x+mu)U_mu^dag(x+nu)U_mu^dag(x-mu+nu)U_nu^dag(x-mu)U_mu(x-mu)
+	    shifts.push_back(genShift(-1,0));
+	    shifts.push_back(genShift(-1,0));
+	    shifts.push_back(genShift(-1,+1));
+	    shifts.push_back(genShift(0,+1));
+	    shifts.push_back(genShift(+1,0));
+
+	    //tmp6 = tmp5(x+mu) = U_nu(x+mu)U_nu(x+mu+nu)U_mu^dag(x+2nu)U_nu^dag(x+nu)U_nu^dag(x)
+	    shifts.push_back(genShift(0,0));
+	    shifts.push_back(genShift(0,+1));
+	    shifts.push_back(genShift(0,+2));
+	    shifts.push_back(genShift(+1,+1));
+	    shifts.push_back(genShift(+1,0));
+
+	    //tmp5 = tmp4(x+mu) = U_nu^dag(x+mu-nu)U_nu^dag(x+mu-2nu)U_mu^dag(x-2nu)U_nu(x-2nu)U_nu(x-nu)
+	    shifts.push_back(genShift(0,-1));
+	    shifts.push_back(genShift(0,-2));
+	    shifts.push_back(genShift(0,-2));
+	    shifts.push_back(genShift(+1,-2));
+	    shifts.push_back(genShift(+1,-1));
+	  }
+	}
+      }
+      return shifts;
+    }
+
+    int paddingDepth() const override{ return 2; }
+  }; 
+
+  //Padded cell implementation of the rectangular staple method for all mu, summed over nu != mu
+  //staple: output staple for each mu, summed over nu != mu (Nd)
+  //U_padded: the gauge link fields padded out using the PaddedCell class
+  //Cell: the padded cell class
+  static void RectStaplePaddedAll(std::vector<GaugeMat> &staple, const std::vector<GaugeMat> &U_padded, const PaddedCell &Cell) {
+    RectStaplePaddedAllWorkspace wk;
+    RectStaplePaddedAll(staple,U_padded,Cell,wk.getStencil(Cell));
+  }
+  
+  //Padded cell implementation of the rectangular staple method for all mu, summed over nu != mu
+  //staple: output staple for each mu, summed over nu != mu (Nd)
+  //U_padded: the gauge link fields padded out using the PaddedCell class
+  //Cell: the padded cell class
+  //gStencil: the stencil
+  static void RectStaplePaddedAll(std::vector<GaugeMat> &staple, const std::vector<GaugeMat> &U_padded, const PaddedCell &Cell, const GeneralLocalStencil &gStencil) {
+    double t0 = usecond();
+    assert(U_padded.size() == Nd); assert(staple.size() == Nd);
+    assert(U_padded[0].Grid() == (GridBase*)Cell.grids.back());
+    assert(Cell.depth >= 2);
+    GridBase *ggrid = U_padded[0].Grid(); //padded cell grid
+
+    size_t nshift = gStencil._npoints;
+    int mu_off_delta = nshift / Nd;
+    
+    //Open views to padded gauge links and keep open over mu loop
+    typedef LatticeView<typename GaugeMat::vector_object> GaugeViewType;
+    size_t vsize = Nd*sizeof(GaugeViewType);
+    GaugeViewType* Ug_dirs_v_host = (GaugeViewType*)malloc(vsize);
+    for(int i=0;i<Nd;i++) Ug_dirs_v_host[i] = U_padded[i].View(AcceleratorRead);
+    GaugeViewType* Ug_dirs_v = (GaugeViewType*)acceleratorAllocDevice(vsize);
+    acceleratorCopyToDevice(Ug_dirs_v_host,Ug_dirs_v,vsize);
+
+    GaugeMat gStaple(ggrid); //temp staple object on padded grid
+
+    int offset = 0;
+    for(int mu=0; mu<Nd; mu++){
+
+      { //view scope
+	autoView( gStaple_v , gStaple, AcceleratorWrite);
+	auto gStencil_v = gStencil.View();
+
+	accelerator_for(ss, ggrid->oSites(), ggrid->Nsimd(), {
+	    decltype(coalescedRead(Ug_dirs_v[0][0])) stencil_ss;
+	    stencil_ss = Zero();
+	    int s=offset;
+	    for(int nu=0;nu<Nd;nu++){
+	      if(nu != mu){
+		//tmp6 = tmp5(x+mu) = U_mu(x+mu)U_nu(x+2mu)U_mu^dag(x+nu+mu) U_mu^dag(x+nu) U_nu^dag(x)
+		GeneralStencilEntry const* e = gStencil_v.GetEntry(s++,ss);
+		auto U0 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		auto U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		auto U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		auto U3 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(s++,ss);
+		auto U4 = coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd);
+	    
+		stencil_ss = stencil_ss + U4*U3*U2*U1*U0;
+
+		//tmp5 = tmp4(x+mu) = U_mu(x+mu)U^dag_nu(x-nu+2mu)U^dag_mu(x-nu+mu)U^dag_mu(x-nu)U_nu(x-nu)
+		e = gStencil_v.GetEntry(s++,ss);
+		U0 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(s++,ss);
+		U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U3 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U4 = coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd);
+
+		stencil_ss = stencil_ss + U4*U3*U2*U1*U0;
+
+		//tmp5 = tmp4(x+mu) = U^dag_nu(x-nu+mu)U^dag_mu(x-nu)U^dag_mu(x-mu-nu)U_nu(x-mu-nu)U_mu(x-mu)
+		e = gStencil_v.GetEntry(s++,ss);
+		U0 = coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(s++,ss);
+		U1 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(s++,ss);
+		U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U3 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U4 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+
+		stencil_ss = stencil_ss + U4*U3*U2*U1*U0;
+
+		//tmp5 = tmp4(x+mu) = U_nu(x+mu)U_mu^dag(x+nu)U_mu^dag(x-mu+nu)U_nu^dag(x-mu)U_mu(x-mu)
+		e = gStencil_v.GetEntry(s++,ss);
+		U0 = coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(s++,ss);
+		U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U3 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U4 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+
+		stencil_ss = stencil_ss + U4*U3*U2*U1*U0;
+
+		//tmp6 = tmp5(x+mu) = U_nu(x+mu)U_nu(x+mu+nu)U_mu^dag(x+2nu)U_nu^dag(x+nu)U_nu^dag(x)
+		e = gStencil_v.GetEntry(s++,ss);
+		U0 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U1 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U3 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(s++,ss);
+		U4 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+
+		stencil_ss = stencil_ss + U4*U3*U2*U1*U0;   
+
+		//tmp5 = tmp4(x+mu) = U_nu^dag(x+mu-nu)U_nu^dag(x+mu-2nu)U_mu^dag(x-2nu)U_nu(x-2nu)U_nu(x-nu)
+		e = gStencil_v.GetEntry(s++,ss);
+		U0 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(s++,ss);
+		U1 = coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd);
+		e = gStencil_v.GetEntry(s++,ss);
+		U2 = adj(coalescedReadGeneralPermute(Ug_dirs_v[mu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U3 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+		e = gStencil_v.GetEntry(s++,ss);
+		U4 = adj(coalescedReadGeneralPermute(Ug_dirs_v[nu][e->_offset], e->_permute, Nd));
+
+		stencil_ss = stencil_ss + U4*U3*U2*U1*U0;   
+
+	      }
+	    }
+	    coalescedWrite(gStaple_v[ss],stencil_ss);
+	  }
+	  );
+	offset += mu_off_delta;
+      }//kernel/view scope
+
+      staple[mu] = Cell.Extract(gStaple);    
+    }//mu loop
+  
+    for(int i=0;i<Nd;i++) Ug_dirs_v_host[i].ViewClose();
+    free(Ug_dirs_v_host);
+    acceleratorFreeDevice(Ug_dirs_v);
+    
+    double t1 = usecond();
+    
+    std::cout << GridLogPerformance << "RectStaplePaddedAll timings:" << (t1-t0)/1000 << "ms" << std::endl;   
+  }
+
+  //A workspace for reusing the PaddedCell and GeneralLocalStencil objects
+  class StapleAndRectStapleAllWorkspace: public WilsonLoopPaddedWorkspace{
+  public:
+    StapleAndRectStapleAllWorkspace(){
+      this->addStencil(new StaplePaddedAllWorkspace);
+      this->addStencil(new RectStaplePaddedAllWorkspace);
+    }
+  };     
+    
+  //////////////////////////////////////////////////////
+  //Compute the 1x1 and 1x2 staples for all orientations
+  //Stap : Array of staples (Nd)
+  //RectStap: Array of rectangular staples (Nd)
+  //U: Gauge links in each direction (Nd)
+  /////////////////////////////////////////////////////
+  static void StapleAndRectStapleAll(std::vector<GaugeMat> &Stap, std::vector<GaugeMat> &RectStap, const std::vector<GaugeMat> &U){
+    StapleAndRectStapleAllWorkspace wk;
+    StapleAndRectStapleAll(Stap,RectStap,U,wk);
+  }
+  
+  //////////////////////////////////////////////////////
+  //Compute the 1x1 and 1x2 staples for all orientations
+  //Stap : Array of staples (Nd)
+  //RectStap: Array of rectangular staples (Nd)
+  //U: Gauge links in each direction (Nd)
+  //wk: a workspace containing stored PaddedCell and GeneralLocalStencil objects to maximize reuse
+  /////////////////////////////////////////////////////
+  static void StapleAndRectStapleAll(std::vector<GaugeMat> &Stap, std::vector<GaugeMat> &RectStap, const std::vector<GaugeMat> &U, StapleAndRectStapleAllWorkspace &wk){
+#if 0
+    StapleAll(Stap, U);
+    RectStapleAll(RectStap, U);
+#else
+    double t0 = usecond();
+
+    GridCartesian* unpadded_grid = dynamic_cast<GridCartesian*>(U[0].Grid());
+    const PaddedCell &Ghost = wk.getPaddedCell(unpadded_grid);
+        
+    CshiftImplGauge<Gimpl> cshift_impl;
+    std::vector<GaugeMat> U_pad(Nd, Ghost.grids.back());
+    for(int mu=0;mu<Nd;mu++) U_pad[mu] = Ghost.Exchange(U[mu], cshift_impl);
+    double t1 = usecond();
+    StaplePaddedAll(Stap, U_pad, Ghost, wk.getStencil(0,unpadded_grid) );
+    double t2 = usecond();
+    RectStaplePaddedAll(RectStap, U_pad, Ghost, wk.getStencil(1,unpadded_grid));
+    double t3 = usecond();
+    std::cout << GridLogPerformance << "StapleAndRectStapleAll timings: pad:" << (t1-t0)/1000 << "ms, staple:" << (t2-t1)/1000 << "ms, rect-staple:" << (t3-t2)/1000 << "ms" << std::endl;
+#endif
   }
 
   //////////////////////////////////////////////////

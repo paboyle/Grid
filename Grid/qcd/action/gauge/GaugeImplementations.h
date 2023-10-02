@@ -176,7 +176,7 @@ public:
       return PeriodicBC::CshiftLink(Link,mu,shift);
   }
 
-  static inline void       setDirections(std::vector<int> &conjDirs) { _conjDirs=conjDirs; }
+  static inline void       setDirections(const std::vector<int> &conjDirs) { _conjDirs=conjDirs; }
   static inline std::vector<int> getDirections(void) { return _conjDirs; }
   static inline bool isPeriodicGaugeField(void) { return false; }
 };
