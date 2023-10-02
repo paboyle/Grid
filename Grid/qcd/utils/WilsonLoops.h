@@ -487,7 +487,7 @@ public:
     for(int mu=0;mu<Nd;mu++){
       { //view scope
 	autoView( gStaple_v , gStaple, AcceleratorWrite);
-	auto gStencil_v = gStencil.View();
+	auto gStencil_v = gStencil.View(AcceleratorRead);
 	
 	accelerator_for(ss, ggrid->oSites(), ggrid->Nsimd(), {
 	    decltype(coalescedRead(Ug_dirs_v[0][0])) stencil_ss;
@@ -1199,7 +1199,7 @@ public:
 
       { //view scope
 	autoView( gStaple_v , gStaple, AcceleratorWrite);
-	auto gStencil_v = gStencil.View();
+	auto gStencil_v = gStencil.View(AcceleratorRead);
 
 	accelerator_for(ss, ggrid->oSites(), ggrid->Nsimd(), {
 	    decltype(coalescedRead(Ug_dirs_v[0][0])) stencil_ss;

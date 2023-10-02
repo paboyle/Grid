@@ -344,8 +344,8 @@ public:
 	    int ss = sss/nbasis;
 	    int b  = sss%nbasis;
 
-	    auto SE = Stencil_v.GetEntry(point,ss);
-	    auto nbr = coalescedRead(in_v[SE->_offset]);
+	    auto SE  = Stencil_v.GetEntry(point,ss);
+	    auto nbr = coalescedReadGeneralPermute(in_v[SE->_offset],SE->_permute,Nd);
 	    auto res = out_v(ss)(b);
 	    for(int bb=0;bb<nbasis;bb++) {
 	      res = res + coalescedRead(A_v[ss](b,bb))*nbr(bb);
