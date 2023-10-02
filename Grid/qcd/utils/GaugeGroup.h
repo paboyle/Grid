@@ -151,8 +151,8 @@ class GaugeGroup {
   // The public part of the interface follows below and refers to these
   // private member functions.
 
-#include "Grid/qcd/utils/SUn.impl"
-#include "Grid/qcd/utils/Sp2n.impl"
+#include <Grid/qcd/utils/SUn.impl>
+#include <Grid/qcd/utils/Sp2n.impl>
 
  public:
   template <class cplx>
