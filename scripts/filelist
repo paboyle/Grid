@@ -15,6 +15,8 @@ STAG_FERMION_FILES=`  find . -name '*.cc' -path '*/instantiation/*' -path '*/ins
 GP_FERMION_FILES=`    find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/Gparity*' `
 ADJ_FERMION_FILES=`   find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/WilsonAdj*' `
 TWOIND_FERMION_FILES=`find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/WilsonTwoIndex*'`
+SP_FERMION_FILES=`find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/SpWilsonImpl*'`
+SP_TWOIND_FERMION_FILES=`find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/SpWilsonTwo*'`
 
 HPPFILES=`find . -type f -name '*.hpp'`
 echo HFILES=$HFILES $HPPFILES > Make.inc
@@ -27,13 +29,14 @@ echo STAG_FERMION_FILES=$STAG_FERMION_FILES   >> Make.inc
 echo GP_FERMION_FILES=$GP_FERMION_FILES   >> Make.inc
 echo ADJ_FERMION_FILES=$ADJ_FERMION_FILES   >> Make.inc
 echo TWOIND_FERMION_FILES=$TWOIND_FERMION_FILES   >> Make.inc
+echo SP_FERMION_FILES=$SP_FERMION_FILES >> Make.inc
+echo SP_TWOIND_FERMION_FILES=$SP_TWOIND_FERMION_FILES >> Make.inc
 
 # tests Make.inc
 cd $home/tests
 dirs=`find . -type d -not -path '*/\.*'`
 for subdir in $dirs; do
     cd $home/tests/$subdir
-    pwd
     TESTS=`ls T*.cc`
     TESTLIST=`echo ${TESTS} | sed s/.cc//g `
     PREF=`[ $subdir = '.' ] && echo noinst || echo EXTRA`

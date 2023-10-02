@@ -13,7 +13,7 @@ NAMESPACE_BEGIN(Grid);
  * Empty since HMC updates already the fundamental representation 
  */
 
-template <int ncolour>
+template <int ncolour, class group_name>
 class FundamentalRep {
 public:
   static const int Dimension = ncolour;
@@ -21,7 +21,7 @@ public:
 
   // typdef to be used by the Representations class in HMC to get the
   // types for the higher representation fields
-  typedef typename SU<ncolour>::LatticeMatrix LatticeMatrix;
+  typedef typename GaugeGroup<ncolour,group_name>::LatticeMatrix LatticeMatrix;
   typedef LatticeGaugeField LatticeField;
   
   explicit FundamentalRep(GridBase* grid) {} //do nothing
@@ -45,7 +45,8 @@ public:
     
 
   
-typedef	 FundamentalRep<Nc> FundamentalRepresentation;
+typedef	 FundamentalRep<Nc,GroupName::SU> FundamentalRepresentation;
+typedef	 FundamentalRep<Nc,GroupName::Sp> SpFundamentalRepresentation;
 
 NAMESPACE_END(Grid);  
 

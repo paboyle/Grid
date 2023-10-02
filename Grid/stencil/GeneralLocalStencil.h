@@ -79,60 +79,60 @@ public:
     this->_entries.resize(npoints* osites);
     this->_entries_p = &_entries[0];
 
+    thread_for(site, osites, {
+	Coordinate Coor;
+	Coordinate NbrCoor;
 
-    Coordinate Coor;
-    Coordinate NbrCoor;
-    for(Integer site=0;site<osites;site++){
-      for(Integer ii=0;ii<npoints;ii++){
-	Integer lex = site*npoints+ii;
-	GeneralStencilEntry SE;
-	////////////////////////////////////////////////
-	// Outer index of neighbour Offset calculation
-	////////////////////////////////////////////////
-	grid->oCoorFromOindex(Coor,site);
-	for(int d=0;d<Coor.size();d++){
-	  int rd = grid->_rdimensions[d];
-	  NbrCoor[d] = (Coor[d] + shifts[ii][d] + rd )%rd;
+	for(Integer ii=0;ii<npoints;ii++){
+	  Integer lex = site*npoints+ii;
+	  GeneralStencilEntry SE;
+	  ////////////////////////////////////////////////
+	  // Outer index of neighbour Offset calculation
+	  ////////////////////////////////////////////////
+	  grid->oCoorFromOindex(Coor,site);
+	  for(int d=0;d<Coor.size();d++){
+	    int rd = grid->_rdimensions[d];
+	    NbrCoor[d] = (Coor[d] + shifts[ii][d] + rd )%rd;
+	  }
+	  SE._offset      = grid->oIndexReduced(NbrCoor);
+
+	  ////////////////////////////////////////////////
+	  // Inner index permute calculation
+	  // Simpler version using icoor calculation
+	  ////////////////////////////////////////////////
+	  SE._permute =0;
+	  for(int d=0;d<Coor.size();d++){
+
+	    int fd = grid->_fdimensions[d];
+	    int rd = grid->_rdimensions[d];
+	    int ly = grid->_simd_layout[d];
+
+	    assert((ly==1)||(ly==2));
+
+	    int shift = (shifts[ii][d]+fd)%fd;  // make it strictly positive 0.. L-1
+	    int x = Coor[d];                // x in [0... rd-1] as an oSite 
+
+	    int permute_dim  = grid->PermuteDim(d);
+	    int permute_slice=0;
+	    if(permute_dim){    
+	      int  num = shift%rd; // Slice within dest osite cell of slice zero
+	      int wrap = shift/rd; // Number of osite local volume cells crossed through
+	      // x+num < rd dictates whether we are in same permute state as slice 0
+	      if ( x< rd-num ) permute_slice=wrap;
+	      else             permute_slice=(wrap+1)%ly;
+	    }
+	    if ( permute_slice ) {
+	      int ptype       =grid->PermuteType(d);
+	      uint8_t mask    =0x1<<ptype;
+	      SE._permute    |= mask;
+	    }
+	  }	
+	  ////////////////////////////////////////////////
+	  // Store in look up table
+	  ////////////////////////////////////////////////
+	  this->_entries[lex] = SE;
 	}
-	SE._offset      = grid->oIndexReduced(NbrCoor);
-
-	////////////////////////////////////////////////
-	// Inner index permute calculation
-	// Simpler version using icoor calculation
-	////////////////////////////////////////////////
-	SE._permute =0;
-	for(int d=0;d<Coor.size();d++){
-
-	  int fd = grid->_fdimensions[d];
-	  int rd = grid->_rdimensions[d];
-	  int ly = grid->_simd_layout[d];
-
-	  assert((ly==1)||(ly==2));
-
-	  int shift = (shifts[ii][d]+fd)%fd;  // make it strictly positive 0.. L-1
-	  int x = Coor[d];                // x in [0... rd-1] as an oSite 
-
-	  int permute_dim  = grid->PermuteDim(d);
-	  int permute_slice=0;
-	  if(permute_dim){    
-	    int  num = shift%rd; // Slice within dest osite cell of slice zero
-	    int wrap = shift/rd; // Number of osite local volume cells crossed through
-                                  // x+num < rd dictates whether we are in same permute state as slice 0
-	    if ( x< rd-num ) permute_slice=wrap;
-	    else             permute_slice=(wrap+1)%ly;
-	  }
-	  if ( permute_slice ) {
-	    int ptype       =grid->PermuteType(d);
-	    uint8_t mask    =0x1<<ptype;
-	    SE._permute    |= mask;
-	  }
-	}	
-	////////////////////////////////////////////////
-	// Store in look up table
-	////////////////////////////////////////////////
-	this->_entries[lex] = SE;
-      }
-    }      
+      });
   }
   
 };

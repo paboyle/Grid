@@ -604,8 +604,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 #ifdef GRID_SYCL_LEVEL_ZERO_IPC
     typedef struct { int fd; pid_t pid ; ze_ipc_mem_handle_t ze; } clone_mem_t;
 
-    auto zeDevice    = cl::sycl::get_native<cl::sycl::backend::level_zero>(theGridAccelerator->get_device());
-    auto zeContext   = cl::sycl::get_native<cl::sycl::backend::level_zero>(theGridAccelerator->get_context());
+    auto zeDevice    = cl::sycl::get_native<cl::sycl::backend::ext_oneapi_level_zero>(theGridAccelerator->get_device());
+    auto zeContext   = cl::sycl::get_native<cl::sycl::backend::ext_oneapi_level_zero>(theGridAccelerator->get_context());
       
     ze_ipc_mem_handle_t ihandle;
     clone_mem_t handle;

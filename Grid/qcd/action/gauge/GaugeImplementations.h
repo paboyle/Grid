@@ -176,7 +176,7 @@ public:
       return PeriodicBC::CshiftLink(Link,mu,shift);
   }
 
-  static inline void       setDirections(std::vector<int> &conjDirs) { _conjDirs=conjDirs; }
+  static inline void       setDirections(const std::vector<int> &conjDirs) { _conjDirs=conjDirs; }
   static inline std::vector<int> getDirections(void) { return _conjDirs; }
   static inline bool isPeriodicGaugeField(void) { return false; }
 };
@@ -192,6 +192,11 @@ typedef PeriodicGaugeImpl<GimplAdjointTypesD> PeriodicGimplAdjD; // Double
 typedef ConjugateGaugeImpl<GimplTypesR> ConjugateGimplR; // Real.. whichever prec
 typedef ConjugateGaugeImpl<GimplTypesF> ConjugateGimplF; // Float
 typedef ConjugateGaugeImpl<GimplTypesD> ConjugateGimplD; // Double
+
+typedef PeriodicGaugeImpl<SpGimplTypesR> SpPeriodicGimplR; // Real.. whichever prec
+typedef PeriodicGaugeImpl<SpGimplTypesF> SpPeriodicGimplF; // Float
+typedef PeriodicGaugeImpl<SpGimplTypesD> SpPeriodicGimplD; // Double
+
 
 NAMESPACE_END(Grid);
 
