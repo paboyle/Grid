@@ -193,6 +193,11 @@ typedef ConjugateGaugeImpl<GimplTypesR> ConjugateGimplR; // Real.. whichever pre
 typedef ConjugateGaugeImpl<GimplTypesF> ConjugateGimplF; // Float
 typedef ConjugateGaugeImpl<GimplTypesD> ConjugateGimplD; // Double
 
+typedef PeriodicGaugeImpl<SpGimplTypesR> SpPeriodicGimplR; // Real.. whichever prec
+typedef PeriodicGaugeImpl<SpGimplTypesF> SpPeriodicGimplF; // Float
+typedef PeriodicGaugeImpl<SpGimplTypesD> SpPeriodicGimplD; // Double
+
+
 NAMESPACE_END(Grid);
 
 #endif
