@@ -45,8 +45,8 @@ echo "rank $PALS_RANKID ; local rank $PALS_LOCAL_RANKID ; ZE_AFFINITY_MASK=$ZE_A
 
 if [ $PALS_LOCAL_RANKID = 0 ]
 then
-    onetrace --chrome-device-timeline "$@"
-#    "$@"
+#    onetrace --chrome-device-timeline "$@"
+    "$@"
 else
 "$@"
 fi

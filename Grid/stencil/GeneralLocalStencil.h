@@ -43,7 +43,7 @@ class GeneralLocalStencilView {
   int                               _npoints; // Move to template param?
   GeneralStencilEntry*  _entries_p;
 
-  accelerator_inline GeneralStencilEntry * GetEntry(int point,int osite) { 
+  accelerator_inline GeneralStencilEntry * GetEntry(int point,int osite) const { 
     return & this->_entries_p[point+this->_npoints*osite]; 
   }
 
