@@ -43,7 +43,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 template<class Field, class CoarseField, class Aggregation>
-class TwoLevelFlexiblePcg : public LinearFunction<Field>
+class TwoLevelADEF2 : public LinearFunction<Field>
 {
  public:
   RealD   Tolerance;
@@ -64,14 +64,14 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
   Aggregation &_Aggregates;                    
   
   // more most opertor functions
-  TwoLevelFlexiblePcg(RealD tol,
-		      Integer maxit,
-		      LinearOperatorBase<Field>   &FineLinop,
-		      LinearFunction<Field>   &Smoother,
-		      LinearFunction<CoarseField>  &CoarseSolver,
-		      LinearFunction<CoarseField>  &CoarseSolverPrecise,
-		      Aggregation &Aggregates
-		     ) : 
+  TwoLevelADEF2(RealD tol,
+		   Integer maxit,
+		   LinearOperatorBase<Field>   &FineLinop,
+		   LinearFunction<Field>   &Smoother,
+		   LinearFunction<CoarseField>  &CoarseSolver,
+		   LinearFunction<CoarseField>  &CoarseSolverPrecise,
+		   Aggregation &Aggregates
+		   ) : 
       Tolerance(tol), 
       MaxIterations(maxit),
       _FineLinop(FineLinop),
@@ -84,7 +84,7 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
     grid       = Aggregates.FineGrid;
   };
   
-  void Inflexible(const Field &src,Field &psi)
+  virtual void operator() (const Field &src, Field &psi)
   {
     Field resid(grid);
     RealD f;
@@ -192,10 +192,6 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
     return ;
   }
   
-  virtual void operator() (const Field &in, Field &out)
-  {
-    this->Inflexible(in,out);
-  }
 
  public:
 
@@ -285,5 +281,49 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
   }
 };
 
+template<class Field, class CoarseField, class Aggregation>
+class TwoLevelADEF1ev : public TwoLevelADEF2<Field,CoarseField,Aggregation>
+{
+  TwoLevelADEF1ev(RealD tol,
+		   Integer maxit,
+		   LinearOperatorBase<Field>   &FineLinop,
+		   LinearFunction<Field>   &Smoother,
+		   LinearFunction<CoarseField>  &CoarseSolver,
+		   LinearFunction<CoarseField>  &CoarseSolverPrecise,
+		   Aggregation &Aggregates ) : 
+    TwoLevelADEF2<Field,CoarseField,Aggregation>(tol,maxit,FineLinop,Smoother,CoarseSolver,CoarseSolverPrecise,Aggregates)
+  {};
+
+  // Can just inherit existing Vstart
+  // Can just inherit existing Vout
+  // Can just inherit existing M2
+  // Can just inherit existing M3
+  // Override PcgM1
+  virtual void PcgM1(Field & in, Field & out)
+  {
+    CoarseField PleftProj(this->coarsegrid);
+    CoarseField PleftMss_proj(this->coarsegrid);
+    Field tmp(this->grid);
+    Field Pin(this->grid);
+
+    //MP  + Q = M(1-AQ) + Q = M
+    // // If we are eigenvector deflating in coarse space
+    // // Q   = Sum_i |phi_i> 1/lambda_i <phi_i|
+    // // A Q = Sum_i |phi_i> <phi_i|
+    // // M(1-AQ) = M(1-proj) + Q
+    this->_Aggregates.ProjectToSubspace(PleftProj,in);     
+    this->_Aggregates.PromoteFromSubspace(PleftProj,tmp);// tmp = Qin
+
+    Pin = in - tmp;
+    this->_Smoother(Pin,out);
+
+    this->_CoarseSolver(PleftProj,PleftMss_proj); 
+    this->_Aggregates.PromoteFromSubspace(PleftMss_proj,tmp);// tmp = Qin
+
+    out = out + tmp;
+  }
+};
+
 NAMESPACE_END(Grid);
+
 #endif

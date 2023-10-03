@@ -191,7 +191,8 @@ public:
 template<class Fobj,class CComplex,int nbasis>
 class GeneralCoarsenedMatrix : public SparseMatrixBase<Lattice<iVector<CComplex,nbasis > > >  {
 public:
-    
+
+  typedef GeneralCoarsenedMatrix<Fobj,CComplex,nbasis> GeneralCoarseOp;
   typedef iVector<CComplex,nbasis >           siteVector;
   typedef iMatrix<CComplex,nbasis >           siteMatrix;
   typedef Lattice<iScalar<CComplex> >         CoarseComplexField;
@@ -222,27 +223,22 @@ public:
   GridCartesian * CoarseGrid(void)     { return _CoarseGrid; };   // this is all the linalg routines need to know
 
 
-  void ProjectNearestNeighbour(RealD shift)
+  void ProjectNearestNeighbour(RealD shift, GeneralCoarseOp &CopyMe)
   {
-    int Nd = geom.grid->Nd();
-    int point;
-    std::cout << "ProjectNearestNeighbour "<<std::endl;
+    int nfound=0;
     for(int p=0;p<geom.npoint;p++){
-      int nhops = 0;
-      for(int s=0;s<Nd;s++){
-	nhops+=abs(geom.shifts[p][s]);
-      }
-      if(nhops>1) {
-	std::cout << "setting geom "<<p<<" shift "<<geom.shifts[p]<<" to zero "<<std::endl;
-	_A[p]=Zero();
-	_Adag[p]=Zero();
-      }
-      if(nhops==0) {
-	std::cout << " Adding IR shift "<<shift<<" to "<<geom.shifts[p]<<std::endl;
-	_A[p]=_A[p]+shift;
-	_Adag[p]=_Adag[p]+shift;
+      for(int pp=0;pp<CopyMe.geom.npoint;pp++){
+ 	// Search for the same relative shift
+	// Avoids brutal handling of Grid pointers
+	if ( CopyMe.geom.shifts[pp]==geom.shifts[p] ) {
+	  _A[p] = CopyMe.Cell.Extract(CopyMe._A[pp]);
+	  _Adag[p] = CopyMe.Cell.Extract(CopyMe._Adag[pp]);
+	  ExchangeCoarseLinks();
+	  nfound++;
+	}
       }
     }
+    assert(nfound==geom.npoint);
   }
   
   GeneralCoarsenedMatrix(NonLocalStencilGeometry &_geom,GridBase *FineGrid, GridCartesian * CoarseGrid)
@@ -317,27 +313,13 @@ public:
       autoView( out_v , pout, AcceleratorWrite);
       autoView( Stencil_v  , Stencil, AcceleratorRead);
       tviews+=usecond();
-
-      std::cout << "Calling accelerator for loop " <<std::endl;
       
       for(int point=0;point<npoint;point++){
 	tviews-=usecond();
 	autoView( A_v, A[point],AcceleratorRead);
 	tviews+=usecond();
 	tmult-=usecond();
-#if 0
-	prof_accelerator_for(ss, osites, Nsimd, {
-	  // Junk load is annoying -- need to sort out the types better.
-	  //////////////////////////////
-	  // GPU chokes on gpermute - want coalescedReadPermute()
-	  //	gpermute(nbr,SE->_permute);
-	  //////////////////////////////
-	  auto SE = Stencil_v.GetEntry(point,ss);
-	  int o = SE->_offset;
-	  coalescedWrite(out_v[ss],out_v(ss) + A_v(ss)*in_v(o));
-	});
-#else
-	prof_accelerator_for(sss, osites*nbasis, Nsimd, {
+	accelerator_for(sss, osites*nbasis, Nsimd, {
 
 	    typedef decltype(coalescedRead(in_v[0]))    calcVector;
 
@@ -352,10 +334,9 @@ public:
 	    }
 	    coalescedWrite(out_v[ss](b),res);
 	});
-#endif
+
 	tmult+=usecond();
       }
-      std::cout << "Called accelerator for loop " <<std::endl;
     }
     text-=usecond();
     out = Cell.Extract(pout);
@@ -392,84 +373,6 @@ public:
       }
     }
   }
-  void CoarsenOperator(LinearOperatorBase<Lattice<Fobj> > &linop,
-		       Aggregation<Fobj,CComplex,nbasis> & Subspace)
-  {
-    RealD tproj=0.0;
-    RealD tpick=0.0;
-    RealD tmat=0.0;
-    RealD tpeek=0.0;
-    std::cout << GridLogMessage<< "CoarsenMatrix "<< std::endl;
-    GridBase *grid = FineGrid();
-
-    ////////////////////////////////////////////////
-    // Orthogonalise the subblocks over the basis
-    ////////////////////////////////////////////////
-    CoarseScalar InnerProd(CoarseGrid()); 
-    blockOrthogonalise(InnerProd,Subspace.subspace);
-
-    ////////////////////////////////////////////////
-    // Now compute the matrix elements of linop between this orthonormal
-    // set of vectors.
-    ////////////////////////////////////////////////
-    FineField bV(grid);
-    FineField MbV(grid);
-    FineField tmp(grid);
-    CoarseVector coarseInner(CoarseGrid());
-    
-    // Very inefficient loop of order coarse volume.
-    // First pass hack
-    // Could replace with a coloring scheme our phase scheme
-    // as in BFM
-    for(int bidx=0;bidx<CoarseGrid()->gSites() ;bidx++){
-      Coordinate bcoor;
-      CoarseGrid()->GlobalIndexToGlobalCoor(bidx,bcoor);
-
-      for(int b=0;b<nbasis;b++){
-	tpick-=usecond();
-	blockPick(CoarseGrid(),Subspace.subspace[b],bV,bcoor);
-	tpick+=usecond();
-	tmat-=usecond();
-	linop.Op(bV,MbV);
-	tmat+=usecond();
-	tproj-=usecond();
-	blockProject(coarseInner,MbV,Subspace.subspace);
-	tproj+=usecond();
-
-	tpeek-=usecond();
-	for(int p=0;p<geom.npoint;p++){
-	  Coordinate scoor = bcoor;
-	  for(int mu=0;mu<bcoor.size();mu++){
-	    int L = CoarseGrid()->GlobalDimensions()[mu];
-	    scoor[mu] = (bcoor[mu] - geom.shifts[p][mu] + L) % L; // Modulo arithmetic
-	  }
-	  // Flip to peekLocalSite
-	  // Flip to pokeLocalSite
-	  auto ip    = peekSite(coarseInner,scoor);
-	  auto Ab    = peekSite(_A[p],scoor);
-	  int pp = geom.Reverse(p);
-	  auto Adagb = peekSite(_Adag[pp],bcoor);
-	  for(int bb=0;bb<nbasis;bb++){
-	    Ab(bb,b)    = ip(bb);
-	    Adagb(b,bb) = conjugate(ip(bb));
-	  }
-	  pokeSite(Ab,_A[p],scoor);
-	  pokeSite(Adagb,_Adag[pp],bcoor);
-	}
-	tpeek+=usecond();
-      }
-    }
-    for(int p=0;p<geom.npoint;p++){
-      Coordinate coor({0,0,0,0,0});
-      auto sval = peekSite(_A[p],coor);
-    }
-    ExchangeCoarseLinks();
-    std::cout << GridLogMessage<<"CoarsenOperator pick "<<tpick<<" us"<<std::endl;
-    std::cout << GridLogMessage<<"CoarsenOperator mat  "<<tmat <<" us"<<std::endl;
-    std::cout << GridLogMessage<<"CoarsenOperator projection "<<tproj<<" us"<<std::endl;
-    std::cout << GridLogMessage<<"CoarsenOperator peek/poke  "<<tpeek<<" us"<<std::endl;
-  }
-
   /////////////////////////////////////////////////////////////
   // 
   // A) Only reduced flops option is to use a padded cell of depth 4

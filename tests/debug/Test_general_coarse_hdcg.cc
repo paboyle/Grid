@@ -149,6 +149,7 @@ int main (int argc, char ** argv)
   typedef LittleDiracOperator::CoarseVector CoarseVector;
 
   NextToNextToNextToNearestStencilGeometry5D geom(Coarse5d);
+  NearestStencilGeometry5D geom_nn(Coarse5d);
   
   // Warning: This routine calls PVdagM.Op, not PVdagM.HermOp
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis> Subspace;
@@ -178,8 +179,8 @@ int main (int argc, char ** argv)
   LittleDiracOp.CoarsenOperatorColoured(FineHermOp,Aggregates);
 
   // Try projecting to one hop only
-  LittleDiracOperator LittleDiracOpProj(LittleDiracOp);
-  LittleDiracOpProj.ProjectNearestNeighbour(0.5);
+  LittleDiracOperator LittleDiracOpProj(geom_nn,FrbGrid,Coarse5d);
+  LittleDiracOpProj.ProjectNearestNeighbour(0.5,LittleDiracOp);
 
   typedef HermitianLinearOperator<LittleDiracOperator,CoarseVector> HermMatrix;
   HermMatrix CoarseOp (LittleDiracOp);
@@ -260,7 +261,7 @@ int main (int argc, char ** argv)
       //////////////////////////////////////////
       // Build a HDCG solver
       //////////////////////////////////////////
-      TwoLevelFlexiblePcg<LatticeFermion,CoarseVector,Subspace>
+      TwoLevelADEF2<LatticeFermion,CoarseVector,Subspace>
 	HDCG(1.0e-8, 3000,
 	     FineHermOp,
 	     Smoother,
@@ -268,11 +269,8 @@ int main (int argc, char ** argv)
 	     HPDSolve,
 	     Aggregates);
 
-      //    result=Zero();
-      //    HDCG(src,result);
-    
       result=Zero();
-      HDCG.Inflexible(src,result);
+      HDCG(src,result);
     }
   }
   
