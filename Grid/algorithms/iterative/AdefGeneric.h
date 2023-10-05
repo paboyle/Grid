@@ -42,46 +42,30 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
    */
 NAMESPACE_BEGIN(Grid);
 
-template<class Field, class CoarseField, class Aggregation>
-class TwoLevelADEF2 : public LinearFunction<Field>
+template<class Field>
+class TwoLevelCG : public LinearFunction<Field>
 {
  public:
   RealD   Tolerance;
   Integer MaxIterations;
-  const int mmax = 1;
   GridBase *grid;
-  GridBase *coarsegrid;
 
   // Fine operator, Smoother, CoarseSolver
   LinearOperatorBase<Field>   &_FineLinop;
   LinearFunction<Field>   &_Smoother;
-  LinearFunction<CoarseField> &_CoarseSolver;
-  LinearFunction<CoarseField> &_CoarseSolverPrecise;
-
-  // Need something that knows how to get from Coarse to fine and back again
-  //  void ProjectToSubspace(CoarseVector &CoarseVec,const FineField &FineVec){
-  //  void PromoteFromSubspace(const CoarseVector &CoarseVec,FineField &FineVec){
-  Aggregation &_Aggregates;                    
   
   // more most opertor functions
-  TwoLevelADEF2(RealD tol,
-		   Integer maxit,
-		   LinearOperatorBase<Field>   &FineLinop,
-		   LinearFunction<Field>   &Smoother,
-		   LinearFunction<CoarseField>  &CoarseSolver,
-		   LinearFunction<CoarseField>  &CoarseSolverPrecise,
-		   Aggregation &Aggregates
-		   ) : 
+  TwoLevelCG(RealD tol,
+	     Integer maxit,
+	     LinearOperatorBase<Field>   &FineLinop,
+	     LinearFunction<Field>       &Smoother,
+	     GridBase *fine) : 
       Tolerance(tol), 
       MaxIterations(maxit),
       _FineLinop(FineLinop),
-      _Smoother(Smoother),
-      _CoarseSolver(CoarseSolver),
-      _CoarseSolverPrecise(CoarseSolverPrecise),
-      _Aggregates(Aggregates)
+      _Smoother(Smoother)
   {
-    coarsegrid = Aggregates.CoarseGrid;
-    grid       = Aggregates.FineGrid;
+    grid       = fine;
   };
   
   virtual void operator() (const Field &src, Field &psi)
@@ -195,47 +179,8 @@ class TwoLevelADEF2 : public LinearFunction<Field>
 
  public:
 
-  virtual void PcgM1(Field & in, Field & out)
-  {
-    // [PTM+Q] in = [1 - Q A] M in + Q in = Min + Q [ in -A Min]
-
-    Field tmp(grid);
-    Field Min(grid);
-    CoarseField PleftProj(coarsegrid);
-    CoarseField PleftMss_proj(coarsegrid);
-
-    GridStopWatch SmootherTimer;
-    GridStopWatch MatrixTimer;
-    SmootherTimer.Start();
-    _Smoother(in,Min);
-    SmootherTimer.Stop();
-
-    MatrixTimer.Start();
-    _FineLinop.HermOp(Min,out);
-    MatrixTimer.Stop();
-    axpy(tmp,-1.0,out,in);          // tmp  = in - A Min
-
-    GridStopWatch ProjTimer;
-    GridStopWatch CoarseTimer;
-    GridStopWatch PromTimer;
-    ProjTimer.Start();
-    _Aggregates.ProjectToSubspace(PleftProj,tmp);     
-    ProjTimer.Stop();
-    CoarseTimer.Start();
-    _CoarseSolver(PleftProj,PleftMss_proj); // Ass^{-1} [in - A Min]_s
-    CoarseTimer.Stop();
-    PromTimer.Start();
-    _Aggregates.PromoteFromSubspace(PleftMss_proj,tmp);// tmp = Q[in - A Min]  
-    PromTimer.Stop();
-    std::cout << GridLogMessage << "PcgM1 breakdown "<<std::endl;
-    std::cout << GridLogMessage << "\tSmoother   " << SmootherTimer.Elapsed() <<std::endl;
-    std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
-    std::cout << GridLogMessage << "\tProj       " << ProjTimer.Elapsed() <<std::endl;
-    std::cout << GridLogMessage << "\tCoarse     " << CoarseTimer.Elapsed() <<std::endl;
-    std::cout << GridLogMessage << "\tProm       " << PromTimer.Elapsed() <<std::endl;
-
-    axpy(out,1.0,Min,tmp); // Min+tmp
-  }
+  virtual void PcgM1(Field & in, Field & out)     =0;
+  virtual void Vstart(Field & x,const Field & src)=0;
 
   virtual void PcgM2(const Field & in, Field & out) {
     out=in;
@@ -247,6 +192,89 @@ class TwoLevelADEF2 : public LinearFunction<Field>
     ComplexD dot = innerProduct(p,mmp);
     dd=real(dot);
     return dd;
+  }
+
+  /////////////////////////////////////////////////////////////////////
+  // Only Def1 has non-trivial Vout.
+  /////////////////////////////////////////////////////////////////////
+  virtual void   Vout  (Field & in, Field & out,Field & src){
+    out = in;
+  }
+
+};
+  
+template<class Field, class CoarseField, class Aggregation>
+class TwoLevelADEF2 : public TwoLevelCG<Field>
+{
+ public:
+  ///////////////////////////////////////////////////////////////////////////////////
+  // Need something that knows how to get from Coarse to fine and back again
+  //  void ProjectToSubspace(CoarseVector &CoarseVec,const FineField &FineVec){
+  //  void PromoteFromSubspace(const CoarseVector &CoarseVec,FineField &FineVec){
+  ///////////////////////////////////////////////////////////////////////////////////
+  GridBase *coarsegrid;
+  Aggregation &_Aggregates;                    
+  LinearFunction<CoarseField> &_CoarseSolver;
+  LinearFunction<CoarseField> &_CoarseSolverPrecise;
+  ///////////////////////////////////////////////////////////////////////////////////
+  
+  // more most opertor functions
+  TwoLevelADEF2(RealD tol,
+		Integer maxit,
+		LinearOperatorBase<Field>   &FineLinop,
+		LinearFunction<Field>   &Smoother,
+		LinearFunction<CoarseField>  &CoarseSolver,
+		LinearFunction<CoarseField>  &CoarseSolverPrecise,
+		Aggregation &Aggregates
+		) :
+    TwoLevelCG<Field>(tol,maxit,FineLinop,Smoother,Aggregates.FineGrid),
+      _CoarseSolver(CoarseSolver),
+      _CoarseSolverPrecise(CoarseSolverPrecise),
+      _Aggregates(Aggregates)
+  {
+    coarsegrid = Aggregates.CoarseGrid;
+  };
+
+  virtual void PcgM1(Field & in, Field & out)
+  {
+    // [PTM+Q] in = [1 - Q A] M in + Q in = Min + Q [ in -A Min]
+
+    Field tmp(this->grid);
+    Field Min(this->grid);
+    CoarseField PleftProj(this->coarsegrid);
+    CoarseField PleftMss_proj(this->coarsegrid);
+
+    GridStopWatch SmootherTimer;
+    GridStopWatch MatrixTimer;
+    SmootherTimer.Start();
+    this->_Smoother(in,Min);
+    SmootherTimer.Stop();
+
+    MatrixTimer.Start();
+    this->_FineLinop.HermOp(Min,out);
+    MatrixTimer.Stop();
+    axpy(tmp,-1.0,out,in);          // tmp  = in - A Min
+
+    GridStopWatch ProjTimer;
+    GridStopWatch CoarseTimer;
+    GridStopWatch PromTimer;
+    ProjTimer.Start();
+    this->_Aggregates.ProjectToSubspace(PleftProj,tmp);     
+    ProjTimer.Stop();
+    CoarseTimer.Start();
+    this->_CoarseSolver(PleftProj,PleftMss_proj); // Ass^{-1} [in - A Min]_s
+    CoarseTimer.Stop();
+    PromTimer.Start();
+    this->_Aggregates.PromoteFromSubspace(PleftMss_proj,tmp);// tmp = Q[in - A Min]  
+    PromTimer.Stop();
+    std::cout << GridLogPerformance << "PcgM1 breakdown "<<std::endl;
+    std::cout << GridLogPerformance << "\tSmoother   " << SmootherTimer.Elapsed() <<std::endl;
+    std::cout << GridLogPerformance << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
+    std::cout << GridLogPerformance << "\tProj       " << ProjTimer.Elapsed() <<std::endl;
+    std::cout << GridLogPerformance << "\tCoarse     " << CoarseTimer.Elapsed() <<std::endl;
+    std::cout << GridLogPerformance << "\tProm       " << PromTimer.Elapsed() <<std::endl;
+
+    axpy(out,1.0,Min,tmp); // Min+tmp
   }
 
   virtual void Vstart(Field & x,const Field & src)
@@ -262,65 +290,69 @@ class TwoLevelADEF2 : public LinearFunction<Field>
     //                   = src_s - (A guess)_s - src_s  + (A guess)_s 
     //                   = 0 
     ///////////////////////////////////
-    Field r(grid);
-    Field mmp(grid);
-    CoarseField PleftProj(coarsegrid);
-    CoarseField PleftMss_proj(coarsegrid);
+    Field r(this->grid);
+    Field mmp(this->grid);
+    CoarseField PleftProj(this->coarsegrid);
+    CoarseField PleftMss_proj(this->coarsegrid);
 
-    _Aggregates.ProjectToSubspace(PleftProj,src);     
-    _CoarseSolverPrecise(PleftProj,PleftMss_proj); // Ass^{-1} r_s
-    _Aggregates.PromoteFromSubspace(PleftMss_proj,x);  
+    this->_Aggregates.ProjectToSubspace(PleftProj,src);     
+    this->_CoarseSolverPrecise(PleftProj,PleftMss_proj); // Ass^{-1} r_s
+    this->_Aggregates.PromoteFromSubspace(PleftMss_proj,x);  
 
   }
 
-  /////////////////////////////////////////////////////////////////////
-  // Only Def1 has non-trivial Vout.
-  /////////////////////////////////////////////////////////////////////
-  virtual void   Vout  (Field & in, Field & out,Field & src){
-    out = in;
-  }
 };
 
-template<class Field, class CoarseField, class Aggregation>
-class TwoLevelADEF1ev : public TwoLevelADEF2<Field,CoarseField,Aggregation>
+template<class Field>
+class TwoLevelADEF1defl : public TwoLevelCG<Field>
 {
-  TwoLevelADEF1ev(RealD tol,
+public:
+  const std::vector<Field> &evec;
+  const std::vector<RealD> &eval;
+  
+  TwoLevelADEF1defl(RealD tol,
 		   Integer maxit,
 		   LinearOperatorBase<Field>   &FineLinop,
 		   LinearFunction<Field>   &Smoother,
-		   LinearFunction<CoarseField>  &CoarseSolver,
-		   LinearFunction<CoarseField>  &CoarseSolverPrecise,
-		   Aggregation &Aggregates ) : 
-    TwoLevelADEF2<Field,CoarseField,Aggregation>(tol,maxit,FineLinop,Smoother,CoarseSolver,CoarseSolverPrecise,Aggregates)
+		   std::vector<Field> &_evec,
+		   std::vector<RealD> &_eval) : 
+    TwoLevelCG<Field>(tol,maxit,FineLinop,Smoother,_evec[0].Grid()),
+    evec(_evec),
+    eval(_eval)
   {};
 
-  // Can just inherit existing Vstart
   // Can just inherit existing Vout
   // Can just inherit existing M2
   // Can just inherit existing M3
+
+  // Simple vstart - do nothing
+  virtual void Vstart(Field & x,const Field & src){};
+
   // Override PcgM1
   virtual void PcgM1(Field & in, Field & out)
   {
-    CoarseField PleftProj(this->coarsegrid);
-    CoarseField PleftMss_proj(this->coarsegrid);
-    Field tmp(this->grid);
+    int N=evec.size();
     Field Pin(this->grid);
+    Field Qin(this->grid);
 
     //MP  + Q = M(1-AQ) + Q = M
     // // If we are eigenvector deflating in coarse space
     // // Q   = Sum_i |phi_i> 1/lambda_i <phi_i|
     // // A Q = Sum_i |phi_i> <phi_i|
     // // M(1-AQ) = M(1-proj) + Q
-    this->_Aggregates.ProjectToSubspace(PleftProj,in);     
-    this->_Aggregates.PromoteFromSubspace(PleftProj,tmp);// tmp = Qin
+    Qin.Checkerboard()=in.Checkerboard();
+    Qin = Zero();
+    Pin = in;
+    for (int i=0;i<N;i++) {
+      const Field& tmp = evec[i];
+      auto ip = TensorRemove(innerProduct(tmp,in));
+      axpy(Qin, ip / eval[i],tmp,Qin);
+      axpy(Pin, -ip ,tmp,Pin);
+    }
 
-    Pin = in - tmp;
     this->_Smoother(Pin,out);
 
-    this->_CoarseSolver(PleftProj,PleftMss_proj); 
-    this->_Aggregates.PromoteFromSubspace(PleftMss_proj,tmp);// tmp = Qin
-
-    out = out + tmp;
+    out = out + Qin;
   }
 };
 
