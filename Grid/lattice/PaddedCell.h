@@ -86,8 +86,10 @@ public:
     // expand up one dim at a time
     for(int d=0;d<dims;d++){
 
-      plocal[d] += 2*depth; 
-
+      if ( processors[d] > 1 ) { 
+	plocal[d] += 2*depth; 
+      }
+      
       for(int d=0;d<dims;d++){
 	global[d] = plocal[d]*processors[d];
       }
@@ -98,11 +100,17 @@ public:
   template<class vobj>
   inline Lattice<vobj> Extract(const Lattice<vobj> &in) const
   {
+    Coordinate processors=unpadded_grid->_processors;
+
     Lattice<vobj> out(unpadded_grid);
 
     Coordinate local     =unpadded_grid->LocalDimensions();
-    Coordinate fll(dims,depth); // depends on the MPI spread
+    // depends on the MPI spread      
+    Coordinate fll(dims,depth);
     Coordinate tll(dims,0); // depends on the MPI spread
+    for(int d=0;d<dims;d++){
+      if( processors[d]==1 ) fll[d]=0;
+    }
     localCopyRegion(in,out,fll,tll,local);
     return out;
   }
@@ -121,6 +129,7 @@ public:
   template<class vobj>
   inline Lattice<vobj> Expand(int dim, const Lattice<vobj> &in, const CshiftImplBase<vobj> &cshift = CshiftImplDefault<vobj>()) const
   {
+    Coordinate processors=unpadded_grid->_processors;
     GridBase *old_grid = in.Grid();
     GridCartesian *new_grid = grids[dim];//These are new grids
     Lattice<vobj>  padded(new_grid);
@@ -133,36 +142,48 @@ public:
     std::cout << " dim "<<dim<<" local "<<local << " padding to "<<plocal<<std::endl;
 
     double tins=0, tshift=0;
-    
-    // Middle bit
-    double t = usecond();
-    for(int x=0;x<local[dim];x++){
-      InsertSliceLocal(in,padded,x,depth+x,dim);
-    }
-    tins += usecond() - t;
-    
-    // High bit
-    t = usecond();
-    shifted = cshift.Cshift(in,dim,depth);
-    tshift += usecond() - t;
 
-    t=usecond();
-    for(int x=0;x<depth;x++){
-      InsertSliceLocal(shifted,padded,local[dim]-depth+x,depth+local[dim]+x,dim);
-    }
-    tins += usecond() - t;
-    
-    // Low bit
-    t = usecond();
-    shifted = cshift.Cshift(in,dim,-depth);
-    tshift += usecond() - t;
-    
-    t = usecond();
-    for(int x=0;x<depth;x++){
-      InsertSliceLocal(shifted,padded,x,x,dim);
-    }
-    tins += usecond() - t;
+    int islocal = 0 ;
+    if ( processors[dim] == 1 ) islocal = 1;
 
+    if ( islocal ) {
+      
+      double t = usecond();
+      for(int x=0;x<local[dim];x++){
+	InsertSliceLocal(in,padded,x,x,dim);
+      }
+      tins += usecond() - t;
+      
+    } else { 
+      // Middle bit
+      double t = usecond();
+      for(int x=0;x<local[dim];x++){
+	InsertSliceLocal(in,padded,x,depth+x,dim);
+      }
+      tins += usecond() - t;
+    
+      // High bit
+      t = usecond();
+      shifted = cshift.Cshift(in,dim,depth);
+      tshift += usecond() - t;
+
+      t=usecond();
+      for(int x=0;x<depth;x++){
+	InsertSliceLocal(shifted,padded,local[dim]-depth+x,depth+local[dim]+x,dim);
+      }
+      tins += usecond() - t;
+    
+      // Low bit
+      t = usecond();
+      shifted = cshift.Cshift(in,dim,-depth);
+      tshift += usecond() - t;
+    
+      t = usecond();
+      for(int x=0;x<depth;x++){
+	InsertSliceLocal(shifted,padded,x,x,dim);
+      }
+      tins += usecond() - t;
+    }
     std::cout << GridLogPerformance << "PaddedCell::Expand timings: cshift:" << tshift/1000 << "ms, insert-slice:" << tins/1000 << "ms" << std::endl;
     
     return padded;
