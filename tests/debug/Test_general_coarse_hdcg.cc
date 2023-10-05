@@ -86,6 +86,12 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   const int Ls=16;
+  const int nbasis = 40;
+  const int cb = 0 ;
+  RealD mass=0.01;
+  RealD M5=1.8;
+  RealD b=1.5;
+  RealD c=0.5;
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(),
 								   GridDefaultSimd(Nd,vComplex::Nsimd()),
@@ -121,10 +127,6 @@ int main (int argc, char ** argv)
   NerscIO::readConfiguration(Umu,header,file);
 
   //////////////////////// Fermion action //////////////////////////////////
-  RealD mass=0.01;
-  RealD M5=1.8;
-  RealD b=1.5;
-  RealD c=0.5;
   MobiusFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c);
 
   SchurDiagMooeeOperator<MobiusFermionD, LatticeFermion> HermOpEO(Ddwf);
@@ -143,8 +145,6 @@ int main (int argc, char ** argv)
   ////////////////////////////////////////////////////////////
   ///////////// Coarse basis and Little Dirac Operator ///////
   ////////////////////////////////////////////////////////////
-  const int nbasis = 40;
-  const int cb = 0 ;
   typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
 
@@ -154,6 +154,18 @@ int main (int argc, char ** argv)
   // Warning: This routine calls PVdagM.Op, not PVdagM.HermOp
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis> Subspace;
   Subspace Aggregates(Coarse5d,FrbGrid,cb);
+#if 1
+  Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,
+				     95.0,0.1,
+				     //				     400,200,200 -- 48 iters
+				     //				     600,200,200 -- 38 iters, 162s
+				     //				     600,200,100 -- 38 iters, 169s
+				     //				     600,200,50  -- 88 iters. 370s 
+				     600,
+				     200,
+				     100,
+				     0.0);
+#else
   Aggregates.CreateSubspaceChebyshev(RNG5,
 				     HermOpEO,
 				     nbasis,
@@ -172,19 +184,22 @@ int main (int argc, char ** argv)
 				     //				     0.1,  // nbasis 16 -- 142; sloppy solve
 				     0.1,  // nbasis 24 
 				     300);
+#endif
   ////////////////////////////////////////////////////////////
   // Need to check about red-black grid coarsening
   ////////////////////////////////////////////////////////////
   LittleDiracOperator LittleDiracOp(geom,FrbGrid,Coarse5d);
-  LittleDiracOp.CoarsenOperatorColoured(FineHermOp,Aggregates);
+  LittleDiracOp.CoarsenOperator(FineHermOp,Aggregates);
 
   // Try projecting to one hop only
+  std::cout << " projecting coarse matrix "<<std::endl;
   LittleDiracOperator LittleDiracOpProj(geom_nn,FrbGrid,Coarse5d);
   LittleDiracOpProj.ProjectNearestNeighbour(0.5,LittleDiracOp);
 
   typedef HermitianLinearOperator<LittleDiracOperator,CoarseVector> HermMatrix;
   HermMatrix CoarseOp (LittleDiracOp);
-
+  HermMatrix CoarseOpProj (LittleDiracOpProj);
+  
   //////////////////////////////////////////
   // Build a coarse lanczos
   //////////////////////////////////////////
@@ -200,11 +215,13 @@ int main (int argc, char ** argv)
   std::vector<RealD>            eval(Nm);
   std::vector<CoarseVector>     evec(Nm,Coarse5d);
   CoarseVector c_src(Coarse5d); c_src=1.0;
+  CoarseVector c_res(Coarse5d); 
 
   PowerMethod<CoarseVector>       cPM;   cPM(CoarseOp,c_src);
 
   IRL.calc(eval,evec,c_src,Nconv);
   DeflatedGuesser<CoarseVector> DeflCoarseGuesser(evec,eval);
+
   
   //////////////////////////////////////////
   // Build a coarse space solver
@@ -216,7 +233,53 @@ int main (int argc, char ** argv)
 
   //  HPDSolver<CoarseVector> HPDSolve(CoarseOp,CG,CoarseZeroGuesser);
   HPDSolver<CoarseVector> HPDSolve(CoarseOp,CG,DeflCoarseGuesser);
+  c_res=Zero();
+  HPDSolve(c_src,c_res); 
 
+  //////////////////////////////////////////////////////////////////////////
+  // Deflated (with real op EV's) solve for the projected coarse op
+  // Work towards ADEF1 in the coarse space
+  //////////////////////////////////////////////////////////////////////////
+  HPDSolver<CoarseVector> HPDSolveProj(CoarseOpProj,CG,DeflCoarseGuesser);
+  c_res=Zero();
+  HPDSolveProj(c_src,c_res);
+
+  //////////////////////////////////////////////////////////////////////
+  // Coarse ADEF1 with deflation space
+  //////////////////////////////////////////////////////////////////////
+  //  ChebyshevSmoother<CoarseVector,HermMatrix > CoarseSmoother(2.0,40.,8,CoarseOpProj);  // 311
+  ChebyshevSmoother<CoarseVector,HermMatrix > CoarseSmoother(2.0,36.,12,CoarseOpProj);  // 311
+
+  ////////////////////////////////////////////////////////
+  // CG, Cheby mode spacing 200,200
+  // Unprojected Coarse CG solve to 1e-8 : 190 iters, 4.9s
+  // Unprojected Coarse CG solve to 4e-2 :  33 iters, 0.8s
+  // Projected Coarse CG solve to 1e-8 : 100 iters, 0.36s
+  ////////////////////////////////////////////////////////
+  // CoarseSmoother(1.0,48.,8,CoarseOpProj); 48 evecs 
+  ////////////////////////////////////////////////////////
+  // ADEF1 Coarse solve to 1e-8 : 44 iters, 2.34s  2.1x gain
+  // ADEF1 Coarse solve to 4e-2 : 7 iters, 0.4s
+  // HDCG 38 iters 162s
+  //
+  // CoarseSmoother(1.0,40.,8,CoarseOpProj); 48 evecs 
+  // ADEF1 Coarse solve to 1e-8 : 37 iters, 2.0s  2.1x gain
+  // ADEF1 Coarse solve to 4e-2 : 6 iters, 0.36s
+  // HDCG 38 iters 169s
+
+  TwoLevelADEF1defl<CoarseVector>
+    cADEF1(1.0e-8, 100,
+	   CoarseOp,
+	   CoarseSmoother,
+	   evec,eval);
+
+  c_res=Zero();
+  cADEF1(c_src,c_res);
+  
+  cADEF1.Tolerance = 4.0e-2;
+  c_res=Zero();
+  cADEF1(c_src,c_res);
+  
   //////////////////////////////////////////
   // Build a smoother
   //////////////////////////////////////////
@@ -271,6 +334,18 @@ int main (int argc, char ** argv)
 
       result=Zero();
       HDCG(src,result);
+
+      TwoLevelADEF2<LatticeFermion,CoarseVector,Subspace>
+	HDCGdefl(1.0e-8, 3000,
+	     FineHermOp,
+	     Smoother,
+	     cADEF1,
+	     HPDSolve,
+	     Aggregates);
+      
+      result=Zero();
+      HDCGdefl(src,result);
+      
     }
   }
   
