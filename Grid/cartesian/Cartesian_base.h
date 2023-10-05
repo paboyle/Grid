@@ -70,8 +70,8 @@ public:
   Coordinate _istride;    // Inner stride i.e. within simd lane
   int _osites;                  // _isites*_osites = product(dimensions).
   int _isites;
-  int _fsites;                  // _isites*_osites = product(dimensions).
-  int _gsites;
+  int64_t _fsites;                  // _isites*_osites = product(dimensions).
+  int64_t _gsites;
   Coordinate _slice_block;// subslice information
   Coordinate _slice_stride;
   Coordinate _slice_nblock;
@@ -183,7 +183,7 @@ public:
   inline int Nsimd(void)  const { return _isites; };// Synonymous with iSites
   inline int oSites(void) const { return _osites; };
   inline int lSites(void) const { return _isites*_osites; }; 
-  inline int gSites(void) const { return _isites*_osites*_Nprocessors; }; 
+  inline int64_t gSites(void) const { return (int64_t)_isites*(int64_t)_osites*(int64_t)_Nprocessors; }; 
   inline int Nd    (void) const { return _ndimension;};
 
   inline const Coordinate LocalStarts(void)             { return _lstart;    };
@@ -214,7 +214,7 @@ public:
   ////////////////////////////////////////////////////////////////
   // Global addressing
   ////////////////////////////////////////////////////////////////
-  void GlobalIndexToGlobalCoor(int gidx,Coordinate &gcoor){
+  void GlobalIndexToGlobalCoor(int64_t gidx,Coordinate &gcoor){
     assert(gidx< gSites());
     Lexicographic::CoorFromIndex(gcoor,gidx,_gdimensions);
   }
@@ -222,7 +222,7 @@ public:
     assert(lidx<lSites());
     Lexicographic::CoorFromIndex(lcoor,lidx,_ldimensions);
   }
-  void GlobalCoorToGlobalIndex(const Coordinate & gcoor,int & gidx){
+  void GlobalCoorToGlobalIndex(const Coordinate & gcoor,int64_t & gidx){
     gidx=0;
     int mult=1;
     for(int mu=0;mu<_ndimension;mu++) {
