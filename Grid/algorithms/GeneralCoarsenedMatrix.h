@@ -226,6 +226,7 @@ public:
   void ProjectNearestNeighbour(RealD shift, GeneralCoarseOp &CopyMe)
   {
     int nfound=0;
+    std::cout << " ProjectNearestNeighbour "<< CopyMe._A[0].Grid()<<std::endl;
     for(int p=0;p<geom.npoint;p++){
       for(int pp=0;pp<CopyMe.geom.npoint;pp++){
  	// Search for the same relative shift
@@ -233,12 +234,12 @@ public:
 	if ( CopyMe.geom.shifts[pp]==geom.shifts[p] ) {
 	  _A[p] = CopyMe.Cell.Extract(CopyMe._A[pp]);
 	  _Adag[p] = CopyMe.Cell.Extract(CopyMe._Adag[pp]);
-	  ExchangeCoarseLinks();
 	  nfound++;
 	}
       }
     }
     assert(nfound==geom.npoint);
+    ExchangeCoarseLinks();
   }
   
   GeneralCoarsenedMatrix(NonLocalStencilGeometry &_geom,GridBase *FineGrid, GridCartesian * CoarseGrid)
@@ -271,7 +272,8 @@ public:
   }
   void Mdag (const CoarseVector &in, CoarseVector &out)
   {
-    Mult(_Adag,in,out);
+    if ( hermitian ) M(in,out);
+    else Mult(_Adag,in,out);
   }
   void Mult (std::vector<CoarseMatrix> &A,const CoarseVector &in, CoarseVector &out)
   {
@@ -343,15 +345,15 @@ public:
     text+=usecond();
     ttot+=usecond();
 
-    std::cout << GridLogMessage<<"Coarse Mult Aviews "<<tviews<<" us"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Mult exch "<<texch<<" us"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Mult mult "<<tmult<<" us"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Mult ext  "<<text<<" us"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Mult tot  "<<ttot<<" us"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Kernel "<< flops/tmult<<" mflop/s"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Kernel "<< bytes/tmult<<" MB/s"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse bytes   "<< bytes/1e6<<" MB"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Mult Aviews "<<tviews<<" us"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Mult exch "<<texch<<" us"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Mult mult "<<tmult<<" us"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Mult ext  "<<text<<" us"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Mult tot  "<<ttot<<" us"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Kernel "<< flops/tmult<<" mflop/s"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Kernel "<< bytes/tmult<<" MB/s"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse bytes   "<< bytes/1e6<<" MB"<<std::endl;
   };
 
   void PopulateAdag(void)
@@ -412,10 +414,10 @@ public:
      *
      *     Where q_k = delta_k . (2*M_PI/global_nb[mu])
      */
-  void CoarsenOperatorColoured(LinearOperatorBase<Lattice<Fobj> > &linop,
-			       Aggregation<Fobj,CComplex,nbasis> & Subspace)
+  void CoarsenOperator(LinearOperatorBase<Lattice<Fobj> > &linop,
+		       Aggregation<Fobj,CComplex,nbasis> & Subspace)
   {
-    std::cout << GridLogMessage<< "CoarsenMatrixColoured "<< std::endl;
+    std::cout << GridLogMessage<< "GeneralCoarsenMatrix "<< std::endl;
     GridBase *grid = FineGrid();
 
     RealD tproj=0.0;
@@ -540,7 +542,9 @@ public:
       auto sval = peekSite(_A[p],coor);
     }
 
-    PopulateAdag();
+    // Only needed if nonhermitian
+    if ( ! hermitian )
+      PopulateAdag();
 
     // Need to write something to populate Adag from A
     ExchangeCoarseLinks();
