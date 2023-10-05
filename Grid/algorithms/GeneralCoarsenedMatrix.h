@@ -300,10 +300,10 @@ public:
     const int Nsimd = CComplex::Nsimd();
     
     int osites=pin.Grid()->oSites();
-    int gsites=pin.Grid()->gSites();
+    //    int gsites=pin.Grid()->gSites();
 
-    RealD flops = 1.0* npoint * nbasis * nbasis * 8 * gsites;
-    RealD bytes = (1.0*osites*sizeof(siteMatrix)+2.0*osites*sizeof(siteVector))*npoint;
+    RealD flops = 1.0* npoint * nbasis * nbasis * 8 * osites;
+    RealD bytes = (1.0*osites*sizeof(siteMatrix)*npoint+2.0*osites*sizeof(siteVector))*npoint;
       
     //    for(int point=0;point<npoint;point++){
     //      conformable(A[point],pin);
@@ -358,7 +358,7 @@ public:
 
   void PopulateAdag(void)
   {
-    for(int bidx=0;bidx<CoarseGrid()->gSites() ;bidx++){
+    for(int64_t bidx=0;bidx<CoarseGrid()->gSites() ;bidx++){
       Coordinate bcoor;
       CoarseGrid()->GlobalIndexToGlobalCoor(bidx,bcoor);
       
@@ -543,10 +543,13 @@ public:
     }
 
     // Only needed if nonhermitian
-    if ( ! hermitian )
+    if ( ! hermitian ) {
+      std::cout << GridLogMessage<<"PopulateAdag  "<<std::endl;
       PopulateAdag();
+    }
 
     // Need to write something to populate Adag from A
+    std::cout << GridLogMessage<<"ExchangeCoarseLinks  "<<std::endl;
     ExchangeCoarseLinks();
     std::cout << GridLogMessage<<"CoarsenOperator eigen  "<<teigen<<" us"<<std::endl;
     std::cout << GridLogMessage<<"CoarsenOperator phase  "<<tphase<<" us"<<std::endl;
@@ -556,6 +559,7 @@ public:
   }
   void ExchangeCoarseLinks(void){
     for(int p=0;p<geom.npoint;p++){
+      std::cout << "Exchange "<<p<<std::endl;
       _A[p] = Cell.Exchange(_A[p]);
       _Adag[p]= Cell.Exchange(_Adag[p]);
     }

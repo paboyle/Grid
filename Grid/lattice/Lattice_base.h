@@ -360,7 +360,7 @@ public:
 
 template<class vobj> std::ostream& operator<< (std::ostream& stream, const Lattice<vobj> &o){
   typedef typename vobj::scalar_object sobj;
-  for(int g=0;g<o.Grid()->_gsites;g++){
+  for(int64_t g=0;g<o.Grid()->_gsites;g++){
 
     Coordinate gcoor;
     o.Grid()->GlobalIndexToGlobalCoor(g,gcoor);

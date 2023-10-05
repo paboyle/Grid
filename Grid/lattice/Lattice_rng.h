@@ -432,7 +432,7 @@ public:
 #if 1
     thread_for( lidx, _grid->lSites(), {
 
-	int gidx;
+	int64_t gidx;
 	int o_idx;
 	int i_idx;
 	int rank;

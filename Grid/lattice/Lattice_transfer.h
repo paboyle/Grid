@@ -1054,7 +1054,7 @@ void Replicate(const Lattice<vobj> &coarse,Lattice<vobj> & fine)
 
   Coordinate fcoor(nd);
   Coordinate ccoor(nd);
-  for(int g=0;g<fg->gSites();g++){
+  for(int64_t g=0;g<fg->gSites();g++){
 
     fg->GlobalIndexToGlobalCoor(g,fcoor);
     for(int d=0;d<nd;d++){
