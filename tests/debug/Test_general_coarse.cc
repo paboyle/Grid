@@ -144,12 +144,7 @@ int main (int argc, char ** argv)
   HermOpAdaptor<LatticeFermionD> HOA(HermDefOp);
 
   int pp=16;
-  //  LittleDiracOpCol.CoarsenOperator(HOA,Aggregates);
-  //  std::cout << "LittleDiracOp old " << LittleDiracOpCol._A[pp]<<std::endl;
-  LittleDiracOp.CoarsenOperatorColoured(HOA,Aggregates);
-  //  LittleDiracOp.ExchangeCoarseLinks();
-
-  //  std::cout << "LittleDiracOp new " << LittleDiracOp._A[pp]<<std::endl;
+  LittleDiracOp.CoarsenOperator(HOA,Aggregates);
   
   ///////////////////////////////////////////////////
   // Test the operator
