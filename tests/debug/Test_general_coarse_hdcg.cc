@@ -242,10 +242,6 @@ int main (int argc, char ** argv)
   //  std::vector<int> ords({7,8,10}); // Nbasis 40 == 40,38,36 iters (320,342,396 mults)
   std::vector<int> ords({7}); // Nbasis 40 == 40 iters (320 mults)  
 
-  // Standard CG
-  //      result=Zero();
-  //      CGfine(HermOpEO, src, result);
-
   for(int l=0;l<los.size();l++){
 
     RealD lo = los[l];
@@ -273,6 +269,10 @@ int main (int argc, char ** argv)
       HDCG(src,result);
     }
   }
+
+  // Standard CG
+  result=Zero();
+  CGfine(HermOpEO, src, result);
   
   Grid_finalize();
   return 0;
