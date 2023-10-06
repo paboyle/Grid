@@ -161,12 +161,12 @@ class TwoLevelCG : public LinearFunction<Field>
 	axpy(tmp,-1.0,src,mmp);
 
 	RealD  mmpnorm = sqrt(norm2(mmp));
-	RealD  psinorm = sqrt(norm2(x));
+	RealD  xnorm   = sqrt(norm2(x));
 	RealD  srcnorm = sqrt(norm2(src));
 	RealD  tmpnorm = sqrt(norm2(tmp));
 	RealD  true_residual = tmpnorm/srcnorm;
 	std::cout<<GridLogMessage<<"HDCG: true residual is "<<true_residual
-		 <<" solution "<<psinorm<<" source "<<srcnorm<<std::endl;
+		 <<" solution "<<xnorm<<" source "<<srcnorm<<std::endl;
 
 	return;
       }
@@ -326,7 +326,7 @@ public:
   // Can just inherit existing M3
 
   // Simple vstart - do nothing
-  virtual void Vstart(Field & x,const Field & src){};
+  virtual void Vstart(Field & x,const Field & src){ x=src; };
 
   // Override PcgM1
   virtual void PcgM1(Field & in, Field & out)
