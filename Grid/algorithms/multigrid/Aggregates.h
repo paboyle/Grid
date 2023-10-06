@@ -55,30 +55,6 @@ public:
   {
   };
   
-  void SaveState(std::string file)
-  {
-#ifdef HAVE_LIME
-    emptyUserRecord record;
-    ScidacWriter WR(Grid()->IsBoss());
-    WR.open(file);
-    for(int b=0;b<nbasis;b++){
-      WR.writeScidacFieldRecord(subspace[b],record);
-    }
-    WR.close();
-#endif
-  }
-  void LoadState(std::string file)
-  {
-#ifdef HAVE_LIME
-    emptyUserRecord record;
-    Grid::ScidacReader RD ;
-    RD.open(file);
-    for(int b=0;b<nbasis;b++){
-      RD.readScidacFieldRecord(subspace[b],record);
-    }    
-    RD.close();
-#endif
-  }
   
   void Orthogonalise(void){
     CoarseScalar InnerProd(CoarseGrid); 
