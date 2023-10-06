@@ -69,7 +69,8 @@ NAMESPACE_CHECK(BiCGSTAB);
 #include <Grid/algorithms/iterative/PowerMethod.h>
 
 NAMESPACE_CHECK(PowerMethod);
-#include <Grid/algorithms/CoarsenedMatrix.h>
+#include <Grid/algorithms/multigrid/MultiGrid.h>
+
 NAMESPACE_CHECK(CoarsendMatrix);
 #include <Grid/algorithms/FFT.h>
 
