@@ -28,11 +28,70 @@ Author: Peter Boyle <pboyle@bnl.gov>
 #include <Grid/Grid.h>
 #include <Grid/lattice/PaddedCell.h>
 #include <Grid/stencil/GeneralLocalStencil.h>
-#include <Grid/algorithms/GeneralCoarsenedMatrix.h>
+//#include <Grid/algorithms/GeneralCoarsenedMatrix.h>
 #include <Grid/algorithms/iterative/AdefGeneric.h>
 
 using namespace std;
 using namespace Grid;
+
+template<class Coarsened>
+void SaveOperator(Coarsened &Operator,std::string file)
+{
+#ifdef HAVE_LIME
+  emptyUserRecord record;
+  ScidacWriter WR(Operator.Grid()->IsBoss());
+  assert(Operator._A.size()==Operator.geom.npoint);
+  WR.open(file);
+  for(int p=0;p<Operator._A.size();p++){
+    auto tmp = Operator.Cell.Extract(Operator._A[p]);
+    WR.writeScidacFieldRecord(tmp,record);
+  }
+  WR.close();
+#endif
+}
+template<class Coarsened>
+void LoadOperator(Coarsened Operator,std::string file)
+{
+#ifdef HAVE_LIME
+  emptyUserRecord record;
+  Grid::ScidacReader RD ;
+  RD.open(file);
+  assert(Operator._A.size()==Operator.geom.npoint);
+  for(int p=0;p<Operator.geom.npoint;p++){
+    conformable(Operator._A[p].Grid(),Operator.CoarseGrid());
+    RD.readScidacFieldRecord(Operator._A[p],record);
+  }    
+  RD.close();
+  Operator.ExchangeCoarseLinks();
+#endif
+}
+template<class aggregation>
+void SaveBasis(aggregation &Agg,std::string file)
+{
+#ifdef HAVE_LIME
+  emptyUserRecord record;
+  ScidacWriter WR(Agg.FineGrid->IsBoss());
+  WR.open(file);
+  for(int b=0;b<Agg.subspace.size();b++){
+    WR.writeScidacFieldRecord(Agg.subspace[b],record);
+  }
+  WR.close();
+#endif
+}
+template<class aggregation>
+void LoadBasis(aggregation &Agg, std::string file)
+{
+#ifdef HAVE_LIME
+  emptyUserRecord record;
+  ScidacReader RD ;
+  RD.open(file);
+  for(int b=0;b<Agg.subspace.size();b++){
+    RD.readScidacFieldRecord(Agg.subspace[b],record);
+  }    
+  RD.close();
+#endif
+}
+
 
 template<class Field> class TestSolver : public LinearFunction<Field> {
 public:
@@ -154,47 +213,35 @@ int main (int argc, char ** argv)
   // Warning: This routine calls PVdagM.Op, not PVdagM.HermOp
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis> Subspace;
   Subspace Aggregates(Coarse5d,FrbGrid,cb);
-#if 1
-  Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,
-				     95.0,0.1,
-				     //				     400,200,200 -- 48 iters
-				     //				     600,200,200 -- 38 iters, 162s
-				     //				     600,200,100 -- 38 iters, 169s
-				     //				     600,200,50  -- 88 iters. 370s 
-				     600,
-				     200,
-				     100,
-				     0.0);
-#else
-  Aggregates.CreateSubspaceChebyshev(RNG5,
-				     HermOpEO,
-				     nbasis,
-				     //				     100.0,
-				     //	0.1, // Low pass is pretty high still -- 311 iters
-				     //				     250.0,
-				     //				     0.01, // subspace too low filter power wrong
-				     //				     250.0,
-				     //				     0.2, // slower
-				     95.0,
-				     //				     0.05, // nbasis 12 - 311 -- wrong coarse inv
-				     //				     0.05, // nbasis 12 - 154 -- right filt
-				     //				     0.1, // nbasis 12 - 169 oops
-				     //				     0.05, // nbasis 16 -- 127 iters
-				     //				     0.03, // nbasis 16 -- 13-
-				     //				     0.1,  // nbasis 16 -- 142; sloppy solve
-				     0.1,  // nbasis 24 
-				     300);
-#endif
+
   ////////////////////////////////////////////////////////////
   // Need to check about red-black grid coarsening
   ////////////////////////////////////////////////////////////
   LittleDiracOperator LittleDiracOp(geom,FrbGrid,Coarse5d);
-  LittleDiracOp.CoarsenOperator(FineHermOp,Aggregates);
 
+  bool load=false;
+  if ( load ) {
+    LoadBasis(Aggregates,"Subspace.scidac");
+    LoadOperator(LittleDiracOp,"LittleDiracOp.scidac");
+  } else {
+    Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,
+				       95.0,0.1,
+				       //				     400,200,200 -- 48 iters
+				       //				     600,200,200 -- 38 iters, 162s
+				       //				     600,200,100 -- 38 iters, 169s
+				       //				     600,200,50  -- 88 iters. 370s 
+				       600,
+				       200,
+				       100,
+				       0.0);
+    LittleDiracOp.CoarsenOperator(FineHermOp,Aggregates);
+    SaveBasis(Aggregates,"Subspace.scidac");
+    SaveOperator(LittleDiracOp,"LittleDiracOp.scidac");
+  }
+  
   // Try projecting to one hop only
-  std::cout << " projecting coarse matrix "<<std::endl;
   LittleDiracOperator LittleDiracOpProj(geom_nn,FrbGrid,Coarse5d);
-  LittleDiracOpProj.ProjectNearestNeighbour(0.5,LittleDiracOp);
+  LittleDiracOpProj.ProjectNearestNeighbour(0.2,LittleDiracOp);
 
   typedef HermitianLinearOperator<LittleDiracOperator,CoarseVector> HermMatrix;
   HermMatrix CoarseOp (LittleDiracOp);
@@ -216,6 +263,7 @@ int main (int argc, char ** argv)
   std::vector<CoarseVector>     evec(Nm,Coarse5d);
   CoarseVector c_src(Coarse5d); c_src=1.0;
   CoarseVector c_res(Coarse5d); 
+  CoarseVector c_ref(Coarse5d); 
 
   PowerMethod<CoarseVector>       cPM;   cPM(CoarseOp,c_src);
 
@@ -234,7 +282,7 @@ int main (int argc, char ** argv)
   //  HPDSolver<CoarseVector> HPDSolve(CoarseOp,CG,CoarseZeroGuesser);
   HPDSolver<CoarseVector> HPDSolve(CoarseOp,CG,DeflCoarseGuesser);
   c_res=Zero();
-  HPDSolve(c_src,c_res); 
+  HPDSolve(c_src,c_res); c_ref = c_res;
 
   //////////////////////////////////////////////////////////////////////////
   // Deflated (with real op EV's) solve for the projected coarse op
@@ -243,12 +291,14 @@ int main (int argc, char ** argv)
   HPDSolver<CoarseVector> HPDSolveProj(CoarseOpProj,CG,DeflCoarseGuesser);
   c_res=Zero();
   HPDSolveProj(c_src,c_res);
+  c_res = c_res - c_ref;
+  std::cout << "Projected solver error "<<norm2(c_res)<<std::endl;
 
   //////////////////////////////////////////////////////////////////////
   // Coarse ADEF1 with deflation space
   //////////////////////////////////////////////////////////////////////
-  //  ChebyshevSmoother<CoarseVector,HermMatrix > CoarseSmoother(2.0,40.,8,CoarseOpProj);  // 311
-  ChebyshevSmoother<CoarseVector,HermMatrix > CoarseSmoother(2.0,36.,12,CoarseOpProj);  // 311
+  ChebyshevSmoother<CoarseVector,HermMatrix > CoarseSmoother(4.0,45.,16,CoarseOpProj);  // 311
+  //  ChebyshevSmoother<CoarseVector,HermMatrix > CoarseSmoother(0.5,36.,10,CoarseOpProj);  // 311
 
   ////////////////////////////////////////////////////////
   // CG, Cheby mode spacing 200,200
@@ -275,10 +325,14 @@ int main (int argc, char ** argv)
 
   c_res=Zero();
   cADEF1(c_src,c_res);
+  c_res = c_res - c_ref;
+  std::cout << "cADEF1 solver error "<<norm2(c_res)<<std::endl;
   
-  cADEF1.Tolerance = 4.0e-2;
+  cADEF1.Tolerance = 1.0e-9;
   c_res=Zero();
   cADEF1(c_src,c_res);
+  c_res = c_res - c_ref;
+  std::cout << "cADEF1 solver error "<<norm2(c_res)<<std::endl;
   
   //////////////////////////////////////////
   // Build a smoother
@@ -332,12 +386,12 @@ int main (int argc, char ** argv)
       HDCG(src,result);
 
       TwoLevelADEF2<LatticeFermion,CoarseVector,Subspace>
-	HDCGdefl(1.0e-8, 3000,
-	     FineHermOp,
-	     Smoother,
-	     cADEF1,
-	     HPDSolve,
-	     Aggregates);
+	HDCGdefl(1.0e-8, 100,
+		 FineHermOp,
+		 Smoother,
+		 cADEF1,
+		 HPDSolve,
+		 Aggregates);
       
       result=Zero();
       HDCGdefl(src,result);

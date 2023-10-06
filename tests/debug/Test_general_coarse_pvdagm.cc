@@ -28,7 +28,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid.h>
 #include <Grid/lattice/PaddedCell.h>
 #include <Grid/stencil/GeneralLocalStencil.h>
-#include <Grid/algorithms/GeneralCoarsenedMatrix.h>
 
 #include <Grid/algorithms/iterative/PrecGeneralisedConjugateResidual.h>
 #include <Grid/algorithms/iterative/PrecGeneralisedConjugateResidualNonHermitian.h>
