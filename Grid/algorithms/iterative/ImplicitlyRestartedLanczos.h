@@ -457,7 +457,7 @@ until convergence
 	    std::vector<Field>& evec,
 	    Field& w,int Nm,int k)
   {
-    std::cout<<GridLogIRL << "Lanczos step " <<k<<std::endl;
+    std::cout<<GridLogDebug << "Lanczos step " <<k<<std::endl;
     const RealD tiny = 1.0e-20;
     assert( k< Nm );
 
@@ -487,7 +487,7 @@ until convergence
 
     if(k < Nm-1) evec[k+1] = w;
 
-    std::cout<<GridLogIRL << "alpha[" << k << "] = " << zalph << " beta[" << k << "] = "<<beta<<std::endl;
+    std::cout<<GridLogIRL << "Lanczos step alpha[" << k << "] = " << zalph << " beta[" << k << "] = "<<beta<<std::endl;
     if ( beta < tiny ) 
       std::cout<<GridLogIRL << " beta is tiny "<<beta<<std::endl;
 
