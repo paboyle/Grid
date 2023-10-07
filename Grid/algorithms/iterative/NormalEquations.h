@@ -78,7 +78,7 @@ public:
   void operator() (const Field &in, Field &out){
  
     _Guess(in,out);
-    _HermitianSolver(_Matrix,in,out);  // Mdag M out = Mdag in
+    _HermitianSolver(_Matrix,in,out);  //M out = in
 
   }     
 };
