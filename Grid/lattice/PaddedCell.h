@@ -139,7 +139,7 @@ public:
     if(dim==0) conformable(old_grid,unpadded_grid);
     else       conformable(old_grid,grids[dim-1]);
 
-    std::cout << " dim "<<dim<<" local "<<local << " padding to "<<plocal<<std::endl;
+    //    std::cout << " dim "<<dim<<" local "<<local << " padding to "<<plocal<<std::endl;
 
     double tins=0, tshift=0;
 
@@ -184,7 +184,7 @@ public:
       }
       tins += usecond() - t;
     }
-    std::cout << GridLogPerformance << "PaddedCell::Expand timings: cshift:" << tshift/1000 << "ms, insert-slice:" << tins/1000 << "ms" << std::endl;
+    std::cout << GridLogDebug << "PaddedCell::Expand timings: cshift:" << tshift/1000 << "ms, insert-slice:" << tins/1000 << "ms" << std::endl;
     
     return padded;
   }
