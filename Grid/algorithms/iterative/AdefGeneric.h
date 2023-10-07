@@ -38,7 +38,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
    * Vstart = P^Tx + Qb
    * M1 = P^TM + Q
    * M2=M3=1
-   * Vout = x
    */
 NAMESPACE_BEGIN(Grid);
 
@@ -68,14 +67,13 @@ class TwoLevelCG : public LinearFunction<Field>
     grid       = fine;
   };
   
-  virtual void operator() (const Field &src, Field &psi)
+  virtual void operator() (const Field &src, Field &x)
   {
     Field resid(grid);
     RealD f;
     RealD rtzp,rtz,a,d,b;
     RealD rptzp;
     
-    Field x(grid); 
     Field p(grid);
     Field z(grid);
     Field tmp(grid);
@@ -85,7 +83,6 @@ class TwoLevelCG : public LinearFunction<Field>
     Field rp (grid);
     
     //Initial residual computation & set up
-    RealD guess = norm2(psi);
     double tn;
 
     GridStopWatch HDCGTimer;
@@ -165,14 +162,22 @@ class TwoLevelCG : public LinearFunction<Field>
 	RealD  srcnorm = sqrt(norm2(src));
 	RealD  tmpnorm = sqrt(norm2(tmp));
 	RealD  true_residual = tmpnorm/srcnorm;
-	std::cout<<GridLogMessage<<"HDCG: true residual is "<<true_residual
-		 <<" solution "<<xnorm<<" source "<<srcnorm<<std::endl;
+	std::cout<<GridLogMessage
+		 <<"HDCG: true residual is "<<true_residual
+		 <<" solution "<<xnorm
+		 <<" source "<<srcnorm
+		 <<" mmp "<<mmpnorm	  
+		 <<std::endl;
 
 	return;
       }
 
     }
-    std::cout << "HDCG: Pcg not converged"<<std::endl;
+    std::cout<<GridLogMessage<<"HDCG: not converged"<<std::endl;
+    RealD  xnorm   = sqrt(norm2(x));
+    RealD  srcnorm = sqrt(norm2(src));
+    std::cout<<GridLogMessage<<"HDCG: non-converged solution "<<xnorm<<" source "<<srcnorm<<std::endl;
+    
     return ;
   }
   
@@ -197,9 +202,6 @@ class TwoLevelCG : public LinearFunction<Field>
   /////////////////////////////////////////////////////////////////////
   // Only Def1 has non-trivial Vout.
   /////////////////////////////////////////////////////////////////////
-  virtual void   Vout  (Field & in, Field & out,Field & src){
-    out = in;
-  }
 
 };
   
@@ -221,13 +223,13 @@ class TwoLevelADEF2 : public TwoLevelCG<Field>
   // more most opertor functions
   TwoLevelADEF2(RealD tol,
 		Integer maxit,
-		LinearOperatorBase<Field>   &FineLinop,
-		LinearFunction<Field>   &Smoother,
+		LinearOperatorBase<Field>    &FineLinop,
+		LinearFunction<Field>        &Smoother,
 		LinearFunction<CoarseField>  &CoarseSolver,
 		LinearFunction<CoarseField>  &CoarseSolverPrecise,
 		Aggregation &Aggregates
 		) :
-    TwoLevelCG<Field>(tol,maxit,FineLinop,Smoother,Aggregates.FineGrid),
+      TwoLevelCG<Field>(tol,maxit,FineLinop,Smoother,Aggregates.FineGrid),
       _CoarseSolver(CoarseSolver),
       _CoarseSolverPrecise(CoarseSolverPrecise),
       _Aggregates(Aggregates)
@@ -321,12 +323,13 @@ public:
     eval(_eval)
   {};
 
-  // Can just inherit existing Vout
   // Can just inherit existing M2
   // Can just inherit existing M3
 
   // Simple vstart - do nothing
-  virtual void Vstart(Field & x,const Field & src){ x=src; };
+  virtual void Vstart(Field & x,const Field & src){
+    x=src; // Could apply Q
+  };
 
   // Override PcgM1
   virtual void PcgM1(Field & in, Field & out)
