@@ -50,7 +50,7 @@ void SaveOperator(Coarsened &Operator,std::string file)
 #endif
 }
 template<class Coarsened>
-void LoadOperator(Coarsened Operator,std::string file)
+void LoadOperator(Coarsened &Operator,std::string file)
 {
 #ifdef HAVE_LIME
   emptyUserRecord record;
@@ -219,7 +219,7 @@ int main (int argc, char ** argv)
   ////////////////////////////////////////////////////////////
   LittleDiracOperator LittleDiracOp(geom,FrbGrid,Coarse5d);
 
-  bool load=false;
+  bool load=true;
   if ( load ) {
     LoadBasis(Aggregates,"Subspace.scidac");
     LoadOperator(LittleDiracOp,"LittleDiracOp.scidac");
@@ -230,7 +230,7 @@ int main (int argc, char ** argv)
 				       //				     600,200,200 -- 38 iters, 162s
 				       //				     600,200,100 -- 38 iters, 169s
 				       //				     600,200,50  -- 88 iters. 370s 
-				       600,
+				       800,
 				       200,
 				       100,
 				       0.0);
@@ -241,16 +241,16 @@ int main (int argc, char ** argv)
   
   // Try projecting to one hop only
   LittleDiracOperator LittleDiracOpProj(geom_nn,FrbGrid,Coarse5d);
-  LittleDiracOpProj.ProjectNearestNeighbour(0.2,LittleDiracOp);
+  LittleDiracOpProj.ProjectNearestNeighbour(0.01,LittleDiracOp); // smaller shift 0.02? n
 
   typedef HermitianLinearOperator<LittleDiracOperator,CoarseVector> HermMatrix;
-  HermMatrix CoarseOp (LittleDiracOp);
+  HermMatrix CoarseOp     (LittleDiracOp);
   HermMatrix CoarseOpProj (LittleDiracOpProj);
   
   //////////////////////////////////////////
   // Build a coarse lanczos
   //////////////////////////////////////////
-  Chebyshev<CoarseVector>      IRLCheby(0.5,60.0,71);  // 1 iter
+  Chebyshev<CoarseVector>      IRLCheby(0.2,40.0,71);  // 1 iter
   FunctionHermOp<CoarseVector> IRLOpCheby(IRLCheby,CoarseOp);
   PlainHermOp<CoarseVector>    IRLOp    (CoarseOp);
   int Nk=48;
@@ -270,7 +270,6 @@ int main (int argc, char ** argv)
   IRL.calc(eval,evec,c_src,Nconv);
   DeflatedGuesser<CoarseVector> DeflCoarseGuesser(evec,eval);
 
-  
   //////////////////////////////////////////
   // Build a coarse space solver
   //////////////////////////////////////////
@@ -283,7 +282,8 @@ int main (int argc, char ** argv)
   HPDSolver<CoarseVector> HPDSolve(CoarseOp,CG,DeflCoarseGuesser);
   c_res=Zero();
   HPDSolve(c_src,c_res); c_ref = c_res;
-
+  std::cout << GridLogMessage<<"src norm "<<norm2(c_src)<<std::endl;
+  std::cout << GridLogMessage<<"ref norm "<<norm2(c_ref)<<std::endl;
   //////////////////////////////////////////////////////////////////////////
   // Deflated (with real op EV's) solve for the projected coarse op
   // Work towards ADEF1 in the coarse space
@@ -291,13 +291,21 @@ int main (int argc, char ** argv)
   HPDSolver<CoarseVector> HPDSolveProj(CoarseOpProj,CG,DeflCoarseGuesser);
   c_res=Zero();
   HPDSolveProj(c_src,c_res);
+  std::cout << GridLogMessage<<"src norm "<<norm2(c_src)<<std::endl;
+  std::cout << GridLogMessage<<"res norm "<<norm2(c_res)<<std::endl;
   c_res = c_res - c_ref;
   std::cout << "Projected solver error "<<norm2(c_res)<<std::endl;
 
   //////////////////////////////////////////////////////////////////////
   // Coarse ADEF1 with deflation space
   //////////////////////////////////////////////////////////////////////
-  ChebyshevSmoother<CoarseVector,HermMatrix > CoarseSmoother(4.0,45.,16,CoarseOpProj);  // 311
+  ChebyshevSmoother<CoarseVector,HermMatrix >
+    CoarseSmoother(1.0,37.,8,CoarseOpProj);  // just go to sloppy 0.1 convergence
+    //  CoarseSmoother(0.1,37.,8,CoarseOpProj);  //
+  //  CoarseSmoother(0.5,37.,6,CoarseOpProj);  //  8 iter 0.36s
+  //    CoarseSmoother(0.5,37.,12,CoarseOpProj);  // 8 iter, 0.55s
+  //    CoarseSmoother(0.5,37.,8,CoarseOpProj);// 7-9 iter
+  //  CoarseSmoother(1.0,37.,8,CoarseOpProj); // 0.4 - 0.5s solve to 0.04, 7-9 iter
   //  ChebyshevSmoother<CoarseVector,HermMatrix > CoarseSmoother(0.5,36.,10,CoarseOpProj);  // 311
 
   ////////////////////////////////////////////////////////
@@ -318,19 +326,25 @@ int main (int argc, char ** argv)
   // HDCG 38 iters 169s
 
   TwoLevelADEF1defl<CoarseVector>
-    cADEF1(1.0e-8, 100,
+    cADEF1(1.0e-8, 500,
 	   CoarseOp,
 	   CoarseSmoother,
 	   evec,eval);
 
   c_res=Zero();
   cADEF1(c_src,c_res);
+  std::cout << GridLogMessage<<"src norm "<<norm2(c_src)<<std::endl;
+  std::cout << GridLogMessage<<"cADEF1 res norm "<<norm2(c_res)<<std::endl;
   c_res = c_res - c_ref;
   std::cout << "cADEF1 solver error "<<norm2(c_res)<<std::endl;
   
-  cADEF1.Tolerance = 1.0e-9;
+  //  cADEF1.Tolerance = 4.0e-2;
+  //  cADEF1.Tolerance = 1.0e-1;
+  cADEF1.Tolerance = 5.0e-2;
   c_res=Zero();
   cADEF1(c_src,c_res);
+  std::cout << GridLogMessage<<"src norm "<<norm2(c_src)<<std::endl;
+  std::cout << GridLogMessage<<"cADEF1 res norm "<<norm2(c_res)<<std::endl;
   c_res = c_res - c_ref;
   std::cout << "cADEF1 solver error "<<norm2(c_res)<<std::endl;
   
@@ -375,15 +389,12 @@ int main (int argc, char ** argv)
       // Build a HDCG solver
       //////////////////////////////////////////
       TwoLevelADEF2<LatticeFermion,CoarseVector,Subspace>
-	HDCG(1.0e-8, 3000,
+	HDCG(1.0e-8, 100,
 	     FineHermOp,
 	     Smoother,
 	     HPDSolveSloppy,
 	     HPDSolve,
 	     Aggregates);
-
-      result=Zero();
-      HDCG(src,result);
 
       TwoLevelADEF2<LatticeFermion,CoarseVector,Subspace>
 	HDCGdefl(1.0e-8, 100,
@@ -395,6 +406,10 @@ int main (int argc, char ** argv)
       
       result=Zero();
       HDCGdefl(src,result);
+
+      result=Zero();
+      HDCG(src,result);
+
       
     }
   }
