@@ -191,16 +191,17 @@ public:
     out = Cell.Extract(pout);
     text+=usecond();
     ttot+=usecond();
+    
+    std::cout << GridLogDebug<<"Coarse Mult Aviews "<<tviews<<" us"<<std::endl;
+    std::cout << GridLogDebug<<"Coarse Mult exch "<<texch<<" us"<<std::endl;
+    std::cout << GridLogDebug<<"Coarse Mult mult "<<tmult<<" us"<<std::endl;
+    std::cout << GridLogDebug<<"Coarse Mult ext  "<<text<<" us"<<std::endl;
+    std::cout << GridLogDebug<<"Coarse Mult tot  "<<ttot<<" us"<<std::endl;
+    std::cout << GridLogDebug<<"Coarse Kernel flop/s "<< flops/tmult<<" mflop/s"<<std::endl;
+    std::cout << GridLogDebug<<"Coarse Kernel bytes/s"<< bytes/tmult<<" MB/s"<<std::endl;
+    std::cout << GridLogDebug<<"Coarse overall flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
+    std::cout << GridLogDebug<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
 
-    std::cout << GridLogPerformance<<"Coarse Mult Aviews "<<tviews<<" us"<<std::endl;
-    std::cout << GridLogPerformance<<"Coarse Mult exch "<<texch<<" us"<<std::endl;
-    std::cout << GridLogPerformance<<"Coarse Mult mult "<<tmult<<" us"<<std::endl;
-    std::cout << GridLogPerformance<<"Coarse Mult ext  "<<text<<" us"<<std::endl;
-    std::cout << GridLogPerformance<<"Coarse Mult tot  "<<ttot<<" us"<<std::endl;
-    std::cout << GridLogPerformance<<"Coarse Kernel flop/s "<< flops/tmult<<" mflop/s"<<std::endl;
-    std::cout << GridLogPerformance<<"Coarse Kernel bytes/s"<< bytes/tmult<<" MB/s"<<std::endl;
-    std::cout << GridLogPerformance<<"Coarse overall flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
-    std::cout << GridLogPerformance<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
   };
 
   void PopulateAdag(void)
