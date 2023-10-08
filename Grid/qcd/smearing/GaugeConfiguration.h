@@ -7,26 +7,40 @@
 
 NAMESPACE_BEGIN(Grid);
 
-//trivial class for no smearing
 template< class Impl >
-class NoSmearing
+class ConfigurationBase
 {
 public:
   INHERIT_FIELD_TYPES(Impl);
 
-  Field* ThinField;
+  ConfigurationBase() {}
+  virtual ~ConfigurationBase() {}
+  virtual void set_Field(Field& U) =0;
+  virtual void smeared_force(Field&) const = 0;
+  virtual Field& get_SmearedU() =0;
+  virtual Field &get_U(bool smeared = false) = 0;
+};
 
-  NoSmearing(): ThinField(NULL) {}
+//trivial class for no smearing
+template< class Impl >
+class NoSmearing : public ConfigurationBase<Impl>
+{
+public:
+  INHERIT_FIELD_TYPES(Impl);
 
-  void set_Field(Field& U) { ThinField = &U; }
+  Field* ThinLinks;
+
+  NoSmearing(): ThinLinks(NULL) {}
+
+  void set_Field(Field& U) { ThinLinks = &U; }
 
   void smeared_force(Field&) const {}
 
-  Field& get_SmearedU() { return *ThinField; }
+  Field& get_SmearedU() { return *ThinLinks; }
 
   Field &get_U(bool smeared = false)
   {
-    return *ThinField;
+    return *ThinLinks;
   }
 };
 
@@ -42,19 +56,24 @@ public:
   It stores a list of smeared configurations.
 */
 template <class Gimpl>
-class SmearedConfiguration
+class SmearedConfiguration : public ConfigurationBase<Gimpl>
 {
 public:
   INHERIT_GIMPL_TYPES(Gimpl);
 
-private:
+protected:
   const unsigned int smearingLevels;
   Smear_Stout<Gimpl> *StoutSmearing;
   std::vector<GaugeField> SmearedSet;
-
+public:
+  GaugeField*  ThinLinks; /* Pointer to the thin links configuration */ // move to base???
+protected:
+  
   // Member functions
   //====================================================================
-  void fill_smearedSet(GaugeField &U)
+
+  // Overridden in masked version
+  virtual void fill_smearedSet(GaugeField &U)
   {
     ThinLinks = &U;  // attach the smearing routine to the field U
 
@@ -82,9 +101,10 @@ private:
       }
     }
   }
-  //====================================================================
-  GaugeField AnalyticSmearedForce(const GaugeField& SigmaKPrime,
-                                  const GaugeField& GaugeK) const 
+
+  //overridden in masked verson
+  virtual GaugeField AnalyticSmearedForce(const GaugeField& SigmaKPrime,
+					  const GaugeField& GaugeK) const 
   {
     GridBase* grid = GaugeK.Grid();
     GaugeField C(grid), SigmaK(grid), iLambda(grid);
@@ -213,8 +233,6 @@ private:
 
   //====================================================================
 public:
-  GaugeField*
-      ThinLinks; /* Pointer to the thin links configuration */
 
   /* Standard constructor */
   SmearedConfiguration(GridCartesian* UGrid, unsigned int Nsmear,
