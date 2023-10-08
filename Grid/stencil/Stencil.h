@@ -760,7 +760,8 @@ public:
 		   int checkerboard,
 		   const std::vector<int> &directions,
 		   const std::vector<int> &distances,
-		   Parameters p=Parameters())
+		   Parameters p=Parameters(),
+		   bool preserve_shm=false)
   {
     face_table_computed=0;
     _grid    = grid;
@@ -854,7 +855,9 @@ public:
     /////////////////////////////////////////////////////////////////////////////////
     const int Nsimd = grid->Nsimd();
 
-    _grid->ShmBufferFreeAll();
+    // Allow for multiple stencils to exist simultaneously
+    if (!preserve_shm)
+      _grid->ShmBufferFreeAll();
 
     int maxl=2;
     u_simd_send_buf.resize(maxl);
