@@ -40,7 +40,9 @@ template <class Gimpl>
 class Smear_Stout : public Smear<Gimpl> {
  private:
   int OrthogDim = -1;
+public:
   const std::vector<double> SmearRho;
+private:
   // Smear<Gimpl>* ownership semantics:
   //    Smear<Gimpl>* passed in to constructor are owned by caller, so we don't delete them here
   //    Smear<Gimpl>* created within constructor need to be deleted as part of the destructor

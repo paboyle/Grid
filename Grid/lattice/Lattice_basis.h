@@ -62,7 +62,7 @@ void basisRotate(VField &basis,Matrix& Qt,int j0, int j1, int k0,int k1,int Nm)
     basis_v.push_back(basis[k].View(AcceleratorWrite));
   }
 
-#if ( (!defined(GRID_CUDA)) )
+#if ( !(defined(GRID_CUDA) || defined(GRID_HIP)) )
   int max_threads = thread_max();
   Vector < vobj > Bt(Nm * max_threads);
   thread_region
