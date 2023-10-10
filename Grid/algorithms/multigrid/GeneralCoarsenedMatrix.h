@@ -146,11 +146,12 @@ public:
       
     const int Nsimd = CComplex::Nsimd();
     
-    int osites=pin.Grid()->oSites();
+    int64_t osites=pin.Grid()->oSites();
     //    int gsites=pin.Grid()->gSites();
 
-    RealD flops = 1.0* npoint * nbasis * nbasis * 8 * osites;
-    RealD bytes = (1.0*osites*sizeof(siteMatrix)*npoint+2.0*osites*sizeof(siteVector))*npoint;
+    RealD flops = 1.0* npoint * nbasis * nbasis * 8.0 * osites * CComplex::Nsimd();
+    RealD bytes = 1.0*osites*sizeof(siteMatrix)*npoint
+                + 2.0*osites*sizeof(siteVector)*npoint;
       
     //    for(int point=0;point<npoint;point++){
     //      conformable(A[point],pin);
@@ -163,11 +164,13 @@ public:
       autoView( Stencil_v  , Stencil, AcceleratorRead);
       tviews+=usecond();
       
+      tmult-=usecond();
       for(int point=0;point<npoint;point++){
+	std::cout << GridLogMessage<< "View "<<point<<"/"<<npoint<<std::endl;
 	tviews-=usecond();
 	autoView( A_v, A[point],AcceleratorRead);
 	tviews+=usecond();
-	tmult-=usecond();
+	std::cout << GridLogMessage<< "Mult "<<point<<"/"<<npoint<<std::endl;
 	accelerator_for(sss, osites*nbasis, Nsimd, {
 
 	    typedef decltype(coalescedRead(in_v[0]))    calcVector;
@@ -179,28 +182,28 @@ public:
 	    auto nbr = coalescedReadGeneralPermute(in_v[SE->_offset],SE->_permute,Nd);
 	    auto res = out_v(ss)(b);
 	    for(int bb=0;bb<nbasis;bb++) {
-	      res = res + coalescedRead(A_v[ss](b,bb))*nbr(bb);
+	      res = res + coalescedRead(A_v[ss](bb,b))*nbr(bb);
 	    }
 	    coalescedWrite(out_v[ss](b),res);
-	});
-
-	tmult+=usecond();
+	  });
       }
+      tmult+=usecond();
     }
     text-=usecond();
+    std::cout << GridLogMessage<< "Extract "<<std::endl;
     out = Cell.Extract(pout);
     text+=usecond();
     ttot+=usecond();
     
-    std::cout << GridLogDebug<<"Coarse Mult Aviews "<<tviews<<" us"<<std::endl;
-    std::cout << GridLogDebug<<"Coarse Mult exch "<<texch<<" us"<<std::endl;
-    std::cout << GridLogDebug<<"Coarse Mult mult "<<tmult<<" us"<<std::endl;
-    std::cout << GridLogDebug<<"Coarse Mult ext  "<<text<<" us"<<std::endl;
-    std::cout << GridLogDebug<<"Coarse Mult tot  "<<ttot<<" us"<<std::endl;
-    std::cout << GridLogDebug<<"Coarse Kernel flop/s "<< flops/tmult<<" mflop/s"<<std::endl;
-    std::cout << GridLogDebug<<"Coarse Kernel bytes/s"<< bytes/tmult<<" MB/s"<<std::endl;
-    std::cout << GridLogDebug<<"Coarse overall flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
-    std::cout << GridLogDebug<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Mult Aviews "<<tviews<<" us"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Mult exch "<<texch<<" us"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Mult mult "<<tmult<<" us"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Mult ext  "<<text<<" us"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Mult tot  "<<ttot<<" us"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Kernel flop/s "<< flops/tmult<<" mflop/s"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Kernel bytes/s"<< bytes/tmult<<" MB/s"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse overall flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
 
   };
 
