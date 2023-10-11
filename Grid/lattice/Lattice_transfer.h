@@ -697,8 +697,68 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
   for(int d=0;d<nd;d++){
     assert(Fg->_processors[d]  == Tg->_processors[d]);
   }
-
   // the above should guarantee that the operations are local
+  
+#if 1
+
+  size_t nsite = 1;
+  for(int i=0;i<nd;i++) nsite *= RegionSize[i];
+  
+  size_t tbytes = 4*nsite*sizeof(int);
+  int *table = (int*)malloc(tbytes);
+ 
+  thread_for(idx, nsite, {
+      Coordinate from_coor, to_coor;
+      size_t rem = idx;
+      for(int i=0;i<nd;i++){
+	size_t base_i  = rem % RegionSize[i]; rem /= RegionSize[i];
+	from_coor[i] = base_i + FromLowerLeft[i];
+	to_coor[i] = base_i + ToLowerLeft[i];
+      }
+      
+      int foidx = Fg->oIndex(from_coor);
+      int fiidx = Fg->iIndex(from_coor);
+      int toidx = Tg->oIndex(to_coor);
+      int tiidx = Tg->iIndex(to_coor);
+      int* tt = table + 4*idx;
+      tt[0] = foidx;
+      tt[1] = fiidx;
+      tt[2] = toidx;
+      tt[3] = tiidx;
+    });
+  
+  int* table_d = (int*)acceleratorAllocDevice(tbytes);
+  acceleratorCopyToDevice(table,table_d,tbytes);
+
+  typedef typename vobj::vector_type vector_type;
+  typedef typename vobj::scalar_type scalar_type;
+
+  autoView(from_v,From,AcceleratorRead);
+  autoView(to_v,To,AcceleratorWrite);
+  
+  accelerator_for(idx,nsite,1,{
+      static const int words=sizeof(vobj)/sizeof(vector_type);
+      int* tt = table_d + 4*idx;
+      int from_oidx = *tt++;
+      int from_lane = *tt++;
+      int to_oidx = *tt++;
+      int to_lane = *tt;
+
+      const vector_type* from = (const vector_type *)&from_v[from_oidx];
+      vector_type* to = (vector_type *)&to_v[to_oidx];
+      
+      scalar_type stmp;
+      for(int w=0;w<words;w++){
+	stmp = getlane(from[w], from_lane);
+	putlane(to[w], stmp, to_lane);
+      }
+    });
+  
+  acceleratorFreeDevice(table_d);    
+  free(table);
+  
+
+#else  
   Coordinate ldf = Fg->_ldimensions;
   Coordinate rdf = Fg->_rdimensions;
   Coordinate isf = Fg->_istride;
@@ -738,6 +798,8 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
 #endif
     }
   });
+
+#endif
 }
 
 
@@ -830,6 +892,8 @@ void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slic
 }
 
 
+//Insert subvolume orthogonal to direction 'orthog' with slice index 'slice_lo' from 'lowDim' onto slice index 'slice_hi' of higherDim
+//The local dimensions of both 'lowDim' and 'higherDim' orthogonal to 'orthog' should be the same
 template<class vobj>
 void InsertSliceLocal(const Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice_lo,int slice_hi, int orthog)
 {
@@ -851,6 +915,65 @@ void InsertSliceLocal(const Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int
     }
   }
 
+#if 1
+  size_t nsite = lg->lSites()/lg->LocalDimensions()[orthog];
+  size_t tbytes = 4*nsite*sizeof(int);
+  int *table = (int*)malloc(tbytes);
+  
+  thread_for(idx,nsite,{
+    Coordinate lcoor(nl);
+    Coordinate hcoor(nh);
+    lcoor[orthog] = slice_lo;
+    hcoor[orthog] = slice_hi;
+    size_t rem = idx;
+    for(int mu=0;mu<nl;mu++){
+      if(mu != orthog){
+	int xmu = rem % lg->LocalDimensions()[mu];  rem /= lg->LocalDimensions()[mu];
+	lcoor[mu] = hcoor[mu] = xmu;
+      }
+    }
+    int loidx = lg->oIndex(lcoor);
+    int liidx = lg->iIndex(lcoor);
+    int hoidx = hg->oIndex(hcoor);
+    int hiidx = hg->iIndex(hcoor);
+    int* tt = table + 4*idx;
+    tt[0] = loidx;
+    tt[1] = liidx;
+    tt[2] = hoidx;
+    tt[3] = hiidx;
+    });
+   
+  int* table_d = (int*)acceleratorAllocDevice(tbytes);
+  acceleratorCopyToDevice(table,table_d,tbytes);
+
+  typedef typename vobj::vector_type vector_type;
+  typedef typename vobj::scalar_type scalar_type;
+
+  autoView(lowDim_v,lowDim,AcceleratorRead);
+  autoView(higherDim_v,higherDim,AcceleratorWrite);
+  
+  accelerator_for(idx,nsite,1,{
+      static const int words=sizeof(vobj)/sizeof(vector_type);
+      int* tt = table_d + 4*idx;
+      int from_oidx = *tt++;
+      int from_lane = *tt++;
+      int to_oidx = *tt++;
+      int to_lane = *tt;
+
+      const vector_type* from = (const vector_type *)&lowDim_v[from_oidx];
+      vector_type* to = (vector_type *)&higherDim_v[to_oidx];
+      
+      scalar_type stmp;
+      for(int w=0;w<words;w++){
+	stmp = getlane(from[w], from_lane);
+	putlane(to[w], stmp, to_lane);
+      }
+    });
+  
+  acceleratorFreeDevice(table_d);    
+  free(table);
+  
+#else
   // the above should guarantee that the operations are local
   autoView(lowDimv,lowDim,CpuRead);
   autoView(higherDimv,higherDim,CpuWrite);
@@ -866,6 +989,7 @@ void InsertSliceLocal(const Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int
       pokeLocalSite(s,higherDimv,hcoor);
     }
   });
+#endif
 }
 
 

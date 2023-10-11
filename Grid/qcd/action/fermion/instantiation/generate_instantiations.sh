@@ -10,12 +10,18 @@ WILSON_IMPL_LIST=" \
 	   WilsonImplF \
 	   WilsonImplD \
 	   WilsonImplD2 \
+	   SpWilsonImplF \
+	   SpWilsonImplD \
 	   WilsonAdjImplF \
 	   WilsonAdjImplD \
 	   WilsonTwoIndexSymmetricImplF \
 	   WilsonTwoIndexSymmetricImplD \
 	   WilsonTwoIndexAntiSymmetricImplF \
 	   WilsonTwoIndexAntiSymmetricImplD \
+	   SpWilsonTwoIndexAntiSymmetricImplF \
+	   SpWilsonTwoIndexAntiSymmetricImplD \
+	   SpWilsonTwoIndexSymmetricImplF \
+	   SpWilsonTwoIndexSymmetricImplD \
 	   GparityWilsonImplF \
 	   GparityWilsonImplD "
 

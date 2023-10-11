@@ -1,4 +1,4 @@
-SUBDIRS = . core forces hmc solver debug smearing IO lanczos
+SUBDIRS = . core forces hmc solver debug smearing IO lanczos sp2n
 
 if BUILD_CHROMA_REGRESSION
   SUBDIRS+= qdpxx

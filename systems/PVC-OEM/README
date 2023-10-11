@@ -1,0 +1,53 @@
+1. Prerequisites:
+===================
+Make sure you have the latest Intel ipcx release loaded (via modules or similar)
+Make sure you have SYCL aware MPICH or Intel MPI loaded (assumed as mpicxx)
+
+2. Obtain Grid:
+===================
+
+bash$
+git clone https://github.com/paboyle/Grid
+cd Grid
+./bootstrap.sh
+cd systems/PVC
+
+3. Build Grid:
+===================
+
+Here, configure command is stored in file config-command:
+
+bash$
+../../configure \
+	--enable-simd=GPU \
+	--enable-gen-simd-width=64 \
+	--enable-comms=mpi-auto \
+	--enable-accelerator-cshift \
+	--disable-gparity \
+	--disable-fermion-reps \
+	--enable-shm=nvlink \
+	--enable-accelerator=sycl \
+	--enable-unified=no \
+	MPICXX=mpicxx \
+	CXX=icpx \
+	LDFLAGS="-fiopenmp  -fsycl -fsycl-device-code-split=per_kernel -fsycl-device-lib=all -lze_loader " \
+	CXXFLAGS="-fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-tautological-compare "
+
+make all
+
+4. Run a benchmark:
+===================
+
+*** Assumes interactive access to node. ***
+
+run Benchmark_dwf_fp32 using benchmarks/bench.sh
+
+bash$
+cd benchmarks
+./bench.sh
+
+
+
+
+
+
