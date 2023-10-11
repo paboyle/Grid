@@ -20,7 +20,7 @@ unset OMP_PLACES
 
 cd $PBS_O_WORKDIR
 
-qsub jobscript.pbs
+#qsub jobscript.pbs
 
 echo Jobid: $PBS_JOBID
 echo Running on host `hostname`
@@ -44,3 +44,4 @@ CMD="mpiexec -np ${NTOTRANKS} -ppn ${NRANKS} -d ${NDEPTH} --cpu-bind=depth -enva
 	./Benchmark_dwf_fp32 --mpi 1.1.2.6 --grid 16.32.64.192 --comms-overlap \
 	--shm-mpi 0 --shm 2048 --device-mem 32000 --accelerator-threads 32"
 
+$CMD
