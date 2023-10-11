@@ -82,7 +82,7 @@ void generalShift(Coordinate& shift, int dir) {
     }
 }
 
-
+// Move into general stencil header, beneath definition of general stencil
 /*!  @brief follow a path of directions, shifting one unit in each direction */
 template<typename... Args>
 void generalShift(Coordinate& shift, int dir, Args... args) {
@@ -118,13 +118,13 @@ struct SmearingParameters{
     Real c_5;               // 5 link
     Real c_7;               // 7 link
     Real c_lp;              // 5 link Lepage
-    SmearingParameters(Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) :
-        c_1(c1),
-        c_naik(cnaik),
-        c_3(c3),
-        c_5(c5),
-        c_7(c7),
-        c_lp(clp){}
+    SmearingParameters(Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) 
+        : c_1(c1),
+          c_naik(cnaik),
+          c_3(c3),
+          c_5(c5),
+          c_7(c7),
+          c_lp(clp){}
 };
 
 
@@ -198,10 +198,11 @@ public:
 
         for(int mu=0;mu<Nd;mu++) {
 
+            // TODO: This approach is slightly memory inefficient. It uses 25% more memory than
+            // needs to be used. 
             Ughost_3link =Zero();
             Ughost_5linkA=Zero();
             Ughost_5linkB=Zero();
-
 
             // 3-link
             for(int site=0;site<U_v.size();site++){
@@ -245,8 +246,7 @@ public:
                     if(nu==mu) continue;
                     int s = stencilIndex(mu,nu);
                     for(int rho=0;rho<Nd;rho++) {
-                        if(rho==mu) continue;
-                        if(rho==nu) continue;
+                        if (rho == mu || rho == nu) continue;
 
                         auto SE0 = gStencil.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
                         auto SE1 = gStencil.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
@@ -254,6 +254,8 @@ public:
                         auto SE3 = gStencil.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
                         auto SE4 = gStencil.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
 
+                        // gpermutes will be replaced with single line of code, combines load and permute
+                        // into one step. still in pull request stage 
                         auto U0 =       U_v[x_p_mu     ](nu) ; gpermute(U0,SE0->_permute);
                         auto U1 = U_3link_v[x_p_nu     ](rho); gpermute(U1,SE1->_permute);
                         auto U2 =       U_v[x          ](nu) ; gpermute(U2,SE2->_permute);
@@ -283,8 +285,7 @@ public:
                     if(nu==mu) continue;
                     int s = stencilIndex(mu,nu);
                     for(int rho=0;rho<Nd;rho++) {
-                        if(rho==mu) continue;
-                        if(rho==nu) continue;
+                        if (rho == mu || rho == nu) continue;
 
                         auto SE0 = gStencil.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
                         auto SE1 = gStencil.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
@@ -293,6 +294,7 @@ public:
                         auto SE4 = gStencil.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
 
                         auto U0 = U_v[x_p_mu     ](nu) ; gpermute(U0,SE0->_permute);
+                        // decltype, or auto U1 = { ? ... }           
                         auto U1 = U0; 
                         if(sigmaIndex<3) {
                             U1 = U_5linkB_v[x_p_nu](rho); gpermute(U1,SE1->_permute);
@@ -311,6 +313,7 @@ public:
 
                         auto W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
+                        // std::vector<LatticeColorMatrix>(3) ? 
                         U_fat_v[site](mu) = U_fat_v[site](mu) + lt.c_7*W;
 
                         sigmaIndex++;
