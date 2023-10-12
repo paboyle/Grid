@@ -40,6 +40,8 @@ directory
 NAMESPACE_BEGIN(Grid);
 
 
+// TODO: find a way to fold this into the stencil header. need to access grid to get
+// Nd, since you don't want to inherit from QCD.h
 /*!  @brief append arbitrary shift path to shifts */
 template<typename... Args>
 void appendShift(std::vector<Coordinate>& shifts, int dir, Args... args) {
@@ -48,16 +50,6 @@ void appendShift(std::vector<Coordinate>& shifts, int dir, Args... args) {
     // push_back creates an element at the end of shifts and
     // assigns the data in the argument to it.
     shifts.push_back(shift);
-}
-
-
-// This is to optimize the SIMD (will also need to be in the class, at least for now)
-template<class vobj> void gpermute(vobj & inout,int perm) {
-    vobj tmp=inout;
-    if (perm & 0x1) {permute(inout,tmp,0); tmp=inout;}
-    if (perm & 0x2) {permute(inout,tmp,1); tmp=inout;}
-    if (perm & 0x4) {permute(inout,tmp,2); tmp=inout;}
-    if (perm & 0x8) {permute(inout,tmp,3); tmp=inout;}
 }
 
 
@@ -163,6 +155,12 @@ public:
             Ughost_5linkA=Zero();
             Ughost_5linkB=Zero();
 
+            // We infer some types that will be needed in the calculation.
+            typedef decltype(gStencil.GetEntry(0,0)) stencilElement;
+            typedef decltype(coalescedReadGeneralPermute(U_v[0](0),gStencil.GetEntry(0,0)->_permute,Nd)) U3matrix;
+            stencilElement SE0, SE1, SE2, SE3, SE4;
+            U3matrix U0, U1, U2, U3, U4, U5, W;
+
             // 3-link
             for(int site=0;site<U_v.size();site++){
                 for(int nu=0;nu<Nd;nu++) {
@@ -171,32 +169,31 @@ public:
 
                     // The stencil gives us support points in the mu-nu plane that we will use to
                     // grab the links we need.
-                    auto SE0 = gStencil.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
-                    auto SE1 = gStencil.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
-                    auto SE2 = gStencil.GetEntry(s+2,site); int x           = SE2->_offset;
-                    auto SE3 = gStencil.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
-                    auto SE4 = gStencil.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
+                    SE0 = gStencil.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
+                    SE1 = gStencil.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
+                    SE2 = gStencil.GetEntry(s+2,site); int x           = SE2->_offset;
+                    SE3 = gStencil.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
+                    SE4 = gStencil.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
 
                     // When you're deciding whether to take an adjoint, the question is: how is the
                     // stored link oriented compared to the one you want? If I imagine myself travelling
                     // with the to-be-updated link, I have two possible, alternative 3-link paths I can
                     // take, one starting by going to the left, the other starting by going to the right.
-                    auto U0 = U_v[x_p_mu     ](nu); gpermute(U0,SE0->_permute);
-                    auto U1 = U_v[x_p_nu     ](mu); gpermute(U1,SE1->_permute);
-                    auto U2 = U_v[x          ](nu); gpermute(U2,SE2->_permute);
-                    auto U3 = U_v[x_p_mu_m_nu](nu); gpermute(U3,SE3->_permute);
-                    auto U4 = U_v[x_m_nu     ](mu); gpermute(U4,SE4->_permute);
-                    auto U5 = U_v[x_m_nu     ](nu); gpermute(U5,SE4->_permute);
+                    U0 = coalescedReadGeneralPermute(U_v[x_p_mu     ](nu),SE0->_permute,Nd);
+                    U1 = coalescedReadGeneralPermute(U_v[x_p_nu     ](mu),SE1->_permute,Nd);
+                    U2 = coalescedReadGeneralPermute(U_v[x          ](nu),SE2->_permute,Nd);
+                    U3 = coalescedReadGeneralPermute(U_v[x_p_mu_m_nu](nu),SE3->_permute,Nd);
+                    U4 = coalescedReadGeneralPermute(U_v[x_m_nu     ](mu),SE4->_permute,Nd);
+                    U5 = coalescedReadGeneralPermute(U_v[x_m_nu     ](nu),SE4->_permute,Nd);
 
-                    //       "left"          "right"
-                    auto W = U2*U1*adj(U0) + adj(U5)*U4*U3;
+                    //  "left"          "right"
+                    W = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
                     U_3link_v[site](nu) = W;
 
                     U_fat_v[site](mu) = U_fat_v[site](mu) + lt.c_3*W;
                 }
             }
-
 
             // 5-link
             for(int site=0;site<U_v.size();site++){
@@ -207,22 +204,22 @@ public:
                     for(int rho=0;rho<Nd;rho++) {
                         if (rho == mu || rho == nu) continue;
 
-                        auto SE0 = gStencil.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
-                        auto SE1 = gStencil.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
-                        auto SE2 = gStencil.GetEntry(s+2,site); int x           = SE2->_offset;
-                        auto SE3 = gStencil.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
-                        auto SE4 = gStencil.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
+                        SE0 = gStencil.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
+                        SE1 = gStencil.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
+                        SE2 = gStencil.GetEntry(s+2,site); int x           = SE2->_offset;
+                        SE3 = gStencil.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
+                        SE4 = gStencil.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
 
                         // gpermutes will be replaced with single line of code, combines load and permute
                         // into one step. still in pull request stage 
-                        auto U0 =       U_v[x_p_mu     ](nu) ; gpermute(U0,SE0->_permute);
-                        auto U1 = U_3link_v[x_p_nu     ](rho); gpermute(U1,SE1->_permute);
-                        auto U2 =       U_v[x          ](nu) ; gpermute(U2,SE2->_permute);
-                        auto U3 =       U_v[x_p_mu_m_nu](nu) ; gpermute(U3,SE3->_permute);
-                        auto U4 = U_3link_v[x_m_nu     ](rho); gpermute(U4,SE4->_permute);
-                        auto U5 =       U_v[x_m_nu     ](nu) ; gpermute(U5,SE4->_permute);
+                        U0 = coalescedReadGeneralPermute(      U_v[x_p_mu     ](nu ),SE0->_permute,Nd);
+                        U1 = coalescedReadGeneralPermute(U_3link_v[x_p_nu     ](rho),SE1->_permute,Nd);
+                        U2 = coalescedReadGeneralPermute(      U_v[x          ](nu ),SE2->_permute,Nd);
+                        U3 = coalescedReadGeneralPermute(      U_v[x_p_mu_m_nu](nu ),SE3->_permute,Nd);
+                        U4 = coalescedReadGeneralPermute(U_3link_v[x_m_nu     ](rho),SE4->_permute,Nd);
+                        U5 = coalescedReadGeneralPermute(      U_v[x_m_nu     ](nu ),SE4->_permute,Nd);
 
-                        auto W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
+                        W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
                         if(sigmaIndex<3) {
                             U_5linkA_v[site](rho) = W;
@@ -246,33 +243,29 @@ public:
                     for(int rho=0;rho<Nd;rho++) {
                         if (rho == mu || rho == nu) continue;
 
-                        auto SE0 = gStencil.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
-                        auto SE1 = gStencil.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
-                        auto SE2 = gStencil.GetEntry(s+2,site); int x           = SE2->_offset;
-                        auto SE3 = gStencil.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
-                        auto SE4 = gStencil.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
+                        SE0 = gStencil.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
+                        SE1 = gStencil.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
+                        SE2 = gStencil.GetEntry(s+2,site); int x           = SE2->_offset;
+                        SE3 = gStencil.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
+                        SE4 = gStencil.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
 
-                        auto U0 = U_v[x_p_mu     ](nu) ; gpermute(U0,SE0->_permute);
-                        // decltype, or auto U1 = { ? ... }           
-                        auto U1 = U0; 
+                        U0 = coalescedReadGeneralPermute(U_v[x_p_mu](nu),SE0->_permute,Nd);
                         if(sigmaIndex<3) {
-                            U1 = U_5linkB_v[x_p_nu](rho); gpermute(U1,SE1->_permute);
+                            U1 = coalescedReadGeneralPermute(U_5linkB_v[x_p_nu](rho),SE1->_permute,Nd);
                         } else {
-                            U1 = U_5linkA_v[x_p_nu](rho); gpermute(U1,SE1->_permute);
+                            U1 = coalescedReadGeneralPermute(U_5linkA_v[x_p_nu](rho),SE1->_permute,Nd);
                         }  
-                        auto U2 = U_v[x          ](nu) ; gpermute(U2,SE2->_permute);
-                        auto U3 = U_v[x_p_mu_m_nu](nu) ; gpermute(U3,SE3->_permute);
-                        auto U4 = U0; 
+                        U2 = coalescedReadGeneralPermute(U_v[x](nu),SE2->_permute,Nd);
+                        U3 = coalescedReadGeneralPermute(U_v[x_p_mu_m_nu](nu),SE3->_permute,Nd);
                         if(sigmaIndex<3) {
-                            U4 = U_5linkB_v[x_m_nu](rho); gpermute(U4,SE4->_permute);
+                            U4 = coalescedReadGeneralPermute(U_5linkB_v[x_m_nu](rho),SE4->_permute,Nd);
                         } else {
-                            U4 = U_5linkA_v[x_m_nu](rho); gpermute(U4,SE4->_permute);
+                            U4 = coalescedReadGeneralPermute(U_5linkA_v[x_m_nu](rho),SE4->_permute,Nd);
                         }  
-                        auto U5 = U_v[x_m_nu     ](nu) ; gpermute(U5,SE4->_permute);
+                        U5 = coalescedReadGeneralPermute(U_v[x_m_nu](nu),SE4->_permute,Nd);
 
-                        auto W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
+                        W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
-                        // std::vector<LatticeColorMatrix>(3) ? 
                         U_fat_v[site](mu) = U_fat_v[site](mu) + lt.c_7*W;
 
                         sigmaIndex++;
