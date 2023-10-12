@@ -191,6 +191,27 @@ extern Colours    GridLogColours;
 
 std::string demangle(const char* name) ;
 
+template<typename... Args>
+inline std::string sjoin(Args&&... args) noexcept {
+    std::ostringstream msg;
+    (msg << ... << args);
+    return msg.str();
+}
+
+/*!  @brief make log messages work like python print */
+template <typename... Args>
+inline void Grid_log(Args&&... args) {
+    std::string msg = sjoin(std::forward<Args>(args)...);
+    std::cout << GridLogMessage << msg << std::endl;
+}
+
+/*!  @brief make warning messages work like python print */
+template <typename... Args>
+inline void Grid_warn(Args&&... args) {
+    std::string msg = sjoin(std::forward<Args>(args)...);
+    std::cout << GridLogWarning << msg << std::endl;
+}
+
 #define _NBACKTRACE (256)
 extern void * Grid_backtrace_buffer[_NBACKTRACE];
 

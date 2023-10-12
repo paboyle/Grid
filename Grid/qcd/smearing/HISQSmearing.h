@@ -32,15 +32,23 @@ directory
 
 
 #pragma once
-
 #include <Grid/Grid.h>
 #include <Grid/lattice/PaddedCell.h>
 #include <Grid/stencil/GeneralLocalStencil.h>
 
-#define BACKWARD_CONST 16
-#define NO_SHIFT -1
 
 NAMESPACE_BEGIN(Grid);
+
+
+/*!  @brief append arbitrary shift path to shifts */
+template<typename... Args>
+void appendShift(std::vector<Coordinate>& shifts, int dir, Args... args) {
+    Coordinate shift(Nd,0);
+    generalShift(shift, dir, args...); 
+    // push_back creates an element at the end of shifts and
+    // assigns the data in the argument to it.
+    shifts.push_back(shift);
+}
 
 
 // This is to optimize the SIMD (will also need to be in the class, at least for now)
@@ -53,59 +61,11 @@ template<class vobj> void gpermute(vobj & inout,int perm) {
 }
 
 
-/*!  @brief signals that you want to go backwards in direction dir */
-inline int Back(const int dir) {
-    // generalShift will use BACKWARD_CONST to determine whether we step forward or 
-    // backward. Should work as long as BACKWARD_CONST > Nd. Trick inspired by SIMULATeQCD. 
-    return dir + BACKWARD_CONST;
-}
-
-
 /*!  @brief figure out the stencil index from mu and nu */
 inline int stencilIndex(int mu, int nu) {
     // Nshifts depends on how you built the stencil
     int Nshifts = 5;
     return Nshifts*nu + Nd*Nshifts*mu;
-}
-
-
-/*!  @brief shift one unit in direction dir */
-template<typename... Args>
-void generalShift(Coordinate& shift, int dir) {
-    if (dir >= BACKWARD_CONST) {
-        dir -= BACKWARD_CONST;
-        shift[dir]+=-1;
-    } else if (dir == NO_SHIFT) {
-        ; // do nothing
-    } else {
-        shift[dir]+=1;
-    }
-}
-
-// Move into general stencil header, beneath definition of general stencil
-/*!  @brief follow a path of directions, shifting one unit in each direction */
-template<typename... Args>
-void generalShift(Coordinate& shift, int dir, Args... args) {
-    if (dir >= BACKWARD_CONST) {
-        dir -= BACKWARD_CONST;
-        shift[dir]+=-1;
-    } else if (dir == NO_SHIFT) {
-        ; // do nothing
-    } else {
-        shift[dir]+=1;
-    }
-    generalShift(shift, args...);
-}
-
-
-/*!  @brief append arbitrary shift path to shifts */
-template<typename... Args>
-void appendShift(std::vector<Coordinate>& shifts, int dir, Args... args) {
-    Coordinate shift(Nd,0);
-    generalShift(shift, dir, args...); 
-    // push_back creates an element at the end of shifts and
-    // assigns the data in the argument to it.
-    shifts.push_back(shift);
 }
 
 
@@ -189,17 +149,16 @@ public:
         // This is where contributions from the smearing get added together
         Ughost_fat=Zero();
 
-        // Create the accessors
-        autoView(U_v       , Ughost       , CpuRead);
-        autoView(U_fat_v   , Ughost_fat   , CpuWrite);
-        autoView(U_3link_v , Ughost_3link , CpuWrite);
-        autoView(U_5linkA_v, Ughost_5linkA, CpuWrite);
-        autoView(U_5linkB_v, Ughost_5linkB, CpuWrite);
-
         for(int mu=0;mu<Nd;mu++) {
 
-            // TODO: This approach is slightly memory inefficient. It uses 25% more memory than
-            // needs to be used. 
+            // Create the accessors
+            autoView(U_v       , Ughost       , CpuRead);
+            autoView(U_fat_v   , Ughost_fat   , CpuWrite);
+            autoView(U_3link_v , Ughost_3link , CpuWrite);
+            autoView(U_5linkA_v, Ughost_5linkA, CpuWrite);
+            autoView(U_5linkB_v, Ughost_5linkB, CpuWrite);
+
+            // TODO: This approach is slightly memory inefficient. It uses 25% extra memory 
             Ughost_3link =Zero();
             Ughost_5linkA=Zero();
             Ughost_5linkB=Zero();
@@ -321,7 +280,7 @@ public:
                 }
             }
 
-        }
+        } // end mu loop
 
         u_smr = Ghost.Extract(Ughost_fat) + lt.c_1*u_thin;
     };

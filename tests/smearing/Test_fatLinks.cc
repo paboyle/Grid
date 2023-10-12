@@ -38,20 +38,6 @@ directory
 using namespace Grid;
 
 
-/*!  @brief make the logger work like python print */
-template<typename... Args>
-inline std::string sjoin(Args&&... args) noexcept {
-    std::ostringstream msg;
-    (msg << ... << args);
-    return msg.str();
-}
-template <typename... Args>
-inline void Grid_log(Args&&... args) {
-    std::string msg = sjoin(std::forward<Args>(args)...);
-    std::cout << GridLogMessage << msg << std::endl;
-}
-
-
 /*!  @brief parameter file to easily adjust Nloop */
 struct ConfParameters: Serializable {
     GRID_SERIALIZABLE_CLASS_MEMBERS(
