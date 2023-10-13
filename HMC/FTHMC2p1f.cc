@@ -54,15 +54,16 @@ int main(int argc, char **argv)
   //  MD.name    = std::string("Force Gradient");
   typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;
   MD.name    = std::string("MinimumNorm2");
-  MD.MDsteps = 12;
+  MD.MDsteps = 24;
   MD.trajL   = 1.0;
 
   HMCparameters HMCparams;
-  HMCparams.StartTrajectory  = 0;
+  HMCparams.StartTrajectory  = 104;
   HMCparams.Trajectories     = 200;
   HMCparams.NoMetropolisUntil=  20;
   // "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
-  HMCparams.StartingType     =std::string("HotStart");
+  //  HMCparams.StartingType     =std::string("HotStart");
+  HMCparams.StartingType     =std::string("CheckpointStart");
   HMCparams.MD = MD;
   HMCWrapper TheHMC(HMCparams);
 
@@ -87,6 +88,7 @@ int main(int argc, char **argv)
   // here there is too much indirection
   typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
   TheHMC.Resources.AddObservable<PlaqObs>();
+
   //////////////////////////////////////////////
 
   const int Ls      = 16;
@@ -134,7 +136,6 @@ int main(int argc, char **argv)
   ////////////////////////////////////
   ActionLevel<HMCWrapper::Field> Level1(1);
   ActionLevel<HMCWrapper::Field> Level2(2);
-  ActionLevel<HMCWrapper::Field> Level3(4);
 
   ////////////////////////////////////
   // Strange action
@@ -191,7 +192,7 @@ int main(int argc, char **argv)
   Smear_Stout<HMCWrapper::ImplPolicy> Stout(rho);
   SmearedConfigurationMasked<HMCWrapper::ImplPolicy> SmearingPolicy(GridPtr, Nstep, Stout);
   JacobianAction<HMCWrapper::ImplPolicy> Jacobian(&SmearingPolicy);
-  if( ApplySmearing ) Level2.push_back(&Jacobian);
+  if( ApplySmearing ) Level1.push_back(&Jacobian);
   std::cout << GridLogMessage << " Built the Jacobian "<< std::endl;
 
 
@@ -200,7 +201,7 @@ int main(int argc, char **argv)
   /////////////////////////////////////////////////////////////
   //  GaugeAction.is_smeared = ApplySmearing;
   GaugeAction.is_smeared = true;
-  Level3.push_back(&GaugeAction);
+  Level2.push_back(&GaugeAction);
 
   std::cout << GridLogMessage << " ************************************************"<< std::endl;
   std::cout << GridLogMessage << " Action complete -- NO FERMIONS FOR NOW -- FIXME"<< std::endl;
@@ -210,10 +211,11 @@ int main(int argc, char **argv)
 
 
   std::cout << GridLogMessage << " Running the FT HMC "<< std::endl;
-
   TheHMC.TheAction.push_back(Level1);
   TheHMC.TheAction.push_back(Level2);
-  TheHMC.TheAction.push_back(Level3);
+
+  TheHMC.ReadCommandLine(argc,argv);  // params on CML or from param file
+  TheHMC.initializeGaugeFieldAndRNGs(U);
 
   TheHMC.Run(SmearingPolicy); // for smearing
 
