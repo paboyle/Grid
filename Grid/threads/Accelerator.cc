@@ -147,7 +147,7 @@ void acceleratorInit(void)
 #define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("AcceleratorHipInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
 #define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
     
-    hipGetDeviceProperties(&gpu_props[i], i);
+    auto r=hipGetDeviceProperties(&gpu_props[i], i);
     hipDeviceProp_t prop; 
     prop = gpu_props[i];
     totalDeviceMem = prop.totalGlobalMem;
