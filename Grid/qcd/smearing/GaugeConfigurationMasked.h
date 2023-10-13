@@ -1,3 +1,4 @@
+
 /*!
   @file GaugeConfiguration.h
   @brief Declares the GaugeConfiguration class
@@ -6,6 +7,15 @@
 
 NAMESPACE_BEGIN(Grid);
 
+
+template<class T> void Dump(const Lattice<T> & lat,
+			    std::string s,
+			    Coordinate site = Coordinate({0,0,0,0}))
+{
+  typename T::scalar_object tmp;
+  peekSite(tmp,lat,site);
+  std::cout << " Dump "<<s<<" "<<tmp<<std::endl;
+}
 /*!
   @brief Smeared configuration masked container
   Modified for a multi-subset smearing (aka Luscher Flowed HMC)
@@ -28,6 +38,101 @@ private:
   typedef typename SU3Adjoint::LatticeAdjMatrix  AdjMatrixField;
   typedef typename SU3Adjoint::LatticeAdjVector  AdjVectorField;
 
+  void BaseSmearDerivative(GaugeField& SigmaTerm,
+			   const GaugeField& iLambda,
+			   const GaugeField& U,
+			   int mmu, RealD rho)
+  {
+    // Reference
+    // Morningstar, Peardon, Phys.Rev.D69,054501(2004)
+    // Equation 75
+    // Computing Sigma_mu, derivative of S[fat links] with respect to the thin links
+    // Output SigmaTerm
+
+    GridBase *grid = U.Grid();
+
+    WilsonLoops<Gimpl> WL;
+    GaugeLinkField staple(grid), u_tmp(grid);
+    GaugeLinkField iLambda_mu(grid), iLambda_nu(grid);
+    GaugeLinkField U_mu(grid), U_nu(grid);
+    GaugeLinkField sh_field(grid), temp_Sigma(grid);
+    Real rho_munu, rho_numu;
+
+    rho_munu = rho;
+    rho_numu = rho;
+    for(int mu = 0; mu < Nd; ++mu){
+      U_mu       = peekLorentz(      U, mu);
+      iLambda_mu = peekLorentz(iLambda, mu);
+
+      for(int nu = 0; nu < Nd; ++nu){
+	if(nu==mu) continue;
+
+	U_nu       = peekLorentz(      U, nu);
+
+	// Nd(nd-1) = 12 staples normally.
+	// We must compute 6 of these
+	// in FTHMC case
+	if ( (mu==mmu)||(nu==mmu) )
+	  WL.StapleUpper(staple, U, mu, nu);
+	
+	if(nu==mmu) {
+	  iLambda_nu = peekLorentz(iLambda, nu);
+
+	  temp_Sigma = -rho_numu*staple*iLambda_nu;  //ok
+	  //-r_numu*U_nu(x+mu)*Udag_mu(x+nu)*Udag_nu(x)*Lambda_nu(x)
+	  Gimpl::AddLink(SigmaTerm, temp_Sigma, mu);
+
+	  sh_field = Cshift(iLambda_nu, mu, 1);// general also for Gparity?
+
+	  temp_Sigma = rho_numu*sh_field*staple; //ok
+	  //r_numu*Lambda_nu(mu)*U_nu(x+mu)*Udag_mu(x+nu)*Udag_nu(x)
+	  Gimpl::AddLink(SigmaTerm, temp_Sigma, mu);
+	}
+
+	if ( mu == mmu ) { 
+	  sh_field = Cshift(iLambda_mu, nu, 1);
+
+	  temp_Sigma = -rho_munu*staple*U_nu*sh_field*adj(U_nu); //ok
+	  //-r_munu*U_nu(x+mu)*Udag_mu(x+nu)*Lambda_mu(x+nu)*Udag_nu(x)
+	  Gimpl::AddLink(SigmaTerm, temp_Sigma, mu);
+	}
+
+	//	staple = Zero();
+	sh_field = Cshift(U_nu, mu, 1);
+
+	temp_Sigma = Zero();
+
+	if ( mu == mmu )
+	  temp_Sigma = -rho_munu*adj(sh_field)*adj(U_mu)*iLambda_mu*U_nu;
+
+	if ( nu == mmu ) {
+	  temp_Sigma += rho_numu*adj(sh_field)*adj(U_mu)*iLambda_nu*U_nu;
+
+	  u_tmp = adj(U_nu)*iLambda_nu;
+	  sh_field = Cshift(u_tmp, mu, 1);
+	  temp_Sigma += -rho_numu*sh_field*adj(U_mu)*U_nu;
+	}
+	
+	sh_field = Cshift(temp_Sigma, nu, -1);
+	Gimpl::AddLink(SigmaTerm, sh_field, mu);
+
+      }
+    }
+  }
+  
+  void BaseSmear(GaugeLinkField& Cup, const GaugeField& U,int mu,RealD rho) {
+    GridBase *grid = U.Grid();
+    GaugeLinkField tmp_stpl(grid);
+    WilsonLoops<Gimpl> WL;
+    Cup = Zero();
+    for(int nu=0; nu<Nd; ++nu){
+      if (nu != mu) {
+	// get the staple in direction mu, nu
+	WL.Staple(tmp_stpl, U, mu, nu);  //nb staple conventions of IroIro and Grid differ by a dagger
+	Cup += adj(tmp_stpl*rho);
+      }
+    }
+  }
   // Adjoint vector to GaugeField force
   void InsertForce(GaugeField &Fdet,AdjVectorField &Fdet_nu,int nu)
   {
@@ -47,27 +152,54 @@ private:
     GaugeLinkField UtaU(PlaqL.Grid());
     GaugeLinkField D(PlaqL.Grid());
     AdjMatrixField Dbc(PlaqL.Grid());
+    AdjMatrixField Dbc_opt(PlaqL.Grid());
     LatticeComplex tmp(PlaqL.Grid());
     const int Ngen = SU3Adjoint::Dimension;
     Complex ci(0,1);
     ColourMatrix   ta,tb,tc;
-    
+    RealD t=0;
+    RealD tp=0;
+    RealD tta=0;
+    RealD tpk=0;
+    t-=usecond();
     for(int a=0;a<Ngen;a++) {
+      tta-=usecond();
       SU3::generator(a, ta);
+      ta = 2.0 * ci * ta;
       // Qlat Tb = 2i Tb^Grid
-      UtaU= 2.0*ci*adj(PlaqL)*ta*PlaqR;
+      UtaU= adj(PlaqL)*ta*PlaqR; // 6ms
+      tta+=usecond();
+      ////////////////////////////////////////////
+      // Could add this entire C-loop to a projection routine
+      // for performance. Could also pick checkerboard on UtaU
+      // and set checkerboard on result for 2x perf
+      ////////////////////////////////////////////
       for(int c=0;c<Ngen;c++) {
 	SU3::generator(c, tc);
-	D = Ta( (2.0)*ci*tc *UtaU);
+	tc = 2.0*ci*tc;
+	tp-=usecond(); 
+	D = Ta( tc *UtaU); // 2ms
+#if 1
+	SU3::LieAlgebraProject(Dbc_opt,D,c); // 5.5ms
+#else
 	for(int b=0;b<Ngen;b++){
 	  SU3::generator(b, tb);
 	  tmp =-trace(ci*tb*D); 
 	  PokeIndex<ColourIndex>(Dbc,tmp,b,c);  // Adjoint rep
 	}
+#endif
+	tp+=usecond();
       }
-      tmp = trace(MpInvJx * Dbc);
+      //      Dump(Dbc_opt,"Dbc_opt");
+      //      Dump(Dbc,"Dbc");
+      tpk-=usecond();
+      tmp = trace(MpInvJx * Dbc_opt);
       PokeIndex<ColourIndex>(Fdet2,tmp,a);
+      tpk+=usecond();
     }
+    t+=usecond();
+    std::cout << GridLogPerformance << " Compute_MpInvJx_dNxxdSy " << t/1e3 << " ms  proj "<<tp/1e3<< " ms"
+	      << " ta "<<tta/1e3<<" ms" << " poke "<<tpk/1e3<< " ms"<<std::endl;
   }
   
   void ComputeNxy(const GaugeLinkField &PlaqL,const GaugeLinkField &PlaqR,AdjMatrixField &NxAd)
@@ -79,12 +211,17 @@ private:
     ColourMatrix   tc;
     for(int b=0;b<Ngen;b++) {
       SU3::generator(b, tb);
-      Nx = (2.0)*Ta( adj(PlaqL)*ci*tb * PlaqR );
+      tb = 2.0 * ci * tb;
+      Nx = Ta( adj(PlaqL)*tb * PlaqR );
+#if 1
+      SU3::LieAlgebraProject(NxAd,Nx,b);
+#else
       for(int c=0;c<Ngen;c++) {
 	SU3::generator(c, tc);
 	auto tmp =closure( -trace(ci*tc*Nx)); 
 	PokeIndex<ColourIndex>(NxAd,tmp,c,b); 
       }
+#endif
     }
   }
   void ApplyMask(GaugeField &U,int smr)
@@ -164,8 +301,7 @@ public:
     // Computes ALL the staples -- could compute one only and do it here
     RealD time;
     time=-usecond();
-    this->StoutSmearing->BaseSmear(C, U);
-    Cmu = peekLorentz(C, mu);
+    BaseSmear(Cmu, U,mu,rho);
 
     //////////////////////////////////////////////////////////////////
     // Assemble Luscher exp diff map J matrix 
@@ -209,6 +345,36 @@ public:
     // dJ(x)/dxe
     //////////////////////////////////////
     time=-usecond();
+#if 1
+    std::vector<AdjMatrixField>  dJdX;    dJdX.resize(8,grid);
+    std::vector<AdjMatrix> TRb_s; TRb_s.resize(8);
+    AdjMatrixField tbXn(grid);
+    AdjMatrixField sumXtbX(grid);
+    AdjMatrixField t2(grid);
+    AdjMatrixField dt2(grid);
+    AdjMatrixField t3(grid);
+    AdjMatrixField dt3(grid);
+    AdjMatrixField aunit(grid);
+
+    for(int b=0;b<8;b++){
+      SU3Adjoint::generator(b, TRb_s[b]);
+      dJdX[b] = TRb_s[b];
+    }
+    aunit = ComplexD(1.0);
+    // Could put into an accelerator_for
+    X  = (-1.0)*ZxAd; 
+    t2 = X;
+    for (int j = 12; j > 1; --j) {
+      t3  = t2*(1.0 / (j + 1))  + aunit;
+      t2  = X * t3;
+      for(int b=0;b<8;b++){
+	dJdX[b]= TRb_s[b] * t3 + X * dJdX[b]*(1.0 / (j + 1));
+      }
+    }
+    for(int b=0;b<8;b++){
+      dJdX[b] = -dJdX[b];
+    }
+#else
     std::vector<AdjMatrixField>  dJdX;    dJdX.resize(8,grid);
     AdjMatrixField tbXn(grid);
     AdjMatrixField sumXtbX(grid);
@@ -224,14 +390,15 @@ public:
       X  = (-1.0)*ZxAd; 
       t2 = X;
       dt2 = TRb;
-      for (int j = 20; j > 1; --j) {
-	t3 = t2*(1.0 / (j + 1))  + aunit;
+      for (int j = 12; j > 1; --j) {
+	t3  = t2*(1.0 / (j + 1))  + aunit;
 	dt3 = dt2*(1.0 / (j + 1));
 	t2 = X * t3;
 	dt2 = TRb * t3 + X * dt3;
       }
       dJdX[b] = -dt2; 
     }
+#endif  
     time+=usecond();
     std::cout << GridLogMessage << "dJx took "<<time<< " us"<<std::endl;
     /////////////////////////////////////////////////////////////////
@@ -281,8 +448,8 @@ public:
     
     for(int e =0 ; e<8 ; e++){
       LatticeComplexD tr(grid);
-      ColourMatrix te;
-      SU3::generator(e, te);
+      //      ColourMatrix te;
+      //      SU3::generator(e, te);
       tr = trace(dJdX[e] * nMpInv);
       pokeColour(dJdXe_nMpInv,tr,e);
     }
@@ -493,20 +660,25 @@ public:
     //////////////////////////////////////////////////////////////////
     // Assemble the N matrix
     //////////////////////////////////////////////////////////////////
-    // Computes ALL the staples -- could compute one only here
-    this->StoutSmearing->BaseSmear(C, U);
-    Cmu = peekLorentz(C, mu);
+    double rho=this->StoutSmearing->SmearRho[1];
+    BaseSmear(Cmu, U,mu,rho);
+
     Umu = peekLorentz(U, mu);
     Complex ci(0,1);
     for(int b=0;b<Ngen;b++) {
       SU3::generator(b, Tb);
       // Qlat Tb = 2i Tb^Grid
       Nb = (2.0)*Ta( ci*Tb * Umu * adj(Cmu));
+      // FIXME -- replace this with LieAlgebraProject
+#if 0
+      SU3::LieAlgebraProject(Ncb,tmp,b);
+#else
       for(int c=0;c<Ngen;c++) {
 	SU3::generator(c, Tc);
 	auto tmp = -trace(ci*Tc*Nb); // Luchang's norm: (2Tc) (2Td) N^db = -2 delta cd N^db // - was important
 	PokeIndex<ColourIndex>(Ncb,tmp,c,b); 
       }
+#endif
     }      
 
     //////////////////////////////////////////////////////////////////
@@ -693,15 +865,19 @@ private:
 					  const GaugeField& GaugeK,int level) 
   {
     GridBase* grid = GaugeK.Grid();
-    GaugeField C(grid), SigmaK(grid), iLambda(grid);
+    GaugeField SigmaK(grid), iLambda(grid);
     GaugeField SigmaKPrimeA(grid);
     GaugeField SigmaKPrimeB(grid);
     GaugeLinkField iLambda_mu(grid);
     GaugeLinkField iQ(grid), e_iQ(grid);
     GaugeLinkField SigmaKPrime_mu(grid);
     GaugeLinkField GaugeKmu(grid), Cmu(grid);
-    
-    this->StoutSmearing->BaseSmear(C, GaugeK);
+
+    int mmu= (level/2) %Nd;
+    int cb= (level%2);
+    double rho=this->StoutSmearing->SmearRho[1];
+
+    // Can override this to do one direction only.
     SigmaK = Zero();
     iLambda = Zero();
 
@@ -712,18 +888,38 @@ private:
     // Could get away with computing only one polarisation here
     // int mu= (smr/2) %Nd;
     // SigmaKprime_A has only one component
-    for (int mu = 0; mu < Nd; mu++)
+#if 0
+    BaseSmear(Cmu, GaugeK,mu,rho);
+    GaugeKmu = peekLorentz(GaugeK, mu);
+    SigmaKPrime_mu = peekLorentz(SigmaKPrimeA, mu);
+    iQ = Ta(Cmu * adj(GaugeKmu));
+    this->set_iLambda(iLambda_mu, e_iQ, iQ, SigmaKPrime_mu, GaugeKmu);
+    pokeLorentz(SigmaK, SigmaKPrime_mu * e_iQ + adj(Cmu) * iLambda_mu, mu);
+    pokeLorentz(iLambda, iLambda_mu, mu);
+    BaseSmearDerivative(SigmaK, iLambda,GaugeK,mu,rho);  // derivative of SmearBase
+#else
+    //    GaugeField C(grid);
+    //    this->StoutSmearing->BaseSmear(C, GaugeK);
+    //    for (int mu = 0; mu < Nd; mu++)
+    int mu =mmu;
+    BaseSmear(Cmu, GaugeK,mu,rho);
     {
-      Cmu = peekLorentz(C, mu);
+      // Cmu = peekLorentz(C, mu);
       GaugeKmu = peekLorentz(GaugeK, mu);
       SigmaKPrime_mu = peekLorentz(SigmaKPrimeA, mu);
       iQ = Ta(Cmu * adj(GaugeKmu));
       this->set_iLambda(iLambda_mu, e_iQ, iQ, SigmaKPrime_mu, GaugeKmu);
       pokeLorentz(SigmaK, SigmaKPrime_mu * e_iQ + adj(Cmu) * iLambda_mu, mu);
       pokeLorentz(iLambda, iLambda_mu, mu);
+      std::cout << " mu "<<mu<<" SigmaKPrime_mu"<<norm2(SigmaKPrime_mu)<< " iLambda_mu " <<norm2(iLambda_mu)<<std::endl;
     }
-    this->StoutSmearing->derivative(SigmaK, iLambda,GaugeK);  // derivative of SmearBase
-
+    //    GaugeField SigmaKcopy(grid);
+    //    SigmaKcopy = SigmaK;
+    BaseSmearDerivative(SigmaK, iLambda,GaugeK,mu,rho);  // derivative of SmearBase
+    //    this->StoutSmearing->derivative(SigmaK, iLambda,GaugeK);  // derivative of SmearBase
+    //    SigmaKcopy = SigmaKcopy - SigmaK;
+    //    std::cout << " BaseSmearDerivative fast path error" <<norm2(SigmaKcopy)<<std::endl;
+#endif
     ////////////////////////////////////////////////////////////////////////////////////
     // propagate the rest of the force as identity map, just add back
     ////////////////////////////////////////////////////////////////////////////////////
