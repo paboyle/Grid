@@ -575,4 +575,11 @@ accelerator_inline void acceleratorFence(void)
   return;
 }
 
+inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)
+{
+  acceleratorCopyDeviceToDeviceAsynch(from,to,bytes);
+  acceleratorCopySynchronise();
+}
+
+
 NAMESPACE_END(Grid);
