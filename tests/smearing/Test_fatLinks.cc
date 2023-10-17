@@ -90,14 +90,14 @@ int main (int argc, char** argv) {
     NerscIO::readConfiguration(Umu, header, conf_in);
 
     // Smear Umu and store result in U_smr
-    Smear_HISQ_fat<LatticeGaugeField> hisq_fat(&GRID,1/8.,0.,1/16.,1/64.,1/384.,0.);
+    Smear_HISQ_fat<LatticeGaugeField,PeriodicGimplD> hisq_fat(&GRID,1/8.,0.,1/16.,1/64.,1/384.,-1/8.);
     hisq_fat.smear(U_smr,Umu);
 
     NerscIO::writeConfiguration(U_smr,conf_out,"HISQ");
 
     // Test a C-style instantiation 
     double path_coeff[6] = {1, 2, 3, 4, 5, 6};
-    Smear_HISQ_fat<LatticeGaugeField> hisq_fat_Cstyle(&GRID,path_coeff);
+    Smear_HISQ_fat<LatticeGaugeField,PeriodicGimplD> hisq_fat_Cstyle(&GRID,path_coeff);
 
     // Make sure result doesn't change w.r.t. a trusted lattice
     NerscIO::readConfiguration(Umu, header, "nersc.l8t4b3360.357link.control");

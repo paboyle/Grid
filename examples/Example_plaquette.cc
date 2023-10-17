@@ -29,7 +29,6 @@ public:
     // Gimpl seems to be an arbitrary class. Within this class, it is expected that certain types are
     // already defined, things like Scalar and Field. This macro includes a bunch of #typedefs that
     // implement this equivalence at compile time.
-    // WARNING: The first time you include this or take it out, the compile time will increase a lot.
     INHERIT_GIMPL_TYPES(Gimpl);
 
     // Some example Gimpls can be found in GaugeImplementations.h, at the bottom. These are in turn built
@@ -53,12 +52,15 @@ public:
 
     // U_mu_nu(x)
     static void dirPlaquette(GaugeMat &plaq, const std::vector<GaugeMat> &U, const int mu, const int nu) {
-        // These CovShift calls seem to carry out the multiplication already. A positive shift moves the lattice 
-        // site x_mu = 1 in the RHS to x_mu = 0 in the result.
+        // Calls like CovShiftForward and CovShiftBackward have 3 arguments, and they multiply together
+        // the first and last argument. (Second arg gives the shift direction.) The CovShiftIdentityBackward
+        // has meanwhile only two arguments; it just returns the shifted (adjoint since backward) link. 
         plaq = Gimpl::CovShiftForward(U[mu],mu,
-                    Gimpl::CovShiftForward(U[nu],nu,
-                        Gimpl::CovShiftBackward(U[mu],mu,
-                            Gimpl::CovShiftIdentityBackward(U[nu], nu))));
+                   // Means Link*Cshift(field,mu,1), arguments are Link, mu, field in that order.
+                   Gimpl::CovShiftForward(U[nu],nu,
+                       Gimpl::CovShiftBackward(U[mu],mu,
+                           // This means Cshift(adj(Link), mu, -1)
+                           Gimpl::CovShiftIdentityBackward(U[nu], nu))));
     }
 
     // tr U_mu_nu(x)

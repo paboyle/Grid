@@ -81,14 +81,16 @@ struct SmearingParameters{
 
 
 /*!  @brief create fat links from link variables */
-template<class LGF> 
-class Smear_HISQ_fat {
+template<class LGF, class Gimpl> 
+class Smear_HISQ_fat : public Gimpl {
 
 private:
     GridCartesian* const _grid;
     SmearingParameters _linkTreatment;
 
 public:
+
+    INHERIT_GIMPL_TYPES(Gimpl);
 
     // Don't allow default values here.
     Smear_HISQ_fat(GridCartesian* grid, Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) 
@@ -141,6 +143,7 @@ public:
         // This is where contributions from the smearing get added together
         Ughost_fat=Zero();
 
+        // This loop handles 3-, 5-, and 7-link constructs, minus Lepage and Naik.
         for(int mu=0;mu<Nd;mu++) {
 
             // Create the accessors
@@ -161,8 +164,7 @@ public:
             stencilElement SE0, SE1, SE2, SE3, SE4;
             U3matrix U0, U1, U2, U3, U4, U5, W;
 
-            // 3-link
-            for(int site=0;site<U_v.size();site++){
+            for(int site=0;site<U_v.size();site++){ // ----------- 3-link
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
                     int s = stencilIndex(mu,nu);
@@ -195,8 +197,7 @@ public:
                 }
             }
 
-            // 5-link
-            for(int site=0;site<U_v.size();site++){
+            for(int site=0;site<U_v.size();site++){ // ----------- 5-link
                 int sigmaIndex = 0;
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
@@ -210,8 +211,6 @@ public:
                         SE3 = gStencil.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
                         SE4 = gStencil.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
 
-                        // gpermutes will be replaced with single line of code, combines load and permute
-                        // into one step. still in pull request stage 
                         U0 = coalescedReadGeneralPermute(      U_v[x_p_mu     ](nu ),SE0->_permute,Nd);
                         U1 = coalescedReadGeneralPermute(U_3link_v[x_p_nu     ](rho),SE1->_permute,Nd);
                         U2 = coalescedReadGeneralPermute(      U_v[x          ](nu ),SE2->_permute,Nd);
@@ -234,8 +233,7 @@ public:
                 }
             }
 
-            // 7-link
-            for(int site=0;site<U_v.size();site++){
+            for(int site=0;site<U_v.size();site++){ // ----------- 7-link
                 int sigmaIndex = 0;
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
@@ -275,9 +273,41 @@ public:
 
         } // end mu loop
 
+        // c1, c3, c5, c7 construct contributions
         u_smr = Ghost.Extract(Ughost_fat) + lt.c_1*u_thin;
-    };
 
+        // Load up U and V std::vectors to access thin and smeared links.
+        std::vector<LatticeColourMatrix> U(Nd, u_thin.Grid());
+        std::vector<LatticeColourMatrix> V(Nd, u_smr.Grid());
+        for (int mu = 0; mu < Nd; mu++) {
+            U[mu] = PeekIndex<LorentzIndex>(u_thin, mu);
+            V[mu] = PeekIndex<LorentzIndex>(u_smr, mu);
+        }
+
+        // Compute LePage term from U_thin:
+        for(int mu=0;mu<Nd;mu++) {
+            for (int nu_h=1;nu_h<Nd;nu_h++) {
+                int nu=(mu+nu_h)%Nd;
+                                // nu, nu, mu, Back(nu), Back(nu)
+                V[mu] = V[mu] + lt.c_lp*Gimpl::CovShiftForward(U[nu],nu,
+                                          Gimpl::CovShiftForward(U[nu],nu,
+                                            Gimpl::CovShiftForward(U[mu],mu,
+                                              Gimpl::CovShiftBackward(U[nu],nu,
+                                                Gimpl::CovShiftIdentityBackward(U[nu],nu)))))
+                                // Back(nu), Back(nu), mu, nu, nu
+                              + lt.c_lp*Gimpl::CovShiftBackward(U[nu],nu,
+                                          Gimpl::CovShiftBackward(U[nu],nu,
+                                            Gimpl::CovShiftForward(U[mu],mu,
+                                              Gimpl::CovShiftForward(U[nu],nu,
+                                                Gimpl::CovShiftIdentityForward(U[nu],nu)))));
+            }
+        }
+
+        // Put V back into u_smr.
+        for (int mu = 0; mu < Nd; mu++) {
+            PokeIndex<LorentzIndex>(u_smr, V[mu], mu);
+        }
+    };
 
 //    void derivative(const GaugeField& Gauge) const {
 //    };
