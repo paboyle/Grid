@@ -100,6 +100,9 @@ class GaugeGroup {
   using iGroupMatrix = iScalar<iScalar<iMatrix<vtype, ncolour> > >;
   template <typename vtype>
   using iAlgebraVector = iScalar<iScalar<iVector<vtype, AdjointDimension> > >;
+  template <typename vtype>
+  using iSUnAlgebraMatrix =
+    iScalar<iScalar<iMatrix<vtype, AdjointDimension> > >;
   static int su2subgroups(void) { return su2subgroups(group_name()); }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -128,10 +131,19 @@ class GaugeGroup {
   typedef Lattice<vMatrix> LatticeMatrix;
   typedef Lattice<vMatrixF> LatticeMatrixF;
   typedef Lattice<vMatrixD> LatticeMatrixD;
-
+  
   typedef Lattice<vAlgebraVector> LatticeAlgebraVector;
   typedef Lattice<vAlgebraVectorF> LatticeAlgebraVectorF;
   typedef Lattice<vAlgebraVectorD> LatticeAlgebraVectorD;
+   
+  typedef iSUnAlgebraMatrix<vComplex>  vAlgebraMatrix;
+  typedef iSUnAlgebraMatrix<vComplexF> vAlgebraMatrixF;
+  typedef iSUnAlgebraMatrix<vComplexD> vAlgebraMatrixD;
+
+  typedef Lattice<vAlgebraMatrix>  LatticeAlgebraMatrix;
+  typedef Lattice<vAlgebraMatrixF> LatticeAlgebraMatrixF;
+  typedef Lattice<vAlgebraMatrixD> LatticeAlgebraMatrixD;
+  
 
   typedef iSU2Matrix<Complex> SU2Matrix;
   typedef iSU2Matrix<ComplexF> SU2MatrixF;
@@ -160,7 +172,7 @@ class GaugeGroup {
     return generator(lieIndex, ta, group_name());
   }
 
-  static void su2SubGroupIndex(int &i1, int &i2, int su2_index) {
+  static accelerator_inline void su2SubGroupIndex(int &i1, int &i2, int su2_index) {
     return su2SubGroupIndex(i1, i2, su2_index, group_name());
   }
 
@@ -389,6 +401,52 @@ class GaugeGroup {
     }
   }
 
+// Ta are hermitian (?)
+// Anti herm is i Ta basis
+static void LieAlgebraProject(LatticeAlgebraMatrix &out,const LatticeMatrix &in, int b)
+{
+  conformable(in, out);
+  GridBase *grid = out.Grid();
+  LatticeComplex tmp(grid);
+  Matrix ta;
+  // Using Luchang's projection convention
+  //  2 Tr{Ta Tb} A_b= 2/2 delta ab A_b = A_a
+  autoView(out_v,out,AcceleratorWrite);
+  autoView(in_v,in,AcceleratorRead);
+  int N = ncolour;
+  int NNm1 = N * (N - 1);
+  int hNNm1= NNm1/2;
+  RealD sqrt_2 = sqrt(2.0);
+  Complex ci(0.0,1.0);
+  for(int su2Index=0;su2Index<hNNm1;su2Index++){
+    int i1, i2;
+    su2SubGroupIndex(i1, i2, su2Index);
+    int ax = su2Index*2;
+    int ay = su2Index*2+1;
+    accelerator_for(ss,grid->oSites(),1,{
+	// in is traceless ANTI-hermitian whereas Grid generators are Hermitian.
+	// trace( Ta x Ci in)
+	// Bet I need to move to real part with mult by -i
+	out_v[ss]()()(ax,b) = 0.5*(real(in_v[ss]()()(i2,i1)) - real(in_v[ss]()()(i1,i2)));
+	out_v[ss]()()(ay,b) = 0.5*(imag(in_v[ss]()()(i1,i2)) + imag(in_v[ss]()()(i2,i1)));
+      });
+  }
+  for(int diagIndex=0;diagIndex<N-1;diagIndex++){
+    int k = diagIndex + 1; // diagIndex starts from 0
+    int a = NNm1+diagIndex;
+    RealD scale = 1.0/sqrt(2.0*k*(k+1));
+    accelerator_for(ss,grid->oSites(),vComplex::Nsimd(),{
+	auto tmp = in_v[ss]()()(0,0);
+	for(int i=1;i<k;i++){
+	  tmp=tmp+in_v[ss]()()(i,i);
+	}
+	tmp = tmp - in_v[ss]()()(k,k)*k;
+	out_v[ss]()()(a,b) =imag(tmp) * scale;
+      });
+    }
+}
+
+  
 };
     
 template <int ncolour>

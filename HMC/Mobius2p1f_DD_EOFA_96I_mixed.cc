@@ -343,7 +343,7 @@ int main(int argc, char **argv) {
   // Probably dominates the force - back to EOFA.
   OneFlavourRationalParams SFRp;
   SFRp.lo       = 0.1;
-  SFRp.hi       = 25.0;
+  SFRp.hi       = 30.0;
   SFRp.MaxIter  = 10000;
   SFRp.tolerance= 1.0e-5;
   SFRp.mdtolerance= 2.0e-4;

@@ -58,12 +58,13 @@ int main(int argc, char **argv)
   MD.trajL   = 1.0;
 
   HMCparameters HMCparams;
-  HMCparams.StartTrajectory  = 104;
+  HMCparams.StartTrajectory  = 0;
   HMCparams.Trajectories     = 200;
   HMCparams.NoMetropolisUntil=  20;
   // "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
   //  HMCparams.StartingType     =std::string("HotStart");
-  HMCparams.StartingType     =std::string("CheckpointStart");
+  HMCparams.StartingType     =std::string("ColdStart");
+  //  HMCparams.StartingType     =std::string("CheckpointStart");
   HMCparams.MD = MD;
   HMCWrapper TheHMC(HMCparams);
 
@@ -91,13 +92,13 @@ int main(int argc, char **argv)
 
   //////////////////////////////////////////////
 
-  const int Ls      = 16;
-  Real beta         = 2.13;
-  Real light_mass   = 0.01;
-  Real strange_mass = 0.04;
+  const int Ls      = 12;
+  Real beta         = 2.37;
+  Real light_mass   = 0.0047;
+  Real strange_mass = 0.0186;
   Real pv_mass      = 1.0;
   RealD M5  = 1.8;
-  RealD b   = 1.0; // Scale factor two
+  RealD b   = 1.0; // Scale factor one, Shamir
   RealD c   = 0.0;
 
   OneFlavourRationalParams OFRp;
@@ -108,7 +109,7 @@ int main(int argc, char **argv)
   OFRp.degree   = 14;
   OFRp.precision= 40;
 
-  std::vector<Real> hasenbusch({ 0.1 });
+  std::vector<Real> hasenbusch({ 0.05, 0.1, 0.25, 0.5 });
 
   auto GridPtr   = TheHMC.Resources.GetCartesian();
   auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
@@ -199,8 +200,7 @@ int main(int argc, char **argv)
   /////////////////////////////////////////////////////////////
   // Gauge action
   /////////////////////////////////////////////////////////////
-  //  GaugeAction.is_smeared = ApplySmearing;
-  GaugeAction.is_smeared = true;
+  GaugeAction.is_smeared = ApplySmearing;
   Level2.push_back(&GaugeAction);
 
   std::cout << GridLogMessage << " ************************************************"<< std::endl;

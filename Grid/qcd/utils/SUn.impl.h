@@ -10,6 +10,7 @@
 // doesn't get found by the scripts/filelist during bootstrapping.
 
 private:
+
 template <ONLY_IF_SU>
 static int su2subgroups(GroupName::SU) { return (ncolour * (ncolour - 1)) / 2; }
 ////////////////////////////////////////////////////////////////////////
@@ -576,3 +577,4 @@ static void RandomGaugeTransform(GridParallelRNG &pRNG, typename Gimpl::GaugeFie
   LieRandomize(pRNG,g,1.0);
   GaugeTransform<Gimpl>(Umu,g);
 }
+

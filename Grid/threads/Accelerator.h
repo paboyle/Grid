@@ -405,7 +405,7 @@ void LambdaApply(uint64_t numx, uint64_t numy, uint64_t numz, lambda Lambda)
 
 #define accelerator_barrier(dummy)				\
   {								\
-    hipStreamSynchronize(computeStream);			\
+    auto r=hipStreamSynchronize(computeStream);			\
     auto err = hipGetLastError();				\
     if ( err != hipSuccess ) {					\
       printf("After hipDeviceSynchronize() : HIP error %s \n", hipGetErrorString( err )); \
@@ -438,19 +438,19 @@ inline void *acceleratorAllocDevice(size_t bytes)
   return ptr;
 };
 
-inline void acceleratorFreeShared(void *ptr){ hipFree(ptr);};
-inline void acceleratorFreeDevice(void *ptr){ hipFree(ptr);};
-inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
-inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
+inline void acceleratorFreeShared(void *ptr){ auto r=hipFree(ptr);};
+inline void acceleratorFreeDevice(void *ptr){ auto r=hipFree(ptr);};
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { auto r=hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ auto r=hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
 //inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyDeviceToDevice);}
 //inline void acceleratorCopySynchronise(void) {  }
-inline void acceleratorMemSet(void *base,int value,size_t bytes) { hipMemset(base,value,bytes);}
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { auto r=hipMemset(base,value,bytes);}
 
 inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) // Asynch
 {
-  hipMemcpyDtoDAsync(to,from,bytes, copyStream);
+  auto r=hipMemcpyDtoDAsync(to,from,bytes, copyStream);
 }
-inline void acceleratorCopySynchronise(void) { hipStreamSynchronize(copyStream); };
+inline void acceleratorCopySynchronise(void) { auto r=hipStreamSynchronize(copyStream); };
 
 #endif
 
@@ -574,5 +574,12 @@ accelerator_inline void acceleratorFence(void)
 #endif
   return;
 }
+
+inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)
+{
+  acceleratorCopyDeviceToDeviceAsynch(from,to,bytes);
+  acceleratorCopySynchronise();
+}
+
 
 NAMESPACE_END(Grid);
