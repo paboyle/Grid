@@ -47,6 +47,7 @@ public:
   typedef Lattice<siteVector>                 CoarseVector;
   typedef Lattice<iMatrix<CComplex,nbasis > > CoarseMatrix;
   typedef iMatrix<CComplex,nbasis >  Cobj;
+  typedef iVector<CComplex,nbasis >  Cvec;
   typedef Lattice< CComplex >   CoarseScalar; // used for inner products on fine field
   typedef Lattice<Fobj >        FineField;
   typedef CoarseVector Field;
@@ -136,61 +137,76 @@ public:
     CoarseVector tin=in;
 
     texch-=usecond();
-    CoarseVector pin  = Cell.Exchange(tin);
+    //    CoarseVector pin  = Cell.Exchange(tin);
+    CoarseVector pin = Cell.ExchangeTest(tin);
     texch+=usecond();
 
-    CoarseVector pout(pin.Grid()); pout=Zero();
+    CoarseVector pout(pin.Grid());
 
     int npoint = geom.npoint;
     typedef LatticeView<Cobj> Aview;
+    typedef LatticeView<Cvec> Vview;
       
     const int Nsimd = CComplex::Nsimd();
     
     int64_t osites=pin.Grid()->oSites();
-    //    int gsites=pin.Grid()->gSites();
 
     RealD flops = 1.0* npoint * nbasis * nbasis * 8.0 * osites * CComplex::Nsimd();
     RealD bytes = 1.0*osites*sizeof(siteMatrix)*npoint
                 + 2.0*osites*sizeof(siteVector)*npoint;
       
-    //    for(int point=0;point<npoint;point++){
-    //      conformable(A[point],pin);
-    //    }
-
     {
-      tviews-=usecond();
       autoView( in_v , pin, AcceleratorRead);
-      autoView( out_v , pout, AcceleratorWrite);
+      autoView( out_v , pout, AcceleratorWriteDiscard);
       autoView( Stencil_v  , Stencil, AcceleratorRead);
+
+      // Static and prereserve to keep UVM region live and not resized across multiple calls
+      Vector<Aview> AcceleratorViewContainer;    AcceleratorViewContainer.reserve(npoint);
+      Vector<Vview> AcceleratorVecViewContainer; AcceleratorVecViewContainer.reserve(npoint);
+      std::vector<CoarseVector> outp(npoint,pin.Grid()); 
+
+      tviews-=usecond();
+      for(int p=0;p<npoint;p++) {
+	AcceleratorViewContainer.push_back(      A[p].View(AcceleratorRead));
+	AcceleratorVecViewContainer.push_back(outp[p].View(AcceleratorWrite));
+      }
       tviews+=usecond();
+
+      auto Aview_p = &AcceleratorViewContainer[0];
+      auto Vview_p = &AcceleratorVecViewContainer[0];
       
       tmult-=usecond();
-      for(int point=0;point<npoint;point++){
-	std::cout << GridLogMessage<< "View "<<point<<"/"<<npoint<<std::endl;
-	tviews-=usecond();
-	autoView( A_v, A[point],AcceleratorRead);
-	tviews+=usecond();
-	std::cout << GridLogMessage<< "Mult "<<point<<"/"<<npoint<<std::endl;
-	accelerator_for(sss, osites*nbasis, Nsimd, {
-
-	    typedef decltype(coalescedRead(in_v[0]))    calcVector;
-
-	    int ss = sss/nbasis;
-	    int b  = sss%nbasis;
-
-	    auto SE  = Stencil_v.GetEntry(point,ss);
-	    auto nbr = coalescedReadGeneralPermute(in_v[SE->_offset],SE->_permute,Nd);
-	    auto res = out_v(ss)(b);
-	    for(int bb=0;bb<nbasis;bb++) {
-	      res = res + coalescedRead(A_v[ss](bb,b))*nbr(bb);
-	    }
-	    coalescedWrite(out_v[ss](b),res);
-	  });
-      }
+      accelerator_for(spb, osites*nbasis*npoint, Nsimd, {
+	  typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
+	  int32_t ss   = spb/(nbasis*npoint);
+	  int32_t bp   = spb%(nbasis*npoint);
+	  int32_t b    = bp/npoint;
+	  int32_t point= bp%npoint;
+	  auto SE  = Stencil_v.GetEntry(point,ss);
+	  auto nbr = coalescedReadGeneralPermute(in_v[SE->_offset],SE->_permute,Nd);
+	  auto res = coalescedRead(Aview_p[point][ss](b,0))*nbr(0);
+	  for(int bb=1;bb<nbasis;bb++) {
+	    res = res + coalescedRead(Aview_p[point][ss](b,bb))*nbr(bb);
+	  }
+	  coalescedWrite(Vview_p[point][ss](b),res);
+      });
+      accelerator_for(sb, osites*nbasis, Nsimd, {
+	  int ss = sb/nbasis;
+	  int b  = sb%nbasis;
+	  auto res = coalescedRead(Vview_p[0][ss](b));
+	  for(int point=1;point<npoint;point++){
+	    res = res + coalescedRead(Vview_p[point][ss](b));
+	  }
+	  coalescedWrite(out_v[ss](b),res);
+      });
       tmult+=usecond();
+      for(int p=0;p<npoint;p++) {
+	AcceleratorViewContainer[p].ViewClose();
+	AcceleratorVecViewContainer[p].ViewClose();
+      }
     }
+
     text-=usecond();
-    std::cout << GridLogMessage<< "Extract "<<std::endl;
     out = Cell.Extract(pout);
     text+=usecond();
     ttot+=usecond();
@@ -200,6 +216,7 @@ public:
     std::cout << GridLogPerformance<<"Coarse Mult mult "<<tmult<<" us"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Mult ext  "<<text<<" us"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Mult tot  "<<ttot<<" us"<<std::endl;
+    std::cout << GridLogPerformance<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Kernel flop/s "<< flops/tmult<<" mflop/s"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Kernel bytes/s"<< bytes/tmult<<" MB/s"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse overall flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
