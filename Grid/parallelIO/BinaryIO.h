@@ -165,7 +165,7 @@ class BinaryIO {
 	 * FIXME -- 128^3 x 256 x 16 will overflow.
 	 */
 	
-	int global_site;
+	int64_t global_site;
 
 	Lexicographic::CoorFromIndex(coor,local_site,local_vol);
 
@@ -175,8 +175,8 @@ class BinaryIO {
 
 	Lexicographic::IndexFromCoor(coor,global_site,global_vol);
 
-	uint32_t gsite29   = global_site%29;
-	uint32_t gsite31   = global_site%31;
+	uint64_t gsite29   = global_site%29;
+	uint64_t gsite31   = global_site%31;
 	
 	site_crc = crc32(0,(unsigned char *)site_buf,sizeof(fobj));
 	//	std::cout << "Site "<<local_site << " crc "<<std::hex<<site_crc<<std::dec<<std::endl;
@@ -545,7 +545,9 @@ class BinaryIO {
 				       const std::string &format,
 				       uint32_t &nersc_csum,
 				       uint32_t &scidac_csuma,
-				       uint32_t &scidac_csumb)
+				       uint32_t &scidac_csumb,
+				       int control=BINARYIO_LEXICOGRAPHIC
+				       )
   {
     typedef typename vobj::scalar_object sobj;
     typedef typename vobj::Realified::scalar_type word;    word w=0;
@@ -556,7 +558,7 @@ class BinaryIO {
     std::vector<sobj> scalardata(lsites); 
     std::vector<fobj>     iodata(lsites); // Munge, checksum, byte order in here
     
-    IOobject(w,grid,iodata,file,offset,format,BINARYIO_READ|BINARYIO_LEXICOGRAPHIC,
+    IOobject(w,grid,iodata,file,offset,format,BINARYIO_READ|control,
 	     nersc_csum,scidac_csuma,scidac_csumb);
 
     GridStopWatch timer; 
@@ -582,7 +584,8 @@ class BinaryIO {
 					  const std::string &format,
 					  uint32_t &nersc_csum,
 					  uint32_t &scidac_csuma,
-					  uint32_t &scidac_csumb)
+					  uint32_t &scidac_csumb,
+					  int control=BINARYIO_LEXICOGRAPHIC)
   {
     typedef typename vobj::scalar_object sobj;
     typedef typename vobj::Realified::scalar_type word;    word w=0;
@@ -607,7 +610,7 @@ class BinaryIO {
     while (attemptsLeft >= 0)
     {
       grid->Barrier();
-      IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC,
+      IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|control,
 	             nersc_csum,scidac_csuma,scidac_csumb);
       if (checkWrite)
       {
@@ -617,7 +620,7 @@ class BinaryIO {
 
         std::cout << GridLogMessage << "writeLatticeObject: read back object" << std::endl;
         grid->Barrier();
-        IOobject(w,grid,ckiodata,file,ckoffset,format,BINARYIO_READ|BINARYIO_LEXICOGRAPHIC,
+        IOobject(w,grid,ckiodata,file,ckoffset,format,BINARYIO_READ|control,
 	               cknersc_csum,ckscidac_csuma,ckscidac_csumb);
         if ((cknersc_csum != nersc_csum) or (ckscidac_csuma != scidac_csuma) or (ckscidac_csumb != scidac_csumb))
         {
