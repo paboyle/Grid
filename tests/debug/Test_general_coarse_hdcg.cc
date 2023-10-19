@@ -261,7 +261,10 @@ int main (int argc, char ** argv)
   int Nconv;
   std::vector<RealD>            eval(Nm);
   std::vector<CoarseVector>     evec(Nm,Coarse5d);
-  CoarseVector c_src(Coarse5d); c_src=1.0;
+  CoarseVector c_src(Coarse5d);
+  //c_src=1.0;
+  random(CRNG,c_src);
+
   CoarseVector c_res(Coarse5d); 
   CoarseVector c_ref(Coarse5d); 
 
