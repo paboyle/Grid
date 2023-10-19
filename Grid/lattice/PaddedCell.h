@@ -47,15 +47,14 @@ struct CshiftImplGauge: public CshiftImplBase<typename Gimpl::GaugeLinkField::ve
 
 
 
-template<class vobj> inline void ScatterSlice(const cshiftVector<typename vobj::scalar_object> &buf,
+template<class vobj> inline void ScatterSlice(const cshiftVector<vobj> &buf,
 					      Lattice<vobj> &lat,
 					      int x,
 					      int dim,
 					      int offset=0)
 {
+  const int Nsimd=vobj::Nsimd();
   typedef typename vobj::scalar_object sobj;
-
-  autoView(lat_v, lat, AcceleratorRead);
 
   GridBase *grid = lat.Grid();
   Coordinate simd = grid->_simd_layout;
@@ -73,7 +72,8 @@ template<class vobj> inline void ScatterSlice(const cshiftVector<typename vobj::
   Coordinate rsimd= simd;  rsimd[dim]=1; // maybe reduce Nsimd
 
   int rNsimd = 1; for(int d=0;d<Nd;d++) rNsimd*=rsimd[d];
-  
+  int rNsimda= Nsimd/simd[dim]; // should be equal
+  assert(rNsimda==rNsimd);
   int face_ovol=block*nblock;
 
   //  assert(buf.size()==face_ovol*rNsimd);
@@ -82,22 +82,26 @@ template<class vobj> inline void ScatterSlice(const cshiftVector<typename vobj::
   //Let's make it work on GPU and then make a special accelerator_for that
   //doesn't hide the SIMD direction and keeps explicit in the threadIdx
   //for cross platform
+  // FIXME -- can put internal indices into thread loop
   auto buf_p = & buf[0];
-  accelerator_for(ss, face_ovol,rNsimd,{
+  autoView(lat_v, lat, AcceleratorRead);
+  accelerator_for(ss, face_ovol/simd[dim],Nsimd,{
 
     // scalar layout won't coalesce
-    int olane=acceleratorSIMTlane(rNsimd);
-    sobj obj = buf_p[ss+olane*face_ovol+offset];
+    int blane=acceleratorSIMTlane(Nsimd); // buffer lane
+    int olane=blane%rNsimd;               // reduced lattice lane
+    int obit =blane/rNsimd;
 
-    ////////////////////////////////////////////
-    // osite
-    ////////////////////////////////////////////
-    int b    = ss%block;
-    int n    = ss/block;
+    ///////////////////////////////////////////////////////////////
+    // osite -- potentially one bit from simd in the buffer: (ss<<1)|obit
+    ///////////////////////////////////////////////////////////////
+    int ssp = ss*simd[dim]+obit;
+    int b    = ssp%block;
+    int n    = ssp/block;
     int osite= b+n*stride + ox*block;
 
     ////////////////////////////////////////////
-    // isite
+    // isite -- map lane within buffer to lane within lattice
     ////////////////////////////////////////////
     Coordinate icoor;
     int lane;
@@ -108,16 +112,18 @@ template<class vobj> inline void ScatterSlice(const cshiftVector<typename vobj::
     ///////////////////////////////////////////
     // Transfer into lattice - will coalesce
     ///////////////////////////////////////////
+    sobj obj = extractLane(blane,buf_p[ss+offset]);
     insertLane(lane,lat_v[osite],obj);
   });
 }
 
-template<class vobj> inline void GatherSlice(cshiftVector<typename vobj::scalar_object> &buf,
+template<class vobj> inline void GatherSlice(cshiftVector<vobj> &buf,
 					     const Lattice<vobj> &lat,
 					     int x,
 					     int dim,
 					     int offset=0)
 {
+  const int Nsimd=vobj::Nsimd();
   typedef typename vobj::scalar_object sobj;
 
   autoView(lat_v, lat, AcceleratorRead);
@@ -149,20 +155,29 @@ template<class vobj> inline void GatherSlice(cshiftVector<typename vobj::scalar_
   //for cross platform
   //For CPU perhaps just run a loop over Nsimd
   auto buf_p = & buf[0];
-  accelerator_for(ss, face_ovol,rNsimd,{
+  std::cout << " simd["<<dim<<"] "<< simd[dim] <<std::endl;
+  std::cout << " simd "<< simd <<std::endl;
+  std::cout << " Nsimd "<< Nsimd <<std::endl;
+  std::cout << " rNsimd "<< rNsimd <<std::endl;
+  accelerator_for(ss, face_ovol/simd[dim],Nsimd,{
+
+    // scalar layout won't coalesce
+    int blane=acceleratorSIMTlane(Nsimd); // buffer lane
+    int olane=blane%rNsimd;               // reduced lattice lane
+    int obit =blane/rNsimd;
 
     ////////////////////////////////////////////
     // osite
     ////////////////////////////////////////////
-    int b    = ss%block;
-    int n    = ss/block;
+    int ssp = ss*simd[dim]+obit;
+    int b    = ssp%block;
+    int n    = ssp/block;
     int osite= b+n*stride + ox*block;
 
     ////////////////////////////////////////////
-    // isite
+    // isite -- map lane within buffer to lane within lattice
     ////////////////////////////////////////////
     Coordinate icoor;
-    int olane=acceleratorSIMTlane(rNsimd);
     int lane;
     Lexicographic::CoorFromIndex(icoor,olane,rsimd);
     icoor[dim]=ix;
@@ -171,10 +186,23 @@ template<class vobj> inline void GatherSlice(cshiftVector<typename vobj::scalar_
     ///////////////////////////////////////////
     // Take out of lattice
     ///////////////////////////////////////////
+
     sobj obj = extractLane(lane,lat_v[osite]);
-    buf_p[ss+olane*face_ovol+offset] = obj;
+    insertLane(blane,buf_p[ss+offset],obj);
 
   });
+  /*
+  int words =block*nblock/simd[dim];
+  std::vector<vobj> tbuf(words);
+  acceleratorCopyFromDevice((void *)&buf[offset],(void *)&tbuf[0],words*sizeof(vobj));
+  typedef typename vobj::scalar_type scalar;
+  scalar *sbuf = (scalar *)&tbuf[0];
+  scalar tmp=0.0;
+  for(int w=0;w<words*sizeof(vobj)/sizeof(scalar);w++){
+    tmp=tmp+conjugate(sbuf[w])*sbuf[w];
+  }
+  std::cout << " Gathered buffer norm "<<tmp<<std::endl;
+  */
 }
 
 
@@ -260,13 +288,13 @@ public:
     return tmp;
   }
   template<class vobj>
-  inline Lattice<vobj> ExchangeTest(const Lattice<vobj> &in, const CshiftImplBase<vobj> &cshift = CshiftImplDefault<vobj>()) const
+  inline Lattice<vobj> ExchangePeriodic(const Lattice<vobj> &in, const CshiftImplBase<vobj> &cshift = CshiftImplDefault<vobj>()) const
   {
     GridBase *old_grid = in.Grid();
     int dims = old_grid->Nd();
     Lattice<vobj> tmp = in;
     for(int d=0;d<dims;d++){
-      tmp = ExpandTest(d,tmp,cshift); // rvalue && assignment
+      tmp = ExpandPeriodic(d,tmp,cshift); // rvalue && assignment
     }
     return tmp;
   }
@@ -337,9 +365,6 @@ public:
 	InsertSliceLocal(shifted,padded,x,x,dim);
       }
       tins += usecond() - t;
-      //      std::cout << GridLogMessage << "dimension " <<dim<<std::endl;
-      //      DumpSliceNorm(std::string("Old_exchange from"),in,dim);
-      //      DumpSliceNorm(std::string("Old_exchange to  "),padded,dim);
 
     }
     std::cout << GridLogPerformance << "PaddedCell::Expand timings: cshift:" << tshift/1000 << "ms, insert-slice:" << tins/1000 << "ms" << std::endl;
@@ -348,7 +373,7 @@ public:
   }
 
   template<class vobj>
-  inline Lattice<vobj> ExpandTest(int dim, const Lattice<vobj> &in, const CshiftImplBase<vobj> &cshift = CshiftImplDefault<vobj>()) const
+  inline Lattice<vobj> ExpandPeriodic(int dim, const Lattice<vobj> &in, const CshiftImplBase<vobj> &cshift = CshiftImplDefault<vobj>()) const
   {
     Coordinate processors=unpadded_grid->_processors;
     GridBase *old_grid = in.Grid();
@@ -412,7 +437,7 @@ public:
     Coordinate simd= from.Grid()->_simd_layout;
     int ld    = lds[dimension];
     int nld   = to.Grid()->_ldimensions[dimension];
-    
+    const int Nsimd = vobj::Nsimd();
 
     assert(depth<=lds[dimension]); // A must be on neighbouring node
     assert(depth>0);   // A caller bug if zero
@@ -424,16 +449,17 @@ public:
     for(int d=0;d<lds.size();d++){
       if ( d!= dimension) buffer_size=buffer_size*lds[d];
     }
-    int rNsimd = vobj::Nsimd() / simd[dimension];
-    assert( buffer_size == from.Grid()->_slice_nblock[dimension]*from.Grid()->_slice_block[dimension] *rNsimd);
+    buffer_size = buffer_size  / Nsimd;
+    int rNsimd = Nsimd / simd[dimension];
+    assert( buffer_size == from.Grid()->_slice_nblock[dimension]*from.Grid()->_slice_block[dimension] / simd[dimension]);
 
-    static cshiftVector<sobj> send_buf; 
-    static cshiftVector<sobj> recv_buf;
+    static cshiftVector<vobj> send_buf; 
+    static cshiftVector<vobj> recv_buf;
     send_buf.resize(buffer_size*2*depth);    
     recv_buf.resize(buffer_size*2*depth);
 
     int words = buffer_size;
-    int bytes = words * sizeof(sobj);
+    int bytes = words * sizeof(vobj);
     ////////////////////////////////////////////////////////////////////////////
     // Gather all surface terms up to depth "d"
     ////////////////////////////////////////////////////////////////////////////
@@ -491,14 +517,14 @@ public:
       ScatterSlice(recv_buf,to,nld-depth+d,dimension,plane*buffer_size); plane++;
     }
     t_scatter= usecond() - t;
+    //    DumpSliceNorm(std::string("Face_exchange to done"),to,dimension);
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: gather :" << t_gather/1000  << "ms"<<std::endl;
-    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: scatter:" << t_scatter/1000   << "ms"<<std::endl;
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: gather :" << 2.0*bytes/t_gather << "MB/s"<<std::endl;
+    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: scatter:" << t_scatter/1000   << "ms"<<std::endl;
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: scatter:" << 2.0*bytes/t_scatter<< "MB/s"<<std::endl;
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: copy   :" << t_copy/1000      << "ms"<<std::endl;
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: comms  :" << t_comms/1000     << "ms"<<std::endl;
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: comms  :" << (RealD)4.0*bytes/t_comms   << "MB/s"<<std::endl;
-    //    DumpSliceNorm(std::string("Face_exchange to done"),to,dimension);
   }
   
 };
