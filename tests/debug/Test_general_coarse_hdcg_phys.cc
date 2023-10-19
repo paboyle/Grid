@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -44,7 +44,8 @@ void SaveOperator(Coarsened &Operator,std::string file)
   WR.open(file);
   for(int p=0;p<Operator._A.size();p++){
     auto tmp = Operator.Cell.Extract(Operator._A[p]);
-    WR.writeScidacFieldRecord(tmp,record);
+    WR.writeScidacFieldRecord(tmp,record,0,0);
+    //    WR.writeScidacFieldRecord(tmp,record,0,BINARYIO_LEXICOGRAPHIC);
   }
   WR.close();
 #endif
@@ -59,7 +60,8 @@ void LoadOperator(Coarsened &Operator,std::string file)
   assert(Operator._A.size()==Operator.geom.npoint);
   for(int p=0;p<Operator.geom.npoint;p++){
     conformable(Operator._A[p].Grid(),Operator.CoarseGrid());
-    RD.readScidacFieldRecord(Operator._A[p],record);
+    //    RD.readScidacFieldRecord(Operator._A[p],record,BINARYIO_LEXICOGRAPHIC);
+    RD.readScidacFieldRecord(Operator._A[p],record,0);
   }    
   RD.close();
   Operator.ExchangeCoarseLinks();
@@ -73,7 +75,8 @@ void SaveBasis(aggregation &Agg,std::string file)
   ScidacWriter WR(Agg.FineGrid->IsBoss());
   WR.open(file);
   for(int b=0;b<Agg.subspace.size();b++){
-    WR.writeScidacFieldRecord(Agg.subspace[b],record);
+    //WR.writeScidacFieldRecord(Agg.subspace[b],record,0,BINARYIO_LEXICOGRAPHIC);
+    WR.writeScidacFieldRecord(Agg.subspace[b],record,0,0);
   }
   WR.close();
 #endif
@@ -86,7 +89,8 @@ void LoadBasis(aggregation &Agg, std::string file)
   ScidacReader RD ;
   RD.open(file);
   for(int b=0;b<Agg.subspace.size();b++){
-    RD.readScidacFieldRecord(Agg.subspace[b],record);
+    //    RD.readScidacFieldRecord(Agg.subspace[b],record,BINARYIO_LEXICOGRAPHIC);
+    RD.readScidacFieldRecord(Agg.subspace[b],record,0);
   }    
   RD.close();
 #endif
@@ -182,7 +186,7 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu(UGrid);
 
   FieldMetaData header;
-  std::string file("ckpoint_lat.4000");
+  std::string file("ckpoint_lat.2250");
   NerscIO::readConfiguration(Umu,header,file);
 
   //////////////////////// Fermion action //////////////////////////////////
@@ -219,24 +223,26 @@ int main (int argc, char ** argv)
   ////////////////////////////////////////////////////////////
   LittleDiracOperator LittleDiracOp(geom,FrbGrid,Coarse5d);
 
-  bool load=true;
-  if ( load ) {
-    LoadBasis(Aggregates,"Subspace.scidac");
-    LoadOperator(LittleDiracOp,"LittleDiracOp.scidac");
+  std::string subspace_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Subspace.phys.nolex.scidac");
+  std::string ldop_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/LittleDiracOp.phys.nolex.scidac");
+  bool load_agg=true;
+  bool load_mat=true;
+  if ( load_agg ) {
+    LoadBasis(Aggregates,subspace_file);
   } else {
     Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,
-				       95.0,0.1,
-				       //				     400,200,200 -- 48 iters
-				       //				     600,200,200 -- 38 iters, 162s
-				       //				     600,200,100 -- 38 iters, 169s
-				       //				     600,200,50  -- 88 iters. 370s 
-				       800,
+				       95.0,0.05,
+				       1000,
 				       200,
-				       100,
+				       200,
 				       0.0);
+    SaveBasis(Aggregates,subspace_file);
+  }
+  if ( load_mat ) {
+    LoadOperator(LittleDiracOp,ldop_file);
+  } else {
     LittleDiracOp.CoarsenOperator(FineHermOp,Aggregates);
-    SaveBasis(Aggregates,"Subspace.scidac");
-    SaveOperator(LittleDiracOp,"LittleDiracOp.scidac");
+    SaveOperator(LittleDiracOp,ldop_file);
   }
   
   // Try projecting to one hop only
@@ -250,13 +256,14 @@ int main (int argc, char ** argv)
   //////////////////////////////////////////
   // Build a coarse lanczos
   //////////////////////////////////////////
-  Chebyshev<CoarseVector>      IRLCheby(0.2,40.0,71);  // 1 iter
+  //  Chebyshev<CoarseVector>      IRLCheby(0.01,44.0,201);  // 1 iter
+  Chebyshev<CoarseVector>      IRLCheby(0.006,44.0,301);  // 1 iter
   FunctionHermOp<CoarseVector> IRLOpCheby(IRLCheby,CoarseOp);
   PlainHermOp<CoarseVector>    IRLOp    (CoarseOp);
-  int Nk=48;
-  int Nm=64;
+  int Nk=160;
+  int Nm=240;
   int Nstop=Nk;
-  ImplicitlyRestartedLanczos<CoarseVector> IRL(IRLOpCheby,IRLOp,Nstop,Nk,Nm,1.0e-5,20);
+  ImplicitlyRestartedLanczos<CoarseVector> IRL(IRLOpCheby,IRLOp,Nstop,Nk,Nm,1.0e-3,20);
 
   int Nconv;
   std::vector<RealD>            eval(Nm);
@@ -281,20 +288,20 @@ int main (int argc, char ** argv)
   //  HPDSolver<CoarseVector> HPDSolve(CoarseOp,CG,CoarseZeroGuesser);
   HPDSolver<CoarseVector> HPDSolve(CoarseOp,CG,DeflCoarseGuesser);
   c_res=Zero();
-  HPDSolve(c_src,c_res); c_ref = c_res;
-  std::cout << GridLogMessage<<"src norm "<<norm2(c_src)<<std::endl;
-  std::cout << GridLogMessage<<"ref norm "<<norm2(c_ref)<<std::endl;
+  //  HPDSolve(c_src,c_res); c_ref = c_res;
+  //  std::cout << GridLogMessage<<"src norm "<<norm2(c_src)<<std::endl;
+  //  std::cout << GridLogMessage<<"ref norm "<<norm2(c_ref)<<std::endl;
   //////////////////////////////////////////////////////////////////////////
   // Deflated (with real op EV's) solve for the projected coarse op
   // Work towards ADEF1 in the coarse space
   //////////////////////////////////////////////////////////////////////////
   HPDSolver<CoarseVector> HPDSolveProj(CoarseOpProj,CG,DeflCoarseGuesser);
   c_res=Zero();
-  HPDSolveProj(c_src,c_res);
-  std::cout << GridLogMessage<<"src norm "<<norm2(c_src)<<std::endl;
-  std::cout << GridLogMessage<<"res norm "<<norm2(c_res)<<std::endl;
-  c_res = c_res - c_ref;
-  std::cout << "Projected solver error "<<norm2(c_res)<<std::endl;
+  //  HPDSolveProj(c_src,c_res);
+  //  std::cout << GridLogMessage<<"src norm "<<norm2(c_src)<<std::endl;
+  //  std::cout << GridLogMessage<<"res norm "<<norm2(c_res)<<std::endl;
+  //  c_res = c_res - c_ref;
+  //  std::cout << "Projected solver error "<<norm2(c_res)<<std::endl;
 
   //////////////////////////////////////////////////////////////////////
   // Coarse ADEF1 with deflation space
@@ -331,22 +338,22 @@ int main (int argc, char ** argv)
 	   CoarseSmoother,
 	   evec,eval);
 
-  c_res=Zero();
-  cADEF1(c_src,c_res);
-  std::cout << GridLogMessage<<"src norm "<<norm2(c_src)<<std::endl;
-  std::cout << GridLogMessage<<"cADEF1 res norm "<<norm2(c_res)<<std::endl;
-  c_res = c_res - c_ref;
-  std::cout << "cADEF1 solver error "<<norm2(c_res)<<std::endl;
+  //  c_res=Zero();
+  //  cADEF1(c_src,c_res);
+  //  std::cout << GridLogMessage<<"src norm "<<norm2(c_src)<<std::endl;
+  //  std::cout << GridLogMessage<<"cADEF1 res norm "<<norm2(c_res)<<std::endl;
+  //  c_res = c_res - c_ref;
+  //  std::cout << "cADEF1 solver error "<<norm2(c_res)<<std::endl;
   
   //  cADEF1.Tolerance = 4.0e-2;
   //  cADEF1.Tolerance = 1.0e-1;
-  cADEF1.Tolerance = 5.0e-2;
-  c_res=Zero();
-  cADEF1(c_src,c_res);
-  std::cout << GridLogMessage<<"src norm "<<norm2(c_src)<<std::endl;
-  std::cout << GridLogMessage<<"cADEF1 res norm "<<norm2(c_res)<<std::endl;
-  c_res = c_res - c_ref;
-  std::cout << "cADEF1 solver error "<<norm2(c_res)<<std::endl;
+  //  cADEF1.Tolerance = 5.0e-2;
+  //  c_res=Zero();
+  //  cADEF1(c_src,c_res);
+  //  std::cout << GridLogMessage<<"src norm "<<norm2(c_src)<<std::endl;
+  //  std::cout << GridLogMessage<<"cADEF1 res norm "<<norm2(c_res)<<std::endl;
+  //  c_res = c_res - c_ref;
+  //  std::cout << "cADEF1 solver error "<<norm2(c_res)<<std::endl;
   
   //////////////////////////////////////////
   // Build a smoother
@@ -379,7 +386,7 @@ int main (int argc, char ** argv)
 
     for(int o=0;o<ords.size();o++){
 
-      ConjugateGradient<CoarseVector>  CGsloppy(4.0e-2,maxit,false);
+      ConjugateGradient<CoarseVector>  CGsloppy(5.0e-2,maxit,false);
       HPDSolver<CoarseVector> HPDSolveSloppy(CoarseOp,CGsloppy,DeflCoarseGuesser);
       
       //    ChebyshevSmoother<LatticeFermionD,HermFineMatrix > Smoother(lo,92,10,FineHermOp); // 36 best case
@@ -404,12 +411,11 @@ int main (int argc, char ** argv)
 		 HPDSolve,
 		 Aggregates);
       
-      result=Zero();
-      HDCGdefl(src,result);
+      //      result=Zero();
+      //      HDCGdefl(src,result);
 
       result=Zero();
       HDCG(src,result);
-
       
     }
   }
