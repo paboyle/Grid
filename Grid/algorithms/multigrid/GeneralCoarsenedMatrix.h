@@ -137,8 +137,7 @@ public:
     CoarseVector tin=in;
 
     texch-=usecond();
-    //    CoarseVector pin  = Cell.Exchange(tin);
-    CoarseVector pin = Cell.ExchangeTest(tin);
+    CoarseVector pin = Cell.ExchangePeriodic(tin);
     texch+=usecond();
 
     CoarseVector pout(pin.Grid());
