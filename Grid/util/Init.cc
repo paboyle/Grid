@@ -283,6 +283,7 @@ void GridBanner(void)
     std::cout << "Build " << GRID_BUILD_STR(GRID_BUILD_REF) << std::endl;
 #endif
     std::cout << std::endl;
+    std::cout << std::setprecision(9);
 }
 
 void Grid_init(int *argc,char ***argv)
