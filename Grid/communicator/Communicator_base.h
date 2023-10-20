@@ -138,6 +138,14 @@ public:
   ////////////////////////////////////////////////////////////
   // Face exchange, buffer swap in translational invariant way
   ////////////////////////////////////////////////////////////
+  void CommsComplete(std::vector<CommsRequest_t> &list);
+  void SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+			   void *xmit,
+			   int dest,
+			   void *recv,
+			   int from,
+			   int bytes,int dir);
+  
   void SendToRecvFrom(void *xmit,
 		      int xmit_to_rank,
 		      void *recv,
