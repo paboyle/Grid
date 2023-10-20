@@ -63,6 +63,7 @@ public:
   
   std::vector<CoarseMatrix> _A;
   std::vector<CoarseMatrix> _Adag;
+  std::vector<CoarseVector> MultTemporaries;
 
   ///////////////////////
   // Interface
@@ -125,11 +126,8 @@ public:
   }
   void Mult (std::vector<CoarseMatrix> &A,const CoarseVector &in, CoarseVector &out)
   {
-    RealD tviews=0;
-    RealD ttot=0;
-    RealD tmult=0;
-    RealD texch=0;
-    RealD text=0;
+    RealD tviews=0;    RealD ttot=0;    RealD tmult=0;   RealD texch=0;    RealD text=0; RealD ttemps=0; RealD tcopy=0;
+
     ttot=-usecond();
     conformable(CoarseGrid(),in.Grid());
     conformable(in.Grid(),out.Grid());
@@ -155,25 +153,36 @@ public:
                 + 2.0*osites*sizeof(siteVector)*npoint;
       
     {
+      tviews-=usecond();
       autoView( in_v , pin, AcceleratorRead);
       autoView( out_v , pout, AcceleratorWriteDiscard);
       autoView( Stencil_v  , Stencil, AcceleratorRead);
+      tviews+=usecond();
 
       // Static and prereserve to keep UVM region live and not resized across multiple calls
-      Vector<Aview> AcceleratorViewContainer;    AcceleratorViewContainer.reserve(npoint);
-      Vector<Vview> AcceleratorVecViewContainer; AcceleratorVecViewContainer.reserve(npoint);
-      std::vector<CoarseVector> outp(npoint,pin.Grid()); 
+      ttemps-=usecond();
+      MultTemporaries.resize(npoint,pin.Grid());       
+      ttemps+=usecond();
+      std::vector<Aview> AcceleratorViewContainer_h;
+      std::vector<Vview> AcceleratorVecViewContainer_h; 
 
       tviews-=usecond();
       for(int p=0;p<npoint;p++) {
-	AcceleratorViewContainer.push_back(      A[p].View(AcceleratorRead));
-	AcceleratorVecViewContainer.push_back(outp[p].View(AcceleratorWrite));
+	AcceleratorViewContainer_h.push_back(      A[p].View(AcceleratorRead));
+	AcceleratorVecViewContainer_h.push_back(MultTemporaries[p].View(AcceleratorWrite));
       }
       tviews+=usecond();
 
+      static deviceVector<Aview> AcceleratorViewContainer; AcceleratorViewContainer.resize(npoint);
+      static deviceVector<Vview> AcceleratorVecViewContainer; AcceleratorVecViewContainer.resize(npoint); 
+      
       auto Aview_p = &AcceleratorViewContainer[0];
       auto Vview_p = &AcceleratorVecViewContainer[0];
-      
+      tcopy-=usecond();
+      acceleratorCopyToDevice(&AcceleratorViewContainer_h[0],&AcceleratorViewContainer[0],npoint *sizeof(Aview));
+      acceleratorCopyToDevice(&AcceleratorVecViewContainer_h[0],&AcceleratorVecViewContainer[0],npoint *sizeof(Vview));
+      tcopy+=usecond();
+
       tmult-=usecond();
       accelerator_for(spb, osites*nbasis*npoint, Nsimd, {
 	  typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
@@ -200,8 +209,8 @@ public:
       });
       tmult+=usecond();
       for(int p=0;p<npoint;p++) {
-	AcceleratorViewContainer[p].ViewClose();
-	AcceleratorVecViewContainer[p].ViewClose();
+	AcceleratorViewContainer_h[p].ViewClose();
+	AcceleratorVecViewContainer_h[p].ViewClose();
       }
     }
 
@@ -214,12 +223,14 @@ public:
     std::cout << GridLogPerformance<<"Coarse Mult exch "<<texch<<" us"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Mult mult "<<tmult<<" us"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Mult ext  "<<text<<" us"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Mult temps "<<ttemps<<" us"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Mult copy  "<<tcopy<<" us"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Mult tot  "<<ttot<<" us"<<std::endl;
-    std::cout << GridLogPerformance<<std::endl;
-    std::cout << GridLogPerformance<<"Coarse Kernel flop/s "<< flops/tmult<<" mflop/s"<<std::endl;
-    std::cout << GridLogPerformance<<"Coarse Kernel bytes/s"<< bytes/tmult<<" MB/s"<<std::endl;
-    std::cout << GridLogPerformance<<"Coarse overall flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
-    std::cout << GridLogPerformance<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
+    //    std::cout << GridLogPerformance<<std::endl;
+    //    std::cout << GridLogPerformance<<"Coarse Kernel flop/s "<< flops/tmult<<" mflop/s"<<std::endl;
+    //    std::cout << GridLogPerformance<<"Coarse Kernel bytes/s"<< bytes/tmult<<" MB/s"<<std::endl;
+    //    std::cout << GridLogPerformance<<"Coarse overall flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
+    //    std::cout << GridLogPerformance<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
 
   };
 
