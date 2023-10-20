@@ -141,7 +141,7 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
   ///////////////////////////////////////////////////////////////////////////
   assert(AccCache.state!=Empty);
   
-  mprintf("MemoryManager: Evict cpu %lx acc %lx cpuLock %ld accLock %ld\n",
+  mprintf("MemoryManager: Evict CpuPtr %lx AccPtr %lx cpuLock %ld accLock %ld\n",
 	  (uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr,
 	  (uint64_t)AccCache.cpuLock,(uint64_t)AccCache.accLock); 
   if (AccCache.accLock!=0) return;
@@ -155,7 +155,7 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
     AccCache.AccPtr=(uint64_t)NULL;
     AccCache.state=CpuDirty; // CPU primary now
     DeviceBytes   -=AccCache.bytes;
-    dprintf("MemoryManager: Free(%lx) footprint now %ld \n",(uint64_t)AccCache.AccPtr,DeviceBytes);  
+    dprintf("MemoryManager: Free(AccPtr %lx) footprint now %ld \n",(uint64_t)AccCache.AccPtr,DeviceBytes);  
   }
   //  uint64_t CpuPtr = AccCache.CpuPtr;
   DeviceEvictions++;
@@ -169,7 +169,7 @@ void MemoryManager::Flush(AcceleratorViewEntry &AccCache)
   assert(AccCache.AccPtr!=(uint64_t)NULL);
   assert(AccCache.CpuPtr!=(uint64_t)NULL);
   acceleratorCopyFromDevice((void *)AccCache.AccPtr,(void *)AccCache.CpuPtr,AccCache.bytes);
-  mprintf("MemoryManager: acceleratorCopyFromDevice Flush  %lx -> %lx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
+  mprintf("MemoryManager: acceleratorCopyFromDevice Flush AccPtr %lx -> CpuPtr %lx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   DeviceToHostBytes+=AccCache.bytes;
   DeviceToHostXfer++;
   AccCache.state=Consistent;
@@ -184,7 +184,7 @@ void MemoryManager::Clone(AcceleratorViewEntry &AccCache)
     AccCache.AccPtr=(uint64_t)AcceleratorAllocate(AccCache.bytes);
     DeviceBytes+=AccCache.bytes;
   }
-  mprintf("MemoryManager: acceleratorCopyToDevice Clone %lx <- %lx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
+  mprintf("MemoryManager: acceleratorCopyToDevice Clone AccPtr %lx <- CpuPtr %lx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   acceleratorCopyToDevice((void *)AccCache.CpuPtr,(void *)AccCache.AccPtr,AccCache.bytes);
   HostToDeviceBytes+=AccCache.bytes;
   HostToDeviceXfer++;
