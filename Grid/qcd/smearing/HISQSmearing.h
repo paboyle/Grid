@@ -81,7 +81,8 @@ struct SmearingParameters{
 
 
 /*!  @brief create fat links from link variables */
-template<class LGF, class Gimpl> 
+//template<class LGF, class Gimpl> 
+template<class Gimpl> 
 class Smear_HISQ_fat : public Gimpl {
 
 private:
@@ -91,6 +92,7 @@ private:
 public:
 
     INHERIT_GIMPL_TYPES(Gimpl);
+    typedef typename Gimpl::GaugeField LGF;
 
     // Don't allow default values here.
     Smear_HISQ_fat(GridCartesian* grid, Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) 
