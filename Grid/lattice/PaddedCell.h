@@ -46,6 +46,13 @@ struct CshiftImplGauge: public CshiftImplBase<typename Gimpl::GaugeLinkField::ve
 };  
 
 
+/*
+ *
+ * TODO: 
+ *  -- address elementsof vobj via thread block in Scatter/Gather
+ *  -- overlap comms with motion in Face_exchange
+ *
+ */
 
 template<class vobj> inline void ScatterSlice(const cshiftVector<vobj> &buf,
 					      Lattice<vobj> &lat,
@@ -155,10 +162,6 @@ template<class vobj> inline void GatherSlice(cshiftVector<vobj> &buf,
   //for cross platform
   //For CPU perhaps just run a loop over Nsimd
   auto buf_p = & buf[0];
-  std::cout << " simd["<<dim<<"] "<< simd[dim] <<std::endl;
-  std::cout << " simd "<< simd <<std::endl;
-  std::cout << " Nsimd "<< Nsimd <<std::endl;
-  std::cout << " rNsimd "<< rNsimd <<std::endl;
   accelerator_for(ss, face_ovol/simd[dim],Nsimd,{
 
     // scalar layout won't coalesce
@@ -458,38 +461,51 @@ public:
     send_buf.resize(buffer_size*2*depth);    
     recv_buf.resize(buffer_size*2*depth);
 
+    std::vector<CommsRequest_t> fwd_req;   
+    std::vector<CommsRequest_t> bwd_req;   
+
     int words = buffer_size;
     int bytes = words * sizeof(vobj);
-    ////////////////////////////////////////////////////////////////////////////
-    // Gather all surface terms up to depth "d"
-    ////////////////////////////////////////////////////////////////////////////
-    RealD t=usecond();
-    int plane=0;
-    for ( int d=0;d < depth ; d ++ ) {
-      GatherSlice(send_buf,from,d,dimension,plane*buffer_size); plane++;
-    }
-    for ( int d=0;d < depth ; d ++ ) {
-      GatherSlice(send_buf,from,ld-depth+d,dimension,plane*buffer_size); plane++;
-    }
-    t_gather= usecond() - t;
 
     ////////////////////////////////////////////////////////////////////////////
-    // Communicate
+    // Communication coords
     ////////////////////////////////////////////////////////////////////////////
     int comm_proc = 1;
     int xmit_to_rank;
     int recv_from_rank;
     grid->ShiftedRanks(dimension,comm_proc,xmit_to_rank,recv_from_rank);
 
-    t=usecond();
-    for(int d = 0; d<depth;d++){
-      grid->SendToRecvFrom((void *)&send_buf[d*buffer_size], xmit_to_rank,
-			   (void *)&recv_buf[(d+depth)*buffer_size], recv_from_rank, bytes);
-  
-      grid->SendToRecvFrom((void *)&send_buf[(d+depth)*buffer_size], recv_from_rank,
-			   (void *)&recv_buf[d*buffer_size], xmit_to_rank, bytes);
+    ////////////////////////////////////////////////////////////////////////////
+    // Gather all surface terms up to depth "d"
+    ////////////////////////////////////////////////////////////////////////////
+    RealD t;
+    int plane=0;
+    for ( int d=0;d < depth ; d ++ ) {
+      int tag = d*1024 + dimension*2+0;
+
+      t=usecond();
+      GatherSlice(send_buf,from,d,dimension,plane*buffer_size); plane++;
+      t_gather+=usecond()-t;
+
+      t=usecond();
+      grid->SendToRecvFromBegin(fwd_req,
+				(void *)&send_buf[d*buffer_size], xmit_to_rank,
+				(void *)&recv_buf[d*buffer_size], recv_from_rank, bytes, tag);
+      t_comms+=usecond()-t;
+     }
+    for ( int d=0;d < depth ; d ++ ) {
+      int tag = d*1024 + dimension*2+1;
+
+      t=usecond();
+      GatherSlice(send_buf,from,ld-depth+d,dimension,plane*buffer_size); plane++;
+      t_gather+= usecond() - t;
+
+      t=usecond();
+      grid->SendToRecvFromBegin(bwd_req,
+				(void *)&send_buf[(d+depth)*buffer_size], recv_from_rank,
+				(void *)&recv_buf[(d+depth)*buffer_size], xmit_to_rank, bytes,tag);
+      t_comms+=usecond()-t;
     }
-    t_comms= usecond() - t;
 
     ////////////////////////////////////////////////////////////////////////////
     // Copy interior -- overlap this with comms
@@ -507,28 +523,43 @@ public:
     // Scatter all faces
     ////////////////////////////////////////////////////////////////////////////
     //    DumpSliceNorm(std::string("Face_exchange to before scatter"),to,dimension);
+
     plane=0;
+
     t=usecond();
-    for ( int d=0;d < depth ; d ++ ) {
-      ScatterSlice(recv_buf,to,d,dimension,plane*buffer_size); plane++;
-    }
-    //    DumpSliceNorm(std::string("Face_exchange to scatter 1st "),to,dimension);
+    grid->CommsComplete(fwd_req);
+    t_comms+= usecond() - t;
+
+    t=usecond();
     for ( int d=0;d < depth ; d ++ ) {
       ScatterSlice(recv_buf,to,nld-depth+d,dimension,plane*buffer_size); plane++;
     }
     t_scatter= usecond() - t;
-    //    DumpSliceNorm(std::string("Face_exchange to done"),to,dimension);
+
+    t=usecond();
+    grid->CommsComplete(bwd_req);
+    t_comms+= usecond() - t;
+    
+    t=usecond();
+    for ( int d=0;d < depth ; d ++ ) {
+      ScatterSlice(recv_buf,to,d,dimension,plane*buffer_size); plane++;
+    }
+    t_scatter+= usecond() - t;
+    //    DumpSliceNorm(std::string("Face_exchange to scatter 1st "),to,dimension);
+
+    //DumpSliceNorm(std::string("Face_exchange to done"),to,dimension);
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: gather :" << t_gather/1000  << "ms"<<std::endl;
-    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: gather :" << 2.0*bytes/t_gather << "MB/s"<<std::endl;
+    //    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: gather :" << 2.0*bytes/t_gather << "MB/s"<<std::endl;
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: scatter:" << t_scatter/1000   << "ms"<<std::endl;
-    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: scatter:" << 2.0*bytes/t_scatter<< "MB/s"<<std::endl;
+    //    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: scatter:" << 2.0*bytes/t_scatter<< "MB/s"<<std::endl;
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: copy   :" << t_copy/1000      << "ms"<<std::endl;
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: comms  :" << t_comms/1000     << "ms"<<std::endl;
-    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: comms  :" << (RealD)4.0*bytes/t_comms   << "MB/s"<<std::endl;
+    //    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: comms  :" << (RealD)4.0*bytes/t_comms   << "MB/s"<<std::endl;
   }
   
 };
  
 
 NAMESPACE_END(Grid);
+
 
