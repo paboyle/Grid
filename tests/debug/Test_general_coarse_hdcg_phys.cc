@@ -257,7 +257,7 @@ int main (int argc, char ** argv)
   // Build a coarse lanczos
   //////////////////////////////////////////
   //  Chebyshev<CoarseVector>      IRLCheby(0.01,44.0,201);  // 1 iter
-  Chebyshev<CoarseVector>      IRLCheby(0.006,44.0,301);  // 1 iter
+  Chebyshev<CoarseVector>      IRLCheby(0.005,44.0,401);  // 1 iter
   FunctionHermOp<CoarseVector> IRLOpCheby(IRLCheby,CoarseOp);
   PlainHermOp<CoarseVector>    IRLOp    (CoarseOp);
   int Nk=160;

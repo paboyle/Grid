@@ -144,10 +144,10 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  const int Ls=16;
+  const int Ls=24;
   const int nbasis = 40;
   const int cb = 0 ;
-  RealD mass=0.01;
+  RealD mass=0.00078;
   RealD M5=1.8;
   RealD b=1.5;
   RealD c=0.5;
@@ -219,10 +219,10 @@ int main (int argc, char ** argv)
   ////////////////////////////////////////////////////////////
   LittleDiracOperator LittleDiracOp(geom,FrbGrid,Coarse5d);
 
-  bool load=true;
+  bool load=false;
   if ( load ) {
-    LoadBasis(Aggregates,"Subspace.scidac");
-    LoadOperator(LittleDiracOp,"LittleDiracOp.scidac");
+    LoadBasis(Aggregates,"/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Subspace.scidac");
+    LoadOperator(LittleDiracOp,"/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/LittleDiracOp.scidac");
   } else {
     Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,
 				       95.0,0.1,
@@ -235,8 +235,8 @@ int main (int argc, char ** argv)
 				       100,
 				       0.0);
     LittleDiracOp.CoarsenOperator(FineHermOp,Aggregates);
-    SaveBasis(Aggregates,"Subspace.scidac");
-    SaveOperator(LittleDiracOp,"LittleDiracOp.scidac");
+    SaveBasis(Aggregates,"/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Subspace.scidac");
+    SaveOperator(LittleDiracOp,"/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/LittleDiracOp.scidac");
   }
   
   // Try projecting to one hop only
