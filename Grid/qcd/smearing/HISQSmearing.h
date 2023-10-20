@@ -81,7 +81,7 @@ struct SmearingParameters{
 
 
 /*!  @brief create fat links from link variables */
-//template<class LGF, class Gimpl> 
+//template<class GF, class Gimpl> 
 template<class Gimpl> 
 class Smear_HISQ_fat : public Gimpl {
 
@@ -92,7 +92,8 @@ private:
 public:
 
     INHERIT_GIMPL_TYPES(Gimpl);
-    typedef typename Gimpl::GaugeField LGF;
+    typedef typename Gimpl::GaugeField     GF;
+    typedef typename Gimpl::GaugeLinkField LF;
 
     // Don't allow default values here.
     Smear_HISQ_fat(GridCartesian* grid, Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) 
@@ -112,20 +113,20 @@ public:
 
     ~Smear_HISQ_fat() {}
 
-    void smear(LGF& u_smr, LGF& u_thin) const {
+    void smear(GF& u_smr, GF& u_thin) const {
 
         SmearingParameters lt = this->_linkTreatment;
 
         // Create a padded cell of extra padding depth=1 and fill the padding.
         int depth = 1;
         PaddedCell Ghost(depth,this->_grid);
-        LGF Ughost = Ghost.Exchange(u_thin);
+        GF Ughost = Ghost.Exchange(u_thin);
 
         // This is where auxiliary N-link fields and the final smear will be stored. 
-        LGF Ughost_fat(Ughost.Grid());
-        LGF Ughost_3link(Ughost.Grid());
-        LGF Ughost_5linkA(Ughost.Grid());
-        LGF Ughost_5linkB(Ughost.Grid());
+        GF Ughost_fat(Ughost.Grid());
+        GF Ughost_3link(Ughost.Grid());
+        GF Ughost_5linkA(Ughost.Grid());
+        GF Ughost_5linkB(Ughost.Grid());
 
         // Create 3-link stencil. We allow mu==nu just to make the indexing easier.
         // Shifts with mu==nu will not be used. 
@@ -279,8 +280,8 @@ public:
         u_smr = Ghost.Extract(Ughost_fat) + lt.c_1*u_thin;
 
         // Load up U and V std::vectors to access thin and smeared links.
-        std::vector<LatticeColourMatrix> U(Nd, u_thin.Grid());
-        std::vector<LatticeColourMatrix> V(Nd, u_smr.Grid());
+        std::vector<LF> U(Nd, u_thin.Grid());
+        std::vector<LF> V(Nd, u_smr.Grid());
         for (int mu = 0; mu < Nd; mu++) {
             U[mu] = PeekIndex<LorentzIndex>(u_thin, mu);
             V[mu] = PeekIndex<LorentzIndex>(u_smr, mu);
@@ -317,7 +318,7 @@ public:
 
 
 /*!  @brief create long links from link variables. */
-template<class LGF>
+template<class GF>
 class Smear_HISQ_Naik {
 
 private:
@@ -333,7 +334,7 @@ public:
 
     ~Smear_HISQ_Naik() {}
 
-//    void smear(LGF& u_smr, const LGF& U) const {
+//    void smear(GF& u_smr, const GF& U) const {
 //    };
 
 //    void derivative(const GaugeField& Gauge) const {

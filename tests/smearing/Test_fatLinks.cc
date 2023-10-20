@@ -67,6 +67,8 @@ int main (int argc, char** argv) {
     std::string conf_out = "nersc.l8t4b3360.357link";
     int threads          = GridThread::GetThreads();
 
+    typedef LatticeGaugeFieldD LGF;
+
     // Initialize the Grid
     Grid_init(&argc,&argv);
     Coordinate simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
@@ -81,9 +83,9 @@ int main (int argc, char** argv) {
     ConfParameters param(Reader);
     if(param.benchmark) Grid_log("  Nloop = ",param.Nloop);
 
-    // Instantiate the LatticeGaugeField objects holding thin (Umu) and fat (U_smr) links
-    LatticeGaugeField Umu(&GRID);
-    LatticeGaugeField U_smr(&GRID);
+    // Instantiate the LGF objects holding thin (Umu) and fat (U_smr) links
+    LGF Umu(&GRID);
+    LGF U_smr(&GRID);
 
     // Read the configuration into Umu
     FieldMetaData header;
@@ -101,7 +103,7 @@ int main (int argc, char** argv) {
 
     // Make sure result doesn't change w.r.t. a trusted lattice
     NerscIO::readConfiguration(Umu, header, "nersc.l8t4b3360.357link.control");
-    LatticeGaugeField diff(&GRID);
+    LGF diff(&GRID);
     diff = Umu-U_smr;
     auto absDiff = norm2(diff)/norm2(Umu);
     Grid_log(" |Umu-U|/|Umu| = ",absDiff);
