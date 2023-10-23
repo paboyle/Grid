@@ -45,6 +45,7 @@ public:
   };
   // Host only
   GridBase * getGrid(void) const { return _grid; };
+  vobj* getHostPointer(void) const { return _odata; };
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
