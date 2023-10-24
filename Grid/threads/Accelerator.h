@@ -443,7 +443,7 @@ void LambdaApply(uint64_t numx, uint64_t numy, uint64_t numz, lambda Lambda)
 
 #define accelerator_barrier(dummy)				\
   {								\
-    hipStreamSynchronize(computeStream);			\
+    auto tmp=hipStreamSynchronize(computeStream);		\
     auto err = hipGetLastError();				\
     if ( err != hipSuccess ) {					\
       printf("After hipDeviceSynchronize() : HIP error %s \n", hipGetErrorString( err )); \
@@ -476,19 +476,19 @@ inline void *acceleratorAllocDevice(size_t bytes)
   return ptr;
 };
 
-inline void acceleratorFreeShared(void *ptr){ hipFree(ptr);};
-inline void acceleratorFreeDevice(void *ptr){ hipFree(ptr);};
-inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
-inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
+inline void acceleratorFreeShared(void *ptr){ auto discard=hipFree(ptr);};
+inline void acceleratorFreeDevice(void *ptr){ auto discard=hipFree(ptr);};
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { auto discard=hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ auto discard=hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
 //inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyDeviceToDevice);}
 //inline void acceleratorCopySynchronise(void) {  }
-inline void acceleratorMemSet(void *base,int value,size_t bytes) { hipMemset(base,value,bytes);}
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { auto discard=hipMemset(base,value,bytes);}
 
 inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) // Asynch
 {
-  hipMemcpyDtoDAsync(to,from,bytes, copyStream);
+  auto discard=hipMemcpyDtoDAsync(to,from,bytes, copyStream);
 }
-inline void acceleratorCopySynchronise(void) { hipStreamSynchronize(copyStream); };
+inline void acceleratorCopySynchronise(void) { auto discard=hipStreamSynchronize(copyStream); };
 
 #endif
 
