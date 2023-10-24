@@ -436,8 +436,8 @@ public:
   }
   void ExchangeCoarseLinks(void){
     for(int p=0;p<geom.npoint;p++){
-      _A[p] = Cell.Exchange(_A[p]);
-      _Adag[p]= Cell.Exchange(_Adag[p]);
+      _A[p] = Cell.ExchangePeriodic(_A[p]);
+      _Adag[p]= Cell.ExchangePeriodic(_Adag[p]);
     }
   }
   virtual  void Mdiag    (const Field &in, Field &out){ assert(0);};
