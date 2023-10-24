@@ -276,18 +276,33 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
 
   autoView( coarseData_ , coarseData, AcceleratorWrite);
   autoView( ip_         , ip,         AcceleratorWrite);
+  RealD t_IP=0;
+  RealD t_co=0;
+  RealD t_za=0;
   for(int v=0;v<nbasis;v++) {
+    t_IP-=usecond();
     blockInnerProductD(ip,Basis[v],fineDataRed); // ip = <basis|fine>
+    t_IP+=usecond();
+    t_co-=usecond();
     accelerator_for( sc, coarse->oSites(), vobj::Nsimd(), {
 	convertType(coarseData_[sc](v),ip_[sc]);
     });
+    t_co+=usecond();
 
     // improve numerical stability of projection
     // |fine> = |fine> - <basis|fine> |basis>
     ip=-ip;
+    t_za-=usecond();
     blockZAXPY(fineDataRed,ip,Basis[v],fineDataRed); 
+    t_za+=usecond();
   }
+  //  std::cout << GridLogPerformance << " blockProject : blockInnerProduct :  "<<t_IP<<" us"<<std::endl;
+  //  std::cout << GridLogPerformance << " blockProject : conv              :  "<<t_co<<" us"<<std::endl;
+  //  std::cout << GridLogPerformance << " blockProject : blockZaxpy        :  "<<t_za<<" us"<<std::endl;
 }
+// This only minimises data motion from CPU to GPU
+// there is chance of better implementation that does a vxk loop of inner products to data share
+// at the GPU thread level
 template<class vobj,class CComplex,int nbasis,class VLattice>
 inline void batchBlockProject(std::vector<Lattice<iVector<CComplex,nbasis>>> &coarseData,
                                const std::vector<Lattice<vobj>> &fineData,
@@ -393,8 +408,15 @@ template<class vobj,class CComplex>
   Lattice<dotp> coarse_inner(coarse);
 
   // Precision promotion
+  RealD t;
+  t=-usecond();
   fine_inner = localInnerProductD<vobj>(fineX,fineY);
+  //  t+=usecond(); std::cout << GridLogPerformance << " blockInnerProduct : localInnerProductD "<<t<<" us"<<std::endl;
+  
+  t=-usecond();
   blockSum(coarse_inner,fine_inner);
+  //  t+=usecond(); std::cout << GridLogPerformance << " blockInnerProduct : blockSum "<<t<<" us"<<std::endl;
+  t=-usecond();
   {
     autoView( CoarseInner_  , CoarseInner,AcceleratorWrite);
     autoView( coarse_inner_ , coarse_inner,AcceleratorRead);
@@ -402,6 +424,7 @@ template<class vobj,class CComplex>
       convertType(CoarseInner_[ss], TensorRemove(coarse_inner_[ss]));
     });
   }
+  //  t+=usecond(); std::cout << GridLogPerformance << " blockInnerProduct : convertType "<<t<<" us"<<std::endl;
  
 }
 
@@ -444,6 +467,9 @@ inline void blockNormalise(Lattice<CComplex> &ip,Lattice<vobj> &fineX)
 template<class vobj>
 inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData) 
 {
+  const int maxsubsec=256;
+  typedef iVector<vobj,maxsubsec> vSubsec;
+
   GridBase * fine  = fineData.Grid();
   GridBase * coarse= coarseData.Grid();
 
@@ -463,37 +489,62 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
   autoView( coarseData_ , coarseData, AcceleratorWrite);
   autoView( fineData_   , fineData, AcceleratorRead);
 
-  auto coarseData_p = &coarseData_[0];
-  auto fineData_p = &fineData_[0];
+  auto coarseData_p  = &coarseData_[0];
+  auto fineData_p    = &fineData_[0];
   
   Coordinate fine_rdimensions = fine->_rdimensions;
   Coordinate coarse_rdimensions = coarse->_rdimensions;
 
   vobj zz = Zero();
-  
-  accelerator_for(sc,coarse->oSites(),vobj::Nsimd(),{
 
+  // Somewhat lazy calculation
+  // Find the biggest power of two subsection divisor less than or equal to maxsubsec
+  int subsec=maxsubsec;
+  int subvol;
+  subvol=blockVol/subsec;
+  while(subvol*subsec!=blockVol){
+    subsec = subsec/2;
+    subvol=blockVol/subsec;
+  };
+
+  Lattice<vSubsec> coarseTmp(coarse);
+  autoView( coarseTmp_, coarseTmp, AcceleratorWriteDiscard);
+  auto coarseTmp_p= &coarseTmp_[0];
+  
+  // Sum within subsecs in a first kernel
+  accelerator_for(sce,subsec*coarse->oSites(),vobj::Nsimd(),{
+
+      int sc=sce/subsec;
+      int e=sce%subsec;
+      
       // One thread per sub block
       Coordinate coor_c(_ndimension);
       Lexicographic::CoorFromIndex(coor_c,sc,coarse_rdimensions);  // Block coordinate
 
       auto cd = coalescedRead(zz);
-      
-      for(int sb=0;sb<blockVol;sb++){
-
+      for(int sb=e*subvol;sb<MIN((e+1)*subvol,blockVol);sb++){
 	int sf;
 	Coordinate coor_b(_ndimension);
 	Coordinate coor_f(_ndimension);
 	Lexicographic::CoorFromIndex(coor_b,sb,block_r);               // Block sub coordinate
 	for(int d=0;d<_ndimension;d++) coor_f[d]=coor_c[d]*block_r[d] + coor_b[d];
 	Lexicographic::IndexFromCoor(coor_f,sf,fine_rdimensions);
-
+	
 	cd=cd+coalescedRead(fineData_p[sf]);
       }
 
-      coalescedWrite(coarseData_p[sc],cd);
+      coalescedWrite(coarseTmp_[sc](e),cd);
 
     });
+   // Sum across subsecs in a second kernel
+   accelerator_for(sc,coarse->oSites(),vobj::Nsimd(),{
+      auto cd = coalescedRead(coarseTmp_p[sc](0));
+      for(int e=1;e<subsec;e++){
+	cd=cd+coalescedRead(coarseTmp_p[sc](e));
+      }
+      coalescedWrite(coarseData_p[sc],cd);
+   });
+
   return;
 }
 
@@ -550,7 +601,7 @@ inline void blockOrthogonalise(Lattice<CComplex> &ip,std::vector<Lattice<vobj> >
   blockOrthonormalize(ip,Basis);
 }
 
-#if 0
+#ifdef GRID_ACCELERATED
 // TODO: CPU optimized version here
 template<class vobj,class CComplex,int nbasis>
 inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
@@ -576,26 +627,37 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
   autoView( fineData_   , fineData, AcceleratorWrite);
   autoView( coarseData_ , coarseData, AcceleratorRead);
 
+  typedef LatticeView<vobj> Vview;
+  std::vector<Vview> AcceleratorVecViewContainer_h; 
+  for(int v=0;v<nbasis;v++) {
+    AcceleratorVecViewContainer_h.push_back(Basis[v].View(AcceleratorRead));
+  }
+  static deviceVector<Vview> AcceleratorVecViewContainer; AcceleratorVecViewContainer.resize(nbasis); 
+  acceleratorCopyToDevice(&AcceleratorVecViewContainer_h[0],&AcceleratorVecViewContainer[0],nbasis *sizeof(Vview));
+  auto Basis_p = &AcceleratorVecViewContainer[0];
   // Loop with a cache friendly loop ordering
-  accelerator_for(sf,fine->oSites(),1,{
+  Coordinate frdimensions=fine->_rdimensions;
+  Coordinate crdimensions=coarse->_rdimensions;
+  accelerator_for(sf,fine->oSites(),vobj::Nsimd(),{
     int sc;
     Coordinate coor_c(_ndimension);
     Coordinate coor_f(_ndimension);
 
-    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+    Lexicographic::CoorFromIndex(coor_f,sf,frdimensions);
     for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+    Lexicographic::IndexFromCoor(coor_c,sc,crdimensions);
 
-    for(int i=0;i<nbasis;i++) {
-      /*      auto basis_ = Basis[i],  );*/
-      if(i==0) fineData_[sf]=coarseData_[sc](i) *basis_[sf]);
-      else     fineData_[sf]=fineData_[sf]+coarseData_[sc](i)*basis_[sf]);
-    }
+    auto sum= coarseData_(sc)(0) *Basis_p[0](sf);
+    for(int i=1;i<nbasis;i++) sum = sum + coarseData_(sc)(i)*Basis_p[i](sf);
+    coalescedWrite(fineData_[sf],sum);
   });
+  for(int v=0;v<nbasis;v++) {
+    AcceleratorVecViewContainer_h[v].ViewClose();
+  }
   return;
-  
 }
 #else
+// CPU version
 template<class vobj,class CComplex,int nbasis,class VLattice>
 inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
 			 Lattice<vobj>   &fineData,
