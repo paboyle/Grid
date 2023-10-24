@@ -291,13 +291,13 @@ public:
     return tmp;
   }
   template<class vobj>
-  inline Lattice<vobj> ExchangePeriodic(const Lattice<vobj> &in, const CshiftImplBase<vobj> &cshift = CshiftImplDefault<vobj>()) const
+  inline Lattice<vobj> ExchangePeriodic(const Lattice<vobj> &in) const
   {
     GridBase *old_grid = in.Grid();
     int dims = old_grid->Nd();
     Lattice<vobj> tmp = in;
     for(int d=0;d<dims;d++){
-      tmp = ExpandPeriodic(d,tmp,cshift); // rvalue && assignment
+      tmp = ExpandPeriodic(d,tmp); // rvalue && assignment
     }
     return tmp;
   }
@@ -376,7 +376,7 @@ public:
   }
 
   template<class vobj>
-  inline Lattice<vobj> ExpandPeriodic(int dim, const Lattice<vobj> &in, const CshiftImplBase<vobj> &cshift = CshiftImplDefault<vobj>()) const
+  inline Lattice<vobj> ExpandPeriodic(int dim, const Lattice<vobj> &in) const
   {
     Coordinate processors=unpadded_grid->_processors;
     GridBase *old_grid = in.Grid();
