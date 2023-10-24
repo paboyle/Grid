@@ -30,7 +30,7 @@ int getNumBlocksAndThreads(const Iterator n, const size_t sizeofsobj, Iterator &
   cudaGetDevice(&device);
 #endif
 #ifdef GRID_HIP
-  hipGetDevice(&device);
+  auto discard=hipGetDevice(&device);
 #endif
   
   Iterator warpSize            = gpu_props[device].warpSize;
