@@ -41,7 +41,7 @@ AC_PROG_RANLIB
 
 ############### Get compiler informations
 AC_LANG([C++])
-AX_CXX_COMPILE_STDCXX(14,noext,mandatory)
+AX_CXX_COMPILE_STDCXX(17,noext,mandatory)
 AX_COMPILER_VENDOR
 AC_DEFINE_UNQUOTED([CXX_COMP_VENDOR],["$ax_cv_cxx_compiler_vendor"],
       [vendor of C++ compiler that will compile the code])
