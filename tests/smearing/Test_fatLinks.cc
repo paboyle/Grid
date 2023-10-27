@@ -64,7 +64,7 @@ int main (int argc, char** argv) {
     int Nt = 4;
     Coordinate latt_size(Nd,0); latt_size[0]=Ns; latt_size[1]=Ns; latt_size[2]=Ns; latt_size[3]=Nt;
     std::string conf_in  = "nersc.l8t4b3360";
-    std::string conf_out = "nersc.l8t4b3360.357link";
+    std::string conf_out = "nersc.l8t4b3360.357lplink";
     int threads          = GridThread::GetThreads();
 
     typedef LatticeGaugeFieldD LGF;
@@ -92,7 +92,7 @@ int main (int argc, char** argv) {
     NerscIO::readConfiguration(Umu, header, conf_in);
 
     // Smear Umu and store result in U_smr
-    Smear_HISQ_fat<PeriodicGimplD> hisq_fat(&GRID,1/8.,0.,1/16.,1/64.,1/384.,-1/8.);
+    Smear_HISQ_fat<PeriodicGimplD> hisq_fat(&GRID,1/8.,-1/24.,1/16.,1/64.,1/384.,-1/8.);
     hisq_fat.smear(U_smr,Umu);
 
     NerscIO::writeConfiguration(U_smr,conf_out,"HISQ");
@@ -102,7 +102,7 @@ int main (int argc, char** argv) {
     Smear_HISQ_fat<PeriodicGimplD> hisq_fat_Cstyle(&GRID,path_coeff);
 
     // Make sure result doesn't change w.r.t. a trusted lattice
-    NerscIO::readConfiguration(Umu, header, "nersc.l8t4b3360.357link.control");
+    NerscIO::readConfiguration(Umu, header, "nersc.l8t4b3360.357lplink.control");
     LGF diff(&GRID);
     diff = Umu-U_smr;
     auto absDiff = norm2(diff)/norm2(Umu);

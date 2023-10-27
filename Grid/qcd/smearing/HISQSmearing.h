@@ -56,7 +56,7 @@ void appendShift(std::vector<Coordinate>& shifts, int dir, Args... args) {
 /*!  @brief figure out the stencil index from mu and nu */
 inline int stencilIndex(int mu, int nu) {
     // Nshifts depends on how you built the stencil
-    int Nshifts = 5;
+    int Nshifts = 6;
     return Nshifts*nu + Nd*Nshifts*mu;
 }
 
@@ -128,8 +128,8 @@ public:
         GF Ughost_5linkA(Ughost.Grid());
         GF Ughost_5linkB(Ughost.Grid());
 
-        // Create 3-link stencil. We allow mu==nu just to make the indexing easier.
-        // Shifts with mu==nu will not be used. 
+        // mu-nu plane stencil. We allow mu==nu to make indexing the stencil easier,
+        // but these entries will not be used. 
         std::vector<Coordinate> shifts;
         for(int mu=0;mu<Nd;mu++)
         for(int nu=0;nu<Nd;nu++) {
@@ -138,6 +138,7 @@ public:
             appendShift(shifts,NO_SHIFT);
             appendShift(shifts,mu,Back(nu));
             appendShift(shifts,Back(nu));
+            appendShift(shifts,Back(mu));
         }
 
         // A GeneralLocalStencil has two indices: a site and stencil index 
@@ -164,8 +165,9 @@ public:
             // We infer some types that will be needed in the calculation.
             typedef decltype(gStencil.GetEntry(0,0)) stencilElement;
             typedef decltype(coalescedReadGeneralPermute(U_v[0](0),gStencil.GetEntry(0,0)->_permute,Nd)) U3matrix;
-            stencilElement SE0, SE1, SE2, SE3, SE4;
+            stencilElement SE0, SE1, SE2, SE3, SE4, SE5;
             U3matrix U0, U1, U2, U3, U4, U5, W;
+
 
             for(int site=0;site<U_v.size();site++){ // ----------- 3-link
                 for(int nu=0;nu<Nd;nu++) {
@@ -179,6 +181,7 @@ public:
                     SE2 = gStencil.GetEntry(s+2,site); int x           = SE2->_offset;
                     SE3 = gStencil.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
                     SE4 = gStencil.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
+                    SE5 = gStencil.GetEntry(s+5,site); int x_m_mu      = SE5->_offset;
 
                     // When you're deciding whether to take an adjoint, the question is: how is the
                     // stored link oriented compared to the one you want? If I imagine myself travelling
@@ -194,9 +197,17 @@ public:
                     //  "left"          "right"
                     W = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
+                    // Save 3-link construct for later and add to smeared field.
                     U_3link_v[site](nu) = W;
+                    U_fat_v[site](mu)   = U_fat_v[site](mu) + lt.c_3*W;
 
-                    U_fat_v[site](mu) = U_fat_v[site](mu) + lt.c_3*W;
+                    U0 = coalescedReadGeneralPermute(U_v[x_m_mu](mu),SE5->_permute,Nd);
+                    U1 = coalescedReadGeneralPermute(U_v[x     ](mu),SE2->_permute,Nd);
+                    U2 = coalescedReadGeneralPermute(U_v[x_p_mu](mu),SE0->_permute,Nd);
+                    W  = U0*U1*U2;
+
+                    // Add Naik term to smeared field.
+                    U_fat_v[site](mu) = U_fat_v[site](mu) + lt.c_naik*W;
                 }
             }
 
@@ -311,31 +322,6 @@ public:
             PokeIndex<LorentzIndex>(u_smr, V[mu], mu);
         }
     };
-
-//    void derivative(const GaugeField& Gauge) const {
-//    };
-};
-
-
-/*!  @brief create long links from link variables. */
-template<class GF>
-class Smear_HISQ_Naik {
-
-private:
-    GridCartesian* const _grid;
-
-public:
-
-    // Eventually this will take, e.g., coefficients as argument 
-    Smear_HISQ_Naik(GridCartesian* grid) : _grid(grid) {
-        assert(Nc == 3 && "HISQ smearing currently implemented only for Nc==3");
-        assert(Nd == 4 && "HISQ smearing only defined for Nd==4");
-    }
-
-    ~Smear_HISQ_Naik() {}
-
-//    void smear(GF& u_smr, const GF& U) const {
-//    };
 
 //    void derivative(const GaugeField& Gauge) const {
 //    };
