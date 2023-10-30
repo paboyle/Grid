@@ -211,7 +211,7 @@ public:
                     U1 = coalescedReadGeneralPermute(U_v[x     ](mu),SE2->_permute,Nd);
                     U2 = coalescedReadGeneralPermute(U_v[x_p_mu](mu),SE0->_permute,Nd);
                     W  = U0*U1*U2;
-                    U_naik_v[site](mu) = U_fat_v[site](mu) + lt.c_naik*W;
+                    U_naik_v[site](mu) = lt.c_naik*W;
                 }
             }
 
