@@ -81,9 +81,9 @@ struct SmearingParameters{
 
 
 /*!  @brief create fat links from link variables */
-//template<class GF, class Gimpl> 
 template<class Gimpl> 
-class Smear_HISQ_fat : public Gimpl {
+class Smear_HISQ : public Gimpl {
+// TODO: this needs to be renamed, becaues the Naik guy is not part of the fat smear
 
 private:
     GridCartesian* const _grid;
@@ -96,7 +96,7 @@ public:
     typedef typename Gimpl::GaugeLinkField LF;
 
     // Don't allow default values here.
-    Smear_HISQ_fat(GridCartesian* grid, Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) 
+    Smear_HISQ(GridCartesian* grid, Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) 
         : _grid(grid), 
           _linkTreatment(c1,cnaik,c3,c5,c7,clp) {
         assert(Nc == 3 && "HISQ smearing currently implemented only for Nc==3");
@@ -104,16 +104,18 @@ public:
     }
 
     // Allow to pass a pointer to a C-style, double array for MILC convenience
-    Smear_HISQ_fat(GridCartesian* grid, double* coeff) 
+    Smear_HISQ(GridCartesian* grid, double* coeff) 
         : _grid(grid), 
           _linkTreatment(coeff[0],coeff[1],coeff[2],coeff[3],coeff[4],coeff[5]) {
         assert(Nc == 3 && "HISQ smearing currently implemented only for Nc==3");
         assert(Nd == 4 && "HISQ smearing only defined for Nd==4");
     }
 
-    ~Smear_HISQ_fat() {}
+    ~Smear_HISQ() {}
 
-    void smear(GF& u_smr, GF& u_thin) const {
+    // Intent: OUT--u_smr, u_naik
+    //          IN--u_thin
+    void smear(GF& u_smr, GF& u_naik, GF& u_thin) const {
 
         SmearingParameters lt = this->_linkTreatment;
 
@@ -127,6 +129,7 @@ public:
         GF Ughost_3link(Ughost.Grid());
         GF Ughost_5linkA(Ughost.Grid());
         GF Ughost_5linkB(Ughost.Grid());
+        GF Ughost_naik(Ughost.Grid());
 
         // mu-nu plane stencil. We allow mu==nu to make indexing the stencil easier,
         // but these entries will not be used. 
@@ -146,6 +149,7 @@ public:
 
         // This is where contributions from the smearing get added together
         Ughost_fat=Zero();
+        Ughost_naik=Zero();
 
         // This loop handles 3-, 5-, and 7-link constructs, minus Lepage and Naik.
         for(int mu=0;mu<Nd;mu++) {
@@ -156,6 +160,7 @@ public:
             autoView(U_3link_v , Ughost_3link , CpuWrite);
             autoView(U_5linkA_v, Ughost_5linkA, CpuWrite);
             autoView(U_5linkB_v, Ughost_5linkB, CpuWrite);
+            autoView(U_naik_v  , Ughost_naik  , CpuWrite);
 
             // TODO: This approach is slightly memory inefficient. It uses 25% extra memory 
             Ughost_3link =Zero();
@@ -169,7 +174,7 @@ public:
             U3matrix U0, U1, U2, U3, U4, U5, W;
 
 
-            for(int site=0;site<U_v.size();site++){ // ----------- 3-link
+            for(int site=0;site<U_v.size();site++){ // ----------- 3-link constructs
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
                     int s = stencilIndex(mu,nu);
@@ -201,13 +206,12 @@ public:
                     U_3link_v[site](nu) = W;
                     U_fat_v[site](mu)   = U_fat_v[site](mu) + lt.c_3*W;
 
+                    // TODO: May need to be shifted by 1?
                     U0 = coalescedReadGeneralPermute(U_v[x_m_mu](mu),SE5->_permute,Nd);
                     U1 = coalescedReadGeneralPermute(U_v[x     ](mu),SE2->_permute,Nd);
                     U2 = coalescedReadGeneralPermute(U_v[x_p_mu](mu),SE0->_permute,Nd);
                     W  = U0*U1*U2;
-
-                    // Add Naik term to smeared field.
-                    U_fat_v[site](mu) = U_fat_v[site](mu) + lt.c_naik*W;
+                    U_naik_v[site](mu) = U_fat_v[site](mu) + lt.c_naik*W;
                 }
             }
 
@@ -289,6 +293,9 @@ public:
 
         // c1, c3, c5, c7 construct contributions
         u_smr = Ghost.Extract(Ughost_fat) + lt.c_1*u_thin;
+
+        // Naik contribution
+        u_naik = Ghost.Extract(Ughost_naik);
 
         // Load up U and V std::vectors to access thin and smeared links.
         std::vector<LF> U(Nd, u_thin.Grid());

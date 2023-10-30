@@ -57,6 +57,22 @@ struct ConfParameters: Serializable {
 // another   : input --> unitarize
 //
 
+
+void testSmear(GridCartesian& GRID, LatticeGaugeFieldD Umu, LatticeGaugeFieldD Usmr, LatticeGaugeFieldD Unaik,
+               LatticeGaugeFieldD Ucontrol, Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) {
+    Smear_HISQ<PeriodicGimplD> hisq_fat(&GRID,c1,cnaik,c3,c5,c7,clp);
+    hisq_fat.smear(Usmr, Unaik, Umu);
+    LatticeGaugeFieldD diff(&GRID);
+    diff = Ucontrol-Usmr;
+    auto absDiff = norm2(diff)/norm2(Ucontrol);
+    if (absDiff < 1e-30) {
+        Grid_pass(" |Umu-U|/|Umu| = ",absDiff);
+    } else {
+        Grid_error(" |Umu-U|/|Umu| = ",absDiff);
+    }
+}
+
+
 int main (int argc, char** argv) {
 
     // Params for the test.
@@ -83,30 +99,26 @@ int main (int argc, char** argv) {
     ConfParameters param(Reader);
     if(param.benchmark) Grid_log("  Nloop = ",param.Nloop);
 
-    // Instantiate the LGF objects holding thin (Umu) and fat (U_smr) links
-    LGF Umu(&GRID);
-    LGF U_smr(&GRID);
+    LGF Umu(&GRID), Usmr(&GRID), Unaik(&GRID), Ucontrol(&GRID);
 
     // Read the configuration into Umu
     FieldMetaData header;
     NerscIO::readConfiguration(Umu, header, conf_in);
 
-    // Smear Umu and store result in U_smr
-    Smear_HISQ_fat<PeriodicGimplD> hisq_fat(&GRID,1/8.,-1/24.,1/16.,1/64.,1/384.,-1/8.);
-    hisq_fat.smear(U_smr,Umu);
-
-    NerscIO::writeConfiguration(U_smr,conf_out,"HISQ");
+    // Carry out various tests    
+    NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.357lplink.control");
+    testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,0.,1/16.,1/64.,1/384.,-1/8.);
+    NerscIO::writeConfiguration(Usmr,conf_out,"HISQ");
+    NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.357link.control");
+    testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,0.,1/16.,1/64.,1/384.,0.);
+    NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.35link.control");
+    testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,0.,1/16.,1/64.,0.,0.);
+    NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.3link.control");
+    testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,0.,1/16.,0.,0.,0.);
 
     // Test a C-style instantiation 
     double path_coeff[6] = {1, 2, 3, 4, 5, 6};
-    Smear_HISQ_fat<PeriodicGimplD> hisq_fat_Cstyle(&GRID,path_coeff);
-
-    // Make sure result doesn't change w.r.t. a trusted lattice
-    NerscIO::readConfiguration(Umu, header, "nersc.l8t4b3360.357lplink.control");
-    LGF diff(&GRID);
-    diff = Umu-U_smr;
-    auto absDiff = norm2(diff)/norm2(Umu);
-    Grid_log(" |Umu-U|/|Umu| = ",absDiff);
+    Smear_HISQ<PeriodicGimplD> hisq_fat_Cstyle(&GRID,path_coeff);
 
 
     if (param.benchmark) {
