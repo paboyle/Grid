@@ -203,15 +203,16 @@ public:
                     W = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
                     // Save 3-link construct for later and add to smeared field.
-                    U_3link_v[site](nu) = W;
-                    U_fat_v[site](mu)   = U_fat_v[site](mu) + lt.c_3*W;
+                    U_3link_v[x](nu) = W;
+                    U_fat_v[x](mu)   = U_fat_v[x](mu) + lt.c_3*W;
 
-                    // TODO: May need to be shifted by 1?
+                    // Naik term starts at x-mu, save at x-mu. The idea will be to keep track
+                    // of this shift, and then take into account when we use Naik later.
                     U0 = coalescedReadGeneralPermute(U_v[x_m_mu](mu),SE5->_permute,Nd);
                     U1 = coalescedReadGeneralPermute(U_v[x     ](mu),SE2->_permute,Nd);
                     U2 = coalescedReadGeneralPermute(U_v[x_p_mu](mu),SE0->_permute,Nd);
                     W  = U0*U1*U2;
-                    U_naik_v[site](mu) = lt.c_naik*W;
+                    U_naik_v[x_m_mu](mu) = lt.c_naik*W;
                 }
             }
 
@@ -239,12 +240,12 @@ public:
                         W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
                         if(sigmaIndex<3) {
-                            U_5linkA_v[site](rho) = W;
+                            U_5linkA_v[x](rho) = W;
                         } else {
-                            U_5linkB_v[site](rho) = W;
+                            U_5linkB_v[x](rho) = W;
                         }    
 
-                        U_fat_v[site](mu) = U_fat_v[site](mu) + lt.c_5*W;
+                        U_fat_v[x](mu) = U_fat_v[x](mu) + lt.c_5*W;
 
                         sigmaIndex++;
                     }
@@ -282,7 +283,7 @@ public:
 
                         W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
-                        U_fat_v[site](mu) = U_fat_v[site](mu) + lt.c_7*W;
+                        U_fat_v[x](mu) = U_fat_v[x](mu) + lt.c_7*W;
 
                         sigmaIndex++;
                     }
