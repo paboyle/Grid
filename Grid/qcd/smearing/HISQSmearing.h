@@ -129,7 +129,6 @@ public:
         GF Ughost_3link(Ughost.Grid());
         GF Ughost_5linkA(Ughost.Grid());
         GF Ughost_5linkB(Ughost.Grid());
-        GF Ughost_naik(Ughost.Grid());
 
         // mu-nu plane stencil. We allow mu==nu to make indexing the stencil easier,
         // but these entries will not be used. 
@@ -149,7 +148,6 @@ public:
 
         // This is where contributions from the smearing get added together
         Ughost_fat=Zero();
-        Ughost_naik=Zero();
 
         // This loop handles 3-, 5-, and 7-link constructs, minus Lepage and Naik.
         for(int mu=0;mu<Nd;mu++) {
@@ -160,7 +158,6 @@ public:
             autoView(U_3link_v , Ughost_3link , CpuWrite);
             autoView(U_5linkA_v, Ughost_5linkA, CpuWrite);
             autoView(U_5linkB_v, Ughost_5linkB, CpuWrite);
-            autoView(U_naik_v  , Ughost_naik  , CpuWrite);
 
             // TODO: This approach is slightly memory inefficient. It uses 25% extra memory 
             Ughost_3link =Zero();
@@ -205,14 +202,6 @@ public:
                     // Save 3-link construct for later and add to smeared field.
                     U_3link_v[x](nu) = W;
                     U_fat_v[x](mu)   = U_fat_v[x](mu) + lt.c_3*W;
-
-                    // Naik term starts at x-mu, save at x-mu. The idea will be to keep track
-                    // of this shift, and then take into account when we use Naik later.
-                    U0 = coalescedReadGeneralPermute(U_v[x_m_mu](mu),SE5->_permute,Nd);
-                    U1 = coalescedReadGeneralPermute(U_v[x     ](mu),SE2->_permute,Nd);
-                    U2 = coalescedReadGeneralPermute(U_v[x_p_mu](mu),SE0->_permute,Nd);
-                    W  = U0*U1*U2;
-                    U_naik_v[x_m_mu](mu) = lt.c_naik*W;
                 }
             }
 
@@ -295,19 +284,24 @@ public:
         // c1, c3, c5, c7 construct contributions
         u_smr = Ghost.Extract(Ughost_fat) + lt.c_1*u_thin;
 
-        // Naik contribution
-        u_naik = Ghost.Extract(Ughost_naik);
-
         // Load up U and V std::vectors to access thin and smeared links.
         std::vector<LF> U(Nd, u_thin.Grid());
         std::vector<LF> V(Nd, u_smr.Grid());
+        std::vector<LF> Vnaik(Nd, u_naik.Grid());
         for (int mu = 0; mu < Nd; mu++) {
-            U[mu] = PeekIndex<LorentzIndex>(u_thin, mu);
-            V[mu] = PeekIndex<LorentzIndex>(u_smr, mu);
+            U[mu]     = PeekIndex<LorentzIndex>(u_thin, mu);
+            V[mu]     = PeekIndex<LorentzIndex>(u_smr, mu);
+            Vnaik[mu] = PeekIndex<LorentzIndex>(u_naik, mu);
         }
 
-        // Compute LePage term from U_thin:
         for(int mu=0;mu<Nd;mu++) {
+
+            // Naik
+            Vnaik[mu] = Vnaik[mu] + lt.c_naik*Gimpl::CovShiftForward(U[mu],mu,
+                                                Gimpl::CovShiftForward(U[mu],mu,
+                                                  Gimpl::CovShiftIdentityForward(U[mu],mu)));
+
+            // LePage
             for (int nu_h=1;nu_h<Nd;nu_h++) {
                 int nu=(mu+nu_h)%Nd;
                                 // nu, nu, mu, Back(nu), Back(nu)
