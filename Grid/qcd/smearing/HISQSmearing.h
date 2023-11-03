@@ -291,15 +291,14 @@ public:
         for (int mu = 0; mu < Nd; mu++) {
             U[mu]     = PeekIndex<LorentzIndex>(u_thin, mu);
             V[mu]     = PeekIndex<LorentzIndex>(u_smr, mu);
-            Vnaik[mu] = PeekIndex<LorentzIndex>(u_naik, mu);
         }
 
         for(int mu=0;mu<Nd;mu++) {
 
             // Naik
-            Vnaik[mu] = Vnaik[mu] + lt.c_naik*Gimpl::CovShiftForward(U[mu],mu,
-                                                Gimpl::CovShiftForward(U[mu],mu,
-                                                  Gimpl::CovShiftIdentityForward(U[mu],mu)));
+            Vnaik[mu] =  lt.c_naik*Gimpl::CovShiftForward(U[mu],mu,
+                                     Gimpl::CovShiftForward(U[mu],mu,
+                                       Gimpl::CovShiftIdentityForward(U[mu],mu)));
 
             // LePage
             for (int nu_h=1;nu_h<Nd;nu_h++) {
@@ -321,7 +320,8 @@ public:
 
         // Put V back into u_smr.
         for (int mu = 0; mu < Nd; mu++) {
-            PokeIndex<LorentzIndex>(u_smr, V[mu], mu);
+            PokeIndex<LorentzIndex>(u_smr , V[mu]    , mu);
+            PokeIndex<LorentzIndex>(u_naik, Vnaik[mu], mu);
         }
     };
 
