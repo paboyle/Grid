@@ -121,12 +121,19 @@ public:
 
   template <class SmearingPolicy>
   void Run(SmearingPolicy &S) {
-    Runner(S);
+    TrivialMetric<typename Implementation::Field> Mtr;
+    Runner(S,Mtr);
+  }
+
+  template <class SmearingPolicy, class Metric>
+  void Run(SmearingPolicy &S, Metric &Mtr) {
+    Runner(S,Mtr);
   }
 
   void Run(){
     NoSmearing<Implementation> S;
-    Runner(S);
+    TrivialMetric<typename Implementation::Field> Mtr;
+    Runner(S,Mtr);
   }
 
   //Use the checkpointer to initialize the RNGs and the gauge field, writing the resulting gauge field into U.
@@ -176,15 +183,15 @@ public:
   //////////////////////////////////////////////////////////////////
 
 private:
-  template <class SmearingPolicy>
-  void Runner(SmearingPolicy &Smearing) {
+  template <class SmearingPolicy, class Metric>
+  void Runner(SmearingPolicy &Smearing, Metric &Mtr) {
     auto UGrid = Resources.GetCartesian();
     Field U(UGrid);
 
     initializeGaugeFieldAndRNGs(U);
 
     typedef IntegratorType<SmearingPolicy> TheIntegrator;
-    TheIntegrator MDynamics(UGrid, Parameters.MD, TheAction, Smearing);
+    TheIntegrator MDynamics(UGrid, Parameters.MD, TheAction, Smearing,Mtr);
 
     // Sets the momentum filter
     MDynamics.setMomentumFilter(*(Resources.GetMomentumFilter()));

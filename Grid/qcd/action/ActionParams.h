@@ -65,6 +65,19 @@ struct WilsonImplParams {
   }
 };
 
+struct GaugeImplParams {
+//  bool overlapCommsCompute;
+//  AcceleratorVector<Real,Nd> twist_n_2pi_L;
+  AcceleratorVector<Complex,Nd> boundary_phases;
+  GaugeImplParams()  {
+    boundary_phases.resize(Nd, 1.0);
+//      twist_n_2pi_L.resize(Nd, 0.0);
+  };
+  GaugeImplParams(const AcceleratorVector<Complex,Nd> phi) : boundary_phases(phi) {
+//    twist_n_2pi_L.resize(Nd, 0.0);
+  }
+};
+
 struct StaggeredImplParams {
   Coordinate dirichlet; // Blocksize of dirichlet BCs
   int  partialDirichlet;

@@ -42,9 +42,13 @@ template <class Gimpl>
 class WilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
 public:  
   INHERIT_GIMPL_TYPES(Gimpl);
+  typedef GaugeImplParams ImplParams;
+  ImplParams Params;
 
   /////////////////////////// constructors
-  explicit WilsonGaugeAction(RealD beta_):beta(beta_){};
+  explicit WilsonGaugeAction(RealD beta_,
+		  const ImplParams &p = ImplParams()
+		  ):beta(beta_),Params(p){};
 
   virtual std::string action_name() {return "WilsonGaugeAction";}
 
@@ -56,14 +60,53 @@ public:
 
   virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG){};  // noop as no pseudoferms
 
+// Umu<->U maximally confusing
+  virtual void boundary(const GaugeField &Umu, GaugeField &Ub){
+    typedef typename Simd::scalar_type scalar_type;
+    assert(Params.boundary_phases.size() == Nd);
+    GridBase *GaugeGrid=Umu.Grid();
+    GaugeLinkField U(GaugeGrid);
+    GaugeLinkField tmp(GaugeGrid);
+
+    Lattice<iScalar<vInteger> > coor(GaugeGrid);
+    for (int mu = 0; mu < Nd; mu++) {
+	////////// boundary phase /////////////
+      auto pha = Params.boundary_phases[mu];
+      scalar_type phase( real(pha),imag(pha) );
+   std::cout<< GridLogMessage << "[WilsonGaugeAction] boundary "<<mu<<" "<<phase<< std::endl; 
+
+	int L   = GaugeGrid->GlobalDimensions()[mu];
+        int Lmu = L - 1;
+
+      LatticeCoordinate(coor, mu);
+
+      U = PeekIndex<LorentzIndex>(Umu, mu);
+      tmp = where(coor == Lmu, phase * U, U);
+      PokeIndex<LorentzIndex>(Ub, tmp, mu);
+//      PokeIndex<LorentzIndex>(Ub, U, mu);
+//      PokeIndex<LorentzIndex>(Umu, tmp, mu);
+
+    }
+  };
+
   virtual RealD S(const GaugeField &U) {
-    RealD plaq = WilsonLoops<Gimpl>::avgPlaquette(U);
-    RealD vol = U.Grid()->gSites();
+    GaugeField Ub(U.Grid());
+    this->boundary(U,Ub);
+    static RealD lastG=0.;
+    RealD plaq = WilsonLoops<Gimpl>::avgPlaquette(Ub);
+    RealD vol = Ub.Grid()->gSites();
     RealD action = beta * (1.0 - plaq) * (Nd * (Nd - 1.0)) * vol * 0.5;
+    std::cout << GridLogMessage << "[WilsonGaugeAction] dH: " << action-lastG << std::endl;
+    RealD plaq_o = WilsonLoops<Gimpl>::avgPlaquette(U);
+    RealD action_o = beta * (1.0 - plaq_o) * (Nd * (Nd - 1.0)) * vol * 0.5;
+    std::cout << GridLogMessage << "[WilsonGaugeAction] U: " << action_o <<" Ub: "<< action  << std::endl;
+    lastG=action;
     return action;
   };
 
   virtual void deriv(const GaugeField &U, GaugeField &dSdU) {
+    GaugeField Ub(U.Grid());
+    this->boundary(U,Ub);
     // not optimal implementation FIXME
     // extend Ta to include Lorentz indexes
 
@@ -73,10 +116,9 @@ public:
     GaugeLinkField dSdU_mu(U.Grid());
     for (int mu = 0; mu < Nd; mu++) {
 
-      Umu = PeekIndex<LorentzIndex>(U, mu);
-      
+      Umu = PeekIndex<LorentzIndex>(Ub, mu);
       // Staple in direction mu
-      WilsonLoops<Gimpl>::Staple(dSdU_mu, U, mu);
+      WilsonLoops<Gimpl>::Staple(dSdU_mu, Ub, mu);
       dSdU_mu = Ta(Umu * dSdU_mu) * factor;
       
       PokeIndex<LorentzIndex>(dSdU, dSdU_mu, mu);

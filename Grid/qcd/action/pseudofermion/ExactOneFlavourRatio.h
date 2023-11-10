@@ -178,7 +178,10 @@ NAMESPACE_BEGIN(Grid);
         // Use chronological inverter to forecast solutions across poles
         std::vector<FermionField> prev_solns;
         if(use_heatbath_forecasting){ prev_solns.reserve(param.degree); }
-        ChronoForecast<AbstractEOFAFermion<Impl>, FermionField> Forecast;
+	MdagMLinearOperator<AbstractEOFAFermion<Impl> ,FermionField> MdagML(Lop);
+	MdagMLinearOperator<AbstractEOFAFermion<Impl> ,FermionField> MdagMR(Rop);
+//        ChronoForecast<AbstractEOFAFermion<Impl>, FermionField> Forecast;
+	ChronoForecast<MdagMLinearOperator<AbstractEOFAFermion<Impl>, FermionField> , FermionField> Forecast;
 
         // \Phi = ( \alpha_{0} + \sum_{k=1}^{N_{p}} \alpha_{l} * \gamma_{l} ) * \eta
         RealD N(PowerNegHalf.norm);
@@ -198,7 +201,7 @@ NAMESPACE_BEGIN(Grid);
           heatbathRefreshShiftCoefficients(0, -gamma_l);
           if(use_heatbath_forecasting){ // Forecast CG guess using solutions from previous poles
             Lop.Mdag(CG_src, Forecast_src);
-            CG_soln = Forecast(Lop, Forecast_src, prev_solns);
+            CG_soln = Forecast(MdagML, Forecast_src, prev_solns);
             SolverHBL(Lop, CG_src, CG_soln);
             prev_solns.push_back(CG_soln);
           } else {
@@ -225,7 +228,7 @@ NAMESPACE_BEGIN(Grid);
 	  heatbathRefreshShiftCoefficients(1, -gamma_l*PowerNegHalf.poles[k]);
           if(use_heatbath_forecasting){
             Rop.Mdag(CG_src, Forecast_src);
-            CG_soln = Forecast(Rop, Forecast_src, prev_solns);
+            CG_soln = Forecast(MdagMR, Forecast_src, prev_solns);
             SolverHBR(Rop, CG_src, CG_soln);
             prev_solns.push_back(CG_soln);
           } else {
