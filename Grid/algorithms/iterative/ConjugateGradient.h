@@ -207,7 +207,8 @@ public:
 
     TrueResidual = sqrt(norm2(p)/ssq);
 
-    std::cout << GridLogMessage << "ConjugateGradient did NOT converge "<<k<<" / "<< MaxIterations<< std::endl;
+    std::cout << GridLogMessage << "ConjugateGradient did NOT converge "<<k<<" / "<< MaxIterations
+	      <<" residual "<< TrueResidual<< std::endl;
 
     if (ErrorOnNoConverge) assert(0);
     IterationsToComplete = k;
