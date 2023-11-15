@@ -3,7 +3,7 @@ spack load c-lime
 #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/sw/crusher/spack-envs/base/opt/cray-sles15-zen3/gcc-11.2.0/gperftools-2.9.1-72ubwtuc5wcz2meqltbfdb76epufgzo2/lib
 module load emacs 
 module load PrgEnv-gnu
-module load rocm
+module load rocm/5.3.0
 module load cray-mpich/8.1.23
 module load gmp
 module load cray-fftw
