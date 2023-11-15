@@ -69,6 +69,7 @@ class TwoLevelCG : public LinearFunction<Field>
   
   virtual void operator() (const Field &src, Field &x)
   {
+#if 0
     Field resid(grid);
     RealD f;
     RealD rtzp,rtz,a,d,b;
@@ -113,6 +114,7 @@ class TwoLevelCG : public LinearFunction<Field>
     RealD ssq =  norm2(src);
     RealD rsq =  ssq*Tolerance*Tolerance;
 
+    GRID_TRACE("MultiGrid TwoLevel ");
     std::cout<<GridLogMessage<<"HDCG: k=0 residual "<<rtzp<<" target rsq "<<rsq<<" ssq "<<ssq<<std::endl;
     
     for (int k=1;k<=MaxIterations;k++){
@@ -179,6 +181,162 @@ class TwoLevelCG : public LinearFunction<Field>
     std::cout<<GridLogMessage<<"HDCG: non-converged solution "<<xnorm<<" source "<<srcnorm<<std::endl;
     
     return ;
+#else
+  RealD f;
+  RealD rtzp,rtz,a,d,b;
+  RealD rptzp;
+
+  /////////////////////////////
+  // Set up history vectors
+  /////////////////////////////
+  int mmax = 20;
+  std::vector<Field> p(mmax,grid);
+  std::vector<Field> mmp(mmax,grid);
+  std::vector<RealD> pAp(mmax);
+  Field z(grid);
+  Field tmp(grid);
+  Field  mp (grid);
+  Field  r  (grid);
+  Field  mu (grid);
+
+  //Initial residual computation & set up
+  RealD guess   = norm2(x);
+  RealD src_nrm = norm2(src);
+
+  if ( src_nrm == 0.0 ) {
+    std::cout << GridLogMessage<<"HDCG: fPcg given trivial source norm "<<src_nrm<<std::endl;
+    x=Zero();
+  }
+  RealD tn;
+
+  GridStopWatch HDCGTimer;
+  HDCGTimer.Start();
+  //////////////////////////
+  // x0 = Vstart -- possibly modify guess
+  //////////////////////////
+  Vstart(x,src);
+
+  // r0 = b -A x0
+  _FineLinop.HermOp(x,mmp[0]);
+  axpy (r, -1.0,mmp[0], src);    // Recomputes r=src-Ax0
+  {
+    double n1 = norm2(x);
+    double n2 = norm2(mmp[0]);
+    double n3 = norm2(r);
+    std::cout<<GridLogMessage<<"x,vstart,r = "<<n1<<" "<<n2<<" "<<n3<<std::endl;
+  }
+
+  //////////////////////////////////
+  // Compute z = M1 x
+  //////////////////////////////////
+  PcgM1(r,z);
+  rtzp =real(innerProduct(r,z));
+
+  ///////////////////////////////////////
+  // Solve for Mss mu = P A z and set p = z-mu
+  // Def2: p = 1 - Q Az = Pright z 
+  // Other algos M2 is trivial
+  ///////////////////////////////////////
+  PcgM2(z,p[0]);
+
+  RealD ssq =  norm2(src);
+  RealD rsq =  ssq*Tolerance*Tolerance;
+
+  std::cout << GridLogMessage<<"HDCG: k=0 residual "<<rtzp<<" rsq "<<rsq<<"\n";
+
+  Field pp(grid);
+
+  for (int k=0;k<=MaxIterations;k++){
+    
+    int peri_k  = k % mmax;
+    int peri_kp = (k+1) % mmax;
+
+    rtz=rtzp;
+    d= PcgM3(p[peri_k],mmp[peri_k]);
+    a = rtz/d;
+    
+    // Memorise this
+    pAp[peri_k] = d;
+
+    
+    axpy(x,a,p[peri_k],x);
+    RealD rn = axpy_norm(r,-a,mmp[peri_k],r);
+
+    // Compute z = M x
+    PcgM1(r,z);
+
+    {
+      RealD n1,n2;
+      n1=norm2(r);
+      n2=norm2(z);
+      std::cout << GridLogMessage<<"HDCG::fPcg iteration "<<k<<" : vector r,z "<<n1<<" "<<n2<<"\n";
+    }
+    rtzp =real(innerProduct(r,z));
+    std::cout << GridLogMessage<<"HDCG::fPcg iteration "<<k<<" : inner rtzp "<<rtzp<<"\n";
+
+    //    PcgM2(z,p[0]);
+    PcgM2(z,mu); // ADEF-2 this is identity. Axpy possible to eliminate
+
+    p[peri_kp]=mu;
+
+    // Standard search direction  p -> z + b p    ; b = 
+    b = (rtzp)/rtz;
+
+    int northog;
+    // k=zero  <=> peri_kp=1;        northog = 1
+    // k=1     <=> peri_kp=2;        northog = 2
+    // ...               ...                  ...
+    // k=mmax-2<=> peri_kp=mmax-1;   northog = mmax-1
+    // k=mmax-1<=> peri_kp=0;        northog = 1
+
+    //    northog     = (peri_kp==0)?1:peri_kp; // This is the fCG(mmax) algorithm
+    northog     = (k>mmax-1)?(mmax-1):k;        // This is the fCG-Tr(mmax-1) algorithm
+    
+    std::cout<<GridLogMessage<<"HDCG::fPcg iteration "<<k<<" : orthogonalising to last "<<northog<<" vectors\n";
+    for(int back=0; back < northog; back++){
+      int peri_back = (k-back)%mmax;
+      RealD pbApk= real(innerProduct(mmp[peri_back],p[peri_kp]));
+      RealD beta = -pbApk/pAp[peri_back];
+      axpy(p[peri_kp],beta,p[peri_back],p[peri_kp]);
+    }
+
+    RealD rrn=sqrt(rn/ssq);
+    RealD rtn=sqrt(rtz/ssq);
+    RealD rtnp=sqrt(rtzp/ssq);
+
+    std::cout<<GridLogMessage<<"HDCG: fPcg k= "<<k<<" residual = "<<rrn<<"\n";
+
+    // Stopping condition
+    if ( rn <= rsq ) { 
+
+      HDCGTimer.Stop();
+      std::cout<<GridLogMessage<<"HDCG: fPcg converged in "<<k<<" iterations and "<<HDCGTimer.Elapsed()<<std::endl;;
+      
+      _FineLinop.HermOp(x,mmp[0]);			  
+      axpy(tmp,-1.0,src,mmp[0]);
+      
+      RealD  mmpnorm = sqrt(norm2(mmp[0]));
+      RealD  xnorm   = sqrt(norm2(x));
+      RealD  srcnorm = sqrt(norm2(src));
+      RealD  tmpnorm = sqrt(norm2(tmp));
+      RealD  true_residual = tmpnorm/srcnorm;
+      std::cout<<GridLogMessage
+	       <<"HDCG: true residual is "<<true_residual
+	       <<" solution "<<xnorm
+	       <<" source "<<srcnorm
+	       <<" mmp "<<mmpnorm	  
+	       <<std::endl;
+      
+      return;
+    }
+
+  }
+  HDCGTimer.Stop();
+  std::cout<<GridLogMessage<<"HDCG: not converged "<<HDCGTimer.Elapsed()<<std::endl;
+  RealD  xnorm   = sqrt(norm2(x));
+  RealD  srcnorm = sqrt(norm2(src));
+  std::cout<<GridLogMessage<<"HDCG: non-converged solution "<<xnorm<<" source "<<srcnorm<<std::endl;
+#endif
   }
   
 
@@ -239,6 +397,7 @@ class TwoLevelADEF2 : public TwoLevelCG<Field>
 
   virtual void PcgM1(Field & in, Field & out)
   {
+    GRID_TRACE("MultiGridPreconditioner ");
     // [PTM+Q] in = [1 - Q A] M in + Q in = Min + Q [ in -A Min]
 
     Field tmp(this->grid);
@@ -334,6 +493,7 @@ public:
   // Override PcgM1
   virtual void PcgM1(Field & in, Field & out)
   {
+    GRID_TRACE("EvecPreconditioner ");
     int N=evec.size();
     Field Pin(this->grid);
     Field Qin(this->grid);
