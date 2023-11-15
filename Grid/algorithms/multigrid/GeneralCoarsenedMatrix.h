@@ -72,6 +72,17 @@ public:
   GridBase      * FineGrid(void)       { return _FineGrid; };   // this is all the linalg routines need to know
   GridCartesian * CoarseGrid(void)     { return _CoarseGrid; };   // this is all the linalg routines need to know
 
+  void ShiftMatrix(RealD shift)
+  {
+    int Nd=_FineGrid->Nd(); 
+    Coordinate zero_shift(Nd,0);
+    for(int p=0;p<geom.npoint;p++){
+      if ( zero_shift==geom.shifts[p] ) {
+	_A[p] = _A[p]+shift;
+	_Adag[p] = _Adag[p]+shift;
+      }
+    }    
+  }
   void ProjectNearestNeighbour(RealD shift, GeneralCoarseOp &CopyMe)
   {
     int nfound=0;
@@ -101,17 +112,7 @@ public:
   {
     {
       int npoint = _geom.npoint;
-      autoView( Stencil_v  , Stencil, AcceleratorRead);
-      int osites=Stencil.Grid()->oSites();
-      for(int ss=0;ss<osites;ss++){
-	for(int point=0;point<npoint;point++){
-	  auto SE = Stencil_v.GetEntry(point,ss);
-	  int o = SE->_offset;
-	  assert( o< osites);
-	}
-      }    
     }
-
     _A.resize(geom.npoint,CoarseGrid);
     _Adag.resize(geom.npoint,CoarseGrid);
   }
@@ -127,6 +128,7 @@ public:
   void Mult (std::vector<CoarseMatrix> &A,const CoarseVector &in, CoarseVector &out)
   {
     RealD tviews=0;    RealD ttot=0;    RealD tmult=0;   RealD texch=0;    RealD text=0; RealD ttemps=0; RealD tcopy=0;
+    RealD tmult2=0;
 
     ttot=-usecond();
     conformable(CoarseGrid(),in.Grid());
@@ -188,16 +190,17 @@ public:
 	  typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
 	  int32_t ss   = spb/(nbasis*npoint);
 	  int32_t bp   = spb%(nbasis*npoint);
-	  int32_t b    = bp/npoint;
-	  int32_t point= bp%npoint;
+	  int32_t point= bp/nbasis;
+	  int32_t b    = bp%nbasis;
 	  auto SE  = Stencil_v.GetEntry(point,ss);
 	  auto nbr = coalescedReadGeneralPermute(in_v[SE->_offset],SE->_permute,Nd);
-	  auto res = coalescedRead(Aview_p[point][ss](b,0))*nbr(0);
+	  auto res = coalescedRead(Aview_p[point][ss](0,b))*nbr(0);
 	  for(int bb=1;bb<nbasis;bb++) {
-	    res = res + coalescedRead(Aview_p[point][ss](b,bb))*nbr(bb);
+	    res = res + coalescedRead(Aview_p[point][ss](bb,b))*nbr(bb);
 	  }
 	  coalescedWrite(Vview_p[point][ss](b),res);
       });
+      tmult2-=usecond();
       accelerator_for(sb, osites*nbasis, Nsimd, {
 	  int ss = sb/nbasis;
 	  int b  = sb%nbasis;
@@ -207,6 +210,7 @@ public:
 	  }
 	  coalescedWrite(out_v[ss](b),res);
       });
+      tmult2+=usecond();
       tmult+=usecond();
       for(int p=0;p<npoint;p++) {
 	AcceleratorViewContainer_h[p].ViewClose();
@@ -222,15 +226,16 @@ public:
     std::cout << GridLogPerformance<<"Coarse Mult Aviews "<<tviews<<" us"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Mult exch "<<texch<<" us"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Mult mult "<<tmult<<" us"<<std::endl;
+    std::cout << GridLogPerformance<<" of which mult2  "<<tmult2<<" us"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Mult ext  "<<text<<" us"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Mult temps "<<ttemps<<" us"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Mult copy  "<<tcopy<<" us"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Mult tot  "<<ttot<<" us"<<std::endl;
     //    std::cout << GridLogPerformance<<std::endl;
-    //    std::cout << GridLogPerformance<<"Coarse Kernel flop/s "<< flops/tmult<<" mflop/s"<<std::endl;
-    //    std::cout << GridLogPerformance<<"Coarse Kernel bytes/s"<< bytes/tmult<<" MB/s"<<std::endl;
-    //    std::cout << GridLogPerformance<<"Coarse overall flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
-    //    std::cout << GridLogPerformance<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Kernel flop/s "<< flops/tmult<<" mflop/s"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Kernel bytes/s"<< bytes/tmult<<" MB/s"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse overall flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
 
   };
 
@@ -408,7 +413,7 @@ public:
 	autoView( FT_v  , FT[k], AcceleratorRead);
 	accelerator_for(sss, osites, 1, {
 	    for(int j=0;j<nbasis;j++){
-	      A_v[sss](j,i) = FT_v[sss](j);
+	      A_v[sss](i,j) = FT_v[sss](j);
 	    }
         });
       }
