@@ -144,7 +144,7 @@ public:
     for(int s=0;s<nshift;s++){
       rsq[s] = cp * mresidual[s] * mresidual[s];
       std::cout<<GridLogMessage<<"ConjugateGradientMultiShift: shift "<<s
-	       <<" target resid "<<rsq[s]<<std::endl;
+	       <<" target resid^2 "<<rsq[s]<<std::endl;
       ps[s] = src;
     }
     // r and p for primary
