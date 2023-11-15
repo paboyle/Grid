@@ -32,6 +32,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
+inline RealD AggregatePowerLaw(RealD x)
+{
+  //  return std::pow(x,-4);
+  //  return std::pow(x,-3);
+  return std::pow(x,-5);
+}
+
 template<class Fobj,class CComplex,int nbasis>
 class Aggregation {
 public:
@@ -246,8 +253,53 @@ public:
       // Initial matrix element
       hermop.Op(noise,Mn);
       if(b==0) std::cout<<GridLogMessage << "noise <n|MdagM|n> "<<norm2(Mn)<<std::endl;
+
       // Filter
       Chebyshev<FineField> Cheb(lo,hi,orderfilter);
+      Cheb(hermop,noise,Mn);
+      scale = std::pow(norm2(Mn),-0.5); 	Mn=Mn*scale;
+
+      // Refine
+      Chebyshev<FineField> PowerLaw(lo,hi,1000,AggregatePowerLaw);
+      noise = Mn;
+      PowerLaw(hermop,noise,Mn);
+      scale = std::pow(norm2(Mn),-0.5); 	Mn=Mn*scale;
+
+      // normalise
+      subspace[b]   = Mn;
+      hermop.Op(Mn,tmp); 
+      std::cout<<GridLogMessage << "filt ["<<b<<"] <n|MdagM|n> "<<norm2(tmp)<<std::endl;
+    }
+
+  }
+
+  virtual void CreateSubspaceChebyshevPowerLaw(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,
+					       int nn,
+					       double hi,
+					       int orderfilter
+					       ) {
+
+    RealD scale;
+
+    FineField noise(FineGrid);
+    FineField Mn(FineGrid);
+    FineField tmp(FineGrid);
+
+    // New normalised noise
+    std::cout << GridLogMessage<<" Chebyshev subspace pure noise : ord "<<orderfilter<<" [0,"<<hi<<"]"<<std::endl;
+    std::cout << GridLogMessage<<" Chebyshev subspace pure noise  : nbasis "<<nn<<std::endl;
+
+    for(int b =0;b<nbasis;b++)
+    {
+      gaussian(RNG,noise);
+      scale = std::pow(norm2(noise),-0.5); 
+      noise=noise*scale;
+
+      // Initial matrix element
+      hermop.Op(noise,Mn);
+      if(b==0) std::cout<<GridLogMessage << "noise <n|MdagM|n> "<<norm2(Mn)<<std::endl;
+      // Filter
+      Chebyshev<FineField> Cheb(0.0,hi,orderfilter,AggregatePowerLaw);
       Cheb(hermop,noise,Mn);
       // normalise
       scale = std::pow(norm2(Mn),-0.5); 	Mn=Mn*scale;
@@ -258,5 +310,72 @@ public:
 
   }
 
+  virtual void CreateSubspaceMultishift(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,
+					double Lo,double tol,int maxit)
+  {
+
+    RealD scale;
+
+    FineField noise(FineGrid);
+    FineField Mn(FineGrid);
+    FineField tmp(FineGrid);
+
+    // New normalised noise
+    std::cout << GridLogMessage<<" Multishift subspace : Lo "<<Lo<<std::endl;
+
+    // Filter
+    // [ 1/6(x+Lo)  - 1/2(x+2Lo) + 1/2(x+3Lo)  -1/6(x+4Lo) = Lo^3 /[ (x+1Lo)(x+2Lo)(x+3Lo)(x+4Lo) ]
+    //
+    // 1/(x+Lo)  - 1/(x+2 Lo)
+    double epsilon      = Lo/3;
+    std::vector<RealD> alpha({1.0/6.0,-1.0/2.0,1.0/2.0,-1.0/6.0});
+    std::vector<RealD> shifts({Lo,Lo+epsilon,Lo+2*epsilon,Lo+3*epsilon});
+    std::vector<RealD> tols({tol,tol,tol,tol});
+    std::cout << "sizes "<<alpha.size()<<" "<<shifts.size()<<" "<<tols.size()<<std::endl;
+
+    MultiShiftFunction msf(4,0.0,95.0);
+    std::cout << "msf constructed "<<std::endl;
+    msf.poles=shifts;
+    msf.residues=alpha;
+    msf.tolerances=tols;
+    msf.norm=0.0;
+    msf.order=alpha.size();
+    ConjugateGradientMultiShift<FineField> MSCG(maxit,msf);
+    
+    for(int b =0;b<nbasis;b++)
+    {
+      gaussian(RNG,noise);
+      scale = std::pow(norm2(noise),-0.5); 
+      noise=noise*scale;
+
+      // Initial matrix element
+      hermop.Op(noise,Mn);
+      if(b==0) std::cout<<GridLogMessage << "noise <n|MdagM|n> "<<norm2(Mn)<<std::endl;
+
+      MSCG(hermop,noise,Mn);
+      scale = std::pow(norm2(Mn),-0.5); 	Mn=Mn*scale;
+      subspace[b]   = Mn;
+      hermop.Op(Mn,tmp); 
+      std::cout<<GridLogMessage << "filt ["<<b<<"] <n|MdagM|n> "<<norm2(tmp)<<std::endl;
+
+    }
+
+  }
+  virtual void RefineSubspace(LinearOperatorBase<FineField> &hermop,
+			      double Lo,double tol,int maxit)
+  {
+    FineField tmp(FineGrid);
+    for(int b =0;b<nbasis;b++)
+    {
+      RealD MirsShift = Lo;
+      ConjugateGradient<FineField>  CGsloppy(tol,maxit,false);
+      ShiftedHermOpLinearOperator<FineField> ShiftedFineHermOp(hermop,MirsShift);
+      CGsloppy(hermop,subspace[b],tmp);
+      subspace[b]=tmp;
+    }
+  }
+
+  
+  
 };
 NAMESPACE_END(Grid);
