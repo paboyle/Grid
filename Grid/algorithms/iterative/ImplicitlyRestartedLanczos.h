@@ -79,13 +79,15 @@ template<class Field> class ImplicitlyRestartedLanczosHermOpTester  : public Imp
     RealD vv = norm2(v) / ::pow(evalMaxApprox,2.0);
 
     std::cout.precision(13);
-    std::cout<<GridLogIRL  << "[" << std::setw(3)<<j<<"] "
-	     <<"eval = "<<std::setw(25)<< eval << " (" << eval_poly << ")"
-	     <<" |H B[i] - eval[i]B[i]|^2 / evalMaxApprox^2 " << std::setw(25) << vv
-	     <<std::endl;
 
     int conv=0;
     if( (vv<eresid*eresid) ) conv = 1;
+
+    std::cout<<GridLogIRL  << "[" << std::setw(3)<<j<<"] "
+	     <<"eval = "<<std::setw(25)<< eval << " (" << eval_poly << ")"
+	     <<" |H B[i] - eval[i]B[i]|^2 / evalMaxApprox^2 " << std::setw(25) << vv
+	     <<" target " << eresid*eresid << " conv " <<conv
+	     <<std::endl;
 
     return conv;
   }
