@@ -299,7 +299,7 @@ int main(int argc, char **argv) {
   
   double ActionStoppingCondition     = 1e-8;
   double DerivativeStoppingCondition = 1e-6;
-  double MaxCGIterations = 30000;
+  double MaxCGIterations =  100000;
 
   ////////////////////////////////////
   // Collect actions

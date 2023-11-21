@@ -73,7 +73,7 @@ public:
 	////////// boundary phase /////////////
       auto pha = Params.boundary_phases[mu];
       scalar_type phase( real(pha),imag(pha) );
-   std::cout<< GridLogMessage << "[WilsonGaugeAction] boundary "<<mu<<" "<<phase<< std::endl; 
+      std::cout<< GridLogIterative << "[WilsonGaugeAction] boundary "<<mu<<" "<<phase<< std::endl; 
 
 	int L   = GaugeGrid->GlobalDimensions()[mu];
         int Lmu = L - 1;

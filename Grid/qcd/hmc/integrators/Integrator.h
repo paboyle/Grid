@@ -91,6 +91,8 @@ public:
   RepresentationPolicy Representations;
   IntegratorParameters Params;
 
+  RealD Saux,Smom,Sg;
+
   //Filters allow the user to manipulate the conjugate momentum, for example to freeze links in DDHMC
   //It is applied whenever the momentum is updated / refreshed
   //The default filter does nothing
@@ -384,7 +386,8 @@ public:
       P(grid, M),
       levels(Aset.size()),
       Smearer(Sm),
-      Representations(grid) 
+      Representations(grid),
+      Saux(0.),Smom(0.),Sg(0.)
   {
     t_P.resize(levels, 0.0);
     t_U = 0.0;
@@ -524,7 +527,10 @@ public:
     std::cout << GridLogIntegrator << "Integrator refresh" << std::endl;
 
     std::cout << GridLogIntegrator << "Generating momentum" << std::endl;
-    FieldImplementation::generate_momenta(P.Mom, sRNG, pRNG);
+//    FieldImplementation::generate_momenta(P.Mom, sRNG, pRNG);
+    P.M.ImportGauge(U);
+    P.MomentaDistribution(sRNG,pRNG);
+
 
     // Update the smeared fields, can be implemented as observer
     // necessary to keep the fields updated even after a reject
@@ -579,9 +585,22 @@ public:
 
     std::cout << GridLogIntegrator << "Integrator action\n";
 
-    RealD H = - FieldImplementation::FieldSquareNorm(P.Mom)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
+//    RealD H = - FieldImplementation::FieldSquareNorm(P.Mom)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
+//    RealD Hterm;
 
-    RealD Hterm;
+//    static RealD Saux=0.,Smom=0.,Sg=0.;
+
+    RealD H = - FieldImplementation::FieldSquareNorm(P.Mom)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
+    std::cout << GridLogMessage << "S:FieldSquareNorm H_p = " << H << "\n";
+    std::cout << GridLogMessage << "S:dSField = " << H-Smom << "\n";
+    Smom=H;
+    P.M.ImportGauge(U);
+    RealD Hterm = - P.MomentaAction();
+    std::cout << GridLogMessage << "S:Momentum action H_p = " << Hterm << "\n";
+    std::cout << GridLogMessage << "S:dSMom = " << Hterm-Saux << "\n";
+    Saux=Hterm;
+    H = Hterm;
+
 
     // Actions
     for (int level = 0; level < as.size(); ++level) {
@@ -623,9 +642,18 @@ public:
 
     std::cout << GridLogIntegrator << "Integrator initial action\n";
 
+//    RealD H = - FieldImplementation::FieldSquareNorm(P.Mom)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
+//    RealD Hterm;
     RealD H = - FieldImplementation::FieldSquareNorm(P.Mom)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
-
-    RealD Hterm;
+    std::cout << GridLogMessage << "S:FieldSquareNorm H_p = " << H << "\n";
+    std::cout << GridLogMessage << "S:dSField = " << H-Smom << "\n";
+    Smom=H;
+    P.M.ImportGauge(U);
+    RealD Hterm = - P.MomentaAction();
+    std::cout << GridLogMessage << "S:Momentum action H_p = " << Hterm << "\n";
+    std::cout << GridLogMessage << "S:dSMom = " << Hterm-Saux << "\n";
+    Saux=Hterm;
+    H = Hterm;
 
     // Actions
     for (int level = 0; level < as.size(); ++level) {

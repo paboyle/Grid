@@ -232,7 +232,8 @@ public:
   }
 
   void update_auxiliary_momenta(RealD ep){
-//    if(!M.Trivial()) 
+      std::cout << GridLogIntegrator << "AuxMom update_auxiliary_fields: " << std::sqrt(norm2(AuxMom)) << std::endl;
+      std::cout << GridLogIntegrator << "AuxField update_auxiliary_fields: " << std::sqrt(norm2(AuxField)) << std::endl;
     {
       AuxMom -= ep * AuxField * HMC_MOMENTUM_DENOMINATOR;
       std::cout << GridLogIntegrator << "AuxMom update_auxiliary_fields: " << std::sqrt(norm2(AuxMom)) << std::endl;

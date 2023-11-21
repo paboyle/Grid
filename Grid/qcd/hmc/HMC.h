@@ -209,7 +209,7 @@ private:
     // updated state action
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     std::cout << GridLogMessage << "--------------------------------------------------\n";
-    std::cout << GridLogMessage << "Compute final action";
+    std::cout << GridLogMessage << "Compute final action" <<std::endl;
     RealD H1 = TheIntegrator.S(U);  
     std::cout << GridLogMessage << "--------------------------------------------------\n";
 

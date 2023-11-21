@@ -1,6 +1,6 @@
 #pragma once
 
-#define CPS_MD_TIME 
+#undef CPS_MD_TIME 
 
 #ifdef CPS_MD_TIME
 #define HMC_MOMENTUM_DENOMINATOR (2.0)
