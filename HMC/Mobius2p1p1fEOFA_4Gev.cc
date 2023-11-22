@@ -197,15 +197,15 @@ int main(int argc, char **argv) {
   }
 #endif
 
-  //  typedef GenericHMCRunner<LeapFrog> HMCWrapper; 
-//    typedef GenericHMCRunner<ImplicitLeapFrog> HMCWrapper; 
 #ifdef DO_IMPLICIT
+//    typedef GenericHMCRunner<ImplicitLeapFrog> HMCWrapper; 
   typedef GenericHMCRunner<ImplicitMinimumNorm2> HMCWrapper; 
   HMCparams.MD.name          =std::string("ImplicitMinimumNorm2");
 #else
-  typedef GenericHMCRunner<ForceGradient> HMCWrapper; 
-//  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper; 
-  HMCparams.MD.name          =std::string("ForceGradient");
+//  typedef GenericHMCRunner<LeapFrog> HMCWrapper; 
+//  typedef GenericHMCRunner<ForceGradient> HMCWrapper; 
+  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper; 
+  HMCparams.MD.name          =std::string("MinimumNorm2");
 #endif
 
   std::cout << GridLogMessage<< HMCparams <<std::endl;
@@ -270,6 +270,7 @@ int main(int argc, char **argv) {
   Coordinate simdF = GridDefaultSimd(Nd,vComplexF::Nsimd());
   Coordinate simdD = GridDefaultSimd(Nd,vComplexD::Nsimd());
   auto GridPtrF   = SpaceTimeGrid::makeFourDimGrid(latt,simdF,mpi);
+//auto UGrid_f    = SpaceTimeGrid::makeFourDimGrid(latt,simdF,mpi);
   auto GridRBPtrF = SpaceTimeGrid::makeFourDimRedBlackGrid(GridPtrF);
   auto FGridF     = SpaceTimeGrid::makeFiveDimGrid(Ls,GridPtrF);
   auto FrbGridF   = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,GridPtrF);
@@ -298,7 +299,7 @@ int main(int argc, char **argv) {
   FermionActionF::ImplParams ParamsF(boundary);
   
   double ActionStoppingCondition     = 1e-8;
-  double DerivativeStoppingCondition = 1e-6;
+  double DerivativeStoppingCondition = 1e-8;
   double MaxCGIterations =  100000;
 
   ////////////////////////////////////
@@ -512,7 +513,7 @@ int main(int argc, char **argv) {
     ////////////////////////////////////////////////////////////////////////////
     // Mixed precision CG for 2f force
     ////////////////////////////////////////////////////////////////////////////
-    double DerivativeStoppingConditionLoose = 1e-10;
+    double DerivativeStoppingConditionLoose = 1e-8;
 
     DenominatorsF.push_back(new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[h],M5,b,c, ParamsF));
     LinOpD.push_back(new LinearOperatorD(*Denominators[h]));
@@ -562,8 +563,72 @@ int main(int argc, char **argv) {
   /////////////////////////////////////////////////////////////
   // HMC parameters are serialisable
 
+  NoSmearing<HMCWrapper::ImplPolicy> S;
+#ifndef DO_IMPLICIT
+  TrivialMetric<HMCWrapper::ImplPolicy::Field> Mtr;
+#else
+    LaplacianRatParams gpar(2),mpar(2);
+    gpar.offset = 1.;
+    gpar.a0[0] = 500.;
+    gpar.a1[0] = 0.;
+    gpar.b0[0] = 0.25;
+    gpar.b1[0] = 1.;
+    gpar.a0[1] = -500.;
+    gpar.a1[1] = 0.;
+    gpar.b0[1] = 0.36;
+    gpar.b1[1] = 1.2;
+    gpar.b2=1.;
+
+    mpar.offset = 1.;
+    mpar.a0[0] =  -0.850891906532;
+    mpar.a1[0] = -1.54707654538;
+    mpar. b0[0] = 2.85557166137;
+    mpar. b1[0] = 5.74194794773;
+    mpar.a0[1] = -13.5120056831218384729709214298;
+    mpar.a1[1] = 1.54707654538396877086370295729;
+    mpar.b0[1] = 19.2921090880640520026645390317;
+    mpar.b1[1] = -3.54194794773029020262811172870;
+    mpar.b2=1.;
+    for(int i=0;i<2;i++){
+       gpar.a1[i] *=16.;
+       gpar.b1[i] *=16.;
+       mpar.a1[i] *=16.;
+       mpar.b1[i] *=16.;
+    }
+    gpar.b2 *= 16.*16.;
+    mpar.b2 *= 16.*16.;
+
+    ConjugateGradient<LatticeGaugeField> CG(1.0e-8,10000);
+    LaplacianParams LapPar(0.0001, 1.0, 10000, 1e-8, 12, 64);
+
+    std::cout << GridLogMessage << "LaplacianRat " << std::endl;
+    gpar.tolerance=HMCparams.MD.RMHMCCGTol;
+    mpar.tolerance=HMCparams.MD.RMHMCCGTol;
+    std::cout << GridLogMessage << "gpar offset= " << gpar.offset <<std::endl;
+    std::cout << GridLogMessage << " a0= " << gpar.a0 <<std::endl;
+    std::cout << GridLogMessage << " a1= " << gpar.a1 <<std::endl;
+    std::cout << GridLogMessage << " b0= " << gpar.b0 <<std::endl;
+    std::cout << GridLogMessage << " b1= " << gpar.b1 <<std::endl;
+    std::cout << GridLogMessage << " b2= " << gpar.b2 <<std::endl ;;
+
+    std::cout << GridLogMessage << "mpar offset= " << mpar.offset <<std::endl;
+    std::cout << GridLogMessage << " a0= " << mpar.a0 <<std::endl;
+    std::cout << GridLogMessage << " a1= " << mpar.a1 <<std::endl;
+    std::cout << GridLogMessage << " b0= " << mpar.b0 <<std::endl;
+    std::cout << GridLogMessage << " b1= " << mpar.b1 <<std::endl;
+    std::cout << GridLogMessage << " b2= " << mpar.b2 <<std::endl;
+//  Assumes PeriodicGimplR or D at the moment
+    auto UGrid = TheHMC.Resources.GetCartesian("gauge");
+//  auto UGrid_f   = SpaceTimeGrid::makeFourDimGrid(latt,simdF,mpi);
+//  auto GridPtrF   = SpaceTimeGrid::makeFourDimGrid(latt,simdF,mpi);
+//    std::cout << GridLogMessage << " UGrid= " << UGrid <<std::endl;
+//    std::cout << GridLogMessage << " UGrid_f= " << UGrid_f <<std::endl;
+
+    LaplacianAdjointRat<HMCWrapper::ImplPolicy, PeriodicGimplF> Mtr(UGrid, GridPtrF ,CG, gpar, mpar);
+#endif
+
   std::cout << GridLogMessage << " Running the HMC "<< std::endl;
-  TheHMC.Run();  // no smearing
+  TheHMC.Run(S,Mtr);  // no smearing
 
   Grid_finalize();
 } // main

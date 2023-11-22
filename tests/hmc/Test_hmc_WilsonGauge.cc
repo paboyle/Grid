@@ -83,8 +83,15 @@ int main(int argc, char **argv)
   // need wrappers of the fermionic classes 
   // that have a complex construction
   // standard
-  RealD beta = 5.6 ;
+  RealD beta = 6.4 ; 
+
+#if 0
   WilsonGaugeActionR Waction(beta);
+#else
+  std::vector<Complex> boundaryG = {1,1,1,0};
+  WilsonGaugeActionR::ImplParams ParamsG(boundaryG);
+  WilsonGaugeActionR Waction(beta,ParamsG);
+#endif
   
   ActionLevel<HMCWrapper::Field> Level1(1);
   Level1.push_back(&Waction);
