@@ -539,7 +539,7 @@ void Grid_init(int *argc,char ***argv)
 void Grid_finalize(void)
 {
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
-  std::cout<<GridLogMessage<<"******* Grid Bye Bye                 ******"<<std::endl;
+  std::cout<<GridLogMessage<<"******* Grid Finalize                ******"<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
 
 #if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) || defined (GRID_COMMS_MPIT)
