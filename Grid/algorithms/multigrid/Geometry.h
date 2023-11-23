@@ -104,7 +104,8 @@ public:
 /////////////////////////////////////////////////////////////////
 class NonLocalStencilGeometry {
 public:
-  int depth;
+  //  int depth;
+  int skip;
   int hops;
   int npoint;
   std::vector<Coordinate> shifts;
@@ -115,8 +116,7 @@ public:
   GridCartesian *Grid() {return grid;};
   int Depth(void){return 1;};   // Ghost zone depth
   int Hops(void){return hops;}; // # of hops=> level of corner fill in in stencil
-
-  virtual int DimSkip(void) =0;
+  int DimSkip(void){return skip;};
 
   virtual ~NonLocalStencilGeometry() {};
 
@@ -156,7 +156,7 @@ public:
     std::cout << GridLogMessage << "NonLocalStencilGeometry has "<< this->npoint << " terms in stencil "<<std::endl;
   }
   
-  NonLocalStencilGeometry(GridCartesian *_coarse_grid,int _hops) : grid(_coarse_grid), hops(_hops)
+  NonLocalStencilGeometry(GridCartesian *_coarse_grid,int _hops,int _skip) : grid(_coarse_grid), hops(_hops), skip(_skip)
   {
     Coordinate latt = grid->GlobalDimensions();
     stencil_size.resize(grid->Nd());
@@ -177,6 +177,7 @@ public:
        stencil_size[d]= 3;
      }
     }
+    this->BuildShifts();
   };
 
 };
@@ -184,14 +185,14 @@ public:
 // Need to worry about red-black now
 class NonLocalStencilGeometry4D : public NonLocalStencilGeometry {
 public:
-  virtual int DimSkip(void) { return 0;};
-  NonLocalStencilGeometry4D(GridCartesian *Coarse,int _hops) : NonLocalStencilGeometry(Coarse,_hops) { };
+  virtual int DerivedDimSkip(void) { return 0;};
+  NonLocalStencilGeometry4D(GridCartesian *Coarse,int _hops) : NonLocalStencilGeometry(Coarse,_hops,0) { };
   virtual ~NonLocalStencilGeometry4D() {};
 };
 class NonLocalStencilGeometry5D : public NonLocalStencilGeometry {
 public:
-  virtual int DimSkip(void) { return 1; }; 
-  NonLocalStencilGeometry5D(GridCartesian *Coarse,int _hops) : NonLocalStencilGeometry(Coarse,_hops)  { };
+  virtual int DerivedDimSkip(void) { return 1; }; 
+  NonLocalStencilGeometry5D(GridCartesian *Coarse,int _hops) : NonLocalStencilGeometry(Coarse,_hops,1)  { };
   virtual ~NonLocalStencilGeometry5D() {};
 };
 /*
@@ -201,42 +202,36 @@ class NextToNextToNextToNearestStencilGeometry4D : public NonLocalStencilGeometr
 public:
   NextToNextToNextToNearestStencilGeometry4D(GridCartesian *Coarse) :  NonLocalStencilGeometry4D(Coarse,4)
   {
-    this->BuildShifts();
   };
 };
 class NextToNextToNextToNearestStencilGeometry5D : public  NonLocalStencilGeometry5D {
 public:
   NextToNextToNextToNearestStencilGeometry5D(GridCartesian *Coarse) :  NonLocalStencilGeometry5D(Coarse,4)
   {
-    this->BuildShifts();
   };
 };
 class NextToNearestStencilGeometry4D : public  NonLocalStencilGeometry4D {
 public:
   NextToNearestStencilGeometry4D(GridCartesian *Coarse) :  NonLocalStencilGeometry4D(Coarse,2)
   {
-    this->BuildShifts();
   };
 };
 class NextToNearestStencilGeometry5D : public  NonLocalStencilGeometry5D {
 public:
   NextToNearestStencilGeometry5D(GridCartesian *Coarse) :  NonLocalStencilGeometry5D(Coarse,2)
   {
-    this->BuildShifts();
   };
 };
 class NearestStencilGeometry4D : public  NonLocalStencilGeometry4D {
 public:
   NearestStencilGeometry4D(GridCartesian *Coarse) :  NonLocalStencilGeometry4D(Coarse,1)
   {
-    this->BuildShifts();
   };
 };
 class NearestStencilGeometry5D : public  NonLocalStencilGeometry5D {
 public:
   NearestStencilGeometry5D(GridCartesian *Coarse) :  NonLocalStencilGeometry5D(Coarse,1)
   {
-    this->BuildShifts();
   };
 };
 

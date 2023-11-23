@@ -68,7 +68,7 @@ public:
   ///////////////////////
   // Interface
   ///////////////////////
-  GridBase      * Grid(void)           { return _FineGrid; };   // this is all the linalg routines need to know
+  GridBase      * Grid(void)           { return _CoarseGrid; };   // this is all the linalg routines need to know
   GridBase      * FineGrid(void)       { return _FineGrid; };   // this is all the linalg routines need to know
   GridCartesian * CoarseGrid(void)     { return _CoarseGrid; };   // this is all the linalg routines need to know
 
@@ -238,7 +238,7 @@ public:
     std::cout << GridLogPerformance<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
 
   };
-
+  
   void PopulateAdag(void)
   {
     for(int64_t bidx=0;bidx<CoarseGrid()->gSites() ;bidx++){
@@ -451,4 +451,5 @@ public:
 };
 
 
+  
 NAMESPACE_END(Grid);
