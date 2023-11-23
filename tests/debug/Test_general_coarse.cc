@@ -229,7 +229,36 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
-  
+
+  //  Create a higher dim coarse grid
+  const int nrhs=vComplex::Nsimd();
+
+  Coordinate mpi=GridDefaultMpi();
+  Coordinate rhMpi ({1,1,mpi[0],mpi[1],mpi[2],mpi[3]});
+  Coordinate rhLatt({nrhs,1,clatt[0],clatt[2],clatt[2],clatt[3]});
+  Coordinate rhSimd({nrhs,1, 1,1,1,1});
+
+  GridCartesian *CoarseMrhs = new GridCartesian(rhLatt,rhSimd,rhMpi); 
+
+  MultiGeneralCoarsenedMatrix mrhs(LittleDiracOp,CoarseMrhs);
+
+  {
+    GridParallelRNG          rh_CRNG(CoarseMrhs);rh_CRNG.SeedFixedIntegers(cseeds);
+    CoarseVector rh_phi(CoarseMrhs);
+    CoarseVector rh_res(CoarseMrhs);
+    random(rh_CRNG,rh_phi);
+    mrhs.M(rh_phi,rh_res);
+
+    for(int r=0;r<nrhs;r++){
+      ExtractSlice(phi,rh_phi,r,0);
+      ExtractSlice(chi,rh_res,r,0);
+      LittleDiracOp.M(phi,Aphi);
+      std::cout << r << " mrhs " << norm2(chi)<<std::endl;
+      std::cout << r << " srhs " << norm2(Aphi)<<std::endl;
+      chi=chi-Aphi;
+      std::cout << r << " diff " << norm2(chi)<<std::endl;
+    }
+  }
   Grid_finalize();
   return 0;
 }
