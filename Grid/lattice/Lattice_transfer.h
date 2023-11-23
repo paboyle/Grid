@@ -265,8 +265,8 @@ inline auto localInnerProductD(const Lattice<vobj> &lhs,const Lattice<vobj> &rhs
 ////////////////////////////////////////////////////////////////////////////////////////////
 template<class vobj,class CComplex,int nbasis,class VLattice>
 inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
-			   const             Lattice<vobj>   &fineData,
-			   const VLattice &Basis)
+			 const             Lattice<vobj>   &fineData,
+			 const VLattice &Basis)
 {
   GridBase * fine  = fineData.Grid();
   GridBase * coarse= coarseData.Grid();
@@ -300,6 +300,7 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
   //  std::cout << GridLogPerformance << " blockProject : conv              :  "<<t_co<<" us"<<std::endl;
   //  std::cout << GridLogPerformance << " blockProject : blockZaxpy        :  "<<t_za<<" us"<<std::endl;
 }
+
 // This only minimises data motion from CPU to GPU
 // there is chance of better implementation that does a vxk loop of inner products to data share
 // at the GPU thread level
@@ -1799,6 +1800,33 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
       scalardata[site] = alldata[v*lsites+site];
     });
     vectorizeFromLexOrdArray(scalardata,full[v]);    
+  }
+}
+
+//////////////////////////////////////////////////////
+// MultiRHS interface support for coarse space
+// -- Simplest possible implementation to begin with
+//////////////////////////////////////////////////////
+template<class vobj,class CComplex,int nbasis,class VLattice>
+inline void blockProjectMany(Lattice<iVector<CComplex,nbasis > > &coarseIP,
+			     Lattice<iVector<CComplex,nbasis > > &coarseTMP,
+			     const VLattice &fineData, // Basis and fineData necessarily same type
+			     const VLattice &Basis)
+{
+  for(int r=0;r<fineData.size();r++){
+    blockProject(coarseTMP,fineData[r],Basis);
+    InsertSliceLocal(coarseTMP, coarseIP,r,r,0);
+  }
+}
+template<class vobj,class CComplex,int nbasis,class VLattice>
+inline void blockPromoteMany(Lattice<iVector<CComplex,nbasis > > &coarseIP,
+			     Lattice<iVector<CComplex,nbasis > > &coarseTMP,
+			     const VLattice &fineData, // Basis and fineData necessarily same type
+			     const VLattice &Basis)
+{
+  for(int r=0;r<fineData.size();r++){
+    ExtractSliceLocal(coarseTMP, coarseIP,r,r,0);
+    blockPromote(coarseTMP,fineData[r],Basis);
   }
 }
 

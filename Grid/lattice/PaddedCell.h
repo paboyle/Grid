@@ -234,8 +234,11 @@ public:
   }
   void DeleteGrids(void)
   {
+    Coordinate processors=unpadded_grid->_processors;
     for(int d=0;d<grids.size();d++){
-      delete grids[d];
+      if ( processors[d] > 1 ) { 
+	delete grids[d];
+      }
     }
     grids.resize(0);
   };
