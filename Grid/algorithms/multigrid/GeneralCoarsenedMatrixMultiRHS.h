@@ -149,13 +149,15 @@ public:
 	  int32_t point= bp/nbasis;
 	  int32_t b    = bp%nbasis;
 	  auto SE  = Stencil_v.GetEntry(point,ss);
-	  int32_t snbr= SE->_offset;
-	  auto nbr = coalescedReadGeneralPermute(in_v[snbr],SE->_permute,Nd);
-	  auto res = Aview_p[point][ss](0,b)*nbr(0);
-	  for(int bb=1;bb<nbasis;bb++) {
-	    res = res + Aview_p[point][ss](bb,b)*nbr(bb);
+	  if ( SE->_permute == 0 ) { 
+	    int32_t snbr= SE->_offset;
+	    auto nbr = coalescedReadGeneralPermute(in_v[snbr],SE->_permute,Nd);
+	    auto res = Aview_p[point][ss](0,b)*nbr(0);
+	    for(int bb=1;bb<nbasis;bb++) {
+	      res = res + Aview_p[point][ss](bb,b)*nbr(bb);
+	    }
+	    coalescedWrite(Vview_p[point][ss](b),res);
 	  }
-	  coalescedWrite(Vview_p[point][ss](b),res);
       });
       accelerator_for(sb, osites*nbasis, Nsimd, {
 	  int ss = sb/nbasis;
