@@ -107,7 +107,7 @@ public:
 	    int rd = grid->_rdimensions[d];
 	    int ly = grid->_simd_layout[d];
 
-	    assert((ly==1)||(ly==2));
+	    assert((ly==1)||(ly==2)||(ly==grid->Nsimd()));
 
 	    int shift = (shifts[ii][d]+fd)%fd;  // make it strictly positive 0.. L-1
 	    int x = Coor[d];                // x in [0... rd-1] as an oSite 
