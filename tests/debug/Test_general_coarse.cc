@@ -247,17 +247,31 @@ int main (int argc, char ** argv)
     CoarseVector rh_phi(CoarseMrhs);
     CoarseVector rh_res(CoarseMrhs);
     random(rh_CRNG,rh_phi);
-    mrhs.M(rh_phi,rh_res);
 
+    mrhs.M(rh_phi,rh_res);
+    const int ncall=100;
+    RealD t0=-usecond();
+    for(int i=0;i<ncall;i++){
+      mrhs.M(rh_phi,rh_res);
+    }
+    t0+=usecond();
+    RealD t1=0;
     for(int r=0;r<nrhs;r++){
       ExtractSlice(phi,rh_phi,r,0);
       ExtractSlice(chi,rh_res,r,0);
       LittleDiracOp.M(phi,Aphi);
+      t1-=usecond();
+      for(int i=0;i<ncall;i++){
+	LittleDiracOp.M(phi,Aphi);
+      }
+      t1+=usecond();
       std::cout << r << " mrhs " << norm2(chi)<<std::endl;
       std::cout << r << " srhs " << norm2(Aphi)<<std::endl;
       chi=chi-Aphi;
       std::cout << r << " diff " << norm2(chi)<<std::endl;
     }
+    std::cout << nrhs<< " mrhs " << t0/ncall/nrhs <<" us"<<std::endl;
+    std::cout << nrhs<< " srhs " << t1/ncall/nrhs <<" us"<<std::endl;
   }
   Grid_finalize();
   return 0;
