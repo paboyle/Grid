@@ -78,7 +78,7 @@ int main (int argc, char ** argv)
   // Construct a coarsened grid
   Coordinate clatt = GridDefaultLatt();
   for(int d=0;d<clatt.size();d++){
-    clatt[d] = clatt[d]/2;
+    clatt[d] = clatt[d]/4;
   }
 
   GridCartesian *Coarse4d =  SpaceTimeGrid::makeFourDimGrid(clatt,
@@ -107,7 +107,7 @@ int main (int argc, char ** argv)
 
   DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
-  const int nbasis = 16;
+  const int nbasis = 32;
   const int cb = 0 ;
   LatticeFermion prom(FGrid);
 
@@ -265,8 +265,8 @@ int main (int argc, char ** argv)
 	LittleDiracOp.M(phi,Aphi);
       }
       t1+=usecond();
-      std::cout << r << " mrhs " << norm2(chi)<<std::endl;
-      std::cout << r << " srhs " << norm2(Aphi)<<std::endl;
+      std::cout << " mrhs [" <<r <<"] "<< norm2(chi)<<std::endl;
+      std::cout << " srhs [" <<r <<"] "<< norm2(Aphi)<<std::endl;
       chi=chi-Aphi;
       std::cout << r << " diff " << norm2(chi)<<std::endl;
     }

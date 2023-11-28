@@ -745,8 +745,6 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
-  static const int words=sizeof(vobj)/sizeof(vector_type);
-
   GridBase *Fg = From.Grid();
   GridBase *Tg = To.Grid();
   assert(!Fg->_isCheckerBoarded);
@@ -763,13 +761,14 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
   // the above should guarantee that the operations are local
   
 #if 1
-
   size_t nsite = 1;
   for(int i=0;i<nd;i++) nsite *= RegionSize[i];
   
   size_t tbytes = 4*nsite*sizeof(int);
   int *table = (int*)malloc(tbytes);
- 
+
+  RealD t_cpu=-usecond();
+#if 0
   thread_for(idx, nsite, {
       Coordinate from_coor, to_coor;
       size_t rem = idx;
@@ -792,15 +791,44 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
   
   int* table_d = (int*)acceleratorAllocDevice(tbytes);
   acceleratorCopyToDevice(table,table_d,tbytes);
+#else
+  int* table_d = (int*)acceleratorAllocDevice(tbytes);
+  Coordinate f_ostride = Fg->_ostride;
+  Coordinate f_istride = Fg->_istride;
+  Coordinate f_rdimensions = Fg->_rdimensions;
+  Coordinate t_ostride = Tg->_ostride;
+  Coordinate t_istride = Tg->_istride;
+  Coordinate t_rdimensions = Tg->_rdimensions;
+
+  accelerator_for(idx, nsite, 1, {
+      Coordinate from_coor, to_coor;
+      size_t rem = idx;
+      for(int i=0;i<nd;i++){
+	size_t base_i  = rem % RegionSize[i]; rem /= RegionSize[i];
+	from_coor[i] = base_i + FromLowerLeft[i];
+	to_coor[i] = base_i + ToLowerLeft[i];
+      }
+      int foidx = 0; for(int d=0;d<nd;d++) foidx+=f_ostride[d]*(from_coor[d]%f_rdimensions[d]);
+      int fiidx = 0; for(int d=0;d<nd;d++) fiidx+=f_istride[d]*(from_coor[d]/f_rdimensions[d]);
+      int toidx = 0; for(int d=0;d<nd;d++) toidx+=t_ostride[d]*(to_coor[d]%t_rdimensions[d]);
+      int tiidx = 0; for(int d=0;d<nd;d++) tiidx+=t_istride[d]*(to_coor[d]/t_rdimensions[d]);
+      int* tt = table_d + 4*idx;
+      tt[0] = foidx;
+      tt[1] = fiidx;
+      tt[2] = toidx;
+      tt[3] = tiidx;
+    });
+#endif
+  t_cpu+=usecond();
 
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
 
   autoView(from_v,From,AcceleratorRead);
   autoView(to_v,To,AcceleratorWrite);
-  
-  accelerator_for(idx,nsite,1,{
-      static const int words=sizeof(vobj)/sizeof(vector_type);
+  RealD t_acc=-usecond();
+  const int words=sizeof(vobj)/sizeof(vector_type);
+  accelerator_for(idx,nsite,words,{
       int* tt = table_d + 4*idx;
       int from_oidx = *tt++;
       int from_lane = *tt++;
@@ -811,12 +839,20 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
       vector_type* to = (vector_type *)&to_v[to_oidx];
       
       scalar_type stmp;
+#ifdef GRID_SIMT
+      int w = acceleratorSIMTlane(words);
+      stmp = getlane(from[w], from_lane);
+      putlane(to[w], stmp, to_lane);
+#else
       for(int w=0;w<words;w++){
 	stmp = getlane(from[w], from_lane);
 	putlane(to[w], stmp, to_lane);
       }
+#endif
     });
-  
+  t_acc+=usecond();
+  std::cout << " localCopyRegion cpu " <<t_cpu/1000<<" ms"<<std::endl;
+  std::cout << " localCopyRegion acc " <<t_acc/1000<<" ms"<<std::endl;
   acceleratorFreeDevice(table_d);    
   free(table);
   

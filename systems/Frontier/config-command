@@ -6,6 +6,7 @@ CLIME=`spack find --paths c-lime@2-3-9 | grep c-lime| cut -c 15-`
 --enable-tracing=timer \
 --enable-accelerator=hip \
 --enable-gen-simd-width=64 \
+--enable-tracing=roctx \
 --disable-gparity \
 --disable-fermion-reps \
 --enable-simd=GPU \

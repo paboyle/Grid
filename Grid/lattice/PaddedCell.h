@@ -403,18 +403,8 @@ public:
       double t = usecond();
       padded = in;
       tins += usecond() - t;
-      
+      // return in; ?
     } else {
-
-      //////////////////////////////////////////////
-      // Replace sequence with
-      // ---------------------
-      // (i) Gather high face(s); start comms
-      // (ii) Gather low  face(s); start comms
-      // (iii) Copy middle bit with localCopyRegion
-      // (iv) Complete high face(s), insert slice(s)
-      // (iv) Complete low  face(s), insert slice(s)
-      //////////////////////////////////////////////
       Face_exchange(in,padded,dim,depth);
     }
     return padded;
@@ -482,6 +472,7 @@ public:
     // Gather all surface terms up to depth "d"
     ////////////////////////////////////////////////////////////////////////////
     RealD t;
+    RealD t_tot=-usecond();
     int plane=0;
     for ( int d=0;d < depth ; d ++ ) {
       int tag = d*1024 + dimension*2+0;
@@ -549,6 +540,7 @@ public:
     }
     t_scatter+= usecond() - t;
     //    DumpSliceNorm(std::string("Face_exchange to scatter 1st "),to,dimension);
+    t_tot+=usecond();
 
     //DumpSliceNorm(std::string("Face_exchange to done"),to,dimension);
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: gather :" << t_gather/1000  << "ms"<<std::endl;
@@ -557,6 +549,7 @@ public:
     //    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: scatter:" << 2.0*bytes/t_scatter<< "MB/s"<<std::endl;
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: copy   :" << t_copy/1000      << "ms"<<std::endl;
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: comms  :" << t_comms/1000     << "ms"<<std::endl;
+    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: total  :" << t_tot/1000     << "ms"<<std::endl;
     //    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: comms  :" << (RealD)4.0*bytes/t_comms   << "MB/s"<<std::endl;
   }
   

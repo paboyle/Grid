@@ -62,6 +62,7 @@ public:
   
   std::vector<deviceVector<calcMatrix> > _A;
   std::vector<CoarseVector> MultTemporaries;
+  deviceVector<GeneralStencilEntryReordered> StencilMasked;
 
   ///////////////////////
   // Interface
@@ -78,9 +79,40 @@ public:
     Stencil(Cell.grids.back(),geom.shifts)
   {
     _A.resize(geom.npoint);
+    int32_t padded_sites = _Op._A[0].Grid()->lSites();
     for(int p=0;p<geom.npoint;p++){
-      _A[p].resize(_CoarseGrid->lSites());
+      _A[p].resize(padded_sites);
     }
+    std::cout << GridLogMessage<<"MultiGeneralCoarsenedMatrix "<<_CoarseGrid->lSites()<<" coarse sites "<<_Op._A[0].Grid()->lSites() <<std::endl;
+
+    StencilMasked.resize(_CoarseGridMulti->oSites());
+    std::vector<GeneralStencilEntryReordered> StencilTmp;
+
+    int32_t j=0;
+    int32_t sites = Stencil._entries.size()/geom.npoint;
+    for(int32_t s=0;s<sites;s++){
+      int ghost_zone=0;
+      for(int32_t point = 0 ; point < geom.npoint; point++){
+	int i=s*geom.npoint+point;
+	if( Stencil._entries[i]._permute ) {
+	  ghost_zone=1;
+	}
+      }
+      GeneralStencilEntryReordered tmp;
+      if( ghost_zone==0) {
+	for(int32_t point = 0 ; point < geom.npoint; point++){
+	  int i=s*geom.npoint+point;
+	  tmp._offset = Stencil._entries[i]._offset;
+	  tmp._permute= Stencil._entries[i]._permute;
+	  tmp._output = j;
+	  StencilTmp.push_back(tmp);
+	}
+	j++;
+      }
+    }
+    std::cout << "coarse osites x npoint "<<_CoarseGridMulti->oSites()*geom.npoint<< " stencil interior size "<< StencilTmp.size()<<std::endl;
+    assert(_CoarseGridMulti->lSites()*geom.npoint==StencilTmp.size());
+    acceleratorCopyToDevice(&StencilTmp[0],&StencilMasked[0],sizeof(GeneralStencilEntryReordered)*StencilTmp.size());
     CopyMatrix();
   }
   void CopyMatrix (void)
@@ -100,12 +132,18 @@ public:
   }
   void M (const CoarseVector &in, CoarseVector &out)
   {
+    RealD tviews=0;    RealD ttot=0;    RealD tmult=0;   RealD texch=0;    RealD text=0; RealD ttemps=0; RealD tcopy=0;
+    RealD tmult2=0;
+
+    ttot=-usecond();
     conformable(CoarseGrid(),in.Grid());
     conformable(in.Grid(),out.Grid());
     out.Checkerboard() = in.Checkerboard();
     CoarseVector tin=in;
 
+    texch-=usecond();
     CoarseVector pin = Cell.ExchangePeriodic(tin);
+    texch+=usecond();
     CoarseVector pout(pin.Grid());
 
     int npoint = geom.npoint;
@@ -116,22 +154,33 @@ public:
     
     int64_t osites=pin.Grid()->oSites();
     int64_t nrhs  =pin.Grid()->GlobalDimensions()[0]/Nsimd;
+    assert(nrhs>=1);
 
+    RealD flops = 1.0* npoint * nbasis * nbasis * 8.0 * osites * CComplex::Nsimd();
+    RealD bytes = 1.0*osites*sizeof(siteMatrix)*npoint/pin.Grid()->GlobalDimensions()[0]
+                + 2.0*osites*sizeof(siteVector)*npoint;
+    
     {
+      tviews-=usecond();
       autoView( in_v , pin, AcceleratorRead);
       autoView( out_v , pout, AcceleratorWriteDiscard);
       autoView( Stencil_v  , Stencil, AcceleratorRead);
+      tviews+=usecond();
 
       // Static and prereserve to keep UVM region live and not resized across multiple calls
+      ttemps-=usecond();
       MultTemporaries.resize(npoint,pin.Grid());       
+      ttemps+=usecond();
 
       std::vector<Aview> AcceleratorViewContainer_h;
       std::vector<Vview> AcceleratorVecViewContainer_h; 
 
+      tviews-=usecond();
       for(int p=0;p<npoint;p++) {
 	AcceleratorViewContainer_h.push_back( &_A[p][0]);
 	AcceleratorVecViewContainer_h.push_back(MultTemporaries[p].View(AcceleratorWrite));
       }
+      tviews+=usecond();
 
       static deviceVector<Aview> AcceleratorViewContainer; AcceleratorViewContainer.resize(npoint);
       static deviceVector<Vview> AcceleratorVecViewContainer; AcceleratorVecViewContainer.resize(npoint); 
@@ -139,15 +188,23 @@ public:
       auto Aview_p = &AcceleratorViewContainer[0];
       auto Vview_p = &AcceleratorVecViewContainer[0];
 
+      tcopy-=usecond();
       acceleratorCopyToDevice(&AcceleratorViewContainer_h[0],&AcceleratorViewContainer[0],npoint *sizeof(Aview));
       acceleratorCopyToDevice(&AcceleratorVecViewContainer_h[0],&AcceleratorVecViewContainer[0],npoint *sizeof(Vview));
+      tcopy+=usecond();
 
+      int32_t bound = _A[0].size();
+      std::cout << " osites "<<osites <<" bound "<<bound<<std::endl;
+      std::cout << " padded local dims   "<<pin.Grid()->LocalDimensions()<<std::endl;
+      std::cout << " unpadded local dims "<<in.Grid()->LocalDimensions()<<std::endl;
+      tmult-=usecond();
       accelerator_for(rspb, osites*nbasis*npoint, Nsimd, {
 	  typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
 	  int32_t ss   = rspb/(nbasis*npoint);
 	  int32_t bp   = rspb%(nbasis*npoint);
 	  int32_t point= bp/nbasis;
 	  int32_t b    = bp%nbasis;
+	  assert(ss<bound);
 	  auto SE  = Stencil_v.GetEntry(point,ss);
 	  if ( SE->_permute == 0 ) { 
 	    int32_t snbr= SE->_offset;
@@ -159,6 +216,7 @@ public:
 	    coalescedWrite(Vview_p[point][ss](b),res);
 	  }
       });
+      tmult2-=usecond();
       accelerator_for(sb, osites*nbasis, Nsimd, {
 	  int ss = sb/nbasis;
 	  int b  = sb%nbasis;
@@ -168,13 +226,32 @@ public:
 	  }
 	  coalescedWrite(out_v[ss](b),res);
       });
+      tmult2+=usecond();
+      tmult+=usecond();
       for(int p=0;p<npoint;p++) {
 	AcceleratorVecViewContainer_h[p].ViewClose();
       }
     }
 
+    text-=usecond();
     out = Cell.Extract(pout);
+    text+=usecond();
+    ttot+=usecond();
 
+    std::cout << GridLogMessage<<"Coarse Mult Aviews "<<tviews<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Mult exch "<<texch<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Mult mult "<<tmult<<" us"<<std::endl;
+    std::cout << GridLogMessage<<" of which mult2  "<<tmult2<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Mult ext  "<<text<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Mult temps "<<ttemps<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Mult copy  "<<tcopy<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Mult tot  "<<ttot<<" us"<<std::endl;
+    //    std::cout << GridLogMessage<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Kernel flop/s "<< flops/tmult<<" mflop/s"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Kernel bytes/s"<< bytes/tmult<<" MB/s"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse overall flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
+    
   };
   virtual  void Mdiag    (const Field &in, Field &out){ assert(0);};
   virtual  void Mdir     (const Field &in, Field &out,int dir, int disp){assert(0);};
