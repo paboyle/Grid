@@ -85,7 +85,7 @@ public:
     }
     std::cout << GridLogMessage<<"MultiGeneralCoarsenedMatrix "<<_CoarseGrid->lSites()<<" coarse sites "<<_Op._A[0].Grid()->lSites() <<std::endl;
 
-    StencilMasked.resize(_CoarseGridMulti->oSites());
+    StencilMasked.resize(_CoarseGridMulti->oSites()*geom.npoint);
     std::vector<GeneralStencilEntryReordered> StencilTmp;
 
     int32_t j=0;
@@ -102,16 +102,19 @@ public:
       if( ghost_zone==0) {
 	for(int32_t point = 0 ; point < geom.npoint; point++){
 	  int i=s*geom.npoint+point;
-	  tmp._offset = Stencil._entries[i]._offset;
-	  tmp._permute= Stencil._entries[i]._permute;
-	  tmp._output = j;
+ 	  tmp._offset = Stencil._entries[i]._offset;
+	  tmp._permute= Stencil._entries[i]._permute; // Should be no premute and j=site
+	  tmp._input = s;
 	  StencilTmp.push_back(tmp);
 	}
 	j++;
       }
     }
-    std::cout << "coarse osites x npoint "<<_CoarseGridMulti->oSites()*geom.npoint<< " stencil interior size "<< StencilTmp.size()<<std::endl;
-    assert(_CoarseGridMulti->lSites()*geom.npoint==StencilTmp.size());
+
+    std::cout << " oSites " << _CoarseGridMulti->oSites()<<std::endl;
+    std::cout << " npoint " << geom.npoint<<std::endl;
+    std::cout << " StencilTmp "<<StencilTmp.size();
+    assert(_CoarseGridMulti->oSites()*geom.npoint==StencilTmp.size());
     acceleratorCopyToDevice(&StencilTmp[0],&StencilMasked[0],sizeof(GeneralStencilEntryReordered)*StencilTmp.size());
     CopyMatrix();
   }
@@ -151,25 +154,21 @@ public:
     typedef LatticeView<Cvec> Vview;
       
     const int Nsimd = CComplex::Nsimd();
-    
-    int64_t osites=pin.Grid()->oSites();
+
+    RealD flops,bytes;
     int64_t nrhs  =pin.Grid()->GlobalDimensions()[0]/Nsimd;
     assert(nrhs>=1);
 
-    RealD flops = 1.0* npoint * nbasis * nbasis * 8.0 * osites * CComplex::Nsimd();
-    RealD bytes = 1.0*osites*sizeof(siteMatrix)*npoint/pin.Grid()->GlobalDimensions()[0]
-                + 2.0*osites*sizeof(siteVector)*npoint;
-    
+#if 0
     {
       tviews-=usecond();
       autoView( in_v , pin, AcceleratorRead);
       autoView( out_v , pout, AcceleratorWriteDiscard);
-      autoView( Stencil_v  , Stencil, AcceleratorRead);
       tviews+=usecond();
 
       // Static and prereserve to keep UVM region live and not resized across multiple calls
       ttemps-=usecond();
-      MultTemporaries.resize(npoint,pin.Grid());       
+      MultTemporaries.resize(npoint,in.Grid());       
       ttemps+=usecond();
 
       std::vector<Aview> AcceleratorViewContainer_h;
@@ -194,10 +193,16 @@ public:
       tcopy+=usecond();
 
       int32_t bound = _A[0].size();
+      int64_t osites=pin.Grid()->oSites();
+      flops = 1.0* npoint * nbasis * nbasis * 8.0 * osites * CComplex::Nsimd();
+      bytes = 1.0*osites*sizeof(siteMatrix)*npoint/pin.Grid()->GlobalDimensions()[0]
+	+ 2.0*osites*sizeof(siteVector)*npoint;
+
       std::cout << " osites "<<osites <<" bound "<<bound<<std::endl;
       std::cout << " padded local dims   "<<pin.Grid()->LocalDimensions()<<std::endl;
       std::cout << " unpadded local dims "<<in.Grid()->LocalDimensions()<<std::endl;
       tmult-=usecond();
+      autoView( Stencil_v  , Stencil, AcceleratorRead);
       accelerator_for(rspb, osites*nbasis*npoint, Nsimd, {
 	  typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
 	  int32_t ss   = rspb/(nbasis*npoint);
@@ -206,7 +211,7 @@ public:
 	  int32_t b    = bp%nbasis;
 	  assert(ss<bound);
 	  auto SE  = Stencil_v.GetEntry(point,ss);
-	  if ( SE->_permute == 0 ) { 
+	  if ( SE->_permute == 0 ) {
 	    int32_t snbr= SE->_offset;
 	    auto nbr = coalescedReadGeneralPermute(in_v[snbr],SE->_permute,Nd);
 	    auto res = Aview_p[point][ss](0,b)*nbr(0);
@@ -228,6 +233,7 @@ public:
       });
       tmult2+=usecond();
       tmult+=usecond();
+
       for(int p=0;p<npoint;p++) {
 	AcceleratorVecViewContainer_h[p].ViewClose();
       }
@@ -237,6 +243,85 @@ public:
     out = Cell.Extract(pout);
     text+=usecond();
     ttot+=usecond();
+#else
+    {
+      tviews-=usecond();
+      autoView( in_v , pin, AcceleratorRead);
+      autoView( out_v , out, AcceleratorWriteDiscard);
+      tviews+=usecond();
+
+      // Static and prereserve to keep UVM region live and not resized across multiple calls
+      ttemps-=usecond();
+      MultTemporaries.resize(npoint,in.Grid());       
+      ttemps+=usecond();
+
+      std::vector<Aview> AcceleratorViewContainer_h;
+      std::vector<Vview> AcceleratorVecViewContainer_h; 
+
+      tviews-=usecond();
+      for(int p=0;p<npoint;p++) {
+	AcceleratorViewContainer_h.push_back( &_A[p][0]);
+	AcceleratorVecViewContainer_h.push_back(MultTemporaries[p].View(AcceleratorWrite));
+      }
+      tviews+=usecond();
+
+      static deviceVector<Aview> AcceleratorViewContainer; AcceleratorViewContainer.resize(npoint);
+      static deviceVector<Vview> AcceleratorVecViewContainer; AcceleratorVecViewContainer.resize(npoint); 
+      
+      auto Aview_p = &AcceleratorViewContainer[0];
+      auto Vview_p = &AcceleratorVecViewContainer[0];
+
+      tcopy-=usecond();
+      acceleratorCopyToDevice(&AcceleratorViewContainer_h[0],&AcceleratorViewContainer[0],npoint *sizeof(Aview));
+      acceleratorCopyToDevice(&AcceleratorVecViewContainer_h[0],&AcceleratorVecViewContainer[0],npoint *sizeof(Vview));
+      tcopy+=usecond();
+
+      int32_t bound = _A[0].size();
+      int64_t osites=in.Grid()->oSites();
+      flops = 1.0* npoint * nbasis * nbasis * 8.0 * osites * CComplex::Nsimd();
+      bytes = 1.0*osites*sizeof(siteMatrix)*npoint/pin.Grid()->GlobalDimensions()[0]
+	+ 2.0*osites*sizeof(siteVector)*npoint;
+
+      std::cout << " osites "<<osites <<" bound "<<bound<< " stencilsize  "<<StencilMasked.size()<<std::endl;
+      std::cout << " padded local dims   "<<pin.Grid()->LocalDimensions()<<std::endl;
+      std::cout << " unpadded local dims "<<in.Grid()->LocalDimensions()<<std::endl;
+      tmult-=usecond();
+      auto Stencil_v = &StencilMasked[0];
+      accelerator_for(rspb, StencilMasked.size()*nbasis, Nsimd, {
+	  typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
+	  int32_t ss   = rspb/(nbasis*npoint); // site of unpadded
+	  int32_t bp   = rspb%(nbasis*npoint);
+	  int32_t point= bp/nbasis;
+	  int32_t b    = bp%nbasis;
+	  auto SE  = &Stencil_v[ss*npoint+point];
+	  int32_t s   = SE->_input;
+	  int32_t snbr= SE->_offset;
+	  std::cout << " unpadded " << ss<<" padded " << s<< " point "<<point <<" row " <<b<<std::endl;
+	  auto nbr = coalescedRead(in_v[snbr]);
+	  auto res = Aview_p[point][s](0,b)*nbr(0);
+	  for(int bb=1;bb<nbasis;bb++) {
+	    res = res + Aview_p[point][s](bb,b)*nbr(bb);
+	  }
+	  coalescedWrite(Vview_p[point][ss](b),res);
+      });
+      tmult2-=usecond();
+      accelerator_for(sb, osites*nbasis, Nsimd, {
+	  int ss = sb/nbasis;
+	  int b  = sb%nbasis;
+	  auto res = coalescedRead(Vview_p[0][ss](b));
+	  for(int point=1;point<npoint;point++){
+	    res = res + coalescedRead(Vview_p[point][ss](b));
+	  }
+	  coalescedWrite(out_v[ss](b),res);
+      });
+      tmult2+=usecond();
+      tmult+=usecond();
+      for(int p=0;p<npoint;p++) {
+	AcceleratorVecViewContainer_h[p].ViewClose();
+      }
+    }
+    ttot+=usecond();
+#endif
 
     std::cout << GridLogMessage<<"Coarse Mult Aviews "<<tviews<<" us"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult exch "<<texch<<" us"<<std::endl;

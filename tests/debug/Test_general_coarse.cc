@@ -107,7 +107,7 @@ int main (int argc, char ** argv)
 
   DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
-  const int nbasis = 32;
+  const int nbasis = 8;
   const int cb = 0 ;
   LatticeFermion prom(FGrid);
 

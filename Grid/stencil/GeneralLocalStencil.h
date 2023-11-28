@@ -34,7 +34,7 @@ struct GeneralStencilEntry {
   uint8_t _permute;            // 1 bytes // Horrible alignment properties
 };
 struct GeneralStencilEntryReordered : public GeneralStencilEntry {
-  uint64_t _output;
+  uint64_t _input;
 };
 
 // Could pack to 8 + 4 + 4 = 128 bit and use 
