@@ -94,26 +94,27 @@ public:
       int ghost_zone=0;
       for(int32_t point = 0 ; point < geom.npoint; point++){
 	int i=s*geom.npoint+point;
-	if( Stencil._entries[i]._permute ) {
+	if( Stencil._entries[i]._wrap ) {
 	  ghost_zone=1;
 	}
       }
+      //      std::cout << "site " <<s<<"/"<<sites <<" ghost_zone "<<ghost_zone<<std::endl;
       GeneralStencilEntryReordered tmp;
       if( ghost_zone==0) {
 	for(int32_t point = 0 ; point < geom.npoint; point++){
 	  int i=s*geom.npoint+point;
  	  tmp._offset = Stencil._entries[i]._offset;
-	  tmp._permute= Stencil._entries[i]._permute; // Should be no premute and j=site
+	  tmp._wrap= Stencil._entries[i]._wrap; // Should be no premute and j=site
 	  tmp._input = s;
 	  StencilTmp.push_back(tmp);
 	}
 	j++;
       }
     }
-
     std::cout << " oSites " << _CoarseGridMulti->oSites()<<std::endl;
     std::cout << " npoint " << geom.npoint<<std::endl;
-    std::cout << " StencilTmp "<<StencilTmp.size();
+    std::cout << " StencilTmp "<<StencilTmp.size()<<std::endl;
+    
     assert(_CoarseGridMulti->oSites()*geom.npoint==StencilTmp.size());
     acceleratorCopyToDevice(&StencilTmp[0],&StencilMasked[0],sizeof(GeneralStencilEntryReordered)*StencilTmp.size());
     CopyMatrix();
@@ -198,9 +199,9 @@ public:
       bytes = 1.0*osites*sizeof(siteMatrix)*npoint/pin.Grid()->GlobalDimensions()[0]
 	+ 2.0*osites*sizeof(siteVector)*npoint;
 
-      std::cout << " osites "<<osites <<" bound "<<bound<<std::endl;
-      std::cout << " padded local dims   "<<pin.Grid()->LocalDimensions()<<std::endl;
-      std::cout << " unpadded local dims "<<in.Grid()->LocalDimensions()<<std::endl;
+      //      std::cout << " osites "<<osites <<" bound "<<bound<<std::endl;
+      //      std::cout << " padded local dims   "<<pin.Grid()->LocalDimensions()<<std::endl;
+      //      std::cout << " unpadded local dims "<<in.Grid()->LocalDimensions()<<std::endl;
       tmult-=usecond();
       autoView( Stencil_v  , Stencil, AcceleratorRead);
       accelerator_for(rspb, osites*nbasis*npoint, Nsimd, {
@@ -282,9 +283,9 @@ public:
       bytes = 1.0*osites*sizeof(siteMatrix)*npoint/pin.Grid()->GlobalDimensions()[0]
 	+ 2.0*osites*sizeof(siteVector)*npoint;
 
-      std::cout << " osites "<<osites <<" bound "<<bound<< " stencilsize  "<<StencilMasked.size()<<std::endl;
-      std::cout << " padded local dims   "<<pin.Grid()->LocalDimensions()<<std::endl;
-      std::cout << " unpadded local dims "<<in.Grid()->LocalDimensions()<<std::endl;
+      //      std::cout << " osites "<<osites <<" bound "<<bound<< " stencilsize  "<<StencilMasked.size()<<std::endl;
+      //      std::cout << " padded local dims   "<<pin.Grid()->LocalDimensions()<<std::endl;
+      //      std::cout << " unpadded local dims "<<in.Grid()->LocalDimensions()<<std::endl;
       tmult-=usecond();
       auto Stencil_v = &StencilMasked[0];
       accelerator_for(rspb, StencilMasked.size()*nbasis, Nsimd, {
@@ -294,14 +295,19 @@ public:
 	  int32_t point= bp/nbasis;
 	  int32_t b    = bp%nbasis;
 	  auto SE  = &Stencil_v[ss*npoint+point];
-	  int32_t s   = SE->_input;
+	  int32_t s   = SE->_input; // site of padded
 	  int32_t snbr= SE->_offset;
-	  std::cout << " unpadded " << ss<<" padded " << s<< " point "<<point <<" row " <<b<<std::endl;
 	  auto nbr = coalescedRead(in_v[snbr]);
 	  auto res = Aview_p[point][s](0,b)*nbr(0);
 	  for(int bb=1;bb<nbasis;bb++) {
 	    res = res + Aview_p[point][s](bb,b)*nbr(bb);
 	  }
+	  //	  std::cout << " unpadded " << ss<<" padded " << s<< " point "<<point <<" row " <<b<<" "<< innerProduct(res,res) <<std::endl;
+	  //	  std::cout << " unpadded " << ss<<" point "<<point <<" row " <<b<<" res "<< innerProduct(res,res) <<std::endl;
+	  //	  std::cout << " unpadded " << ss<<" point "<<point <<" row " <<b<<" nbrIP "<< innerProduct(nbr,nbr) <<std::endl;
+	  //	  std::cout << " unpadded " << ss<<" point "<<point <<" row " <<b<<" nbr "<< nbr <<std::endl;
+	  //	  std::cout << " unpadded " << ss<<" point "<<point <<" row " <<b<<" nbr "<< in_v[snbr] <<std::endl;
+	  //	  std::cout << " unpadded " << ss<<" point "<<point <<" row " <<b<<" A   "<< innerProduct(Aview_p[point][s],Aview_p[point][s]) <<std::endl;
 	  coalescedWrite(Vview_p[point][ss](b),res);
       });
       tmult2-=usecond();
@@ -332,10 +338,10 @@ public:
     std::cout << GridLogMessage<<"Coarse Mult copy  "<<tcopy<<" us"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult tot  "<<ttot<<" us"<<std::endl;
     //    std::cout << GridLogMessage<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Kernel flop/s "<< flops/tmult<<" mflop/s"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Kernel bytes/s"<< bytes/tmult<<" MB/s"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse overall flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
+    //    std::cout << GridLogMessage<<"Coarse Kernel flop/s "<< flops/tmult<<" mflop/s"<<std::endl;
+    //    std::cout << GridLogMessage<<"Coarse Kernel bytes/s"<< bytes/tmult<<" MB/s"<<std::endl;
+    //    std::cout << GridLogMessage<<"Coarse overall flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
+    //    std::cout << GridLogMessage<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
     
   };
   virtual  void Mdiag    (const Field &in, Field &out){ assert(0);};

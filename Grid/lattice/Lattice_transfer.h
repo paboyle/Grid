@@ -851,8 +851,8 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
 #endif
     });
   t_acc+=usecond();
-  std::cout << " localCopyRegion cpu " <<t_cpu/1000<<" ms"<<std::endl;
-  std::cout << " localCopyRegion acc " <<t_acc/1000<<" ms"<<std::endl;
+  //  std::cout << " localCopyRegion cpu " <<t_cpu/1000<<" ms"<<std::endl;
+  //  std::cout << " localCopyRegion acc " <<t_acc/1000<<" ms"<<std::endl;
   acceleratorFreeDevice(table_d);    
   free(table);
   

@@ -95,32 +95,38 @@ template<class vobj> inline void ScatterSlice(const cshiftVector<vobj> &buf,
   accelerator_for(ss, face_ovol/simd[dim],Nsimd,{
 
     // scalar layout won't coalesce
-    int blane=acceleratorSIMTlane(Nsimd); // buffer lane
-    int olane=blane%rNsimd;               // reduced lattice lane
-    int obit =blane/rNsimd;
+#ifdef GRID_SIMT
+      {
+	int blane=acceleratorSIMTlane(Nsimd); // buffer lane
+#else
+      for(int blane=0;blane<Nsimd;blane++) {
+#endif
+	int olane=blane%rNsimd;               // reduced lattice lane
+	int obit =blane/rNsimd;
 
-    ///////////////////////////////////////////////////////////////
-    // osite -- potentially one bit from simd in the buffer: (ss<<1)|obit
-    ///////////////////////////////////////////////////////////////
-    int ssp = ss*simd[dim]+obit;
-    int b    = ssp%block;
-    int n    = ssp/block;
-    int osite= b+n*stride + ox*block;
-
-    ////////////////////////////////////////////
-    // isite -- map lane within buffer to lane within lattice
-    ////////////////////////////////////////////
-    Coordinate icoor;
-    int lane;
-    Lexicographic::CoorFromIndex(icoor,olane,rsimd);
-    icoor[dim]=ix;
-    Lexicographic::IndexFromCoor(icoor,lane,simd);
-
-    ///////////////////////////////////////////
-    // Transfer into lattice - will coalesce
-    ///////////////////////////////////////////
-    sobj obj = extractLane(blane,buf_p[ss+offset]);
-    insertLane(lane,lat_v[osite],obj);
+	///////////////////////////////////////////////////////////////
+	// osite -- potentially one bit from simd in the buffer: (ss<<1)|obit
+	///////////////////////////////////////////////////////////////
+	int ssp = ss*simd[dim]+obit;
+	int b    = ssp%block;
+	int n    = ssp/block;
+	int osite= b+n*stride + ox*block;
+	
+	////////////////////////////////////////////
+	// isite -- map lane within buffer to lane within lattice
+	////////////////////////////////////////////
+	Coordinate icoor;
+	int lane;
+	Lexicographic::CoorFromIndex(icoor,olane,rsimd);
+	icoor[dim]=ix;
+	Lexicographic::IndexFromCoor(icoor,lane,simd);
+	
+	///////////////////////////////////////////
+	// Transfer into lattice - will coalesce
+	///////////////////////////////////////////
+	sobj obj = extractLane(blane,buf_p[ss+offset]);
+	insertLane(lane,lat_v[osite],obj);
+      }
   });
 }
 
@@ -165,34 +171,39 @@ template<class vobj> inline void GatherSlice(cshiftVector<vobj> &buf,
   accelerator_for(ss, face_ovol/simd[dim],Nsimd,{
 
     // scalar layout won't coalesce
-    int blane=acceleratorSIMTlane(Nsimd); // buffer lane
-    int olane=blane%rNsimd;               // reduced lattice lane
-    int obit =blane/rNsimd;
+#ifdef GRID_SIMT
+      {
+	int blane=acceleratorSIMTlane(Nsimd); // buffer lane
+#else
+      for(int blane=0;blane<Nsimd;blane++) {
+#endif
+	int olane=blane%rNsimd;               // reduced lattice lane
+	int obit =blane/rNsimd;
+	
+	////////////////////////////////////////////
+	// osite
+	////////////////////////////////////////////
+	int ssp = ss*simd[dim]+obit;
+	int b    = ssp%block;
+	int n    = ssp/block;
+	int osite= b+n*stride + ox*block;
 
-    ////////////////////////////////////////////
-    // osite
-    ////////////////////////////////////////////
-    int ssp = ss*simd[dim]+obit;
-    int b    = ssp%block;
-    int n    = ssp/block;
-    int osite= b+n*stride + ox*block;
+	////////////////////////////////////////////
+	// isite -- map lane within buffer to lane within lattice
+	////////////////////////////////////////////
+	Coordinate icoor;
+	int lane;
+	Lexicographic::CoorFromIndex(icoor,olane,rsimd);
+	icoor[dim]=ix;
+	Lexicographic::IndexFromCoor(icoor,lane,simd);
+	
+	///////////////////////////////////////////
+	// Take out of lattice
+	///////////////////////////////////////////
 
-    ////////////////////////////////////////////
-    // isite -- map lane within buffer to lane within lattice
-    ////////////////////////////////////////////
-    Coordinate icoor;
-    int lane;
-    Lexicographic::CoorFromIndex(icoor,olane,rsimd);
-    icoor[dim]=ix;
-    Lexicographic::IndexFromCoor(icoor,lane,simd);
-
-    ///////////////////////////////////////////
-    // Take out of lattice
-    ///////////////////////////////////////////
-
-    sobj obj = extractLane(lane,lat_v[osite]);
-    insertLane(blane,buf_p[ss+offset],obj);
-
+	sobj obj = extractLane(lane,lat_v[osite]);
+	insertLane(blane,buf_p[ss+offset],obj);
+      }
   });
   /*
   int words =block*nblock/simd[dim];
