@@ -297,6 +297,7 @@ public:
 	  auto SE  = &Stencil_v[ss*npoint+point];
 	  int32_t s   = SE->_input; // site of padded
 	  int32_t snbr= SE->_offset;
+	  //	  std::cout << " unpadded " << ss<<" padded " << s<< " point "<<point <<" row " <<b<<std::endl;
 	  auto nbr = coalescedRead(in_v[snbr]);
 	  auto res = Aview_p[point][s](0,b)*nbr(0);
 	  for(int bb=1;bb<nbasis;bb++) {
