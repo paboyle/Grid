@@ -1,0 +1,14 @@
+../../configure \
+--enable-comms=mpi \
+--enable-unified=yes \
+--enable-shm=shmopen \
+--enable-accelerator=none \
+--enable-simd=AVX2 \
+--disable-accelerator-cshift \
+--disable-fermion-reps \
+--disable-gparity \
+CXX=mpicxx \
+CXXFLAGS="-std=c++17"
+
+
+
