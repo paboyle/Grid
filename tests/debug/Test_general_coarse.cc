@@ -136,7 +136,7 @@ int main (int argc, char ** argv)
   typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
 
-  NextToNearestStencilGeometry5D geom(Coarse5d);
+  NextToNextToNextToNearestStencilGeometry5D geom(Coarse5d);
   LittleDiracOperator LittleDiracOp(geom,FGrid,Coarse5d);
   LittleDiracOperator LittleDiracOpCol(geom,FGrid,Coarse5d);
 

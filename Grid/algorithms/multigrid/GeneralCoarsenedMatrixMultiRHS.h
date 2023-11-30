@@ -338,11 +338,11 @@ public:
     std::cout << GridLogMessage<<"Coarse Mult temps "<<ttemps<<" us"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult copy  "<<tcopy<<" us"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult tot  "<<ttot<<" us"<<std::endl;
-    //    std::cout << GridLogMessage<<std::endl;
-    //    std::cout << GridLogMessage<<"Coarse Kernel flop/s "<< flops/tmult<<" mflop/s"<<std::endl;
-    //    std::cout << GridLogMessage<<"Coarse Kernel bytes/s"<< bytes/tmult<<" MB/s"<<std::endl;
-    //    std::cout << GridLogMessage<<"Coarse overall flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
-    //    std::cout << GridLogMessage<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
+        std::cout << GridLogMessage<<std::endl;
+        std::cout << GridLogMessage<<"Coarse Kernel flop/s "<< flops/tmult<<" mflop/s"<<std::endl;
+        std::cout << GridLogMessage<<"Coarse Kernel bytes/s"<< bytes/tmult<<" MB/s"<<std::endl;
+        std::cout << GridLogMessage<<"Coarse overall flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
+        std::cout << GridLogMessage<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
     
   };
   virtual  void Mdiag    (const Field &in, Field &out){ assert(0);};
