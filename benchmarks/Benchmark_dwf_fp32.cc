@@ -185,6 +185,7 @@ void Benchmark(int Ls, Coordinate Dirichlet)
   GaugeField Umu(UGrid);
   GaugeField UmuCopy(UGrid);
   SU<Nc>::HotConfiguration(RNG4,Umu);
+  //  SU<Nc>::ColdConfiguration(Umu);
   UmuCopy=Umu;
   std::cout << GridLogMessage << "Random gauge initialised " << std::endl;
 
@@ -306,6 +307,14 @@ void Benchmark(int Ls, Coordinate Dirichlet)
 
     if(( n2e>1.0e-4) ) {
       std::cout<<GridLogMessage << "WRONG RESULT" << std::endl;
+      FGrid->Barrier();
+      std::cout<<GridLogMessage << "RESULT" << std::endl;
+      //      std::cout << result<<std::endl;
+      std::cout << norm2(result)<<std::endl;
+      std::cout<<GridLogMessage << "REF" << std::endl;
+      std::cout << norm2(ref)<<std::endl;
+      std::cout<<GridLogMessage << "ERR" << std::endl;
+      std::cout << norm2(err)<<std::endl;
       FGrid->Barrier();
       exit(-1);
     }

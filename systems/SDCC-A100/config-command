@@ -5,7 +5,7 @@
 --enable-accelerator=cuda \
 --enable-gen-simd-width=64 \
 --enable-simd=GPU \
---enable-accelerator-cshift \
+--disable-accelerator-cshift \
 --disable-fermion-reps \
 --disable-gparity \
 CXX=nvcc \
