@@ -568,7 +568,6 @@ inline void acceleratorCopySynchronise(void)
   theCopyAccelerator->wait();
 #endif
 };
-
 inline int  acceleratorIsCommunicable(void *ptr){ return 1; }
 inline void acceleratorMemSet(void *base,int value,size_t bytes)
 {
