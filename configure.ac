@@ -229,13 +229,13 @@ case ${ac_ACC_CSHIFT} in
 esac
 
 
-############### SYCL/CUDA/HIP/none
+############### SYCL/CUDA/HIP/OpenMP/none
 AC_ARG_ENABLE([accelerator],
-    [AS_HELP_STRING([--enable-accelerator=cuda|sycl|hip|none],[enable none,cuda,sycl,hip acceleration])],
+    [AS_HELP_STRING([--enable-accelerator=cuda|sycl|hip|openmp|none],[enable none,openmp,cuda,sycl,hip acceleration])],
     [ac_ACCELERATOR=${enable_accelerator}], [ac_ACCELERATOR=none])
 case ${ac_ACCELERATOR} in
     cuda)
-      echo CUDA acceleration
+      echo CUDA acceleration ${ac_ACCELERATOR} ${enable_accelerator}
       LIBS="${LIBS} -lcuda"
       AC_DEFINE([GRID_CUDA],[1],[Use CUDA offload]);;
     sycl)
@@ -244,12 +244,15 @@ case ${ac_ACCELERATOR} in
     hip)
       echo HIP acceleration
       AC_DEFINE([GRID_HIP],[1],[Use HIP offload]);;
+    openmp)
+      echo OMPTARGET acceleration
+      AC_DEFINE([GRID_OMPTARGET],[1],[Use OMPTARGET offload]);;
     none)
       echo NO acceleration    ;;
     no)
       echo NO acceleration    ;;
     *)
-      AC_MSG_ERROR(["Acceleration not suppoorted ${ac_ACCELERATOR}"]);;
+      AC_MSG_ERROR(["1Acceleration not suppoorted ${ac_ACCELERATOR}"]);;
 esac
 
 ############### UNIFIED MEMORY

@@ -32,15 +32,14 @@ protected:
   uint64_t _odata_size;    
   ViewAdvise advise;
 public:
-  accelerator_inline LatticeAccelerator() : checkerboard(0), _odata(nullptr), _odata_size(0), _grid(nullptr), advise(AdviseDefault) { std::cout << __FILE__ << " " << __LINE__ << std::endl; }; 
-  accelerator_inline uint64_t oSites(void) const { std::cout << __FILE__ << " " << __LINE__ << std::endl; return _odata_size; };
-  accelerator_inline int  Checkerboard(void) const { std::cout << __FILE__ << " " << __LINE__ << std::endl; return checkerboard; };
-  accelerator_inline int &Checkerboard(void) { std::cout << __FILE__ << " " << __LINE__ << std::endl; return this->checkerboard; }; // can assign checkerboard on a container, not a view
-  accelerator_inline ViewAdvise Advise(void) const { std::cout << __FILE__ << " " << __LINE__ << std::endl; return advise; };
-  accelerator_inline ViewAdvise &Advise(void) { std::cout << __FILE__ << " " << __LINE__ << std::endl; return this->advise; }; // can assign advise on a container, not a view
+  accelerator_inline LatticeAccelerator() : checkerboard(0), _odata(nullptr), _odata_size(0), _grid(nullptr), advise(AdviseDefault) { }; 
+  accelerator_inline uint64_t oSites(void) const { return _odata_size; };
+  accelerator_inline int  Checkerboard(void) const { return checkerboard; };
+  accelerator_inline int &Checkerboard(void) { return this->checkerboard; }; // can assign checkerboard on a container, not a view
+  accelerator_inline ViewAdvise Advise(void) const { return advise; };
+  accelerator_inline ViewAdvise &Advise(void) { return this->advise; }; // can assign advise on a container, not a view
   accelerator_inline void Conformable(GridBase * &grid) const
   { 
-    std::cout << __FILE__ << " " << __LINE__ << std::endl;	  
     if (grid) conformable(grid, _grid);
     else      grid = _grid;
   };
@@ -80,11 +79,10 @@ public:
   accelerator_inline uint64_t end(void)   const { return this->_odata_size; };
   accelerator_inline uint64_t size(void)  const { return this->_odata_size; };
 
-  LatticeView(const LatticeAccelerator<vobj> &refer_to_me) : LatticeAccelerator<vobj> (refer_to_me){ std::cout << __FILE__ << " " << __LINE__ << std::endl; }
+  LatticeView(const LatticeAccelerator<vobj> &refer_to_me) : LatticeAccelerator<vobj> (refer_to_me){ }
   LatticeView(const LatticeView<vobj> &refer_to_me) = default; // Trivially copyable
   LatticeView(const LatticeAccelerator<vobj> &refer_to_me,ViewMode mode) : LatticeAccelerator<vobj> (refer_to_me)
   {
-    std::cout << __FILE__ << " " << __LINE__ << std::endl;
     this->ViewOpen(mode);
   }
 
@@ -92,16 +90,13 @@ public:
   void ViewOpen(ViewMode mode)
   { // Translate the pointer, could save a copy. Could use a "Handle" and not save _odata originally in base
     //    std::cout << "View Open"<<std::hex<<this->_odata<<std::dec <<std::endl;
-    std::cout << __FILE__ << " " << __LINE__ << std::endl;
     this->cpu_ptr = (void *)this->_odata;
     this->mode    = mode;
-    std::cout << __FILE__ << " " << __LINE__ << " " << this->cpu_ptr << " " << this->_odata_size*sizeof(vobj) << std::endl;
     this->_odata  =(vobj *)
       MemoryManager::ViewOpen(this->cpu_ptr,
 				this->_odata_size*sizeof(vobj),
 				mode,
 				this->advise);    
-    std::cout << __FILE__ << " " << __LINE__ << std::endl;
   }
   void ViewClose(void)
   { // Inform the manager

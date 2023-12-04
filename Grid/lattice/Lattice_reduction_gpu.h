@@ -32,7 +32,10 @@ int getNumBlocksAndThreads(const Iterator n, const size_t sizeofsobj, Iterator &
 #ifdef GRID_HIP
   hipGetDevice(&device);
 #endif
-  
+#ifdef GRID_OMPTARGET
+  device = omp_get_device_num();  
+#endif
+
   Iterator warpSize            = gpu_props[device].warpSize;
   Iterator sharedMemPerBlock   = gpu_props[device].sharedMemPerBlock;
   Iterator maxThreadsPerBlock  = gpu_props[device].maxThreadsPerBlock;
