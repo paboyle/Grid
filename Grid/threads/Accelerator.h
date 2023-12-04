@@ -529,27 +529,22 @@ extern "C" void *llvm_omp_target_alloc_shared(size_t Size, int DeviceNum);
 accelerator_inline int acceleratorSIMTlane(int Nsimd) { return 0; } // CUDA specific
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)
 {
-  std::cout << "H->D copy to device start "<<std::endl;
   int devc = omp_get_default_device();
   int host = omp_get_initial_device();
   if( omp_target_memcpy( to, from, bytes, 0, 0, devc, host ) ) {
     printf(" omp_target_memcpy host to device failed for %ld in device %d \n",bytes,devc);
   }
-  std::cout << "H->D copy to device end "<<std::endl;
 };
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes)
 {
-  std::cout << "D->H copy from device start "<<std::endl;
   int devc = omp_get_default_device();
   int host = omp_get_initial_device();
   if( omp_target_memcpy( to, from, bytes, 0, 0, host, devc ) ) {
     printf(" omp_target_memcpy device to host failed for %ld in device %d \n",bytes,devc);
   }
-  std::cout << "D->H copy from device end "<<std::endl;
 };
 inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) 
 { 
-  printf("TODO acceleratorCopyDeviceToDeviceAsynch");//memcpy(to,from,bytes);
 #ifdef __CUDA_ARCH__
   extern cudaStream_t copyStream;
   cudaMemcpyAsync(to,from,bytes, cudaMemcpyDeviceToDevice,copyStream);
@@ -562,7 +557,6 @@ inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes
 };
 inline void acceleratorCopySynchronise(void) 
 {
-  printf("TODO acceleratorCopySynchronize");
   //#pragma omp barrier
 #ifdef __CUDA_ARCH__
   extern cudaStream_t copyStream;
@@ -578,7 +572,6 @@ inline void acceleratorCopySynchronise(void)
 inline int  acceleratorIsCommunicable(void *ptr){ return 1; }
 inline void acceleratorMemSet(void *base,int value,size_t bytes)
 {
-  std::cout << " l-l-l-l-l-l-l-l-l-l-l-l-l OMPTARGET calling memset on host and copying to dev l-l-l-l-l-l-l-l-l-l-l-l "<<std::endl;
   void *base_host = memalign(GRID_ALLOC_ALIGN,bytes);
   memset(base_host,value,bytes);
   int devc = omp_get_default_device();
@@ -590,7 +583,6 @@ inline void acceleratorMemSet(void *base,int value,size_t bytes)
 inline void *acceleratorAllocShared(size_t bytes)
 {
 #ifdef __CUDA_ARCH__
-  std::cout << " l-l-l-l-l-l-l-l-l-l-l-l-l  Allocating shared from OMPTARGET MANAGED from CUDA l-l-l-l-l-l-l-l-l-l-l-l "<<std::endl;
   void *ptr=NULL;
   auto err = cudaMallocManaged((void **)&ptr,bytes);
   if( err != cudaSuccess ) {
@@ -599,7 +591,6 @@ inline void *acceleratorAllocShared(size_t bytes)
   }
   return ptr;
 #elif defined __HIP_DEVICE_COMPILE__
-  std::cout << " l-l-l-l-l-l-l-l-l-l-l-l-l  Allocating shared from OMPTARGET MANAGED from HIP l-l-l-l-l-l-l-l-l-l-l-l "<<std::endl;
   void *ptr=NULL;
   auto err = hipMallocManaged((void **)&ptr,bytes);
   if( err != hipSuccess ) {
@@ -608,12 +599,10 @@ inline void *acceleratorAllocShared(size_t bytes)
   }
   return ptr;
 #elif defined __SYCL_DEVICE_ONLY__
-  std::cout << " l-l-l-l-l-l-l-l-l-l-l-l-l  Allocating shared from OMPTARGET MANAGED from SYCL l-l-l-l-l-l-l-l-l-l-l-l "<<std::endl;
   queue q;
   //void *ptr = malloc_shared<void *>(bytes, q);
   return ptr;
 #else
-  std::cout << " l-l-l-l-l-l-l-l-l-l-l-l-l  Allocating shared mem from OMPTARGET from LLVM l-l-l-l-l-l-l-l-l-l-l-l "<<std::endl;
   int devc = omp_get_default_device();
   void *ptr=NULL;
   ptr = (void *) llvm_omp_target_alloc_shared(bytes, devc);
@@ -625,7 +614,6 @@ inline void *acceleratorAllocShared(size_t bytes)
 };
 inline void *acceleratorAllocDevice(size_t bytes)
 {
-  std::cout << " l-l-l-l-l-l-l-l-l-l-l-l-l  Allocating device mem " << bytes << " Bytes from OMPTARGET l-l-l-l-l-l-l-l-l-l-l-l "<<std::endl;
   int devc = omp_get_default_device();
   void *ptr=NULL;
   ptr = (void *) omp_target_alloc(bytes, devc);

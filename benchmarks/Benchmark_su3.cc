@@ -65,10 +65,9 @@ int main (int argc, char ** argv)
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
       GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
-      std::cout << __FILE__ << " " << __LINE__ << std::endl;
-      LatticeColourMatrix z(&Grid); std::cout << "z lattice color mat " << std::endl; random(pRNG,z);
-      LatticeColourMatrix x(&Grid); std::cout << "x lattice color mat " << std::endl; random(pRNG,x);
-      LatticeColourMatrix y(&Grid); std::cout << "y lattice color mat " << std::endl; random(pRNG,y);
+      LatticeColourMatrix z(&Grid); random(pRNG,z);
+      LatticeColourMatrix x(&Grid); random(pRNG,x);
+      LatticeColourMatrix y(&Grid); random(pRNG,y);
 
       for(int64_t i=0;i<Nwarm;i++){
 	x=x*y;
