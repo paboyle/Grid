@@ -112,6 +112,8 @@ private:
   IntegratorType &TheIntegrator;
   ObsListType Observables;
 
+  int traj_num;
+
   /////////////////////////////////////////////////////////
   // Metropolis step
   /////////////////////////////////////////////////////////
@@ -202,7 +204,7 @@ private:
 
     std::cout << GridLogMessage << "--------------------------------------------------\n";
     std::cout << GridLogMessage << " Molecular Dynamics evolution ";
-    TheIntegrator.integrate(U);
+    TheIntegrator.integrate(U,traj_num);
     std::cout << GridLogMessage << "--------------------------------------------------\n";
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -244,7 +246,7 @@ public:
   HybridMonteCarlo(HMCparameters _Pams, IntegratorType &_Int,
                    GridSerialRNG &_sRNG, GridParallelRNG &_pRNG, 
                    ObsListType _Obs, Field &_U)
-    : Params(_Pams), TheIntegrator(_Int), sRNG(_sRNG), pRNG(_pRNG), Observables(_Obs), Ucur(_U) {}
+    : Params(_Pams), TheIntegrator(_Int), sRNG(_sRNG), pRNG(_pRNG), Observables(_Obs), Ucur(_U),traj_num(0) {}
   ~HybridMonteCarlo(){};
 
   void evolve(void) {
@@ -259,9 +261,10 @@ public:
     unsigned int FinalTrajectory = Params.Trajectories + Params.NoMetropolisUntil + Params.StartTrajectory;
 
     for (int traj = Params.StartTrajectory; traj < FinalTrajectory; ++traj) {
+    
 
       std::cout << GridLogHMC << "-- # Trajectory = " << traj << "\n";
-
+      traj_num=traj;
       if (traj < Params.StartTrajectory + Params.NoMetropolisUntil) {
       	std::cout << GridLogHMC << "-- Thermalization" << std::endl;
       }

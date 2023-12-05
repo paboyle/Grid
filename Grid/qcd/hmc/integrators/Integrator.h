@@ -34,6 +34,7 @@ directory
 #define INTEGRATOR_INCLUDED
 
 #include <memory>
+#include <Grid/parallelIO/NerscIO.h>
 
 NAMESPACE_BEGIN(Grid);
 
@@ -676,7 +677,7 @@ public:
   }
 
   
-  void integrate(Field& U) 
+  void integrate(Field& U, int traj=-1 ) 
   {
     // reset the clocks
     t_U = 0;
@@ -688,6 +689,12 @@ public:
       int first_step = (stp == 0);
       int last_step = (stp == Params.MDsteps - 1);
       this->step(U, 0, first_step, last_step);
+      if (traj>=0){
+        std::string file("./config."+std::to_string(traj)+"_"+std::to_string(stp+1) );
+        int precision32 = 0;
+        int tworow      = 0;
+        NerscIO::writeConfiguration(U,file,tworow,precision32);
+      }
     }
 
     // Check the clocks all match on all levels
@@ -697,7 +704,6 @@ public:
     }
 
     FieldImplementation::Project(U);
-
     // and that we indeed got to the end of the trajectory
     assert(fabs(t_U - Params.trajL) < 1.0e-6);
 

@@ -140,7 +140,7 @@ template <class FieldImplementation_, class SmearingPolicy, class Representation
 class MinimumNorm2 : public Integrator<FieldImplementation_, SmearingPolicy, RepresentationPolicy> 
 {
 private:
-  const RealD lambda = 0.1931833275037836;
+//  const RealD lambda = 0.1931833275037836;
 
 public:
   typedef FieldImplementation_ FieldImplementation;
@@ -155,6 +155,11 @@ public:
     // level  : current level
     // fl     : final level
     // eps    : current step size
+    assert(level<3);
+    RealD lambda= this->Params.lambda0;
+    if (level>0) lambda= this->Params.lambda1;
+    if (level>1) lambda= this->Params.lambda2;
+    std::cout << GridLogMessage << "level: "<<level<< "lambda: "<<lambda<<std::endl;
 
     int fl = this->as.size() - 1;
 

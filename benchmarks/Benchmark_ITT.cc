@@ -365,9 +365,15 @@ public:
     GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
     std::cout << GridLogMessage << "Initialised RNGs" << std::endl;
 
+#if 1
     typedef DomainWallFermionF Action;
     typedef typename Action::FermionField Fermion;
     typedef LatticeGaugeFieldF Gauge;
+#else
+    typedef GparityDomainWallFermionF Action;
+    typedef typename Action::FermionField Fermion;
+    typedef LatticeGaugeFieldF Gauge;
+#endif
     
     ///////// Source preparation ////////////
     Gauge Umu(UGrid);  SU<Nc>::HotConfiguration(RNG4,Umu); 
