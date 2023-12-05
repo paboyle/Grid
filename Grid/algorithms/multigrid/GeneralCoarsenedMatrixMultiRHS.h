@@ -286,6 +286,7 @@ public:
       //      std::cout << " osites "<<osites <<" bound "<<bound<< " stencilsize  "<<StencilMasked.size()<<std::endl;
       //      std::cout << " padded local dims   "<<pin.Grid()->LocalDimensions()<<std::endl;
       //      std::cout << " unpadded local dims "<<in.Grid()->LocalDimensions()<<std::endl;
+      
       tmult-=usecond();
       auto Stencil_v = &StencilMasked[0];
       accelerator_for(rspb, StencilMasked.size()*nbasis, Nsimd, {
@@ -303,12 +304,6 @@ public:
 	  for(int bb=1;bb<nbasis;bb++) {
 	    res = res + Aview_p[point][s](bb,b)*nbr(bb);
 	  }
-	  //	  std::cout << " unpadded " << ss<<" padded " << s<< " point "<<point <<" row " <<b<<" "<< innerProduct(res,res) <<std::endl;
-	  //	  std::cout << " unpadded " << ss<<" point "<<point <<" row " <<b<<" res "<< innerProduct(res,res) <<std::endl;
-	  //	  std::cout << " unpadded " << ss<<" point "<<point <<" row " <<b<<" nbrIP "<< innerProduct(nbr,nbr) <<std::endl;
-	  //	  std::cout << " unpadded " << ss<<" point "<<point <<" row " <<b<<" nbr "<< nbr <<std::endl;
-	  //	  std::cout << " unpadded " << ss<<" point "<<point <<" row " <<b<<" nbr "<< in_v[snbr] <<std::endl;
-	  //	  std::cout << " unpadded " << ss<<" point "<<point <<" row " <<b<<" A   "<< innerProduct(Aview_p[point][s],Aview_p[point][s]) <<std::endl;
 	  coalescedWrite(Vview_p[point][ss](b),res);
       });
       tmult2-=usecond();
