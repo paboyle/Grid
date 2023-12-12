@@ -223,8 +223,10 @@ public:
     as[level].apply(update_P_hireps, Representations, Mom, U, ep);
   }
 
-  void implicit_update_P(Field& U, int level, double ep, bool intermediate = false) {
+  void implicit_update_P(Field& U, int level, double ep, double ep1, bool intermediate = false) {
     t_P[level] += ep;
+
+    double ep2= ep-ep1;
 
     std::cout << GridLogIntegrator << "[" << level << "] P "
               << " dt " << ep << " : t_P " << t_P[level] << std::endl;
@@ -267,7 +269,7 @@ public:
 //    std::cout << GridLogIntegrator << "MomDer1 implicit_update_P: " << std::sqrt(norm2(MomDer1)) << std::endl;
 
     // Auxiliary fields
-    P.update_auxiliary_momenta(ep*0.5 );
+    P.update_auxiliary_momenta(ep1);
     P.AuxiliaryFieldsDerivative(AuxDer);
     Msum += AuxDer;
     
@@ -285,7 +287,8 @@ public:
       std::cout << GridLogIntegrator << "|Force| laplacian site average: " << force_abs
                 << std::endl;
 
-      NewMom = P.Mom - ep* 0.5 * HMC_MOMENTUM_DENOMINATOR * (2.0*Msum + factor*MomDer + MomDer1);// simplify
+//      NewMom = P.Mom - ep* 0.5 * HMC_MOMENTUM_DENOMINATOR * (2.0*Msum + factor*MomDer + MomDer1);// simplify
+      NewMom = P.Mom -  HMC_MOMENTUM_DENOMINATOR * (ep*Msum + ep1* factor*MomDer + ep2* MomDer1);// simplify
       diff = NewMom - OldMom;
       counter++;
       RelativeError = std::sqrt(norm2(diff))/std::sqrt(norm2(NewMom));
@@ -297,7 +300,11 @@ public:
     std::cout << GridLogIntegrator << "NewMom implicit_update_P: " << std::sqrt(norm2(NewMom)) << std::endl;
 
     // update the auxiliary fields momenta    
-    P.update_auxiliary_momenta(ep*0.5 );
+    P.update_auxiliary_momenta(ep2);
+  }
+
+  void implicit_update_P(Field& U, int level, double ep, bool intermediate = false) {
+      implicit_update_P( U, level, ep, ep*0.5, intermediate ); 
   }
 
   void update_U(Field& U, double ep) 

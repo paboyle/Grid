@@ -37,7 +37,7 @@ directory
 // second level EOFA
 #undef EOFA_H
 #define USE_OBC
-#undef DO_IMPLICIT
+#define DO_IMPLICIT
 
 NAMESPACE_BEGIN(Grid);
 
@@ -269,11 +269,11 @@ int main(int argc, char **argv) {
   Coordinate mpi   = GridDefaultMpi();
   Coordinate simdF = GridDefaultSimd(Nd,vComplexF::Nsimd());
   Coordinate simdD = GridDefaultSimd(Nd,vComplexD::Nsimd());
-  auto GridPtrF   = SpaceTimeGrid::makeFourDimGrid(latt,simdF,mpi);
-//auto UGrid_f    = SpaceTimeGrid::makeFourDimGrid(latt,simdF,mpi);
-  auto GridRBPtrF = SpaceTimeGrid::makeFourDimRedBlackGrid(GridPtrF);
-  auto FGridF     = SpaceTimeGrid::makeFiveDimGrid(Ls,GridPtrF);
-  auto FrbGridF   = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,GridPtrF);
+//  auto GridPtrF   = SpaceTimeGrid::makeFourDimGrid(latt,simdF,mpi);
+  auto UGrid_f    = SpaceTimeGrid::makeFourDimGrid(latt,simdF,mpi);
+  auto GridRBPtrF = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid_f);
+  auto FGridF     = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid_f);
+  auto FrbGridF   = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid_f);
 
 
 #ifndef USE_OBC
@@ -287,7 +287,7 @@ int main(int argc, char **argv) {
 
   // temporarily need a gauge field
   LatticeGaugeField U(GridPtr);
-  LatticeGaugeFieldF UF(GridPtrF);
+  LatticeGaugeFieldF UF(UGrid_f);
 
   // These lines are unecessary if BC are all periodic
 #ifndef USE_OBC
@@ -330,15 +330,15 @@ int main(int argc, char **argv) {
 
   
   MobiusEOFAFermionD Strange_Op_L (U , *FGrid , *FrbGrid , *GridPtr , *GridRBPtr , strange_mass, strange_mass, charm_mass, 0.0, -1, M5, b, c);
-  MobiusEOFAFermionF Strange_Op_LF(UF, *FGridF, *FrbGridF, *GridPtrF, *GridRBPtrF, strange_mass, strange_mass, charm_mass, 0.0, -1, M5, b, c);
+  MobiusEOFAFermionF Strange_Op_LF(UF, *FGridF, *FrbGridF, *UGrid_f, *GridRBPtrF, strange_mass, strange_mass, charm_mass, 0.0, -1, M5, b, c);
   MobiusEOFAFermionD Strange_Op_R (U , *FGrid , *FrbGrid , *GridPtr , *GridRBPtr , charm_mass, strange_mass,      charm_mass, -1.0, 1, M5, b, c);
-  MobiusEOFAFermionF Strange_Op_RF(UF, *FGridF, *FrbGridF, *GridPtrF, *GridRBPtrF, charm_mass, strange_mass,      charm_mass, -1.0, 1, M5, b, c);
+  MobiusEOFAFermionF Strange_Op_RF(UF, *FGridF, *FrbGridF, *UGrid_f, *GridRBPtrF, charm_mass, strange_mass,      charm_mass, -1.0, 1, M5, b, c);
   
 #ifdef EOFA_H
   MobiusEOFAFermionD Strange2_Op_L (U , *FGrid , *FrbGrid , *GridPtr , *GridRBPtr , eofa_mass, eofa_mass, charm_mass , 0.0, -1, M5, b, c);
-  MobiusEOFAFermionF Strange2_Op_LF(UF, *FGridF, *FrbGridF, *GridPtrF, *GridRBPtrF, eofa_mass, eofa_mass, charm_mass , 0.0, -1, M5, b, c);
+  MobiusEOFAFermionF Strange2_Op_LF(UF, *FGridF, *FrbGridF, *UGrid_f, *GridRBPtrF, eofa_mass, eofa_mass, charm_mass , 0.0, -1, M5, b, c);
   MobiusEOFAFermionD Strange2_Op_R (U , *FGrid , *FrbGrid , *GridPtr , *GridRBPtr , charm_mass , eofa_mass,      charm_mass , -1.0, 1, M5, b, c);
-  MobiusEOFAFermionF Strange2_Op_RF(UF, *FGridF, *FrbGridF, *GridPtrF, *GridRBPtrF, charm_mass , eofa_mass,      charm_mass , -1.0, 1, M5, b, c);
+  MobiusEOFAFermionF Strange2_Op_RF(UF, *FGridF, *FrbGridF, *UGrid_f, *GridRBPtrF, charm_mass , eofa_mass,      charm_mass , -1.0, 1, M5, b, c);
 #endif
 
   ConjugateGradient<FermionField>      ActionCG(ActionStoppingCondition,MaxCGIterations);
@@ -363,7 +363,7 @@ int main(int argc, char **argv) {
   MxPCG_EOFA ActionCGL(ActionStoppingCondition,
 		       MX_inner,
 		       MaxCGIterations,
-		       GridPtrF,
+		       UGrid_f,
 		       FrbGridF,
 		       Strange_Op_LF,Strange_Op_L,
 		       Strange_LinOp_LF,Strange_LinOp_L);
@@ -372,7 +372,7 @@ int main(int argc, char **argv) {
   MxPCG_EOFA ActionCGL2(ActionStoppingCondition,
 		       MX_inner,
 		       MaxCGIterations,
-		       GridPtrF,
+		       UGrid_f,
 		       FrbGridF,
 		       Strange2_Op_LF,Strange2_Op_L,
 		       Strange2_LinOp_LF,Strange2_LinOp_L);
@@ -381,7 +381,7 @@ int main(int argc, char **argv) {
   MxPCG_EOFA DerivativeCGL(DerivativeStoppingCondition,
 			   MX_inner,
 			   MaxCGIterations,
-			   GridPtrF,
+			   UGrid_f,
 			   FrbGridF,
 			   Strange_Op_LF,Strange_Op_L,
 			   Strange_LinOp_LF,Strange_LinOp_L);
@@ -390,7 +390,7 @@ int main(int argc, char **argv) {
   MxPCG_EOFA DerivativeCGL2(DerivativeStoppingCondition,
 			   MX_inner,
 			   MaxCGIterations,
-			   GridPtrF,
+			   UGrid_f,
 			   FrbGridF,
 			   Strange2_Op_LF,Strange2_Op_L,
 			   Strange2_LinOp_LF,Strange2_LinOp_L);
@@ -399,7 +399,7 @@ int main(int argc, char **argv) {
   MxPCG_EOFA ActionCGR(ActionStoppingCondition,
 		       MX_inner,
 		       MaxCGIterations,
-		       GridPtrF,
+		       UGrid_f,
 		       FrbGridF,
 		       Strange_Op_RF,Strange_Op_R,
 		       Strange_LinOp_RF,Strange_LinOp_R);
@@ -408,7 +408,7 @@ int main(int argc, char **argv) {
   MxPCG_EOFA ActionCGR2(ActionStoppingCondition,
 		       MX_inner,
 		       MaxCGIterations,
-		       GridPtrF,
+		       UGrid_f,
 		       FrbGridF,
 		       Strange2_Op_RF,Strange2_Op_R,
 		       Strange2_LinOp_RF,Strange2_LinOp_R);
@@ -417,7 +417,7 @@ int main(int argc, char **argv) {
   MxPCG_EOFA DerivativeCGR(DerivativeStoppingCondition,
 			   MX_inner,
 			   MaxCGIterations,
-			   GridPtrF,
+			   UGrid_f,
 			   FrbGridF,
 			   Strange_Op_RF,Strange_Op_R,
 			   Strange_LinOp_RF,Strange_LinOp_R);
@@ -426,7 +426,7 @@ int main(int argc, char **argv) {
   MxPCG_EOFA DerivativeCGR2(DerivativeStoppingCondition,
 			   MX_inner,
 			   MaxCGIterations,
-			   GridPtrF,
+			   UGrid_f,
 			   FrbGridF,
 			   Strange2_Op_RF,Strange2_Op_R,
 			   Strange2_LinOp_RF,Strange2_LinOp_R);
@@ -515,7 +515,7 @@ int main(int argc, char **argv) {
     ////////////////////////////////////////////////////////////////////////////
     double DerivativeStoppingConditionLoose = 1e-8;
 
-    DenominatorsF.push_back(new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[h],M5,b,c, ParamsF));
+    DenominatorsF.push_back(new FermionActionF(UF,*FGridF,*FrbGridF,*UGrid_f,*GridRBPtrF,light_den[h],M5,b,c, ParamsF));
     LinOpD.push_back(new LinearOperatorD(*Denominators[h]));
     LinOpF.push_back(new LinearOperatorF(*DenominatorsF[h]));
 
@@ -524,7 +524,7 @@ int main(int argc, char **argv) {
     MPCG.push_back(new MxPCG(conv,
 			     MX_inner,
 			     MaxCGIterations,
-			     GridPtrF,
+			     UGrid_f,
 			     FrbGridF,
 			     *DenominatorsF[h],*Denominators[h],
 			     *LinOpF[h], *LinOpD[h]) );
@@ -532,7 +532,7 @@ int main(int argc, char **argv) {
     ActionMPCG.push_back(new MxPCG(ActionStoppingCondition,
 				   MX_inner,
 				   MaxCGIterations,
-				   GridPtrF,
+				   UGrid_f,
 				   FrbGridF,
 				   *DenominatorsF[h],*Denominators[h],
 				   *LinOpF[h], *LinOpD[h]) );
@@ -619,12 +619,12 @@ int main(int argc, char **argv) {
     std::cout << GridLogMessage << " b2= " << mpar.b2 <<std::endl;
 //  Assumes PeriodicGimplR or D at the moment
     auto UGrid = TheHMC.Resources.GetCartesian("gauge");
-//  auto UGrid_f   = SpaceTimeGrid::makeFourDimGrid(latt,simdF,mpi);
+//    auto UGrid_f   = GridPtrF;
 //  auto GridPtrF   = SpaceTimeGrid::makeFourDimGrid(latt,simdF,mpi);
 //    std::cout << GridLogMessage << " UGrid= " << UGrid <<std::endl;
 //    std::cout << GridLogMessage << " UGrid_f= " << UGrid_f <<std::endl;
 
-    LaplacianAdjointRat<HMCWrapper::ImplPolicy, PeriodicGimplF> Mtr(UGrid, GridPtrF ,CG, gpar, mpar);
+    LaplacianAdjointRat<HMCWrapper::ImplPolicy, PeriodicGimplF> Mtr(UGrid, UGrid_f ,CG, gpar, mpar);
 #endif
 
   std::cout << GridLogMessage << " Running the HMC "<< std::endl;
