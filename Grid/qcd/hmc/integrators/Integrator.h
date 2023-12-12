@@ -86,6 +86,7 @@ public:
   MomentumFilterBase<MomentaField> const* MomFilter;
 
   const ActionSet<Field, RepresentationPolicy> as;
+
   ActionSet<Field,RepresentationPolicy> LevelForces;
   
   //Get a pointer to a shared static instance of the "do-nothing" momentum filter to serve as a default
@@ -124,6 +125,8 @@ public:
   void update_P(MomentaField& Mom, Field& U, int level, double ep) {
     // input U actually not used in the fundamental case
     // Fundamental updates, include smearing
+
+    assert(as.size()==LevelForces.size());
     
     Field level_force(U.Grid()); level_force =Zero();
     for (int a = 0; a < as[level].actions.size(); ++a) {
@@ -233,9 +236,13 @@ public:
     MomFilter = getDefaultMomFilter();
 
     for (int level = 0; level < as.size(); ++level) {
-      ActionLevel<Field> Level;
-      Level.push_back(new EmptyAction<Field>);
-      LevelForces.push_back(Level); // does it copy by value or reference??
+      int multiplier = as.at(level).multiplier;
+      ActionLevel<Field> * Level = new ActionLevel<Field>(multiplier);
+      Level->push_back(new EmptyAction<Field>); 
+      LevelForces.push_back(*Level);
+      // does it copy by value or reference??
+      // - answer it copies by value, BUT the action level contains a reference that is NOT updated.
+      // Unsafe code in Guido's area
     }
   };
 
@@ -254,12 +261,14 @@ public:
 
   void reset_timer(void)
   {
+    assert(as.size()==LevelForces.size());
     for (int level = 0; level < as.size(); ++level) {
       for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
         as[level].actions.at(actionID)->reset_timer();
       }
       int actionID=0;
-      LevelForces[level].actions.at(actionID)->reset_timer();
+      assert(LevelForces.at(level).actions.size()==1);
+      LevelForces.at(level).actions.at(actionID)->reset_timer();
     }
   }
   void print_timer(void)
@@ -352,6 +361,13 @@ public:
 	std::cout << as[level].actions.at(actionID)->LogParameters();
       }
     }
+    std::cout << " [Integrator] Total Force loggers: "<< LevelForces.size() <<std::endl;
+    for (int level = 0; level < LevelForces.size(); ++level) {
+      std::cout << GridLogMessage << "[Integrator] ---- Level: "<< level << std::endl;
+      for (int actionID = 0; actionID < LevelForces[level].actions.size(); ++actionID) {
+	std::cout << GridLogMessage << "["<< LevelForces[level].actions.at(actionID)->action_name() << "] ID: " << actionID << std::endl;
+      }
+    }
     std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::"<< std::endl;
   }
 
@@ -433,6 +449,7 @@ public:
   RealD S(Field& U) 
   {  // here also U not used
 
+    assert(as.size()==LevelForces.size());
     std::cout << GridLogIntegrator << "Integrator action\n";
 
     RealD H = - FieldImplementation::FieldSquareNorm(P)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
