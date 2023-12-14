@@ -30,7 +30,7 @@ int getNumBlocksAndThreads(const Iterator n, const size_t sizeofsobj, Iterator &
   cudaGetDevice(&device);
 #endif
 #ifdef GRID_HIP
-  hipGetDevice(&device);
+  auto r=hipGetDevice(&device);
 #endif
 #ifdef GRID_OMPTARGET
   device = omp_get_device_num();  

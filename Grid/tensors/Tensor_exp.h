@@ -53,7 +53,6 @@ template<class vtype, int N> accelerator_inline iVector<vtype, N> Exponentiate(c
 }
 
 
-
 // Specialisation: Cayley-Hamilton exponential for SU(3)
 #if 0
 template<class vtype, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0>::type * =nullptr> 

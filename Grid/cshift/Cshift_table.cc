@@ -1,4 +1,5 @@
 #include <Grid/GridCore.h>       
 NAMESPACE_BEGIN(Grid);
-Vector<std::pair<int,int> > Cshift_table; 
+std::vector<std::pair<int,int> > Cshift_table; 
+commVector<std::pair<int,int> > Cshift_table_device; 
 NAMESPACE_END(Grid);

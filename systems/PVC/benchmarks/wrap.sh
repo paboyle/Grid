@@ -1,9 +1,0 @@
-#!/bin/sh
-
-export ZE_AFFINITY_MASK=0.$MPI_LOCALRANKID
-
-echo Ranke $MPI_LOCALRANKID ZE_AFFINITY_MASK is $ZE_AFFINITY_MASK
-
-
-  $@
-
