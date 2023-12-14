@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
 
    // Typedefs to simplify notation
   typedef WilsonImplR FermionImplPolicy;
-  typedef MobiusFermionR FermionAction;
+  typedef MobiusFermionD FermionAction;
   typedef typename FermionAction::FermionField FermionField;
 
   typedef Grid::XmlReader       Serialiser;
@@ -137,8 +137,8 @@ int main(int argc, char **argv) {
   ////////////////////////////////////
 
   //  FermionAction StrangeOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_mass,M5,b,c, Params);
-  //  DomainWallEOFAFermionR Strange_Op_L(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, mf, mb, shift_L, pm, M5);
-  //  DomainWallEOFAFermionR Strange_Op_R(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, mf, mb, shift_R, pm, M5);
+  //  DomainWallEOFAFermionD Strange_Op_L(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, mf, mb, shift_L, pm, M5);
+  //  DomainWallEOFAFermionD Strange_Op_R(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, mf, mb, shift_R, pm, M5);
   //  ExactOneFlavourRatioPseudoFermionAction EOFA(Strange_Op_L,Strange_Op_R,CG,ofp, false);
 
   FermionAction StrangeOp (U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,strange_mass,M5,b,c, Params);

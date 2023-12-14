@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
 
   RealD mass = 0.01;
   RealD M5 = 1.8;
-  DomainWallFermionR Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5);
+  DomainWallFermionD Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5);
 
   LatticeFermion src_o(FrbGrid);
   LatticeFermion result_o(FrbGrid);
@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
 
   GridStopWatch CGTimer;
 
-  SchurDiagMooeeOperator<DomainWallFermionR, LatticeFermion> HermOpEO(Ddwf);
+  SchurDiagMooeeOperator<DomainWallFermionD, LatticeFermion> HermOpEO(Ddwf);
   ConjugateGradient<LatticeFermion> CG(1.0e-5, 10000, 0);// switch off the assert
 
   CGTimer.Start();
@@ -97,9 +97,6 @@ int main(int argc, char** argv) {
 
   std::cout << GridLogMessage << "Total CG time : " << CGTimer.Elapsed()
             << std::endl;
-
-  std::cout << GridLogMessage << "######## Dhop calls summary" << std::endl;
-  Ddwf.Report();
 
   Grid_finalize();
 }

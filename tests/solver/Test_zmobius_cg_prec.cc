@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
   omegas.push_back( std::complex<double>(0.0686324988446592,-0.0550658530827402) );
 #endif
 
-  ZMobiusFermionR Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, omegas,1.,0.);
+  ZMobiusFermionD Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, omegas,1.,0.);
 
   LatticeFermion src_o(FrbGrid);
   LatticeFermion result_o(FrbGrid);
@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
 
   GridStopWatch CGTimer;
 
-  SchurDiagMooeeOperator<ZMobiusFermionR, LatticeFermion> HermOpEO(Ddwf);
+  SchurDiagMooeeOperator<ZMobiusFermionD, LatticeFermion> HermOpEO(Ddwf);
   ConjugateGradient<LatticeFermion> CG(1.0e-8, 10000, 0);// switch off the assert
 
   CGTimer.Start();
@@ -121,7 +121,6 @@ int main(int argc, char** argv) {
             << std::endl;
 
   std::cout << GridLogMessage << "######## Dhop calls summary" << std::endl;
-  Ddwf.Report();
 
   Grid_finalize();
 }

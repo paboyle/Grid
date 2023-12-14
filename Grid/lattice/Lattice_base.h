@@ -117,6 +117,7 @@ public:
   ////////////////////////////////////////////////////////////////////////////////
   template <typename Op, typename T1> inline Lattice<vobj> & operator=(const LatticeUnaryExpression<Op,T1> &expr)
   {
+    GRID_TRACE("ExpressionTemplateEval");
     GridBase *egrid(nullptr);
     GridFromExpression(egrid,expr);
     assert(egrid!=nullptr);
@@ -129,7 +130,7 @@ public:
     
     auto exprCopy = expr;
     ExpressionViewOpen(exprCopy);
-    auto me  = View(AcceleratorWrite);
+    auto me  = View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       auto tmp = eval(ss,exprCopy);
       coalescedWrite(me[ss],tmp);
@@ -140,6 +141,7 @@ public:
   }
   template <typename Op, typename T1,typename T2> inline Lattice<vobj> & operator=(const LatticeBinaryExpression<Op,T1,T2> &expr)
   {
+    GRID_TRACE("ExpressionTemplateEval");
     GridBase *egrid(nullptr);
     GridFromExpression(egrid,expr);
     assert(egrid!=nullptr);
@@ -152,7 +154,7 @@ public:
 
     auto exprCopy = expr;
     ExpressionViewOpen(exprCopy);
-    auto me  = View(AcceleratorWrite);
+    auto me  = View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       auto tmp = eval(ss,exprCopy);
       coalescedWrite(me[ss],tmp);
@@ -163,6 +165,7 @@ public:
   }
   template <typename Op, typename T1,typename T2,typename T3> inline Lattice<vobj> & operator=(const LatticeTrinaryExpression<Op,T1,T2,T3> &expr)
   {
+    GRID_TRACE("ExpressionTemplateEval");
     GridBase *egrid(nullptr);
     GridFromExpression(egrid,expr);
     assert(egrid!=nullptr);
@@ -174,7 +177,7 @@ public:
     this->checkerboard=cb;
     auto exprCopy = expr;
     ExpressionViewOpen(exprCopy);
-    auto me  = View(AcceleratorWrite);
+    auto me  = View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       auto tmp = eval(ss,exprCopy);
       coalescedWrite(me[ss],tmp);
@@ -245,7 +248,7 @@ public:
   ///////////////////////////////////////////
   // user defined constructor
   ///////////////////////////////////////////
-  Lattice(GridBase *grid,ViewMode mode=AcceleratorWrite) { 
+  Lattice(GridBase *grid,ViewMode mode=AcceleratorWriteDiscard) { 
     this->_grid = grid;
     resize(this->_grid->oSites());
     assert((((uint64_t)&this->_odata[0])&0xF) ==0);
@@ -288,8 +291,8 @@ public:
     typename std::enable_if<!std::is_same<robj,vobj>::value,int>::type i=0;
     conformable(*this,r);
     this->checkerboard = r.Checkerboard();
-    auto me =   View(AcceleratorWrite);
     auto him= r.View(AcceleratorRead);
+    auto me =   View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       coalescedWrite(me[ss],him(ss));
     });
@@ -303,8 +306,8 @@ public:
   inline Lattice<vobj> & operator = (const Lattice<vobj> & r){
     this->checkerboard = r.Checkerboard();
     conformable(*this,r);
-    auto me =   View(AcceleratorWrite);
     auto him= r.View(AcceleratorRead);
+    auto me =   View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       coalescedWrite(me[ss],him(ss));
     });

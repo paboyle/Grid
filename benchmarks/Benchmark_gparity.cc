@@ -93,14 +93,11 @@ int main (int argc, char ** argv)
   int ncall =1000;
   if (1) {
     FGrid->Barrier();
-    Dw.ZeroCounters();
     Dw.Dhop(src,result,0);
     std::cout<<GridLogMessage<<"Called warmup"<<std::endl;
     double t0=usecond();
     for(int i=0;i<ncall;i++){
-      __SSC_START;
       Dw.Dhop(src,result,0);
-      __SSC_STOP;
     }
     double t1=usecond();
     FGrid->Barrier();
@@ -114,7 +111,6 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NN<<std::endl;
-    Dw.Report();
   }
 
 
@@ -136,14 +132,11 @@ int main (int argc, char ** argv)
   GparityDomainWallFermionD DwD(Umu_d,*FGrid_d,*FrbGrid_d,*UGrid_d,*UrbGrid_d,mass,M5);
   if (1) {
     FGrid_d->Barrier();
-    DwD.ZeroCounters();
     DwD.Dhop(src_d,result_d,0);
     std::cout<<GridLogMessage<<"Called warmup"<<std::endl;
     double t0=usecond();
     for(int i=0;i<ncall;i++){
-      __SSC_START;
       DwD.Dhop(src_d,result_d,0);
-      __SSC_STOP;
     }
     double t1=usecond();
     FGrid_d->Barrier();
@@ -157,7 +150,6 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NN<<std::endl;
-    DwD.Report();
   }
 #endif
   Grid_finalize();

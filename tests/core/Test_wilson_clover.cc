@@ -52,8 +52,8 @@ int main(int argc, char **argv)
   pRNG.SeedFixedIntegers(seeds);
   //  pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
 
-  typedef typename WilsonCloverFermionR::FermionField FermionField;
-  typename WilsonCloverFermionR::ImplParams params;
+  typedef typename WilsonCloverFermionD::FermionField FermionField;
+  typename WilsonCloverFermionD::ImplParams params;
   WilsonAnisotropyCoefficients anis;
 
   FermionField src(&Grid);
@@ -88,8 +88,8 @@ int main(int argc, char **argv)
   RealD csw_r = 1.0;
   RealD csw_t = 1.0;
 
-  WilsonCloverFermionR Dwc(Umu, Grid, RBGrid, mass, csw_r, csw_t, anis, params);
-  CompactWilsonCloverFermionR Dwc_compact(Umu, Grid, RBGrid, mass, csw_r, csw_t, 1.0, anis, params);
+  WilsonCloverFermionD Dwc(Umu, Grid, RBGrid, mass, csw_r, csw_t, anis, params);
+  CompactWilsonCloverFermionD Dwc_compact(Umu, Grid, RBGrid, mass, csw_r, csw_t, 1.0, anis, params);
 
   std::cout << GridLogMessage << "==========================================================" << std::endl;
   std::cout << GridLogMessage << "= Testing that Deo + Doe = Dunprec " << std::endl;
@@ -324,8 +324,8 @@ int main(int argc, char **argv)
   }
   /////////////////
 
-  WilsonCloverFermionR Dwc_prime(U_prime, Grid, RBGrid, mass, csw_r, csw_t, anis, params);
-  CompactWilsonCloverFermionR Dwc_compact_prime(U_prime, Grid, RBGrid, mass, csw_r, csw_t, 1.0, anis, params);
+  WilsonCloverFermionD Dwc_prime(U_prime, Grid, RBGrid, mass, csw_r, csw_t, anis, params);
+  CompactWilsonCloverFermionD Dwc_compact_prime(U_prime, Grid, RBGrid, mass, csw_r, csw_t, 1.0, anis, params);
 
   tmp = Omega * src;
   pickCheckerboard(Even, src_e, tmp);
@@ -377,14 +377,14 @@ int main(int argc, char **argv)
   chi = Zero();
   phi = Zero();
 
-  WilsonFermionR Dw(Umu, Grid, RBGrid, mass, params);
+  WilsonFermionD Dw(Umu, Grid, RBGrid, mass, params);
 
   Dw.M(src, result);
   Dwc.M(src, chi);
 
   Dwc_prime.M(Omega * src, phi);
 
-  WilsonFermionR Dw_prime(U_prime, Grid, RBGrid, mass, params);
+  WilsonFermionD Dw_prime(U_prime, Grid, RBGrid, mass, params);
   Dw_prime.M(Omega * src, result2);
 
   err = result - adj(Omega) * result2;
@@ -411,7 +411,7 @@ int main(int argc, char **argv)
   chi = Zero();
   phi = Zero();
   err = Zero();
-  WilsonCloverFermionR Dwc_csw0(Umu, Grid, RBGrid, mass, 0.0, 0.0, anis, params); //  <-- Notice: csw=0
+  WilsonCloverFermionD Dwc_csw0(Umu, Grid, RBGrid, mass, 0.0, 0.0, anis, params); //  <-- Notice: csw=0
 
   pickCheckerboard(Even, phi_e, phi);
   pickCheckerboard(Odd, phi_o, phi);
@@ -437,7 +437,7 @@ int main(int argc, char **argv)
   chi = Zero();
   phi = Zero();
   err = Zero();
-  CompactWilsonCloverFermionR Dwc_compact_csw0(Umu, Grid, RBGrid, mass, 0.0, 0.0, 1.0, anis, params); //  <-- Notice: csw=0
+  CompactWilsonCloverFermionD Dwc_compact_csw0(Umu, Grid, RBGrid, mass, 0.0, 0.0, 1.0, anis, params); //  <-- Notice: csw=0
 
   pickCheckerboard(Even, phi_e, phi);
   pickCheckerboard(Odd, phi_o, phi);

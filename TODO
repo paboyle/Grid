@@ -1,3 +1,24 @@
+- - Slice sum optimisation & A2A - atomic addition
+- - Also faster non-atomic reduction
+- - Remaining PRs
+- - DDHMC
+  - - MixedPrec is the action eval, high precision
+  - - MixedPrecCleanup is the force eval, low precision
+
+=================
+=================
+Lattice_basis.h -- > HIP and SYCL GPU code
+
+
+======
+DDHMC
+======
+-- Reliable Update CG - DONE
+-- Multishift Mixed Precision - DONE
+-- Pole dependent residual  - DONE
+
+
+=======
 -- comms threads issue??
 -- Part done: Staggered kernel performance on GPU
 
@@ -8,7 +29,7 @@ General
 - Make representations code take Gimpl
 - Simplify the HMCand remove modules
 - Lattice_arith - are the mult, mac etc.. still needed after ET engine?
-- Lattice_rng - faster local only loop in init
+- Lattice_rng - faster local only loop in init -- DDHMC
 - Audit: accelerate A2Autils -- off critical path for HMC
 
 =========================================================

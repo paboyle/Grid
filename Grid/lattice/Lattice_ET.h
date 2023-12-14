@@ -63,7 +63,7 @@ accelerator_inline vobj predicatedWhere(const iobj &predicate,
   typename std::remove_const<vobj>::type ret;
 
   typedef typename vobj::scalar_object scalar_object;
-  typedef typename vobj::scalar_type scalar_type;
+  //  typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   const int Nsimd = vobj::vector_type::Nsimd();
@@ -345,7 +345,9 @@ GridUnopClass(UnaryNot, Not(a));
 GridUnopClass(UnaryTrace, trace(a));
 GridUnopClass(UnaryTranspose, transpose(a));
 GridUnopClass(UnaryTa, Ta(a));
+GridUnopClass(UnarySpTa, SpTa(a));
 GridUnopClass(UnaryProjectOnGroup, ProjectOnGroup(a));
+GridUnopClass(UnaryProjectOnSpGroup, ProjectOnSpGroup(a));
 GridUnopClass(UnaryTimesI, timesI(a));
 GridUnopClass(UnaryTimesMinusI, timesMinusI(a));
 GridUnopClass(UnaryAbs, abs(a));
@@ -456,7 +458,9 @@ GRID_DEF_UNOP(operator!, UnaryNot);
 GRID_DEF_UNOP(trace, UnaryTrace);
 GRID_DEF_UNOP(transpose, UnaryTranspose);
 GRID_DEF_UNOP(Ta, UnaryTa);
+GRID_DEF_UNOP(SpTa, UnarySpTa);
 GRID_DEF_UNOP(ProjectOnGroup, UnaryProjectOnGroup);
+GRID_DEF_UNOP(ProjectOnSpGroup, UnaryProjectOnSpGroup);
 GRID_DEF_UNOP(timesI, UnaryTimesI);
 GRID_DEF_UNOP(timesMinusI, UnaryTimesMinusI);
 GRID_DEF_UNOP(abs, UnaryAbs);  // abs overloaded in cmath C++98; DON'T do the

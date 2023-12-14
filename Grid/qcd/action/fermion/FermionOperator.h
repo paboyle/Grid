@@ -49,6 +49,8 @@ public:
 
   virtual FermionField &tmp(void) = 0;
 
+  virtual void DirichletBlock(const Coordinate & _Block) { assert(0); };
+  
   GridBase * Grid(void)   { return FermionGrid(); };   // this is all the linalg routines need to know
   GridBase * RedBlackGrid(void) { return FermionRedBlackGrid(); };
 

@@ -144,8 +144,8 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
   mprintf("MemoryManager: Evict cpu %lx acc %lx cpuLock %ld accLock %ld\n",
 	  (uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr,
 	  (uint64_t)AccCache.cpuLock,(uint64_t)AccCache.accLock); 
-  assert(AccCache.accLock==0); // Cannot evict so logic bomb
-  assert(AccCache.CpuPtr!=(uint64_t)NULL);
+  if (AccCache.accLock!=0) return;
+  if (AccCache.cpuLock!=0) return;
   if(AccCache.state==AccDirty) {
     Flush(AccCache);
   }
@@ -519,7 +519,6 @@ void MemoryManager::Audit(std::string s)
   uint64_t LruBytes1=0;
   uint64_t LruBytes2=0;
   uint64_t LruCnt=0;
-  uint64_t LockedBytes=0;
   
   std::cout << " Memory Manager::Audit() from "<<s<<std::endl;
   for(auto it=LRU.begin();it!=LRU.end();it++){
@@ -532,6 +531,7 @@ void MemoryManager::Audit(std::string s)
     assert(AccCache.LRU_entry==it);
   }
   std::cout << " Memory Manager::Audit() LRU queue matches table entries "<<std::endl;
+
   for(auto it=AccViewTable.begin();it!=AccViewTable.end();it++){
     auto &AccCache = it->second;
     
@@ -548,6 +548,7 @@ void MemoryManager::Audit(std::string s)
     
     if ( AccCache.cpuLock || AccCache.accLock ) {
       assert(AccCache.LRU_valid==0);
+
       std::cout << GridLogError << s<< "\n\t 0x"<<std::hex<<AccCache.CpuPtr<<std::dec
 		<< "\t0x"<<std::hex<<AccCache.AccPtr<<std::dec<<"\t" <<str
 		<< "\t cpuLock  " << AccCache.cpuLock
@@ -566,6 +567,7 @@ void MemoryManager::Audit(std::string s)
   std::cout << " Memory Manager::Audit() device bytes matches sum over table "<<std::endl;
   assert(LruCnt == LRU.size());
   std::cout << " Memory Manager::Audit() LRU entry count matches "<<std::endl;
+
 }
 
 void MemoryManager::PrintState(void* _CpuPtr)

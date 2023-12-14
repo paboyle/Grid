@@ -30,9 +30,12 @@ int getNumBlocksAndThreads(const Iterator n, const size_t sizeofsobj, Iterator &
   cudaGetDevice(&device);
 #endif
 #ifdef GRID_HIP
-  hipGetDevice(&device);
+  auto r=hipGetDevice(&device);
 #endif
-  
+#ifdef GRID_OMPTARGET
+  device = omp_get_device_num();  
+#endif
+
   Iterator warpSize            = gpu_props[device].warpSize;
   Iterator sharedMemPerBlock   = gpu_props[device].sharedMemPerBlock;
   Iterator maxThreadsPerBlock  = gpu_props[device].maxThreadsPerBlock;
@@ -211,13 +214,25 @@ inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osi
   assert(ok);
 
   Integer smemSize = numThreads * sizeof(sobj);
-
+  // Move out of UVM
+  // Turns out I had messed up the synchronise after move to compute stream
+  // as running this on the default stream fools the synchronise
+#undef UVM_BLOCK_BUFFER  
+#ifndef UVM_BLOCK_BUFFER  
+  commVector<sobj> buffer(numBlocks);
+  sobj *buffer_v = &buffer[0];
+  sobj result;
+  reduceKernel<<< numBlocks, numThreads, smemSize, computeStream >>>(lat, buffer_v, size);
+  accelerator_barrier();
+  acceleratorCopyFromDevice(buffer_v,&result,sizeof(result));
+#else
   Vector<sobj> buffer(numBlocks);
   sobj *buffer_v = &buffer[0];
-  
-  reduceKernel<<< numBlocks, numThreads, smemSize >>>(lat, buffer_v, size);
+  sobj result;
+  reduceKernel<<< numBlocks, numThreads, smemSize, computeStream >>>(lat, buffer_v, size);
   accelerator_barrier();
-  auto result = buffer_v[0];
+  result = *buffer_v;
+#endif
   return result;
 }
 
@@ -250,8 +265,6 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
 template <class vobj>
 inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites)
 {
-  typedef typename vobj::vector_type  vector;
-  typedef typename vobj::scalar_typeD scalarD;
   typedef typename vobj::scalar_objectD sobj;
   sobj ret;
   

@@ -48,9 +48,10 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
   _ShmSetup=1;
 }
 
-void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
+void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_MPI_Comm & optimal_comm,Coordinate &SHM)
 {
   optimal_comm = WorldComm;
+  SHM = Coordinate(processors.size(),1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +68,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Each MPI rank should allocate our own buffer
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ShmCommBuf = acceleratorAllocDevice(bytes);
+  ShmCommBuf = acceleratorAllocShared(bytes);
+  //ShmCommBuf = acceleratorAllocDevice(bytes);
 
   if (ShmCommBuf == (void *)NULL ) {
     std::cerr << " SharedMemoryNone.cc acceleratorAllocDevice failed NULL pointer for " << bytes<<" bytes " << std::endl;

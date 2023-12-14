@@ -129,18 +129,10 @@ public:
     Runner(S);
   }
 
-  //////////////////////////////////////////////////////////////////
-
-private:
-  template <class SmearingPolicy>
-  void Runner(SmearingPolicy &Smearing) {
-    auto UGrid = Resources.GetCartesian();
-    Resources.AddRNGs();
-    Field U(UGrid);
-
-    // Can move this outside?
-    typedef IntegratorType<SmearingPolicy> TheIntegrator;
-    TheIntegrator MDynamics(UGrid, Parameters.MD, TheAction, Smearing);
+  //Use the checkpointer to initialize the RNGs and the gauge field, writing the resulting gauge field into U.
+  //This is called automatically by Run but may be useful elsewhere, e.g. for integrator tuning experiments
+  void initializeGaugeFieldAndRNGs(Field &U){
+    if(!Resources.haveRNGs()) Resources.AddRNGs();
 
     if (Parameters.StartingType == "HotStart") {
       // Hot start
@@ -159,14 +151,43 @@ private:
       Resources.GetCheckPointer()->CheckpointRestore(Parameters.StartTrajectory, U,
 						     Resources.GetSerialRNG(),
 						     Resources.GetParallelRNG());
+    } else if (Parameters.StartingType == "CheckpointStartReseed") {
+      // Same as CheckpointRestart but reseed the RNGs using the fixed integer seeding used for ColdStart and HotStart
+      // Useful for creating new evolution streams from an existing stream
+      
+      // WARNING: Unfortunately because the checkpointer doesn't presently allow us to separately restore the RNG and gauge fields we have to load
+      // an existing RNG checkpoint first; make sure one is available and named correctly
+      Resources.GetCheckPointer()->CheckpointRestore(Parameters.StartTrajectory, U,
+						     Resources.GetSerialRNG(),
+						     Resources.GetParallelRNG());
+      Resources.SeedFixedIntegers();      
     } else {
       // others
       std::cout << GridLogError << "Unrecognized StartingType\n";
       std::cout
 	<< GridLogError
-	<< "Valid [HotStart, ColdStart, TepidStart, CheckpointStart]\n";
+	<< "Valid [HotStart, ColdStart, TepidStart, CheckpointStart, CheckpointStartReseed]\n";
       exit(1);
     }
+  }
+
+
+
+  //////////////////////////////////////////////////////////////////
+
+private:
+  template <class SmearingPolicy>
+  void Runner(SmearingPolicy &Smearing) {
+    auto UGrid = Resources.GetCartesian();
+    Field U(UGrid);
+
+    initializeGaugeFieldAndRNGs(U);
+
+    typedef IntegratorType<SmearingPolicy> TheIntegrator;
+    TheIntegrator MDynamics(UGrid, Parameters.MD, TheAction, Smearing);
+
+    // Sets the momentum filter
+    MDynamics.setMomentumFilter(*(Resources.GetMomentumFilter()));
 
     Smearing.set_Field(U);
 
@@ -203,6 +224,18 @@ template <class RepresentationsPolicy,
           template <typename, typename, typename> class Integrator>
 using GenericHMCRunnerHirep =
 				     HMCWrapperTemplate<PeriodicGimplR, Integrator, RepresentationsPolicy>;
+
+// sp2n
+
+template <template <typename, typename, typename> class Integrator>
+using GenericSpHMCRunner = HMCWrapperTemplate<SpPeriodicGimplR, Integrator>;
+
+template <class RepresentationsPolicy,
+          template <typename, typename, typename> class Integrator>
+using GenericSpHMCRunnerHirep =
+                     HMCWrapperTemplate<SpPeriodicGimplR, Integrator, RepresentationsPolicy>;
+
+
 
 template <class Implementation, class RepresentationsPolicy, 
           template <typename, typename, typename> class Integrator>

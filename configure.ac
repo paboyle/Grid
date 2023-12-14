@@ -1,5 +1,5 @@
-AC_PREREQ([2.63])
-AC_INIT([Grid], [0.7.0], [https://github.com/paboyle/Grid], [Grid])
+AC_PREREQ([2.69])
+AC_INIT([Grid],[0.7.0],[https://github.com/paboyle/Grid],[Grid])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -20,7 +20,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 ################ Set flags
 # do not move!
-AC_ARG_ENABLE([debug],[AC_HELP_STRING([--enable-debug=yes|no], [enable debug compilation ])],
+AC_ARG_ENABLE([debug],[AS_HELP_STRING([--enable-debug=yes|no],[enable debug compilation ])],
     [ac_DEBUG=${enable_debug}], [ac_DEBUG=no])
 case ${ac_DEBUG} in
     yes)
@@ -41,7 +41,7 @@ AC_PROG_RANLIB
 
 ############### Get compiler informations
 AC_LANG([C++])
-AX_CXX_COMPILE_STDCXX_11([noext],[mandatory])
+AX_CXX_COMPILE_STDCXX(17,noext,mandatory)
 AX_COMPILER_VENDOR
 AC_DEFINE_UNQUOTED([CXX_COMP_VENDOR],["$ax_cv_cxx_compiler_vendor"],
       [vendor of C++ compiler that will compile the code])
@@ -114,7 +114,7 @@ AC_ARG_WITH([openssl],
 
 ############### lapack
 AC_ARG_ENABLE([lapack],
-    [AC_HELP_STRING([--enable-lapack=yes|no|prefix], [enable LAPACK])],
+    [AS_HELP_STRING([--enable-lapack=yes|no|prefix],[enable LAPACK])],
     [ac_LAPACK=${enable_lapack}], [ac_LAPACK=no])
 
 case ${ac_LAPACK} in
@@ -128,21 +128,41 @@ case ${ac_LAPACK} in
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK]);;
 esac
 
+############### tracing
+AC_ARG_ENABLE([tracing],
+    [AS_HELP_STRING([--enable-tracing=none|nvtx|roctx|timer],[enable tracing])],
+    [ac_TRACING=${enable_tracing}], [ac_TRACING=none])
+
+case ${ac_TRACING} in
+    nvtx)
+        AC_DEFINE([GRID_TRACING_NVTX],[1],[use NVTX])
+	LIBS="${LIBS} -lnvToolsExt64_1"
+	;;
+    roctx)
+        AC_DEFINE([GRID_TRACING_ROCTX],[1],[use ROCTX])
+	LIBS="${LIBS} -lroctx64"
+	;;
+    timer)
+        AC_DEFINE([GRID_TRACING_TIMER],[1],[use TIMER]);;
+    *)
+	AC_DEFINE([GRID_TRACING_NONE],[1],[no tracing]);;
+esac
+
 ############### fermions
 AC_ARG_ENABLE([fermion-reps],
-     [AC_HELP_STRING([--enable-fermion-reps=yes|no], [enable extra fermion representation support])],
+     [AS_HELP_STRING([--enable-fermion-reps=yes|no],[enable extra fermion representation support])],
      [ac_FERMION_REPS=${enable_fermion_reps}], [ac_FERMION_REPS=yes])
 
 AM_CONDITIONAL(BUILD_FERMION_REPS, [ test "${ac_FERMION_REPS}X" == "yesX" ])
 
 AC_ARG_ENABLE([gparity],
-     [AC_HELP_STRING([--enable-gparity=yes|no], [enable G-parity support])],
+     [AS_HELP_STRING([--enable-gparity=yes|no],[enable G-parity support])],
      [ac_GPARITY=${enable_gparity}], [ac_GPARITY=yes])
 
 AM_CONDITIONAL(BUILD_GPARITY, [ test "${ac_GPARITY}X" == "yesX" ])
 
 AC_ARG_ENABLE([zmobius],
-     [AC_HELP_STRING([--enable-zmobius=yes|no], [enable Zmobius support])],
+     [AS_HELP_STRING([--enable-zmobius=yes|no],[enable Zmobius support])],
      [ac_ZMOBIUS=${enable_zmobius}], [ac_ZMOBIUS=yes])
 
 AM_CONDITIONAL(BUILD_ZMOBIUS, [ test "${ac_ZMOBIUS}X" == "yesX" ])
@@ -159,7 +179,7 @@ case ${ac_ZMOBIUS} in
 esac
 ############### Nc
 AC_ARG_ENABLE([Nc],
-    [AC_HELP_STRING([--enable-Nc=2|3|4|5], [enable number of colours])],
+    [AS_HELP_STRING([--enable-Nc=2|3|4|5],[enable number of colours])],
     [ac_Nc=${enable_Nc}], [ac_Nc=3])
 
 case ${ac_Nc} in
@@ -171,13 +191,31 @@ case ${ac_Nc} in
         AC_DEFINE([Config_Nc],[4],[Gauge group Nc]);;
     5)
         AC_DEFINE([Config_Nc],[5],[Gauge group Nc]);;
+    8)
+        AC_DEFINE([Config_Nc],[8],[Gauge group Nc]);;
     *)
       AC_MSG_ERROR(["Unsupport gauge group choice Nc = ${ac_Nc}"]);;
 esac
 
+############### Symplectic group
+AC_ARG_ENABLE([Sp],
+    [AC_HELP_STRING([--enable-Sp=yes|no], [enable gauge group Sp2n])],
+    [ac_ENABLE_SP=${enable_Sp}], [ac_ENABLE_SP=no])
+
+AM_CONDITIONAL(BUILD_SP, [ test "${ac_ENABLE_SP}X" == "yesX" ])
+
+case ${ac_ENABLE_SP} in
+   yes)
+        AC_DEFINE([Sp2n_config],[1],[gauge group Sp2n], [have_sp2n=true]);;
+   no)
+        AC_DEFINE([Sp2n_config],[0],[gauge group SUn], [have_sp2n=false]);;
+    *)
+        AC_MSG_ERROR(["--enable-Sp is either yes or no"]);;
+esac
+
 ############### FP16 conversions
 AC_ARG_ENABLE([sfw-fp16],
-    [AC_HELP_STRING([--enable-sfw-fp16=yes|no], [enable software fp16 comms])],
+    [AS_HELP_STRING([--enable-sfw-fp16=yes|no],[enable software fp16 comms])],
     [ac_SFW_FP16=${enable_sfw_fp16}], [ac_SFW_FP16=yes])
 case ${ac_SFW_FP16} in
     yes)
@@ -189,11 +227,11 @@ esac
 
 ############### Default to accelerator cshift, but revert to host if UCX is buggy or other reasons
 AC_ARG_ENABLE([accelerator-cshift],
-    [AC_HELP_STRING([--enable-accelerator-cshift=yes|no], [run cshift on the device])],
+    [AS_HELP_STRING([--enable-accelerator-cshift=yes|no],[run cshift on the device])],
     [ac_ACC_CSHIFT=${enable_accelerator_cshift}], [ac_ACC_CSHIFT=yes])
 
 AC_ARG_ENABLE([ucx-buggy],
-    [AC_HELP_STRING([--enable-ucx-buggy=yes|no], [enable workaround for UCX device buffer bugs])],
+    [AS_HELP_STRING([--enable-ucx-buggy=yes|no],[enable workaround for UCX device buffer bugs])],
     [ac_UCXBUGGY=${enable_ucx_buggy}], [ac_UCXBUGGY=no])
 
 case ${ac_UCXBUGGY} in
@@ -209,13 +247,13 @@ case ${ac_ACC_CSHIFT} in
 esac
 
 
-############### SYCL/CUDA/HIP/none
+############### SYCL/CUDA/HIP/OpenMP/none
 AC_ARG_ENABLE([accelerator],
-    [AC_HELP_STRING([--enable-accelerator=cuda|sycl|hip|none], [enable none,cuda,sycl,hip acceleration])],
+    [AS_HELP_STRING([--enable-accelerator=cuda|sycl|hip|openmp|none],[enable none,openmp,cuda,sycl,hip acceleration])],
     [ac_ACCELERATOR=${enable_accelerator}], [ac_ACCELERATOR=none])
 case ${ac_ACCELERATOR} in
     cuda)
-      echo CUDA acceleration
+      echo CUDA acceleration ${ac_ACCELERATOR} ${enable_accelerator}
       LIBS="${LIBS} -lcuda"
       AC_DEFINE([GRID_CUDA],[1],[Use CUDA offload]);;
     sycl)
@@ -224,17 +262,20 @@ case ${ac_ACCELERATOR} in
     hip)
       echo HIP acceleration
       AC_DEFINE([GRID_HIP],[1],[Use HIP offload]);;
+    openmp)
+      echo OMPTARGET acceleration
+      AC_DEFINE([GRID_OMPTARGET],[1],[Use OMPTARGET offload]);;
     none)
       echo NO acceleration    ;;
     no)
       echo NO acceleration    ;;
     *)
-      AC_MSG_ERROR(["Acceleration not suppoorted ${ac_ACCELERATOR}"]);;
+      AC_MSG_ERROR(["1Acceleration not suppoorted ${ac_ACCELERATOR}"]);;
 esac
 
 ############### UNIFIED MEMORY
 AC_ARG_ENABLE([unified],
-    [AC_HELP_STRING([--enable-unified=yes|no], [enable unified address space for accelerator loops])],
+    [AS_HELP_STRING([--enable-unified=yes|no],[enable unified address space for accelerator loops])],
     [ac_UNIFIED=${enable_unified}], [ac_UNIFIED=yes])
 case ${ac_UNIFIED} in
     yes)
@@ -248,10 +289,10 @@ esac
 
 ############### Intel libraries
 AC_ARG_ENABLE([mkl],
-    [AC_HELP_STRING([--enable-mkl=yes|no|prefix], [enable Intel MKL for LAPACK & FFTW])],
+    [AS_HELP_STRING([--enable-mkl=yes|no|prefix],[enable Intel MKL for LAPACK & FFTW])],
     [ac_MKL=${enable_mkl}], [ac_MKL=no])
 AC_ARG_ENABLE([ipp],
-    [AC_HELP_STRING([--enable-ipp=yes|no|prefix], [enable Intel IPP for fast CRC32C])],
+    [AS_HELP_STRING([--enable-ipp=yes|no|prefix],[enable Intel IPP for fast CRC32C])],
     [ac_IPP=${enable_ipp}], [ac_IPP=no])
 
 case ${ac_MKL} in
@@ -349,8 +390,7 @@ CXXFLAGS=$CXXFLAGS_CPY
 LDFLAGS=$LDFLAGS_CPY
 
 ############### SIMD instruction selection
-AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=code],
-              [select SIMD target (cf. README.md)])], [ac_SIMD=${enable_simd}], [ac_SIMD=GEN])
+AC_ARG_ENABLE([simd],[AS_HELP_STRING([--enable-simd=code],[select SIMD target (cf. README.md)])], [ac_SIMD=${enable_simd}], [ac_SIMD=GEN])
 
 AC_ARG_ENABLE([gen-simd-width],
             [AS_HELP_STRING([--enable-gen-simd-width=size],
@@ -394,11 +434,10 @@ case ${CXXTEST} in
     fi
     ;;
   hipcc)
-#    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
     CXXFLAGS="$CXXFLAGS -fno-strict-aliasing"
     CXXLD=${CXX}
     if test $ac_openmp = yes; then
-       CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
+       CXXFLAGS="$CXXFLAGS -fopenmp"
     fi
     ;;
   dpcpp)
@@ -416,7 +455,13 @@ case ${ax_cv_cxx_compiler_vendor} in
   clang|gnu)
     case ${ac_SIMD} in
       GPU)
-        AC_DEFINE([GPU_VEC],[1],[GPU vectorised 512bit])
+        AC_DEFINE([GPU_VEC],[1],[GPU vectorised])
+        AC_DEFINE_UNQUOTED([GEN_SIMD_WIDTH],[$ac_gen_simd_width],
+                           [generic SIMD vector width (in bytes)])
+        SIMD_GEN_WIDTH_MSG=" (width= $ac_gen_simd_width)"
+	SIMD_FLAGS='';;
+      GPU-RRII)
+        AC_DEFINE([GPU_RRII],[1],[GPU vectorised with RRRR / IIII layout])
         AC_DEFINE_UNQUOTED([GEN_SIMD_WIDTH],[$ac_gen_simd_width],
                            [generic SIMD vector width (in bytes)])
         SIMD_GEN_WIDTH_MSG=" (width= $ac_gen_simd_width)"
@@ -485,6 +530,12 @@ case ${ax_cv_cxx_compiler_vendor} in
       GPU)
         AC_DEFINE([GPU_VEC],[1],[GPU vectorised ])
 	SIMD_FLAGS='';;
+      GPU-RRII)
+        AC_DEFINE([GPU_RRII],[1],[GPU vectorised with RRRR / IIII layout])
+        AC_DEFINE_UNQUOTED([GEN_SIMD_WIDTH],[$ac_gen_simd_width],
+                           [generic SIMD vector width (in bytes)])
+        SIMD_GEN_WIDTH_MSG=" (width= $ac_gen_simd_width)"
+	SIMD_FLAGS='';;
       SSE4)
         AC_DEFINE([SSE4],[1],[SSE4 intrinsics])
         SIMD_FLAGS='-msse4.2 -xsse4.2';;
@@ -532,8 +583,7 @@ AC_DEFINE([GRID_DEFAULT_PRECISION_DOUBLE],[1],[GRID_DEFAULT_PRECISION is DOUBLE]
 #########################################################
 ######################  GRID ALLOCATOR ALIGNMENT ##
 #########################################################
-AC_ARG_ENABLE([alloc-align],[AC_HELP_STRING([--enable-alloc-align=2MB|4k],
-              [Alignment in bytes of GRID Allocator ])],[ac_ALLOC_ALIGN=${enable_alloc_align}],[ac_ALLOC_ALIGN=2MB])
+AC_ARG_ENABLE([alloc-align],[AS_HELP_STRING([--enable-alloc-align=2MB|4k],[Alignment in bytes of GRID Allocator ])],[ac_ALLOC_ALIGN=${enable_alloc_align}],[ac_ALLOC_ALIGN=2MB])
 case ${ac_ALLOC_ALIGN} in
     4k)
      AC_DEFINE([GRID_ALLOC_ALIGN],[(4096)],[GRID_ALLOC_ALIGN]);;
@@ -542,8 +592,7 @@ case ${ac_ALLOC_ALIGN} in
     *);;
 esac
 
-AC_ARG_ENABLE([alloc-cache],[AC_HELP_STRING([--enable-alloc-cache ],
-              [Cache a pool of recent "frees" to reuse])],[ac_ALLOC_CACHE=${enable_alloc_cache}],[ac_ALLOC_CACHE=yes])
+AC_ARG_ENABLE([alloc-cache],[AS_HELP_STRING([--enable-alloc-cache ],[Cache a pool of recent "frees" to reuse])],[ac_ALLOC_CACHE=${enable_alloc_cache}],[ac_ALLOC_CACHE=yes])
 case ${ac_ALLOC_CACHE} in
     yes)
      AC_DEFINE([ALLOCATION_CACHE],[1],[ALLOCATION_CACHE]);;
@@ -554,20 +603,21 @@ esac
 #########################################################
 ######################  set GPU device to rank in node ##
 #########################################################
-AC_ARG_ENABLE([setdevice],[AC_HELP_STRING([--enable-setdevice | --disable-setdevice],
-              [Set GPU to rank in node with cudaSetDevice or similar])],[ac_SETDEVICE=${enable_SETDEVICE}],[ac_SETDEVICE=no])
+AC_ARG_ENABLE([setdevice],[AS_HELP_STRING([--enable-setdevice | --disable-setdevice],[Set GPU to rank in node with cudaSetDevice or similar])],[ac_SETDEVICE=${enable_SETDEVICE}],[ac_SETDEVICE=no])
 case ${ac_SETDEVICE} in
-    yes);;
-    no)
+    yes)
+	echo ENABLE SET DEVICE
+    ;;
+    *)
      AC_DEFINE([GRID_DEFAULT_GPU],[1],[GRID_DEFAULT_GPU] )
+   	echo DISABLE SET DEVICE
     ;;
 esac
 
 #########################################################
 ######################  Shared memory intranode #########
 #########################################################
-AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmopen|shmget|hugetlbfs|shmnone|nvlink|no],
-              [Select SHM allocation technique])],[ac_SHM=${enable_shm}],[ac_SHM=no])
+AC_ARG_ENABLE([shm],[AS_HELP_STRING([--enable-shm=shmopen|shmget|hugetlbfs|shmnone|nvlink|no|none],[Select SHM allocation technique])],[ac_SHM=${enable_shm}],[ac_SHM=no])
 
 case ${ac_SHM} in
 
@@ -586,7 +636,7 @@ case ${ac_SHM} in
      AC_DEFINE([GRID_MPI3_SHMGET],[1],[GRID_MPI3_SHMGET] )
      ;;
 
-     shmnone | no)
+     shmnone | no | none)
      AC_DEFINE([GRID_MPI3_SHM_NONE],[1],[GRID_MPI3_SHM_NONE] )
      ;;
 
@@ -604,25 +654,30 @@ case ${ac_SHM} in
 esac
 
 ######################  Shared base path for SHMMMAP
-AC_ARG_ENABLE([shmpath],[AC_HELP_STRING([--enable-shmpath=path],
-              [Select SHM mmap base path for hugetlbfs])],
+AC_ARG_ENABLE([shmpath],[AS_HELP_STRING([--enable-shmpath=path],[Select SHM mmap base path for hugetlbfs])],
 	      [ac_SHMPATH=${enable_shmpath}],
 	      [ac_SHMPATH=/var/lib/hugetlbfs/global/pagesize-2MB/])
 AC_DEFINE_UNQUOTED([GRID_SHM_PATH],["$ac_SHMPATH"],[Path to a hugetlbfs filesystem for MMAPing])
 
 ############### force MPI in SMP
-AC_ARG_ENABLE([shm-force-mpi],[AC_HELP_STRING([--enable-shm-force-mpi],
-              [Force MPI within shared memory])],[ac_SHM_FORCE_MPI=${enable_shm_force_mpi}],[ac_SHM_FORCE_MPI=no])
+AC_ARG_ENABLE([shm-force-mpi],[AS_HELP_STRING([--enable-shm-force-mpi],[Force MPI within shared memory])],[ac_SHM_FORCE_MPI=${enable_shm_force_mpi}],[ac_SHM_FORCE_MPI=no])
 case ${ac_SHM_FORCE_MPI} in
      yes)
         AC_DEFINE([GRID_SHM_FORCE_MPI],[1],[GRID_SHM_FORCE_MPI] )
       ;;
      *) ;;
 esac
+############### force MPI in SMP
+AC_ARG_ENABLE([shm-fast-path],[AS_HELP_STRING([--enable-shm-fast-path],[Allow kernels to remote copy over intranode])],[ac_SHM_FAST_PATH=${enable_shm_fast_path}],[ac_SHM_FAST_PATH=no])
+case ${ac_SHM_FAST_PATH} in
+     yes)
+        AC_DEFINE([SHM_FAST_PATH],[1],[SHM_FAST_PATH] )
+      ;;
+     *) ;;
+esac
 
 ############### communication type selection
-AC_ARG_ENABLE([comms-threads],[AC_HELP_STRING([--enable-comms-threads | --disable-comms-threads],
-              [Use multiple threads in MPI calls])],[ac_COMMS_THREADS=${enable_comms_threads}],[ac_COMMS_THREADS=yes])
+AC_ARG_ENABLE([comms-threads],[AS_HELP_STRING([--enable-comms-threads | --disable-comms-threads],[Use multiple threads in MPI calls])],[ac_COMMS_THREADS=${enable_comms_threads}],[ac_COMMS_THREADS=yes])
 
 case ${ac_COMMS_THREADS} in
      yes)
@@ -632,8 +687,7 @@ case ${ac_COMMS_THREADS} in
 esac
 
 ############### communication type selection
-AC_ARG_ENABLE([comms],[AC_HELP_STRING([--enable-comms=none|mpi|mpi-auto],
-              [Select communications])],[ac_COMMS=${enable_comms}],[ac_COMMS=none])
+AC_ARG_ENABLE([comms],[AS_HELP_STRING([--enable-comms=none|mpi|mpi-auto],[Select communications])],[ac_COMMS=${enable_comms}],[ac_COMMS=none])
 
 
 case ${ac_COMMS} in
@@ -667,8 +721,8 @@ AM_CONDITIONAL(BUILD_COMMS_MPI3,  [ test "${comms_type}X" == "mpi3X" ] )
 AM_CONDITIONAL(BUILD_COMMS_NONE,  [ test "${comms_type}X" == "noneX" ])
 
 ############### RNG selection
-AC_ARG_ENABLE([rng],[AC_HELP_STRING([--enable-rng=ranlux48|mt19937|sitmo],\
-	            [Select Random Number Generator to be used])],\
+AC_ARG_ENABLE([rng],[AS_HELP_STRING([--enable-rng=ranlux48|mt19937|sitmo],[\
+	            Select Random Number Generator to be used])],\
 	            [ac_RNG=${enable_rng}],[ac_RNG=sitmo])
 
 case ${ac_RNG} in
@@ -687,8 +741,8 @@ case ${ac_RNG} in
 esac
 
 ############### Timer option
-AC_ARG_ENABLE([timers],[AC_HELP_STRING([--enable-timers],\
-	            [Enable system dependent high res timers])],\
+AC_ARG_ENABLE([timers],[AS_HELP_STRING([--enable-timers],[\
+	            Enable system dependent high res timers])],\
 	            [ac_TIMERS=${enable_timers}],[ac_TIMERS=yes])
 
 case ${ac_TIMERS} in
@@ -704,8 +758,7 @@ case ${ac_TIMERS} in
 esac
 
 ############### Chroma regression test
-AC_ARG_ENABLE([chroma],[AC_HELP_STRING([--enable-chroma],
-              [Expect chroma compiled under c++11 ])],ac_CHROMA=yes,ac_CHROMA=no)
+AC_ARG_ENABLE([chroma],[AS_HELP_STRING([--enable-chroma],[Expect chroma compiled under c++14 ])],ac_CHROMA=yes,ac_CHROMA=no)
 
 case ${ac_CHROMA} in
      yes|no)
@@ -787,6 +840,7 @@ FFTW                        : `if test "x$have_fftw" = xtrue; then echo yes; els
 LIME (ILDG support)         : `if test "x$have_lime" = xtrue; then echo yes; else echo no; fi`
 HDF5                        : `if test "x$have_hdf5" = xtrue; then echo yes; else echo no; fi`
 build DOXYGEN documentation : `if test "$DX_FLAG_doc" = '1'; then echo yes; else echo no; fi`
+Sp2n                        : ${ac_ENABLE_SP}
 ----- BUILD FLAGS -------------------------------------
 CXXFLAGS:
 `echo ${AM_CXXFLAGS} ${CXXFLAGS} | tr ' ' '\n' | sed 's/^-/    -/g'`
@@ -815,6 +869,7 @@ AC_CONFIG_FILES(tests/lanczos/Makefile)
 AC_CONFIG_FILES(tests/smearing/Makefile)
 AC_CONFIG_FILES(tests/qdpxx/Makefile)
 AC_CONFIG_FILES(tests/testu01/Makefile)
+AC_CONFIG_FILES(tests/sp2n/Makefile)
 AC_CONFIG_FILES(benchmarks/Makefile)
 AC_CONFIG_FILES(examples/Makefile)
 AC_OUTPUT

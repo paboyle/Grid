@@ -45,8 +45,8 @@ struct scal {
 
 int main (int argc, char ** argv)
 {
-  typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
-  typename ImprovedStaggeredFermionR::ImplParams params; 
+  typedef typename ImprovedStaggeredFermionD::FermionField FermionField; 
+  typename ImprovedStaggeredFermionD::ImplParams params; 
   Grid_init(&argc,&argv);
 
   Coordinate latt_size   = GridDefaultLatt();
@@ -68,7 +68,7 @@ int main (int argc, char ** argv)
   RealD c1=9.0/8.0;
   RealD c2=-1.0/24.0;
   RealD u0=1.0;
-  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0);
+  ImprovedStaggeredFermionD Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0);
 
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
   SchurRedBlackStaggeredSolve<FermionField> SchurSolver(CG);

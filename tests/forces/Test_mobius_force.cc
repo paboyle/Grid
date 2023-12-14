@@ -76,7 +76,7 @@ int main (int argc, char ** argv)
   p.boundary_phases[2] = 1.0;
   p.boundary_phases[3] =- 1.0;
   
-  MobiusFermionR Ddwf(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c,p);
+  MobiusFermionD Ddwf(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c,p);
   Ddwf.M   (phi,Mphi);
 
   ComplexD S    = innerProduct(Mphi,Mphi); // pdag MdagM p

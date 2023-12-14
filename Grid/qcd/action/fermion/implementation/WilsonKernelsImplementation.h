@@ -72,20 +72,15 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
   if (SE->_is_local) {						\
     int perm= SE->_permute;					\
     auto tmp = coalescedReadPermute(in[SE->_offset],ptype,perm,lane);	\
-    spProj(chi,tmp);						\
-  } else if ( st.same_node[Dir] ) {				\
-    chi = coalescedRead(buf[SE->_offset],lane);			\
-  }								\
-  acceleratorSynchronise();						\
-  if (SE->_is_local || st.same_node[Dir] ) {			\
-    Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);		\
-    Recon(result, Uchi);					\
-  }								\
+    spProj(chi,tmp);							\
+    Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);			\
+    Recon(result, Uchi);						\
+  }									\
   acceleratorSynchronise();
 
 #define GENERIC_STENCIL_LEG_EXT(Dir,spProj,Recon)		\
   SE = st.GetEntry(ptype, Dir, sF);				\
-  if ((!SE->_is_local) && (!st.same_node[Dir]) ) {		\
+  if (!SE->_is_local ) {		\
     auto chi = coalescedRead(buf[SE->_offset],lane);		\
     Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);		\
     Recon(result, Uchi);					\
@@ -416,19 +411,6 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
 #undef LoopBody
 }
 
-#define KERNEL_CALL_TMP(A) \
-  const uint64_t    NN = Nsite*Ls;					\
-  auto U_p = & U_v[0];							\
-  auto in_p = & in_v[0];						\
-  auto out_p = & out_v[0];						\
-  auto st_p = st_v._entries_p;						\
-  auto st_perm = st_v._permute_type;					\
-  accelerator_forNB( ss, NN, Simd::Nsimd(), {				\
-      int sF = ss;							\
-      int sU = ss/Ls;							\
-      WilsonKernels<Impl>::A(st_perm,st_p,U_p,buf,sF,sU,in_p,out_p);	\
-    });									\
-  accelerator_barrier();
 
 #define KERNEL_CALLNB(A)						\
   const uint64_t    NN = Nsite*Ls;					\
@@ -440,12 +422,34 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
 
 #define KERNEL_CALL(A) KERNEL_CALLNB(A); accelerator_barrier();
 
+#define KERNEL_CALL_EXT(A)						\
+  const uint64_t    sz = st.surface_list.size();			\
+  auto ptr = &st.surface_list[0];					\
+  accelerator_forNB( ss, sz, Simd::Nsimd(), {				\
+      int sF = ptr[ss];							\
+      int sU = sF/Ls;							\
+      WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,in_v,out_v);		\
+    });									\
+  accelerator_barrier();
+
 #define ASM_CALL(A)							\
-  thread_for( ss, Nsite, {						\
+  thread_for( sss, Nsite, {						\
+    int ss = st.lo->Reorder(sss);					\
     int sU = ss;							\
     int sF = ss*Ls;							\
     WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,Ls,1,in_v,out_v);		\
   });
+#define ASM_CALL_SLICE(A)						\
+  auto grid = in.Grid() ;						\
+  int nt = grid->LocalDimensions()[4];					\
+  int nxyz = Nsite/nt ;							\
+  for(int t=0;t<nt;t++){						\
+  thread_for( sss, nxyz, {						\
+    int ss = t*nxyz+sss;						\
+    int sU = ss;							\
+    int sF = ss*Ls;							\
+    WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,Ls,1,in_v,out_v);		\
+    });}
 
 template <class Impl>
 void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
@@ -459,11 +463,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
 
    if( interior && exterior ) {
      if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSite); return;}
-#ifdef SYCL_HACK     
-     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL_TMP(HandDhopSiteSycl);    return; }
-#else
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSite);    return;}
-#endif     
 #ifndef GRID_CUDA
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSite);    return;}
 #endif
@@ -474,8 +474,10 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteInt);    return;}
 #endif
    } else if( exterior ) {
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteExt); return;}
-     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteExt);    return;}
+     // dependent on result of merge
+     acceleratorFenceComputeStream();
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL_EXT(GenericDhopSiteExt); return;}
+     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL_EXT(HandDhopSiteExt);    return;}
 #ifndef GRID_CUDA
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteExt);    return;}
 #endif
@@ -498,21 +500,20 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
 #ifndef GRID_CUDA
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDag);     return;}
 #endif
-     acceleratorFenceComputeStream();
    } else if( interior ) {
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteDagInt); return;}
-     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteDagInt);    return;}
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALLNB(GenericDhopSiteDagInt); return;}
+     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALLNB(HandDhopSiteDagInt);    return;}
 #ifndef GRID_CUDA
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDagInt);     return;}
 #endif
    } else if( exterior ) {
+     // Dependent on result of merge
      acceleratorFenceComputeStream();
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteDagExt); return;}
-     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteDagExt);    return;}
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL_EXT(GenericDhopSiteDagExt); return;}
+     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL_EXT(HandDhopSiteDagExt);    return;}
 #ifndef GRID_CUDA
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDagExt);     return;}
 #endif
-     acceleratorFenceComputeStream();
    }
    assert(0 && " Kernel optimisation case not covered ");
   }

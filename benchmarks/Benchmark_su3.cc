@@ -36,12 +36,12 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-#define LMAX (64)
-#define LMIN (8)
+#define LMAX (31)
+#define LMIN (31)
 #define LADD (8)
 
-  int64_t Nwarm=0;
-  int64_t Nloop=1;
+  int64_t Nwarm=500;
+  int64_t Nloop=1500;
 
   Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();
@@ -65,10 +65,9 @@ int main (int argc, char ** argv)
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
       GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
-      printf("line 67 \n");
-      LatticeColourMatrix z(&Grid); printf("z lattice color mat \n"); random(pRNG,z);
-      LatticeColourMatrix x(&Grid); printf("x lattice color mat \n"); random(pRNG,x);
-      LatticeColourMatrix y(&Grid); printf("y lattice color mat \n"); random(pRNG,y);
+      LatticeColourMatrix z(&Grid); random(pRNG,z);
+      LatticeColourMatrix x(&Grid); random(pRNG,x);
+      LatticeColourMatrix y(&Grid); random(pRNG,y);
 
       for(int64_t i=0;i<Nwarm;i++){
 	x=x*y;

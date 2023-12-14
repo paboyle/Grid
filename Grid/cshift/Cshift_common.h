@@ -29,8 +29,27 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
-extern Vector<std::pair<int,int> > Cshift_table; 
+extern std::vector<std::pair<int,int> > Cshift_table; 
+extern commVector<std::pair<int,int> > Cshift_table_device; 
 
+inline std::pair<int,int> *MapCshiftTable(void)
+{
+  // GPU version
+#ifdef ACCELERATOR_CSHIFT    
+  uint64_t sz=Cshift_table.size();
+  if (Cshift_table_device.size()!=sz )    {
+    Cshift_table_device.resize(sz);
+  }
+  acceleratorCopyToDevice((void *)&Cshift_table[0],
+			  (void *)&Cshift_table_device[0],
+			  sizeof(Cshift_table[0])*sz);
+
+  return &Cshift_table_device[0];
+#else 
+  return &Cshift_table[0];
+#endif
+  // CPU version use identify map
+}
 ///////////////////////////////////////////////////////////////////
 // Gather for when there is no need to SIMD split 
 ///////////////////////////////////////////////////////////////////
@@ -74,8 +93,8 @@ Gather_plane_simple (const Lattice<vobj> &rhs,cshiftVector<vobj> &buffer,int dim
   }
   {
     auto buffer_p = & buffer[0];
-    auto table = &Cshift_table[0];
-#ifdef ACCELERATOR_CSHIFT    
+    auto table = MapCshiftTable();
+#ifdef ACCELERATOR_CSHIFT
     autoView(rhs_v , rhs, AcceleratorRead);
     accelerator_for(i,ent,vobj::Nsimd(),{
 	coalescedWrite(buffer_p[table[i].first],coalescedRead(rhs_v[table[i].second]));
@@ -225,7 +244,7 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,cshiftVector<
   
   {
     auto buffer_p = & buffer[0];
-    auto table = &Cshift_table[0];
+    auto table = MapCshiftTable();
 #ifdef ACCELERATOR_CSHIFT    
     autoView( rhs_v, rhs, AcceleratorWrite);
     accelerator_for(i,ent,vobj::Nsimd(),{
@@ -340,7 +359,7 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
   }
 
   {
-    auto table = &Cshift_table[0];
+    auto table = MapCshiftTable();
 #ifdef ACCELERATOR_CSHIFT    
     autoView(rhs_v , rhs, AcceleratorRead);
     autoView(lhs_v , lhs, AcceleratorWrite);
@@ -392,7 +411,7 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
   }
 
   {
-    auto table = &Cshift_table[0];
+    auto table = MapCshiftTable();
 #ifdef ACCELERATOR_CSHIFT    
     autoView( rhs_v, rhs, AcceleratorRead);
     autoView( lhs_v, lhs, AcceleratorWrite);

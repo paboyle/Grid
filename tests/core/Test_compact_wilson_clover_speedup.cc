@@ -53,7 +53,7 @@ static int readInt(int* argc, char*** argv, std::string&& option, int defaultVal
 
 static float readFloat(int* argc, char*** argv, std::string&& option, float defaultValue) {
   std::string arg;
-  float       ret = defaultValue;
+  double      ret = defaultValue;
   if(checkPresent(argc, argv, option)) {
     arg = getContent(argc, argv, option);
     GridCmdOptionFloat(arg, ret);
@@ -218,9 +218,9 @@ void runBenchmark(int* argc, char*** argv) {
 
 int main(int argc, char** argv) {
   Grid_init(&argc, &argv);
-
+#if Nc==3
   runBenchmark<vComplexD>(&argc, &argv);
   runBenchmark<vComplexF>(&argc, &argv);
-
+#endif
   Grid_finalize();
 }

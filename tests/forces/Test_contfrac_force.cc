@@ -66,7 +66,7 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   RealD mass=0.01; 
   RealD M5=1.8; 
-  OverlapWilsonContFracTanhFermionR Dcf(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+  OverlapWilsonContFracTanhFermionD Dcf(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
   Dcf.M   (phi,Mphi);
 
   ComplexD S    = innerProduct(Mphi,Mphi); // pdag MdagM p

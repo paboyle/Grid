@@ -31,9 +31,10 @@ directory
 /*  END LEGAL */
 #include "Grid/Grid.h"
 
+#ifdef ENABLE_FERMION_REPS
+
 int main(int argc, char **argv) {
   using namespace Grid;
-   ;
 
   // Here change the allowed (higher) representations
   typedef Representations< FundamentalRepresentation, AdjointRepresentation > TheRepresentations;
@@ -46,7 +47,7 @@ int main(int argc, char **argv) {
    // Typedefs to simplify notation
   typedef GenericHMCRunnerHirep<TheRepresentations, MinimumNorm2> HMCWrapper;
   typedef WilsonAdjImplR FermionImplPolicy; // gauge field implemetation for the pseudofermions
-  typedef WilsonAdjFermionR FermionAction; // type of lattice fermions (Wilson, DW, ...)
+  typedef WilsonAdjFermionD FermionAction; // type of lattice fermions (Wilson, DW, ...)
   typedef typename FermionAction::FermionField FermionField;
 
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -127,3 +128,6 @@ int main(int argc, char **argv) {
 
 } // main
 
+#else
+int main(int argc, char **argv){}
+#endif

@@ -71,14 +71,14 @@ int main (int argc, char ** argv)
   RealD mass=0.1;
   RealD M5=1.8;
 
-  OverlapWilsonContFracTanhFermionR Dcf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+  OverlapWilsonContFracTanhFermionD Dcf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
 
   ConjugateResidual<LatticeFermion> MCR(1.0e-8,10000);
 
-  MdagMLinearOperator<OverlapWilsonContFracTanhFermionR,LatticeFermion> HermPosDefOp(Dcf);
+  MdagMLinearOperator<OverlapWilsonContFracTanhFermionD,LatticeFermion> HermPosDefOp(Dcf);
   MCR(HermPosDefOp,src,result);
 
-  HermitianLinearOperator<OverlapWilsonContFracTanhFermionR,LatticeFermion> HermIndefOp(Dcf);
+  HermitianLinearOperator<OverlapWilsonContFracTanhFermionD,LatticeFermion> HermIndefOp(Dcf);
   MCR(HermIndefOp,src,result);
 
   Grid_finalize();

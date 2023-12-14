@@ -42,8 +42,10 @@ using namespace Grid;
 ////////////////////////////////////////////////////////////////////////////////
 class NerscIO : public BinaryIO { 
 public:
-
   typedef Lattice<vLorentzColourMatrixD> GaugeField;
+
+  // Enable/disable exiting if the plaquette in the header does not match the value computed (default true)
+  static bool & exitOnReadPlaquetteMismatch(){ static bool v=true; return v; }
 
   static inline void truncate(std::string file){
     std::ofstream fout(file,std::ios::out);
@@ -203,7 +205,7 @@ public:
       std::cerr << " nersc_csum  " <<std::hex<< nersc_csum << " " << header.checksum<< std::dec<< std::endl;
       exit(0);
     }
-    assert(fabs(clone.plaquette -header.plaquette ) < 1.0e-5 );
+    if(exitOnReadPlaquetteMismatch()) assert(fabs(clone.plaquette -header.plaquette ) < 1.0e-5 );
     assert(fabs(clone.link_trace-header.link_trace) < 1.0e-6 );
     assert(nersc_csum == header.checksum );
       

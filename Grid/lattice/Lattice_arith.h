@@ -36,6 +36,7 @@ NAMESPACE_BEGIN(Grid);
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class obj1,class obj2,class obj3> inline
 void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
+  GRID_TRACE("mult");
   ret.Checkerboard() = lhs.Checkerboard();
   autoView( ret_v , ret, AcceleratorWrite);
   autoView( lhs_v , lhs, AcceleratorRead);
@@ -53,6 +54,7 @@ void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   
 template<class obj1,class obj2,class obj3> inline
 void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
+  GRID_TRACE("mac");
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,rhs);
   conformable(lhs,rhs);
@@ -70,6 +72,7 @@ void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   
 template<class obj1,class obj2,class obj3> inline
 void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
+  GRID_TRACE("sub");
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,rhs);
   conformable(lhs,rhs);
@@ -86,6 +89,7 @@ void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
 }
 template<class obj1,class obj2,class obj3> inline
 void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
+  GRID_TRACE("add");
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,rhs);
   conformable(lhs,rhs);
@@ -106,6 +110,7 @@ void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class obj1,class obj2,class obj3> inline
 void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
+  GRID_TRACE("mult");
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(lhs,ret);
   autoView( ret_v , ret, AcceleratorWrite);
@@ -119,6 +124,7 @@ void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   
 template<class obj1,class obj2,class obj3> inline
 void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
+  GRID_TRACE("mac");
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,lhs);
   autoView( ret_v , ret, AcceleratorWrite);
@@ -133,6 +139,7 @@ void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   
 template<class obj1,class obj2,class obj3> inline
 void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
+  GRID_TRACE("sub");
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,lhs);
   autoView( ret_v , ret, AcceleratorWrite);
@@ -146,6 +153,7 @@ void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
 }
 template<class obj1,class obj2,class obj3> inline
 void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
+  GRID_TRACE("add");
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(lhs,ret);
   autoView( ret_v , ret, AcceleratorWrite);
@@ -163,6 +171,7 @@ void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class obj1,class obj2,class obj3> inline
 void mult(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
+  GRID_TRACE("mult");
   ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
   autoView( ret_v , ret, AcceleratorWrite);
@@ -177,6 +186,7 @@ void mult(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   
 template<class obj1,class obj2,class obj3> inline
 void mac(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
+  GRID_TRACE("mac");
   ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
   autoView( ret_v , ret, AcceleratorWrite);
@@ -191,6 +201,7 @@ void mac(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   
 template<class obj1,class obj2,class obj3> inline
 void sub(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
+  GRID_TRACE("sub");
   ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
   autoView( ret_v , ret, AcceleratorWrite);
@@ -204,6 +215,7 @@ void sub(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
 }
 template<class obj1,class obj2,class obj3> inline
 void add(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
+  GRID_TRACE("add");
   ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
   autoView( ret_v , ret, AcceleratorWrite);
@@ -218,6 +230,7 @@ void add(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   
 template<class sobj,class vobj> inline
 void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y){
+  GRID_TRACE("axpy");
   ret.Checkerboard() = x.Checkerboard();
   conformable(ret,x);
   conformable(x,y);
@@ -231,6 +244,7 @@ void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &
 }
 template<class sobj,class vobj> inline
 void axpby(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y){
+  GRID_TRACE("axpby");
   ret.Checkerboard() = x.Checkerboard();
   conformable(ret,x);
   conformable(x,y);
@@ -246,13 +260,52 @@ void axpby(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice
 template<class sobj,class vobj> inline
 RealD axpy_norm(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y)
 {
+  GRID_TRACE("axpy_norm");
     return axpy_norm_fast(ret,a,x,y);
 }
 template<class sobj,class vobj> inline
 RealD axpby_norm(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y)
 {
+  GRID_TRACE("axpby_norm");
     return axpby_norm_fast(ret,a,b,x,y);
 }
+
+/// Trace product
+template<class obj> auto traceProduct(const Lattice<obj> &rhs_1,const Lattice<obj> &rhs_2)
+  -> Lattice<decltype(trace(obj()))>
+{
+  typedef decltype(trace(obj())) robj;
+  Lattice<robj> ret_i(rhs_1.Grid());
+  autoView( rhs1 , rhs_1, AcceleratorRead);
+  autoView( rhs2 , rhs_2, AcceleratorRead);
+  autoView( ret , ret_i, AcceleratorWrite);
+  ret.Checkerboard() = rhs_1.Checkerboard();
+  accelerator_for(ss,rhs1.size(),obj::Nsimd(),{
+      coalescedWrite(ret[ss],traceProduct(rhs1(ss),rhs2(ss)));
+  });
+  return ret_i;
+}
+
+template<class obj1,class obj2> auto traceProduct(const Lattice<obj1> &rhs_1,const obj2 &rhs2)
+  -> Lattice<decltype(trace(obj1()))>
+{
+  typedef decltype(trace(obj1())) robj;
+  Lattice<robj> ret_i(rhs_1.Grid());
+  autoView( rhs1 , rhs_1, AcceleratorRead);
+  autoView( ret , ret_i, AcceleratorWrite);
+  ret.Checkerboard() = rhs_1.Checkerboard();
+  accelerator_for(ss,rhs1.size(),obj1::Nsimd(),{
+      coalescedWrite(ret[ss],traceProduct(rhs1(ss),rhs2));
+  });
+  return ret_i;
+}
+template<class obj1,class obj2> auto traceProduct(const obj2 &rhs_2,const Lattice<obj1> &rhs_1)
+  -> Lattice<decltype(trace(obj1()))>
+{
+  return traceProduct(rhs_1,rhs_2);
+}
+
+
 
 NAMESPACE_END(Grid);
 #endif

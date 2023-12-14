@@ -37,7 +37,7 @@ NAMESPACE_BEGIN(Grid);
 template <class S, class Representation = FundamentalRepresentation,class Options = CoeffReal >
 class WilsonImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation::Dimension > > {
 public:
-
+  
   static const int Dimension = Representation::Dimension;
   static const bool isFundamental = Representation::isFundamental;
   static const bool LsVectorised=false;
@@ -246,19 +246,13 @@ public:
 typedef WilsonImpl<vComplex,  FundamentalRepresentation, CoeffReal > WilsonImplR;  // Real.. whichever prec
 typedef WilsonImpl<vComplexF, FundamentalRepresentation, CoeffReal > WilsonImplF;  // Float
 typedef WilsonImpl<vComplexD, FundamentalRepresentation, CoeffReal > WilsonImplD;  // Double
-
-//typedef WilsonImpl<vComplex,  FundamentalRepresentation, CoeffRealHalfComms > WilsonImplRL;  // Real.. whichever prec
-//typedef WilsonImpl<vComplexF, FundamentalRepresentation, CoeffRealHalfComms > WilsonImplFH;  // Float
-//typedef WilsonImpl<vComplexD, FundamentalRepresentation, CoeffRealHalfComms > WilsonImplDF;  // Double
+typedef WilsonImpl<vComplexD2, FundamentalRepresentation, CoeffReal > WilsonImplD2;  // Double
 
 typedef WilsonImpl<vComplex,  FundamentalRepresentation, CoeffComplex > ZWilsonImplR; // Real.. whichever prec
 typedef WilsonImpl<vComplexF, FundamentalRepresentation, CoeffComplex > ZWilsonImplF; // Float
 typedef WilsonImpl<vComplexD, FundamentalRepresentation, CoeffComplex > ZWilsonImplD; // Double
+typedef WilsonImpl<vComplexD2, FundamentalRepresentation, CoeffComplex > ZWilsonImplD2; // Double
 
-//typedef WilsonImpl<vComplex,  FundamentalRepresentation, CoeffComplexHalfComms > ZWilsonImplRL; // Real.. whichever prec
-//typedef WilsonImpl<vComplexF, FundamentalRepresentation, CoeffComplexHalfComms > ZWilsonImplFH; // Float
-//typedef WilsonImpl<vComplexD, FundamentalRepresentation, CoeffComplexHalfComms > ZWilsonImplDF; // Double
- 
 typedef WilsonImpl<vComplex,  AdjointRepresentation, CoeffReal > WilsonAdjImplR;   // Real.. whichever prec
 typedef WilsonImpl<vComplexF, AdjointRepresentation, CoeffReal > WilsonAdjImplF;  // Float
 typedef WilsonImpl<vComplexD, AdjointRepresentation, CoeffReal > WilsonAdjImplD;  // Double
@@ -271,6 +265,22 @@ typedef WilsonImpl<vComplex,  TwoIndexAntiSymmetricRepresentation, CoeffReal > W
 typedef WilsonImpl<vComplexF, TwoIndexAntiSymmetricRepresentation, CoeffReal > WilsonTwoIndexAntiSymmetricImplF;  // Float
 typedef WilsonImpl<vComplexD, TwoIndexAntiSymmetricRepresentation, CoeffReal > WilsonTwoIndexAntiSymmetricImplD;  // Double
 
+//sp 2n
+
+typedef WilsonImpl<vComplex,  SpFundamentalRepresentation, CoeffReal > SpWilsonImplR;  // Real.. whichever prec
+typedef WilsonImpl<vComplexF, SpFundamentalRepresentation, CoeffReal > SpWilsonImplF;  // Float
+typedef WilsonImpl<vComplexD, SpFundamentalRepresentation, CoeffReal > SpWilsonImplD;  // Double
+
+typedef WilsonImpl<vComplex,  SpTwoIndexAntiSymmetricRepresentation, CoeffReal > SpWilsonTwoIndexAntiSymmetricImplR;  // Real.. whichever prec
+typedef WilsonImpl<vComplexF, SpTwoIndexAntiSymmetricRepresentation, CoeffReal > SpWilsonTwoIndexAntiSymmetricImplF;  // Float
+typedef WilsonImpl<vComplexD, SpTwoIndexAntiSymmetricRepresentation, CoeffReal > SpWilsonTwoIndexAntiSymmetricImplD;  // Double
+
+typedef WilsonImpl<vComplex,  SpTwoIndexSymmetricRepresentation, CoeffReal > SpWilsonTwoIndexSymmetricImplR;  // Real.. whichever prec
+typedef WilsonImpl<vComplexF, SpTwoIndexSymmetricRepresentation, CoeffReal > SpWilsonTwoIndexSymmetricImplF;  // Float
+typedef WilsonImpl<vComplexD, SpTwoIndexSymmetricRepresentation, CoeffReal > SpWilsonTwoIndexSymmetricImplD;  // Double
+
+typedef WilsonImpl<vComplex,  SpTwoIndexSymmetricRepresentation, CoeffReal > SpWilsonAdjImplR;  // Real.. whichever prec    // adj = 2indx symmetric for Sp(2N)
+typedef WilsonImpl<vComplexF, SpTwoIndexSymmetricRepresentation, CoeffReal > SpWilsonAdjImplF;  // Float     // adj = 2indx symmetric for Sp(2N)
+typedef WilsonImpl<vComplexD, SpTwoIndexSymmetricRepresentation, CoeffReal > SpWilsonAdjImplD;  // Double    // adj = 2indx symmetric for Sp(2N)
 
 NAMESPACE_END(Grid);
-

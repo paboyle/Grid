@@ -1,14 +1,13 @@
 #!/bin/bash
 #SBATCH -J dslash
-#SBATCH -A tc002
-#SBATCH -t 2:20:00
-#SBATCH --nodelist=tu-c0r0n[00,03,06,09]
+#SBATCH -A dp207
 #SBATCH --exclusive
 #SBATCH --nodes=4
 #SBATCH --ntasks=16
+#SBATCH --qos=standard
 #SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=8
-#SBATCH --time=12:00:00
+#SBATCH --time=0:05:00
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:4
 #SBATCH --output=%x.%j.out
