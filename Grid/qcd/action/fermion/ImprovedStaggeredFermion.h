@@ -47,18 +47,6 @@ public:
   FermionField _tmp;
   FermionField &tmp(void) { return _tmp; }
 
-  ////////////////////////////////////////
-  // Performance monitoring
-  ////////////////////////////////////////
-  void Report(void);
-  void ZeroCounters(void);
-  double DhopTotalTime;
-  double DhopCalls;
-  double DhopCommTime;
-  double DhopComputeTime;
-  double DhopComputeTime2;
-  double DhopFaceTime;
-
   ///////////////////////////////////////////////////////////////
   // Implement the abstract base
   ///////////////////////////////////////////////////////////////

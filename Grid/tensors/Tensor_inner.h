@@ -214,24 +214,20 @@ accelerator_inline vRealD    innerProductD2(const vRealD    &l,const vRealD    &
 
 accelerator_inline vComplexD2 innerProductD2(const vComplexF &l,const vComplexF &r)
 {  
-  vComplexD la,lb;
-  vComplexD ra,rb;
-  Optimization::PrecisionChange::StoD(l.v,la.v,lb.v);
-  Optimization::PrecisionChange::StoD(r.v,ra.v,rb.v);
+  vComplexD2 dl,dr;
   vComplexD2 ret;
-  ret._internal[0] = innerProduct(la,ra);
-  ret._internal[1] = innerProduct(lb,rb);
+  precisionChange(dl,l);
+  precisionChange(dr,r);
+  ret = innerProduct(dl,dr);
   return ret;
 }
 accelerator_inline vRealD2 innerProductD2(const vRealF &l,const vRealF &r)
 {  
-  vRealD la,lb;
-  vRealD ra,rb;
-  Optimization::PrecisionChange::StoD(l.v,la.v,lb.v);
-  Optimization::PrecisionChange::StoD(r.v,ra.v,rb.v);
+  vRealD2 dl,dr;
   vRealD2 ret;
-  ret._internal[0]=innerProduct(la,ra);
-  ret._internal[1]=innerProduct(lb,rb); 
+  precisionChange(dl,l);
+  precisionChange(dr,r);
+  ret=innerProduct(dl,dr);
   return ret;
 }
 

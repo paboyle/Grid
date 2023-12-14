@@ -83,8 +83,8 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Building g5R5 hermitian DWF operator" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> HermIndefOp(Ddwf);
+  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  Gamma5R5HermitianLinearOperator<DomainWallFermionD,LatticeFermion> HermIndefOp(Ddwf);
 
   const int nbasis = 8;
 
@@ -95,7 +95,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Calling Aggregation class to build subspace" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermDefOp(Ddwf);
+  MdagMLinearOperator<DomainWallFermionD,LatticeFermion> HermDefOp(Ddwf);
   Subspace Aggregates(Coarse5d,FGrid,cb);
   Aggregates.CreateSubspace(RNG5,HermDefOp);
 

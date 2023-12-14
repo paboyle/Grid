@@ -53,8 +53,8 @@ int main (int argc, char ** argv)
   pRNG.SeedFixedIntegers(seeds);
   //  pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
 
-  typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
-  typename ImprovedStaggeredFermionR::ImplParams params; 
+  typedef typename ImprovedStaggeredFermionD::FermionField FermionField; 
+  typename ImprovedStaggeredFermionD::ImplParams params; 
 
   FermionField src   (&Grid); random(pRNG,src);
   FermionField result(&Grid); result=Zero();
@@ -93,7 +93,7 @@ int main (int argc, char ** argv)
   RealD c1=9.0/8.0;
   RealD c2=-1.0/24.0;
   RealD u0=1.0;
-  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0,params);
+  ImprovedStaggeredFermionD Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0,params);
   
   std::cout<<GridLogMessage << "Calling Ds"<<std::endl;
   int ncall=1000;

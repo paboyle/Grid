@@ -301,8 +301,8 @@ int main (int argc, char ** argv) {
   std::cout << GridLogMessage << "Lattice dimensions: " << GridDefaultLatt() << "   Ls: " << Ls << std::endl;
 
   // ZMobius EO Operator
-  ZMobiusFermionR Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, Params.omega,1.,0.);
-  SchurDiagTwoOperator<ZMobiusFermionR,LatticeFermion> HermOp(Ddwf);
+  ZMobiusFermionD Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, Params.omega,1.,0.);
+  SchurDiagTwoOperator<ZMobiusFermionD,LatticeFermion> HermOp(Ddwf);
 
   // Eigenvector storage
   LanczosParams fine  =Params.FineParams;  

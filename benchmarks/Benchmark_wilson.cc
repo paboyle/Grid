@@ -146,16 +146,15 @@ int main (int argc, char ** argv)
   ref = -0.5*ref;
   RealD mass=0.1;
 
-  typename WilsonFermionR::ImplParams params;
+  typename WilsonFermionD::ImplParams params;
 
-  WilsonFermionR Dw(Umu,Grid,RBGrid,mass,params);
+  WilsonFermionD Dw(Umu,Grid,RBGrid,mass,params);
 
   std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
   int ncall=1000;
   //int ncall=1;
 
   // Counters
-  Dw.ZeroCounters();
   Grid.Barrier();
 
   double t0=usecond();
@@ -201,7 +200,6 @@ int main (int argc, char ** argv)
   err = ref-result;
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
 
-  Dw.Report();
   
   // guard
   double err0 = norm2(err);

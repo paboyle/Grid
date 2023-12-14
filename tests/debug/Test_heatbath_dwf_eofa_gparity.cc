@@ -41,7 +41,7 @@ using namespace Grid;
  ;
 
 typedef GparityWilsonImplR FermionImplPolicy;
-typedef GparityDomainWallEOFAFermionR FermionAction;
+typedef GparityDomainWallEOFAFermionD FermionAction;
 typedef typename FermionAction::FermionField FermionField;
 
 // Parameters for test
@@ -82,7 +82,7 @@ int main(int argc, char** argv)
   LatticeGaugeField Umu(UGrid);
   SU<Nc>::HotConfiguration(RNG4, Umu);
 
-  // GparityDomainWallFermionR::ImplParams params;
+  // GparityDomainWallFermionD::ImplParams params;
   FermionAction::ImplParams params;
   FermionAction Lop(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf,  mf, mpv,  0.0, -1, M5, params);
   FermionAction Rop(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mpv, mf, mpv, -1.0,  1, M5, params);

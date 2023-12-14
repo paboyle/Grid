@@ -1,9 +1,14 @@
+DIR=`pwd`
+PREFIX=$DIR/../Prequisites/install/
 ../../configure \
     --enable-comms=mpi \
     --enable-simd=GPU \
     --enable-shm=nvlink \
     --enable-gen-simd-width=64 \
     --enable-accelerator=cuda \
+    --enable-setdevice \
+    --disable-accelerator-cshift \
+    --with-gmp=$PREFIX \
     --disable-fermion-reps \
     --disable-unified \
     --disable-gparity \

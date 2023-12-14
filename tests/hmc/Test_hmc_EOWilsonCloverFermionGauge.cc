@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
    // Typedefs to simplify notation
   typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
   typedef WilsonImplR FermionImplPolicy;
-  typedef WilsonCloverFermionR FermionAction;
+  typedef WilsonCloverFermionD FermionAction;
   typedef typename FermionAction::FermionField FermionField;
 
 

@@ -77,12 +77,12 @@ int main (int argc, char ** argv)
   
   RealD mass=0.5;
   RealD M5=1.8;
-  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   std::cout<<GridLogMessage<<"* Solving with MdagM VPGCR "<<std::endl;
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
-  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
+  MdagMLinearOperator<DomainWallFermionD,LatticeFermion> HermOp(Ddwf);
   TrivialPrecon<LatticeFermion> simple;
   PrecGeneralisedConjugateResidual<LatticeFermion> PGCR(1.0e-6,10000,HermOp,simple,4,160);
 
@@ -92,7 +92,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   std::cout<<GridLogMessage<<"* Solving with g5-VPGCR "<<std::endl;
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
-  Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> g5HermOp(Ddwf);
+  Gamma5R5HermitianLinearOperator<DomainWallFermionD,LatticeFermion> g5HermOp(Ddwf);
   PrecGeneralisedConjugateResidual<LatticeFermion> PGCR5(1.0e-6,10000,g5HermOp,simple,4,160);
   result=Zero();
   PGCR5(src,result);

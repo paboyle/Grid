@@ -1,0 +1,54 @@
+name: Bug report
+description: Report a bug.
+title: "<insert title>"
+labels: [bug]
+
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Thank you for taking the time to file a bug report.
+        Please check that the code is pointing to the HEAD of develop
+        or any commit in master which is tagged with a version number.
+
+  - type: textarea
+    attributes:
+      label: "Describe the issue:"
+      description: >
+        Describe the issue and any previous attempt to solve it.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: "Code example:"
+      description: >
+        If relevant, show how to reproduce the issue using a minimal working
+        example.
+      placeholder: |
+        << your code here >>
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: "Target platform:"
+      description: >
+        Give a description of the target platform (CPU, network, compiler).
+        Please give the full CPU part description, using for example
+        `cat /proc/cpuinfo | grep 'model name' | uniq` (Linux)
+        or `sysctl machdep.cpu.brand_string` (macOS) and the full output
+        the `--version` option of your compiler.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: "Configure options:"
+      description: >
+        Please give the exact configure command used and attach
+        `config.log`, `grid.config.summary` and the output of `make V=1`.
+      render: shell
+    validations:
+      required: true

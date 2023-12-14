@@ -61,11 +61,14 @@ public:
     fout.close();
   }
 
-  void TrajectoryComplete(int traj, Field &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG) {
+  void TrajectoryComplete(int traj,
+			  ConfigurationBase<Field> &SmartConfig,
+			  GridSerialRNG &sRNG, GridParallelRNG &pRNG)
+  {
 
     if ((traj % Params.saveInterval) == 0) {
-      std::string config, rng;
-      this->build_filenames(traj, Params, config, rng);
+      std::string config, rng, smr;
+      this->build_filenames(traj, Params, config, smr, rng);
 
       uint32_t nersc_csum;
       uint32_t scidac_csuma;
@@ -74,9 +77,15 @@ public:
       BinarySimpleUnmunger<sobj_double, sobj> munge;
       truncate(rng);
       BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
-      truncate(config);
+      std::cout << GridLogMessage << "Written Binary RNG " << rng
+                << " checksum " << std::hex 
+		<< nersc_csum   <<"/"
+		<< scidac_csuma   <<"/"
+		<< scidac_csumb 
+		<< std::dec << std::endl;
 
-      BinaryIO::writeLatticeObject<vobj, sobj_double>(U, config, munge, 0, Params.format,
+      truncate(config);
+      BinaryIO::writeLatticeObject<vobj, sobj_double>(SmartConfig.get_U(false), config, munge, 0, Params.format,
 						      nersc_csum,scidac_csuma,scidac_csumb);
 
       std::cout << GridLogMessage << "Written Binary Configuration " << config
@@ -85,6 +94,18 @@ public:
 		<< scidac_csuma   <<"/"
 		<< scidac_csumb 
 		<< std::dec << std::endl;
+
+      if ( Params.saveSmeared ) {
+	truncate(smr);
+	BinaryIO::writeLatticeObject<vobj, sobj_double>(SmartConfig.get_U(true), smr, munge, 0, Params.format,
+							nersc_csum,scidac_csuma,scidac_csumb);
+	std::cout << GridLogMessage << "Written Binary Smeared Configuration " << smr
+                << " checksum " << std::hex 
+		<< nersc_csum   <<"/"
+		<< scidac_csuma   <<"/"
+		<< scidac_csumb 
+		<< std::dec << std::endl;
+      }
     }
 
   };

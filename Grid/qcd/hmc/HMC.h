@@ -34,6 +34,7 @@ directory
 			    * @brief Classes for Hybrid Monte Carlo update
 			    *
 			    * @author Guido Cossu
+			    * @author Peter Boyle
 			    */
 			   //--------------------------------------------------------------------
 #pragma once
@@ -52,6 +53,7 @@ struct HMCparameters: Serializable {
                                   Integer, Trajectories, /* @brief Number of sweeps in this run */
                                   bool, MetropolisTest,
                                   Integer, NoMetropolisUntil,
+				  bool, PerformRandomShift, /* @brief Randomly shift the gauge configuration at the start of a trajectory */
                                   std::string, StartingType,
                                   IntegratorParameters, MD)
 
@@ -62,6 +64,7 @@ struct HMCparameters: Serializable {
     StartTrajectory   = 0;
     Trajectories      = 10;
     StartingType      = "HotStart";
+    PerformRandomShift = true;
     /////////////////////////////////
   }
 
@@ -82,6 +85,7 @@ struct HMCparameters: Serializable {
     std::cout << GridLogMessage << "[HMC parameters] Start trajectory        : " << StartTrajectory << "\n";
     std::cout << GridLogMessage << "[HMC parameters] Metropolis test (on/off): " << std::boolalpha << MetropolisTest << "\n";
     std::cout << GridLogMessage << "[HMC parameters] Thermalization trajs    : " << NoMetropolisUntil << "\n";
+    std::cout << GridLogMessage << "[HMC parameters] Doing random shift      : " << std::boolalpha << PerformRandomShift << "\n";
     std::cout << GridLogMessage << "[HMC parameters] Starting type           : " << StartingType << "\n";
     MD.print_parameters();
   }
@@ -94,6 +98,7 @@ private:
   const HMCparameters Params;
 
   typedef typename IntegratorType::Field Field;
+  typedef typename IntegratorType::FieldImplementation FieldImplementation;
   typedef std::vector< HmcObservable<Field> * > ObsListType;
 
   //pass these from the resource manager
@@ -115,22 +120,17 @@ private:
 
     random(sRNG, rn_test);
 
-    std::cout << GridLogMessage
-              << "--------------------------------------------------\n";
-    std::cout << GridLogMessage << "exp(-dH) = " << prob
-              << "  Random = " << rn_test << "\n";
-    std::cout << GridLogMessage
-              << "Acc. Probability = " << ((prob < 1.0) ? prob : 1.0) << "\n";
+    std::cout << GridLogHMC << "--------------------------------------------------\n";
+    std::cout << GridLogHMC << "exp(-dH) = " << prob << "  Random = " << rn_test << "\n";
+    std::cout << GridLogHMC << "Acc. Probability = " << ((prob < 1.0) ? prob : 1.0) << "\n";
 
     if ((prob > 1.0) || (rn_test <= prob)) {  // accepted
-      std::cout << GridLogMessage << "Metropolis_test -- ACCEPTED\n";
-      std::cout << GridLogMessage
-                << "--------------------------------------------------\n";
+      std::cout << GridLogHMC << "Metropolis_test -- ACCEPTED\n";
+      std::cout << GridLogHMC << "--------------------------------------------------\n";
       return true;
     } else {  // rejected
-      std::cout << GridLogMessage << "Metropolis_test -- REJECTED\n";
-      std::cout << GridLogMessage
-                << "--------------------------------------------------\n";
+      std::cout << GridLogHMC << "Metropolis_test -- REJECTED\n";
+      std::cout << GridLogHMC << "--------------------------------------------------\n";
       return false;
     }
   }
@@ -139,19 +139,80 @@ private:
   // Evolution
   /////////////////////////////////////////////////////////
   RealD evolve_hmc_step(Field &U) {
-    TheIntegrator.refresh(U, sRNG, pRNG);  // set U and initialize P and phi's
 
-    RealD H0 = TheIntegrator.S(U);  // initial state action
+    GridBase *Grid = U.Grid();
+
+    if(Params.PerformRandomShift){
+#if 0
+      //////////////////////////////////////////////////////////////////////////////////////////////////////
+      // Mainly for DDHMC perform a random translation of U modulo volume
+      //////////////////////////////////////////////////////////////////////////////////////////////////////
+      std::cout << GridLogMessage << "--------------------------------------------------\n";
+      std::cout << GridLogMessage << "Random shifting gauge field by [";
+
+      std::vector<typename FieldImplementation::GaugeLinkField> Umu(Grid->Nd(), U.Grid());
+      for(int mu=0;mu<Grid->Nd();mu++) Umu[mu] = PeekIndex<LorentzIndex>(U, mu);
+
+      for(int d=0;d<Grid->Nd();d++) {
+
+	int L = Grid->GlobalDimensions()[d];
+
+	RealD rn_uniform;  random(sRNG, rn_uniform);
+
+	int shift = (int) (rn_uniform*L);
+
+	std::cout << shift;
+	if(d<Grid->Nd()-1) std::cout <<",";
+	else               std::cout <<"]\n";
+      
+	//shift all fields together in a way that respects the gauge BCs
+	for(int mu=0; mu < Grid->Nd(); mu++)
+	  Umu[mu] = FieldImplementation::CshiftLink(Umu[mu],d,shift);
+
+	for(int mu=0;mu<Grid->Nd();mu++) PokeIndex<LorentzIndex>(U,Umu[mu],mu);
+      }
+      std::cout << GridLogMessage << "--------------------------------------------------\n";
+#endif	
+    }
+
+    TheIntegrator.reset_timer();
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    // set U and initialize P and phi's
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    std::cout << GridLogMessage << "--------------------------------------------------\n";
+    std::cout << GridLogMessage << "Refresh momenta and pseudofermions";
+    TheIntegrator.refresh(U, sRNG, pRNG);  
+    std::cout << GridLogMessage << "--------------------------------------------------\n";
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    // initial state action
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    std::cout << GridLogMessage << "--------------------------------------------------\n";
+    std::cout << GridLogMessage << "Compute initial action";
+    RealD H0 = TheIntegrator.Sinitial(U);  
+    std::cout << GridLogMessage << "--------------------------------------------------\n";
 
     std::streamsize current_precision = std::cout.precision();
     std::cout.precision(15);
-    std::cout << GridLogMessage << "Total H before trajectory = " << H0 << "\n";
+    std::cout << GridLogHMC << "Total H before trajectory = " << H0 << "\n";
     std::cout.precision(current_precision);
 
+    std::cout << GridLogMessage << "--------------------------------------------------\n";
+    std::cout << GridLogMessage << " Molecular Dynamics evolution ";
     TheIntegrator.integrate(U);
+    std::cout << GridLogMessage << "--------------------------------------------------\n";
 
-    RealD H1 = TheIntegrator.S(U);  // updated state action
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    // updated state action
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    std::cout << GridLogMessage << "--------------------------------------------------\n";
+    std::cout << GridLogMessage << "Compute final action";
+    RealD H1 = TheIntegrator.S(U);  
+    std::cout << GridLogMessage << "--------------------------------------------------\n";
 
+
+    
     ///////////////////////////////////////////////////////////
     if(0){
       std::cout << "------------------------- Reversibility test" << std::endl;
@@ -163,17 +224,16 @@ private:
     }
     ///////////////////////////////////////////////////////////
 
-
     std::cout.precision(15);
-    std::cout << GridLogMessage << "Total H after trajectory  = " << H1
-	      << "  dH = " << H1 - H0 << "\n";
+
+    std::cout << GridLogHMC << "--------------------------------------------------\n";
+    std::cout << GridLogHMC << "Total H after trajectory  = " << H1 << "  dH = " << H1 - H0 << "\n";
+    std::cout << GridLogHMC << "--------------------------------------------------\n";
+
     std::cout.precision(current_precision);
     
     return (H1 - H0);
   }
-  
-
-  
 
 public:
   /////////////////////////////////////////
@@ -195,10 +255,13 @@ public:
 
     // Actual updates (evolve a copy Ucopy then copy back eventually)
     unsigned int FinalTrajectory = Params.Trajectories + Params.NoMetropolisUntil + Params.StartTrajectory;
+
     for (int traj = Params.StartTrajectory; traj < FinalTrajectory; ++traj) {
-      std::cout << GridLogMessage << "-- # Trajectory = " << traj << "\n";
+
+      std::cout << GridLogHMC << "-- # Trajectory = " << traj << "\n";
+
       if (traj < Params.StartTrajectory + Params.NoMetropolisUntil) {
-      	std::cout << GridLogMessage << "-- Thermalization" << std::endl;
+      	std::cout << GridLogHMC << "-- Thermalization" << std::endl;
       }
       
       double t0=usecond();
@@ -207,28 +270,28 @@ public:
       DeltaH = evolve_hmc_step(Ucopy);
       // Metropolis-Hastings test
       bool accept = true;
-      if (traj >= Params.StartTrajectory + Params.NoMetropolisUntil) {
+      if (Params.MetropolisTest && traj >= Params.StartTrajectory + Params.NoMetropolisUntil) {
         accept = metropolis_test(DeltaH);
       } else {
-      	std::cout << GridLogMessage << "Skipping Metropolis test" << std::endl;
+      	std::cout << GridLogHMC << "Skipping Metropolis test" << std::endl;
       }
 
       if (accept)
         Ucur = Ucopy; 
       
-     
-      
       double t1=usecond();
-      std::cout << GridLogMessage << "Total time for trajectory (s): " << (t1-t0)/1e6 << std::endl;
+      std::cout << GridLogHMC << "Total time for trajectory (s): " << (t1-t0)/1e6 << std::endl;
 
-
+      TheIntegrator.print_timer();
+      
+      TheIntegrator.Smearer.set_Field(Ucur);
       for (int obs = 0; obs < Observables.size(); obs++) {
       	std::cout << GridLogDebug << "Observables # " << obs << std::endl;
       	std::cout << GridLogDebug << "Observables total " << Observables.size() << std::endl;
       	std::cout << GridLogDebug << "Observables pointer " << Observables[obs] << std::endl;
-        Observables[obs]->TrajectoryComplete(traj + 1, Ucur, sRNG, pRNG);
+        Observables[obs]->TrajectoryComplete(traj + 1, TheIntegrator.Smearer, sRNG, pRNG);
       }
-      std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::::" << std::endl;
+      std::cout << GridLogHMC << ":::::::::::::::::::::::::::::::::::::::::::" << std::endl;
     }
   }
 

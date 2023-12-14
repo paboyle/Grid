@@ -1,0 +1,90 @@
+Branch: develop
+
+Files:
+
+Grid/lattice/PaddedCell.h -- Halo exchange
+tests/Test_general_stencil.cc -- test local off axis stencil addressing
+tests/debug/Test_padded_cell.cc -- test PaddedCell halo exchange and the General local stencil  by computing ALL plaquettes on lattice
+
+Functionality:
+
+-- extend a lattice field:
+Grid/lattice/PaddedCell.h
+
+// Constructor
+  PaddedCell(int _depth,GridCartesian *_grid)
+
+// Expand a field "in" to depth "d"
+  template<class vobj>
+  inline Lattice<vobj> Exchange(Lattice<vobj> &in)
+  
+// Take the "apple core" of in to a smaller local volume
+  template<class vobj>
+  inline Lattice<vobj> Extract(Lattice<vobj> &in)
+
+-- Plaquette test:
+tests/debug/Test_padded_cell.cc
+  /////////////////////////////////////////////////
+  // Create a padded cell of extra padding depth=1
+  /////////////////////////////////////////////////
+  int depth = 1;
+  PaddedCell Ghost(depth,&GRID);
+  LatticeGaugeField Ughost = Ghost.Exchange(Umu);
+
+///// Array for the site plaquette
+  GridBase *GhostGrid = Ughost.Grid();
+  LatticeComplex gplaq(GhostGrid); 
+
+  std::vector<Coordinate> shifts;
+  for(int mu=0;mu<Nd;mu++){
+    for(int nu=mu+1;nu<Nd;nu++){
+  
+      //    Umu(x) Unu(x+mu) Umu^dag(x+nu) Unu^dag(x)
+      Coordinate shift_0(Nd,0);
+      Coordinate shift_mu(Nd,0); shift_mu[mu]=1;
+      Coordinate shift_nu(Nd,0); shift_nu[nu]=1;
+      shifts.push_back(shift_0);
+      shifts.push_back(shift_mu);
+      shifts.push_back(shift_nu);
+      shifts.push_back(shift_0);
+    }
+  }
+  GeneralLocalStencil gStencil(GhostGrid,shifts);
+
+  gplaq=Zero();
+  {
+    autoView( gp_v , gplaq, CpuWrite);
+    autoView( t_v , trplaq, CpuRead);
+    autoView( U_v , Ughost, CpuRead);
+    for(int ss=0;ss<gp_v.size();ss++){
+      int s=0;
+      for(int mu=0;mu<Nd;mu++){
+	for(int nu=mu+1;nu<Nd;nu++){
+
+	  auto SE0 = gStencil.GetEntry(s+0,ss);
+	  auto SE1 = gStencil.GetEntry(s+1,ss);
+	  auto SE2 = gStencil.GetEntry(s+2,ss);
+	  auto SE3 = gStencil.GetEntry(s+3,ss);
+	
+	  int o0 = SE0->_offset;
+	  int o1 = SE1->_offset;
+	  int o2 = SE2->_offset;
+	  int o3 = SE3->_offset;
+	  
+	  auto U0 = U_v[o0](mu);
+	  auto U1 = U_v[o1](nu);
+	  auto U2 = adj(U_v[o2](mu));
+	  auto U3 = adj(U_v[o3](nu));
+
+	  gpermute(U0,SE0->_permute);
+	  gpermute(U1,SE1->_permute);
+	  gpermute(U2,SE2->_permute);
+	  gpermute(U3,SE3->_permute);
+	  
+	  gp_v[ss]() =gp_v[ss]() + trace( U0*U1*U2*U3 );
+	  s=s+4;
+	}
+      }
+    }
+  }
+  cplaq = Ghost.Extract(gplaq);

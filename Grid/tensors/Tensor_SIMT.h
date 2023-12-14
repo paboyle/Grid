@@ -31,6 +31,27 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
+////////////////////////////////////////////////
+// Inside a GPU thread
+////////////////////////////////////////////////
+template<class vobj>
+accelerator_inline void exchangeSIMT(vobj &mp0,vobj &mp1,const vobj &vp0,const vobj &vp1,Integer type)
+{
+    typedef decltype(coalescedRead(mp0)) sobj;
+    unsigned int Nsimd = vobj::Nsimd();
+    unsigned int mask = Nsimd >> (type + 1);
+    int lane = acceleratorSIMTlane(Nsimd);
+    int j0 = lane &(~mask); // inner coor zero
+    int j1 = lane |(mask) ; // inner coor one
+    const vobj *vpa = &vp0;
+    const vobj *vpb = &vp1;
+    const vobj *vp = (lane&mask) ? (vpb) : (vpa);
+    auto sa = coalescedRead(vp[0],j0);
+    auto sb = coalescedRead(vp[0],j1);
+    coalescedWrite(mp0,sa);
+    coalescedWrite(mp1,sb);
+}
+
 
 #ifndef GRID_SIMT
 //////////////////////////////////////////

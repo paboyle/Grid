@@ -34,7 +34,7 @@ using namespace Grid;
  ;
 
 typedef GparityWilsonImplR FermionImplPolicy;
-typedef GparityMobiusEOFAFermionR FermionAction;
+typedef GparityMobiusEOFAFermionD FermionAction;
 typedef typename FermionAction::FermionField FermionField;
 
 int main (int argc, char** argv)

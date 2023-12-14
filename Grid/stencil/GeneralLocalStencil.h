@@ -123,7 +123,7 @@ public:
 	  }
 	  if ( permute_slice ) {
 	    int ptype       =grid->PermuteType(d);
-	    uint8_t mask    =grid->Nsimd() >> (ptype + 1);		
+	    uint8_t mask    =0x1<<ptype;
 	    SE._permute    |= mask;
 	  }
 	}	
