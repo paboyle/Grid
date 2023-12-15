@@ -88,8 +88,7 @@ public:
   static inline void AddLink(Field &U, LinkField &W, int mu) { // U[mu] += W
     autoView(U_v,U,AcceleratorWrite);
     autoView(W_v,W,AcceleratorRead);
-    int size=U.Grid()->oSites();
-    accelerator_for( ss, size, 1, {
+    accelerator_for( ss, U.Grid()->oSites(), 1, {
       U_v[ss](mu) = U_v[ss](mu) + W_v[ss]();
     });
   }
@@ -139,8 +138,7 @@ public:
     //auto start = std::chrono::high_resolution_clock::now();
     autoView(U_v,U,AcceleratorWrite);
     autoView(P_v,P,AcceleratorRead);
-    int size=P.Grid()->oSites();
-    accelerator_for(ss, size,1,{
+    accelerator_for(ss, P.Grid()->oSites(),1,{
       for (int mu = 0; mu < Nd; mu++) {
           U_v[ss](mu) = Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu);
           U_v[ss](mu) = Group::ProjectOnGeneralGroup(U_v[ss](mu));

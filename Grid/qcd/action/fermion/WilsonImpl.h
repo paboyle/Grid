@@ -110,10 +110,8 @@ public:
     autoView( out_v, out, AcceleratorWrite);
     autoView( phi_v, phi, AcceleratorRead);
     autoView( Umu_v, Umu, AcceleratorRead);
-    int size=out.Grid()->oSites();
-
     typedef decltype(coalescedRead(out_v[0]))   calcSpinor;
-    accelerator_for(sss,size,Nsimd,{
+    accelerator_for(sss,out.Grid()->oSites(),Nsimd,{
 	calcSpinor tmp;
 	multLink(tmp,Umu_v[sss],phi_v(sss),mu);
 	coalescedWrite(out_v[sss],tmp);
@@ -205,8 +203,7 @@ public:
       autoView( tmp_v , tmp, AcceleratorWrite);
       autoView( Btilde_v , Btilde, AcceleratorRead);
       autoView( Atilde_v , Atilde, AcceleratorRead);
-      int size=tmp.Grid()->oSites();
-      accelerator_for(sss,size,1,{
+      accelerator_for(sss,tmp.Grid()->oSites(),1,{
 	  int sU=sss;
 	  for(int s=0;s<Ls;s++){
 	    int sF = s+Ls*sU;
@@ -220,8 +217,7 @@ public:
       const int Nsimd = SiteSpinor::Nsimd();
       autoView( Btilde_v , Btilde, AcceleratorRead);
       autoView( Atilde_v , Atilde, AcceleratorRead);
-      int size=mat.Grid()->oSites();
-      accelerator_for(sss,size,Nsimd,{
+      accelerator_for(sss,mat.Grid()->oSites(),Nsimd,{
 	  int sU=sss;
   	  typedef decltype(coalescedRead(mat_v[sU](mu)() )) ColorMatrixType;
   	  ColorMatrixType sum;
