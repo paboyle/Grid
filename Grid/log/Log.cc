@@ -90,7 +90,7 @@ void GridLogConfigure(std::vector<std::string> &logstreams) {
 
   for (int i = 0; i < logstreams.size(); i++) {
     if (logstreams[i] == std::string("Tracing"))     GridLogTracing.Active(1);
-    if (logstreams[i] == std::string("Memory"))      GridLogMemory.Active(0);
+    if (logstreams[i] == std::string("Memory"))      GridLogMemory.Active(1);
     if (logstreams[i] == std::string("Warning"))     GridLogWarning.Active(1);
     if (logstreams[i] == std::string("NoMessage"))   GridLogMessage.Active(0);
     if (logstreams[i] == std::string("Iterative"))   GridLogIterative.Active(1);
