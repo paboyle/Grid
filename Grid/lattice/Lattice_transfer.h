@@ -763,19 +763,22 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
 #if 1
   size_t nsite = 1;
   for(int i=0;i<nd;i++) nsite *= RegionSize[i];
-  
+
+  //  std::cout << "Region size is "<<nsite<<std::endl;
+
   size_t tbytes = 4*nsite*sizeof(int);
   int *table = (int*)malloc(tbytes);
 
+  // FIXME - fuse these loops
   RealD t_cpu=-usecond();
 #if 0
   thread_for(idx, nsite, {
-      Coordinate from_coor, to_coor;
+      Coordinate from_coor, to_coor, base;
       size_t rem = idx;
+      Lexicographic::CoorFromIndex(base,idx,RegionSize);
       for(int i=0;i<nd;i++){
-	size_t base_i  = rem % RegionSize[i]; rem /= RegionSize[i];
-	from_coor[i] = base_i + FromLowerLeft[i];
-	to_coor[i] = base_i + ToLowerLeft[i];
+	from_coor[i] = base[i] + FromLowerLeft[i];
+	to_coor[i] = base[i] + ToLowerLeft[i];
       }
       
       int foidx = Fg->oIndex(from_coor);
@@ -801,12 +804,11 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
   Coordinate t_rdimensions = Tg->_rdimensions;
 
   accelerator_for(idx, nsite, 1, {
-      Coordinate from_coor, to_coor;
-      size_t rem = idx;
+      Coordinate from_coor, to_coor, base;
+      Lexicographic::CoorFromIndex(base,idx,RegionSize);
       for(int i=0;i<nd;i++){
-	size_t base_i  = rem % RegionSize[i]; rem /= RegionSize[i];
-	from_coor[i] = base_i + FromLowerLeft[i];
-	to_coor[i] = base_i + ToLowerLeft[i];
+	from_coor[i] = base[i] + FromLowerLeft[i];
+	to_coor[i] = base[i] + ToLowerLeft[i];
       }
       int foidx = 0; for(int d=0;d<nd;d++) foidx+=f_ostride[d]*(from_coor[d]%f_rdimensions[d]);
       int fiidx = 0; for(int d=0;d<nd;d++) fiidx+=f_istride[d]*(from_coor[d]/f_rdimensions[d]);
@@ -824,52 +826,53 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
 
-  autoView(from_v,From,AcceleratorRead);
-  autoView(to_v,To,AcceleratorWrite);
-  RealD t_acc=-usecond();
-  const int words=sizeof(vobj)/sizeof(vector_type);
-  accelerator_for(idx,nsite,words,{
-      int* tt = table_d + 4*idx;
-      int from_oidx = *tt++;
-      int from_lane = *tt++;
-      int to_oidx = *tt++;
-      int to_lane = *tt;
+  {
+    autoView(from_v,From,AcceleratorRead);
+    autoView(to_v,To,AcceleratorWrite);
+    //    autoView(from_v,From,CpuRead);
+    //    autoView(to_v,To,CpuWrite);
+    RealD t_acc=-usecond();
+    const int words=sizeof(vobj)/sizeof(vector_type);
+    accelerator_for(idx,nsite,1,{
+    //    for(int idx=0;idx<nsite;idx++) {
+	int* tt = table_d + 4*idx;
+	int from_oidx = *tt++;
+	int from_lane = *tt++;
+	int to_oidx = *tt++;
+	int to_lane = *tt;
 
-      const vector_type* from = (const vector_type *)&from_v[from_oidx];
-      vector_type* to = (vector_type *)&to_v[to_oidx];
+	const vector_type* from = (const vector_type *)&from_v[from_oidx];
+	vector_type* to = (vector_type *)&to_v[to_oidx];
       
-      scalar_type stmp;
-#ifdef GRID_SIMT
-      int w = acceleratorSIMTlane(words);
-      stmp = getlane(from[w], from_lane);
-      putlane(to[w], stmp, to_lane);
-#else
-      for(int w=0;w<words;w++){
-	stmp = getlane(from[w], from_lane);
-	putlane(to[w], stmp, to_lane);
-      }
-#endif
+	scalar_type stmp;
+	for(int w=0;w<words;w++){
+	  stmp = getlane(from[w], from_lane);
+	  putlane(to[w], stmp, to_lane);
+	}
     });
-  t_acc+=usecond();
-  //  std::cout << " localCopyRegion cpu " <<t_cpu/1000<<" ms"<<std::endl;
-  //  std::cout << " localCopyRegion acc " <<t_acc/1000<<" ms"<<std::endl;
-  acceleratorFreeDevice(table_d);    
-  free(table);
-  
-
+    t_acc+=usecond();
+    //    std::cout << " localCopyRegion cpu " <<t_cpu/1000<<" ms"<<std::endl;
+    //    std::cout << " localCopyRegion acc " <<t_acc/1000<<" ms"<<std::endl;
+    acceleratorFreeDevice(table_d);    
+    free(table);
+  }  
 #else  
   Coordinate ldf = Fg->_ldimensions;
   Coordinate rdf = Fg->_rdimensions;
   Coordinate isf = Fg->_istride;
   Coordinate osf = Fg->_ostride;
+  Coordinate ldt = Tg->_ldimensions;
   Coordinate rdt = Tg->_rdimensions;
   Coordinate ist = Tg->_istride;
   Coordinate ost = Tg->_ostride;
 
+  {
   autoView( t_v , To, CpuWrite);
   autoView( f_v , From, CpuRead);
-  thread_for(idx,Fg->lSites(),{
-    sobj s;
+  //  thread_for(idx,Fg->lSites(),{
+  ComplexD mysum(0.0);
+  int num=0;
+  for(int idx=0;idx<Fg->lSites();idx++) {
     Coordinate Fcoor(nd);
     Coordinate Tcoor(nd);
     Lexicographic::CoorFromIndex(Fcoor,idx,ldf);
@@ -881,24 +884,31 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
       Tcoor[d] = ToLowerLeft[d]+ Fcoor[d]-FromLowerLeft[d];
     }
     if (in_region) {
-#if 0      
-      Integer idx_f = 0; for(int d=0;d<nd;d++) idx_f+=isf[d]*(Fcoor[d]/rdf[d]); // inner index from
-      Integer idx_t = 0; for(int d=0;d<nd;d++) idx_t+=ist[d]*(Tcoor[d]/rdt[d]); // inner index to
-      Integer odx_f = 0; for(int d=0;d<nd;d++) odx_f+=osf[d]*(Fcoor[d]%rdf[d]); // outer index from
-      Integer odx_t = 0; for(int d=0;d<nd;d++) odx_t+=ost[d]*(Tcoor[d]%rdt[d]); // outer index to
-      scalar_type * fp = (scalar_type *)&f_v[odx_f];
-      scalar_type * tp = (scalar_type *)&t_v[odx_t];
-      for(int w=0;w<words;w++){
-	tp[w].putlane(fp[w].getlane(idx_f),idx_t);
-      }
-#else
-    peekLocalSite(s,f_v,Fcoor);
-    pokeLocalSite(s,t_v,Tcoor);
-#endif
+      sobj s;
+      peekLocalSite(s,f_v,Fcoor);
+      pokeLocalSite(s,t_v,Tcoor);
+      ComplexD ip=innerProduct(s,s);
+      std::cout << " localCopyRegion "<<Fcoor<<" "<<Tcoor<<" "<<ip<<std::endl;
+      mysum=mysum+innerProduct(s,s);
+      num++;
     }
-  });
-
+  };
+  Fg->GlobalSum(mysum);
+  //  std::cout << " localCopyRegion slow sum  "<<mysum<<std::endl;
+  //  std::cout << " localCopyRegion slow sites in region "<<num<<" region "<<RegionSize<<std::endl;
+  //  std::cout << " localCopyRegion slow from size "<<f_v.oSites()<<" localFrom "<<ldf<<std::endl;
+  //  std::cout << " localCopyRegion slow to size   "<<t_v.oSites()<<" localTo   "<<ldt<<std::endl;
+  }
+  
 #endif
+  //  {
+  //    autoView( t_v , To, CpuWrite);
+  //    autoView( f_v , From, CpuRead);
+  //    std::cout << " localCopyRegion slow from "<<&f_v[0]<<std::endl;
+  //    std::cout << " localCopyRegion slow to   "<<&t_v[0]<<std::endl;
+  //  }
+  //  std::cout << " localCopyRegion slow from nrm "<<norm2(From)<<std::endl;
+  //  std::cout << " localCopyRegion slow to   nrm "<<norm2(To)<<std::endl;
 }
 
 
