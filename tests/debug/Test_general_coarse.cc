@@ -33,9 +33,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/iterative/PrecGeneralisedConjugateResidualNonHermitian.h>
 #include <Grid/algorithms/iterative/BiCGSTAB.h>
 
-#include <Grid/algorithms/multigrid/BatchedBlas.h>
-#include <Grid/algorithms/multigrid/GeneralCoarsenedMatrixMultiRHSnew.h>
-
 using namespace std;
 using namespace Grid;
 
@@ -247,7 +244,7 @@ int main (int argc, char ** argv)
 
   GridCartesian *CoarseMrhs = new GridCartesian(rhLatt,rhSimd,rhMpi); 
   
-  MultiGeneralCoarsenedMatrixnew mrhs(LittleDiracOp,CoarseMrhs);
+  MultiGeneralCoarsenedMatrix mrhs(LittleDiracOp,CoarseMrhs);
 
   {
     GridParallelRNG          rh_CRNG(CoarseMrhs);rh_CRNG.SeedFixedIntegers(cseeds);
