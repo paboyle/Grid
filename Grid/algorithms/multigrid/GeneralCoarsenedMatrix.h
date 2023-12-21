@@ -223,7 +223,7 @@ public:
     text+=usecond();
     ttot+=usecond();
     
-    std::cout << GridLogPerformance<<"Coarse Mult Aviews "<<tviews<<" us"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse 1rhs Mult Aviews "<<tviews<<" us"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Mult exch "<<texch<<" us"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Mult mult "<<tmult<<" us"<<std::endl;
     std::cout << GridLogPerformance<<" of which mult2  "<<tmult2<<" us"<<std::endl;
@@ -232,8 +232,9 @@ public:
     std::cout << GridLogPerformance<<"Coarse Mult copy  "<<tcopy<<" us"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Mult tot  "<<ttot<<" us"<<std::endl;
     //    std::cout << GridLogPerformance<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Kernel flops "<< flops<<std::endl;
     std::cout << GridLogPerformance<<"Coarse Kernel flop/s "<< flops/tmult<<" mflop/s"<<std::endl;
-    std::cout << GridLogPerformance<<"Coarse Kernel bytes/s"<< bytes/tmult<<" MB/s"<<std::endl;
+    std::cout << GridLogPerformance<<"Coarse Kernel bytes/s "<< bytes/tmult<<" MB/s"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse overall flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
     std::cout << GridLogPerformance<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
 
@@ -418,11 +419,6 @@ public:
         });
       }
       tinv+=usecond();
-    }
-
-    for(int p=0;p<geom.npoint;p++){
-      Coordinate coor({0,0,0,0,0});
-      auto sval = peekSite(_A[p],coor);
     }
 
     // Only needed if nonhermitian
