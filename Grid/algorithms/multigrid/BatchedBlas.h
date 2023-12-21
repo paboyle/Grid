@@ -518,7 +518,7 @@ public:
 #ifdef GRID_SYCL
      #warning "oneMKL implementation not made "
 #endif
-#if !definte(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
+#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
      // Need a default/reference implementation
      for (int p = 0; p < batchCount; ++p) {
        for (int mm = 0; mm < m; ++mm) {
