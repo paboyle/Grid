@@ -91,7 +91,7 @@ template<class vobj> inline void ScatterSlice(const cshiftVector<vobj> &buf,
   //for cross platform
   // FIXME -- can put internal indices into thread loop
   auto buf_p = & buf[0];
-  autoView(lat_v, lat, AcceleratorRead);
+  autoView(lat_v, lat, AcceleratorWrite);
   accelerator_for(ss, face_ovol/simd[dim],Nsimd,{
 
     // scalar layout won't coalesce
@@ -329,8 +329,6 @@ public:
     if(dim==0) conformable(old_grid,unpadded_grid);
     else       conformable(old_grid,grids[dim-1]);
 
-    //    std::cout << " dim "<<dim<<" local "<<local << " padding to "<<plocal<<std::endl;
-
     double tins=0, tshift=0;
 
     int islocal = 0 ;
@@ -339,6 +337,7 @@ public:
     if ( islocal ) {
 
       // replace with a copy and maybe grid swizzle
+      // return in;??
       double t = usecond();
       padded = in;
       tins += usecond() - t;
@@ -396,7 +395,7 @@ public:
     GridBase *old_grid = in.Grid();
     GridCartesian *new_grid = grids[dim];//These are new grids
     Lattice<vobj>  padded(new_grid);
-    Lattice<vobj> shifted(old_grid);    
+    //    Lattice<vobj> shifted(old_grid);    
     Coordinate local     =old_grid->LocalDimensions();
     Coordinate plocal    =new_grid->LocalDimensions();
     if(dim==0) conformable(old_grid,unpadded_grid);
@@ -409,14 +408,10 @@ public:
     if ( processors[dim] == 1 ) islocal = 1;
 
     if ( islocal ) {
-
-      // replace with a copy and maybe grid swizzle
-      double t = usecond();
-      padded = in;
-      tins += usecond() - t;
-      // return in; ?
+      padded=in; // slightly different interface could avoid a copy operation
     } else {
       Face_exchange(in,padded,dim,depth);
+      return padded;
     }
     return padded;
   }
@@ -527,8 +522,6 @@ public:
     ////////////////////////////////////////////////////////////////////////////
     // Scatter all faces
     ////////////////////////////////////////////////////////////////////////////
-    //    DumpSliceNorm(std::string("Face_exchange to before scatter"),to,dimension);
-
     plane=0;
 
     t=usecond();
@@ -550,18 +543,16 @@ public:
       ScatterSlice(recv_buf,to,d,dimension,plane*buffer_size); plane++;
     }
     t_scatter+= usecond() - t;
-    //    DumpSliceNorm(std::string("Face_exchange to scatter 1st "),to,dimension);
     t_tot+=usecond();
 
-    //DumpSliceNorm(std::string("Face_exchange to done"),to,dimension);
-    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: gather :" << t_gather/1000  << "ms"<<std::endl;
-    //    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: gather :" << 2.0*bytes/t_gather << "MB/s"<<std::endl;
-    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: scatter:" << t_scatter/1000   << "ms"<<std::endl;
-    //    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: scatter:" << 2.0*bytes/t_scatter<< "MB/s"<<std::endl;
-    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: copy   :" << t_copy/1000      << "ms"<<std::endl;
-    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: comms  :" << t_comms/1000     << "ms"<<std::endl;
-    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: total  :" << t_tot/1000     << "ms"<<std::endl;
-    //    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: comms  :" << (RealD)4.0*bytes/t_comms   << "MB/s"<<std::endl;
+    std::cout << GridLogDebug << "PaddedCell::Expand new timings: gather :" << t_gather/1000  << "ms"<<std::endl;
+    std::cout << GridLogDebug << "PaddedCell::Expand new timings: gather :" << 2.0*bytes/t_gather << "MB/s"<<std::endl;
+    std::cout << GridLogDebug << "PaddedCell::Expand new timings: scatter:" << t_scatter/1000   << "ms"<<std::endl;
+    std::cout << GridLogDebug << "PaddedCell::Expand new timings: scatter:" << 2.0*bytes/t_scatter<< "MB/s"<<std::endl;
+    std::cout << GridLogDebug << "PaddedCell::Expand new timings: copy   :" << t_copy/1000      << "ms"<<std::endl;
+    std::cout << GridLogDebug << "PaddedCell::Expand new timings: comms  :" << t_comms/1000     << "ms"<<std::endl;
+    std::cout << GridLogDebug << "PaddedCell::Expand new timings: total  :" << t_tot/1000     << "ms"<<std::endl;
+    std::cout << GridLogDebug << "PaddedCell::Expand new timings: comms  :" << (RealD)4.0*bytes/t_comms   << "MB/s"<<std::endl;
   }
   
 };
