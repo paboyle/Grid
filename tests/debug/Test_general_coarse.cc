@@ -33,8 +33,14 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/iterative/PrecGeneralisedConjugateResidualNonHermitian.h>
 #include <Grid/algorithms/iterative/BiCGSTAB.h>
 
+#include <Grid/algorithms/multigrid/BatchedBlas.h>
+#include <Grid/algorithms/multigrid/GeneralCoarsenedMatrixMultiRHSnew.h>
+
 using namespace std;
 using namespace Grid;
+
+gridblasHandle_t GridBLAS::gridblasHandle;
+int            GridBLAS::gridblasInit;
 
 ///////////////////////
 // Tells little dirac op to use MdagM as the .Op()
@@ -107,7 +113,7 @@ int main (int argc, char ** argv)
 
   DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
-  const int nbasis = 32;
+  const int nbasis = 62;
   const int cb = 0 ;
   LatticeFermion prom(FGrid);
 
@@ -142,7 +148,6 @@ int main (int argc, char ** argv)
 
   HermOpAdaptor<LatticeFermionD> HOA(HermDefOp);
 
-  int pp=16;
   LittleDiracOp.CoarsenOperator(HOA,Aggregates);
   
   ///////////////////////////////////////////////////
@@ -229,18 +234,20 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
-
+  //////////////////////////////////////////////////////////////////////////////////////
   //  Create a higher dim coarse grid
-  const int nrhs=vComplex::Nsimd();
+  //////////////////////////////////////////////////////////////////////////////////////
+
+  const int nrhs=vComplex::Nsimd()*3;
 
   Coordinate mpi=GridDefaultMpi();
   Coordinate rhMpi ({1,1,mpi[0],mpi[1],mpi[2],mpi[3]});
-  Coordinate rhLatt({nrhs,1,clatt[0],clatt[2],clatt[2],clatt[3]});
-  Coordinate rhSimd({nrhs,1, 1,1,1,1});
+  Coordinate rhLatt({nrhs,1,clatt[0],clatt[1],clatt[2],clatt[3]});
+  Coordinate rhSimd({vComplex::Nsimd(),1, 1,1,1,1});
 
   GridCartesian *CoarseMrhs = new GridCartesian(rhLatt,rhSimd,rhMpi); 
-
-  MultiGeneralCoarsenedMatrix mrhs(LittleDiracOp,CoarseMrhs);
+  
+  MultiGeneralCoarsenedMatrixnew mrhs(LittleDiracOp,CoarseMrhs);
 
   {
     GridParallelRNG          rh_CRNG(CoarseMrhs);rh_CRNG.SeedFixedIntegers(cseeds);
@@ -248,31 +255,48 @@ int main (int argc, char ** argv)
     CoarseVector rh_res(CoarseMrhs);
     random(rh_CRNG,rh_phi);
 
+    std::cout << "Warmup"<<std::endl;
     mrhs.M(rh_phi,rh_res);
-    const int ncall=100;
+    const int ncall=5;
     RealD t0=-usecond();
     for(int i=0;i<ncall;i++){
+      std::cout << "Call "<<i<<"/"<<ncall<<std::endl;
       mrhs.M(rh_phi,rh_res);
     }
     t0+=usecond();
     RealD t1=0;
     for(int r=0;r<nrhs;r++){
+      std::cout << " compare to single RHS "<<r<<"/"<<nrhs<<std::endl;
       ExtractSlice(phi,rh_phi,r,0);
       ExtractSlice(chi,rh_res,r,0);
       LittleDiracOp.M(phi,Aphi);
       t1-=usecond();
       for(int i=0;i<ncall;i++){
+	std::cout << "Call "<<i<<"/"<<ncall<<std::endl;
 	LittleDiracOp.M(phi,Aphi);
       }
       t1+=usecond();
+      Coordinate site({0,0,0,0,0});
+      auto  bad = peekSite(chi,site);
+      auto good = peekSite(Aphi,site);
       std::cout << " mrhs [" <<r <<"] "<< norm2(chi)<<std::endl;
       std::cout << " srhs [" <<r <<"] "<< norm2(Aphi)<<std::endl;
       chi=chi-Aphi;
-      std::cout << r << " diff " << norm2(chi)<<std::endl;
+      RealD diff =norm2(chi);
+      std::cout << r << " diff " << diff<<std::endl;
+      assert(diff < 1.0e-10);
     }
     std::cout << nrhs<< " mrhs " << t0/ncall/nrhs <<" us"<<std::endl;
     std::cout << nrhs<< " srhs " << t1/ncall/nrhs <<" us"<<std::endl;
   }
+
+
+  std::cout<<GridLogMessage<<std::endl;
+  std::cout<<GridLogMessage<<std::endl;
+  std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
+  std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
+  std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
+
   Grid_finalize();
   return 0;
 }
