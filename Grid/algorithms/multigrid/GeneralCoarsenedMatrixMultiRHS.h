@@ -27,7 +27,25 @@ Author: Peter Boyle <pboyle@bnl.gov>
 /*  END LEGAL */
 #pragma once
 
+#include <Grid/algorithms/multigrid/BatchedBlas.h>
+
 NAMESPACE_BEGIN(Grid);
+
+
+// Move this to accelerator.h
+// Also give a copy device.
+// Rename acceleratorPut
+// Rename acceleratorGet
+template<class T> void deviceSet(T& dev,T&host)
+{
+  acceleratorCopyToDevice(&host,&dev,sizeof(T));
+}
+template<class T> T deviceGet(T& dev)
+{
+  T host;
+  acceleratorCopyFromDevice(&dev,&host,sizeof(T));
+  return host;
+}
 
 // Fine Object == (per site) type of fine field
 // nbasis      == number of deflation vectors
@@ -40,6 +58,7 @@ public:
 
   typedef iVector<CComplex,nbasis >           siteVector;
   typedef iMatrix<CComplex,nbasis >           siteMatrix;
+  typedef iVector<SComplex,nbasis >           calcVector;
   typedef iMatrix<SComplex,nbasis >           calcMatrix;
   typedef Lattice<iScalar<CComplex> >         CoarseComplexField;
   typedef Lattice<siteVector>                 CoarseVector;
@@ -59,10 +78,14 @@ public:
   NonLocalStencilGeometry geom;
   PaddedCell Cell;
   GeneralLocalStencil Stencil;
-  
-  std::vector<deviceVector<calcMatrix> > _A;
-  std::vector<CoarseVector> MultTemporaries;
-  deviceVector<GeneralStencilEntryReordered> StencilMasked;
+
+  deviceVector<calcVector> BLAS_B;
+  deviceVector<calcVector> BLAS_C;
+  std::vector<deviceVector<calcMatrix> > BLAS_A;
+
+  std::vector<deviceVector<ComplexD *> > BLAS_AP;
+  std::vector<deviceVector<ComplexD *> > BLAS_BP;
+  deviceVector<ComplexD *>               BLAS_CP;
 
   ///////////////////////
   // Interface
@@ -76,58 +99,117 @@ public:
     _CoarseGridMulti(CoarseGridMulti),
     geom(_CoarseGridMulti,Op.geom.hops,Op.geom.skip+1),
     Cell(Op.geom.Depth(),_CoarseGridMulti),
-    Stencil(Cell.grids.back(),geom.shifts)
+    Stencil(Cell.grids.back(),geom.shifts) // padded cell stencil
   {
-    _A.resize(geom.npoint);
-    int32_t padded_sites = _Op._A[0].Grid()->lSites();
+    int32_t padded_sites   = _Op._A[0].Grid()->lSites();
+    int32_t unpadded_sites = _CoarseGrid->lSites();
+    
+    int32_t nrhs  = CoarseGridMulti->FullDimensions()[0];  // # RHS
+    int32_t orhs  = nrhs/CComplex::Nsimd();
+
+    /////////////////////////////////////////////////
+    // Device data vector storage
+    /////////////////////////////////////////////////
+    BLAS_A.resize(geom.npoint);
     for(int p=0;p<geom.npoint;p++){
-      _A[p].resize(padded_sites);
+      BLAS_A[p].resize (unpadded_sites); // no ghost zone, npoint elements
     }
-    std::cout << GridLogMessage<<"MultiGeneralCoarsenedMatrix "<<_CoarseGrid->lSites()<<" coarse sites "<<_Op._A[0].Grid()->lSites() <<std::endl;
+    BLAS_B.resize(nrhs *padded_sites);   // includes ghost zone
+    BLAS_C.resize(nrhs *unpadded_sites); // no ghost zone
 
-    StencilMasked.resize(_CoarseGridMulti->oSites()*geom.npoint);
-    std::vector<GeneralStencilEntryReordered> StencilTmp;
+    BLAS_AP.resize(geom.npoint);
+    BLAS_BP.resize(geom.npoint);
+    for(int p=0;p<geom.npoint;p++){
+      BLAS_AP[p].resize(unpadded_sites);
+      BLAS_BP[p].resize(unpadded_sites);
+    }
+    BLAS_CP.resize(unpadded_sites);
 
-    int32_t j=0;
-    int32_t sites = Stencil._entries.size()/geom.npoint;
-    for(int32_t s=0;s<sites;s++){
+    /////////////////////////////////////////////////
+    // Pointers to data
+    /////////////////////////////////////////////////
+
+    // Site identity mapping for A, C
+    for(int p=0;p<geom.npoint;p++){
+      for(int ss=0;ss<unpadded_sites;ss++){
+	ComplexD *ptr = (ComplexD *)&BLAS_A[p][ss];
+	//ComplexD *ptr = (ComplexD *)&BLAS_A[p][0]; std::cout << " A ptr "<<std::hex<<ptr<<std::dec<<" "<<ss<<"/"<<BLAS_A[p].size()<<std::endl;
+	deviceSet(BLAS_AP[p][ss],ptr);
+      }
+    }
+    for(int ss=0;ss<unpadded_sites;ss++){
+      ComplexD *ptr = (ComplexD *)&BLAS_C[ss*nrhs];
+      //ComplexD *ptr = (ComplexD *)&BLAS_C[0];  std::cout << " C ptr "<<std::hex<<ptr<<std::dec<<" "<<ss<<"/"<<BLAS_C.size()<<std::endl;
+      deviceSet(BLAS_CP[ss],ptr);
+    }
+
+    /////////////////////////////////////////////////
+    // Neighbour table is more complicated
+    /////////////////////////////////////////////////
+    int32_t j=0; // Interior point counter (unpadded)
+    for(int32_t s=0;s<padded_sites;s++){ // 4 volume, padded
       int ghost_zone=0;
       for(int32_t point = 0 ; point < geom.npoint; point++){
-	int i=s*geom.npoint+point;
-	if( Stencil._entries[i]._wrap ) {
-	  ghost_zone=1;
+	int i=s*orhs*geom.npoint+point;
+	if( Stencil._entries[i]._wrap ) { // stencil is indexed by the oSite of the CoarseGridMulti, hence orhs factor
+	  ghost_zone=1; // If general stencil wrapped in any direction, wrap=1
 	}
       }
-      //      std::cout << "site " <<s<<"/"<<sites <<" ghost_zone "<<ghost_zone<<std::endl;
-      GeneralStencilEntryReordered tmp;
+      //      GeneralStencilEntryReordered tmp;
       if( ghost_zone==0) {
 	for(int32_t point = 0 ; point < geom.npoint; point++){
-	  int i=s*geom.npoint+point;
- 	  tmp._offset = Stencil._entries[i]._offset;
-	  tmp._wrap= Stencil._entries[i]._wrap; // Should be no premute and j=site
-	  tmp._input = s;
-	  StencilTmp.push_back(tmp);
+	  int i=s*orhs*geom.npoint+point;
+ 	  int32_t nbr = Stencil._entries[i]._offset*CComplex::Nsimd(); // oSite -> lSite
+	  //	  std::cout << " B ptr "<< nbr<<"/"<<BLAS_B.size()<<std::endl;
+	  assert(nbr<BLAS_B.size());
+	  ComplexD * ptr = (ComplexD *)&BLAS_B[nbr];
+	  //	  ComplexD * ptr = (ComplexD *)&BLAS_B[0];
+	  //	  std::cout << " B ptr unpadded "<<std::hex<<ptr<<std::dec<<" "<<s<<"/"<<padded_sites<<std::endl;
+	  //	  std::cout << " B ptr   padded "<<std::hex<<ptr<<std::dec<<" "<<j<<"/"<<unpadded_sites<<std::endl;
+	  deviceSet(BLAS_BP[point][j],ptr); // neighbour indexing in ghost zone volume
+	  //	  auto tmp = deviceGet(*BLAS_BP[point][j]);  // debug trigger SEGV if bad ptr
 	}
 	j++;
       }
     }
-    std::cout << " oSites " << _CoarseGridMulti->oSites()<<std::endl;
-    std::cout << " npoint " << geom.npoint<<std::endl;
-    std::cout << " StencilTmp "<<StencilTmp.size()<<std::endl;
-    
-    assert(_CoarseGridMulti->oSites()*geom.npoint==StencilTmp.size());
-    acceleratorCopyToDevice(&StencilTmp[0],&StencilMasked[0],sizeof(GeneralStencilEntryReordered)*StencilTmp.size());
+    assert(j==unpadded_sites);
     CopyMatrix();
+  }
+  template<class vobj> void GridtoBLAS(const Lattice<vobj> &grid,deviceVector<typename vobj::scalar_object> &out)
+  {
+    std::vector<typename vobj::scalar_object> tmp;
+    unvectorizeToLexOrdArray(tmp,grid);
+    //    std::cout << "GridtoBLAS volume " <<tmp.size()<<" " << grid.Grid()->lSites()<<" "<<out.size()<<std::endl;
+    //    std::cout << "GridtoBLAS site 0 " <<tmp[0]<<std::endl;
+    assert(tmp.size()==grid.Grid()->lSites());
+    assert(tmp.size()==out.size());
+    out.resize(tmp.size());
+    acceleratorCopyToDevice(&tmp[0],&out[0],sizeof(typename vobj::scalar_object)*tmp.size());
+  }    
+  template<class vobj> void BLAStoGrid(Lattice<vobj> &grid,deviceVector<typename vobj::scalar_object> &in)
+  {
+    std::vector<typename vobj::scalar_object> tmp;
+    tmp.resize(in.size());
+    //    std::cout << "BLAStoGrid volume " <<tmp.size()<<" "<< grid.Grid()->lSites()<<std::endl;
+    assert(in.size()==grid.Grid()->lSites());
+    acceleratorCopyFromDevice(&in[0],&tmp[0],sizeof(typename vobj::scalar_object)*in.size());
+    vectorizeFromLexOrdArray(tmp,grid);
   }
   void CopyMatrix (void)
   {
     // Clone "A" to be lexicographic in the physics coords
     // Use unvectorisetolexordarray
     // Copy to device
-    std::vector<calcMatrix> tmp;
     for(int p=0;p<geom.npoint;p++){
-      unvectorizeToLexOrdArray(tmp,_Op._A[p]);
-      acceleratorCopyToDevice(&tmp[0],&_A[p][0],sizeof(calcMatrix)*tmp.size());
+      //Unpadded
+      auto Aup = _Op.Cell.Extract(_Op._A[p]);
+      //      Coordinate coor({0,0,0,0,0});
+      //      auto sval = peekSite(Aup,coor);
+      //      std::cout << "CopyMatrix: p "<<p<<" Aup[0] :"<<sval<<std::endl;
+      //      sval = peekSite(_Op._A[p],coor);
+      //      std::cout << "CopyMatrix: p "<<p<<" _Op._Ap[0] :"<<sval<<std::endl;
+      GridtoBLAS(Aup,BLAS_A[p]);
+      //      std::cout << "Copy Matrix p "<<p<<" "<< deviceGet(BLAS_A[p][0])<<std::endl;
     }
   }
   void Mdag(const CoarseVector &in, CoarseVector &out)
@@ -136,18 +218,23 @@ public:
   }
   void M (const CoarseVector &in, CoarseVector &out)
   {
-    RealD tviews=0;    RealD ttot=0;    RealD tmult=0;   RealD texch=0;    RealD text=0; RealD ttemps=0; RealD tcopy=0;
-    RealD tmult2=0;
-
-    ttot=-usecond();
+    std::cout << GridLogMessage << "New Mrhs coarse"<<std::endl;
     conformable(CoarseGrid(),in.Grid());
     conformable(in.Grid(),out.Grid());
     out.Checkerboard() = in.Checkerboard();
-    CoarseVector tin=in;
 
-    texch-=usecond();
-    CoarseVector pin = Cell.ExchangePeriodic(tin);
-    texch+=usecond();
+    RealD t_tot;
+    RealD t_exch;
+    RealD t_GtoB;
+    RealD t_BtoG;
+    RealD t_mult;
+
+    t_tot=-usecond();
+    CoarseVector tin=in;
+    t_exch=-usecond();
+    CoarseVector pin = Cell.ExchangePeriodic(tin); //padded input
+    t_exch+=usecond();
+
     CoarseVector pout(pin.Grid());
 
     int npoint = geom.npoint;
@@ -157,188 +244,61 @@ public:
     const int Nsimd = CComplex::Nsimd();
 
     RealD flops,bytes;
-    int64_t nrhs  =pin.Grid()->GlobalDimensions()[0]/Nsimd;
+    int64_t osites=in.Grid()->oSites(); // unpadded
+    int64_t unpadded_vol = _CoarseGrid->lSites();
+    
+    flops = 1.0* npoint * nbasis * nbasis * 8.0 * osites * CComplex::Nsimd();
+    bytes = 1.0*osites*sizeof(siteMatrix)*npoint/pin.Grid()->GlobalDimensions()[0]
+          + 2.0*osites*sizeof(siteVector)*npoint;
+    
+    int64_t nrhs  =pin.Grid()->GlobalDimensions()[0];
     assert(nrhs>=1);
 
-#if 0
-    {
-      tviews-=usecond();
-      autoView( in_v , pin, AcceleratorRead);
-      autoView( out_v , pout, AcceleratorWriteDiscard);
-      tviews+=usecond();
+    std::cout << GridLogMessage << "New Mrhs GridtoBLAS in sizes "<<in.Grid()->lSites()<<" "<<pin.Grid()->lSites()<<std::endl;
+    t_GtoB=-usecond();
+    GridtoBLAS(pin,BLAS_B);
+    //    out = Zero();
+    //    GridtoBLAS(out,BLAS_C);
+    t_GtoB+=usecond();
 
-      // Static and prereserve to keep UVM region live and not resized across multiple calls
-      ttemps-=usecond();
-      MultTemporaries.resize(npoint,in.Grid());       
-      ttemps+=usecond();
+    GridBLAS BLAS;
 
-      std::vector<Aview> AcceleratorViewContainer_h;
-      std::vector<Vview> AcceleratorVecViewContainer_h; 
-
-      tviews-=usecond();
-      for(int p=0;p<npoint;p++) {
-	AcceleratorViewContainer_h.push_back( &_A[p][0]);
-	AcceleratorVecViewContainer_h.push_back(MultTemporaries[p].View(AcceleratorWrite));
-      }
-      tviews+=usecond();
-
-      static deviceVector<Aview> AcceleratorViewContainer; AcceleratorViewContainer.resize(npoint);
-      static deviceVector<Vview> AcceleratorVecViewContainer; AcceleratorVecViewContainer.resize(npoint); 
-      
-      auto Aview_p = &AcceleratorViewContainer[0];
-      auto Vview_p = &AcceleratorVecViewContainer[0];
-
-      tcopy-=usecond();
-      acceleratorCopyToDevice(&AcceleratorViewContainer_h[0],&AcceleratorViewContainer[0],npoint *sizeof(Aview));
-      acceleratorCopyToDevice(&AcceleratorVecViewContainer_h[0],&AcceleratorVecViewContainer[0],npoint *sizeof(Vview));
-      tcopy+=usecond();
-
-      int32_t bound = _A[0].size();
-      int64_t osites=pin.Grid()->oSites();
-      flops = 1.0* npoint * nbasis * nbasis * 8.0 * osites * CComplex::Nsimd();
-      bytes = 1.0*osites*sizeof(siteMatrix)*npoint/pin.Grid()->GlobalDimensions()[0]
-	+ 2.0*osites*sizeof(siteVector)*npoint;
-
-      //      std::cout << " osites "<<osites <<" bound "<<bound<<std::endl;
-      //      std::cout << " padded local dims   "<<pin.Grid()->LocalDimensions()<<std::endl;
-      //      std::cout << " unpadded local dims "<<in.Grid()->LocalDimensions()<<std::endl;
-      tmult-=usecond();
-      autoView( Stencil_v  , Stencil, AcceleratorRead);
-      accelerator_for(rspb, osites*nbasis*npoint, Nsimd, {
-	  typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
-	  int32_t ss   = rspb/(nbasis*npoint);
-	  int32_t bp   = rspb%(nbasis*npoint);
-	  int32_t point= bp/nbasis;
-	  int32_t b    = bp%nbasis;
-	  assert(ss<bound);
-	  auto SE  = Stencil_v.GetEntry(point,ss);
-	  if ( SE->_permute == 0 ) {
-	    int32_t snbr= SE->_offset;
-	    auto nbr = coalescedReadGeneralPermute(in_v[snbr],SE->_permute,Nd);
-	    auto res = Aview_p[point][ss](0,b)*nbr(0);
-	    for(int bb=1;bb<nbasis;bb++) {
-	      res = res + Aview_p[point][ss](bb,b)*nbr(bb);
-	    }
-	    coalescedWrite(Vview_p[point][ss](b),res);
-	  }
-      });
-      tmult2-=usecond();
-      accelerator_for(sb, osites*nbasis, Nsimd, {
-	  int ss = sb/nbasis;
-	  int b  = sb%nbasis;
-	  auto res = coalescedRead(Vview_p[0][ss](b));
-	  for(int point=1;point<npoint;point++){
-	    res = res + coalescedRead(Vview_p[point][ss](b));
-	  }
-	  coalescedWrite(out_v[ss](b),res);
-      });
-      tmult2+=usecond();
-      tmult+=usecond();
-
-      for(int p=0;p<npoint;p++) {
-	AcceleratorVecViewContainer_h[p].ViewClose();
-      }
+    t_mult=-usecond();
+    for(int p=0;p<geom.npoint;p++){
+      RealD c = 1.0;
+      if (p==0) c = 0.0;
+      ComplexD beta(c);
+      //      std::cout << GridLogMessage << "New Mrhs coarse gemmBatched "<<p<<std::endl;
+      BLAS.gemmBatched(nbasis,nrhs,nbasis,
+		       ComplexD(1.0),
+		       BLAS_AP[p], 
+		       BLAS_BP[p], 
+		       ComplexD(c), 
+		       BLAS_CP);
     }
-
-    text-=usecond();
-    out = Cell.Extract(pout);
-    text+=usecond();
-    ttot+=usecond();
-#else
-    {
-      tviews-=usecond();
-      autoView( in_v , pin, AcceleratorRead);
-      autoView( out_v , out, AcceleratorWriteDiscard);
-      tviews+=usecond();
-
-      // Static and prereserve to keep UVM region live and not resized across multiple calls
-      ttemps-=usecond();
-      MultTemporaries.resize(npoint,in.Grid());       
-      ttemps+=usecond();
-
-      std::vector<Aview> AcceleratorViewContainer_h;
-      std::vector<Vview> AcceleratorVecViewContainer_h; 
-
-      tviews-=usecond();
-      for(int p=0;p<npoint;p++) {
-	AcceleratorViewContainer_h.push_back( &_A[p][0]);
-	AcceleratorVecViewContainer_h.push_back(MultTemporaries[p].View(AcceleratorWrite));
-      }
-      tviews+=usecond();
-
-      static deviceVector<Aview> AcceleratorViewContainer; AcceleratorViewContainer.resize(npoint);
-      static deviceVector<Vview> AcceleratorVecViewContainer; AcceleratorVecViewContainer.resize(npoint); 
-      
-      auto Aview_p = &AcceleratorViewContainer[0];
-      auto Vview_p = &AcceleratorVecViewContainer[0];
-
-      tcopy-=usecond();
-      acceleratorCopyToDevice(&AcceleratorViewContainer_h[0],&AcceleratorViewContainer[0],npoint *sizeof(Aview));
-      acceleratorCopyToDevice(&AcceleratorVecViewContainer_h[0],&AcceleratorVecViewContainer[0],npoint *sizeof(Vview));
-      tcopy+=usecond();
-
-      int32_t bound = _A[0].size();
-      int64_t osites=in.Grid()->oSites();
-      flops = 1.0* npoint * nbasis * nbasis * 8.0 * osites * CComplex::Nsimd();
-      bytes = 1.0*osites*sizeof(siteMatrix)*npoint/pin.Grid()->GlobalDimensions()[0]
-	+ 2.0*osites*sizeof(siteVector)*npoint;
-
-      //      std::cout << " osites "<<osites <<" bound "<<bound<< " stencilsize  "<<StencilMasked.size()<<std::endl;
-      //      std::cout << " padded local dims   "<<pin.Grid()->LocalDimensions()<<std::endl;
-      //      std::cout << " unpadded local dims "<<in.Grid()->LocalDimensions()<<std::endl;
-      
-      tmult-=usecond();
-      auto Stencil_v = &StencilMasked[0];
-      accelerator_for(rspb, StencilMasked.size()*nbasis, Nsimd, {
-	  typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
-	  int32_t ss   = rspb/(nbasis*npoint); // site of unpadded
-	  int32_t bp   = rspb%(nbasis*npoint);
-	  int32_t point= bp/nbasis;
-	  int32_t b    = bp%nbasis;
-	  auto SE  = &Stencil_v[ss*npoint+point];
-	  int32_t s   = SE->_input; // site of padded
-	  int32_t snbr= SE->_offset;
-	  //	  std::cout << " unpadded " << ss<<" padded " << s<< " point "<<point <<" row " <<b<<std::endl;
-	  auto nbr = coalescedRead(in_v[snbr]);
-	  auto res = Aview_p[point][s](0,b)*nbr(0);
-	  for(int bb=1;bb<nbasis;bb++) {
-	    res = res + Aview_p[point][s](bb,b)*nbr(bb);
-	  }
-	  coalescedWrite(Vview_p[point][ss](b),res);
-      });
-      tmult2-=usecond();
-      accelerator_for(sb, osites*nbasis, Nsimd, {
-	  int ss = sb/nbasis;
-	  int b  = sb%nbasis;
-	  auto res = coalescedRead(Vview_p[0][ss](b));
-	  for(int point=1;point<npoint;point++){
-	    res = res + coalescedRead(Vview_p[point][ss](b));
-	  }
-	  coalescedWrite(out_v[ss](b),res);
-      });
-      tmult2+=usecond();
-      tmult+=usecond();
-      for(int p=0;p<npoint;p++) {
-	AcceleratorVecViewContainer_h[p].ViewClose();
-      }
-    }
-    ttot+=usecond();
-#endif
-
-    std::cout << GridLogMessage<<"Coarse Mult Aviews "<<tviews<<" us"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Mult exch "<<texch<<" us"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Mult mult "<<tmult<<" us"<<std::endl;
-    std::cout << GridLogMessage<<" of which mult2  "<<tmult2<<" us"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Mult ext  "<<text<<" us"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Mult temps "<<ttemps<<" us"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Mult copy  "<<tcopy<<" us"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Mult tot  "<<ttot<<" us"<<std::endl;
-        std::cout << GridLogMessage<<std::endl;
-        std::cout << GridLogMessage<<"Coarse Kernel flop/s "<< flops/tmult<<" mflop/s"<<std::endl;
-        std::cout << GridLogMessage<<"Coarse Kernel bytes/s"<< bytes/tmult<<" MB/s"<<std::endl;
-        std::cout << GridLogMessage<<"Coarse overall flops/s "<< flops/ttot<<" mflop/s"<<std::endl;
-        std::cout << GridLogMessage<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
-    
+    t_mult+=usecond();
+    //    std::cout << GridLogMessage << "New Mrhs coarse BLAStoGrid "<<std::endl;
+    t_BtoG=-usecond();
+    BLAStoGrid(out,BLAS_C);
+    t_BtoG+=usecond();
+    t_tot+=usecond();
+    //    auto check =deviceGet(BLAS_C[0]);
+    //      std::cout << "C[0] "<<check<<std::endl;
+    //    Coordinate coor({0,0,0,0,0,0});
+    //    peekLocalSite(check,out,coor);
+    //    std::cout << "C[0] "<< check<<std::endl;
+    std::cout << GridLogMessage << "New Mrhs coarse DONE "<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Mult exch "<<t_exch<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Mult mult "<<t_mult<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Mult GtoB  "<<t_GtoB<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Mult BtoG  "<<t_BtoG<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Mult tot  "<<t_tot<<" us"<<std::endl;
+    std::cout << GridLogMessage<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Kernel flops "<< flops<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Kernel flop/s "<< flops/t_mult<<" mflop/s"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse Kernel bytes/s "<< bytes/t_mult/1000<<" GB/s"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse overall flops/s "<< flops/t_tot<<" mflop/s"<<std::endl;
+    std::cout << GridLogMessage<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
   };
   virtual  void Mdiag    (const Field &in, Field &out){ assert(0);};
   virtual  void Mdir     (const Field &in, Field &out,int dir, int disp){assert(0);};
