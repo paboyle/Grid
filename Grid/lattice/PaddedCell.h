@@ -126,10 +126,8 @@ template<class vobj> inline void ScatterSlice(const cshiftVector<vobj> &buf,
 	///////////////////////////////////////////
 	// Transfer into lattice - will coalesce
 	///////////////////////////////////////////
-#if 0
-	sobj obj = extractLane(blane,buf_p[ss+offset]);
-	insertLane(lane,lat_v[osite],obj);
-#else
+	//	sobj obj = extractLane(blane,buf_p[ss+offset]);
+	//	insertLane(lane,lat_v[osite],obj);
 	const int words=sizeof(vobj)/sizeof(vector_type);
 	vector_type * from = (vector_type *)&buf_p[ss+offset];
 	vector_type * to   = (vector_type *)&lat_v[osite];
@@ -138,7 +136,6 @@ template<class vobj> inline void ScatterSlice(const cshiftVector<vobj> &buf,
 	  stmp = getlane(from[w], blane);
 	  putlane(to[w], stmp, lane);
 	}
-#endif
       }
   });
 }
@@ -215,10 +212,8 @@ template<class vobj> inline void GatherSlice(cshiftVector<vobj> &buf,
 	///////////////////////////////////////////
 	// Take out of lattice
 	///////////////////////////////////////////
-#if 0
-	sobj obj = extractLane(lane,lat_v[osite]);
-	insertLane(blane,buf_p[ss+offset],obj);
-#else
+	//	sobj obj = extractLane(lane,lat_v[osite]);
+	//	insertLane(blane,buf_p[ss+offset],obj);
 	const int words=sizeof(vobj)/sizeof(vector_type);
 	vector_type * to    = (vector_type *)&buf_p[ss+offset];
 	vector_type * from  = (vector_type *)&lat_v[osite];
@@ -227,22 +222,8 @@ template<class vobj> inline void GatherSlice(cshiftVector<vobj> &buf,
 	  stmp = getlane(from[w], lane);
 	  putlane(to[w], stmp, blane);
 	}
-#endif
-	
       }
   });
-  /*
-  int words =block*nblock/simd[dim];
-  std::vector<vobj> tbuf(words);
-  acceleratorCopyFromDevice((void *)&buf[offset],(void *)&tbuf[0],words*sizeof(vobj));
-  typedef typename vobj::scalar_type scalar;
-  scalar *sbuf = (scalar *)&tbuf[0];
-  scalar tmp=0.0;
-  for(int w=0;w<words*sizeof(vobj)/sizeof(scalar);w++){
-    tmp=tmp+conjugate(sbuf[w])*sbuf[w];
-  }
-  std::cout << " Gathered buffer norm "<<tmp<<std::endl;
-  */
 }
 
 
