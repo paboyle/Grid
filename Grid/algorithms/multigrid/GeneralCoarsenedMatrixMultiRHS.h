@@ -175,25 +175,117 @@ public:
     assert(j==unpadded_sites);
     CopyMatrix();
   }
-  template<class vobj> void GridtoBLAS(const Lattice<vobj> &grid,deviceVector<typename vobj::scalar_object> &out)
+  template<class vobj> void GridtoBLAS(const Lattice<vobj> &from,deviceVector<typename vobj::scalar_object> &to)
   {
+#if 0
     std::vector<typename vobj::scalar_object> tmp;
-    unvectorizeToLexOrdArray(tmp,grid);
-    //    std::cout << "GridtoBLAS volume " <<tmp.size()<<" " << grid.Grid()->lSites()<<" "<<out.size()<<std::endl;
-    //    std::cout << "GridtoBLAS site 0 " <<tmp[0]<<std::endl;
-    assert(tmp.size()==grid.Grid()->lSites());
-    assert(tmp.size()==out.size());
-    out.resize(tmp.size());
-    acceleratorCopyToDevice(&tmp[0],&out[0],sizeof(typename vobj::scalar_object)*tmp.size());
+    unvectorizeToLexOrdArray(tmp,from);
+    assert(tmp.size()==from.Grid()->lSites());
+    assert(tmp.size()==to.size());
+    to.resize(tmp.size());
+    acceleratorCopyToDevice(&tmp[0],&to[0],sizeof(typename vobj::scalar_object)*tmp.size());
+#else
+  typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  GridBase *Fg = from.Grid();
+  assert(!Fg->_isCheckerBoarded);
+  int nd = Fg->_ndimension;
+
+  to.resize(Fg->lSites());
+
+  Coordinate LocalLatt = Fg->LocalDimensions();
+  size_t nsite = 1;
+  for(int i=0;i<nd;i++) nsite *= LocalLatt[i];
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////
+  // do the index calc on the GPU
+  ////////////////////////////////////////////////////////////////////////////////////////////////
+  Coordinate f_ostride = Fg->_ostride;
+  Coordinate f_istride = Fg->_istride;
+  Coordinate f_rdimensions = Fg->_rdimensions;
+
+  autoView(from_v,from,AcceleratorRead);
+  auto to_v = &to[0];
+
+  const int words=sizeof(vobj)/sizeof(vector_type);
+  accelerator_for(idx,nsite,1,{
+      
+      Coordinate from_coor, base;
+      Lexicographic::CoorFromIndex(base,idx,LocalLatt);
+      for(int i=0;i<nd;i++){
+	from_coor[i] = base[i];
+      }
+      int from_oidx = 0; for(int d=0;d<nd;d++) from_oidx+=f_ostride[d]*(from_coor[d]%f_rdimensions[d]);
+      int from_lane = 0; for(int d=0;d<nd;d++) from_lane+=f_istride[d]*(from_coor[d]/f_rdimensions[d]);
+
+      const vector_type* from = (const vector_type *)&from_v[from_oidx];
+      scalar_type* to = (scalar_type *)&to_v[idx];
+      
+      scalar_type stmp;
+      for(int w=0;w<words;w++){
+	stmp = getlane(from[w], from_lane);
+	to[w] = stmp;
+      }
+    });
+#endif
   }    
   template<class vobj> void BLAStoGrid(Lattice<vobj> &grid,deviceVector<typename vobj::scalar_object> &in)
   {
+#if 0
     std::vector<typename vobj::scalar_object> tmp;
     tmp.resize(in.size());
     //    std::cout << "BLAStoGrid volume " <<tmp.size()<<" "<< grid.Grid()->lSites()<<std::endl;
     assert(in.size()==grid.Grid()->lSites());
     acceleratorCopyFromDevice(&in[0],&tmp[0],sizeof(typename vobj::scalar_object)*in.size());
     vectorizeFromLexOrdArray(tmp,grid);
+#else
+  typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  GridBase *Tg = grid.Grid();
+  assert(!Tg->_isCheckerBoarded);
+  int nd = Tg->_ndimension;
+  
+  assert(in.size()==Tg->lSites());
+
+  Coordinate LocalLatt = Tg->LocalDimensions();
+  size_t nsite = 1;
+  for(int i=0;i<nd;i++) nsite *= LocalLatt[i];
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////
+  // do the index calc on the GPU
+  ////////////////////////////////////////////////////////////////////////////////////////////////
+  Coordinate t_ostride = Tg->_ostride;
+  Coordinate t_istride = Tg->_istride;
+  Coordinate t_rdimensions = Tg->_rdimensions;
+
+  autoView(to_v,grid,AcceleratorWrite);
+  auto from_v = &in[0];
+
+  const int words=sizeof(vobj)/sizeof(vector_type);
+  accelerator_for(idx,nsite,1,{
+      
+      Coordinate to_coor, base;
+      Lexicographic::CoorFromIndex(base,idx,LocalLatt);
+      for(int i=0;i<nd;i++){
+	to_coor[i] = base[i];
+      }
+      int to_oidx = 0; for(int d=0;d<nd;d++) to_oidx+=t_ostride[d]*(to_coor[d]%t_rdimensions[d]);
+      int to_lane = 0; for(int d=0;d<nd;d++) to_lane+=t_istride[d]*(to_coor[d]/t_rdimensions[d]);
+
+      vector_type* to = (vector_type *)&to_v[to_oidx];
+      scalar_type* from = (scalar_type *)&from_v[idx];
+      
+      scalar_type stmp;
+      for(int w=0;w<words;w++){
+	stmp=from[w];
+	putlane(to[w], stmp, to_lane);
+      }
+    });
+#endif
   }
   void CopyMatrix (void)
   {
