@@ -204,13 +204,12 @@ public:
       }
     }
 #endif
-     synchronise();
      RealD t1=usecond();
      RealD flops = 8.0*m*n*k*batchCount;
      RealD bytes = 1.0*sizeof(ComplexD)*(m*k+k*n+m*n)*batchCount;
-     std::cout <<GridLogPerformance<< " batched Blas copy "<<(t0-t2)/1.e3 <<" ms "<<std::endl;
-     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< flops/(t1-t0)/1.e3 <<" GF/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
-     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< bytes/(t1-t0)/1.e3 <<" GB/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
+     //     std::cout <<GridLogPerformance<< " batched Blas copy "<<(t0-t2)/1.e3 <<" ms "<<std::endl;
+     //     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< flops/(t1-t0)/1.e3 <<" GF/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
+     //     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< bytes/(t1-t0)/1.e3 <<" GB/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
   }
 
   void gemmBatched(int m,int n, int k,
@@ -279,13 +278,12 @@ public:
       }
     }
 #endif
-     synchronise();
      RealD t1=usecond();
      RealD flops = 8.0*m*n*k*batchCount;
      RealD bytes = 1.0*sizeof(ComplexF)*(m*k+k*n+m*n)*batchCount;
-     std::cout <<GridLogPerformance<< " batched Blas copy "<<(t0-t2)/1.e3 <<" ms "<<std::endl;
-     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< flops/(t1-t0)/1.e3 <<" GF/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
-     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< bytes/(t1-t0)/1.e3 <<" GB/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
+     //     std::cout <<GridLogPerformance<< " batched Blas copy "<<(t0-t2)/1.e3 <<" ms "<<std::endl;
+     //     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< flops/(t1-t0)/1.e3 <<" GF/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
+     //     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< bytes/(t1-t0)/1.e3 <<" GB/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
   }
   
   ///////////////////////////////////////////////////////////////////////////
@@ -357,13 +355,12 @@ public:
       }
     }
 #endif
-     synchronise();
      RealD t1=usecond();
-     RealD flops = 8.0*m*n*k*batchCount;
+     RealD flops = 2.0*m*n*k*batchCount;
      RealD bytes = 1.0*sizeof(RealF)*(m*k+k*n+m*n)*batchCount;
-     std::cout <<GridLogPerformance<< " batched Blas copy "<<(t0-t2)/1.e3 <<" ms "<<std::endl;
-     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< flops/(t1-t0)/1.e3 <<" GF/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
-     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< bytes/(t1-t0)/1.e3 <<" GB/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
+     //     std::cout <<GridLogPerformance<< " batched Blas copy "<<(t0-t2)/1.e3 <<" ms "<<std::endl;
+     //     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< flops/(t1-t0)/1.e3 <<" GF/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
+     //     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< bytes/(t1-t0)/1.e3 <<" GB/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
   }
   
   
@@ -452,13 +449,12 @@ public:
       }
     }
 #endif
-     synchronise();
      RealD t1=usecond();
-     RealD flops = 8.0*m*n*k*batchCount;
+     RealD flops = 2.0*m*n*k*batchCount;
      RealD bytes = 1.0*sizeof(RealD)*(m*k+k*n+m*n)*batchCount;
-     std::cout <<GridLogPerformance<< " batched Blas copy "<<(t0-t2)/1.e3 <<" ms "<<std::endl;
-     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< flops/(t1-t0)/1.e3 <<" GF/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
-     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< bytes/(t1-t0)/1.e3 <<" GB/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
+     //     std::cout <<GridLogPerformance<< " batched Blas copy "<<(t0-t2)/1.e3 <<" ms "<<std::endl;
+     //     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< flops/(t1-t0)/1.e3 <<" GF/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
+     //     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< bytes/(t1-t0)/1.e3 <<" GB/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
   }
   
 
