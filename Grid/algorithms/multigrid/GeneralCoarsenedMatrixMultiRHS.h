@@ -368,6 +368,7 @@ public:
 		       ComplexD(c), 
 		       BLAS_CP);
     }
+    BLAS.synchronise();
     t_mult+=usecond();
     //    std::cout << GridLogMessage << "New Mrhs coarse BLAStoGrid "<<std::endl;
     t_BtoG=-usecond();
