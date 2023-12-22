@@ -62,6 +62,8 @@ template<class vobj> inline void ScatterSlice(const cshiftVector<vobj> &buf,
 {
   const int Nsimd=vobj::Nsimd();
   typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
 
   GridBase *grid = lat.Grid();
   Coordinate simd = grid->_simd_layout;
@@ -124,8 +126,19 @@ template<class vobj> inline void ScatterSlice(const cshiftVector<vobj> &buf,
 	///////////////////////////////////////////
 	// Transfer into lattice - will coalesce
 	///////////////////////////////////////////
+#if 0
 	sobj obj = extractLane(blane,buf_p[ss+offset]);
 	insertLane(lane,lat_v[osite],obj);
+#else
+	const int words=sizeof(vobj)/sizeof(vector_type);
+	vector_type * from = (vector_type *)&buf_p[ss+offset];
+	vector_type * to   = (vector_type *)&lat_v[osite];
+	scalar_type stmp;
+	for(int w=0;w<words;w++){
+	  stmp = getlane(from[w], blane);
+	  putlane(to[w], stmp, lane);
+	}
+#endif
       }
   });
 }
@@ -138,6 +151,8 @@ template<class vobj> inline void GatherSlice(cshiftVector<vobj> &buf,
 {
   const int Nsimd=vobj::Nsimd();
   typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
 
   autoView(lat_v, lat, AcceleratorRead);
 
@@ -200,9 +215,20 @@ template<class vobj> inline void GatherSlice(cshiftVector<vobj> &buf,
 	///////////////////////////////////////////
 	// Take out of lattice
 	///////////////////////////////////////////
-
+#if 0
 	sobj obj = extractLane(lane,lat_v[osite]);
 	insertLane(blane,buf_p[ss+offset],obj);
+#else
+	const int words=sizeof(vobj)/sizeof(vector_type);
+	vector_type * to    = (vector_type *)&buf_p[ss+offset];
+	vector_type * from  = (vector_type *)&lat_v[osite];
+	scalar_type stmp;
+	for(int w=0;w<words;w++){
+	  stmp = getlane(from[w], lane);
+	  putlane(to[w], stmp, blane);
+	}
+#endif
+	
       }
   });
   /*
@@ -545,14 +571,15 @@ public:
     t_scatter+= usecond() - t;
     t_tot+=usecond();
 
-    std::cout << GridLogDebug << "PaddedCell::Expand new timings: gather :" << t_gather/1000  << "ms"<<std::endl;
-    std::cout << GridLogDebug << "PaddedCell::Expand new timings: gather :" << 2.0*bytes/t_gather << "MB/s"<<std::endl;
-    std::cout << GridLogDebug << "PaddedCell::Expand new timings: scatter:" << t_scatter/1000   << "ms"<<std::endl;
-    std::cout << GridLogDebug << "PaddedCell::Expand new timings: scatter:" << 2.0*bytes/t_scatter<< "MB/s"<<std::endl;
-    std::cout << GridLogDebug << "PaddedCell::Expand new timings: copy   :" << t_copy/1000      << "ms"<<std::endl;
-    std::cout << GridLogDebug << "PaddedCell::Expand new timings: comms  :" << t_comms/1000     << "ms"<<std::endl;
-    std::cout << GridLogDebug << "PaddedCell::Expand new timings: total  :" << t_tot/1000     << "ms"<<std::endl;
-    std::cout << GridLogDebug << "PaddedCell::Expand new timings: comms  :" << (RealD)4.0*bytes/t_comms   << "MB/s"<<std::endl;
+    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: gather :" << t_gather/1000  << "ms"<<std::endl;
+    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: scatter:" << t_scatter/1000   << "ms"<<std::endl;
+    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: copy   :" << t_copy/1000      << "ms"<<std::endl;
+    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: comms  :" << t_comms/1000     << "ms"<<std::endl;
+    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: total  :" << t_tot/1000     << "ms"<<std::endl;
+    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: gather :" << depth*4.0*bytes/t_gather << "MB/s"<<std::endl;
+    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: scatter:" << depth*4.0*bytes/t_scatter<< "MB/s"<<std::endl;
+    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: comms  :" << (RealD)4.0*bytes/t_comms   << "MB/s"<<std::endl;
+    std::cout << GridLogPerformance << "PaddedCell::Expand new timings: face bytes  :" << depth*bytes/1e6 << "MB"<<std::endl;
   }
   
 };
