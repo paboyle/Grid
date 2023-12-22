@@ -301,6 +301,37 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
   //  std::cout << GridLogPerformance << " blockProject : blockZaxpy        :  "<<t_za<<" us"<<std::endl;
 }
 
+
+template<class vobj,class CComplex,int nbasis,class VLattice>
+inline void blockProjectFast(Lattice<iVector<CComplex,nbasis > > &coarseData,
+			     const             Lattice<vobj>   &fineData,
+			     const VLattice &Basis)
+{
+  GridBase * fine  = fineData.Grid();
+  GridBase * coarse= coarseData.Grid();
+
+  Lattice<iScalar<CComplex>> ip(coarse);
+  Lattice<vobj>     fineDataRed = fineData;
+
+  autoView( coarseData_ , coarseData, AcceleratorWrite);
+  autoView( ip_         , ip,         AcceleratorWrite);
+  RealD t_IP=0;
+  RealD t_co=0;
+  for(int v=0;v<nbasis;v++) {
+    t_IP-=usecond();
+    blockInnerProductD(ip,Basis[v],fineData); // ip = <basis|fine>
+    t_IP+=usecond();
+    t_co-=usecond();
+    accelerator_for( sc, coarse->oSites(), vobj::Nsimd(), {
+	convertType(coarseData_[sc](v),ip_[sc]);
+    });
+    t_co+=usecond();
+  }
+  //  std::cout << GridLogPerformance << " blockProjectFast : blockInnerProduct :  "<<t_IP<<" us"<<std::endl;
+  //  std::cout << GridLogPerformance << " blockProjectFast : conv              :  "<<t_co<<" us"<<std::endl;
+}
+
+
 // This only minimises data motion from CPU to GPU
 // there is chance of better implementation that does a vxk loop of inner products to data share
 // at the GPU thread level
