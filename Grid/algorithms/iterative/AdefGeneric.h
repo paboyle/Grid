@@ -69,279 +69,339 @@ class TwoLevelCG : public LinearFunction<Field>
   
   virtual void operator() (const Field &src, Field &x)
   {
-#if 0
-    Field resid(grid);
+    std::cout << GridLogMessage<<"HDCG: fPcg starting"<<std::endl;
     RealD f;
     RealD rtzp,rtz,a,d,b;
     RealD rptzp;
-    
-    Field p(grid);
+
+    /////////////////////////////
+    // Set up history vectors
+    /////////////////////////////
+    int mmax = 5;
+    std::cout << GridLogMessage<<"HDCG: fPcg allocating"<<std::endl;
+    std::vector<Field> p(mmax,grid);
+    std::vector<Field> mmp(mmax,grid);
+    std::vector<RealD> pAp(mmax);
     Field z(grid);
     Field tmp(grid);
-    Field mmp(grid);
-    Field r  (grid);
-    Field mu (grid);
-    Field rp (grid);
+    Field  mp (grid);
+    Field  r  (grid);
+    Field  mu (grid);
     
+    std::cout << GridLogMessage<<"HDCG: fPcg allocated"<<std::endl;
     //Initial residual computation & set up
-    double tn;
-
+    RealD guess   = norm2(x);
+    std::cout << GridLogMessage<<"HDCG: fPcg guess nrm "<<guess<<std::endl;
+    RealD src_nrm = norm2(src);
+    std::cout << GridLogMessage<<"HDCG: fPcg src nrm "<<src_nrm<<std::endl;
+    
+    if ( src_nrm == 0.0 ) {
+      std::cout << GridLogMessage<<"HDCG: fPcg given trivial source norm "<<src_nrm<<std::endl;
+      x=Zero();
+    }
+    RealD tn;
+    
     GridStopWatch HDCGTimer;
     HDCGTimer.Start();
     //////////////////////////
     // x0 = Vstart -- possibly modify guess
     //////////////////////////
-    x=Zero();
     Vstart(x,src);
-
+    
     // r0 = b -A x0
-    _FineLinop.HermOp(x,mmp);
-
-    axpy(r, -1.0, mmp, src);    // Recomputes r=src-x0
-    rp=r;
+    _FineLinop.HermOp(x,mmp[0]);
+    axpy (r, -1.0,mmp[0], src);    // Recomputes r=src-Ax0
+    {
+      double n1 = norm2(x);
+      double n2 = norm2(mmp[0]);
+      double n3 = norm2(r);
+      std::cout<<GridLogMessage<<"x,vstart,r = "<<n1<<" "<<n2<<" "<<n3<<std::endl;
+    }
 
     //////////////////////////////////
     // Compute z = M1 x
     //////////////////////////////////
     PcgM1(r,z);
     rtzp =real(innerProduct(r,z));
-
+    
     ///////////////////////////////////////
-    // Except Def2, M2 is trivial
+    // Solve for Mss mu = P A z and set p = z-mu
+    // Def2 p = 1 - Q Az = Pright z
+    // Other algos M2 is trivial
     ///////////////////////////////////////
-    p=z;
+    PcgM2(z,p[0]);
 
     RealD ssq =  norm2(src);
     RealD rsq =  ssq*Tolerance*Tolerance;
 
-    GRID_TRACE("MultiGrid TwoLevel ");
-    std::cout<<GridLogMessage<<"HDCG: k=0 residual "<<rtzp<<" target rsq "<<rsq<<" ssq "<<ssq<<std::endl;
+    std::cout << GridLogMessage<<"HDCG: k=0 residual "<<rtzp<<" rsq "<<rsq<<"\n";
+
+    Field pp(grid);
+
+    for (int k=0;k<=MaxIterations;k++){
     
-    for (int k=1;k<=MaxIterations;k++){
+      int peri_k  = k % mmax;
+      int peri_kp = (k+1) % mmax;
 
       rtz=rtzp;
-      d= PcgM3(p,mmp);
+      d= PcgM3(p[peri_k],mmp[peri_k]);
       a = rtz/d;
+    
+      // Memorise this
+      pAp[peri_k] = d;
+      
+      axpy(x,a,p[peri_k],x);
+      RealD rn = axpy_norm(r,-a,mmp[peri_k],r);
 
-      axpy(x,a,p,x);
-      RealD rn = axpy_norm(r,-a,mmp,r);
-
+      // Compute z = M x
       PcgM1(r,z);
-
-      rtzp =real(innerProduct(r,z));
-
-      int ipcg=1; // almost free inexact preconditioned CG
-      if (ipcg) {
-	rptzp =real(innerProduct(rp,z));
-      } else {
-	rptzp =0;
+      
+      {
+	RealD n1,n2;
+	n1=norm2(r);
+	n2=norm2(z);
+	std::cout << GridLogMessage<<"HDCG::fPcg iteration "<<k<<" : vector r,z "<<n1<<" "<<n2<<"\n";
       }
-      b = (rtzp-rptzp)/rtz;
+      rtzp =real(innerProduct(r,z));
+      std::cout << GridLogMessage<<"HDCG::fPcg iteration "<<k<<" : inner rtzp "<<rtzp<<"\n";
 
+      //    PcgM2(z,p[0]);
       PcgM2(z,mu); // ADEF-2 this is identity. Axpy possible to eliminate
+      
+      p[peri_kp]=mu;
 
-      axpy(p,b,p,mu);  // mu = A r
+      // Standard search direction  p -> z + b p    
+      b = (rtzp)/rtz;
+      
+      int northog;
+      // k=zero  <=> peri_kp=1;        northog = 1
+      // k=1     <=> peri_kp=2;        northog = 2
+      // ...               ...                  ...
+      // k=mmax-2<=> peri_kp=mmax-1;   northog = mmax-1
+      // k=mmax-1<=> peri_kp=0;        northog = 1
+
+      //    northog     = (peri_kp==0)?1:peri_kp; // This is the fCG(mmax) algorithm
+      northog     = (k>mmax-1)?(mmax-1):k;        // This is the fCG-Tr(mmax-1) algorithm
+    
+      std::cout<<GridLogMessage<<"HDCG::fPcg iteration "<<k<<" : orthogonalising to last "<<northog<<" vectors\n";
+      for(int back=0; back < northog; back++){
+	int peri_back = (k-back)%mmax;
+	RealD pbApk= real(innerProduct(mmp[peri_back],p[peri_kp]));
+	RealD beta = -pbApk/pAp[peri_back];
+	axpy(p[peri_kp],beta,p[peri_back],p[peri_kp]);
+      }
 
       RealD rrn=sqrt(rn/ssq);
       RealD rtn=sqrt(rtz/ssq);
-      std::cout<<GridLogMessage<<"HDCG: Pcg k= "<<k<<" residual = "<<rrn<<std::endl;
+      RealD rtnp=sqrt(rtzp/ssq);
 
-      if ( ipcg ) {
-	axpy(rp,0.0,r,r);
-      }
+      std::cout<<GridLogMessage<<"HDCG: fPcg k= "<<k<<" residual = "<<rrn<<"\n";
 
       // Stopping condition
       if ( rn <= rsq ) { 
 
 	HDCGTimer.Stop();
-	std::cout<<GridLogMessage<<"HDCG: Pcg converged in "<<k<<" iterations and "<<HDCGTimer.Elapsed()<<std::endl;;
-
-	_FineLinop.HermOp(x,mmp);			  
-	axpy(tmp,-1.0,src,mmp);
-
-	RealD  mmpnorm = sqrt(norm2(mmp));
+	std::cout<<GridLogMessage<<"HDCG: fPcg converged in "<<k<<" iterations and "<<HDCGTimer.Elapsed()<<std::endl;;
+	
+	_FineLinop.HermOp(x,mmp[0]);			  
+	axpy(tmp,-1.0,src,mmp[0]);
+	
+	RealD  mmpnorm = sqrt(norm2(mmp[0]));
 	RealD  xnorm   = sqrt(norm2(x));
 	RealD  srcnorm = sqrt(norm2(src));
 	RealD  tmpnorm = sqrt(norm2(tmp));
 	RealD  true_residual = tmpnorm/srcnorm;
 	std::cout<<GridLogMessage
-		 <<"HDCG: true residual is "<<true_residual
-		 <<" solution "<<xnorm
-		 <<" source "<<srcnorm
-		 <<" mmp "<<mmpnorm	  
-		 <<std::endl;
-
-	return;
-      }
-
-    }
-    std::cout<<GridLogMessage<<"HDCG: not converged"<<std::endl;
-    RealD  xnorm   = sqrt(norm2(x));
-    RealD  srcnorm = sqrt(norm2(src));
-    std::cout<<GridLogMessage<<"HDCG: non-converged solution "<<xnorm<<" source "<<srcnorm<<std::endl;
-    
-    return ;
-#else
-  RealD f;
-  RealD rtzp,rtz,a,d,b;
-  RealD rptzp;
-
-  /////////////////////////////
-  // Set up history vectors
-  /////////////////////////////
-  int mmax = 20;
-  std::vector<Field> p(mmax,grid);
-  std::vector<Field> mmp(mmax,grid);
-  std::vector<RealD> pAp(mmax);
-  Field z(grid);
-  Field tmp(grid);
-  Field  mp (grid);
-  Field  r  (grid);
-  Field  mu (grid);
-
-  //Initial residual computation & set up
-  RealD guess   = norm2(x);
-  RealD src_nrm = norm2(src);
-
-  if ( src_nrm == 0.0 ) {
-    std::cout << GridLogMessage<<"HDCG: fPcg given trivial source norm "<<src_nrm<<std::endl;
-    x=Zero();
-  }
-  RealD tn;
-
-  GridStopWatch HDCGTimer;
-  HDCGTimer.Start();
-  //////////////////////////
-  // x0 = Vstart -- possibly modify guess
-  //////////////////////////
-  Vstart(x,src);
-
-  // r0 = b -A x0
-  _FineLinop.HermOp(x,mmp[0]);
-  axpy (r, -1.0,mmp[0], src);    // Recomputes r=src-Ax0
-  {
-    double n1 = norm2(x);
-    double n2 = norm2(mmp[0]);
-    double n3 = norm2(r);
-    std::cout<<GridLogMessage<<"x,vstart,r = "<<n1<<" "<<n2<<" "<<n3<<std::endl;
-  }
-
-  //////////////////////////////////
-  // Compute z = M1 x
-  //////////////////////////////////
-  PcgM1(r,z);
-  rtzp =real(innerProduct(r,z));
-
-  ///////////////////////////////////////
-  // Solve for Mss mu = P A z and set p = z-mu
-  // Def2: p = 1 - Q Az = Pright z 
-  // Other algos M2 is trivial
-  ///////////////////////////////////////
-  PcgM2(z,p[0]);
-
-  RealD ssq =  norm2(src);
-  RealD rsq =  ssq*Tolerance*Tolerance;
-
-  std::cout << GridLogMessage<<"HDCG: k=0 residual "<<rtzp<<" rsq "<<rsq<<"\n";
-
-  Field pp(grid);
-
-  for (int k=0;k<=MaxIterations;k++){
-    
-    int peri_k  = k % mmax;
-    int peri_kp = (k+1) % mmax;
-
-    rtz=rtzp;
-    d= PcgM3(p[peri_k],mmp[peri_k]);
-    a = rtz/d;
-    
-    // Memorise this
-    pAp[peri_k] = d;
-
-    
-    axpy(x,a,p[peri_k],x);
-    RealD rn = axpy_norm(r,-a,mmp[peri_k],r);
-
-    // Compute z = M x
-    PcgM1(r,z);
-
-    {
-      RealD n1,n2;
-      n1=norm2(r);
-      n2=norm2(z);
-      std::cout << GridLogMessage<<"HDCG::fPcg iteration "<<k<<" : vector r,z "<<n1<<" "<<n2<<"\n";
-    }
-    rtzp =real(innerProduct(r,z));
-    std::cout << GridLogMessage<<"HDCG::fPcg iteration "<<k<<" : inner rtzp "<<rtzp<<"\n";
-
-    //    PcgM2(z,p[0]);
-    PcgM2(z,mu); // ADEF-2 this is identity. Axpy possible to eliminate
-
-    p[peri_kp]=mu;
-
-    // Standard search direction  p -> z + b p    ; b = 
-    b = (rtzp)/rtz;
-
-    int northog;
-    // k=zero  <=> peri_kp=1;        northog = 1
-    // k=1     <=> peri_kp=2;        northog = 2
-    // ...               ...                  ...
-    // k=mmax-2<=> peri_kp=mmax-1;   northog = mmax-1
-    // k=mmax-1<=> peri_kp=0;        northog = 1
-
-    //    northog     = (peri_kp==0)?1:peri_kp; // This is the fCG(mmax) algorithm
-    northog     = (k>mmax-1)?(mmax-1):k;        // This is the fCG-Tr(mmax-1) algorithm
-    
-    std::cout<<GridLogMessage<<"HDCG::fPcg iteration "<<k<<" : orthogonalising to last "<<northog<<" vectors\n";
-    for(int back=0; back < northog; back++){
-      int peri_back = (k-back)%mmax;
-      RealD pbApk= real(innerProduct(mmp[peri_back],p[peri_kp]));
-      RealD beta = -pbApk/pAp[peri_back];
-      axpy(p[peri_kp],beta,p[peri_back],p[peri_kp]);
-    }
-
-    RealD rrn=sqrt(rn/ssq);
-    RealD rtn=sqrt(rtz/ssq);
-    RealD rtnp=sqrt(rtzp/ssq);
-
-    std::cout<<GridLogMessage<<"HDCG: fPcg k= "<<k<<" residual = "<<rrn<<"\n";
-
-    // Stopping condition
-    if ( rn <= rsq ) { 
-
-      HDCGTimer.Stop();
-      std::cout<<GridLogMessage<<"HDCG: fPcg converged in "<<k<<" iterations and "<<HDCGTimer.Elapsed()<<std::endl;;
-      
-      _FineLinop.HermOp(x,mmp[0]);			  
-      axpy(tmp,-1.0,src,mmp[0]);
-      
-      RealD  mmpnorm = sqrt(norm2(mmp[0]));
-      RealD  xnorm   = sqrt(norm2(x));
-      RealD  srcnorm = sqrt(norm2(src));
-      RealD  tmpnorm = sqrt(norm2(tmp));
-      RealD  true_residual = tmpnorm/srcnorm;
-      std::cout<<GridLogMessage
 	       <<"HDCG: true residual is "<<true_residual
 	       <<" solution "<<xnorm
 	       <<" source "<<srcnorm
 	       <<" mmp "<<mmpnorm	  
 	       <<std::endl;
       
-      return;
+	return;
+      }
+
+    }
+    HDCGTimer.Stop();
+    std::cout<<GridLogMessage<<"HDCG: not converged "<<HDCGTimer.Elapsed()<<std::endl;
+    RealD  xnorm   = sqrt(norm2(x));
+    RealD  srcnorm = sqrt(norm2(src));
+    std::cout<<GridLogMessage<<"HDCG: non-converged solution "<<xnorm<<" source "<<srcnorm<<std::endl;
+  }
+
+
+
+  virtual void operator() (std::vector<Field> &src, std::vector<Field> &x)
+  {
+    std::cout << GridLogMessage<<"HDCG: mrhs fPcg starting"<<std::endl;
+    src[0].Grid()->Barrier();
+    int nrhs = src.size();
+    std::vector<RealD> f(nrhs);
+    std::vector<RealD> rtzp(nrhs);
+    std::vector<RealD> rtz(nrhs);
+    std::vector<RealD> a(nrhs);
+    std::vector<RealD> d(nrhs);
+    std::vector<RealD> b(nrhs);
+    std::vector<RealD> rptzp(nrhs);
+    /////////////////////////////
+    // Set up history vectors
+    /////////////////////////////
+    int mmax = 2;
+    std::cout << GridLogMessage<<"HDCG: fPcg allocating"<<std::endl;
+    src[0].Grid()->Barrier();
+    std::vector<std::vector<Field> > p(nrhs);   for(int r=0;r<nrhs;r++)  p[r].resize(mmax,grid);
+    std::cout << GridLogMessage<<"HDCG: fPcg allocated p"<<std::endl;
+    src[0].Grid()->Barrier();
+    std::vector<std::vector<Field> > mmp(nrhs); for(int r=0;r<nrhs;r++) mmp[r].resize(mmax,grid);
+    std::cout << GridLogMessage<<"HDCG: fPcg allocated mmp"<<std::endl;
+    src[0].Grid()->Barrier();
+    std::vector<std::vector<RealD> > pAp(nrhs); for(int r=0;r<nrhs;r++) pAp[r].resize(mmax);
+    std::cout << GridLogMessage<<"HDCG: fPcg allocated pAp"<<std::endl;
+    src[0].Grid()->Barrier();
+    std::vector<Field> z(nrhs,grid);
+    std::vector<Field>  mp (nrhs,grid);
+    std::vector<Field>  r  (nrhs,grid);
+    std::vector<Field>  mu (nrhs,grid);
+    std::cout << GridLogMessage<<"HDCG: fPcg allocated z,mp,r,mu"<<std::endl;
+    src[0].Grid()->Barrier();
+
+    //Initial residual computation & set up
+    std::vector<RealD> src_nrm(nrhs);
+    for(int rhs=0;rhs<nrhs;rhs++) {
+      src_nrm[rhs]=norm2(src[rhs]);
+      assert(src_nrm[rhs]!=0.0);
+    }
+    std::vector<RealD> tn(nrhs);
+
+    GridStopWatch HDCGTimer;
+    HDCGTimer.Start();
+    //////////////////////////
+    // x0 = Vstart -- possibly modify guess
+    //////////////////////////
+    for(int rhs=0;rhs<nrhs;rhs++){
+      Vstart(x[rhs],src[rhs]);
+
+      // r0 = b -A x0
+      _FineLinop.HermOp(x[rhs],mmp[rhs][0]);
+      axpy (r[rhs], -1.0,mmp[rhs][0], src[rhs]);    // Recomputes r=src-Ax0
     }
 
-  }
-  HDCGTimer.Stop();
-  std::cout<<GridLogMessage<<"HDCG: not converged "<<HDCGTimer.Elapsed()<<std::endl;
-  RealD  xnorm   = sqrt(norm2(x));
-  RealD  srcnorm = sqrt(norm2(src));
-  std::cout<<GridLogMessage<<"HDCG: non-converged solution "<<xnorm<<" source "<<srcnorm<<std::endl;
-#endif
+    //////////////////////////////////
+    // Compute z = M1 x
+    //////////////////////////////////
+    // This needs a multiRHS version for acceleration
+    PcgM1(r,z);
+
+    std::vector<RealD> ssq(nrhs);
+    std::vector<RealD> rsq(nrhs);
+    std::vector<Field> pp(nrhs,grid);
+
+    for(int rhs=0;rhs<nrhs;rhs++){
+      rtzp[rhs] =real(innerProduct(r[rhs],z[rhs]));
+      p[rhs][0]=z[rhs];
+      ssq[rhs]=norm2(src[rhs]);
+      rsq[rhs]=  ssq[rhs]*Tolerance*Tolerance;
+      std::cout << GridLogMessage<<"mrhs HDCG: "<<rhs<<" k=0 residual "<<rtzp[rhs]<<" rsq "<<rsq[rhs]<<"\n";
+    }
+
+    std::vector<RealD> rn(nrhs);
+    for (int k=0;k<=MaxIterations;k++){
+    
+      int peri_k  = k % mmax;
+      int peri_kp = (k+1) % mmax;
+
+      for(int rhs=0;rhs<nrhs;rhs++){
+	rtz[rhs]=rtzp[rhs];
+	d[rhs]= PcgM3(p[rhs][peri_k],mmp[rhs][peri_k]);
+	a[rhs] = rtz[rhs]/d[rhs];
+    
+	// Memorise this
+	pAp[rhs][peri_k] = d[rhs];
+
+	axpy(x[rhs],a[rhs],p[rhs][peri_k],x[rhs]);
+	rn[rhs] = axpy_norm(r[rhs],-a[rhs],mmp[rhs][peri_k],r[rhs]);
+      }
+
+      // Compute z = M x (for *all* RHS)
+      PcgM1(r,z);
+
+      RealD max_rn=0.0;
+      for(int rhs=0;rhs<nrhs;rhs++){
+
+	rtzp[rhs] =real(innerProduct(r[rhs],z[rhs]));
+
+	std::cout << GridLogMessage<<"HDCG::fPcg rhs"<<rhs<<" iteration "<<k<<" : inner rtzp "<<rtzp[rhs]<<"\n";
+	
+	mu[rhs]=z[rhs];
+
+	p[rhs][peri_kp]=mu[rhs];
+
+	// Standard search direction p == z + b p 
+	b[rhs] = (rtzp[rhs])/rtz[rhs];
+
+	int northog = (k>mmax-1)?(mmax-1):k;        // This is the fCG-Tr(mmax-1) algorithm
+	std::cout<<GridLogMessage<<"HDCG::fPcg iteration "<<k<<" : orthogonalising to last "<<northog<<" vectors\n";
+	for(int back=0; back < northog; back++){
+	  int peri_back = (k-back)%mmax;
+	  RealD pbApk= real(innerProduct(mmp[rhs][peri_back],p[rhs][peri_kp]));
+	  RealD beta = -pbApk/pAp[rhs][peri_back];
+	  axpy(p[rhs][peri_kp],beta,p[rhs][peri_back],p[rhs][peri_kp]);
+	}
+
+	RealD rrn=sqrt(rn[rhs]/ssq[rhs]);
+	RealD rtn=sqrt(rtz[rhs]/ssq[rhs]);
+	RealD rtnp=sqrt(rtzp[rhs]/ssq[rhs]);
+	
+	std::cout<<GridLogMessage<<"HDCG: rhs "<<rhs<<"fPcg k= "<<k<<" residual = "<<rrn<<"\n";
+	if ( rrn > max_rn ) max_rn = rrn;
+      }
+
+      // Stopping condition based on worst case
+      if ( max_rn <= Tolerance ) { 
+
+	HDCGTimer.Stop();
+	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg converged in "<<k<<" iterations and "<<HDCGTimer.Elapsed()<<std::endl;;
+
+	for(int rhs=0;rhs<nrhs;rhs++){
+	  _FineLinop.HermOp(x[rhs],mmp[rhs][0]);			  
+	  Field tmp(grid);
+	  axpy(tmp,-1.0,src[rhs],mmp[rhs][0]);
+      
+	  RealD  mmpnorm = sqrt(norm2(mmp[rhs][0]));
+	  RealD  xnorm   = sqrt(norm2(x[rhs]));
+	  RealD  srcnorm = sqrt(norm2(src[rhs]));
+	  RealD  tmpnorm = sqrt(norm2(tmp));
+	  RealD  true_residual = tmpnorm/srcnorm;
+	  std::cout<<GridLogMessage
+		   <<"HDCG: true residual ["<<rhs<<"] is "<<true_residual
+		   <<" solution "<<xnorm
+		   <<" source "<<srcnorm
+		   <<" mmp "<<mmpnorm	  
+		   <<std::endl;
+	}
+	return;
+      }
+      
+    }
+    HDCGTimer.Stop();
+    std::cout<<GridLogMessage<<"HDCG: not converged "<<HDCGTimer.Elapsed()<<std::endl;
+    for(int rhs=0;rhs<nrhs;rhs++){
+      RealD  xnorm   = sqrt(norm2(x[rhs]));
+      RealD  srcnorm = sqrt(norm2(src[rhs]));
+      std::cout<<GridLogMessage<<"HDCG: non-converged solution "<<xnorm<<" source "<<srcnorm<<std::endl;
+    }
   }
   
 
  public:
 
+  virtual void PcgM1(std::vector<Field> & in,std::vector<Field> & out)
+  {
+    std::cout << "PcgM1 default (cheat) mrhs versoin"<<std::endl;
+    for(int rhs=0;rhs<in.size();rhs++){
+      this->PcgM1(in[rhs],out[rhs]);
+    }
+  }
   virtual void PcgM1(Field & in, Field & out)     =0;
   virtual void Vstart(Field & x,const Field & src)=0;
 
@@ -440,6 +500,7 @@ class TwoLevelADEF2 : public TwoLevelCG<Field>
 
   virtual void Vstart(Field & x,const Field & src)
   {
+    std::cout << GridLogMessage<<"HDCG: fPcg Vstart "<<std::endl;
     ///////////////////////////////////
     // Choose x_0 such that 
     // x_0 = guess +  (A_ss^inv) r_s = guess + Ass_inv [src -Aguess]
@@ -456,14 +517,97 @@ class TwoLevelADEF2 : public TwoLevelCG<Field>
     CoarseField PleftProj(this->coarsegrid);
     CoarseField PleftMss_proj(this->coarsegrid);
 
+    std::cout << GridLogMessage<<"HDCG: fPcg Vstart projecting "<<std::endl;
     this->_Aggregates.ProjectToSubspace(PleftProj,src);     
+    std::cout << GridLogMessage<<"HDCG: fPcg Vstart coarse solve "<<std::endl;
     this->_CoarseSolverPrecise(PleftProj,PleftMss_proj); // Ass^{-1} r_s
+    std::cout << GridLogMessage<<"HDCG: fPcg Vstart promote "<<std::endl;
     this->_Aggregates.PromoteFromSubspace(PleftMss_proj,x);  
 
   }
 
 };
 
+template<class Field, class CoarseField, class Aggregation>
+class TwoLevelADEF2mrhs : public TwoLevelADEF2<Field,CoarseField,Aggregation>
+{
+public:
+  GridBase *coarsegridmrhs;
+  LinearFunction<CoarseField> &_CoarseSolverMrhs;
+  LinearFunction<CoarseField> &_CoarseGuesser;
+  TwoLevelADEF2mrhs(RealD tol,
+		    Integer maxit,
+		    LinearOperatorBase<Field>    &FineLinop,
+		    LinearFunction<Field>        &Smoother,
+		    LinearFunction<CoarseField>  &CoarseSolver,
+		    LinearFunction<CoarseField>  &CoarseSolverPrecise,
+		    LinearFunction<CoarseField>  &CoarseSolverMrhs,
+		    LinearFunction<CoarseField>  &CoarseGuesser,
+		    GridBase *rhsgrid,
+		    Aggregation &Aggregates) :
+    TwoLevelADEF2<Field,CoarseField,Aggregation>(tol, maxit,FineLinop,Smoother,CoarseSolver,CoarseSolverPrecise,Aggregates),
+    _CoarseSolverMrhs(CoarseSolverMrhs),
+    _CoarseGuesser(CoarseGuesser)
+  {
+    coarsegridmrhs = rhsgrid;
+  };
+  
+  virtual void PcgM1(std::vector<Field> & in,std::vector<Field> & out){
+
+    int nrhs=in.size();
+    std::cout << " mrhs PcgM1 for "<<nrhs<<" right hand sides"<<std::endl;
+    // [PTM+Q] in = [1 - Q A] M in + Q in = Min + Q [ in -A Min]
+    Field tmp(this->grid);
+    std::vector<Field> Min(nrhs,this->grid);
+    CoarseField PleftProj(this->coarsegrid);
+    CoarseField PleftMss_proj(this->coarsegrid);
+
+    CoarseField PleftProjMrhs(this->coarsegridmrhs);
+    CoarseField PleftMss_projMrhs(this->coarsegridmrhs);
+
+    for(int rhs=0;rhs<nrhs;rhs++) {
+      this->grid->Barrier();
+      std::cout << " Calling smoother for "<<rhs<<std::endl;
+      this->grid->Barrier();
+      this->_Smoother(in[rhs],Min[rhs]);
+      this->grid->Barrier();
+      std::cout << " smoother done "<<rhs<<std::endl;
+      this->grid->Barrier();
+      this->_FineLinop.HermOp(Min[rhs],out[rhs]);
+      this->grid->Barrier();
+      std::cout << " Hermop for "<<rhs<<std::endl;
+      this->grid->Barrier();
+      axpy(tmp,-1.0,out[rhs],in[rhs]);          // tmp  = in - A Min
+      this->grid->Barrier();
+      std::cout << " axpy "<<rhs<<std::endl;
+      this->grid->Barrier();
+      this->_Aggregates.ProjectToSubspace(PleftProj,tmp);     // can optimise later
+      this->grid->Barrier();
+      std::cout << " project "<<rhs<<std::endl;
+      this->grid->Barrier();
+      InsertSlice(PleftProj,PleftProjMrhs,rhs,0);
+      this->grid->Barrier();
+      std::cout << " insert rhs "<<rhs<<std::endl;
+      this->grid->Barrier();
+      this->_CoarseGuesser(PleftProj,PleftMss_proj);
+      this->grid->Barrier();
+      std::cout << " insert guess "<<rhs<<std::endl;
+      this->grid->Barrier();
+      InsertSlice(PleftMss_proj,PleftMss_projMrhs,rhs,0);
+    }
+
+    std::cout << " Coarse solve "<<std::endl;
+    this->_CoarseSolverMrhs(PleftProjMrhs,PleftMss_projMrhs); // Ass^{-1} [in - A Min]_s
+
+    for(int rhs=0;rhs<nrhs;rhs++) {
+      ExtractSlice(PleftMss_proj,PleftMss_projMrhs,rhs,0);
+      this->_Aggregates.PromoteFromSubspace(PleftMss_proj,tmp);// tmp = Q[in - A Min]  
+      axpy(out[rhs],1.0,Min[rhs],tmp); // Min+tmp
+    }
+    std::cout << " Extracted "<<std::endl;
+  }
+};
+  
 template<class Field>
 class TwoLevelADEF1defl : public TwoLevelCG<Field>
 {
