@@ -243,9 +243,14 @@ int main (int argc, char ** argv)
   Coordinate rhSimd({vComplex::Nsimd(),1, 1,1,1,1});
 
   GridCartesian *CoarseMrhs = new GridCartesian(rhLatt,rhSimd,rhMpi); 
+
   
   MultiGeneralCoarsenedMatrix mrhs(LittleDiracOp,CoarseMrhs);
-
+  typedef decltype(mrhs) MultiGeneralCoarsenedMatrix_t;
+  
+  //////////////////////////////////////////
+  // Test against single RHS
+  //////////////////////////////////////////
   {
     GridParallelRNG          rh_CRNG(CoarseMrhs);rh_CRNG.SeedFixedIntegers(cseeds);
     CoarseVector rh_phi(CoarseMrhs);
@@ -287,7 +292,22 @@ int main (int argc, char ** argv)
     std::cout << nrhs<< " srhs " << t1/ncall/nrhs <<" us"<<std::endl;
   }
 
+  //////////////////////////////////////////
+  // Test against single RHS
+  //////////////////////////////////////////
+  {
+    typedef HermitianLinearOperator<MultiGeneralCoarsenedMatrix_t,CoarseVector> HermMatrix;
+    HermMatrix MrhsCoarseOp     (mrhs);
 
+    GridParallelRNG          rh_CRNG(CoarseMrhs);rh_CRNG.SeedFixedIntegers(cseeds);
+    ConjugateGradient<CoarseVector>  mrhsCG(1.0e-8,2000,true);
+    CoarseVector rh_res(CoarseMrhs);
+    CoarseVector rh_src(CoarseMrhs);
+    random(rh_CRNG,rh_src);
+    rh_res= Zero();
+    mrhsCG(MrhsCoarseOp,rh_src,rh_res);
+  }
+  
   std::cout<<GridLogMessage<<std::endl;
   std::cout<<GridLogMessage<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
