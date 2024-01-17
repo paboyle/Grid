@@ -50,7 +50,6 @@ public:
   typedef iVector<CComplex,nbasis >  Cvec;
   typedef Lattice< CComplex >   CoarseScalar; // used for inner products on fine field
   typedef Lattice<Fobj >        FineField;
-  typedef Lattice<CComplex >    FineComplexField;
   typedef CoarseVector Field;
   ////////////////////
   // Data members
@@ -309,7 +308,6 @@ public:
     RealD teigen=0.0;
     RealD tmat=0.0;
     RealD tphase=0.0;
-    RealD tphaseBZ=0.0;
     RealD tinv=0.0;
 
     /////////////////////////////////////////////////////////////
@@ -364,41 +362,28 @@ public:
     ///////////////////////////////////////////////////////////////////////
     FineField phaV(grid); // Phased block basis vector
     FineField MphaV(grid);// Matrix applied
-    std::vector<FineComplexField> phaF(npoint,grid);
-    std::vector<CoarseComplexField> pha(npoint,CoarseGrid());
-    
     CoarseVector coarseInner(CoarseGrid());
-    
-    typedef typename CComplex::scalar_type SComplex;
-    FineComplexField one(grid); one=SComplex(1.0);
-    FineComplexField zz(grid); zz = Zero();
-    tphase=-usecond();
-    for(int p=0;p<npoint;p++){ // Loop over momenta in npoint
-      /////////////////////////////////////////////////////
-      // Stick a phase on every block
-      /////////////////////////////////////////////////////
-      CoarseComplexField coor(CoarseGrid());
-      pha[p]=Zero();
-      for(int mu=0;mu<Nd;mu++){
-	LatticeCoordinate(coor,mu);
-	RealD TwoPiL =  M_PI * 2.0/ clatt[mu];
-	pha[p] = pha[p] + (TwoPiL * geom.shifts[p][mu]) * coor;
-      }
-      pha[p]  =exp(pha[p]*ci);
 
-      blockZAXPY(phaF[p],pha[p],one,zz);
-      
-    }
-    tphase+=usecond();
-    
     std::vector<CoarseVector> ComputeProj(npoint,CoarseGrid());
     std::vector<CoarseVector>          FT(npoint,CoarseGrid());
     for(int i=0;i<nbasis;i++){// Loop over basis vectors
       std::cout << GridLogMessage<< "CoarsenMatrixColoured vec "<<i<<"/"<<nbasis<< std::endl;
       for(int p=0;p<npoint;p++){ // Loop over momenta in npoint
-	tphaseBZ-=usecond();
-	phaV = phaF[p]*Subspace.subspace[i];
-	tphaseBZ+=usecond();
+	/////////////////////////////////////////////////////
+	// Stick a phase on every block
+	/////////////////////////////////////////////////////
+	tphase-=usecond();
+	CoarseComplexField coor(CoarseGrid());
+	CoarseComplexField pha(CoarseGrid());	pha=Zero();
+	for(int mu=0;mu<Nd;mu++){
+	  LatticeCoordinate(coor,mu);
+	  RealD TwoPiL =  M_PI * 2.0/ clatt[mu];
+	  pha = pha + (TwoPiL * geom.shifts[p][mu]) * coor;
+	}
+	pha  =exp(pha*ci);
+	phaV=Zero();
+	blockZAXPY(phaV,pha,Subspace.subspace[i],phaV);
+	tphase+=usecond();
 
 	/////////////////////////////////////////////////////////////////////
 	// Multiple phased subspace vector by matrix and project to subspace
@@ -409,8 +394,8 @@ public:
 	tmat+=usecond();
 
 	tproj-=usecond();
-	blockProjectFast(coarseInner,MphaV,Subspace.subspace);
-	coarseInner = conjugate(pha[p]) * coarseInner;
+	blockProject(coarseInner,MphaV,Subspace.subspace);
+	coarseInner = conjugate(pha) * coarseInner;
 
 	ComputeProj[p] = coarseInner;
 	tproj+=usecond();
@@ -446,7 +431,6 @@ public:
     ExchangeCoarseLinks();
     std::cout << GridLogMessage<<"CoarsenOperator eigen  "<<teigen<<" us"<<std::endl;
     std::cout << GridLogMessage<<"CoarsenOperator phase  "<<tphase<<" us"<<std::endl;
-    std::cout << GridLogMessage<<"CoarsenOperator phaseBZ "<<tphaseBZ<<" us"<<std::endl;
     std::cout << GridLogMessage<<"CoarsenOperator mat    "<<tmat <<" us"<<std::endl;
     std::cout << GridLogMessage<<"CoarsenOperator proj   "<<tproj<<" us"<<std::endl;
     std::cout << GridLogMessage<<"CoarsenOperator inv    "<<tinv<<" us"<<std::endl;
