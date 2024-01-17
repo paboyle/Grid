@@ -117,12 +117,17 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 #endif
 } // CUDA specific
 
-inline void cuda_mem(void)
+inline void acceleratorMem(void)
 {
   size_t free_t,total_t,used_t;
   cudaMemGetInfo(&free_t,&total_t);
   used_t=total_t-free_t;
   std::cout << " MemoryManager : GPU used "<<used_t<<" free "<<free_t<< " total "<<total_t<<std::endl;
+}
+
+inline void cuda_mem(void)
+{
+  acceleratorMem();
 }
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
@@ -305,6 +310,11 @@ NAMESPACE_END(Grid);
 
 NAMESPACE_BEGIN(Grid);
 
+inline void acceleratorMem(void)
+{
+  std::cout <<" SYCL acceleratorMem not implemented"<<std::endl;
+}
+
 extern cl::sycl::queue *theGridAccelerator;
 extern cl::sycl::queue *theCopyAccelerator;
 
@@ -382,6 +392,15 @@ NAMESPACE_BEGIN(Grid);
 
 #define accelerator        __host__ __device__
 #define accelerator_inline __host__ __device__ inline
+
+inline void acceleratorMem(void)
+{
+  size_t free_t,total_t,used_t;
+  hipMemGetInfo(&free_t,&total_t);
+  used_t=total_t-free_t;
+  std::cout << " MemoryManager : GPU used "<<used_t<<" free "<<free_t<< " total "<<total_t<<std::endl;
+}
+
 
 extern hipStream_t copyStream;
 extern hipStream_t computeStream;
@@ -523,6 +542,15 @@ inline void acceleratorCopySynchronise(void) { auto discard=hipStreamSynchronize
 #undef GRID_SIMT
 
 
+inline void acceleratorMem(void)
+{
+  /*
+    struct rusage rusage;
+    getrusage( RUSAGE_SELF, &rusage );
+    return (size_t)rusage.ru_maxrss;
+  */
+  std::cout <<" system acceleratorMem not implemented"<<std::endl;
+}
 
 #define accelerator 
 #define accelerator_inline strong_inline
