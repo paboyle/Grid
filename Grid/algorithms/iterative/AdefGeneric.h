@@ -69,7 +69,7 @@ class TwoLevelCG : public LinearFunction<Field>
   
   virtual void operator() (const Field &src, Field &x)
   {
-    std::cout << GridLogMessage<<"HDCG: fPcg starting"<<std::endl;
+    std::cout << GridLogMessage<<"HDCG: fPcg starting single RHS"<<std::endl;
     RealD f;
     RealD rtzp,rtz,a,d,b;
     RealD rptzp;
@@ -246,7 +246,7 @@ class TwoLevelCG : public LinearFunction<Field>
     /////////////////////////////
     // Set up history vectors
     /////////////////////////////
-    int mmax = 2;
+    int mmax = 3;
     std::cout << GridLogMessage<<"HDCG: fPcg allocating"<<std::endl;
     src[0].Grid()->Barrier();
     std::vector<std::vector<Field> > p(nrhs);   for(int r=0;r<nrhs;r++)  p[r].resize(mmax,grid);
@@ -324,7 +324,9 @@ class TwoLevelCG : public LinearFunction<Field>
 
       // Compute z = M x (for *all* RHS)
       PcgM1(r,z);
-
+      std::cout << GridLogMessage<<"HDCG::fPcg M1 complete"<<std::endl;
+      grid->Barrier();
+      
       RealD max_rn=0.0;
       for(int rhs=0;rhs<nrhs;rhs++){
 
@@ -556,54 +558,43 @@ public:
 
     int nrhs=in.size();
     std::cout << " mrhs PcgM1 for "<<nrhs<<" right hand sides"<<std::endl;
+    MemoryManager::Print();
     // [PTM+Q] in = [1 - Q A] M in + Q in = Min + Q [ in -A Min]
     Field tmp(this->grid);
     std::vector<Field> Min(nrhs,this->grid);
+    std::cout << " mrhs PcgM1 Min "<<std::endl;
     CoarseField PleftProj(this->coarsegrid);
     CoarseField PleftMss_proj(this->coarsegrid);
 
     CoarseField PleftProjMrhs(this->coarsegridmrhs);
     CoarseField PleftMss_projMrhs(this->coarsegridmrhs);
+    std::cout << " mrhs Coarse ops "<<std::endl;
 
     for(int rhs=0;rhs<nrhs;rhs++) {
-      this->grid->Barrier();
-      std::cout << " Calling smoother for "<<rhs<<std::endl;
-      this->grid->Barrier();
       this->_Smoother(in[rhs],Min[rhs]);
-      this->grid->Barrier();
-      std::cout << " smoother done "<<rhs<<std::endl;
-      this->grid->Barrier();
       this->_FineLinop.HermOp(Min[rhs],out[rhs]);
-      this->grid->Barrier();
-      std::cout << " Hermop for "<<rhs<<std::endl;
-      this->grid->Barrier();
       axpy(tmp,-1.0,out[rhs],in[rhs]);          // tmp  = in - A Min
-      this->grid->Barrier();
-      std::cout << " axpy "<<rhs<<std::endl;
-      this->grid->Barrier();
       this->_Aggregates.ProjectToSubspace(PleftProj,tmp);     // can optimise later
-      this->grid->Barrier();
-      std::cout << " project "<<rhs<<std::endl;
-      this->grid->Barrier();
       InsertSlice(PleftProj,PleftProjMrhs,rhs,0);
-      this->grid->Barrier();
-      std::cout << " insert rhs "<<rhs<<std::endl;
-      this->grid->Barrier();
       this->_CoarseGuesser(PleftProj,PleftMss_proj);
-      this->grid->Barrier();
-      std::cout << " insert guess "<<rhs<<std::endl;
-      this->grid->Barrier();
       InsertSlice(PleftMss_proj,PleftMss_projMrhs,rhs,0);
     }
+    MemoryManager::Print();
 
     std::cout << " Coarse solve "<<std::endl;
     this->_CoarseSolverMrhs(PleftProjMrhs,PleftMss_projMrhs); // Ass^{-1} [in - A Min]_s
+    std::cout << " Coarse solve done"<<std::endl;
+    MemoryManager::Print();
 
     for(int rhs=0;rhs<nrhs;rhs++) {
+      //      std::cout << " Extract for "<<rhs<<std::endl;
       ExtractSlice(PleftMss_proj,PleftMss_projMrhs,rhs,0);
+      //      std::cout << " Promote for "<<rhs<<std::endl;
       this->_Aggregates.PromoteFromSubspace(PleftMss_proj,tmp);// tmp = Q[in - A Min]  
+								    //      std::cout << " add for "<<rhs<<std::endl;
       axpy(out[rhs],1.0,Min[rhs],tmp); // Min+tmp
     }
+    MemoryManager::Print();
     std::cout << " Extracted "<<std::endl;
   }
 };
