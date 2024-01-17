@@ -474,6 +474,7 @@ void  MemoryManager::Print(void)
   std::cout << GridLogMessage << DeviceEvictions  << " Evictions from device " << std::endl;
   std::cout << GridLogMessage << DeviceDestroy    << " Destroyed vectors on device " << std::endl;
   std::cout << GridLogMessage << AccViewTable.size()<< " vectors " << LRU.size()<<" evictable"<< std::endl;
+  acceleratorMem();
   std::cout << GridLogMessage << "--------------------------------------------" << std::endl;
 }
 void  MemoryManager::PrintAll(void)
