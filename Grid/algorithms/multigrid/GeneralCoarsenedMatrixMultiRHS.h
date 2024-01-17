@@ -310,7 +310,7 @@ public:
   }
   void M (const CoarseVector &in, CoarseVector &out)
   {
-    std::cout << GridLogMessage << "New Mrhs coarse"<<std::endl;
+    //    std::cout << GridLogMessage << "New Mrhs coarse"<<std::endl;
     conformable(CoarseGrid(),in.Grid());
     conformable(in.Grid(),out.Grid());
     out.Checkerboard() = in.Checkerboard();
@@ -346,7 +346,7 @@ public:
     int64_t nrhs  =pin.Grid()->GlobalDimensions()[0];
     assert(nrhs>=1);
 
-    std::cout << GridLogMessage << "New Mrhs GridtoBLAS in sizes "<<in.Grid()->lSites()<<" "<<pin.Grid()->lSites()<<std::endl;
+    //    std::cout << GridLogMessage << "New Mrhs GridtoBLAS in sizes "<<in.Grid()->lSites()<<" "<<pin.Grid()->lSites()<<std::endl;
     t_GtoB=-usecond();
     GridtoBLAS(pin,BLAS_B);
     //    out = Zero();
@@ -391,7 +391,7 @@ public:
     std::cout << GridLogMessage<<"Coarse Kernel flop/s "<< flops/t_mult<<" mflop/s"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Kernel bytes/s "<< bytes/t_mult/1000<<" GB/s"<<std::endl;
     std::cout << GridLogMessage<<"Coarse overall flops/s "<< flops/t_tot<<" mflop/s"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
+    //    std::cout << GridLogMessage<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
   };
   virtual  void Mdiag    (const Field &in, Field &out){ assert(0);};
   virtual  void Mdir     (const Field &in, Field &out,int dir, int disp){assert(0);};
