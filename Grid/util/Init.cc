@@ -414,7 +414,7 @@ void Grid_init(int *argc,char ***argv)
   // Logging
   ////////////////////////////////////
   std::vector<std::string> logstreams;
-  std::string defaultLog("Error,Warning,Message,Memory");
+  std::string defaultLog("Error,Warning,Message");
   GridCmdOptionCSL(defaultLog,logstreams);
   GridLogConfigure(logstreams);
 
