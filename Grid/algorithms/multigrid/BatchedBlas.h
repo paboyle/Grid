@@ -74,6 +74,7 @@ public:
 #endif
 #ifdef GRID_SYCL
 #endif
+      gridblasInit=1;
     }
   }
   
