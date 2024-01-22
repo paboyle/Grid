@@ -58,24 +58,28 @@ struct ConfParameters: Serializable {
 //
 
 
-void testSmear(GridCartesian& GRID, LatticeGaugeFieldD Umu, LatticeGaugeFieldD Usmr, LatticeGaugeFieldD Unaik,
+void testSmear(GridCartesian& GRID, LatticeGaugeFieldD Umu, LatticeGaugeFieldD Usmr, LatticeGaugeFieldD Unaik, 
                LatticeGaugeFieldD Ucontrol, Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) {
     Smear_HISQ<PeriodicGimplD> hisq_fat(&GRID,c1,cnaik,c3,c5,c7,clp);
+    LatticeGaugeFieldD diff(&GRID);
     hisq_fat.smear(Usmr, Unaik, Umu);
-    LatticeGaugeFieldD diff1(&GRID), diff2(&GRID);
-    diff1 = Ucontrol-Usmr;
-    diff2 = Ucontrol-Unaik;
-    auto absDiff1 = norm2(diff1)/norm2(Ucontrol);
-    auto absDiff2 = norm2(diff2)/norm2(Ucontrol);
-    if (absDiff1 < 1e-30) {
-        Grid_pass(" |Umu-Usmr|/|Umu| = ",absDiff1);
-    } else {
-        Grid_error(" |Umu-Usmr|/|Umu| = ",absDiff1);
-    }
-    if (absDiff2 < 1e-30) {
-        Grid_pass(" |Umu-Unaik|/|Umu| = ",absDiff2);
-    } else {
-        Grid_error(" |Umu-Unaik|/|Umu| = ",absDiff2);
+    if (cnaik < 1e-30) { // Testing anything but Naik term
+        diff = Ucontrol-Usmr;
+        auto absDiff = norm2(diff)/norm2(Ucontrol);
+        if (absDiff < 1e-30) {
+            Grid_pass(" |Umu-Usmr|/|Umu| = ",absDiff);
+        } else {
+            Grid_error(" |Umu-Usmr|/|Umu| = ",absDiff);
+        }
+    } else { // Testing Naik specifically
+        diff = Ucontrol-Unaik;
+        auto absDiff = norm2(diff)/norm2(Ucontrol);
+        if (absDiff < 1e-30) {
+            Grid_pass(" |Umu-Unaik|/|Umu| = ",absDiff);
+        } else {
+            Grid_error(" |Umu-Unaik|/|Umu| = ",absDiff);
+        }
+//        NerscIO::writeConfiguration(Unaik,"nersc.l8t4b3360.naik");
     }
 }
 
@@ -87,7 +91,6 @@ int main (int argc, char** argv) {
     int Nt = 4;
     Coordinate latt_size(Nd,0); latt_size[0]=Ns; latt_size[1]=Ns; latt_size[2]=Ns; latt_size[3]=Nt;
     std::string conf_in  = "nersc.l8t4b3360";
-    std::string conf_out = "nersc.l8t4b3360.357lplink";
     int threads          = GridThread::GetThreads();
 
     typedef LatticeGaugeFieldD LGF;
@@ -115,15 +118,14 @@ int main (int argc, char** argv) {
     // Carry out various tests    
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.357lplink.control");
     testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,0.,1/16.,1/64.,1/384.,-1/8.);
-    NerscIO::writeConfiguration(Usmr,conf_out,"HISQ");
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.357link.control");
     testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,0.,1/16.,1/64.,1/384.,0.);
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.35link.control");
     testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,0.,1/16.,1/64.,0.,0.);
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.3link.control");
-    testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,1.,1/16.,0.,0.,0.);
-    NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.3link.control");
-    testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,2.,1/16.,0.,0.,0.);
+    testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,0.,1/16.,0.,0.,0.);
+    NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.naik.control");
+    testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,0.,0.8675309,0.,0.,0.,0.);
 
     // Test a C-style instantiation 
     double path_coeff[6] = {1, 2, 3, 4, 5, 6};
