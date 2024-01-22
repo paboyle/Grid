@@ -61,7 +61,7 @@ struct ConfParameters: Serializable {
 void testSmear(GridCartesian& GRID, LatticeGaugeFieldD Umu, LatticeGaugeFieldD Usmr, LatticeGaugeFieldD Unaik, 
                LatticeGaugeFieldD Ucontrol, Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) {
     Smear_HISQ<PeriodicGimplD> hisq_fat(&GRID,c1,cnaik,c3,c5,c7,clp);
-    LatticeGaugeFieldD diff(&GRID);
+    LatticeGaugeFieldD diff(&GRID), Uproj(&GRID);
     hisq_fat.smear(Usmr, Unaik, Umu);
     if (cnaik < 1e-30) { // Testing anything but Naik term
         diff = Ucontrol-Usmr;
@@ -79,6 +79,7 @@ void testSmear(GridCartesian& GRID, LatticeGaugeFieldD Umu, LatticeGaugeFieldD U
         } else {
             Grid_error(" |Umu-Unaik|/|Umu| = ",absDiff);
         }
+    hisq_fat.projectU3(Uproj,Usmr);
 //        NerscIO::writeConfiguration(Unaik,"nersc.l8t4b3360.naik");
     }
 }

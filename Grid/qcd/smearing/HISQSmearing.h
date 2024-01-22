@@ -83,7 +83,6 @@ struct SmearingParameters{
 /*!  @brief create fat links from link variables */
 template<class Gimpl> 
 class Smear_HISQ : public Gimpl {
-// TODO: this needs to be renamed, becaues the Naik guy is not part of the fat smear
 
 private:
     GridCartesian* const _grid;
@@ -289,16 +288,16 @@ public:
         std::vector<LF> V(Nd, u_smr.Grid());
         std::vector<LF> Vnaik(Nd, u_naik.Grid());
         for (int mu = 0; mu < Nd; mu++) {
-            U[mu]     = PeekIndex<LorentzIndex>(u_thin, mu);
-            V[mu]     = PeekIndex<LorentzIndex>(u_smr, mu);
+            U[mu] = PeekIndex<LorentzIndex>(u_thin, mu);
+            V[mu] = PeekIndex<LorentzIndex>(u_smr, mu);
         }
 
         for(int mu=0;mu<Nd;mu++) {
 
             // Naik
-            Vnaik[mu] =  lt.c_naik*Gimpl::CovShiftForward(U[mu],mu,
-                                     Gimpl::CovShiftForward(U[mu],mu,
-                                       Gimpl::CovShiftIdentityForward(U[mu],mu)));
+            Vnaik[mu] = lt.c_naik*Gimpl::CovShiftForward(U[mu],mu,
+                                    Gimpl::CovShiftForward(U[mu],mu,
+                                      Gimpl::CovShiftIdentityForward(U[mu],mu)));
 
             // LePage
             for (int nu_h=1;nu_h<Nd;nu_h++) {
@@ -324,6 +323,41 @@ public:
             PokeIndex<LorentzIndex>(u_naik, Vnaik[mu], mu);
         }
     };
+
+
+    // Intent: OUT--u_proj
+    //          IN--u_mu
+    void projectU3(GF& u_proj, GF& u_mu) const {
+
+        LF V, Q, sqrtQinv;
+        Real c1, c2, g0, g1, g2, S, R, theta, u, v, w, den, f0, f1, f2;
+
+        // Follow MILC 10.1103/PhysRevD.82.074501, eqs (B2-B3) and (C1-C8)
+        for (int mu = 0; mu < Nd; mu++) {
+            V     = PeekIndex<LorentzIndex>(u_mu, mu);
+            Q     = adj(V[mu])*V[mu];
+            c1    = trace(Q*Q)/2.; // SU(N) matrices are traceless, so c0=0.
+            c2    = trace(Q*Q*Q)/3.;
+            S     = c1/3.;
+            R     = c2/2.;
+            theta = std::acos(R/std::pow(S,1.5));
+            g0    = 2.*std::sqrt(S)*std::cos(theta/3.-2*M_PI/3.);
+            g1    = 2.*std::sqrt(S)*std::cos(theta/3.          );
+            g2    = 2.*std::sqrt(S)*std::cos(theta/3.+2*M_PI/3.);
+//            if (fabs(Q.determinant()/(g0*g1*g2)-1.0) > 1e-5) {}
+            u     = std::sqrt(g0) + std::sqrt(g1) + std::sqrt(g2);
+            v     = std::sqrt(g0*g1) + std::sqrt(g0*g2) + std::sqrt(g1*g2);
+            w     = std::sqrt(g0*g1*g2);
+            den   = w*(u*v-w);
+            f0    = (-w*(u*u+v)+u*v*v)/den;
+            f1    = (-w-u*u*u+2*u*v)/den;
+            f2    = u/den;
+
+            sqrtQinv = f0 + f1*Q + f2*Q*Q;
+            PokeIndex<LorentzIndex>(u_proj, V*sqrtQinv, mu);
+        }
+    };
+
 
 //    void derivative(const GaugeField& Gauge) const {
 //    };
