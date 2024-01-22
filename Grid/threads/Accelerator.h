@@ -478,7 +478,7 @@ inline void *acceleratorAllocShared(size_t bytes)
   auto err = hipMallocManaged((void **)&ptr,bytes);
   if( err != hipSuccess ) {
     ptr = (void *) NULL;
-    printf(" hipMallocManaged failed for %ld %s \n",bytes,hipGetErrorString(err));
+    fprintf(stderr," hipMallocManaged failed for %ld %s \n",bytes,hipGetErrorString(err)); fflush(stderr);
   }
   return ptr;
 };
@@ -490,7 +490,7 @@ inline void *acceleratorAllocDevice(size_t bytes)
   auto err = hipMalloc((void **)&ptr,bytes);
   if( err != hipSuccess ) {
     ptr = (void *) NULL;
-    printf(" hipMalloc failed for %ld %s \n",bytes,hipGetErrorString(err));
+    fprintf(stderr," hipMalloc failed for %ld %s \n",bytes,hipGetErrorString(err)); fflush(stderr);
   }
   return ptr;
 };
