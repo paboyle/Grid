@@ -112,6 +112,44 @@ void LoadBasis(aggregation &Agg, std::string file)
   RD.close();
 #endif
 }
+template<class CoarseVector>
+void SaveEigenvectors(std::vector<RealD>            &eval,
+		      std::vector<CoarseVector>     &evec,
+		      std::string evec_file,
+		      std::string eval_file)
+{
+#ifdef HAVE_LIME
+  emptyUserRecord record;
+  ScidacWriter WR(evec[0].Grid()->IsBoss());
+  WR.open(evec_file);
+  for(int b=0;b<evec.size();b++){
+    WR.writeScidacFieldRecord(evec[b],record,0,0);
+  }
+  WR.close();
+  XmlWriter WRx(eval_file);
+  write(WRx,"evals",eval);
+#endif
+}
+template<class CoarseVector>
+void LoadEigenvectors(std::vector<RealD>            &eval,
+		      std::vector<CoarseVector>     &evec,
+		      std::string evec_file,
+		      std::string eval_file)
+{
+#ifdef HAVE_LIME
+    XmlReader RDx(eval_file);
+    read(RDx,"evals",eval);
+    emptyUserRecord record;
+
+    Grid::ScidacReader RD ;
+    RD.open(evec_file);
+    assert(evec.size()==eval.size());
+    for(int k=0;k<eval.size();k++) {
+      RD.readScidacFieldRecord(evec[k],record);
+    }
+    RD.close();
+#endif
+}
 
 RealD InverseApproximation(RealD x){
   return 1.0/x;
@@ -169,6 +207,7 @@ public:
   void operator() (const Field &in, Field &out) 
   {
     ConjugateGradient<Field>  CG(0.0,iters,false); // non-converge is just fine in a smoother
+    out=Zero();
     CG(_SmootherOperator,in,out);
   }
 };
@@ -237,12 +276,8 @@ int main (int argc, char ** argv)
   typedef HermOpAdaptor<LatticeFermionD> HermFineMatrix;
   HermFineMatrix FineHermOp(HermOpEO);
 
-  LatticeFermion result(FrbGrid); result=Zero();
-
-  LatticeFermion    src(FrbGrid); random(RNG5,src);
-
   // Run power method on FineHermOp
-  PowerMethod<LatticeFermion>       PM;   PM(HermOpEO,src);
+  //  PowerMethod<LatticeFermion>       PM;   PM(HermOpEO,src);
  
   ////////////////////////////////////////////////////////////
   ///////////// Coarse basis and Little Dirac Operator ///////
@@ -262,12 +297,15 @@ int main (int argc, char ** argv)
   ////////////////////////////////////////////////////////////
   LittleDiracOperator LittleDiracOp(geom,FrbGrid,Coarse5d);
 
-  std::string subspace_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Subspace.phys48.rat.repro.62");
-  std::string refine_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Refine.phys48.rat.repro.62");
-  std::string ldop_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/LittleDiracOp.phys48.rat.repro.62");
+  std::string subspace_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Subspace.phys48.rat.18node.62");
+  std::string refine_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Refine.phys48.rat.18node.62");
+  std::string ldop_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/LittleDiracOp.phys48.rat.18node.62");
+  std::string evec_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/evecs.scidac");
+  std::string eval_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/eval.xml");
   bool load_agg=true;
   bool load_refine=true;
   bool load_mat=true;
+  bool load_evec=false;
   MemoryManager::Print();
 
   int refine=1;
@@ -369,7 +407,7 @@ slurm-1482367.out:Grid : Message : 6169.469330 s : HDCG: Pcg converged in 487 it
   CoarseVector c_res(Coarse5d); 
   CoarseVector c_ref(Coarse5d);
 
-  if (1){
+  if (0){
     ///////////////////////////////////////////////////
     // Test the operator
     ///////////////////////////////////////////////////
@@ -436,7 +474,16 @@ slurm-1482367.out:Grid : Message : 6169.469330 s : HDCG: Pcg converged in 487 it
 
   PowerMethod<CoarseVector>       cPM;   cPM(CoarseOp,c_src);
 
-  IRL.calc(eval,evec,c_src,Nconv);
+  if ( load_evec ) {
+    eval.resize(Nstop);
+    evec.resize(Nstop,Coarse5d);
+    LoadEigenvectors(eval,evec,evec_file,eval_file);
+  } else { 
+    IRL.calc(eval,evec,c_src,Nconv);
+    assert(Nstop==eval.size());
+    SaveEigenvectors(eval,evec,evec_file,eval_file);
+  }
+
   DeflatedGuesser<CoarseVector> DeflCoarseGuesser(evec,eval);
 
   //////////////////////////////////////////
@@ -549,7 +596,7 @@ slurm-1482367.out:Grid : Message : 6169.469330 s : HDCG: Pcg converged in 487 it
   //////////////////////////////////////////////////////////////////////////////////////
   ConjugateGradient<CoarseVector>  coarseCG(4.0e-2,20000,true);
     
-  const int nrhs=vComplex::Nsimd()*2;
+  const int nrhs=vComplex::Nsimd()*3;
     
   Coordinate mpi=GridDefaultMpi();
   Coordinate rhMpi ({1,1,mpi[0],mpi[1],mpi[2],mpi[3]});
@@ -721,9 +768,9 @@ Conclusion: higher order smoother is doing better. Much better. Use a Krylov smo
 	     HPDSolveSloppy,
 	     HPDSolve,
 	     Aggregates);
-      result=Zero();
-      std::cout << "Calling HDCG single RHS"<<std::endl;
-      HDCG(src,result);
+      //      result=Zero();
+      //      std::cout << "Calling HDCG single RHS"<<std::endl;
+      //      HDCG(src,result);
 
       //////////////////////////////////////////
       // Build a HDCG mrhs solver
@@ -749,26 +796,33 @@ Conclusion: higher order smoother is doing better. Much better. Use a Krylov smo
       
   MemoryManager::Print();
       std::vector<LatticeFermionD> src_mrhs(nrhs,FrbGrid);
+      std::cout << " mRHS source"<<std::endl;
       std::vector<LatticeFermionD> res_mrhs(nrhs,FrbGrid);
+      std::cout << " mRHS result"<<std::endl;
   MemoryManager::Print();
   random(RNG5,src_mrhs[0]);
-      for(int r=0;r<nrhs;r++){
+  for(int r=0;r<nrhs;r++){
 	if(r>0)src_mrhs[r]=src_mrhs[0];
 	res_mrhs[r]=Zero();
 	std::cout << "Setup mrhs source "<<r<<std::endl;
-      }
-      std::cout << "Calling the mRHS HDCG"<<std::endl;
+  }
+  std::cout << "Calling the mRHS HDCG"<<std::endl;
   MemoryManager::Print();
-      HDCGmrhs(src_mrhs,res_mrhs);
+  HDCGmrhs(src_mrhs,res_mrhs);
   MemoryManager::Print();
 #endif
     }
   }
 
   // Standard CG
-  result=Zero();
-  CGfine(HermOpEO, src, result);
-  
+#if 1
+  {
+    LatticeFermion result(FrbGrid); result=Zero();
+    LatticeFermion    src(FrbGrid); random(RNG5,src);
+    result=Zero();
+    CGfine(HermOpEO, src, result);
+  }
+#endif  
   Grid_finalize();
   return 0;
 }
