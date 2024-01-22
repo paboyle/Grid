@@ -744,7 +744,11 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
-  static const int words=sizeof(vobj)/sizeof(vector_type);
+  const int words=sizeof(vobj)/sizeof(vector_type);
+
+  //////////////////////////////////////////////////////////////////////////////////////////
+  // checks should guarantee that the operations are local
+  //////////////////////////////////////////////////////////////////////////////////////////
 
   GridBase *Fg = From.Grid();
   GridBase *Tg = To.Grid();
@@ -759,52 +763,39 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
   for(int d=0;d<nd;d++){
     assert(Fg->_processors[d]  == Tg->_processors[d]);
   }
-  // the above should guarantee that the operations are local
-  
-#if 1
+
+  ///////////////////////////////////////////////////////////
+  // do the index calc on the GPU
+  ///////////////////////////////////////////////////////////
+  Coordinate f_ostride = Fg->_ostride;
+  Coordinate f_istride = Fg->_istride;
+  Coordinate f_rdimensions = Fg->_rdimensions;
+  Coordinate t_ostride = Tg->_ostride;
+  Coordinate t_istride = Tg->_istride;
+  Coordinate t_rdimensions = Tg->_rdimensions;
 
   size_t nsite = 1;
   for(int i=0;i<nd;i++) nsite *= RegionSize[i];
-  
-  size_t tbytes = 4*nsite*sizeof(int);
-  int *table = (int*)malloc(tbytes);
- 
-  thread_for(idx, nsite, {
-      Coordinate from_coor, to_coor;
-      size_t rem = idx;
-      for(int i=0;i<nd;i++){
-	size_t base_i  = rem % RegionSize[i]; rem /= RegionSize[i];
-	from_coor[i] = base_i + FromLowerLeft[i];
-	to_coor[i] = base_i + ToLowerLeft[i];
-      }
-      
-      int foidx = Fg->oIndex(from_coor);
-      int fiidx = Fg->iIndex(from_coor);
-      int toidx = Tg->oIndex(to_coor);
-      int tiidx = Tg->iIndex(to_coor);
-      int* tt = table + 4*idx;
-      tt[0] = foidx;
-      tt[1] = fiidx;
-      tt[2] = toidx;
-      tt[3] = tiidx;
-    });
-  
-  int* table_d = (int*)acceleratorAllocDevice(tbytes);
-  acceleratorCopyToDevice(table,table_d,tbytes);
 
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
 
   autoView(from_v,From,AcceleratorRead);
   autoView(to_v,To,AcceleratorWrite);
-  
+
+
   accelerator_for(idx,nsite,1,{
-      static const int words=sizeof(vobj)/sizeof(vector_type);
-      int* tt = table_d + 4*idx;
-      int from_oidx = *tt++;
-      int from_lane = *tt++;
-      int to_oidx = *tt++;
-      int to_lane = *tt;
+
+      Coordinate from_coor, to_coor, base;
+      Lexicographic::CoorFromIndex(base,idx,RegionSize);
+      for(int i=0;i<nd;i++){
+	from_coor[i] = base[i] + FromLowerLeft[i];
+	to_coor[i] = base[i] + ToLowerLeft[i];
+      }
+      int from_oidx = 0; for(int d=0;d<nd;d++) from_oidx+=f_ostride[d]*(from_coor[d]%f_rdimensions[d]);
+      int from_lane = 0; for(int d=0;d<nd;d++) from_lane+=f_istride[d]*(from_coor[d]/f_rdimensions[d]);
+      int to_oidx   = 0; for(int d=0;d<nd;d++) to_oidx+=t_ostride[d]*(to_coor[d]%t_rdimensions[d]);
+      int to_lane   = 0; for(int d=0;d<nd;d++) to_lane+=t_istride[d]*(to_coor[d]/t_rdimensions[d]);
 
       const vector_type* from = (const vector_type *)&from_v[from_oidx];
       vector_type* to = (vector_type *)&to_v[to_oidx];
@@ -814,54 +805,7 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
 	stmp = getlane(from[w], from_lane);
 	putlane(to[w], stmp, to_lane);
       }
-    });
-  
-  acceleratorFreeDevice(table_d);    
-  free(table);
-  
-
-#else  
-  Coordinate ldf = Fg->_ldimensions;
-  Coordinate rdf = Fg->_rdimensions;
-  Coordinate isf = Fg->_istride;
-  Coordinate osf = Fg->_ostride;
-  Coordinate rdt = Tg->_rdimensions;
-  Coordinate ist = Tg->_istride;
-  Coordinate ost = Tg->_ostride;
-
-  autoView( t_v , To, CpuWrite);
-  autoView( f_v , From, CpuRead);
-  thread_for(idx,Fg->lSites(),{
-    sobj s;
-    Coordinate Fcoor(nd);
-    Coordinate Tcoor(nd);
-    Lexicographic::CoorFromIndex(Fcoor,idx,ldf);
-    int in_region=1;
-    for(int d=0;d<nd;d++){
-      if ( (Fcoor[d] < FromLowerLeft[d]) || (Fcoor[d]>=FromLowerLeft[d]+RegionSize[d]) ){ 
-	in_region=0;
-      }
-      Tcoor[d] = ToLowerLeft[d]+ Fcoor[d]-FromLowerLeft[d];
-    }
-    if (in_region) {
-#if 0      
-      Integer idx_f = 0; for(int d=0;d<nd;d++) idx_f+=isf[d]*(Fcoor[d]/rdf[d]); // inner index from
-      Integer idx_t = 0; for(int d=0;d<nd;d++) idx_t+=ist[d]*(Tcoor[d]/rdt[d]); // inner index to
-      Integer odx_f = 0; for(int d=0;d<nd;d++) odx_f+=osf[d]*(Fcoor[d]%rdf[d]); // outer index from
-      Integer odx_t = 0; for(int d=0;d<nd;d++) odx_t+=ost[d]*(Tcoor[d]%rdt[d]); // outer index to
-      scalar_type * fp = (scalar_type *)&f_v[odx_f];
-      scalar_type * tp = (scalar_type *)&t_v[odx_t];
-      for(int w=0;w<words;w++){
-	tp[w].putlane(fp[w].getlane(idx_f),idx_t);
-      }
-#else
-    peekLocalSite(s,f_v,Fcoor);
-    pokeLocalSite(s,t_v,Tcoor);
-#endif
-    }
   });
-
-#endif
 }
 
 
@@ -1801,6 +1745,36 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
     vectorizeFromLexOrdArray(scalardata,full[v]);    
   }
 }
+
+//////////////////////////////////////////////////////
+// Faster but less accurate blockProject
+//////////////////////////////////////////////////////
+template<class vobj,class CComplex,int nbasis,class VLattice>
+inline void blockProjectFast(Lattice<iVector<CComplex,nbasis > > &coarseData,
+			     const             Lattice<vobj>   &fineData,
+			     const VLattice &Basis)
+{
+  GridBase * fine  = fineData.Grid();
+  GridBase * coarse= coarseData.Grid();
+
+  Lattice<iScalar<CComplex> > ip(coarse);
+
+  autoView( coarseData_ , coarseData, AcceleratorWrite);
+  autoView( ip_         , ip,         AcceleratorWrite);
+  RealD t_IP=0;
+  RealD t_co=0;
+  for(int v=0;v<nbasis;v++) {
+    t_IP-=usecond();
+    blockInnerProductD(ip,Basis[v],fineData); 
+    t_IP+=usecond();
+    t_co-=usecond();
+    accelerator_for( sc, coarse->oSites(), vobj::Nsimd(), {
+	convertType(coarseData_[sc](v),ip_[sc]);
+      });
+    t_co+=usecond();
+  }
+}
+
 
 NAMESPACE_END(Grid);
 
