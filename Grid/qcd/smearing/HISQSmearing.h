@@ -93,6 +93,7 @@ public:
     INHERIT_GIMPL_TYPES(Gimpl);
     typedef typename Gimpl::GaugeField     GF;
     typedef typename Gimpl::GaugeLinkField LF;
+    typedef typename Gimpl::ComplexField   CF;
 
     // Don't allow default values here.
     Smear_HISQ(GridCartesian* grid, Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) 
@@ -329,31 +330,36 @@ public:
     //          IN--u_mu
     void projectU3(GF& u_proj, GF& u_mu) const {
 
-        LF V, Q, sqrtQinv;
-        Real c1, c2, g0, g1, g2, S, R, theta, u, v, w, den, f0, f1, f2;
+        LF V(u_mu.Grid()), Q(u_mu.Grid()), sqrtQinv(u_mu.Grid()), id_3(u_mu.Grid());
+        CF c0(u_mu.Grid()), c1(u_mu.Grid()), c2(u_mu.Grid()), g0(u_mu.Grid()), g1(u_mu.Grid()), 
+           g2(u_mu.Grid()), S(u_mu.Grid()), R(u_mu.Grid()), theta(u_mu.Grid()), u(u_mu.Grid()), 
+           v(u_mu.Grid()), w(u_mu.Grid()), den(u_mu.Grid()), f0(u_mu.Grid()), f1(u_mu.Grid()), 
+           f2(u_mu.Grid());
 
         // Follow MILC 10.1103/PhysRevD.82.074501, eqs (B2-B3) and (C1-C8)
         for (int mu = 0; mu < Nd; mu++) {
             V     = PeekIndex<LorentzIndex>(u_mu, mu);
-            Q     = adj(V[mu])*V[mu];
-            c1    = trace(Q*Q)/2.; // SU(N) matrices are traceless, so c0=0.
-            c2    = trace(Q*Q*Q)/3.;
-            S     = c1/3.;
-            R     = c2/2.;
-            theta = std::acos(R/std::pow(S,1.5));
-            g0    = 2.*std::sqrt(S)*std::cos(theta/3.-2*M_PI/3.);
-            g1    = 2.*std::sqrt(S)*std::cos(theta/3.          );
-            g2    = 2.*std::sqrt(S)*std::cos(theta/3.+2*M_PI/3.);
+            Q     = adj(V)*V;
+            c0    =        real(trace(Q));
+            c1    = (1/2.)*real(trace(Q*Q));
+            c2    = (1/3.)*real(trace(Q*Q*Q));
+            S     = (1/3.)*c1-(1/18.)*c0*c0;
+            R     = (1/2.)*c2-(1/3. )*c0*c1+(1/27.)*c0*c0*c0;
+            theta = acos(R*pow(S,-1.5));
+            g0    = (1/3.)*c0+2.*sqrt(S)*cos((1/3.)*theta-2*M_PI/3.);
+            g1    = (1/3.)*c0+2.*sqrt(S)*cos((1/3.)*theta          );
+            g2    = (1/3.)*c0+2.*sqrt(S)*cos((1/3.)*theta+2*M_PI/3.);
 //            if (fabs(Q.determinant()/(g0*g1*g2)-1.0) > 1e-5) {}
-            u     = std::sqrt(g0) + std::sqrt(g1) + std::sqrt(g2);
-            v     = std::sqrt(g0*g1) + std::sqrt(g0*g2) + std::sqrt(g1*g2);
-            w     = std::sqrt(g0*g1*g2);
+            u     = sqrt(g0) + sqrt(g1) + sqrt(g2);
+            v     = sqrt(g0*g1) + sqrt(g0*g2) + sqrt(g1*g2);
+            w     = sqrt(g0*g1*g2);
             den   = w*(u*v-w);
             f0    = (-w*(u*u+v)+u*v*v)/den;
-            f1    = (-w-u*u*u+2*u*v)/den;
+            f1    = (-w-u*u*u+2.*u*v)/den;
             f2    = u/den;
+            id_3  = 1.;
 
-            sqrtQinv = f0 + f1*Q + f2*Q*Q;
+            sqrtQinv = f0*id_3 + f1*Q + f2*Q*Q;
             PokeIndex<LorentzIndex>(u_proj, V*sqrtQinv, mu);
         }
     };
