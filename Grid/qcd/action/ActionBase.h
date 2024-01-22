@@ -129,6 +129,22 @@ public:
   virtual ~Action(){}
 };
 
+template <class GaugeField >
+class EmptyAction : public Action <GaugeField>
+{
+  virtual void refresh(const GaugeField& U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) { assert(0);}; // refresh pseudofermions
+  virtual RealD S(const GaugeField& U) { return 0.0;};                             // evaluate the action
+  virtual void deriv(const GaugeField& U, GaugeField& dSdU) { assert(0); };        // evaluate the action derivative
+
+  ///////////////////////////////
+  // Logging
+  ///////////////////////////////
+  virtual std::string action_name()    { return std::string("Level Force Log"); };
+  virtual std::string LogParameters()  { return std::string("No parameters");};
+};
+
+
+
 NAMESPACE_END(Grid);
 
 #endif // ACTION_BASE_H
