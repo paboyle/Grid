@@ -50,6 +50,7 @@ public:
   typedef iVector<CComplex,nbasis >  Cvec;
   typedef Lattice< CComplex >   CoarseScalar; // used for inner products on fine field
   typedef Lattice<Fobj >        FineField;
+  typedef Lattice<CComplex >    FineComplexField;
   typedef CoarseVector Field;
   ////////////////////
   // Data members
@@ -79,7 +80,7 @@ public:
     for(int p=0;p<geom.npoint;p++){
       if ( zero_shift==geom.shifts[p] ) {
 	_A[p] = _A[p]+shift;
-	_Adag[p] = _Adag[p]+shift;
+	//	_Adag[p] = _Adag[p]+shift;
       }
     }    
   }
@@ -93,7 +94,7 @@ public:
 	// Avoids brutal handling of Grid pointers
 	if ( CopyMe.geom.shifts[pp]==geom.shifts[p] ) {
 	  _A[p] = CopyMe.Cell.Extract(CopyMe._A[pp]);
-	  _Adag[p] = CopyMe.Cell.Extract(CopyMe._Adag[pp]);
+	  //	  _Adag[p] = CopyMe.Cell.Extract(CopyMe._Adag[pp]);
 	  nfound++;
 	}
       }
@@ -114,7 +115,7 @@ public:
       int npoint = _geom.npoint;
     }
     _A.resize(geom.npoint,CoarseGrid);
-    _Adag.resize(geom.npoint,CoarseGrid);
+    //    _Adag.resize(geom.npoint,CoarseGrid);
   }
   void M (const CoarseVector &in, CoarseVector &out)
   {
@@ -122,8 +123,10 @@ public:
   }
   void Mdag (const CoarseVector &in, CoarseVector &out)
   {
-    if ( hermitian ) M(in,out);
-    else Mult(_Adag,in,out);
+    assert(hermitian);
+    Mult(_A,in,out);
+    //    if ( hermitian ) M(in,out);
+    //    else Mult(_Adag,in,out);
   }
   void Mult (std::vector<CoarseMatrix> &A,const CoarseVector &in, CoarseVector &out)
   {
@@ -298,6 +301,7 @@ public:
      *
      *     Where q_k = delta_k . (2*M_PI/global_nb[mu])
      */
+#if 0
   void CoarsenOperator(LinearOperatorBase<Lattice<Fobj> > &linop,
 		       Aggregation<Fobj,CComplex,nbasis> & Subspace)
   {
@@ -423,8 +427,8 @@ public:
 
     // Only needed if nonhermitian
     if ( ! hermitian ) {
-      std::cout << GridLogMessage<<"PopulateAdag  "<<std::endl;
-      PopulateAdag();
+      //      std::cout << GridLogMessage<<"PopulateAdag  "<<std::endl;
+      //      PopulateAdag();
     }
 
     // Need to write something to populate Adag from A
@@ -435,10 +439,164 @@ public:
     std::cout << GridLogMessage<<"CoarsenOperator proj   "<<tproj<<" us"<<std::endl;
     std::cout << GridLogMessage<<"CoarsenOperator inv    "<<tinv<<" us"<<std::endl;
   }
+#else
+  void CoarsenOperator(LinearOperatorBase<Lattice<Fobj> > &linop,
+		       Aggregation<Fobj,CComplex,nbasis> & Subspace)
+  {
+    std::cout << GridLogMessage<< "GeneralCoarsenMatrix "<< std::endl;
+    GridBase *grid = FineGrid();
+
+    RealD tproj=0.0;
+    RealD teigen=0.0;
+    RealD tmat=0.0;
+    RealD tphase=0.0;
+    RealD tphaseBZ=0.0;
+    RealD tinv=0.0;
+
+    /////////////////////////////////////////////////////////////
+    // Orthogonalise the subblocks over the basis
+    /////////////////////////////////////////////////////////////
+    CoarseScalar InnerProd(CoarseGrid()); 
+    blockOrthogonalise(InnerProd,Subspace.subspace);
+
+    const int npoint = geom.npoint;
+      
+    Coordinate clatt = CoarseGrid()->GlobalDimensions();
+    int Nd = CoarseGrid()->Nd();
+
+      /*
+       *     Here, k,l index which possible momentum/shift within the N-points connected by MdagM.
+       *     Matrix index i is mapped to this shift via 
+       *               geom.shifts[i]
+       *
+       *     conj(pha[block]) proj[k (which mom)][j (basis vec cpt)][block] 
+       *       =  \sum_{l in ball}  e^{i q_k . delta_l} < phi_{block,j} | MdagM | phi_{(block+delta_l),i} > 
+       *       =  \sum_{l in ball} e^{iqk.delta_l} A_ji^{b.b+l}
+       *       = M_{kl} A_ji^{b.b+l}
+       *
+       *     Must assemble and invert matrix M_k,l = e^[i q_k . delta_l]
+       *  
+       *     Where q_k = delta_k . (2*M_PI/global_nb[mu])
+       *
+       *     Then A{ji}^{b,b+l} = M^{-1}_{lm} ComputeProj_{m,b,i,j}
+       */
+    teigen-=usecond();
+    Eigen::MatrixXcd Mkl    = Eigen::MatrixXcd::Zero(npoint,npoint);
+    Eigen::MatrixXcd invMkl = Eigen::MatrixXcd::Zero(npoint,npoint);
+    ComplexD ci(0.0,1.0);
+    for(int k=0;k<npoint;k++){ // Loop over momenta
+
+      for(int l=0;l<npoint;l++){ // Loop over nbr relative
+	ComplexD phase(0.0,0.0);
+	for(int mu=0;mu<Nd;mu++){
+	  RealD TwoPiL =  M_PI * 2.0/ clatt[mu];
+	  phase=phase+TwoPiL*geom.shifts[k][mu]*geom.shifts[l][mu];
+	}
+	phase=exp(phase*ci);
+	Mkl(k,l) = phase;
+      }
+    }
+    invMkl = Mkl.inverse();
+    teigen+=usecond();
+
+    ///////////////////////////////////////////////////////////////////////
+    // Now compute the matrix elements of linop between the orthonormal
+    // set of vectors.
+    ///////////////////////////////////////////////////////////////////////
+    FineField phaV(grid); // Phased block basis vector
+    FineField MphaV(grid);// Matrix applied
+    std::vector<FineComplexField> phaF(npoint,grid);
+    std::vector<CoarseComplexField> pha(npoint,CoarseGrid());
+    
+    CoarseVector coarseInner(CoarseGrid());
+    
+    typedef typename CComplex::scalar_type SComplex;
+    FineComplexField one(grid); one=SComplex(1.0);
+    FineComplexField zz(grid); zz = Zero();
+    tphase=-usecond();
+    for(int p=0;p<npoint;p++){ // Loop over momenta in npoint
+      /////////////////////////////////////////////////////
+      // Stick a phase on every block
+      /////////////////////////////////////////////////////
+      CoarseComplexField coor(CoarseGrid());
+      pha[p]=Zero();
+      for(int mu=0;mu<Nd;mu++){
+	LatticeCoordinate(coor,mu);
+	RealD TwoPiL =  M_PI * 2.0/ clatt[mu];
+	pha[p] = pha[p] + (TwoPiL * geom.shifts[p][mu]) * coor;
+      }
+      pha[p]  =exp(pha[p]*ci);
+
+      blockZAXPY(phaF[p],pha[p],one,zz);
+      
+    }
+    tphase+=usecond();
+    
+    std::vector<CoarseVector> ComputeProj(npoint,CoarseGrid());
+    std::vector<CoarseVector>          FT(npoint,CoarseGrid());
+    for(int i=0;i<nbasis;i++){// Loop over basis vectors
+      std::cout << GridLogMessage<< "CoarsenMatrixColoured vec "<<i<<"/"<<nbasis<< std::endl;
+      for(int p=0;p<npoint;p++){ // Loop over momenta in npoint
+	tphaseBZ-=usecond();
+	phaV = phaF[p]*Subspace.subspace[i];
+	tphaseBZ+=usecond();
+
+	/////////////////////////////////////////////////////////////////////
+	// Multiple phased subspace vector by matrix and project to subspace
+	// Remove local bulk phase to leave relative phases
+	/////////////////////////////////////////////////////////////////////
+	tmat-=usecond();
+	linop.Op(phaV,MphaV);
+	tmat+=usecond();
+
+	tproj-=usecond();
+	blockProject(coarseInner,MphaV,Subspace.subspace);
+	coarseInner = conjugate(pha[p]) * coarseInner;
+
+	ComputeProj[p] = coarseInner;
+	tproj+=usecond();
+
+      }
+
+      tinv-=usecond();
+      for(int k=0;k<npoint;k++){
+	FT[k] = Zero();
+	for(int l=0;l<npoint;l++){
+	  FT[k]= FT[k]+ invMkl(l,k)*ComputeProj[l];
+	}
+      
+	int osites=CoarseGrid()->oSites();
+	autoView( A_v  , _A[k], AcceleratorWrite);
+	autoView( FT_v  , FT[k], AcceleratorRead);
+	accelerator_for(sss, osites, 1, {
+	    for(int j=0;j<nbasis;j++){
+	      A_v[sss](i,j) = FT_v[sss](j);
+	    }
+        });
+      }
+      tinv+=usecond();
+    }
+
+    // Only needed if nonhermitian
+    if ( ! hermitian ) {
+      //      std::cout << GridLogMessage<<"PopulateAdag  "<<std::endl;
+      //      PopulateAdag();
+    }
+
+    // Need to write something to populate Adag from A
+    ExchangeCoarseLinks();
+    std::cout << GridLogMessage<<"CoarsenOperator eigen  "<<teigen<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"CoarsenOperator phase  "<<tphase<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"CoarsenOperator phaseBZ "<<tphaseBZ<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"CoarsenOperator mat    "<<tmat <<" us"<<std::endl;
+    std::cout << GridLogMessage<<"CoarsenOperator proj   "<<tproj<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"CoarsenOperator inv    "<<tinv<<" us"<<std::endl;
+  }
+#endif  
   void ExchangeCoarseLinks(void){
     for(int p=0;p<geom.npoint;p++){
       _A[p] = Cell.ExchangePeriodic(_A[p]);
-      _Adag[p]= Cell.ExchangePeriodic(_Adag[p]);
+      //      _Adag[p]= Cell.ExchangePeriodic(_Adag[p]);
     }
   }
   virtual  void Mdiag    (const Field &in, Field &out){ assert(0);};
