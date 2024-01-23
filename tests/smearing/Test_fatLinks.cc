@@ -51,12 +51,6 @@ struct ConfParameters: Serializable {
     }
 };
 
-//
-// one method: input --> fat
-// another   : input --> long (naik)
-// another   : input --> unitarize
-//
-
 
 void testSmear(GridCartesian& GRID, LatticeGaugeFieldD Umu, LatticeGaugeFieldD Usmr, LatticeGaugeFieldD Unaik, 
                LatticeGaugeFieldD Ucontrol, Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) {
@@ -79,7 +73,7 @@ void testSmear(GridCartesian& GRID, LatticeGaugeFieldD Umu, LatticeGaugeFieldD U
         } else {
             Grid_error(" |Umu-Unaik|/|Umu| = ",absDiff);
         }
-    hisq_fat.projectU3(Uproj,Usmr);
+    hisq_fat.projectU3(Uproj,Ucontrol);
 //        NerscIO::writeConfiguration(Unaik,"nersc.l8t4b3360.naik");
     }
 }

@@ -330,7 +330,7 @@ public:
     //          IN--u_mu
     void projectU3(GF& u_proj, GF& u_mu) const {
 
-        LF V(u_mu.Grid()), Q(u_mu.Grid()), sqrtQinv(u_mu.Grid()), id_3(u_mu.Grid());
+        LF V(u_mu.Grid()), Q(u_mu.Grid()), sqrtQinv(u_mu.Grid()), id_3(u_mu.Grid()), diff(u_mu.Grid());
         CF c0(u_mu.Grid()), c1(u_mu.Grid()), c2(u_mu.Grid()), g0(u_mu.Grid()), g1(u_mu.Grid()), 
            g2(u_mu.Grid()), S(u_mu.Grid()), R(u_mu.Grid()), theta(u_mu.Grid()), u(u_mu.Grid()), 
            v(u_mu.Grid()), w(u_mu.Grid()), den(u_mu.Grid()), f0(u_mu.Grid()), f1(u_mu.Grid()), 
@@ -338,18 +338,22 @@ public:
 
         // Follow MILC 10.1103/PhysRevD.82.074501, eqs (B2-B3) and (C1-C8)
         for (int mu = 0; mu < Nd; mu++) {
-            V     = PeekIndex<LorentzIndex>(u_mu, mu);
-            Q     = adj(V)*V;
-            c0    =        real(trace(Q));
-            c1    = (1/2.)*real(trace(Q*Q));
-            c2    = (1/3.)*real(trace(Q*Q*Q));
-            S     = (1/3.)*c1-(1/18.)*c0*c0;
-            R     = (1/2.)*c2-(1/3. )*c0*c1+(1/27.)*c0*c0*c0;
-            theta = acos(R*pow(S,-1.5));
-            g0    = (1/3.)*c0+2.*sqrt(S)*cos((1/3.)*theta-2*M_PI/3.);
-            g1    = (1/3.)*c0+2.*sqrt(S)*cos((1/3.)*theta          );
-            g2    = (1/3.)*c0+2.*sqrt(S)*cos((1/3.)*theta+2*M_PI/3.);
-//            if (fabs(Q.determinant()/(g0*g1*g2)-1.0) > 1e-5) {}
+            V  = PeekIndex<LorentzIndex>(u_mu, mu);
+            Q  = adj(V)*V;
+            c0 =        real(trace(Q));
+            c1 = (1/2.)*real(trace(Q*Q));
+            c2 = (1/3.)*real(trace(Q*Q*Q));
+            S  = (1/3.)*c1-(1/18.)*c0*c0;
+            if (norm2(S)<1e-28) {
+                g0 = (1/3.)*c0; g1 = g0; g2 = g1;
+            } else {
+                R     = (1/2.)*c2-(1/3. )*c0*c1+(1/27.)*c0*c0*c0;
+                theta = acos(R*pow(S,-1.5));
+                g0    = (1/3.)*c0+2.*sqrt(S)*cos((1/3.)*theta-2*M_PI/3.);
+                g1    = (1/3.)*c0+2.*sqrt(S)*cos((1/3.)*theta          );
+                g2    = (1/3.)*c0+2.*sqrt(S)*cos((1/3.)*theta+2*M_PI/3.);
+            }
+//            if (fabs(Q.determinant()/(g0*g1*g2)-1.0) > 1e-5) { SVD }
             u     = sqrt(g0) + sqrt(g1) + sqrt(g2);
             v     = sqrt(g0*g1) + sqrt(g0*g2) + sqrt(g1*g2);
             w     = sqrt(g0*g1*g2);
@@ -360,6 +364,7 @@ public:
             id_3  = 1.;
 
             sqrtQinv = f0*id_3 + f1*Q + f2*Q*Q;
+
             PokeIndex<LorentzIndex>(u_proj, V*sqrtQinv, mu);
         }
     };
