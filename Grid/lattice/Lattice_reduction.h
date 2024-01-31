@@ -27,6 +27,7 @@ Author: Christoph Lehner <christoph@lhnr.de>
 
 #if defined(GRID_CUDA)||defined(GRID_HIP)
 #include <Grid/lattice/Lattice_reduction_gpu.h>
+#include <Grid/lattice/Lattice_slicesum_gpu.h>
 #endif
 #if defined(GRID_SYCL)
 #include <Grid/lattice/Lattice_reduction_sycl.h>
