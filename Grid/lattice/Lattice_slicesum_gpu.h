@@ -4,8 +4,9 @@
 #include <cub/cub.cuh>
 #define gpucub cub
 #define gpuMalloc cudaMalloc
-#define gpuMemcpyDtoHAsync cudaMemcpyDtoHAsync
-#define gpuMemcpyHtoDAsync cudaMemcpyHtoDAsync
+#define gpuMemcpyAsync cudaMemcpyAsync
+#define gpuMemcpyDeviceToHost cudaMemcpyDeviceToHost
+#define gpuMemcpyHostToDevice cudaMemcpyHostToDevice
 #define gpuError_t cudaError_t
 #define gpuSuccess cudaSuccess
 
@@ -14,8 +15,9 @@
 #include <hipcub/hipcub.hpp>
 #define gpucub hipcub
 #define gpuMalloc hipMalloc
-#define gpuMemcpyDtoHAsync hipMemcpyDtoHAsync
-#define gpuMemcpyHtoDAsync hipMemcpyHtoDAsync
+#define gpuMemcpyAsync hipMemcpyAsync
+#define gpuMemcpyDeviceToHost hipMemcpyDeviceToHost
+#define gpuMemcpyHostToDevice hipMemcpyHostToDevice
 #define gpuError_t hipError_t
 #define gpuSuccess hipSuccess
 
@@ -71,7 +73,7 @@ template<class vobj> inline void sliceSumGpu(const Lattice<vobj> &Data,std::vect
   int* d_offsets;
 
   std::vector<int> offsets(rd+1,0);
-  
+
   for (int i = 0; i < offsets.size(); i++) {
     offsets[i] = i*subvol_size;
   }
@@ -90,7 +92,7 @@ template<class vobj> inline void sliceSumGpu(const Lattice<vobj> &Data,std::vect
   }
 
   //copy offsets to device
-  gpuErr = gpuMemcpyHtoDAsync(d_offsets,&offsets[0],sizeof(int)*(rd+1),computeStream);
+  gpuErr = gpuMemcpyAsync(d_offsets,&offsets[0],sizeof(int)*(rd+1),gpuMemcpyHostToDevice,computeStream);
   if (gpuErr != gpuSuccess) {
     std::cout << GridLogError << "Lattice_slicesum_gpu.h: Encountered error during gpuMemcpy (d_offsets)! Error: " << gpuErr <<std::endl;
     exit(EXIT_FAILURE);
@@ -132,7 +134,7 @@ template<class vobj> inline void sliceSumGpu(const Lattice<vobj> &Data,std::vect
     exit(EXIT_FAILURE);
   }
   
-  gpuErr = gpuMemcpyDtoHAsync(&lvSum[0],d_out,rd*sizeof(vobj),computeStream);
+  gpuErr = gpuMemcpyAsync(&lvSum[0],d_out,rd*sizeof(vobj),gpuMemcpyDeviceToHost,computeStream);
   if (gpuErr!=gpuSuccess) {
     std::cout << GridLogError << "Lattice_slicesum_gpu.h: Encountered error during gpuMemcpy (d_out)! Error: " << gpuErr <<std::endl;
     exit(EXIT_FAILURE);
