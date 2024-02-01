@@ -29,29 +29,42 @@ int main (int argc, char ** argv) {
       sliceSumGpu(test_data,reduction_result,0);
     }
 
-
+    int trace_id = traceStart("sliceSum benchmark");
     for (int i = 0; i < Nd; i++) {
-        RealD t=-usecond();
-        sliceSum(test_data,reduction_reference,i);
-        t+=usecond();
-        std::cout << " sliceSum took "<<t<<" usecs"<<std::endl;
-        
-        RealD tgpu=-usecond();
-        tracePush("sliceSumGpu");
-        sliceSumGpu(test_data,reduction_result,i);
-        tracePop("sliceSumGpu");
-        tgpu+=usecond();
-        std::cout <<" sliceSumGpu took "<<tgpu<<" usecs"<<std::endl;
 
-    for(int t=0;t<reduction_reference.size();t++){
-      auto diff = reduction_reference[t]-reduction_result[t];
-      // std::cout << "Difference = " << diff <<std::endl;
+      RealD t=-usecond();
 
-      assert(abs(TensorRemove(diff)) < 1e-8 );
-    }
+      tracePush("sliceSum");
+      sliceSum(test_data,reduction_reference,i);
+      tracePop("sliceSum");
+
+      t+=usecond();
+
+      std::cout << GridLogMessage << " sliceSum took "<<t<<" usecs"<<std::endl;
+      
+      
+      RealD tgpu=-usecond();
+
+      tracePush("sliceSumGpu");
+      sliceSumGpu(test_data,reduction_result,i);
+      tracePop("sliceSumGpu");
+
+      tgpu+=usecond();
+
+      std::cout << GridLogMessage <<" sliceSumGpu took "<<tgpu<<" usecs"<<std::endl;
+
+
+      for(int t=0;t<reduction_reference.size();t++) {
+
+        auto diff = reduction_reference[t]-reduction_result[t];
+        assert(abs(TensorRemove(diff)) < 1e-8 );
+
+      }
 
     
     }
+    traceStop(trace_id);
+    
     Grid_finalize();
     return 0;
 }
