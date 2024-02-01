@@ -44,8 +44,9 @@ int main (int argc, char ** argv) {
         std::cout <<" sliceSumGpu took "<<tgpu<<" usecs"<<std::endl;
 
     for(int t=0;t<reduction_reference.size();t++){
-
       auto diff = reduction_reference[t]-reduction_result[t];
+      // std::cout << "Difference = " << diff <<std::endl;
+
       assert(abs(TensorRemove(diff)) < 1e-8 );
     }
 
