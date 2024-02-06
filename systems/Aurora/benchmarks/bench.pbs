@@ -1,12 +1,10 @@
 #!/bin/bash
 
 ## qsub -q EarlyAppAccess -A Aurora_Deployment -I -l select=1 -l walltime=60:00
-
 #PBS -q EarlyAppAccess
 #PBS -l select=1
 #PBS -l walltime=01:00:00
-##PBS -A Aurora_Deployment
-#PBS -A LatticeQCD_aesp
+#PBS -A LatticeQCD_aesp_CNDA
 
 HDIR=/home/paboyle/
 #module use /soft/testing/modulefiles/
@@ -48,7 +46,6 @@ echo "OMP_PROC_BIND=$OMP_PROC_BIND OMP_PLACES=$OMP_PLACES"
 
 CMD="mpiexec -np ${NTOTRANKS} -ppn ${NRANKS} -d ${NDEPTH} --cpu-bind=depth -envall \
 	     ./gpu_tile_compact.sh \
-	./Benchmark_comms_host_device --mpi 1.1.2.6 --grid 32.24.32.192 \
+	./Benchmark_memory_bandwidth --mpi 1.1.2.6 --grid 32.24.32.192 \
 	--shm-mpi 1 --shm 2048 --device-mem 32000 --accelerator-threads 32"
-
 $CMD
