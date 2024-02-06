@@ -26,7 +26,7 @@ int main (int argc, char ** argv) {
 
     //warmup
     for (int sweeps = 0; sweeps < 5; sweeps++) {
-      sliceSumGpu(test_data,reduction_result,0);
+      reduction_result = sliceSumGpu(test_data,0);
     }
 
     int trace_id = traceStart("sliceSum benchmark");
@@ -46,7 +46,7 @@ int main (int argc, char ** argv) {
       RealD tgpu=-usecond();
 
       tracePush("sliceSumGpu");
-      sliceSumGpu(test_data,reduction_result,i);
+      reduction_result = sliceSumGpu(test_data,i);
       tracePop("sliceSumGpu");
 
       tgpu+=usecond();

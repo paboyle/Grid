@@ -256,12 +256,12 @@ NAMESPACE_END(Grid);
 #if 0
 #include <CL/sycl.hpp>
 #include <CL/sycl/usm.hpp>
-#include <level_zero/ze_api.h>
+#include <ze_api.h>
 #include <CL/sycl/backend/level_zero.hpp>
 #else
 #include <sycl/CL/sycl.hpp>
 #include <sycl/usm.hpp>
-#include <level_zero/ze_api.h>
+#include <ze_api.h>
 #include <sycl/ext/oneapi/backend/level_zero.hpp>
 #endif
 

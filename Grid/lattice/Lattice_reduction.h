@@ -31,6 +31,7 @@ Author: Christoph Lehner <christoph@lhnr.de>
 #endif
 #if defined(GRID_SYCL)
 #include <Grid/lattice/Lattice_reduction_sycl.h>
+#include <Grid/lattice/Lattice_slicesum_sycl.h>
 #endif
 
 NAMESPACE_BEGIN(Grid);
@@ -504,6 +505,20 @@ sliceSum(const Lattice<vobj> &Data,int orthogdim)
   sliceSum(Data,result,orthogdim);
   return result;
 }
+
+template<class vobj> inline
+std::vector<typename vobj::scalar_object> 
+sliceSumGpu(const Lattice<vobj> &Data,int orthogdim)
+{
+  std::vector<typename vobj::scalar_object> result;
+  #if defined(GRID_CUDA) || defined(GRID_HIP)
+  sliceSumGpu(Data,result,orthogdim);
+  #elif defined(GRID_SYCL)
+  sliceSum_sycl(Data,result,orthogdim);
+  #endif
+  return result;
+}
+
 
 template<class vobj>
 static void sliceInnerProductVector( std::vector<ComplexD> & result, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int orthogdim) 

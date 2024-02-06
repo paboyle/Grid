@@ -177,13 +177,4 @@ template<class vobj> inline void sliceSumGpu(const Lattice<vobj> &Data,std::vect
   grid->GlobalSumVector(ptr, words);
 }
 
-template<class vobj> inline
-std::vector<typename vobj::scalar_object> 
-sliceSumGpu(const Lattice<vobj> &Data,int orthogdim)
-{
-  std::vector<typename vobj::scalar_object> result;
-  sliceSumGpu(Data,result,orthogdim);
-  return result;
-}
-
 NAMESPACE_END(Grid);
