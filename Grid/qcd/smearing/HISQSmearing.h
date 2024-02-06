@@ -118,10 +118,11 @@ public:
     void smear(GF& u_smr, GF& u_naik, GF& u_thin) const {
 
         SmearingParameters lt = this->_linkTreatment;
+        auto grid = this->_grid;
 
         // Create a padded cell of extra padding depth=1 and fill the padding.
         int depth = 1;
-        PaddedCell Ghost(depth,this->_grid);
+        PaddedCell Ghost(depth,grid);
         GF Ughost = Ghost.Exchange(u_thin);
 
         // This is where auxiliary N-link fields and the final smear will be stored. 
@@ -285,9 +286,9 @@ public:
         u_smr = Ghost.Extract(Ughost_fat) + lt.c_1*u_thin;
 
         // Load up U and V std::vectors to access thin and smeared links.
-        std::vector<LF> U(Nd, u_thin.Grid());
-        std::vector<LF> V(Nd, u_smr.Grid());
-        std::vector<LF> Vnaik(Nd, u_naik.Grid());
+        std::vector<LF> U(Nd, grid);
+        std::vector<LF> V(Nd, grid);
+        std::vector<LF> Vnaik(Nd, grid);
         for (int mu = 0; mu < Nd; mu++) {
             U[mu] = PeekIndex<LorentzIndex>(u_thin, mu);
             V[mu] = PeekIndex<LorentzIndex>(u_smr, mu);
@@ -330,11 +331,11 @@ public:
     //          IN--u_mu
     void projectU3(GF& u_proj, GF& u_mu) const {
 
-        LF V(u_mu.Grid()), Q(u_mu.Grid()), sqrtQinv(u_mu.Grid()), id_3(u_mu.Grid()), diff(u_mu.Grid());
-        CF c0(u_mu.Grid()), c1(u_mu.Grid()), c2(u_mu.Grid()), g0(u_mu.Grid()), g1(u_mu.Grid()), 
-           g2(u_mu.Grid()), S(u_mu.Grid()), R(u_mu.Grid()), theta(u_mu.Grid()), u(u_mu.Grid()), 
-           v(u_mu.Grid()), w(u_mu.Grid()), den(u_mu.Grid()), f0(u_mu.Grid()), f1(u_mu.Grid()), 
-           f2(u_mu.Grid());
+        auto grid = this->_grid;
+
+        LF V(grid), Q(grid), sqrtQinv(grid), id_3(grid), diff(grid);
+        CF c0(grid), c1(grid), c2(grid), g0(grid), g1(grid), g2(grid), S(grid), R(grid), theta(grid), 
+           u(grid), v(grid), w(grid), den(grid), f0(grid), f1(grid), f2(grid);
 
         // Follow MILC 10.1103/PhysRevD.82.074501, eqs (B2-B3) and (C1-C8)
         for (int mu = 0; mu < Nd; mu++) {
