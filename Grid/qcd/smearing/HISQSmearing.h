@@ -153,17 +153,17 @@ public:
         // This loop handles 3-, 5-, and 7-link constructs, minus Lepage and Naik.
         for(int mu=0;mu<Nd;mu++) {
 
-            // Create the accessors
-            autoView(U_v       , Ughost       , AcceleratorRead);
-            autoView(U_fat_v   , Ughost_fat   , CpuWrite);
-            autoView(U_3link_v , Ughost_3link , CpuWrite);
-            autoView(U_5linkA_v, Ughost_5linkA, CpuWrite);
-            autoView(U_5linkB_v, Ughost_5linkB, CpuWrite);
-
             // TODO: This approach is slightly memory inefficient. It uses 25% extra memory 
             Ughost_3link =Zero();
             Ughost_5linkA=Zero();
             Ughost_5linkB=Zero();
+
+            // Create the accessors
+            autoView(U_v       , Ughost       , AcceleratorRead);
+            autoView(U_fat_v   , Ughost_fat   , AcceleratorWrite);
+            autoView(U_3link_v , Ughost_3link , AcceleratorWrite);
+            autoView(U_5linkA_v, Ughost_5linkA, AcceleratorWrite);
+            autoView(U_5linkB_v, Ughost_5linkB, AcceleratorWrite);
 
             // We infer some types that will be needed in the calculation.
             typedef decltype(gStencil.GetEntry(0,0)) stencilElement;
