@@ -154,7 +154,7 @@ public:
         for(int mu=0;mu<Nd;mu++) {
 
             // Create the accessors
-            autoView(U_v       , Ughost       , CpuRead);
+            autoView(U_v       , Ughost       , AcceleratorRead);
             autoView(U_fat_v   , Ughost_fat   , CpuWrite);
             autoView(U_3link_v , Ughost_3link , CpuWrite);
             autoView(U_5linkA_v, Ughost_5linkA, CpuWrite);
@@ -171,8 +171,10 @@ public:
             stencilElement SE0, SE1, SE2, SE3, SE4, SE5;
             U3matrix U0, U1, U2, U3, U4, U5, W;
 
+            int Nsites = U_v.size();
 
-            for(int site=0;site<U_v.size();site++){ // ----------- 3-link constructs
+            accelerator_for(site,Nsites,Simd:Nsimd(),{ // ----------- 3-link constructs
+//            for(int site=0;site<Nsites;site++){ // ----------- 3-link constructs
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
                     int s = stencilIndex(mu,nu);
@@ -202,11 +204,18 @@ public:
 
                     // Save 3-link construct for later and add to smeared field.
                     U_3link_v[x](nu) = W;
-                    U_fat_v[x](mu)   = U_fat_v[x](mu) + lt.c_3*W;
-                }
-            }
 
-            for(int site=0;site<U_v.size();site++){ // ----------- 5-link
+                    // The index operator (x) returns the coalesced read on GPU. The view [] index returns 
+                    // a reference to the vector object. The [x](mu) returns a reference to the densely 
+                    // packed (contiguous in memory) mu-th element of the vector object. On CPU, 
+                    // coalescedRead/Write is the identity mapping assigning vector object to vector object.
+                    // But on GPU it's non-trivial and maps scalar object to vector object and vice versa.
+                    coalescedWrite(U_fat_v[x](mu), U_fat_v(x)(mu) + lt.c_3*W);
+                }
+            })
+
+            accelerator_for(site,Nsites,Simd:Nsimd(),{ // ----------- 5-link 
+//            for(int site=0;site<Nsites;site++){ // ----------- 5-link
                 int sigmaIndex = 0;
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
@@ -235,14 +244,14 @@ public:
                             U_5linkB_v[x](rho) = W;
                         }    
 
-                        U_fat_v[x](mu) = U_fat_v[x](mu) + lt.c_5*W;
-
+                        coalescedWrite(U_fat_v[x](mu), U_fat_v(x)(mu) + lt.c_5*W);
                         sigmaIndex++;
                     }
                 }
-            }
+            })
 
-            for(int site=0;site<U_v.size();site++){ // ----------- 7-link
+            accelerator_for(site,Nsites,Simd:Nsimd(),{ // ----------- 7-link
+//            for(int site=0;site<Nsites;site++){ // ----------- 7-link
                 int sigmaIndex = 0;
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
@@ -273,12 +282,11 @@ public:
 
                         W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
-                        U_fat_v[x](mu) = U_fat_v[x](mu) + lt.c_7*W;
-
+                        coalescedWrite(U_fat_v[x](mu), U_fat_v(x)(mu) + lt.c_7*W);
                         sigmaIndex++;
                     }
                 }
-            }
+            })
 
         } // end mu loop
 
