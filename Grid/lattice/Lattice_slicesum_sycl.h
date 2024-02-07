@@ -14,7 +14,6 @@ inline void sliceSum_sycl(const Lattice<vobj> &Data, std::vector<typename vobj::
     const int Nd = grid->_ndimension;
     const size_t Nsimd = grid->Nsimd();
 
-
     assert(orthogdim >= 0);
     assert(orthogdim < Nd);
 
@@ -29,9 +28,6 @@ inline void sliceSum_sycl(const Lattice<vobj> &Data, std::vector<typename vobj::
     size_t subvol_size = e1*e2;
 
     vobj *mysum = (vobj *) malloc_shared(sizeof(vobj),*theGridAccelerator);
-    vobj vobj_zero;
-    zeroit(vobj_zero);
-
     
     result.resize(fd);
 
@@ -39,6 +35,8 @@ inline void sliceSum_sycl(const Lattice<vobj> &Data, std::vector<typename vobj::
     Vector<sobj> lsSum(ld,Zero());                    
     commVector<vobj> reduction_buffer(rd*subvol_size);
     ExtractBuffer<sobj> extracted(Nsimd);      
+    vobj vobj_zero;
+    zeroit(vobj_zero);
 
     for(int r=0;r<rd;r++){
         lvSum[r]=Zero();
@@ -46,12 +44,9 @@ inline void sliceSum_sycl(const Lattice<vobj> &Data, std::vector<typename vobj::
 
     auto rb_p = &reduction_buffer[0];
 
-    
-
-
     autoView(Data_v, Data, AcceleratorRead);
 
-    //prepare reduction buffer (can i use this with sycl backend?)
+    //prepare reduction buffer 
     accelerator_for2d( s,subvol_size, r,rd, Nsimd,{ 
     
         int n = s / e2;
@@ -64,9 +59,9 @@ inline void sliceSum_sycl(const Lattice<vobj> &Data, std::vector<typename vobj::
     });
   
     for (int r = 0; r < rd; r++) {
-
+        mysum[0] = vobj_zero; //dirty hack: cannot pass vobj_zero as identity to sycl::reduction as its not device_copyable
         theGridAccelerator->submit([&](cl::sycl::handler &cgh) {
-            auto Reduction = cl::sycl::reduction(mysum,vobj_zero,std::plus<>());
+            auto Reduction = cl::sycl::reduction(mysum,std::plus<>());
             cgh.parallel_for(cl::sycl::range<1>{subvol_size},
             Reduction,
             [=](cl::sycl::id<1> item, auto &sum) {
