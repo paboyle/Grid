@@ -36,7 +36,7 @@ directory
 #endif
 // second level EOFA
 #undef EOFA_H
-#define USE_OBC
+#undef USE_OBC
 #define DO_IMPLICIT
 
 NAMESPACE_BEGIN(Grid);
@@ -203,9 +203,9 @@ int main(int argc, char **argv) {
   HMCparams.MD.name          =std::string("ImplicitMinimumNorm2");
 #else
 //  typedef GenericHMCRunner<LeapFrog> HMCWrapper; 
-//  typedef GenericHMCRunner<ForceGradient> HMCWrapper; 
-  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper; 
-  HMCparams.MD.name          =std::string("MinimumNorm2");
+  typedef GenericHMCRunner<ForceGradient> HMCWrapper; 
+//  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper; 
+  HMCparams.MD.name          =std::string("ForceGradient");
 #endif
 
   std::cout << GridLogMessage<< HMCparams <<std::endl;
@@ -344,7 +344,7 @@ int main(int argc, char **argv) {
   ConjugateGradient<FermionField>      ActionCG(ActionStoppingCondition,MaxCGIterations);
   ConjugateGradient<FermionField>  DerivativeCG(DerivativeStoppingCondition,MaxCGIterations);
 #ifdef MIXED_PRECISION
-  const int MX_inner = 5000;
+  const int MX_inner = 50000;
 
   // Mixed precision EOFA
   LinearOperatorEOFAD Strange_LinOp_L (Strange_Op_L);

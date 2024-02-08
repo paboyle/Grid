@@ -83,7 +83,7 @@ int main(int argc, char **argv)
   // need wrappers of the fermionic classes 
   // that have a complex construction
   // standard
-  RealD beta = 6.4 ; 
+  RealD beta = 6.6 ; 
 
 #if 0
   WilsonGaugeActionR Waction(beta);

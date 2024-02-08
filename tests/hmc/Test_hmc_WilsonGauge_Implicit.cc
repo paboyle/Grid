@@ -30,7 +30,7 @@ directory
 /*  END LEGAL */
 #include <Grid/Grid.h>
 
-#define USE_OBC
+#undef USE_OBC
 #define DO_IMPLICIT
 
 
@@ -138,7 +138,7 @@ int main(int argc, char **argv)
   // that have a complex construction
   // standard
 
-  RealD beta = 6.4;
+  RealD beta = 6.6;
   std::cout << "Wilson Gauge beta= " <<beta <<std::endl;
 #ifndef USE_OBC
   WilsonGaugeActionR Waction(beta);

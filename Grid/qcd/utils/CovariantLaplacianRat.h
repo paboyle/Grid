@@ -148,116 +148,117 @@ public:
               GaugeField& der ,  std::vector< std::vector<GaugeLinkField> >& prev_solns ) {
 
 // get rid of this please
+    std::cout<<GridLogMessage << "LaplaceStart " <<std::endl;
     RealD fac =  - 1. / (double(4 * Nd)) ;
     RealD coef=0.5;
     LapStencil.GaugeImport(Usav);
     LapStencilF.GaugeImport(UsavF);
 
 
-for (int nu=0;nu<Nd;nu++){
-    GaugeLinkField right_nu = PeekIndex<LorentzIndex>(right, nu);
-    GaugeLinkField left_nu = PeekIndex<LorentzIndex>(left, nu);
-    GaugeLinkField LMinvMom(left.Grid());
-
-    GaugeLinkField GMom(left.Grid());
-    GaugeLinkField LMinvGMom(left.Grid());
-
-    GaugeLinkField AGMom(left.Grid());
-    GaugeLinkField MinvAGMom(left.Grid());
-    GaugeLinkField LMinvAGMom(left.Grid());
-
-    GaugeLinkField AMinvMom(left.Grid());
-    GaugeLinkField LMinvAMom(left.Grid());
-    GaugeLinkField temp(left.Grid());
-    GaugeLinkField temp2(left.Grid());
-
-    std::vector<GaugeLinkField> MinvMom(par.order,left.Grid());
-
-    GaugeLinkField MinvGMom(left.Grid());
-    GaugeLinkField Gtemp(left.Grid());
-    GaugeLinkField Gtemp2(left.Grid());
-
-
-    ConjugateGradient<GaugeLinkField> CG(par.tolerance,10000,false);
-//    ConjugateGradient<GaugeFieldF> CG_f(par.tolerance,10000,false);
-    LaplacianParams LapPar(0.0001, 1.0, 10000, 1e-8, 12, 64);
-
-    ChronoForecast< QuadLinearOperator<CovariantAdjointLaplacianStencil<Impl,GaugeLinkField>,GaugeLinkField> , GaugeLinkField> Forecast;
-
-    GMom = par.offset * right_nu;
-
-    for(int i =0;i<par.order;i++){
-    QuadLinearOperator<CovariantAdjointLaplacianStencil<Impl,typename Impl::LinkField>,GaugeLinkField> QuadOp(LapStencil,par.b0[i],fac*par.b1[i],fac*fac*par.b2);
-#if USE_CHRONO
-    MinvMom[i] = Forecast(QuadOp, right_nu, prev_solns[nu]);
-#endif
-#ifndef MIXED_CG
-    CG(QuadOp,right_nu,MinvMom[i]);
-#else
-    QuadLinearOperator<CovariantAdjointLaplacianStencil<ImplF,typename ImplF::LinkField>,GaugeLinkFieldF> QuadOpF(LapStencilF,par.b0[i],fac*par.b1[i],fac*fac*par.b2);
-//    QuadLinearOperator<LaplacianAdjointField<ImplF>,GaugeLinkFieldF> QuadOpF(LapStencilF,par.b0[i],par.b1[i],par.b2);
-    MixedPrecisionConjugateGradient<GaugeLinkField,GaugeLinkFieldF> MixedCG(par.tolerance,10000,10000,grid_f,QuadOpF,QuadOp);
-    MixedCG.InnerTolerance=par.tolerance;
-    MixedCG(right_nu,MinvMom[i]);
-#endif
-#if USE_CHRONO
-    prev_solns[nu].push_back(MinvMom[i]);
-#endif
+    for (int nu=0;nu<Nd;nu++){
+        GaugeLinkField right_nu = PeekIndex<LorentzIndex>(right, nu);
+        GaugeLinkField left_nu = PeekIndex<LorentzIndex>(left, nu);
+        GaugeLinkField LMinvMom(left.Grid());
     
-    GMom += par.a0[i]*MinvMom[i]; 
-    LapStencil.M(MinvMom[i],Gtemp2);
-    GMom += par.a1[i]*fac*Gtemp2; 
+        GaugeLinkField GMom(left.Grid());
+        GaugeLinkField LMinvGMom(left.Grid());
+    
+        GaugeLinkField AGMom(left.Grid());
+        GaugeLinkField MinvAGMom(left.Grid());
+        GaugeLinkField LMinvAGMom(left.Grid());
+    
+        GaugeLinkField AMinvMom(left.Grid());
+        GaugeLinkField LMinvAMom(left.Grid());
+        GaugeLinkField temp(left.Grid());
+        GaugeLinkField temp2(left.Grid());
+    
+        std::vector<GaugeLinkField> MinvMom(par.order,left.Grid());
+    
+        GaugeLinkField MinvGMom(left.Grid());
+        GaugeLinkField Gtemp(left.Grid());
+        GaugeLinkField Gtemp2(left.Grid());
+    
+    
+        ConjugateGradient<GaugeLinkField> CG(par.tolerance,10000,false);
+    //    ConjugateGradient<GaugeFieldF> CG_f(par.tolerance,10000,false);
+        LaplacianParams LapPar(0.0001, 1.0, 10000, 1e-8, 12, 64);
+    
+        ChronoForecast< QuadLinearOperator<CovariantAdjointLaplacianStencil<Impl,GaugeLinkField>,GaugeLinkField> , GaugeLinkField> Forecast;
+    
+        GMom = par.offset * right_nu;
+    
+        for(int i =0;i<par.order;i++){
+        QuadLinearOperator<CovariantAdjointLaplacianStencil<Impl,typename Impl::LinkField>,GaugeLinkField> QuadOp(LapStencil,par.b0[i],fac*par.b1[i],fac*fac*par.b2);
+    #if USE_CHRONO
+        MinvMom[i] = Forecast(QuadOp, right_nu, prev_solns[nu]);
+    #endif
+    #ifndef MIXED_CG
+        CG(QuadOp,right_nu,MinvMom[i]);
+    #else
+        QuadLinearOperator<CovariantAdjointLaplacianStencil<ImplF,typename ImplF::LinkField>,GaugeLinkFieldF> QuadOpF(LapStencilF,par.b0[i],fac*par.b1[i],fac*fac*par.b2);
+    //    QuadLinearOperator<LaplacianAdjointField<ImplF>,GaugeLinkFieldF> QuadOpF(LapStencilF,par.b0[i],par.b1[i],par.b2);
+        MixedPrecisionConjugateGradient<GaugeLinkField,GaugeLinkFieldF> MixedCG(par.tolerance,10000,10000,grid_f,QuadOpF,QuadOp);
+        MixedCG.InnerTolerance=par.tolerance;
+        MixedCG(right_nu,MinvMom[i]);
+    #endif
+    #if USE_CHRONO
+        prev_solns[nu].push_back(MinvMom[i]);
+    #endif
+        
+        GMom += par.a0[i]*MinvMom[i]; 
+        LapStencil.M(MinvMom[i],Gtemp2);
+        GMom += par.a1[i]*fac*Gtemp2; 
+        }
+        for(int i =0;i<par.order;i++){
+        QuadLinearOperator<CovariantAdjointLaplacianStencil<Impl,typename Impl::LinkField>,GaugeLinkField> QuadOp(LapStencil,par.b0[i],fac*par.b1[i],fac*fac*par.b2);
+    
+        MinvGMom = Forecast(QuadOp, GMom, prev_solns[nu]);
+    #ifndef MIXED_CG
+        CG(QuadOp,GMom,MinvGMom);
+        LapStencil.M(MinvGMom, Gtemp2); LMinvGMom=fac*Gtemp2;
+        CG(QuadOp,right_nu,MinvMom[i]);
+    #else
+        QuadLinearOperator<CovariantAdjointLaplacianStencil<ImplF,typename ImplF::LinkField>,GaugeLinkFieldF> QuadOpF(LapStencilF,par.b0[i],fac*par.b1[i],fac*fac*par.b2);
+    //    QuadLinearOperator<LaplacianAdjointField<ImplF>,GaugeLinkFieldF> QuadOpF(LapStencilF,par.b0[i],par.b1[i],par.b2);
+        MixedPrecisionConjugateGradient<GaugeLinkField,GaugeLinkFieldF> MixedCG(par.tolerance,10000,10000,grid_f,QuadOpF,QuadOp);
+        MixedCG.InnerTolerance=par.tolerance;
+        MixedCG(GMom,MinvGMom);
+        LapStencil.M(MinvGMom, Gtemp2); LMinvGMom=fac*Gtemp2;
+    //    Laplacian.M(MinvGMom, LMinvGMom);
+        MixedCG(right_nu,MinvMom[i]);
+    #endif
+    #if USE_CHRONO
+        prev_solns[nu].push_back(MinvGMom);
+    #endif
+    
+        LapStencil.M(MinvMom[i], Gtemp2); LMinvMom=fac*Gtemp2;
+        AMinvMom = par.a1[i]*LMinvMom;
+        AMinvMom += par.a0[i]*MinvMom[i];
+    
+        LapStencil.M(AMinvMom, Gtemp2); LMinvAMom=fac*Gtemp2;
+        LapStencil.M(MinvGMom, Gtemp2); temp=fac*Gtemp2;
+        MinvAGMom = par.a1[i]*temp;
+        MinvAGMom += par.a0[i]*MinvGMom;
+        LapStencil.M(MinvAGMom, Gtemp2); LMinvAGMom=fac*Gtemp2;
+    
+    
+        GaugeField tempDer(left.Grid());
+        std::cout<<GridLogMessage << "force contraction "<< i <<std::endl;
+    //    roctxRangePushA("RMHMC force contraction");
+        MDerivLink(GMom,MinvMom[i],tempDer); der += coef*2*par.a1[i]*tempDer;
+        MDerivLink(left_nu,MinvGMom,tempDer); der += coef*2*par.a1[i]*tempDer;
+        MDerivLink(LMinvAGMom,MinvMom[i],tempDer); der += coef*-2.*par.b2*tempDer;
+        MDerivLink(LMinvAMom,MinvGMom,tempDer); der += coef*-2.*par.b2*tempDer;
+        MDerivLink(MinvAGMom,LMinvMom,tempDer); der += coef*-2.*par.b2*tempDer;
+        MDerivLink(AMinvMom,LMinvGMom,tempDer); der += coef*-2.*par.b2*tempDer;
+        MDerivLink(MinvAGMom,MinvMom[i],tempDer); der += coef*-2.*par.b1[i]*tempDer;
+        MDerivLink(AMinvMom,MinvGMom,tempDer); der += coef*-2.*par.b1[i]*tempDer;
+        std::cout<<GridLogMessage << "coef =  force contraction "<< i << "done "<< coef <<std::endl;
+    //    roctxRangePop();
+    
+        }
     }
-    for(int i =0;i<par.order;i++){
-    QuadLinearOperator<CovariantAdjointLaplacianStencil<Impl,typename Impl::LinkField>,GaugeLinkField> QuadOp(LapStencil,par.b0[i],fac*par.b1[i],fac*fac*par.b2);
-
-    MinvGMom = Forecast(QuadOp, GMom, prev_solns[nu]);
-#ifndef MIXED_CG
-    CG(QuadOp,GMom,MinvGMom);
-    LapStencil.M(MinvGMom, Gtemp2); LMinvGMom=fac*Gtemp2;
-    CG(QuadOp,right_nu,MinvMom[i]);
-#else
-    QuadLinearOperator<CovariantAdjointLaplacianStencil<ImplF,typename ImplF::LinkField>,GaugeLinkFieldF> QuadOpF(LapStencilF,par.b0[i],fac*par.b1[i],fac*fac*par.b2);
-//    QuadLinearOperator<LaplacianAdjointField<ImplF>,GaugeLinkFieldF> QuadOpF(LapStencilF,par.b0[i],par.b1[i],par.b2);
-    MixedPrecisionConjugateGradient<GaugeLinkField,GaugeLinkFieldF> MixedCG(par.tolerance,10000,10000,grid_f,QuadOpF,QuadOp);
-    MixedCG.InnerTolerance=par.tolerance;
-    MixedCG(GMom,MinvGMom);
-    LapStencil.M(MinvGMom, Gtemp2); LMinvGMom=fac*Gtemp2;
-//    Laplacian.M(MinvGMom, LMinvGMom);
-    MixedCG(right_nu,MinvMom[i]);
-#endif
-#if USE_CHRONO
-    prev_solns[nu].push_back(MinvGMom);
-#endif
-
-    LapStencil.M(MinvMom[i], Gtemp2); LMinvMom=fac*Gtemp2;
-    AMinvMom = par.a1[i]*LMinvMom;
-    AMinvMom += par.a0[i]*MinvMom[i];
-
-    LapStencil.M(AMinvMom, Gtemp2); LMinvAMom=fac*Gtemp2;
-    LapStencil.M(MinvGMom, Gtemp2); temp=fac*Gtemp2;
-    MinvAGMom = par.a1[i]*temp;
-    MinvAGMom += par.a0[i]*MinvGMom;
-    LapStencil.M(MinvAGMom, Gtemp2); LMinvAGMom=fac*Gtemp2;
-
-
-    GaugeField tempDer(left.Grid());
-    std::cout<<GridLogMessage << "force contraction "<< i <<std::endl;
-//    roctxRangePushA("RMHMC force contraction");
-    MDerivLink(GMom,MinvMom[i],tempDer); der += coef*2*par.a1[i]*tempDer;
-    MDerivLink(left_nu,MinvGMom,tempDer); der += coef*2*par.a1[i]*tempDer;
-    MDerivLink(LMinvAGMom,MinvMom[i],tempDer); der += coef*-2.*par.b2*tempDer;
-    MDerivLink(LMinvAMom,MinvGMom,tempDer); der += coef*-2.*par.b2*tempDer;
-    MDerivLink(MinvAGMom,LMinvMom,tempDer); der += coef*-2.*par.b2*tempDer;
-    MDerivLink(AMinvMom,LMinvGMom,tempDer); der += coef*-2.*par.b2*tempDer;
-    MDerivLink(MinvAGMom,MinvMom[i],tempDer); der += coef*-2.*par.b1[i]*tempDer;
-    MDerivLink(AMinvMom,MinvGMom,tempDer); der += coef*-2.*par.b1[i]*tempDer;
-    std::cout<<GridLogMessage << "coef =  force contraction "<< i << "done "<< coef <<std::endl;
-//    roctxRangePop();
-
-    }
-}
-
+    std::cout<<GridLogMessage << "LaplaceEnd " <<std::endl;
 //  exit(-42);
   }
 
@@ -283,45 +284,47 @@ for (int nu=0;nu<Nd;nu++){
 
   void MSquareRootInt(LaplacianRatParams &par, GaugeField& P, std::vector< std::vector<GaugeLinkField> > & prev_solns ){
 
+    std::cout<<GridLogMessage << "LaplaceStart " <<std::endl;
     RealD fac = -1. / (double(4 * Nd));
     LapStencil.GaugeImport(Usav);
     LapStencilF.GaugeImport(UsavF);
-for(int nu=0; nu<Nd;nu++){
-    GaugeLinkField P_nu = PeekIndex<LorentzIndex>(P, nu);
-    GaugeLinkField Gp(P.Grid());
-    Gp = par.offset * P_nu;
-    ConjugateGradient<GaugeLinkField> CG(par.tolerance,10000);
-//    ConjugateGradient<GaugeLinkFieldF> CG_f(1.0e-8,10000);
-
-    ChronoForecast< QuadLinearOperator<CovariantAdjointLaplacianStencil<Impl,typename Impl::LinkField>,GaugeLinkField> , GaugeLinkField> Forecast;
-
-    GaugeLinkField Gtemp(P.Grid());
-    GaugeLinkField Gtemp2(P.Grid());
-
-
-    for(int i =0;i<par.order;i++){
-    QuadLinearOperator<CovariantAdjointLaplacianStencil<Impl,typename Impl::LinkField>,GaugeLinkField> QuadOp(LapStencil,par.b0[i],fac*par.b1[i],fac*fac*par.b2);
-
-    Gtemp = Forecast(QuadOp, P_nu, prev_solns[nu]);
-#ifndef MIXED_CG
-    CG(QuadOp,P_nu,Gtemp);
-#else
-    QuadLinearOperator<CovariantAdjointLaplacianStencil<ImplF,typename ImplF::LinkField>,GaugeLinkFieldF> QuadOpF(LapStencilF,par.b0[i],fac*par.b1[i],fac*fac*par.b2);
-//    QuadLinearOperator<LaplacianAdjointField<ImplF>,GaugeFieldF> QuadOpF(LapStencilF,par.b0[i],par.b1[i],par.b2);
-    MixedPrecisionConjugateGradient<GaugeLinkField,GaugeLinkFieldF> MixedCG(par.tolerance,10000,10000,grid_f,QuadOpF,QuadOp);
-    MixedCG.InnerTolerance=par.tolerance;
-    MixedCG(P_nu,Gtemp);
-#endif
-#if USE_CHRONO
-    prev_solns[nu].push_back(Gtemp);
-#endif
-
-    Gp += par.a0[i]*Gtemp; 
-    LapStencil.M(Gtemp,Gtemp2);
-    Gp += par.a1[i]*fac*Gtemp2; 
+    for(int nu=0; nu<Nd;nu++){
+        GaugeLinkField P_nu = PeekIndex<LorentzIndex>(P, nu);
+        GaugeLinkField Gp(P.Grid());
+        Gp = par.offset * P_nu;
+        ConjugateGradient<GaugeLinkField> CG(par.tolerance,10000);
+    //    ConjugateGradient<GaugeLinkFieldF> CG_f(1.0e-8,10000);
+    
+        ChronoForecast< QuadLinearOperator<CovariantAdjointLaplacianStencil<Impl,typename Impl::LinkField>,GaugeLinkField> , GaugeLinkField> Forecast;
+    
+        GaugeLinkField Gtemp(P.Grid());
+        GaugeLinkField Gtemp2(P.Grid());
+    
+    
+        for(int i =0;i<par.order;i++){
+        QuadLinearOperator<CovariantAdjointLaplacianStencil<Impl,typename Impl::LinkField>,GaugeLinkField> QuadOp(LapStencil,par.b0[i],fac*par.b1[i],fac*fac*par.b2);
+    
+        Gtemp = Forecast(QuadOp, P_nu, prev_solns[nu]);
+    #ifndef MIXED_CG
+        CG(QuadOp,P_nu,Gtemp);
+    #else
+        QuadLinearOperator<CovariantAdjointLaplacianStencil<ImplF,typename ImplF::LinkField>,GaugeLinkFieldF> QuadOpF(LapStencilF,par.b0[i],fac*par.b1[i],fac*fac*par.b2);
+    //    QuadLinearOperator<LaplacianAdjointField<ImplF>,GaugeFieldF> QuadOpF(LapStencilF,par.b0[i],par.b1[i],par.b2);
+        MixedPrecisionConjugateGradient<GaugeLinkField,GaugeLinkFieldF> MixedCG(par.tolerance,10000,10000,grid_f,QuadOpF,QuadOp);
+        MixedCG.InnerTolerance=par.tolerance;
+        MixedCG(P_nu,Gtemp);
+    #endif
+    #if USE_CHRONO
+        prev_solns[nu].push_back(Gtemp);
+    #endif
+    
+        Gp += par.a0[i]*Gtemp; 
+        LapStencil.M(Gtemp,Gtemp2);
+        Gp += par.a1[i]*fac*Gtemp2; 
+        }
+        PokeIndex<LorentzIndex>(P, Gp, nu);
     }
-    PokeIndex<LorentzIndex>(P, Gp, nu);
-}
+    std::cout<<GridLogMessage << "LaplaceEnd " <<std::endl;
   }
 
   void MSquareRoot(GaugeField& P){
