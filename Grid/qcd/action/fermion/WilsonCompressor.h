@@ -391,6 +391,23 @@ public:
     default: 	assert(0);	        break;
     }
   }
+
+  template<class hsp,class fsp>
+  static accelerator void Recon(fsp &result,const hsp &in,int mu,int dag){
+    int mudag=dag? mu : (mu+Nd)%(2*Nd);
+    switch(mudag) {
+    case Xp:	spReconXp(result,in);	break;
+    case Yp:	spReconYp(result,in);	break;
+    case Zp:	spReconZp(result,in);	break;
+    case Tp:	spReconTp(result,in);	break;
+    case Xm:	spReconXm(result,in);	break;
+    case Ym:	spReconYm(result,in);	break;
+    case Zm:	spReconZm(result,in);	break;
+    case Tm:	spReconTm(result,in);	break;
+    default: 	assert(0);	        break;
+    }
+  }
+
 };
 template<typename HCS,typename HS,typename S> using WilsonCompressor = WilsonCompressorTemplate<HCS,HS,S,WilsonProjector>;
 

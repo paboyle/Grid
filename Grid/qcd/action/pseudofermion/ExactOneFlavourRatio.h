@@ -126,6 +126,11 @@ NAMESPACE_BEGIN(Grid);
 
       const FermionField &getPhi() const{ return Phi; }
 
+      //Set the pseudofermion Phi field for testing or other purposes
+      void setPhi(const FermionField &phi_in){
+	Phi = phi_in;
+      }
+
       virtual std::string action_name() { return "ExactOneFlavourRatioPseudoFermionAction"; }
 
       virtual std::string LogParameters() {

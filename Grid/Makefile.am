@@ -56,6 +56,8 @@ include Eigen.inc
 
 extra_sources+=$(WILS_FERMION_FILES)
 extra_sources+=$(STAG_FERMION_FILES)
+extra_sources+=$(XCONJ_FERMION_FILES)
+
 if BUILD_ZMOBIUS
   extra_sources+=$(ZWILS_FERMION_FILES)
 endif
