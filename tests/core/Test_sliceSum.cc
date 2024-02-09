@@ -103,7 +103,8 @@ int main (int argc, char ** argv) {
       reduction_result = sliceSum(test_data,0);
     }
 
-    int trace_id = traceStart("sliceSum benchmark");
+    int trace_id = traceStart("sliceSum benchmark - ComplexD");
+    std::cout << GridLogMessage << "Testing ComplexD" << std::endl;
     for (int i = 0; i < Nd; i++) {
 
       RealD t=-usecond();
@@ -138,6 +139,116 @@ int main (int argc, char ** argv) {
     
     }
     traceStop(trace_id);
+
+    LatticeColourVectorD test_data_cv(&Grid);
+    gaussian(pRNG,test_data_cv);
+
+    std::vector<ColourVectorD> reduction_reference_cv;
+    std::vector<ColourVectorD> reduction_result_cv;
+
+    //warmup
+    for (int sweeps = 0; sweeps < 5; sweeps++) {
+      reduction_result_cv = sliceSum(test_data_cv,0);
+    }
+    trace_id = traceStart("sliceSum benchmark - ColourVectorD");
+
+    std::cout << GridLogMessage << "Testing ColourVectorD" << std::endl;
+    for (int i = 0; i < Nd; i++) {
+
+      RealD t=-usecond();
+
+      tracePush("sliceSum");
+      sliceSumCPU(test_data_cv,reduction_reference_cv,i);
+      tracePop("sliceSum");
+
+      t+=usecond();
+      std::cout << GridLogMessage << "Orthog. dir. = " << i << std::endl;
+      std::cout << GridLogMessage << "CPU sliceSum took "<<t<<" usecs"<<std::endl;
+      
+      
+      RealD tgpu=-usecond();
+
+      tracePush("sliceSumGpu");
+      reduction_result_cv = sliceSum(test_data_cv,i);
+      tracePop("sliceSumGpu");
+
+      tgpu+=usecond();
+
+      std::cout << GridLogMessage <<"GPU sliceSum took "<<tgpu<<" usecs"<<std::endl<<std::endl;;
+
+
+      for(int t=0;t<reduction_reference_cv.size();t++) {
+
+        auto diff = reduction_reference_cv[t]-reduction_result_cv[t];
+        assert(abs(diff()()(0)) < 1e-8 );
+        assert(abs(diff()()(1)) < 1e-8 );
+        assert(abs(diff()()(2)) < 1e-8 );
+
+      }
+
+    
+    }
+    traceStop(trace_id);
+
+    LatticeSpinColourVectorD test_data_scv(&Grid);
+    gaussian(pRNG,test_data_scv);
+
+    std::vector<SpinColourVectorD> reduction_reference_scv;
+    std::vector<SpinColourVectorD> reduction_result_scv;
+
+    //warmup
+    for (int sweeps = 0; sweeps < 5; sweeps++) {
+      reduction_result_scv = sliceSum(test_data_scv,0);
+    }
+    trace_id = traceStart("sliceSum benchmark - SpinColourVectorD");
+
+    std::cout << GridLogMessage << "Testing SpinColourVectorD" << std::endl;
+    for (int i = 0; i < Nd; i++) {
+
+      RealD t=-usecond();
+
+      tracePush("sliceSum");
+      sliceSumCPU(test_data_scv,reduction_reference_scv,i);
+      tracePop("sliceSum");
+
+      t+=usecond();
+      std::cout << GridLogMessage << "Orthog. dir. = " << i << std::endl;
+      std::cout << GridLogMessage << "CPU sliceSum took "<<t<<" usecs"<<std::endl;
+      
+      
+      RealD tgpu=-usecond();
+
+      tracePush("sliceSumGpu");
+      reduction_result_scv = sliceSum(test_data_scv,i);
+      tracePop("sliceSumGpu");
+
+      tgpu+=usecond();
+
+      std::cout << GridLogMessage <<"GPU sliceSum took "<<tgpu<<" usecs"<<std::endl<<std::endl;;
+
+
+      for(int t=0;t<reduction_reference_scv.size();t++) {
+
+        auto diff = reduction_reference_scv[t]-reduction_result_scv[t];
+        assert(abs(diff()(0)(0)) < 1e-8 );
+        assert(abs(diff()(0)(1)) < 1e-8 );
+        assert(abs(diff()(0)(2)) < 1e-8 );
+        assert(abs(diff()(1)(0)) < 1e-8 );
+        assert(abs(diff()(1)(1)) < 1e-8 );
+        assert(abs(diff()(1)(2)) < 1e-8 );    
+        assert(abs(diff()(2)(0)) < 1e-8 );
+        assert(abs(diff()(2)(1)) < 1e-8 );
+        assert(abs(diff()(2)(2)) < 1e-8 );    
+        assert(abs(diff()(3)(0)) < 1e-8 );
+        assert(abs(diff()(3)(1)) < 1e-8 );
+        assert(abs(diff()(3)(2)) < 1e-8 );
+
+      }
+
+    
+    }
+    traceStop(trace_id);
+
     
     Grid_finalize();
     return 0;
