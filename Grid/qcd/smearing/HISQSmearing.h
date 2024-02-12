@@ -173,7 +173,7 @@ public:
 
             int Nsites = U_v.size();
 
-            accelerator_for(site,Nsites,Simd:Nsimd(),{ // ----------- 3-link constructs
+            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 3-link constructs
 //            for(int site=0;site<Nsites;site++){ // ----------- 3-link constructs
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
@@ -214,7 +214,7 @@ public:
                 }
             })
 
-            accelerator_for(site,Nsites,Simd:Nsimd(),{ // ----------- 5-link 
+            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 5-link 
 //            for(int site=0;site<Nsites;site++){ // ----------- 5-link
                 int sigmaIndex = 0;
                 for(int nu=0;nu<Nd;nu++) {
@@ -250,7 +250,7 @@ public:
                 }
             })
 
-            accelerator_for(site,Nsites,Simd:Nsimd(),{ // ----------- 7-link
+            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 7-link
 //            for(int site=0;site<Nsites;site++){ // ----------- 7-link
                 int sigmaIndex = 0;
                 for(int nu=0;nu<Nd;nu++) {
