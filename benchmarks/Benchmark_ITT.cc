@@ -768,7 +768,7 @@ public:
 	
 	double volume=1;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
 //	double flops=(1146.0*volume)/2;
-	double flops=(2*8*216.0*volume);
+	double flops=(2*2*8*216.0*volume);
 	double mf_hi, mf_lo, mf_err;
 	
 	timestat.statistics(t_time);
