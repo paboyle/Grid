@@ -642,178 +642,6 @@ public:
     return mflops_best;
   }
 
-  static double LaplaceNo(int L)
-  {
-    double mflops;
-    double mflops_best = 0;
-    double mflops_worst= 0;
-    std::vector<double> mflops_all;
-
-    ///////////////////////////////////////////////////////
-    // Set/Get the layout & grid size
-    ///////////////////////////////////////////////////////
-    int threads = GridThread::GetThreads();
-    Coordinate mpi = GridDefaultMpi(); assert(mpi.size()==4);
-    Coordinate local({L,L,L,L});
-    Coordinate latt4({local[0]*mpi[0],local[1]*mpi[1],local[2]*mpi[2],local[3]*mpi[3]});
-    
-    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(latt4,
-								       GridDefaultSimd(Nd,vComplex::Nsimd()),
-								       GridDefaultMpi());
-    uint64_t NP = TmpGrid->RankCount();
-    uint64_t NN = TmpGrid->NodeCount();
-    NN_global=NN;
-    uint64_t SHM=NP/NN;
-
-
-    ///////// Welcome message ////////////
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << "Benchmark ImprovedStaggered on "<<L<<"^4 local volume "<<std::endl;
-    std::cout<<GridLogMessage << "* Global volume  : "<<GridCmdVectorIntToString(latt4)<<std::endl;
-    std::cout<<GridLogMessage << "* ranks          : "<<NP  <<std::endl;
-    std::cout<<GridLogMessage << "* nodes          : "<<NN  <<std::endl;
-    std::cout<<GridLogMessage << "* ranks/node     : "<<SHM <<std::endl;
-    std::cout<<GridLogMessage << "* ranks geom     : "<<GridCmdVectorIntToString(mpi)<<std::endl;
-    std::cout<<GridLogMessage << "* Using "<<threads<<" threads"<<std::endl;
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-
-    ///////// Lattice Init ////////////
-    GridCartesian         * FGrid   = SpaceTimeGrid::makeFourDimGrid(latt4, GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
-    GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(FGrid);
-    
-    ///////// RNG Init ////////////
-    std::vector<int> seeds4({1,2,3,4});
-    GridParallelRNG          RNG4(FGrid);  RNG4.SeedFixedIntegers(seeds4);
-    std::cout << GridLogMessage << "Initialised RNGs" << std::endl;
-
-    RealD mass=0.1;
-    RealD c1=9.0/8.0;
-    RealD c2=-1.0/24.0;
-    RealD u0=1.0;
-
-    typedef ImprovedStaggeredFermionF Action;
-    typedef typename Action::FermionField Fermion; 
-    typedef LatticeGaugeFieldF Gauge;
-
-    typedef typename  PeriodicGimplF::Field GaugeFieldF;
-    typedef typename  PeriodicGimplF::LinkField GaugeLinkFieldF;
-    
-    Gauge Umu(FGrid);  SU<Nc>::HotConfiguration(RNG4,Umu); 
-
-    typename Action::ImplParams params;
-    Action Ds(Umu,Umu,*FGrid,*FrbGrid,mass,c1,c2,u0,params);
-
-    ///////// Source preparation ////////////
-    Fermion src   (FGrid); random(RNG4,src);
-    Fermion src_e (FrbGrid);
-    Fermion src_o (FrbGrid);
-    Fermion r_e   (FrbGrid);
-    Fermion r_o   (FrbGrid);
-    Fermion r_eo  (FGrid);
-  
-    {
-
-      pickCheckerboard(Even,src_e,src);
-      pickCheckerboard(Odd,src_o,src);
-      CovariantAdjointLaplacianStencil<PeriodicGimplF,typename PeriodicGimplF::LinkField> LapStencilF(FGrid);
-      QuadLinearOperator<CovariantAdjointLaplacianStencil<PeriodicGimplF,GaugeLinkFieldF>,GaugeLinkFieldF> QuadOpF(LapStencilF,c2,c1,1.);
-    
-      const int num_cases = 4;
-      std::string fmt("G/S/C ; G/O/C ; G/S/S ; G/O/S ");
-      
-      controls Cases [] = {
-	{  StaggeredKernelsStatic::OptGeneric   ,  StaggeredKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicyConcurrent  },
-	{  StaggeredKernelsStatic::OptGeneric   ,  StaggeredKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicyConcurrent  },
-	{  StaggeredKernelsStatic::OptGeneric   ,  StaggeredKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{  StaggeredKernelsStatic::OptGeneric   ,  StaggeredKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  }
-      }; 
-
-      for(int c=0;c<num_cases;c++) {
-	
-	StaggeredKernelsStatic::Comms = Cases[c].CommsOverlap;
-	StaggeredKernelsStatic::Opt   = Cases[c].Opt;
-	CartesianCommunicator::SetCommunicatorPolicy(Cases[c].CommsAsynch);
-
-      GaugeLinkFieldF src_l = PeekIndex<LorentzIndex>(Umu, 0);
-
-      SU<Nc>::HotConfiguration(RNG4,Umu);
-      LapStencilF.GaugeImport(Umu);
-
-      GaugeLinkFieldF r_l(FGrid); 
-      
-	std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-	if ( StaggeredKernelsStatic::Opt == StaggeredKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc StaggeredKernels" <<std::endl;
-	if ( StaggeredKernelsStatic::Comms == StaggeredKernelsStatic::CommsAndCompute ) std::cout << GridLogMessage<< "* Using Overlapped Comms/Compute" <<std::endl;
-	if ( StaggeredKernelsStatic::Comms == StaggeredKernelsStatic::CommsThenCompute) std::cout << GridLogMessage<< "* Using sequential Comms/Compute" <<std::endl;
-	std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
-	std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-	
-	int nwarm = 10;
-	double t0=usecond();
-	FGrid->Barrier();
-	for(int i=0;i<nwarm;i++){
-	  Ds.DhopEO(src_o,r_e,DaggerNo);
-//          QuadOpF.HermOp(src_l,r_l);
-	}
-	ConjugateGradient<GaugeLinkFieldF> CG(1e-7,10000,false);
-
-	FGrid->Barrier();
-	double t1=usecond();
-	uint64_t ncall = 500;
-
-	FGrid->Broadcast(0,&ncall,sizeof(ncall));
-
-	//	std::cout << GridLogMessage << " Estimate " << ncall << " calls per second"<<std::endl;
-
-	time_statistics timestat;
-	std::vector<double> t_time(ncall);
-	for(uint64_t i=0;i<ncall;i++){
-	  t0=usecond();
-	  Ds.DhopEO(src_o,r_e,DaggerNo);
-	  t1=usecond();
-	  t_time[i] = t1-t0;
-          QuadOpF.HermOp(src_l,r_l);
-	}
-//	CG(QuadOpF,src_l,r_l);
-	FGrid->Barrier();
-	
-	double volume=1;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-	double flops=(1146.0*volume)/2;
-	double mf_hi, mf_lo, mf_err;
-	
-	timestat.statistics(t_time);
-	mf_hi = flops/timestat.min;
-	mf_lo = flops/timestat.max;
-	mf_err= flops/timestat.min * timestat.err/timestat.mean;
-
-	mflops = flops/timestat.mean;
-	mflops_all.push_back(mflops);
-	if ( mflops_best == 0   ) mflops_best = mflops;
-	if ( mflops_worst== 0   ) mflops_worst= mflops;
-	if ( mflops>mflops_best ) mflops_best = mflops;
-	if ( mflops<mflops_worst) mflops_worst= mflops;
-	
-	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s =   "<< mflops << " ("<<mf_err<<") " << mf_lo<<"-"<<mf_hi <<std::endl;
-	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s per rank   "<< mflops/NP<<std::endl;
-	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s per node   "<< mflops/NN<<std::endl;
-      
-      }
-
-      std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-      std::cout<<GridLogMessage << L<<"^4  Deo Best  mflop/s        =   "<< mflops_best << " ; " << mflops_best/NN<<" per node " <<std::endl;
-      std::cout<<GridLogMessage << L<<"^4  Deo Worst mflop/s        =   "<< mflops_worst<< " ; " << mflops_worst/NN<<" per node " <<std::endl;
-      std::cout<<GridLogMessage <<fmt << std::endl;
-      std::cout<<GridLogMessage ;
-
-      for(int i=0;i<mflops_all.size();i++){
-	std::cout<<mflops_all[i]/NN<<" ; " ;
-      }
-      std::cout<<std::endl;
-    }
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    return mflops_best;
-  }
-
   static double Laplace(int L)
   {
     double mflops;
@@ -998,7 +826,7 @@ int main (int argc, char ** argv)
   int do_comms =1;
 
   int sel=4;
-  std::vector<int> L_list({16,24,32});
+  std::vector<int> L_list({8,12,16,24,32});
   int selm1=sel-1;
 
   std::vector<double> wilson;
@@ -1011,7 +839,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << " Wilson dslash 4D vectorised" <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   for(int l=0;l<L_list.size();l++){
- //   wilson.push_back(Benchmark::DWF(Ls,L_list[l]));
+    wilson.push_back(Benchmark::DWF(Ls,L_list[l]));
   }
 
   Ls=12;
@@ -1019,8 +847,8 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << " Domain wall dslash 4D vectorised" <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   for(int l=0;l<L_list.size();l++){
-//    double result = Benchmark::DWF(Ls,L_list[l]) ;
-//    dwf4.push_back(result);
+    double result = Benchmark::DWF(Ls,L_list[l]) ;
+    dwf4.push_back(result);
   }
 
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
@@ -1036,16 +864,15 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   for(int l=0;l<L_list.size();l++){
     double result = Benchmark::Laplace(L_list[l]) ;
-//    exit(-42);
     lap.push_back(result);
   }
 
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Summary table Ls="<<Ls <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "L \t\t Wilson \t\t DWF4 \t\t Staggered" <<std::endl;
+  std::cout<<GridLogMessage << "L \t\t Wilson \t\t DWF4 \t\t Staggered \t\t Quad Laplace" <<std::endl;
   for(int l=0;l<L_list.size();l++){
-    std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]<<" \t\t "<<dwf4[l] << " \t\t "<< staggered[l]<<std::endl;
+    std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]<<" \t\t "<<dwf4[l] << " \t\t "<< staggered[l]<< " \t\t "<< lap[l]<< std::endl;
   }
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
