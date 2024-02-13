@@ -109,8 +109,7 @@ public:
   };
   
   virtual GridBase *Grid(void) { return grid; };
-
-  virtual void  M    (const Field &_in, Field &_out)
+  virtual void  Morig(const Field &_in, Field &_out)
   {
     ///////////////////////////////////////////////
     // Halo exchange for this geometry of stencil
@@ -120,7 +119,8 @@ public:
     ///////////////////////////////////
     // Arithmetic expressions
     ///////////////////////////////////
-    auto st = Stencil.View(AcceleratorRead);
+//    auto st = Stencil.View(AcceleratorRead);
+    autoView( st     , Stencil    , AcceleratorRead);
     auto buf = st.CommBuf();
 
     autoView( in     , _in    , AcceleratorRead);
@@ -172,7 +172,165 @@ public:
 
 	coalescedWrite(out[ss], res,lane);
     });
+
   };
+  virtual void  Mnew (const Field &_in, Field &_out)
+  {
+    ///////////////////////////////////////////////
+    // Halo exchange for this geometry of stencil
+    ///////////////////////////////////////////////
+//    Stencil.HaloExchange(_in, Compressor);
+      std::vector<std::vector<CommsRequest_t> > requests;
+      Stencil.Prepare();
+  {
+    GRID_TRACE("Laplace Gather");
+    Stencil.HaloGather(_in,Compressor);
+  }
+
+  tracePush("Laplace Communication");
+  Stencil.CommunicateBegin(requests);
+  {
+    GRID_TRACE("MergeSHM");
+    Stencil.CommsMergeSHM(Compressor);
+  }
+    
+
+    ///////////////////////////////////
+    // Arithmetic expressions
+    ///////////////////////////////////
+//    auto st = Stencil.View(AcceleratorRead);
+    autoView( st     , Stencil    , AcceleratorRead);
+    auto buf = st.CommBuf();
+
+    autoView( in     , _in    , AcceleratorRead);
+    autoView( out    , _out   , AcceleratorWrite);
+    autoView( U     , Uds    , AcceleratorRead);
+
+    typedef typename Field::vector_object        vobj;
+    typedef decltype(coalescedRead(in[0]))    calcObj;
+    typedef decltype(coalescedRead(U[0](0))) calcLink;
+
+    const int      Nsimd = vobj::Nsimd();
+    const uint64_t NN = grid->oSites();
+
+    accelerator_for( ss, NN, Nsimd, {
+
+	StencilEntry *SE;
+	
+	const int lane=acceleratorSIMTlane(Nsimd);
+
+	calcObj chi;
+	calcObj res;
+	calcObj Uchi;
+	calcObj Utmp;
+	calcObj Utmp2;
+	calcLink UU;
+	calcLink Udag;
+	int ptype;
+
+	res                 = coalescedRead(in[ss])*(-8.0);
+
+
+        SE = st.GetEntry(ptype, 0, ss);				 
+        if (SE->_is_local ) {
+	LEG_LOAD_MULT(0,Xp);
+	}
+        SE = st.GetEntry(ptype, 1, ss);				 
+        if (SE->_is_local ) {
+	LEG_LOAD_MULT(1,Yp);
+	}
+        SE = st.GetEntry(ptype, 2, ss);				 
+        if (SE->_is_local ) {
+	LEG_LOAD_MULT(2,Zp);
+	}
+        SE = st.GetEntry(ptype, 3, ss);				 
+        if (SE->_is_local ) {
+	LEG_LOAD_MULT(3,Tp);
+	}
+        SE = st.GetEntry(ptype, 4, ss);				 
+        if (SE->_is_local ) {
+	LEG_LOAD_MULT(4,Xm);
+	}
+        SE = st.GetEntry(ptype, 5, ss);				 
+        if (SE->_is_local ) {
+	LEG_LOAD_MULT(5,Ym);
+	}
+        SE = st.GetEntry(ptype, 6, ss);				 
+        if (SE->_is_local ) {
+	LEG_LOAD_MULT(6,Zm);
+	}
+        SE = st.GetEntry(ptype, 7, ss);				 
+        if (SE->_is_local ) {
+	LEG_LOAD_MULT(7,Tm);
+	}
+
+	coalescedWrite(out[ss], res,lane);
+    });
+
+    Stencil.CommunicateComplete(requests);
+  tracePop("Communication");
+
+  {
+    GRID_TRACE("Merge");
+    Stencil.CommsMerge(Compressor);
+  }
+
+
+    accelerator_for( ss, NN, Nsimd, {
+
+	StencilEntry *SE;
+	
+	const int lane=acceleratorSIMTlane(Nsimd);
+
+	calcObj chi;
+	calcObj res;
+	calcObj Uchi;
+	calcObj Utmp;
+	calcObj Utmp2;
+	calcLink UU;
+	calcLink Udag;
+	int ptype;
+
+//	res                 = coalescedRead(in[ss])*(-8.0);
+	res                 = coalescedRead(out[ss]);
+
+        SE = st.GetEntry(ptype, 0, ss);				 
+        if ((SE->_is_local )==0){
+	LEG_LOAD_MULT(0,Xp);
+	}
+        SE = st.GetEntry(ptype, 1, ss);				 
+        if ((SE->_is_local )==0){
+	LEG_LOAD_MULT(1,Yp);
+	}
+        SE = st.GetEntry(ptype, 2, ss);				 
+        if ((SE->_is_local )==0){
+	LEG_LOAD_MULT(2,Zp);
+	}
+        SE = st.GetEntry(ptype, 3, ss);
+        if ((SE->_is_local )==0){
+	LEG_LOAD_MULT(3,Tp);
+	}
+        SE = st.GetEntry(ptype, 4, ss);
+        if ((SE->_is_local )==0){
+	LEG_LOAD_MULT(4,Xm);
+	}
+        SE = st.GetEntry(ptype, 5, ss);
+        if ((SE->_is_local )==0){
+	LEG_LOAD_MULT(5,Ym);
+	}
+        SE = st.GetEntry(ptype, 6, ss);
+        if ((SE->_is_local )==0){
+	LEG_LOAD_MULT(6,Zm);
+	}
+        SE = st.GetEntry(ptype, 7, ss);
+        if ((SE->_is_local )==0){
+	LEG_LOAD_MULT(7,Tm);
+	}
+
+	coalescedWrite(out[ss], res,lane);
+    });
+  };
+  virtual void  M(const Field &in, Field &out) {Mnew(in,out);};
   virtual void  Mdag (const Field &in, Field &out) { M(in,out);}; // Laplacian is hermitian
   virtual  void Mdiag    (const Field &in, Field &out)                  {assert(0);}; // Unimplemented need only for multigrid
   virtual  void Mdir     (const Field &in, Field &out,int dir, int disp){assert(0);}; // Unimplemented need only for multigrid

@@ -189,12 +189,12 @@ public:
     
         for(int i =0;i<par.order;i++){
         QuadLinearOperator<CovariantAdjointLaplacianStencil<Impl,typename Impl::LinkField>,GaugeLinkField> QuadOp(LapStencil,par.b0[i],fac*par.b1[i],fac*fac*par.b2);
-    #if USE_CHRONO
+#if USE_CHRONO
         MinvMom[i] = Forecast(QuadOp, right_nu, prev_solns[nu]);
-    #endif
-    #ifndef MIXED_CG
+#endif
+#ifndef MIXED_CG
         CG(QuadOp,right_nu,MinvMom[i]);
-    #else
+#else
         QuadLinearOperator<CovariantAdjointLaplacianStencil<ImplF,typename ImplF::LinkField>,GaugeLinkFieldF> QuadOpF(LapStencilF,par.b0[i],fac*par.b1[i],fac*fac*par.b2);
     //    QuadLinearOperator<LaplacianAdjointField<ImplF>,GaugeLinkFieldF> QuadOpF(LapStencilF,par.b0[i],par.b1[i],par.b2);
         MixedPrecisionConjugateGradient<GaugeLinkField,GaugeLinkFieldF> MixedCG(par.tolerance,10000,10000,grid_f,QuadOpF,QuadOp);
@@ -227,9 +227,9 @@ public:
     //    Laplacian.M(MinvGMom, LMinvGMom);
         MixedCG(right_nu,MinvMom[i]);
     #endif
-    #if USE_CHRONO
+#if USE_CHRONO
         prev_solns[nu].push_back(MinvGMom);
-    #endif
+#endif
     
         LapStencil.M(MinvMom[i], Gtemp2); LMinvMom=fac*Gtemp2;
         AMinvMom = par.a1[i]*LMinvMom;
