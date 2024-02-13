@@ -69,7 +69,7 @@ public:
   /*! Construct stout smearing object from explicitly specified rho matrix */
   Smear_Stout(const std::vector<double>& rho_)
     : OwnedBase{new Smear_APE<Gimpl>(rho_)}, SmearBase{OwnedBase.get()} {
-    std::cout << GridLogDebug << "Stout smearing constructor : Smear_Stout(const std::vector<double>& " << rho_ << " )" << std::endl
+    std::cout << GridLogDebug << "Stout smearing constructor : Smear_Stout(const std::vector<double>& " << rho_ << " )" << std::endl;
     assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
     }
 
