@@ -54,7 +54,7 @@ void appendShift(std::vector<Coordinate>& shifts, int dir, Args... args) {
 
 
 /*!  @brief figure out the stencil index from mu and nu */
-inline int stencilIndex(int mu, int nu) {
+accelerator_inline int stencilIndex(int mu, int nu) {
     // Nshifts depends on how you built the stencil
     int Nshifts = 6;
     return Nshifts*nu + Nd*Nshifts*mu;
