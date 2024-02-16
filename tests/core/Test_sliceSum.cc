@@ -140,19 +140,21 @@ int main (int argc, char ** argv) {
     }
     traceStop(trace_id);
 
-    LatticeColourVectorD test_data_cv(&Grid);
+    LatticeSpinVectorD test_data_cv(&Grid);
     gaussian(pRNG,test_data_cv);
 
-    std::vector<ColourVectorD> reduction_reference_cv;
-    std::vector<ColourVectorD> reduction_result_cv;
+    std::vector<SpinVectorD> reduction_reference_cv;
+    std::vector<SpinVectorD> reduction_result_cv;
 
     //warmup
     for (int sweeps = 0; sweeps < 5; sweeps++) {
       reduction_result_cv = sliceSum(test_data_cv,0);
     }
-    trace_id = traceStart("sliceSum benchmark - ColourVectorD");
+    trace_id = traceStart("sliceSum benchmark - SpinVectorD");
 
-    std::cout << GridLogMessage << "Testing ColourVectorD" << std::endl;
+    std::cout << GridLogMessage << "Testing SpinVectorD" << std::endl;
+    std::cout << GridLogMessage << "sizeof(SpinVectorD) = " << sizeof(SpinVectorD) << std::endl;
+    std::cout << GridLogMessage << "sizeof(vSpinVectorD) = " << sizeof(vSpinVectorD) << std::endl;
     for (int i = 0; i < Nd; i++) {
 
       RealD t=-usecond();
@@ -180,9 +182,10 @@ int main (int argc, char ** argv) {
       for(int t=0;t<reduction_reference_cv.size();t++) {
 
         auto diff = reduction_reference_cv[t]-reduction_result_cv[t];
-        assert(abs(diff()()(0)) < 1e-8 );
-        assert(abs(diff()()(1)) < 1e-8 );
-        assert(abs(diff()()(2)) < 1e-8 );
+        assert(abs(diff()(0)()) < 1e-8 );
+        assert(abs(diff()(1)()) < 1e-8 );
+        assert(abs(diff()(2)()) < 1e-8 );
+        assert(abs(diff()(3)()) < 1e-8 );
 
       }
 
@@ -203,6 +206,8 @@ int main (int argc, char ** argv) {
     trace_id = traceStart("sliceSum benchmark - SpinColourVectorD");
 
     std::cout << GridLogMessage << "Testing SpinColourVectorD" << std::endl;
+    std::cout << GridLogMessage << "sizeof(SpinColourVectorD) = " << sizeof(SpinColourVectorD) << std::endl;
+    std::cout << GridLogMessage << "sizeof(vSpinColourVectorD) = " << sizeof(vSpinColourVectorD) << std::endl;
     for (int i = 0; i < Nd; i++) {
 
       RealD t=-usecond();
@@ -230,6 +235,7 @@ int main (int argc, char ** argv) {
       for(int t=0;t<reduction_reference_scv.size();t++) {
 
         auto diff = reduction_reference_scv[t]-reduction_result_scv[t];
+        // std::cout << diff <<std::endl;
         assert(abs(diff()(0)(0)) < 1e-8 );
         assert(abs(diff()(0)(1)) < 1e-8 );
         assert(abs(diff()(0)(2)) < 1e-8 );
