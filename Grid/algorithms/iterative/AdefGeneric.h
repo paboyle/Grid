@@ -41,6 +41,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
    */
 NAMESPACE_BEGIN(Grid);
 
+
 template<class Field>
 class TwoLevelCG : public LinearFunction<Field>
 {
@@ -278,9 +279,9 @@ class TwoLevelCG : public LinearFunction<Field>
     //////////////////////////
     // x0 = Vstart -- possibly modify guess
     //////////////////////////
-    for(int rhs=0;rhs<nrhs;rhs++){
-      Vstart(x[rhs],src[rhs]);
+    Vstart(x,src);
 
+    for(int rhs=0;rhs<nrhs;rhs++){
       // r0 = b -A x0
       _FineLinop.HermOp(x[rhs],mmp[rhs][0]);
       axpy (r[rhs], -1.0,mmp[rhs][0], src[rhs]);    // Recomputes r=src-Ax0
@@ -399,12 +400,19 @@ class TwoLevelCG : public LinearFunction<Field>
 
   virtual void PcgM1(std::vector<Field> & in,std::vector<Field> & out)
   {
-    std::cout << "PcgM1 default (cheat) mrhs versoin"<<std::endl;
+    std::cout << "PcgM1 default (cheat) mrhs version"<<std::endl;
     for(int rhs=0;rhs<in.size();rhs++){
       this->PcgM1(in[rhs],out[rhs]);
     }
   }
   virtual void PcgM1(Field & in, Field & out)     =0;
+  virtual void Vstart(std::vector<Field> & x,std::vector<Field> & src)
+  {
+    std::cout << "Vstart default (cheat) mrhs version"<<std::endl;
+    for(int rhs=0;rhs<x.size();rhs++){
+      this->Vstart(x[rhs],src[rhs]);
+    }
+  }
   virtual void Vstart(Field & x,const Field & src)=0;
 
   virtual void PcgM2(const Field & in, Field & out) {
@@ -536,24 +544,67 @@ class TwoLevelADEF2mrhs : public TwoLevelADEF2<Field,CoarseField,Aggregation>
 public:
   GridBase *coarsegridmrhs;
   LinearFunction<CoarseField> &_CoarseSolverMrhs;
+  LinearFunction<CoarseField> &_CoarseSolverPreciseMrhs;
   LinearFunction<CoarseField> &_CoarseGuesser;
   TwoLevelADEF2mrhs(RealD tol,
 		    Integer maxit,
 		    LinearOperatorBase<Field>    &FineLinop,
 		    LinearFunction<Field>        &Smoother,
-		    LinearFunction<CoarseField>  &CoarseSolver,
-		    LinearFunction<CoarseField>  &CoarseSolverPrecise,
+		    //		    LinearFunction<CoarseField>  &CoarseSolver,
+		    //		    LinearFunction<CoarseField>  &CoarseSolverPrecise,
 		    LinearFunction<CoarseField>  &CoarseSolverMrhs,
+		    LinearFunction<CoarseField>  &CoarseSolverPreciseMrhs,
 		    LinearFunction<CoarseField>  &CoarseGuesser,
 		    GridBase *rhsgrid,
 		    Aggregation &Aggregates) :
-    TwoLevelADEF2<Field,CoarseField,Aggregation>(tol, maxit,FineLinop,Smoother,CoarseSolver,CoarseSolverPrecise,Aggregates),
+    TwoLevelADEF2<Field,CoarseField,Aggregation>(tol, maxit,FineLinop,Smoother,CoarseSolverMrhs,CoarseSolverPreciseMrhs,Aggregates),
     _CoarseSolverMrhs(CoarseSolverMrhs),
+    _CoarseSolverPreciseMrhs(CoarseSolverPreciseMrhs),
     _CoarseGuesser(CoarseGuesser)
   {
     coarsegridmrhs = rhsgrid;
   };
-  
+
+  virtual void Vstart(std::vector<Field> & x,std::vector<Field> & src)
+  {
+    int nrhs=x.size();
+    std::cout << GridLogMessage<<"HDCG: fPcg Vstart for "<<nrhs<<" right hand sides" <<std::endl;
+    ///////////////////////////////////
+    // Choose x_0 such that 
+    // x_0 = guess +  (A_ss^inv) r_s = guess + Ass_inv [src -Aguess]
+    //                               = [1 - Ass_inv A] Guess + Assinv src
+    //                               = P^T guess + Assinv src 
+    //                               = Vstart  [Tang notation]
+    // This gives:
+    // W^T (src - A x_0) = src_s - A guess_s - r_s
+    //                   = src_s - (A guess)_s - src_s  + (A guess)_s 
+    //                   = 0 
+    ///////////////////////////////////
+    CoarseField PleftProj(this->coarsegrid);
+    CoarseField PleftMss_proj(this->coarsegrid);
+
+    CoarseField PleftProjMrhs(this->coarsegridmrhs);
+    CoarseField PleftMss_projMrhs(this->coarsegridmrhs);
+
+    std::cout << GridLogMessage<<"HDCG: fPcg Vstart Mrhs projecting "<<std::endl;
+
+    for(int rhs=0;rhs<nrhs;rhs++) {
+      this->_Aggregates.ProjectToSubspace(PleftProj,src[rhs]);     // can optimise later
+      InsertSliceFast(PleftProj,PleftProjMrhs,rhs,0);
+      this->_CoarseGuesser(PleftProj,PleftMss_proj);
+      InsertSliceFast(PleftMss_proj,PleftMss_projMrhs,rhs,0);
+    }
+    
+    std::cout << GridLogMessage<<"HDCG: fPcg Vstart Mrhs coarse solve "<<std::endl;
+    this->_CoarseSolverPreciseMrhs(PleftProjMrhs,PleftMss_projMrhs); // Ass^{-1} r_s
+
+    std::cout << GridLogMessage<<"HDCG: fPcg Vstart promote "<<std::endl;
+    for(int rhs=0;rhs<nrhs;rhs++) {
+      ExtractSliceFast(PleftMss_proj,PleftMss_projMrhs,rhs,0);
+      this->_Aggregates.PromoteFromSubspace(PleftMss_proj,x[rhs]);
+    }
+  }
+
   virtual void PcgM1(std::vector<Field> & in,std::vector<Field> & out){
 
     int nrhs=in.size();
@@ -570,13 +621,35 @@ public:
     CoarseField PleftMss_projMrhs(this->coarsegridmrhs);
     std::cout << " mrhs Coarse ops "<<std::endl;
 
+    // Really want the coarse solver
+    // to do the guessing itself, knowing the eigenvectors.
+    // The projection to coarse space is in aggregates
+    // If the Aggregates have a layout change option
+    // they could formulate as a BLAS routine.
+    // Put the routines in this object
     for(int rhs=0;rhs<nrhs;rhs++) {
+
+      std::cout << GridLogMessage<<" Smoother for "<<rhs<<std::endl;
       this->_Smoother(in[rhs],Min[rhs]);
+
+      std::cout << GridLogMessage<<" HermOp for "<<rhs<<std::endl;
       this->_FineLinop.HermOp(Min[rhs],out[rhs]);
+
       axpy(tmp,-1.0,out[rhs],in[rhs]);          // tmp  = in - A Min
-      this->_Aggregates.ProjectToSubspace(PleftProj,tmp);     // can optimise later
+
+      // Was
+      //      this->_Aggregates.ProjectToSubspace(PleftProj,tmp);     // can optimise later
+      // Now:
+      std::cout << GridLogMessage<<" blockProject for "<<rhs<<std::endl;
+      blockProjectFast(PleftProj,tmp,this->_Aggregates.subspace);
+      
+      std::cout << GridLogMessage<<" InsertSlice for "<<rhs<<std::endl;
       InsertSlice(PleftProj,PleftProjMrhs,rhs,0);
+      
+      std::cout << GridLogMessage<<" CoarseGuesser for "<<rhs<<std::endl;
       this->_CoarseGuesser(PleftProj,PleftMss_proj);
+
+      std::cout << GridLogMessage<<" InsertSlice for "<<rhs<<std::endl;
       InsertSlice(PleftMss_proj,PleftMss_projMrhs,rhs,0);
     }
     MemoryManager::Print();
@@ -587,9 +660,9 @@ public:
     MemoryManager::Print();
 
     for(int rhs=0;rhs<nrhs;rhs++) {
-      //      std::cout << " Extract for "<<rhs<<std::endl;
+      std::cout << GridLogMessage<<" Extract for "<<rhs<<std::endl;
       ExtractSlice(PleftMss_proj,PleftMss_projMrhs,rhs,0);
-      //      std::cout << " Promote for "<<rhs<<std::endl;
+      std::cout << GridLogMessage<<" Promote for "<<rhs<<std::endl;
       this->_Aggregates.PromoteFromSubspace(PleftMss_proj,tmp);// tmp = Q[in - A Min]  
 								    //      std::cout << " add for "<<rhs<<std::endl;
       axpy(out[rhs],1.0,Min[rhs],tmp); // Min+tmp
