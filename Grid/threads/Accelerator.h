@@ -275,6 +275,7 @@ inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes
 }
 inline void acceleratorCopySynchronise(void) { cudaStreamSynchronize(copyStream); };
 
+
 inline int  acceleratorIsCommunicable(void *ptr)
 {
   //  int uvm=0;
@@ -533,6 +534,12 @@ inline void acceleratorCopySynchronise(void) { auto discard=hipStreamSynchronize
 
 #endif
 
+inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)
+{
+  acceleratorCopyDeviceToDeviceAsynch(from,to,bytes);
+  acceleratorCopySynchronise();
+}
+
 //////////////////////////////////////////////
 // CPU Target - No accelerator just thread instead
 //////////////////////////////////////////////
@@ -643,5 +650,18 @@ accelerator_inline void acceleratorFence(void)
 #endif
   return;
 }
+
+template<class T> void acceleratorPut(T& dev,T&host)
+{
+  acceleratorCopyToDevice(&host,&dev,sizeof(T));
+}
+template<class T> T acceleratorGet(T& dev)
+{
+  T host;
+  acceleratorCopyFromDevice(&dev,&host,sizeof(T));
+  return host;
+}
+
+
 
 NAMESPACE_END(Grid);
