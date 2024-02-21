@@ -55,9 +55,12 @@ NAMESPACE_BEGIN(Grid);
   typedef int32_t gridblasHandle_t;
 #endif
 
+enum GridBLASOperation_t { GridBLAS_OP_N, GridBLAS_OP_T, GridBLAS_OP_C } ;
+
 class GridBLAS {
 public:
 
+  
   static gridblasHandle_t gridblasHandle;
   static int            gridblasInit;
   
@@ -109,37 +112,71 @@ public:
     accelerator_barrier();
 #endif
   }
-  void benchmark(int nbasis, int nrhs, int coarseVol, int nstencil)
+  
+  void gemmBatched(int m,int n, int k,
+		   ComplexD alpha,
+		   deviceVector<ComplexD*> &Amk,  // pointer list to matrices
+		   deviceVector<ComplexD*> &Bkn,
+		   ComplexD beta,
+		   deviceVector<ComplexD*> &Cmn)
   {
-    int32_t N_A = nbasis*nbasis*coarseVol*nstencil;
-    int32_t N_B = nbasis*nrhs*coarseVol*nstencil; // One leg of stencil at a time
-    int32_t N_C = nbasis*nrhs*coarseVol*nstencil; 
-    deviceVector<ComplexD> A(N_A); acceleratorMemSet(&A[0],0,N_A*sizeof(ComplexD));
-    deviceVector<ComplexD> B(N_B); acceleratorMemSet(&B[0],0,N_B*sizeof(ComplexD));
-    deviceVector<ComplexD> C(N_C); acceleratorMemSet(&C[0],0,N_C*sizeof(ComplexD));
-    ComplexD alpha(1.0);
-    ComplexD beta (1.0);
-    for(int i=0;i<10;i++){
-      RealD t0 = usecond();
-      for(int s=0;s<nstencil;s++){
-	gemmStridedBatched(nbasis,nrhs,nbasis,
-			   alpha,
-			   &A[0], // m x k 
-			   &B[0], // k x n
-			   beta, 
-			   &C[0], // m x n
-			   coarseVol);
-      }
-      synchronise();
-      RealD t1 = usecond();
-      RealD flops = 8.0*nbasis*nbasis*nrhs*coarseVol*nstencil;
-      RealD bytes = 1.0*sizeof(ComplexD)*(nbasis*nbasis+nbasis*nrhs*3)*coarseVol*nstencil;
-      std::cout << " batched Blas call "<<i<<" "<< flops/(t1-t0)/1.e3 <<" GF/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
-      std::cout << " batched Blas call "<<i<<" "<< bytes/(t1-t0)/1.e3 <<" GB/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
-    }
+    gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N,
+		m,n,k,
+		alpha,
+		Amk,
+		Bkn,
+		beta,
+		Cmn);
+  }
+  void gemmBatched(int m,int n, int k,
+		   ComplexF alpha,
+		   deviceVector<ComplexF*> &Amk,  // pointer list to matrices
+		   deviceVector<ComplexF*> &Bkn,
+		   ComplexF beta,
+		   deviceVector<ComplexF*> &Cmn)
+  {
+    gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N,
+		m,n,k,
+		alpha,
+		Amk,
+		Bkn,
+		beta,
+		Cmn);
+  }
+  void gemmBatched(int m,int n, int k,
+		   RealD alpha,
+		   deviceVector<RealD*> &Amk,  // pointer list to matrices
+		   deviceVector<RealD*> &Bkn,
+		   RealD beta,
+		   deviceVector<RealD*> &Cmn)
+  {
+    gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N,
+		m,n,k,
+		alpha,
+		Amk,
+		Bkn,
+		beta,
+		Cmn);
+  }
+  void gemmBatched(int m,int n, int k,
+		   RealF alpha,
+		   deviceVector<RealF*> &Amk,  // pointer list to matrices
+		   deviceVector<RealF*> &Bkn,
+		   RealF beta,
+		   deviceVector<RealF*> &Cmn)
+  {
+    gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N,
+		m,n,k,
+		alpha,
+		Amk,
+		Bkn,
+		beta,
+		Cmn);
   }
 
-  void gemmBatched(int m,int n, int k,
+  void gemmBatched(GridBLASOperation_t OpA,
+		   GridBLASOperation_t OpB,
+		   int m,int n, int k,
 		   ComplexD alpha,
 		   deviceVector<ComplexD*> &Amk,  // pointer list to matrices
 		   deviceVector<ComplexD*> &Bkn,
@@ -148,23 +185,36 @@ public:
   {
     RealD t2=usecond();
     int32_t batchCount = Amk.size();
-    // Use C-row major storage, so transpose calls
+    assert(Bkn.size()==batchCount);
+    assert(Cmn.size()==batchCount);
+
     int lda = m; // m x k column major
     int ldb = k; // k x n column major
     int ldc = m; // m x b column major
+    if(OpA!=GridBLAS_OP_N)
+      lda = k;
+    if(OpB!=GridBLAS_OP_N)
+      ldb = n;
+    
     static deviceVector<ComplexD> alpha_p(1);
     static deviceVector<ComplexD> beta_p(1);
     // can prestore the 1 and the zero on device
     acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(ComplexD));
     acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(ComplexD));
     RealD t0=usecond();
-    //       std::cout << "hipblasZgemmBatched mnk  "<<m<<","<<n<<","<<k<<" count "<<batchCount<<std::endl;
-    assert(Bkn.size()==batchCount);
-    assert(Cmn.size()==batchCount);
+    //    std::cout << "ZgemmBatched mnk  "<<m<<","<<n<<","<<k<<" count "<<batchCount<<std::endl;
 #ifdef GRID_HIP
+    hipblasOperation_t hOpA;
+    hipblasOperation_t hOpB;
+    if ( OpA == GridBLAS_OP_N ) hOpA = HIPBLAS_OP_N;
+    if ( OpA == GridBLAS_OP_T ) hOpA = HIPBLAS_OP_T;
+    if ( OpA == GridBLAS_OP_C ) hOpA = HIPBLAS_OP_C;
+    if ( OpB == GridBLAS_OP_N ) hOpB = HIPBLAS_OP_N;
+    if ( OpB == GridBLAS_OP_T ) hOpB = HIPBLAS_OP_T;
+    if ( OpB == GridBLAS_OP_C ) hOpB = HIPBLAS_OP_C;
     auto err = hipblasZgemmBatched(gridblasHandle,
-				   HIPBLAS_OP_N,
-				   HIPBLAS_OP_N,
+				   hOpA,
+				   hOpB,
 				   m,n,k,
 				   (hipblasDoubleComplex *) &alpha_p[0],
 				   (hipblasDoubleComplex **)&Amk[0], lda,
@@ -176,9 +226,17 @@ public:
     assert(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
+    cublasOperation_t hOpA;
+    cublasOperation_t hOpB;
+    if ( OpA == GridBLAS_OP_N ) hOpA = CUBLAS_OP_N;
+    if ( OpA == GridBLAS_OP_T ) hOpA = CUBLAS_OP_T;
+    if ( OpA == GridBLAS_OP_C ) hOpA = CUBLAS_OP_C;
+    if ( OpB == GridBLAS_OP_N ) hOpB = CUBLAS_OP_N;
+    if ( OpB == GridBLAS_OP_T ) hOpB = CUBLAS_OP_T;
+    if ( OpB == GridBLAS_OP_C ) hOpB = CUBLAS_OP_C;
     auto err = cublasZgemmBatched(gridblasHandle,
-				  CUBLAS_OP_N,
-				  CUBLAS_OP_N,
+				  hOpA,
+				  hOpB,
 				  m,n,k,
 				  (cuDoubleComplex *) &alpha_p[0],
 				  (cuDoubleComplex **)&Amk[0], lda,
@@ -205,15 +263,18 @@ public:
       }
     }
 #endif
+    //    synchronise();
      RealD t1=usecond();
      RealD flops = 8.0*m*n*k*batchCount;
      RealD bytes = 1.0*sizeof(ComplexD)*(m*k+k*n+m*n)*batchCount;
-     //     std::cout <<GridLogPerformance<< " batched Blas copy "<<(t0-t2)/1.e3 <<" ms "<<std::endl;
-     //     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< flops/(t1-t0)/1.e3 <<" GF/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
-     //     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< bytes/(t1-t0)/1.e3 <<" GB/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
+     //     std::cout <<GridLogMessage<< " batched Blas copy "<<(t0-t2)/1.e3 <<" ms "<<std::endl;
+     //     std::cout <<GridLogMessage<< " batched Blas zGemm call "<<m<<","<<n<<","<<k<<" "<< flops/(t1-t0)/1.e3 <<" GF/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
+     //     std::cout <<GridLogMessage<< " batched Blas zGemm call "<<m<<","<<n<<","<<k<<" "<< bytes/(t1-t0)/1.e3 <<" GB/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
   }
 
-  void gemmBatched(int m,int n, int k,
+  void gemmBatched(GridBLASOperation_t OpA,
+		   GridBLASOperation_t OpB,
+		   int m,int n, int k,
 		   ComplexF alpha,
 		   deviceVector<ComplexF*> &Amk,  // pointer list to matrices
 		   deviceVector<ComplexF*> &Bkn,
@@ -222,23 +283,35 @@ public:
   {
     RealD t2=usecond();
     int32_t batchCount = Amk.size();
-    // Use C-row major storage, so transpose calls
+
     int lda = m; // m x k column major
     int ldb = k; // k x n column major
     int ldc = m; // m x b column major
+    if(OpA!=GridBLAS_OP_N)
+      lda = k;
+    if(OpB!=GridBLAS_OP_N)
+      ldb = n;
     static deviceVector<ComplexF> alpha_p(1);
     static deviceVector<ComplexF> beta_p(1);
     // can prestore the 1 and the zero on device
     acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(ComplexF));
     acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(ComplexF));
     RealD t0=usecond();
-    //       std::cout << "hipblasZgemmBatched mnk  "<<m<<","<<n<<","<<k<<" count "<<batchCount<<std::endl;
+
     assert(Bkn.size()==batchCount);
     assert(Cmn.size()==batchCount);
 #ifdef GRID_HIP
+    hipblasOperation_t hOpA;
+    hipblasOperation_t hOpB;
+    if ( OpA == GridBLAS_OP_N ) hOpA = HIPBLAS_OP_N;
+    if ( OpA == GridBLAS_OP_T ) hOpA = HIPBLAS_OP_T;
+    if ( OpA == GridBLAS_OP_C ) hOpA = HIPBLAS_OP_C;
+    if ( OpB == GridBLAS_OP_N ) hOpB = HIPBLAS_OP_N;
+    if ( OpB == GridBLAS_OP_T ) hOpB = HIPBLAS_OP_T;
+    if ( OpB == GridBLAS_OP_C ) hOpB = HIPBLAS_OP_C;
     auto err = hipblasCgemmBatched(gridblasHandle,
-				   HIPBLAS_OP_N,
-				   HIPBLAS_OP_N,
+				   hOpA,
+				   hOpB,
 				   m,n,k,
 				   (hipblasComplex *) &alpha_p[0],
 				   (hipblasComplex **)&Amk[0], lda,
@@ -246,13 +319,21 @@ public:
 				   (hipblasComplex *) &beta_p[0],
 				   (hipblasComplex **)&Cmn[0], ldc,
 				   batchCount);
-    //	 std::cout << " hipblas return code " <<(int)err<<std::endl;
+
     assert(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
+    cublasOperation_t hOpA;
+    cublasOperation_t hOpB;
+    if ( OpA == GridBLAS_OP_N ) hOpA = CUBLAS_OP_N;
+    if ( OpA == GridBLAS_OP_T ) hOpA = CUBLAS_OP_T;
+    if ( OpA == GridBLAS_OP_C ) hOpA = CUBLAS_OP_C;
+    if ( OpB == GridBLAS_OP_N ) hOpB = CUBLAS_OP_N;
+    if ( OpB == GridBLAS_OP_T ) hOpB = CUBLAS_OP_T;
+    if ( OpB == GridBLAS_OP_C ) hOpB = CUBLAS_OP_C;
     auto err = cublasCgemmBatched(gridblasHandle,
-				  CUBLAS_OP_N,
-				  CUBLAS_OP_N,
+				  hOpA,
+				  hOpB,
 				  m,n,k,
 				  (cuComplex *) &alpha_p[0],
 				  (cuComplex **)&Amk[0], lda,
@@ -282,16 +363,15 @@ public:
      RealD t1=usecond();
      RealD flops = 8.0*m*n*k*batchCount;
      RealD bytes = 1.0*sizeof(ComplexF)*(m*k+k*n+m*n)*batchCount;
-     //     std::cout <<GridLogPerformance<< " batched Blas copy "<<(t0-t2)/1.e3 <<" ms "<<std::endl;
-     //     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< flops/(t1-t0)/1.e3 <<" GF/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
-     //     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< bytes/(t1-t0)/1.e3 <<" GB/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
   }
   
   ///////////////////////////////////////////////////////////////////////////
   // Single precision real GEMM
   ///////////////////////////////////////////////////////////////////////////
 
-  void gemmBatched(int m,int n, int k,
+  void gemmBatched(GridBLASOperation_t OpA,
+		   GridBLASOperation_t OpB,
+		   int m,int n, int k,
 		   RealF alpha,
 		   deviceVector<RealF*> &Amk,  // pointer list to matrices
 		   deviceVector<RealF*> &Bkn,
@@ -300,23 +380,35 @@ public:
   {
     RealD t2=usecond();
     int32_t batchCount = Amk.size();
-    // Use C-row major storage, so transpose calls
+
     int lda = m; // m x k column major
     int ldb = k; // k x n column major
     int ldc = m; // m x b column major
+    if(OpA!=GridBLAS_OP_N)
+      lda = k;
+    if(OpB!=GridBLAS_OP_N)
+      ldb = n;
     static deviceVector<RealF> alpha_p(1);
     static deviceVector<RealF> beta_p(1);
     // can prestore the 1 and the zero on device
     acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(RealF));
     acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(RealF));
     RealD t0=usecond();
-    //       std::cout << "hipblasZgemmBatched mnk  "<<m<<","<<n<<","<<k<<" count "<<batchCount<<std::endl;
+
     assert(Bkn.size()==batchCount);
     assert(Cmn.size()==batchCount);
 #ifdef GRID_HIP
+    hipblasOperation_t hOpA;
+    hipblasOperation_t hOpB;
+    if ( OpA == GridBLAS_OP_N ) hOpA = HIPBLAS_OP_N;
+    if ( OpA == GridBLAS_OP_T ) hOpA = HIPBLAS_OP_T;
+    if ( OpA == GridBLAS_OP_C ) hOpA = HIPBLAS_OP_C;
+    if ( OpB == GridBLAS_OP_N ) hOpB = HIPBLAS_OP_N;
+    if ( OpB == GridBLAS_OP_T ) hOpB = HIPBLAS_OP_T;
+    if ( OpB == GridBLAS_OP_C ) hOpB = HIPBLAS_OP_C;
     auto err = hipblasSgemmBatched(gridblasHandle,
-				   HIPBLAS_OP_N,
-				   HIPBLAS_OP_N,
+				   hOpA,
+				   hOpB,
 				   m,n,k,
 				   (float *) &alpha_p[0],
 				   (float **)&Amk[0], lda,
@@ -327,9 +419,17 @@ public:
     assert(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
+    cublasOperation_t hOpA;
+    cublasOperation_t hOpB;
+    if ( OpA == GridBLAS_OP_N ) hOpA = CUBLAS_OP_N;
+    if ( OpA == GridBLAS_OP_T ) hOpA = CUBLAS_OP_T;
+    if ( OpA == GridBLAS_OP_C ) hOpA = CUBLAS_OP_C;
+    if ( OpB == GridBLAS_OP_N ) hOpB = CUBLAS_OP_N;
+    if ( OpB == GridBLAS_OP_T ) hOpB = CUBLAS_OP_T;
+    if ( OpB == GridBLAS_OP_C ) hOpB = CUBLAS_OP_C;
     auto err = cublasSgemmBatched(gridblasHandle,
-				  CUBLAS_OP_N,
-				  CUBLAS_OP_N,
+				  hOpA,
+				  hOpB,
 				  m,n,k,
 				  (float *) &alpha_p[0],
 				  (float **)&Amk[0], lda,
@@ -359,9 +459,6 @@ public:
      RealD t1=usecond();
      RealD flops = 2.0*m*n*k*batchCount;
      RealD bytes = 1.0*sizeof(RealF)*(m*k+k*n+m*n)*batchCount;
-     //     std::cout <<GridLogPerformance<< " batched Blas copy "<<(t0-t2)/1.e3 <<" ms "<<std::endl;
-     //     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< flops/(t1-t0)/1.e3 <<" GF/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
-     //     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< bytes/(t1-t0)/1.e3 <<" GB/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
   }
   
   
@@ -369,7 +466,9 @@ public:
   // Double precision real GEMM
   ///////////////////////////////////////////////////////////////////////////
 
-  void gemmBatched(int m,int n, int k,
+  void gemmBatched(GridBLASOperation_t OpA,
+		   GridBLASOperation_t OpB,
+		   int m,int n, int k,
 		   RealD alpha,
 		   deviceVector<RealD*> &Amk,  // pointer list to matrices
 		   deviceVector<RealD*> &Bkn,
@@ -378,20 +477,33 @@ public:
   {
     RealD t2=usecond();
     int32_t batchCount = Amk.size();
-    // Use C-row major storage, so transpose calls
+
     int lda = m; // m x k column major
     int ldb = k; // k x n column major
     int ldc = m; // m x b column major
+    if(OpA!=GridBLAS_OP_N)
+      lda = k;
+    if(OpB!=GridBLAS_OP_N)
+      ldb = n;
+    
     static deviceVector<RealD> alpha_p(1);
     static deviceVector<RealD> beta_p(1);
     // can prestore the 1 and the zero on device
     acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(RealD));
     acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(RealD));
     RealD t0=usecond();
-    //       std::cout << "hipblasZgemmBatched mnk  "<<m<<","<<n<<","<<k<<" count "<<batchCount<<std::endl;
+
     assert(Bkn.size()==batchCount);
     assert(Cmn.size()==batchCount);
 #ifdef GRID_HIP
+    hipblasOperation_t hOpA;
+    hipblasOperation_t hOpB;
+    if ( OpA == GridBLAS_OP_N ) hOpA = HIPBLAS_OP_N;
+    if ( OpA == GridBLAS_OP_T ) hOpA = HIPBLAS_OP_T;
+    if ( OpA == GridBLAS_OP_C ) hOpA = HIPBLAS_OP_C;
+    if ( OpB == GridBLAS_OP_N ) hOpB = HIPBLAS_OP_N;
+    if ( OpB == GridBLAS_OP_T ) hOpB = HIPBLAS_OP_T;
+    if ( OpB == GridBLAS_OP_C ) hOpB = HIPBLAS_OP_C;
     auto err = hipblasDgemmBatched(gridblasHandle,
 				   HIPBLAS_OP_N,
 				   HIPBLAS_OP_N,
@@ -405,9 +517,17 @@ public:
     assert(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
+    cublasOperation_t hOpA;
+    cublasOperation_t hOpB;
+    if ( OpA == GridBLAS_OP_N ) hOpA = CUBLAS_OP_N;
+    if ( OpA == GridBLAS_OP_T ) hOpA = CUBLAS_OP_T;
+    if ( OpA == GridBLAS_OP_C ) hOpA = CUBLAS_OP_C;
+    if ( OpB == GridBLAS_OP_N ) hOpB = CUBLAS_OP_N;
+    if ( OpB == GridBLAS_OP_T ) hOpB = CUBLAS_OP_T;
+    if ( OpB == GridBLAS_OP_C ) hOpB = CUBLAS_OP_C;
     auto err = cublasDgemmBatched(gridblasHandle,
-				  CUBLAS_OP_N,
-				  CUBLAS_OP_N,
+				  hOpA,
+				  hOpB,
 				  m,n,k,
 				  (double *) &alpha_p[0],
 				  (double **)&Amk[0], lda,
@@ -453,9 +573,6 @@ public:
      RealD t1=usecond();
      RealD flops = 2.0*m*n*k*batchCount;
      RealD bytes = 1.0*sizeof(RealD)*(m*k+k*n+m*n)*batchCount;
-     //     std::cout <<GridLogPerformance<< " batched Blas copy "<<(t0-t2)/1.e3 <<" ms "<<std::endl;
-     //     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< flops/(t1-t0)/1.e3 <<" GF/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
-     //     std::cout <<GridLogPerformance<< " batched Blas call "<<m<<","<<n<<","<<k<<" "<< bytes/(t1-t0)/1.e3 <<" GB/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
   }
   
 
@@ -528,6 +645,36 @@ public:
        }
      }
 #endif
+  }
+
+  void benchmark(int nbasis, int nrhs, int coarseVol, int nstencil)
+  {
+    int32_t N_A = nbasis*nbasis*coarseVol*nstencil;
+    int32_t N_B = nbasis*nrhs*coarseVol*nstencil; // One leg of stencil at a time
+    int32_t N_C = nbasis*nrhs*coarseVol*nstencil; 
+    deviceVector<ComplexD> A(N_A); acceleratorMemSet(&A[0],0,N_A*sizeof(ComplexD));
+    deviceVector<ComplexD> B(N_B); acceleratorMemSet(&B[0],0,N_B*sizeof(ComplexD));
+    deviceVector<ComplexD> C(N_C); acceleratorMemSet(&C[0],0,N_C*sizeof(ComplexD));
+    ComplexD alpha(1.0);
+    ComplexD beta (1.0);
+    for(int i=0;i<10;i++){
+      RealD t0 = usecond();
+      for(int s=0;s<nstencil;s++){
+	gemmStridedBatched(nbasis,nrhs,nbasis,
+			   alpha,
+			   &A[0], // m x k 
+			   &B[0], // k x n
+			   beta, 
+			   &C[0], // m x n
+			   coarseVol);
+      }
+      synchronise();
+      RealD t1 = usecond();
+      RealD flops = 8.0*nbasis*nbasis*nrhs*coarseVol*nstencil;
+      RealD bytes = 1.0*sizeof(ComplexD)*(nbasis*nbasis+nbasis*nrhs*3)*coarseVol*nstencil;
+      std::cout << " batched Blas call "<<i<<" "<< flops/(t1-t0)/1.e3 <<" GF/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
+      std::cout << " batched Blas call "<<i<<" "<< bytes/(t1-t0)/1.e3 <<" GB/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
+    }
   }
 
 
