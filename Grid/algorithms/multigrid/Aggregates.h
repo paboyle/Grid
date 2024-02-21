@@ -42,6 +42,8 @@ inline RealD AggregatePowerLaw(RealD x)
 template<class Fobj,class CComplex,int nbasis>
 class Aggregation {
 public:
+  constexpr int Nbasis(void) { return nbasis; };
+  
   typedef iVector<CComplex,nbasis >             siteVector;
   typedef Lattice<siteVector>                 CoarseVector;
   typedef Lattice<iMatrix<CComplex,nbasis > > CoarseMatrix;
