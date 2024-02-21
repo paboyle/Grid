@@ -783,7 +783,6 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
   autoView(from_v,From,AcceleratorRead);
   autoView(to_v,To,AcceleratorWrite);
 
-
   accelerator_for(idx,nsite,1,{
 
       Coordinate from_coor, to_coor, base;
@@ -808,6 +807,143 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
   });
 }
 
+template<class vobj>
+void InsertSliceFast(const Lattice<vobj> &From,Lattice<vobj> & To,int slice, int orthog)
+{
+  typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  const int words=sizeof(vobj)/sizeof(vector_type);
+
+  //////////////////////////////////////////////////////////////////////////////////////////
+  // checks should guarantee that the operations are local
+  //////////////////////////////////////////////////////////////////////////////////////////
+  GridBase *Fg = From.Grid();
+  GridBase *Tg = To.Grid();
+  assert(!Fg->_isCheckerBoarded);
+  assert(!Tg->_isCheckerBoarded);
+  int Nsimd = Fg->Nsimd();
+  int nF = Fg->_ndimension;
+  int nT = Tg->_ndimension;
+  assert(nF+1 == nT);
+
+  ///////////////////////////////////////////////////////////
+  // do the index calc on the GPU
+  ///////////////////////////////////////////////////////////
+  Coordinate f_ostride = Fg->_ostride;
+  Coordinate f_istride = Fg->_istride;
+  Coordinate f_rdimensions = Fg->_rdimensions;
+  Coordinate t_ostride = Tg->_ostride;
+  Coordinate t_istride = Tg->_istride;
+  Coordinate t_rdimensions = Tg->_rdimensions;
+  Coordinate RegionSize = Fg->_ldimensions;
+  size_t nsite = 1;
+  for(int i=0;i<nF;i++) nsite *= RegionSize[i]; // whole volume of lower dim grid
+
+  typedef typename vobj::vector_type vector_type;
+  typedef typename vobj::scalar_type scalar_type;
+
+  autoView(from_v,From,AcceleratorRead);
+  autoView(to_v,To,AcceleratorWrite);
+
+  accelerator_for(idx,nsite,1,{
+
+      Coordinate from_coor(nF), to_coor(nT);
+      Lexicographic::CoorFromIndex(from_coor,idx,RegionSize);
+      int j=0;
+      for(int i=0;i<nT;i++){
+	if ( i!=orthog ) { 
+	  to_coor[i] = from_coor[j];
+	  j++;
+	} else {
+	  to_coor[i] = slice;
+	}
+      }
+      int from_oidx = 0; for(int d=0;d<nF;d++) from_oidx+=f_ostride[d]*(from_coor[d]%f_rdimensions[d]);
+      int from_lane = 0; for(int d=0;d<nF;d++) from_lane+=f_istride[d]*(from_coor[d]/f_rdimensions[d]);
+      int to_oidx   = 0; for(int d=0;d<nT;d++) to_oidx+=t_ostride[d]*(to_coor[d]%t_rdimensions[d]);
+      int to_lane   = 0; for(int d=0;d<nT;d++) to_lane+=t_istride[d]*(to_coor[d]/t_rdimensions[d]);
+
+      const vector_type* from = (const vector_type *)&from_v[from_oidx];
+      vector_type* to = (vector_type *)&to_v[to_oidx];
+      
+      scalar_type stmp;
+      for(int w=0;w<words;w++){
+	stmp = getlane(from[w], from_lane);
+	putlane(to[w], stmp, to_lane);
+      }
+  });
+}
+
+template<class vobj>
+void ExtractSliceFast(Lattice<vobj> &To,const Lattice<vobj> & From,int slice, int orthog)
+{
+  typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  const int words=sizeof(vobj)/sizeof(vector_type);
+
+  //////////////////////////////////////////////////////////////////////////////////////////
+  // checks should guarantee that the operations are local
+  //////////////////////////////////////////////////////////////////////////////////////////
+  GridBase *Fg = From.Grid();
+  GridBase *Tg = To.Grid();
+  assert(!Fg->_isCheckerBoarded);
+  assert(!Tg->_isCheckerBoarded);
+  int Nsimd = Fg->Nsimd();
+  int nF = Fg->_ndimension;
+  int nT = Tg->_ndimension;
+  assert(nT+1 == nF);
+
+  ///////////////////////////////////////////////////////////
+  // do the index calc on the GPU
+  ///////////////////////////////////////////////////////////
+  Coordinate f_ostride = Fg->_ostride;
+  Coordinate f_istride = Fg->_istride;
+  Coordinate f_rdimensions = Fg->_rdimensions;
+  Coordinate t_ostride = Tg->_ostride;
+  Coordinate t_istride = Tg->_istride;
+  Coordinate t_rdimensions = Tg->_rdimensions;
+  Coordinate RegionSize = Tg->_ldimensions;
+  size_t nsite = 1;
+  for(int i=0;i<nT;i++) nsite *= RegionSize[i]; // whole volume of lower dim grid
+
+  typedef typename vobj::vector_type vector_type;
+  typedef typename vobj::scalar_type scalar_type;
+
+  autoView(from_v,From,AcceleratorRead);
+  autoView(to_v,To,AcceleratorWrite);
+
+  accelerator_for(idx,nsite,1,{
+
+      Coordinate from_coor(nF), to_coor(nT);
+      Lexicographic::CoorFromIndex(to_coor,idx,RegionSize);
+      int j=0;
+      for(int i=0;i<nF;i++){
+	if ( i!=orthog ) { 
+	  from_coor[i] = to_coor[j];
+	  j++;
+	} else {
+	  from_coor[i] = slice;
+	}
+      }
+      int from_oidx = 0; for(int d=0;d<nF;d++) from_oidx+=f_ostride[d]*(from_coor[d]%f_rdimensions[d]);
+      int from_lane = 0; for(int d=0;d<nF;d++) from_lane+=f_istride[d]*(from_coor[d]/f_rdimensions[d]);
+      int to_oidx   = 0; for(int d=0;d<nT;d++) to_oidx+=t_ostride[d]*(to_coor[d]%t_rdimensions[d]);
+      int to_lane   = 0; for(int d=0;d<nT;d++) to_lane+=t_istride[d]*(to_coor[d]/t_rdimensions[d]);
+
+      const vector_type* from = (const vector_type *)&from_v[from_oidx];
+      vector_type* to = (vector_type *)&to_v[to_oidx];
+      
+      scalar_type stmp;
+      for(int w=0;w<words;w++){
+	stmp = getlane(from[w], from_lane);
+	putlane(to[w], stmp, to_lane);
+      }
+  });
+}
 
 template<class vobj>
 void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int orthog)
@@ -897,9 +1033,7 @@ void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slic
 
 }
 
-
-//Insert subvolume orthogonal to direction 'orthog' with slice index 'slice_lo' from 'lowDim' onto slice index 'slice_hi' of higherDim
-//The local dimensions of both 'lowDim' and 'higherDim' orthogonal to 'orthog' should be the same
+//Can I implement with local copyregion??
 template<class vobj>
 void InsertSliceLocal(const Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice_lo,int slice_hi, int orthog)
 {
@@ -920,121 +1054,18 @@ void InsertSliceLocal(const Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int
       assert(lg->_ldimensions[d] == hg->_ldimensions[d]);
     }
   }
-
-#if 1
-  size_t nsite = lg->lSites()/lg->LocalDimensions()[orthog];
-  size_t tbytes = 4*nsite*sizeof(int);
-  int *table = (int*)malloc(tbytes);
-  
-  thread_for(idx,nsite,{
-    Coordinate lcoor(nl);
-    Coordinate hcoor(nh);
-    lcoor[orthog] = slice_lo;
-    hcoor[orthog] = slice_hi;
-    size_t rem = idx;
-    for(int mu=0;mu<nl;mu++){
-      if(mu != orthog){
-	int xmu = rem % lg->LocalDimensions()[mu];  rem /= lg->LocalDimensions()[mu];
-	lcoor[mu] = hcoor[mu] = xmu;
-      }
-    }
-    int loidx = lg->oIndex(lcoor);
-    int liidx = lg->iIndex(lcoor);
-    int hoidx = hg->oIndex(hcoor);
-    int hiidx = hg->iIndex(hcoor);
-    int* tt = table + 4*idx;
-    tt[0] = loidx;
-    tt[1] = liidx;
-    tt[2] = hoidx;
-    tt[3] = hiidx;
-    });
-   
-  int* table_d = (int*)acceleratorAllocDevice(tbytes);
-  acceleratorCopyToDevice(table,table_d,tbytes);
-
-  typedef typename vobj::vector_type vector_type;
-  typedef typename vobj::scalar_type scalar_type;
-
-  autoView(lowDim_v,lowDim,AcceleratorRead);
-  autoView(higherDim_v,higherDim,AcceleratorWrite);
-  
-  accelerator_for(idx,nsite,1,{
-      static const int words=sizeof(vobj)/sizeof(vector_type);
-      int* tt = table_d + 4*idx;
-      int from_oidx = *tt++;
-      int from_lane = *tt++;
-      int to_oidx = *tt++;
-      int to_lane = *tt;
-
-      const vector_type* from = (const vector_type *)&lowDim_v[from_oidx];
-      vector_type* to = (vector_type *)&higherDim_v[to_oidx];
-      
-      scalar_type stmp;
-      for(int w=0;w<words;w++){
-	stmp = getlane(from[w], from_lane);
-	putlane(to[w], stmp, to_lane);
-      }
-    });
-  
-  acceleratorFreeDevice(table_d);    
-  free(table);
-  
-#else
-  // the above should guarantee that the operations are local
-  autoView(lowDimv,lowDim,CpuRead);
-  autoView(higherDimv,higherDim,CpuWrite);
-  thread_for(idx,lg->lSites(),{
-    sobj s;
-    Coordinate lcoor(nl);
-    Coordinate hcoor(nh);
-    lg->LocalIndexToLocalCoor(idx,lcoor);
-    if( lcoor[orthog] == slice_lo ) { 
-      hcoor=lcoor;
-      hcoor[orthog] = slice_hi;
-      peekLocalSite(s,lowDimv,lcoor);
-      pokeLocalSite(s,higherDimv,hcoor);
-    }
-  });
-#endif
+  Coordinate sz = lg->_ldimensions;
+  sz[orthog]=1;
+  Coordinate f_ll(nl,0); f_ll[orthog]=slice_lo;
+  Coordinate t_ll(nh,0); t_ll[orthog]=slice_hi;
+  localCopyRegion(lowDim,higherDim,f_ll,t_ll,sz);
 }
 
 
 template<class vobj>
 void ExtractSliceLocal(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slice_lo,int slice_hi, int orthog)
 {
-  typedef typename vobj::scalar_object sobj;
-
-  GridBase *lg = lowDim.Grid();
-  GridBase *hg = higherDim.Grid();
-  int nl = lg->_ndimension;
-  int nh = hg->_ndimension;
-
-  assert(nl == nh);
-  assert(orthog<nh);
-  assert(orthog>=0);
-
-  for(int d=0;d<nh;d++){
-    if ( d!=orthog ) {
-    assert(lg->_processors[d]  == hg->_processors[d]);
-    assert(lg->_ldimensions[d] == hg->_ldimensions[d]);
-  }
-  }
-
-  // the above should guarantee that the operations are local
-  autoView(lowDimv,lowDim,CpuWrite);
-  autoView(higherDimv,higherDim,CpuRead);
-  thread_for(idx,lg->lSites(),{
-    sobj s;
-    Coordinate lcoor(nl);
-    Coordinate hcoor(nh);
-    lg->LocalIndexToLocalCoor(idx,lcoor);
-    if( lcoor[orthog] == slice_lo ) { 
-      hcoor=lcoor;
-      hcoor[orthog] = slice_hi;
-      peekLocalSite(s,higherDimv,hcoor);
-      pokeLocalSite(s,lowDimv,lcoor);
-    }
-  });
+  InsertSliceLocal(higherDim,lowDim,slice_hi,slice_lo,orthog);
 }
 
 
