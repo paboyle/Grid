@@ -5,6 +5,7 @@
 #include <cub/cub.cuh>
 #define gpucub cub
 #define gpuMalloc cudaMalloc
+#define gpuFree cudaFree
 #define gpuMemcpyAsync cudaMemcpyAsync
 #define gpuMemcpyDeviceToHost cudaMemcpyDeviceToHost
 #define gpuMemcpyHostToDevice cudaMemcpyHostToDevice
@@ -16,6 +17,7 @@
 #include <hipcub/hipcub.hpp>
 #define gpucub hipcub
 #define gpuMalloc hipMalloc
+#define gpuFree hipFree
 #define gpuMemcpyAsync hipMemcpyAsync
 #define gpuMemcpyDeviceToHost hipMemcpyDeviceToHost
 #define gpuMemcpyHostToDevice hipMemcpyHostToDevice
@@ -112,6 +114,10 @@ template<class vobj> inline void sliceSumReduction_cub_small(const vobj *Data, V
   //sync after copy
   accelerator_barrier();
  
+  gpuFree(temp_storage_array);
+  gpuFree(d_out);
+  gpuFree(d_offsets);
+  
 
 }
 
@@ -201,7 +207,8 @@ template<class vobj> inline void sliceSumReduction_sycl(const Lattice<vobj> &Dat
       theGridAccelerator->wait();
       lvSum[r] = mysum[0];
   }
-
+  
+  free(mysum,*theGridAccelerator);
 }
 #endif
 

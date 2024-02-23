@@ -105,6 +105,8 @@ int main (int argc, char ** argv) {
 
     int trace_id = traceStart("sliceSum benchmark - ComplexD");
     std::cout << GridLogMessage << "Testing ComplexD" << std::endl;
+    std::cout << GridLogMessage << "sizeof(ComplexD) = " << sizeof(ComplexD) << std::endl;
+    std::cout << GridLogMessage << "sizeof(vComplexD) = " << sizeof(vComplexD) << std::endl;
     for (int i = 0; i < Nd; i++) {
 
       RealD t=-usecond();
