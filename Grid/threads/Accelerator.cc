@@ -7,6 +7,8 @@ uint32_t accelerator_threads=2;
 uint32_t acceleratorThreads(void)       {return accelerator_threads;};
 void     acceleratorThreads(uint32_t t) {accelerator_threads = t;};
 
+#define ENV_LOCAL_RANK_PALS    "PALS_LOCAL_RANKID"
+#define ENV_RANK_PALS          "PALS_RANKID"
 #define ENV_LOCAL_RANK_OMPI    "OMPI_COMM_WORLD_LOCAL_RANK"
 #define ENV_RANK_OMPI          "OMPI_COMM_WORLD_RANK"
 #define ENV_LOCAL_RANK_SLURM   "SLURM_LOCALID"
@@ -228,8 +230,17 @@ void acceleratorInit(void)
   {
     rank = atoi(localRankStr);		
   }
+  if ((localRankStr = getenv(ENV_LOCAL_RANK_PALS)) != NULL)
+  {
+    rank = atoi(localRankStr);		
+  }
   if ((localRankStr = getenv(ENV_RANK_OMPI   )) != NULL) { world_rank = atoi(localRankStr);}
   if ((localRankStr = getenv(ENV_RANK_MVAPICH)) != NULL) { world_rank = atoi(localRankStr);}
+  if ((localRankStr = getenv(ENV_RANK_PALS   )) != NULL) { world_rank = atoi(localRankStr);}
+
+  char hostname[HOST_NAME_MAX+1];
+  gethostname(hostname, HOST_NAME_MAX+1);
+  if ( rank==0 ) printf(" acceleratorInit world_rank %d is host %s \n",world_rank,hostname);
 
   auto devices = cl::sycl::device::get_devices();
   for(int d = 0;d<devices.size();d++){
@@ -241,9 +252,10 @@ void acceleratorInit(void)
     printf("AcceleratorSyclInit:   " #prop ": " FMT" \n",devices[d].get_info<cl::sycl::info::device::prop>());
 
 #define GPU_PROP(prop)             GPU_PROP_FMT(prop,"%ld");
+    if ( world_rank == 0) {
 
-    GPU_PROP_STR(vendor);
-    GPU_PROP_STR(version);
+      GPU_PROP_STR(vendor);
+      GPU_PROP_STR(version);
     //    GPU_PROP_STR(device_type);
     /*
     GPU_PROP(max_compute_units);
@@ -259,7 +271,8 @@ void acceleratorInit(void)
     GPU_PROP(single_fp_config);
     */
     //    GPU_PROP(double_fp_config);
-    GPU_PROP(global_mem_size);
+      GPU_PROP(global_mem_size);
+    }
 
   }
   if ( world_rank == 0 ) {
