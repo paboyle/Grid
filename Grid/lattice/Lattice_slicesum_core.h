@@ -125,7 +125,7 @@ template<class vobj> inline void sliceSumReduction_cub_large(const vobj *Data, V
   typedef typename vobj::vector_type vector;
   const int words = sizeof(vobj)/sizeof(vector);
   const int osites = rd*e1*e2;
-  Vector<vector>buffer(osites);
+  commVector<vector>buffer(osites);
   vector *dat = (vector *)Data;
   vector *buf = &buffer[0];
   Vector<vector> lvSum_small(rd);
