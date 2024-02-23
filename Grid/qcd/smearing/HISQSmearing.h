@@ -173,8 +173,8 @@ public:
 
             int Nsites = U_v.size();
 
-            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 3-link constructs
-//            for(int site=0;site<Nsites;site++){ // ----------- 3-link constructs
+//            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 3-link constructs
+            for(int site=0;site<Nsites;site++){ // ----------- 3-link constructs
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
                     int s = stencilIndex(mu,nu);
@@ -203,7 +203,7 @@ public:
                     W = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
                     // Save 3-link construct for later and add to smeared field.
-                    U_3link_v[x](nu) = W;
+                    coalescedWrite(U_3link_v[x](nu), W);
 
                     // The index operator (x) returns the coalesced read on GPU. The view [] index returns 
                     // a reference to the vector object. The [x](mu) returns a reference to the densely 
@@ -212,10 +212,10 @@ public:
                     // But on GPU it's non-trivial and maps scalar object to vector object and vice versa.
                     coalescedWrite(U_fat_v[x](mu), U_fat_v(x)(mu) + lt.c_3*W);
                 }
-            })
+            }//)
 
-            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 5-link 
-//            for(int site=0;site<Nsites;site++){ // ----------- 5-link
+//            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 5-link 
+            for(int site=0;site<Nsites;site++){ // ----------- 5-link
                 int sigmaIndex = 0;
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
@@ -239,19 +239,19 @@ public:
                         W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
                         if(sigmaIndex<3) {
-                            U_5linkA_v[x](rho) = W;
+                            coalescedWrite(U_5linkA_v[x](rho), W);
                         } else {
-                            U_5linkB_v[x](rho) = W;
+                            coalescedWrite(U_5linkB_v[x](rho), W);
                         }    
 
                         coalescedWrite(U_fat_v[x](mu), U_fat_v(x)(mu) + lt.c_5*W);
                         sigmaIndex++;
                     }
                 }
-            })
+            }//)
 
-            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 7-link
-//            for(int site=0;site<Nsites;site++){ // ----------- 7-link
+//            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 7-link
+            for(int site=0;site<Nsites;site++){ // ----------- 7-link
                 int sigmaIndex = 0;
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
@@ -286,7 +286,7 @@ public:
                         sigmaIndex++;
                     }
                 }
-            })
+            }//)
 
         } // end mu loop
 

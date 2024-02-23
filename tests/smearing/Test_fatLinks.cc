@@ -52,30 +52,36 @@ struct ConfParameters: Serializable {
 };
 
 
-void testSmear(GridCartesian& GRID, LatticeGaugeFieldD Umu, LatticeGaugeFieldD Usmr, LatticeGaugeFieldD Unaik, 
+bool testSmear(GridCartesian& GRID, LatticeGaugeFieldD Umu, LatticeGaugeFieldD Usmr, LatticeGaugeFieldD Unaik, 
                LatticeGaugeFieldD Ucontrol, Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) {
     Smear_HISQ<PeriodicGimplD> hisq_fat(&GRID,c1,cnaik,c3,c5,c7,clp);
     LatticeGaugeFieldD diff(&GRID), Uproj(&GRID);
     hisq_fat.smear(Usmr, Unaik, Umu);
+    bool result;
     if (cnaik < 1e-30) { // Testing anything but Naik term
         diff = Ucontrol-Usmr;
         auto absDiff = norm2(diff)/norm2(Ucontrol);
         if (absDiff < 1e-30) {
             Grid_pass(" |Umu-Usmr|/|Umu| = ",absDiff);
+            result = true;
         } else {
             Grid_error(" |Umu-Usmr|/|Umu| = ",absDiff);
+            result = false;
         }
     } else { // Testing Naik specifically
         diff = Ucontrol-Unaik;
         auto absDiff = norm2(diff)/norm2(Ucontrol);
         if (absDiff < 1e-30) {
             Grid_pass(" |Umu-Unaik|/|Umu| = ",absDiff);
+            result = true;
         } else {
             Grid_error(" |Umu-Unaik|/|Umu| = ",absDiff);
+            result = false;
         }
-    hisq_fat.projectU3(Uproj,Ucontrol);
+        hisq_fat.projectU3(Uproj,Ucontrol);
 //        NerscIO::writeConfiguration(Unaik,"nersc.l8t4b3360.naik");
     }
+    return result;
 }
 
 
@@ -110,22 +116,29 @@ int main (int argc, char** argv) {
     FieldMetaData header;
     NerscIO::readConfiguration(Umu, header, conf_in);
 
+    bool pass=true;
+
     // Carry out various tests    
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.357lplink.control");
-    testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,0.,1/16.,1/64.,1/384.,-1/8.);
+    pass *= testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,0.,1/16.,1/64.,1/384.,-1/8.);
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.357link.control");
-    testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,0.,1/16.,1/64.,1/384.,0.);
+    pass *= testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,0.,1/16.,1/64.,1/384.,0.);
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.35link.control");
-    testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,0.,1/16.,1/64.,0.,0.);
+    pass *= testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,0.,1/16.,1/64.,0.,0.);
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.3link.control");
-    testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,0.,1/16.,0.,0.,0.);
+    pass *= testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,1/8.,0.,1/16.,0.,0.,0.);
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.naik.control");
-    testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,0.,0.8675309,0.,0.,0.,0.);
+    pass *= testSmear(GRID,Umu,Usmr,Unaik,Ucontrol,0.,0.8675309,0.,0.,0.,0.);
+
+    if(pass){
+        Grid_pass("All tests passed.");
+    } else {
+        Grid_error("At least one test failed.");
+    }
 
     // Test a C-style instantiation 
     double path_coeff[6] = {1, 2, 3, 4, 5, 6};
     Smear_HISQ<PeriodicGimplD> hisq_fat_Cstyle(&GRID,path_coeff);
-
 
     if (param.benchmark) {
 
