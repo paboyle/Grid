@@ -168,25 +168,26 @@ public:
             // We infer some types that will be needed in the calculation.
             typedef decltype(gStencil.GetEntry(0,0)) stencilElement;
             typedef decltype(coalescedReadGeneralPermute(U_v[0](0),gStencil.GetEntry(0,0)->_permute,Nd)) U3matrix;
-            stencilElement SE0, SE1, SE2, SE3, SE4, SE5;
-            U3matrix U0, U1, U2, U3, U4, U5, W;
 
             int Nsites = U_v.size();
+            auto gStencil_v = gStencil.View(); 
 
-//            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 3-link constructs
-            for(int site=0;site<Nsites;site++){ // ----------- 3-link constructs
+            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 3-link constructs
+//            for(int site=0;site<Nsites;site++){ // ----------- 3-link constructs
+                stencilElement SE0, SE1, SE2, SE3, SE4, SE5;
+                U3matrix U0, U1, U2, U3, U4, U5, W;
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
                     int s = stencilIndex(mu,nu);
 
                     // The stencil gives us support points in the mu-nu plane that we will use to
                     // grab the links we need.
-                    SE0 = gStencil.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
-                    SE1 = gStencil.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
-                    SE2 = gStencil.GetEntry(s+2,site); int x           = SE2->_offset;
-                    SE3 = gStencil.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
-                    SE4 = gStencil.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
-                    SE5 = gStencil.GetEntry(s+5,site); int x_m_mu      = SE5->_offset;
+                    SE0 = gStencil_v.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
+                    SE1 = gStencil_v.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
+                    SE2 = gStencil_v.GetEntry(s+2,site); int x           = SE2->_offset;
+                    SE3 = gStencil_v.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
+                    SE4 = gStencil_v.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
+                    SE5 = gStencil_v.GetEntry(s+5,site); int x_m_mu      = SE5->_offset;
 
                     // When you're deciding whether to take an adjoint, the question is: how is the
                     // stored link oriented compared to the one you want? If I imagine myself travelling
@@ -212,10 +213,12 @@ public:
                     // But on GPU it's non-trivial and maps scalar object to vector object and vice versa.
                     coalescedWrite(U_fat_v[x](mu), U_fat_v(x)(mu) + lt.c_3*W);
                 }
-            }//)
+            })
 
-//            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 5-link 
-            for(int site=0;site<Nsites;site++){ // ----------- 5-link
+            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 5-link 
+//            for(int site=0;site<Nsites;site++){ // ----------- 5-link
+                stencilElement SE0, SE1, SE2, SE3, SE4, SE5;
+                U3matrix U0, U1, U2, U3, U4, U5, W;
                 int sigmaIndex = 0;
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
@@ -223,11 +226,11 @@ public:
                     for(int rho=0;rho<Nd;rho++) {
                         if (rho == mu || rho == nu) continue;
 
-                        SE0 = gStencil.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
-                        SE1 = gStencil.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
-                        SE2 = gStencil.GetEntry(s+2,site); int x           = SE2->_offset;
-                        SE3 = gStencil.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
-                        SE4 = gStencil.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
+                        SE0 = gStencil_v.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
+                        SE1 = gStencil_v.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
+                        SE2 = gStencil_v.GetEntry(s+2,site); int x           = SE2->_offset;
+                        SE3 = gStencil_v.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
+                        SE4 = gStencil_v.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
 
                         U0 = coalescedReadGeneralPermute(      U_v[x_p_mu     ](nu ),SE0->_permute,Nd);
                         U1 = coalescedReadGeneralPermute(U_3link_v[x_p_nu     ](rho),SE1->_permute,Nd);
@@ -248,10 +251,12 @@ public:
                         sigmaIndex++;
                     }
                 }
-            }//)
+            })
 
-//            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 7-link
-            for(int site=0;site<Nsites;site++){ // ----------- 7-link
+            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 7-link
+//            for(int site=0;site<Nsites;site++){ // ----------- 7-link
+                stencilElement SE0, SE1, SE2, SE3, SE4, SE5;
+                U3matrix U0, U1, U2, U3, U4, U5, W;
                 int sigmaIndex = 0;
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
@@ -259,11 +264,11 @@ public:
                     for(int rho=0;rho<Nd;rho++) {
                         if (rho == mu || rho == nu) continue;
 
-                        SE0 = gStencil.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
-                        SE1 = gStencil.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
-                        SE2 = gStencil.GetEntry(s+2,site); int x           = SE2->_offset;
-                        SE3 = gStencil.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
-                        SE4 = gStencil.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
+                        SE0 = gStencil_v.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
+                        SE1 = gStencil_v.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
+                        SE2 = gStencil_v.GetEntry(s+2,site); int x           = SE2->_offset;
+                        SE3 = gStencil_v.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
+                        SE4 = gStencil_v.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
 
                         U0 = coalescedReadGeneralPermute(U_v[x_p_mu](nu),SE0->_permute,Nd);
                         if(sigmaIndex<3) {
@@ -286,7 +291,7 @@ public:
                         sigmaIndex++;
                     }
                 }
-            }//)
+            })
 
         } // end mu loop
 
