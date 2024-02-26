@@ -109,6 +109,74 @@ public:
   };
   
   virtual GridBase *Grid(void) { return grid; };
+//broken
+#if 0
+  virtual void  MDeriv(const Field &_left, Field &_right,Field &_der, int mu)
+  {
+    ///////////////////////////////////////////////
+    // Halo exchange for this geometry of stencil
+    ///////////////////////////////////////////////
+    Stencil.HaloExchange(_lef, Compressor);
+
+    ///////////////////////////////////
+    // Arithmetic expressions
+    ///////////////////////////////////
+    autoView( st     , Stencil    , AcceleratorRead);
+    auto buf = st.CommBuf();
+
+    autoView( in     , _left    , AcceleratorRead);
+    autoView( right    , _right   , AcceleratorRead);
+    autoView( der    , _der   , AcceleratorWrite);
+    autoView( U     , Uds    , AcceleratorRead);
+
+    typedef typename Field::vector_object        vobj;
+    typedef decltype(coalescedRead(left[0]))    calcObj;
+    typedef decltype(coalescedRead(U[0](0))) calcLink;
+
+    const int      Nsimd = vobj::Nsimd();
+    const uint64_t NN = grid->oSites();
+
+    accelerator_for( ss, NN, Nsimd, {
+
+	StencilEntry *SE;
+	
+	const int lane=acceleratorSIMTlane(Nsimd);
+
+	calcObj chi;
+	calcObj phi;
+	calcObj res;
+	calcObj Uchi;
+	calcObj Utmp;
+	calcObj Utmp2;
+	calcLink UU;
+	calcLink Udag;
+	int ptype;
+
+	res                 = coalescedRead(def[ss]);
+	phi                 = coalescedRead(right[ss]);
+
+#define LEG_LOAD_MULT_LINK(leg,polarisation)			\
+	UU = coalescedRead(U[ss](polarisation));	\
+	Udag = adj(UU);					\
+	LEG_LOAD(leg);					\
+	mult(&Utmp(), &UU, &chi());			\
+	Utmp2 = adj(Utmp);				\
+	mult(&Utmp(), &UU, &Utmp2());			\
+	Utmp2 = adj(Utmp);				\
+	mult(&Uchi(), &phi(), &Utmp2());			\
+	res = res + Uchi;
+	
+	LEG_LOAD_MULT_LINK(0,Xp);
+	LEG_LOAD_MULT_LINK(1,Yp);
+	LEG_LOAD_MULT_LINK(2,Zp);
+	LEG_LOAD_MULT_LINK(3,Tp);
+
+	coalescedWrite(der[ss], res,lane);
+    });
+
+  };
+#endif
+
   virtual void  Morig(const Field &_in, Field &_out)
   {
     ///////////////////////////////////////////////
@@ -331,71 +399,6 @@ public:
     });
   };
 
-  virtual void  MDerivLink(const Field &_in, Field &_out)
-  {
-    ///////////////////////////////////////////////
-    // Halo exchange for this geometry of stencil
-    ///////////////////////////////////////////////
-    Stencil.HaloExchange(_in, Compressor);
-
-    ///////////////////////////////////
-    // Arithmetic expressions
-    ///////////////////////////////////
-//    auto st = Stencil.View(AcceleratorRead);
-    autoView( st     , Stencil    , AcceleratorRead);
-    auto buf = st.CommBuf();
-
-    autoView( in     , _in    , AcceleratorRead);
-    autoView( out    , _out   , AcceleratorWrite);
-    autoView( U     , Uds    , AcceleratorRead);
-
-    typedef typename Field::vector_object        vobj;
-    typedef decltype(coalescedRead(in[0]))    calcObj;
-    typedef decltype(coalescedRead(U[0](0))) calcLink;
-
-    const int      Nsimd = vobj::Nsimd();
-    const uint64_t NN = grid->oSites();
-
-    accelerator_for( ss, NN, Nsimd, {
-
-	StencilEntry *SE;
-	
-	const int lane=acceleratorSIMTlane(Nsimd);
-
-	calcObj chi;
-	calcObj res;
-	calcObj Uchi;
-	calcObj Utmp;
-	calcObj Utmp2;
-	calcLink UU;
-	calcLink Udag;
-	int ptype;
-
-	res                 = coalescedRead(in[ss])*(-8.0);
-
-#define LEG_LOAD_MULT(leg,polarisation)			\
-	UU = coalescedRead(U[ss](polarisation));	\
-	Udag = adj(UU);					\
-	LEG_LOAD(leg);					\
-	mult(&Utmp(), &UU, &chi());			\
-	Utmp2 = adj(Utmp);				\
-	mult(&Utmp(), &UU, &Utmp2());			\
-	Uchi = adj(Utmp);				\
-	res = res + Uchi;
-	
-	LEG_LOAD_MULT(0,Xp);
-	LEG_LOAD_MULT(1,Yp);
-	LEG_LOAD_MULT(2,Zp);
-	LEG_LOAD_MULT(3,Tp);
-	LEG_LOAD_MULT(4,Xm);
-	LEG_LOAD_MULT(5,Ym);
-	LEG_LOAD_MULT(6,Zm);
-	LEG_LOAD_MULT(7,Tm);
-
-	coalescedWrite(out[ss], res,lane);
-    });
-
-  };
   virtual void  M(const Field &in, Field &out) {Mnew(in,out);};
   virtual void  Mdag (const Field &in, Field &out) { M(in,out);}; // Laplacian is hermitian
   virtual  void Mdiag    (const Field &in, Field &out)                  {assert(0);}; // Unimplemented need only for multigrid
@@ -404,6 +407,7 @@ public:
 };
 
 #undef LEG_LOAD_MULT
+#undef LEG_LOAD_MULT_LINK
 #undef LEG_LOAD
 
 ////////////////////////////////////////////////////////////

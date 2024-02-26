@@ -128,8 +128,8 @@ public:
 
   void MDerivLink(const GaugeLinkField& left, const GaugeLinkField& right,
               GaugeField& der) {
+    std::cout<<GridLogMessage << "MDerivLink start "<< std::endl;
     RealD factor = -1. / (double(4 * Nd));
-
     for (int mu = 0; mu < Nd; mu++) {
       GaugeLinkField der_mu(der.Grid());
       der_mu = Zero();
@@ -141,7 +141,26 @@ public:
 //      }
       PokeIndex<LorentzIndex>(der, -factor * der_mu, mu);
     }
-    std::cout << GridLogDebug <<"MDerivLink:  norm2(der) = "<<norm2(der)<<std::endl;
+//    std::cout << GridLogDebug <<"MDerivLink:  norm2(der) = "<<norm2(der)<<std::endl;
+    std::cout<<GridLogMessage << "MDerivLink end "<< std::endl;
+  }
+
+  void MDerivLink(const GaugeLinkField& left, const GaugeLinkField& right,
+              std::vector<GaugeLinkField> & der) {
+//    std::cout<<GridLogMessage << "MDerivLink "<< std::endl;
+    RealD factor = -1. / (double(4 * Nd));
+
+    for (int mu = 0; mu < Nd; mu++) {
+      GaugeLinkField der_mu(left.Grid());
+      der_mu = Zero();
+        der_mu += U[mu] * Cshift(left, mu, 1) * adj(U[mu]) * right;
+        der_mu += U[mu] * Cshift(right, mu, 1) * adj(U[mu]) * left;
+//      PokeIndex<LorentzIndex>(der, -factor * der_mu, mu);
+      der[mu] = -factor*der_mu;
+//      std::cout << GridLogDebug <<"MDerivLink:  norm2(der) = "<<norm2(der[mu])<<std::endl;
+        
+    }
+//    std::cout<<GridLogMessage << "MDerivLink end "<< std::endl;
   }
 
   void MDerivInt(LaplacianRatParams &par, const GaugeField& left, const GaugeField& right,
@@ -243,8 +262,12 @@ public:
     
     
         GaugeField tempDer(left.Grid());
+        std::vector<GaugeLinkField> DerLink(Nd,left.Grid());
+        std::vector<GaugeLinkField> tempDerLink(Nd,left.Grid());
+
         std::cout<<GridLogMessage << "force contraction "<< i <<std::endl;
     //    roctxRangePushA("RMHMC force contraction");
+ #if 0
         MDerivLink(GMom,MinvMom[i],tempDer); der += coef*2*par.a1[i]*tempDer;
         MDerivLink(left_nu,MinvGMom,tempDer); der += coef*2*par.a1[i]*tempDer;
         MDerivLink(LMinvAGMom,MinvMom[i],tempDer); der += coef*-2.*par.b2*tempDer;
@@ -253,6 +276,21 @@ public:
         MDerivLink(AMinvMom,LMinvGMom,tempDer); der += coef*-2.*par.b2*tempDer;
         MDerivLink(MinvAGMom,MinvMom[i],tempDer); der += coef*-2.*par.b1[i]*tempDer;
         MDerivLink(AMinvMom,MinvGMom,tempDer); der += coef*-2.*par.b1[i]*tempDer;
+#else
+	for (int mu=0;mu<Nd;mu++) DerLink[mu]=Zero();
+        MDerivLink(GMom,MinvMom[i],tempDerLink); 	for (int mu=0;mu<Nd;mu++) DerLink[mu] += coef*2*par.a1[i]*tempDerLink[mu];
+        MDerivLink(left_nu,MinvGMom,tempDerLink); 	for (int mu=0;mu<Nd;mu++) DerLink[mu] += coef*2*par.a1[i]*tempDerLink[mu];
+        MDerivLink(LMinvAGMom,MinvMom[i],tempDerLink); 	for (int mu=0;mu<Nd;mu++) DerLink[mu] += coef*-2.*par.b2*tempDerLink[mu];
+        MDerivLink(LMinvAMom,MinvGMom,tempDerLink); 	for (int mu=0;mu<Nd;mu++) DerLink[mu] += coef*-2.*par.b2*tempDerLink[mu];
+        MDerivLink(MinvAGMom,LMinvMom,tempDerLink); 	for (int mu=0;mu<Nd;mu++) DerLink[mu] += coef*-2.*par.b2*tempDerLink[mu];
+        MDerivLink(AMinvMom,LMinvGMom,tempDerLink); 	for (int mu=0;mu<Nd;mu++) DerLink[mu] += coef*-2.*par.b2*tempDerLink[mu];
+        MDerivLink(MinvAGMom,MinvMom[i],tempDerLink); 	for (int mu=0;mu<Nd;mu++) DerLink[mu] += coef*-2.*par.b1[i]*tempDerLink[mu];
+        MDerivLink(AMinvMom,MinvGMom,tempDerLink); 	for (int mu=0;mu<Nd;mu++) DerLink[mu] += coef*-2.*par.b1[i]*tempDerLink[mu];
+//      PokeIndex<LorentzIndex>(der, -factor * der_mu, mu);
+        for (int mu=0;mu<Nd;mu++) PokeIndex<LorentzIndex>(tempDer, tempDerLink[mu], mu);
+
+	der += tempDer;
+#endif
         std::cout<<GridLogMessage << "coef =  force contraction "<< i << "done "<< coef <<std::endl;
     //    roctxRangePop();
     
