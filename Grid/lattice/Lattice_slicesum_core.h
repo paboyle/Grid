@@ -4,11 +4,6 @@
 
 #include <cub/cub.cuh>
 #define gpucub cub
-#define gpuMalloc cudaMalloc
-#define gpuFree cudaFree
-#define gpuMemcpyAsync cudaMemcpyAsync
-#define gpuMemcpyDeviceToHost cudaMemcpyDeviceToHost
-#define gpuMemcpyHostToDevice cudaMemcpyHostToDevice
 #define gpuError_t cudaError_t
 #define gpuSuccess cudaSuccess
 
@@ -16,11 +11,6 @@
 
 #include <hipcub/hipcub.hpp>
 #define gpucub hipcub
-#define gpuMalloc hipMalloc
-#define gpuFree hipFree
-#define gpuMemcpyAsync hipMemcpyAsync
-#define gpuMemcpyDeviceToHost hipMemcpyDeviceToHost
-#define gpuMemcpyHostToDevice hipMemcpyHostToDevice
 #define gpuError_t hipError_t
 #define gpuSuccess hipSuccess
 
@@ -51,38 +41,22 @@ template<class vobj> inline void sliceSumReduction_cub_small(const vobj *Data, V
   }
   
   //Allocate memory for output and offset arrays on device
-  gpuError_t gpuErr = gpuMalloc(&d_out,rd*sizeof(vobj));
-  if (gpuErr != gpuSuccess) {
-    std::cout << GridLogError << "Lattice_slicesum_gpu.h: Encountered error during gpuMalloc (d_out)! Error: " << gpuErr <<std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  gpuErr = gpuMalloc(&d_offsets,sizeof(int)*(rd+1));
-  if (gpuErr != gpuSuccess) {
-    std::cout << GridLogError << "Lattice_slicesum_gpu.h: Encountered error during gpuMalloc (d_offsets)! Error: " << gpuErr <<std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  //copy offsets to device
-  gpuErr = gpuMemcpyAsync(d_offsets,&offsets[0],sizeof(int)*(rd+1),gpuMemcpyHostToDevice,computeStream);
-  if (gpuErr != gpuSuccess) {
-    std::cout << GridLogError << "Lattice_slicesum_gpu.h: Encountered error during gpuMemcpy (d_offsets)! Error: " << gpuErr <<std::endl;
-    exit(EXIT_FAILURE);
-  }
-
+  d_out = static_cast<vobj*>(acceleratorAllocDevice(rd*sizeof(vobj)));
   
-  gpuErr = gpucub::DeviceSegmentedReduce::Reduce(temp_storage_array, temp_storage_bytes, rb_p,d_out, rd, d_offsets, d_offsets+1, ::gpucub::Sum(), zero_init, computeStream);
+  d_offsets = static_cast<int*>(acceleratorAllocDevice((rd+1)*sizeof(int)));
+  
+  //copy offsets to device
+  acceleratorCopyToDeviceAsync(&offsets[0],d_offsets,sizeof(int)*(rd+1),computeStream);
+  
+  
+  gpuError_t gpuErr = gpucub::DeviceSegmentedReduce::Reduce(temp_storage_array, temp_storage_bytes, rb_p,d_out, rd, d_offsets, d_offsets+1, ::gpucub::Sum(), zero_init, computeStream);
   if (gpuErr!=gpuSuccess) {
     std::cout << GridLogError << "Lattice_slicesum_gpu.h: Encountered error during gpucub::DeviceSegmentedReduce::Reduce (setup)! Error: " << gpuErr <<std::endl;
     exit(EXIT_FAILURE);
   }
 
   //allocate memory for temp_storage_array  
-  gpuErr = gpuMalloc(&temp_storage_array,temp_storage_bytes);
-  if (gpuErr!=gpuSuccess) {
-    std::cout << GridLogError << "Lattice_slicesum_gpu.h: Encountered error during gpuMalloc (temp_storage_array)! Error: " << gpuErr <<std::endl;
-    exit(EXIT_FAILURE);
-  }
+  temp_storage_array = acceleratorAllocDevice(temp_storage_bytes);
   
   //prepare buffer for reduction
   //use non-blocking accelerator_for to avoid syncs (ok because we submit to same computeStream)
@@ -105,18 +79,14 @@ template<class vobj> inline void sliceSumReduction_cub_small(const vobj *Data, V
     exit(EXIT_FAILURE);
   }
   
-  gpuErr = gpuMemcpyAsync(&lvSum[0],d_out,rd*sizeof(vobj),gpuMemcpyDeviceToHost,computeStream);
-  if (gpuErr!=gpuSuccess) {
-    std::cout << GridLogError << "Lattice_slicesum_gpu.h: Encountered error during gpuMemcpy (d_out)! Error: " << gpuErr <<std::endl;
-    exit(EXIT_FAILURE);
-  }
-
+  acceleratorCopyFromDeviceAsync(d_out,&lvSum[0],rd*sizeof(vobj),computeStream);
+  
   //sync after copy
   accelerator_barrier();
  
-  gpuFree(temp_storage_array);
-  gpuFree(d_out);
-  gpuFree(d_offsets);
+  acceleratorFreeDevice(temp_storage_array);
+  acceleratorFreeDevice(d_out);
+  acceleratorFreeDevice(d_offsets);
   
 
 }
