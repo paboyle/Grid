@@ -26,11 +26,6 @@ Author: Peter Boyle <pboyle@bnl.gov>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
-#include <Grid/lattice/PaddedCell.h>
-#include <Grid/stencil/GeneralLocalStencil.h>
-//#include <Grid/algorithms/GeneralCoarsenedMatrix.h>
-#include <Grid/algorithms/iterative/AdefGeneric.h>
-#include <Grid/algorithms/iterative/BlockConjugateGradient.h>
 
 using namespace std;
 using namespace Grid;
@@ -486,6 +481,8 @@ slurm-1482367.out:Grid : Message : 6169.469330 s : HDCG: Pcg converged in 487 it
 
   DeflatedGuesser<CoarseVector> DeflCoarseGuesser(evec,eval);
 
+  MultiRHSDeflation<CoarseVector> MrhsGuesser;
+  
   //////////////////////////////////////////
   // Build a coarse space solver
   //////////////////////////////////////////
@@ -609,7 +606,7 @@ slurm-1482367.out:Grid : Message : 6169.469330 s : HDCG: Pcg converged in 487 it
   typedef HermitianLinearOperator<MultiGeneralCoarsenedMatrix_t,CoarseVector> MrhsHermMatrix;
   MrhsHermMatrix MrhsCoarseOp     (mrhs);
   MemoryManager::Print();
-#if 0
+#if 1
   { 
     CoarseVector rh_res(CoarseMrhs);
     CoarseVector rh_guess(CoarseMrhs);
@@ -617,19 +614,39 @@ slurm-1482367.out:Grid : Message : 6169.469330 s : HDCG: Pcg converged in 487 it
 
     rh_res= Zero();
     rh_guess= Zero();
+
+    std::cout << "*************************"<<std::endl;
+    std::cout << " MrhsGuesser importing"<<std::endl;
+    std::cout << "*************************"<<std::endl;
+    MrhsGuesser.ImportEigenBasis(evec,eval);
+    std::vector<CoarseVector> BlasGuess(nrhs,Coarse5d);
+    std::vector<CoarseVector> BlasSource(nrhs,Coarse5d);
     for(int r=0;r<nrhs;r++){
-      random(CRNG,c_src);
+      random(CRNG,BlasSource[r]);
+    }
+
+    MrhsGuesser.DeflateSources(BlasSource,BlasGuess);
+
+    for(int r=0;r<nrhs;r++){
+      std::cout << "*************************"<<std::endl;
+      std::cout << "**** DeflCoarseGuesser &&&&& "<<std::endl;
+      std::cout << "*************************"<<std::endl;
+      c_src=BlasSource[r];
       DeflCoarseGuesser(c_src,c_res);
+      std::cout << "Deflated guess      "<< norm2(c_res)<<std::endl;
+      std::cout << "Blas deflated guess "<< norm2(BlasGuess[r])<<std::endl;
+      std::cout << "*************************"<<std::endl;
+      BlasGuess[r] = BlasGuess[r] - c_res;
+      std::cout << "Diff " <<norm2(BlasGuess[r])<<std::endl;
+      std::cout << "*************************"<<std::endl;
       InsertSlice(c_res,rh_res,r,0);
       InsertSlice(c_res,rh_guess,r,0);
       InsertSlice(c_src,rh_src,r,0);
     }
 
-  MemoryManager::Print();
     coarseCG(MrhsCoarseOp,rh_src,rh_res);
-  MemoryManager::Print();
-    //redo with block CG
-    
+
+    //redo with block CG ?
     for(int r=0;r<nrhs;r++){
       std::cout << " compare to single RHS "<<r<<"/"<<nrhs<<std::endl;
       ExtractSlice(c_src,rh_src,r,0);
@@ -645,7 +662,7 @@ slurm-1482367.out:Grid : Message : 6169.469330 s : HDCG: Pcg converged in 487 it
     }
   }
 #endif
-  MemoryManager::Print();
+
   //////////////////////////////////////
   // fine solve
   //////////////////////////////////////
@@ -653,12 +670,23 @@ slurm-1482367.out:Grid : Message : 6169.469330 s : HDCG: Pcg converged in 487 it
   
   //  std::vector<RealD> los({2.0,2.5}); // Nbasis 40 == 36,36 iters
   //  std::vector<RealD> los({2.0});
-  std::vector<RealD> los({2.5});
+  //  std::vector<RealD> los({2.5});
 
   //  std::vector<int> ords({7,8,10}); // Nbasis 40 == 40,38,36 iters (320,342,396 mults)
   //  std::vector<int> ords({7}); // Nbasis 40 == 40 iters (320 mults)
   //  std::vector<int> ords({9}); // Nbasis 40 == 40 iters (320 mults)  
-  std::vector<int> ords({9}); 
+
+  // 148 outer				       
+       //  std::vector<RealD> los({1.0});
+       //  std::vector<int> ords({24}); 
+
+  // 162 outer				       
+       //  std::vector<RealD> los({2.5});
+       //  std::vector<int> ords({9}); 
+
+  // ??? outer				       
+  std::vector<RealD> los({2.0});
+  std::vector<int> ords({7}); 
 
  /*
    Smoother opt @56 nbasis, 0.04 convergence, 192 evs
@@ -778,14 +806,16 @@ Conclusion: higher order smoother is doing better. Much better. Use a Krylov smo
 #if 1
   MemoryManager::Print();
       DoNothingGuesser<CoarseVector> DoNothing;
-      HPDSolver<CoarseVector> HPDSolveMrhs(MrhsCoarseOp,coarseCG,DoNothing);
+      HPDSolver<CoarseVector> HPDSolveMrhs(MrhsCoarseOp,CG,DoNothing);
+      HPDSolver<CoarseVector> HPDSolveMrhsSloppy(MrhsCoarseOp,CGsloppy,DoNothing);
       TwoLevelADEF2mrhs<LatticeFermion,CoarseVector,Subspace>
 	HDCGmrhs(1.0e-8, 500,
 		 FineHermOp,
 		 CGsmooth,
-		 HPDSolveSloppy, // Never used
-		 HPDSolve,       // Used in Vstart
-		 HPDSolveMrhs,    // Used in M1
+		 //		 HPDSolveSloppy, // Never used
+		 //		 HPDSolve,       // Used in Vstart
+		 HPDSolveMrhsSloppy,    // Used in M1
+		 HPDSolveMrhs,          // Used in Vstart
 		 DeflCoarseGuesser, // single RHS guess used in M1
 		 CoarseMrhs,        // Grid needed to Mrhs grid
 		 Aggregates);
