@@ -162,8 +162,14 @@ template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
  {
    uint32_t scidac_checksuma = stoull(scidacChecksum_.suma,0,16);
    uint32_t scidac_checksumb = stoull(scidacChecksum_.sumb,0,16);
-   if ( scidac_csuma !=scidac_checksuma) return 0;
-   if ( scidac_csumb !=scidac_checksumb) return 0;
+   std::cout << GridLogMessage << " scidacChecksumVerify computed "<<scidac_csuma<<" expected "<<scidac_checksuma <<std::endl;
+   std::cout << GridLogMessage << " scidacChecksumVerify computed "<<scidac_csumb<<" expected "<<scidac_checksumb <<std::endl;
+   if ( scidac_csuma !=scidac_checksuma) {
+     return 0;
+   };
+   if ( scidac_csumb !=scidac_checksumb) {
+     return 0;
+   };
    return 1;
  }
 
