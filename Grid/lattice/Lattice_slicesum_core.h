@@ -119,18 +119,13 @@ template<class vobj> inline void sliceSumReduction_cub_large(const vobj *Data, V
 
 template<class vobj> inline void sliceSumReduction_cub(const Lattice<vobj> &Data, Vector<vobj> &lvSum, const int rd, const int e1, const int e2, const int stride, const int ostride, const int Nsimd)
 {
-  autoView(Data_v, Data, AcceleratorRead);
-  #if defined(GRID_CUDA)
-    sliceSumReduction_cub_small(&Data_v[0], lvSum, rd, e1, e2, stride, ostride, Nsimd);
-
-  #elif defined (GRID_HIP) //hipcub cannot deal with large vobjs that don't fit in shared memory, therefore separate into _small/_large. 
-    if constexpr (sizeof(vobj) <= 256) {
+  autoView(Data_v, Data, AcceleratorRead); //hipcub/cub cannot deal with large vobjs so we split into small/large case.
+    if constexpr (sizeof(vobj) <= 256) { 
       sliceSumReduction_cub_small(&Data_v[0], lvSum, rd, e1, e2, stride, ostride, Nsimd);
     }
     else {
       sliceSumReduction_cub_large(&Data_v[0], lvSum, rd, e1, e2, stride, ostride, Nsimd);
     }
-  #endif
 }
 #endif
 
