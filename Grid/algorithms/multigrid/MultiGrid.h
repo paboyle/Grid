@@ -29,7 +29,6 @@ Author: Peter Boyle <pboyle@bnl.gov>
 
 #include <Grid/algorithms/multigrid/Aggregates.h>
 #include <Grid/algorithms/multigrid/Geometry.h>
-#include <Grid/algorithms/multigrid/BatchedBlas.h>
 #include <Grid/algorithms/multigrid/CoarsenedMatrix.h>
 #include <Grid/algorithms/multigrid/GeneralCoarsenedMatrix.h>
 #include <Grid/algorithms/multigrid/GeneralCoarsenedMatrixMultiRHS.h>

@@ -27,7 +27,6 @@ Author: Peter Boyle <pboyle@bnl.gov>
 /*  END LEGAL */
 #pragma once
 
-#include <Grid/algorithms/multigrid/BatchedBlas.h>
 
 NAMESPACE_BEGIN(Grid);
 
