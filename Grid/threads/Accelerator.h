@@ -397,7 +397,7 @@ NAMESPACE_BEGIN(Grid);
 inline void acceleratorMem(void)
 {
   size_t free_t,total_t,used_t;
-  hipMemGetInfo(&free_t,&total_t);
+  auto discard = hipMemGetInfo(&free_t,&total_t);
   used_t=total_t-free_t;
   std::cout << " MemoryManager : GPU used "<<used_t<<" free "<<free_t<< " total "<<total_t<<std::endl;
 }
