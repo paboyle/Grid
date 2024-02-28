@@ -270,5 +270,42 @@ RealD axpby_norm(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const L
     return axpby_norm_fast(ret,a,b,x,y);
 }
 
+/// Trace product
+template<class obj> auto traceProduct(const Lattice<obj> &rhs_1,const Lattice<obj> &rhs_2)
+  -> Lattice<decltype(trace(obj()))>
+{
+  typedef decltype(trace(obj())) robj;
+  Lattice<robj> ret_i(rhs_1.Grid());
+  autoView( rhs1 , rhs_1, AcceleratorRead);
+  autoView( rhs2 , rhs_2, AcceleratorRead);
+  autoView( ret , ret_i, AcceleratorWrite);
+  ret.Checkerboard() = rhs_1.Checkerboard();
+  accelerator_for(ss,rhs1.size(),obj::Nsimd(),{
+      coalescedWrite(ret[ss],traceProduct(rhs1(ss),rhs2(ss)));
+  });
+  return ret_i;
+}
+
+template<class obj1,class obj2> auto traceProduct(const Lattice<obj1> &rhs_1,const obj2 &rhs2)
+  -> Lattice<decltype(trace(obj1()))>
+{
+  typedef decltype(trace(obj1())) robj;
+  Lattice<robj> ret_i(rhs_1.Grid());
+  autoView( rhs1 , rhs_1, AcceleratorRead);
+  autoView( ret , ret_i, AcceleratorWrite);
+  ret.Checkerboard() = rhs_1.Checkerboard();
+  accelerator_for(ss,rhs1.size(),obj1::Nsimd(),{
+      coalescedWrite(ret[ss],traceProduct(rhs1(ss),rhs2));
+  });
+  return ret_i;
+}
+template<class obj1,class obj2> auto traceProduct(const obj2 &rhs_2,const Lattice<obj1> &rhs_1)
+  -> Lattice<decltype(trace(obj1()))>
+{
+  return traceProduct(rhs_1,rhs_2);
+}
+
+
+
 NAMESPACE_END(Grid);
 #endif

@@ -287,23 +287,37 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   theGridAccelerator->submit([&](cl::sycl::handler &cgh) {		\
-      unsigned long nt=acceleratorThreads();				\
-      unsigned long unum1 = num1;					\
-      unsigned long unum2 = num2;					\
-      if(nt < 8)nt=8;							\
-      cl::sycl::range<3> local {nt,1,nsimd};				\
-      cl::sycl::range<3> global{unum1,unum2,nsimd};			\
-      cgh.parallel_for(					\
-      cl::sycl::nd_range<3>(global,local), \
-      [=] (cl::sycl::nd_item<3> item) /*mutable*/     \
-      [[intel::reqd_sub_group_size(16)]]	      \
-      {						      \
-      auto iter1    = item.get_global_id(0);	      \
-      auto iter2    = item.get_global_id(1);	      \
-      auto lane     = item.get_global_id(2);	      \
-      { __VA_ARGS__ };				      \
-     });	   			              \
-    });
+    unsigned long nt=acceleratorThreads();				\
+    if(nt < 8)nt=8;							\
+    unsigned long unum1 = num1;						\
+    unsigned long unum2 = num2;						\
+    unsigned long unum1_divisible_by_nt = ((unum1 + nt - 1) / nt) * nt;	\
+    cl::sycl::range<3> local {nt,1,nsimd};				\
+    cl::sycl::range<3> global{unum1_divisible_by_nt,unum2,nsimd};	\
+    if (unum1_divisible_by_nt != unum1) {				\
+      cgh.parallel_for(							\
+		       cl::sycl::nd_range<3>(global,local),		\
+		       [=] (cl::sycl::nd_item<3> item) /*mutable*/	\
+		       [[intel::reqd_sub_group_size(16)]]		\
+		       {						\
+			 auto iter1    = item.get_global_id(0);		\
+			 auto iter2    = item.get_global_id(1);		\
+			 auto lane     = item.get_global_id(2);		\
+			 { if (iter1 < unum1){ __VA_ARGS__ } };		\
+		       });						\
+    } else {								\
+      cgh.parallel_for(							\
+		       cl::sycl::nd_range<3>(global,local),		\
+		       [=] (cl::sycl::nd_item<3> item) /*mutable*/	\
+		       [[intel::reqd_sub_group_size(16)]]		\
+		       {						\
+			 auto iter1    = item.get_global_id(0);		\
+			 auto iter2    = item.get_global_id(1);		\
+			 auto lane     = item.get_global_id(2);		\
+			 { __VA_ARGS__ };				\
+		       });						\
+    }									\
+  });
 
 #define accelerator_barrier(dummy) { theGridAccelerator->wait(); }
 
@@ -405,7 +419,7 @@ void LambdaApply(uint64_t numx, uint64_t numy, uint64_t numz, lambda Lambda)
 
 #define accelerator_barrier(dummy)				\
   {								\
-    hipStreamSynchronize(computeStream);			\
+    auto r=hipStreamSynchronize(computeStream);			\
     auto err = hipGetLastError();				\
     if ( err != hipSuccess ) {					\
       printf("After hipDeviceSynchronize() : HIP error %s \n", hipGetErrorString( err )); \
@@ -438,19 +452,19 @@ inline void *acceleratorAllocDevice(size_t bytes)
   return ptr;
 };
 
-inline void acceleratorFreeShared(void *ptr){ hipFree(ptr);};
-inline void acceleratorFreeDevice(void *ptr){ hipFree(ptr);};
-inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
-inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
+inline void acceleratorFreeShared(void *ptr){ auto r=hipFree(ptr);};
+inline void acceleratorFreeDevice(void *ptr){ auto r=hipFree(ptr);};
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { auto r=hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ auto r=hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
 //inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyDeviceToDevice);}
 //inline void acceleratorCopySynchronise(void) {  }
-inline void acceleratorMemSet(void *base,int value,size_t bytes) { hipMemset(base,value,bytes);}
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { auto r=hipMemset(base,value,bytes);}
 
 inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) // Asynch
 {
-  hipMemcpyDtoDAsync(to,from,bytes, copyStream);
+  auto r=hipMemcpyDtoDAsync(to,from,bytes, copyStream);
 }
-inline void acceleratorCopySynchronise(void) { hipStreamSynchronize(copyStream); };
+inline void acceleratorCopySynchronise(void) { auto r=hipStreamSynchronize(copyStream); };
 
 #endif
 
@@ -574,5 +588,12 @@ accelerator_inline void acceleratorFence(void)
 #endif
   return;
 }
+
+inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)
+{
+  acceleratorCopyDeviceToDeviceAsynch(from,to,bytes);
+  acceleratorCopySynchronise();
+}
+
 
 NAMESPACE_END(Grid);

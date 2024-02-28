@@ -1,0 +1,6 @@
+HDF=$HOME/paboyle/install
+
+LDFLAGS=-L$HDF/lib CXX=clang++ ../../configure --enable-simd=NEONv8 --enable-comms=none --enable-unified=yes --disable-fermion-reps --disable-gparity --disable-debug --with-hdf5=$HDF 
+#LDFLAGS=-L$HDF/lib CXX=clang++ ../../configure --enable-simd=GEN --enable-comms=none --enable-unified=yes --disable-fermion-reps --disable-gparity --disable-debug --with-hdf5=$HDF 
+
+

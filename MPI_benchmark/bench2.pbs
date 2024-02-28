@@ -1,0 +1,22 @@
+#!/bin/bash
+#PBS -q EarlyAppAccess
+#PBS -l select=2
+#PBS -l walltime=01:00:00
+#PBS -A LatticeQCD_aesp_CNDA
+
+export TZ='/usr/share/zoneinfo/US/Central'
+export OMP_PROC_BIND=spread
+export OMP_NUM_THREADS=3
+unset OMP_PLACES
+
+cd $PBS_O_WORKDIR
+
+NNODES=`wc -l < $PBS_NODEFILE`
+NRANKS=12         # Number of MPI ranks per node
+NDEPTH=4          # Number of hardware threads per rank, spacing between MPI ranks on a node
+NTHREADS=$OMP_NUM_THREADS # Number of OMP threads per rank, given to OMP_NUM_THREADS
+
+NTOTRANKS=$(( NNODES * NRANKS ))
+
+CMD="mpiexec -np 2 -ppn 1  -envall ./gpu_tile_compact.sh ./halo_mpi --mpi 2.1.1.1"
+$CMD

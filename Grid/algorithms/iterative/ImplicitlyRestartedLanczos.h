@@ -419,14 +419,15 @@ until convergence
 	}
       }
 
-      if ( Nconv < Nstop )
+      if ( Nconv < Nstop ) {
 	std::cout << GridLogIRL << "Nconv ("<<Nconv<<") < Nstop ("<<Nstop<<")"<<std::endl;
-
+	std::cout << GridLogIRL << "returning Nstop vectors, the last "<< Nstop-Nconv << "of which might meet convergence criterion only approximately" <<std::endl;
+      }
       eval=eval2;
       
       //Keep only converged
-      eval.resize(Nconv);// Nstop?
-      evec.resize(Nconv,grid);// Nstop?
+      eval.resize(Nstop);// was Nconv
+      evec.resize(Nstop,grid);// was Nconv
       basisSortInPlace(evec,eval,reverse);
       
     }

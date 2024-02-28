@@ -47,3 +47,4 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/lattice/Lattice_transfer.h>
 #include <Grid/lattice/Lattice_basis.h>
 #include <Grid/lattice/Lattice_crc.h>
+#include <Grid/lattice/PaddedCell.h>

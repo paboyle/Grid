@@ -10,9 +10,8 @@ For first time setup of the Xcode and Grid build environment on Mac OS, you will
 
 1. Install Xcode and the Xcode command-line utilities
 2. Set Grid environment variables
-3. Install and build Open MPI ***optional***
-4. Install and build Grid pre-requisites
-5. Install, Configure and Build Grid
+3. Install and build Grid pre-requisites
+4. Install, Configure and Build Grid
 
 Apple's [Xcode website][Xcode] is the go-to reference for 1, and the definitive reference for 4 and 5 is the [Grid Documentation][GridDoc].
 
@@ -92,60 +91,33 @@ launchctl setenv GridPkg /opt/local</string>
 </plist>
 ```
 
-## 3. Install and build Open MPI -- ***optional***
-
-Download the latest version of [Open MPI][OMPI] version 3.1 (I used 3.1.5) and build it like so:
-
-[OMPI]: https://www.open-mpi.org/software/ompi/v3.1/
-
-    ../configure CC=clang CXX=clang++ CXXFLAGS=-g --prefix=$GridPre/bin
-    make -j 4 all install
-
-***Note the `/bin` at the end of the prefix - this is required. As a quirk of the OpenMPI installer, `--prefix` must point to the `bin` subdirectory, with other files installed in `$GridPre/include`, `$GridPre/lib`, `$GridPre/share`, etc.***
-
-Grid does not have any dependencies on fortran, however many standard scientific packages do, so you may wish to download GNU fortran (e.g. MacPorts ``gfortran`` package) and add the following to your configure invocation:
-
-    F77=gfortran FC=gfortran
-
-## 4. Install and build Grid pre-requisites
+## 3. Install and build Grid pre-requisites
 
 To simplify the installation of **Grid pre-requisites**, you can use your favourite package manager, e.g.:
 
-### 1. [MacPorts][MacPorts]
+### 3.1. [MacPorts][MacPorts]
 
 [MacPorts]: https://www.macports.org "MacPorts package manager"
 
 Install [MacPorts][MacPorts] if you haven't done so already, and then install packages with:
 
-    sudo port install <portname>
+    sudo port install openmpi git-flow-avh gmp hdf5 mpfr fftw-3-single lapack wget autoconf automake bison cmake gawk libomp
 
-These are the `portname`s for mandatory Grid libraries:
+On a Mac without GPUs:
 
-* git-flow-avh
-* gmp
-* hdf5
-* mpfr
+    sudo port install OpenBLAS +native
 
-and these are the `portname`s for optional Grid libraries:
+To use `Gnu sha256sum`:
 
-* fftw-3-single
-* lapack
-* doxygen
-* OpenBLAS
+    pushd /opt/local/bin; sudo ln -s gsha256sum sha256sum; popd 
 
-***Please update this list with any packages I've missed! ... and double-check whether OpenBLAS is really for Grid. NB: lapack doesn't seem to work. Should it be scalapack?***
+These `port`s are not strictly necessary, but they are helpful:
 
-### 2. [Homebrew][Homebrew]
+    sudo port install gnuplot gsl h5utils nasm rclone texinfo tree xorg-server
 
-[Homebrew]: https://brew.sh "Homebrew package manager"
+***Please update this list with any packages I've missed!***
 
-Install [Homebrew][Homebrew] if you haven't done so already, and then install packages with:
-
-    sudo brew install <packagename>
-
-The same packages are available as from MacPorts.
-
-### Install LIME ***optional***
+#### Install LIME
 
 There isn't currently a port for [C-LIME][C-LIME], so download the source and then build it:
 
@@ -154,9 +126,19 @@ There isn't currently a port for [C-LIME][C-LIME], so download the source and th
     ../configure CC=clang --prefix=$GridPre
     make -j 4 all install
 
-## 5. Install, Configure and Build Grid
+### 3.2. [Homebrew][Homebrew]
 
-### 5.1 Install Grid
+[Homebrew]: https://brew.sh "Homebrew package manager"
+
+Install [Homebrew][Homebrew] if you haven't done so already, and then install packages with:
+
+    sudo brew install <packagename>
+
+I don't use Homebrew, so I'm not sure what the Brew package name equivalents are. ** Please update if you know **
+
+## 4. Install, Configure and Build Grid
+
+### 4.1 Install Grid
 
 [Grid]: https://github.com/paboyle/Grid
 
@@ -174,7 +156,7 @@ or
 
 depending on how many times you like to enter your password.
 
-### 5.2 Configure Grid
+### 4.2 Configure Grid
 
 The Xcode build system supports multiple configurations for each project, by default: `Debug` and `Release`, but more configurations can be defined. We will create separate Grid build directories for each configuration, using the Grid **Autoconf** build system to make each configuration. NB: it is **not** necessary to run `make install` on them once they are built (IDE features such as *jump to definition* will work better of you don't).
 
@@ -198,7 +180,7 @@ Debug configuration with MPI:
 
     ../configure CXX=clang++ CXXFLAGS="-I$GridPkg/include/libomp -Xpreprocessor -fopenmp -std=c++11" LDFLAGS="-L$GridPkg/lib/libomp" LIBS="-lomp" --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre --enable-simd=GEN --enable-comms=mpi-auto MPICXX=$GridPre/bin/mpicxx --prefix=$GridPre/MPIDebug
 
-### 5.3 Build Grid
+### 4.3 Build Grid
 
 Each configuration must be built before they can be used. You can either:
 

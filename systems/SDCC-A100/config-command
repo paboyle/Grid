@@ -1,0 +1,17 @@
+../../configure \
+--enable-comms=mpi-auto \
+--enable-unified=no \
+--enable-shm=nvlink \
+--enable-accelerator=cuda \
+--enable-gen-simd-width=64 \
+--enable-simd=GPU \
+--disable-accelerator-cshift \
+--disable-fermion-reps \
+--disable-gparity \
+CXX=nvcc \
+MPICXX=mpicxx \
+LDFLAGS="-cudart shared " \
+CXXFLAGS="-ccbin mpicxx -gencode arch=compute_80,code=sm_80 -std=c++17 -cudart shared"
+
+
+

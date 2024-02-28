@@ -1,0 +1,1 @@
+mpicxx  -fsycl halo_mpi.cc -o halo_mpi

@@ -73,6 +73,16 @@ vobj coalescedReadPermute(const vobj & __restrict__ vec,int ptype,int doperm,int
     return vec;
   }
 }
+//'perm_mask' acts as a bitmask
+template<class vobj> accelerator_inline
+vobj coalescedReadGeneralPermute(const vobj & __restrict__ vec,int perm_mask,int nd,int lane=0)
+{
+  auto obj = vec, tmp = vec;
+  for (int d=0;d<nd;d++)
+    if (perm_mask & (0x1 << d)) { permute(obj,tmp,d); tmp=obj;}
+  return obj;
+}
+
 template<class vobj> accelerator_inline
 void coalescedWrite(vobj & __restrict__ vec,const vobj & __restrict__ extracted,int lane=0)
 {
@@ -83,7 +93,7 @@ void coalescedWriteNonTemporal(vobj & __restrict__ vec,const vobj & __restrict__
 {
   vstream(vec, extracted);
 }
-#else
+#else //==GRID_SIMT
 
 
 //#ifndef GRID_SYCL
@@ -163,6 +173,14 @@ typename vobj::scalar_object coalescedReadPermute(const vobj & __restrict__ vec,
 {
   int mask = vobj::Nsimd() >> (ptype + 1);		
   int plane= doperm ? lane ^ mask : lane;
+  return extractLane(plane,vec);
+}
+template<class vobj> accelerator_inline
+typename vobj::scalar_object coalescedReadGeneralPermute(const vobj & __restrict__ vec,int perm_mask,int nd,int lane=acceleratorSIMTlane(vobj::Nsimd()))
+{
+  int plane = lane;
+  for (int d=0;d<nd;d++)
+    plane = (perm_mask & (0x1 << d)) ? plane ^ (vobj::Nsimd() >> (d + 1)) : plane;
   return extractLane(plane,vec);
 }
 template<class vobj> accelerator_inline

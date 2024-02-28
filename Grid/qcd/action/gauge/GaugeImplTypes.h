@@ -61,7 +61,7 @@ NAMESPACE_BEGIN(Grid);
   typedef typename Impl::Field Field;
 
 // hardcodes the exponential approximation in the template
-template <class S, int Nrepresentation = Nc, int Nexp = 12 > class GaugeImplTypes {
+template <class S, int Nrepresentation = Nc, int Nexp = 12, class Group = SU<Nc> > class GaugeImplTypes {
 public:
   typedef S Simd;
   typedef typename Simd::scalar_type scalar_type;
@@ -77,8 +77,6 @@ public:
   typedef Lattice<SiteComplex> ComplexField;
   typedef Lattice<SiteLink>    LinkField; 
   typedef Lattice<SiteField>   Field;
-
-  typedef SU<Nrepresentation> Group;
 
   // Guido: we can probably separate the types from the HMC functions
   // this will create 2 kind of implementations
@@ -119,6 +117,7 @@ public:
     //
     LinkField Pmu(P.Grid());
     Pmu = Zero();
+
     for (int mu = 0; mu < Nd; mu++) {
       Group::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
       RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR) ;
@@ -126,8 +125,12 @@ public:
       PokeIndex<LorentzIndex>(P, Pmu, mu);
     }
   }
-
-  static inline Field projectForce(Field &P) { return Ta(P); }
+    
+  static inline Field projectForce(Field &P) {
+      Field ret(P.Grid());
+      Group::taProj(P, ret);
+      return ret;
+    }
 
   static inline void update_field(Field& P, Field& U, double ep){
     //static std::chrono::duration<double> diff;
@@ -137,14 +140,15 @@ public:
     autoView(P_v,P,AcceleratorRead);
     accelerator_for(ss, P.Grid()->oSites(),1,{
       for (int mu = 0; mu < Nd; mu++) {
-        U_v[ss](mu) = ProjectOnGroup(Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu));
+          U_v[ss](mu) = Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu);
+          U_v[ss](mu) = Group::ProjectOnGeneralGroup(U_v[ss](mu));
       }
     });
    //auto end = std::chrono::high_resolution_clock::now();
    // diff += end - start;
    // std::cout << "Time to exponentiate matrix " << diff.count() << " s\n";
   }
-
+    
   static inline RealD FieldSquareNorm(Field& U){
     LatticeComplex Hloc(U.Grid());
     Hloc = Zero();
@@ -157,7 +161,7 @@ public:
   }
 
   static inline void Project(Field &U) {
-    ProjectSUn(U);
+    Group::ProjectOnSpecialGroup(U);
   }
 
   static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U) {
@@ -171,6 +175,7 @@ public:
   static inline void ColdConfiguration(GridParallelRNG &pRNG, Field &U) {
     Group::ColdConfiguration(pRNG, U);
   }
+
 };
 
 
@@ -178,9 +183,16 @@ typedef GaugeImplTypes<vComplex, Nc> GimplTypesR;
 typedef GaugeImplTypes<vComplexF, Nc> GimplTypesF;
 typedef GaugeImplTypes<vComplexD, Nc> GimplTypesD;
 
+typedef GaugeImplTypes<vComplex, Nc, 12, Sp<Nc> > SpGimplTypesR;
+typedef GaugeImplTypes<vComplexF, Nc, 12, Sp<Nc> > SpGimplTypesF;
+typedef GaugeImplTypes<vComplexD, Nc, 12, Sp<Nc> > SpGimplTypesD;
+
 typedef GaugeImplTypes<vComplex, SU<Nc>::AdjointDimension> GimplAdjointTypesR;
 typedef GaugeImplTypes<vComplexF, SU<Nc>::AdjointDimension> GimplAdjointTypesF;
 typedef GaugeImplTypes<vComplexD, SU<Nc>::AdjointDimension> GimplAdjointTypesD;
+
+
+
 
 NAMESPACE_END(Grid);
 

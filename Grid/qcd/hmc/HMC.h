@@ -283,12 +283,13 @@ public:
       std::cout << GridLogHMC << "Total time for trajectory (s): " << (t1-t0)/1e6 << std::endl;
 
       TheIntegrator.print_timer();
-
+      
+      TheIntegrator.Smearer.set_Field(Ucur);
       for (int obs = 0; obs < Observables.size(); obs++) {
       	std::cout << GridLogDebug << "Observables # " << obs << std::endl;
       	std::cout << GridLogDebug << "Observables total " << Observables.size() << std::endl;
       	std::cout << GridLogDebug << "Observables pointer " << Observables[obs] << std::endl;
-        Observables[obs]->TrajectoryComplete(traj + 1, Ucur, sRNG, pRNG);
+        Observables[obs]->TrajectoryComplete(traj + 1, TheIntegrator.Smearer, sRNG, pRNG);
       }
       std::cout << GridLogHMC << ":::::::::::::::::::::::::::::::::::::::::::" << std::endl;
     }

@@ -32,6 +32,7 @@
 
 #include <Grid/stencil/SimpleCompressor.h>   // subdir aggregate
 #include <Grid/stencil/Lebesgue.h>   // subdir aggregate
+#include <Grid/stencil/GeneralLocalStencil.h>
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Must not lose sight that goal is to be able to construct really efficient

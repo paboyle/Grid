@@ -30,6 +30,8 @@ directory
 #ifndef QCD_ACTION_CORE
 #define QCD_ACTION_CORE
 
+#include <Grid/qcd/action/gauge/GaugeImplementations.h>
+
 #include <Grid/qcd/action/ActionBase.h>
 NAMESPACE_CHECK(ActionBase);
 #include <Grid/qcd/action/ActionSet.h>

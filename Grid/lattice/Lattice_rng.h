@@ -152,6 +152,7 @@ public:
 #ifdef RNG_FAST_DISCARD
   static void Skip(RngEngine &eng,uint64_t site)
   {
+#if 0
     /////////////////////////////////////////////////////////////////////////////////////
     // Skip by 2^40 elements between successive lattice sites
     // This goes by 10^12.
@@ -162,9 +163,9 @@ public:
     // tens of seconds per trajectory so this is clean in all reasonable cases,
     // and margin of safety is orders of magnitude.
     // We could hack Sitmo to skip in the higher order words of state if necessary
-      //
-      // Replace with 2^30 ; avoid problem on large volumes
-      //
+    //
+    // Replace with 2^30 ; avoid problem on large volumes
+    //
     /////////////////////////////////////////////////////////////////////////////////////
     //      uint64_t skip = site+1;  //   Old init Skipped then drew.  Checked compat with faster init
     const int shift = 30;
@@ -179,6 +180,9 @@ public:
     assert((skip >> shift)==site); // check for overflow
 
     eng.discard(skip);
+#else
+    eng.discardhi(site);
+#endif
     //      std::cout << " Engine  " <<site << " state " <<eng<<std::endl;
   } 
 #endif

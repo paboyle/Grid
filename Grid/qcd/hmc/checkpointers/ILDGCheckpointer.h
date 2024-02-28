@@ -69,17 +69,27 @@ public:
     }
   }
 
-  void TrajectoryComplete(int traj, GaugeField &U, GridSerialRNG &sRNG,
+  void TrajectoryComplete(int traj,
+			  ConfigurationBase<GaugeField> &SmartConfig,
+			  GridSerialRNG &sRNG,
                           GridParallelRNG &pRNG) {
     if ((traj % Params.saveInterval) == 0) {
-      std::string config, rng;
+      std::string config, rng, smr;
       this->build_filenames(traj, Params, config, rng);
-      GridBase *grid = U.Grid();
+      GridBase *grid = SmartConfig.get_U(false).Grid();
       uint32_t nersc_csum,scidac_csuma,scidac_csumb;
       BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
+      std::cout << GridLogMessage << "Written BINARY RNG " << rng
+                << " checksum " << std::hex 
+		<< nersc_csum<<"/"
+		<< scidac_csuma<<"/"
+		<< scidac_csumb
+		<< std::dec << std::endl;
+
+      
       IldgWriter _IldgWriter(grid->IsBoss());
       _IldgWriter.open(config);
-      _IldgWriter.writeConfiguration<GaugeStats>(U, traj, config, config);
+      _IldgWriter.writeConfiguration<GaugeStats>(SmartConfig.get_U(false), traj, config, config);
       _IldgWriter.close();
 
       std::cout << GridLogMessage << "Written ILDG Configuration on " << config
@@ -88,6 +98,21 @@ public:
 		<< scidac_csuma<<"/"
 		<< scidac_csumb
 		<< std::dec << std::endl;
+
+      if ( Params.saveSmeared ) { 
+	IldgWriter _IldgWriter(grid->IsBoss());
+	_IldgWriter.open(smr);
+	_IldgWriter.writeConfiguration<GaugeStats>(SmartConfig.get_U(true), traj, config, config);
+	_IldgWriter.close();
+
+	std::cout << GridLogMessage << "Written ILDG Configuration on " << smr
+                << " checksum " << std::hex 
+		<< nersc_csum<<"/"
+		<< scidac_csuma<<"/"
+		<< scidac_csumb
+		<< std::dec << std::endl;
+      }
+
     }
   };
 

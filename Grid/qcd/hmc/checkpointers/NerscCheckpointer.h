@@ -52,23 +52,29 @@ public:
     Params.format = "IEEE64BIG";  // fixed, overwrite any other choice
   }
 
-  void TrajectoryComplete(int traj, GaugeField &U, GridSerialRNG &sRNG,
-                          GridParallelRNG &pRNG) {
+  virtual void TrajectoryComplete(int traj,
+                                  ConfigurationBase<GaugeField> &SmartConfig,
+                                  GridSerialRNG &sRNG,
+                                  GridParallelRNG &pRNG)
+  {
     if ((traj % Params.saveInterval) == 0) {
-      std::string config, rng;
-      this->build_filenames(traj, Params, config, rng);
-
+      std::string config, rng, smr;
+      this->build_filenames(traj, Params, config, smr, rng);
+      
       int precision32 = 1;
       int tworow = 0;
       NerscIO::writeRNGState(sRNG, pRNG, rng);
-      NerscIO::writeConfiguration<GaugeStats>(U, config, tworow, precision32);
+      NerscIO::writeConfiguration<GaugeStats>(SmartConfig.get_U(false), config, tworow, precision32);
+      if ( Params.saveSmeared ) {
+	NerscIO::writeConfiguration<GaugeStats>(SmartConfig.get_U(true), smr, tworow, precision32);
+      }
     }
   };
 
   void CheckpointRestore(int traj, GaugeField &U, GridSerialRNG &sRNG,
                          GridParallelRNG &pRNG) {
-    std::string config, rng;
-    this->build_filenames(traj, Params, config, rng);
+    std::string config, rng, smr;
+    this->build_filenames(traj, Params, config, smr, rng );
     this->check_filename(rng);
     this->check_filename(config);
 

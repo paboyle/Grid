@@ -126,6 +126,16 @@ typedef WilsonFermion<WilsonTwoIndexSymmetricImplD> WilsonTwoIndexSymmetricFermi
 typedef WilsonFermion<WilsonTwoIndexAntiSymmetricImplF> WilsonTwoIndexAntiSymmetricFermionF;
 typedef WilsonFermion<WilsonTwoIndexAntiSymmetricImplD> WilsonTwoIndexAntiSymmetricFermionD;
 
+// Sp(2n)
+typedef WilsonFermion<SpWilsonImplF> SpWilsonFermionF;
+typedef WilsonFermion<SpWilsonImplD> SpWilsonFermionD;
+
+typedef WilsonFermion<SpWilsonTwoIndexAntiSymmetricImplF> SpWilsonTwoIndexAntiSymmetricFermionF;
+typedef WilsonFermion<SpWilsonTwoIndexAntiSymmetricImplD> SpWilsonTwoIndexAntiSymmetricFermionD;
+
+typedef WilsonFermion<SpWilsonTwoIndexSymmetricImplF> SpWilsonTwoIndexSymmetricFermionF;
+typedef WilsonFermion<SpWilsonTwoIndexSymmetricImplD> SpWilsonTwoIndexSymmetricFermionD;
+
 // Twisted mass fermion
 typedef WilsonTMFermion<WilsonImplD2> WilsonTMFermionD2;
 typedef WilsonTMFermion<WilsonImplF> WilsonTMFermionF;

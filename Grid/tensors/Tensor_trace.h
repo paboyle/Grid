@@ -69,6 +69,35 @@ accelerator_inline auto trace(const iVector<vtype,N> &arg) -> iVector<decltype(t
   }
   return ret;
 }
+////////////////////////////
+// Fast path traceProduct
+////////////////////////////
+template<class S1 , class S2, IfNotGridTensor<S1> = 0, IfNotGridTensor<S2> = 0>
+accelerator_inline auto traceProduct( const S1 &arg1,const S2 &arg2)
+  -> decltype(arg1*arg2)
+{
+  return arg1*arg2;
+}
+
+template<class vtype,class rtype,int N >
+accelerator_inline auto traceProduct(const iMatrix<vtype,N> &arg1,const iMatrix<rtype,N> &arg2) -> iScalar<decltype(trace(arg1._internal[0][0]*arg2._internal[0][0]))>
+{
+  iScalar<decltype( trace(arg1._internal[0][0]*arg2._internal[0][0] )) > ret;
+  zeroit(ret._internal);
+  for(int i=0;i<N;i++){
+  for(int j=0;j<N;j++){
+    ret._internal=ret._internal+traceProduct(arg1._internal[i][j],arg2._internal[j][i]);
+  }}
+  return ret;
+}
+
+template<class vtype,class rtype >
+accelerator_inline auto traceProduct(const iScalar<vtype> &arg1,const iScalar<rtype> &arg2) -> iScalar<decltype(trace(arg1._internal*arg2._internal))>
+{
+  iScalar<decltype(trace(arg1._internal*arg2._internal))> ret;
+  ret._internal=traceProduct(arg1._internal,arg2._internal);
+  return ret;
+}
 
 NAMESPACE_END(Grid);
 

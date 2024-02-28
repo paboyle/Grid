@@ -52,7 +52,8 @@ template<class vobj> Lattice<vobj> Cshift(const Lattice<vobj> &rhs,int dimension
   int comm_dim        = rhs.Grid()->_processors[dimension] >1 ;
   int splice_dim      = rhs.Grid()->_simd_layout[dimension]>1 && (comm_dim);
 
-
+  RealD t1,t0;
+  t0=usecond();
   if ( !comm_dim ) {
     //std::cout << "CSHIFT: Cshift_local" <<std::endl;
     Cshift_local(ret,rhs,dimension,shift); // Handles checkerboarding
@@ -63,6 +64,8 @@ template<class vobj> Lattice<vobj> Cshift(const Lattice<vobj> &rhs,int dimension
     //std::cout << "CSHIFT: Cshift_comms" <<std::endl;
     Cshift_comms(ret,rhs,dimension,shift);
   }
+  t1=usecond();
+  //  std::cout << GridLogPerformance << "Cshift took "<< (t1-t0)/1e3 << " ms"<<std::endl;
   return ret;
 }
 
@@ -127,16 +130,20 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
     
   int cb= (cbmask==0x2)? Odd : Even;
   int sshift= rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,cb);
-
+  RealD tcopy=0.0;
+  RealD tgather=0.0;
+  RealD tscatter=0.0;
+  RealD tcomms=0.0;
+  uint64_t xbytes=0;
   for(int x=0;x<rd;x++){       
 
     int sx        =  (x+sshift)%rd;
     int comm_proc = ((x+sshift)/rd)%pd;
     
     if (comm_proc==0) {
-
+      tcopy-=usecond();
       Copy_plane(ret,rhs,dimension,x,sx,cbmask); 
-
+      tcopy+=usecond();
     } else {
 
       int words = buffer_size;
@@ -144,26 +151,39 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
 
       int bytes = words * sizeof(vobj);
 
+      tgather-=usecond();
       Gather_plane_simple (rhs,send_buf,dimension,sx,cbmask);
+      tgather+=usecond();
 
       //      int rank           = grid->_processor;
       int recv_from_rank;
       int xmit_to_rank;
       grid->ShiftedRanks(dimension,comm_proc,xmit_to_rank,recv_from_rank);
-
-      grid->Barrier();
+      
+      tcomms-=usecond();
+      //      grid->Barrier();
 
       grid->SendToRecvFrom((void *)&send_buf[0],
 			   xmit_to_rank,
 			   (void *)&recv_buf[0],
 			   recv_from_rank,
 			   bytes);
+      xbytes+=bytes;
+      //      grid->Barrier();
+      tcomms+=usecond();
 
-      grid->Barrier();
-
+      tscatter-=usecond();
       Scatter_plane_simple (ret,recv_buf,dimension,x,cbmask);
+      tscatter+=usecond();
     }
   }
+  /*
+  std::cout << GridLogPerformance << " Cshift copy    "<<tcopy/1e3<<" ms"<<std::endl;
+  std::cout << GridLogPerformance << " Cshift gather  "<<tgather/1e3<<" ms"<<std::endl;
+  std::cout << GridLogPerformance << " Cshift scatter "<<tscatter/1e3<<" ms"<<std::endl;
+  std::cout << GridLogPerformance << " Cshift comm    "<<tcomms/1e3<<" ms"<<std::endl;
+  std::cout << GridLogPerformance << " Cshift BW      "<<(2.0*xbytes)/tcomms<<" MB/s "<<2*xbytes<< " Bytes "<<std::endl;
+  */
 }
 
 template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
@@ -190,6 +210,12 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
   assert(shift>=0);
   assert(shift<fd);
 
+  RealD tcopy=0.0;
+  RealD tgather=0.0;
+  RealD tscatter=0.0;
+  RealD tcomms=0.0;
+  uint64_t xbytes=0;
+  
   int permute_type=grid->PermuteType(dimension);
 
   ///////////////////////////////////////////////
@@ -227,7 +253,9 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
       pointers[i] = &send_buf_extract[i][0];
     }
     int sx   = (x+sshift)%rd;
+    tgather-=usecond();
     Gather_plane_extract(rhs,pointers,dimension,sx,cbmask);
+    tgather+=usecond();
 
     for(int i=0;i<Nsimd;i++){
       
@@ -252,7 +280,8 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
       if(nbr_proc){
 	grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank); 
 
-	grid->Barrier();
+	tcomms-=usecond();
+	//	grid->Barrier();
 
 	send_buf_extract_mpi = &send_buf_extract[nbr_lane][0];
 	recv_buf_extract_mpi = &recv_buf_extract[i][0];
@@ -262,7 +291,9 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
 			     recv_from_rank,
 			     bytes);
 
-	grid->Barrier();
+	xbytes+=bytes;
+	//	grid->Barrier();
+	tcomms+=usecond();
 
 	rpointers[i] = &recv_buf_extract[i][0];
       } else { 
@@ -270,9 +301,17 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
       }
 
     }
+    tscatter-=usecond();
     Scatter_plane_merge(ret,rpointers,dimension,x,cbmask);
+    tscatter+=usecond();
   }
-
+  /*
+  std::cout << GridLogPerformance << " Cshift (s) copy    "<<tcopy/1e3<<" ms"<<std::endl;
+  std::cout << GridLogPerformance << " Cshift (s) gather  "<<tgather/1e3<<" ms"<<std::endl;
+  std::cout << GridLogPerformance << " Cshift (s) scatter "<<tscatter/1e3<<" ms"<<std::endl;
+  std::cout << GridLogPerformance << " Cshift (s) comm    "<<tcomms/1e3<<" ms"<<std::endl;
+  std::cout << GridLogPerformance << " Cshift BW      "<<(2.0*xbytes)/tcomms<<" MB/s "<<2*xbytes<< " Bytes "<<std::endl;
+  */
 }
 #else 
 template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
@@ -292,6 +331,11 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
   assert(comm_dim==1);
   assert(shift>=0);
   assert(shift<fd);
+  RealD tcopy=0.0;
+  RealD tgather=0.0;
+  RealD tscatter=0.0;
+  RealD tcomms=0.0;
+  uint64_t xbytes=0;
   
   int buffer_size = rhs.Grid()->_slice_nblock[dimension]*rhs.Grid()->_slice_block[dimension];
   static cshiftVector<vobj> send_buf_v; send_buf_v.resize(buffer_size);
@@ -315,7 +359,9 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
     
     if (comm_proc==0) {
 
+      tcopy-=usecond();
       Copy_plane(ret,rhs,dimension,x,sx,cbmask); 
+      tcopy+=usecond();
 
     } else {
 
@@ -324,7 +370,9 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
 
       int bytes = words * sizeof(vobj);
 
+      tgather-=usecond();
       Gather_plane_simple (rhs,send_buf_v,dimension,sx,cbmask);
+      tgather+=usecond();
 
       //      int rank           = grid->_processor;
       int recv_from_rank;
@@ -332,7 +380,8 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
       grid->ShiftedRanks(dimension,comm_proc,xmit_to_rank,recv_from_rank);
 
 
-      grid->Barrier();
+      tcomms-=usecond();
+      //      grid->Barrier();
 
       acceleratorCopyDeviceToDevice((void *)&send_buf_v[0],(void *)&send_buf[0],bytes);
       grid->SendToRecvFrom((void *)&send_buf[0],
@@ -340,13 +389,24 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
 			   (void *)&recv_buf[0],
 			   recv_from_rank,
 			   bytes);
+      xbytes+=bytes;
       acceleratorCopyDeviceToDevice((void *)&recv_buf[0],(void *)&recv_buf_v[0],bytes);
 
-      grid->Barrier();
+      //      grid->Barrier();
+      tcomms+=usecond();
 
+      tscatter-=usecond();
       Scatter_plane_simple (ret,recv_buf_v,dimension,x,cbmask);
+      tscatter+=usecond();
     }
   }
+  /*
+  std::cout << GridLogPerformance << " Cshift copy    "<<tcopy/1e3<<" ms"<<std::endl;
+  std::cout << GridLogPerformance << " Cshift gather  "<<tgather/1e3<<" ms"<<std::endl;
+  std::cout << GridLogPerformance << " Cshift scatter "<<tscatter/1e3<<" ms"<<std::endl;
+  std::cout << GridLogPerformance << " Cshift comm    "<<tcomms/1e3<<" ms"<<std::endl;
+  std::cout << GridLogPerformance << " Cshift BW      "<<(2.0*xbytes)/tcomms<<" MB/s "<<2*xbytes<< " Bytes "<<std::endl;
+  */
 }
 
 template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
@@ -372,6 +432,11 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
   assert(simd_layout==2);
   assert(shift>=0);
   assert(shift<fd);
+  RealD tcopy=0.0;
+  RealD tgather=0.0;
+  RealD tscatter=0.0;
+  RealD tcomms=0.0;
+  uint64_t xbytes=0;
 
   int permute_type=grid->PermuteType(dimension);
 
@@ -414,8 +479,10 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
     for(int i=0;i<Nsimd;i++){       
       pointers[i] = &send_buf_extract[i][0];
     }
+    tgather-=usecond();
     int sx   = (x+sshift)%rd;
     Gather_plane_extract(rhs,pointers,dimension,sx,cbmask);
+    tgather+=usecond();
 
     for(int i=0;i<Nsimd;i++){
       
@@ -440,7 +507,8 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
       if(nbr_proc){
 	grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank); 
 
-	grid->Barrier();
+	tcomms-=usecond();
+	//	grid->Barrier();
 
 	acceleratorCopyDeviceToDevice((void *)&send_buf_extract[nbr_lane][0],(void *)send_buf_extract_mpi,bytes);
 	grid->SendToRecvFrom((void *)send_buf_extract_mpi,
@@ -449,17 +517,28 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
 			     recv_from_rank,
 			     bytes);
 	acceleratorCopyDeviceToDevice((void *)recv_buf_extract_mpi,(void *)&recv_buf_extract[i][0],bytes);
+	xbytes+=bytes;
 
-	grid->Barrier();
+	//	grid->Barrier();
+	tcomms+=usecond();
 	rpointers[i] = &recv_buf_extract[i][0];
       } else { 
 	rpointers[i] = &send_buf_extract[nbr_lane][0];
       }
 
     }
+    tscatter-=usecond();
     Scatter_plane_merge(ret,rpointers,dimension,x,cbmask);
-  }
+    tscatter+=usecond();
 
+  }
+  /*
+  std::cout << GridLogPerformance << " Cshift (s) copy    "<<tcopy/1e3<<" ms"<<std::endl;
+  std::cout << GridLogPerformance << " Cshift (s) gather  "<<tgather/1e3<<" ms"<<std::endl;
+  std::cout << GridLogPerformance << " Cshift (s) scatter "<<tscatter/1e3<<" ms"<<std::endl;
+  std::cout << GridLogPerformance << " Cshift (s) comm    "<<tcomms/1e3<<" ms"<<std::endl;
+  std::cout << GridLogPerformance << " Cshift BW      "<<(2.0*xbytes)/tcomms<<" MB/s"<<std::endl;
+  */
 }
 #endif
 NAMESPACE_END(Grid); 

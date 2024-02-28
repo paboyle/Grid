@@ -218,6 +218,10 @@ public:
     // -------------------------------------------------
     // misc
     // -------------------------------------------------
+    void discardhi(uint64_t z) {
+      _s[3] += z;
+      encrypt_counter();
+    }
     
     // req: 26.5.1.4 Random number engine requirements, p.908 table 117, row 9
     // Advances e’s state ei to ei+z by any means equivalent to z

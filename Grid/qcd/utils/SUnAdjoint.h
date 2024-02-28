@@ -51,6 +51,10 @@ public:
   typedef Lattice<iVector<iScalar<iMatrix<vComplexF, Dimension> >, Nd> > LatticeAdjFieldF;
   typedef Lattice<iVector<iScalar<iMatrix<vComplexD, Dimension> >, Nd> > LatticeAdjFieldD;
 
+
+  template <typename vtype>
+  using iSUnMatrix = iScalar<iScalar<iMatrix<vtype, ncolour> > >;
+
   typedef Lattice<iScalar<iScalar<iVector<vComplex, Dimension> > > >  LatticeAdjVector;
 
   template <class cplx>
@@ -58,8 +62,8 @@ public:
     // returns i(T_Adj)^index necessary for the projectors
     // see definitions above
     iAdjTa = Zero();
-    Vector<typename SU<ncolour>::template iSUnMatrix<cplx> > ta(ncolour * ncolour - 1);
-    typename SU<ncolour>::template iSUnMatrix<cplx> tmp;
+    Vector<iSUnMatrix<cplx> > ta(ncolour * ncolour - 1);
+    iSUnMatrix<cplx> tmp;
 
     // FIXME not very efficient to get all the generators everytime
     for (int a = 0; a < Dimension; a++) SU<ncolour>::generator(a, ta[a]);
@@ -67,8 +71,7 @@ public:
     for (int a = 0; a < Dimension; a++) {
       tmp = ta[a] * ta[Index] - ta[Index] * ta[a];
       for (int b = 0; b < (ncolour * ncolour - 1); b++) {
-        typename SU<ncolour>::template iSUnMatrix<cplx> tmp1 =
-	  2.0 * tmp * ta[b];  // 2.0 from the normalization
+        iSUnMatrix<cplx> tmp1 = 2.0 * tmp * ta[b];  // 2.0 from the normalization
         Complex iTr = TensorRemove(timesI(trace(tmp1)));
         //iAdjTa()()(b, a) = iTr;
         iAdjTa()()(a, b) = iTr;
@@ -134,8 +137,7 @@ public:
 
     for (int a = 0; a < Dimension; a++) {
       generator(a, iTa);
-      LatticeComplex tmp = real(trace(iTa * in)) * coefficient;
-      pokeColour(h_out, tmp, a);
+      pokeColour(h_out, real(trace(iTa * in)) * coefficient, a);
     }
   }
 

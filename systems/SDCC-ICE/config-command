@@ -1,0 +1,19 @@
+../../configure \
+--enable-debug \
+--enable-comms=mpi-auto \
+--enable-unified=yes \
+--enable-shm=shmopen \
+--enable-shm-fast-path=shmopen \
+--enable-accelerator=none \
+--enable-simd=AVX512 \
+--disable-accelerator-cshift \
+--disable-fermion-reps \
+--disable-gparity \
+CXX=clang++ \
+MPICXX=mpicxx \
+LDFLAGS=-L/direct/sdcc+u/paboyle/spack/opt/spack/linux-almalinux8-icelake/gcc-8.5.0/hwloc-2.9.1-hgkscnt5pferhtde4ahctlupb6qf3vtl/lib/ \
+LIBS=-lhwloc \
+CXXFLAGS="-std=c++17"
+
+
+
