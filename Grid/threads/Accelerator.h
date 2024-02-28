@@ -26,8 +26,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#pragma once
 
+#ifndef ACCELERATOR_H
+#define ACCELERATOR_H
+
+#pragma once
 #include <string.h>
 
 #ifdef HAVE_MALLOC_MALLOC_H
@@ -475,14 +478,155 @@ inline void acceleratorCopySynchronise(void) { auto r=hipStreamSynchronize(copyS
 #endif
 
 //////////////////////////////////////////////
-// CPU Target - No accelerator just thread instead
+// OpenMP Target acceleration
 //////////////////////////////////////////////
+#ifdef GRID_OMPTARGET
+//TODO GRID_SIMT for OMPTARGET
+#define GRID_ACCELERATED
+#include<omp.h>
+#ifdef __CUDA_ARCH__
+#include <cuda_runtime_api.h>
+#elif defined __HIP_DEVICE_COMPILE__
+#include <hip/hip_runtime.h>
+#elif defined __SYCL_DEVICE_ONLY__
+#include <CL/sycl.hpp>
+#include <CL/sycl/usm.hpp>
+#endif
+extern "C" void *llvm_omp_target_alloc_host  (size_t Size, int DeviceNum);
+extern "C" void *llvm_omp_target_alloc_device(size_t Size, int DeviceNum);
+extern "C" void *llvm_omp_target_alloc_shared(size_t Size, int DeviceNum);
+//TODO: Dynamic Shared Memory
 
-#if ( (!defined(GRID_SYCL)) && (!defined(GRID_CUDA)) && (!defined(GRID_HIP)) )
+#define THREAD_LIMIT acceleratorThreads()
 
-#undef GRID_SIMT
+#define accelerator
+#define accelerator_inline strong_inline
+#ifdef THREAD_LIMIT
+#define accelerator_for(i,num,nsimd, ... ) \
+	_Pragma("omp target teams distribute parallel for thread_limit(THREAD_LIMIT)") \
+	for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ; 
+#define accelerator_forNB(i,num,nsimd, ... ) \
+	_Pragma("omp target teams distribute parallel for thread_limit(THREAD_LIMIT) nowait") \
+        for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define accelerator_barrier(dummy) _Pragma("omp barrier") 
+#define accelerator_for2d(iter1, num1, iter2, num2, nsimd, ... ) \
+	_Pragma("omp target teams distribute parallel for thread_limit(THREAD_LIMIT) collapse(2)") \
+        for ( uint64_t iter1=0;iter1<num1;iter1++) \
+	for ( uint64_t iter2=0;iter2<num2;iter2++) { __VA_ARGS__ } ;
+#else
+#define accelerator_for(i,num,nsimd, ... ) \
+        _Pragma("omp target teams distribute parallel for") \
+        for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define accelerator_forNB(i,num,nsimd, ... ) \
+        _Pragma("omp target teams distribute parallel for nowait") \
+        for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define accelerator_barrier(dummy) _Pragma("omp barrier")
+#define accelerator_for2d(iter1, num1, iter2, num2, nsimd, ... ) \
+        _Pragma("omp target teams distribute parallel for collapse(2)") \
+        for ( uint64_t iter1=0;iter1<num1;iter1++) \
+        for ( uint64_t iter2=0;iter2<num2;iter2++) { __VA_ARGS__ } ;
+#endif
 
+accelerator_inline int acceleratorSIMTlane(int Nsimd) { return 0; } // CUDA specific
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)
+{
+  int devc = omp_get_default_device();
+  int host = omp_get_initial_device();
+  if( omp_target_memcpy( to, from, bytes, 0, 0, devc, host ) ) {
+    printf(" omp_target_memcpy host to device failed for %ld in device %d \n",bytes,devc);
+  }
+};
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes)
+{
+  int devc = omp_get_default_device();
+  int host = omp_get_initial_device();
+  if( omp_target_memcpy( to, from, bytes, 0, 0, host, devc ) ) {
+    printf(" omp_target_memcpy device to host failed for %ld in device %d \n",bytes,devc);
+  }
+};
+inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) 
+{ 
+#ifdef __CUDA_ARCH__
+  extern cudaStream_t copyStream;
+  cudaMemcpyAsync(to,from,bytes, cudaMemcpyDeviceToDevice,copyStream);
+#elif defined __HIP_DEVICE_COMPILE__
+  extern hipStream_t copyStream;
+  hipMemcpyDtoDAsync(to,from,bytes, copyStream);
+#elif defined __SYCL_DEVICE_ONLY__
+  theCopyAccelerator->memcpy(to,from,bytes);
+#endif
+};
+inline void acceleratorCopySynchronise(void) 
+{
+  //#pragma omp barrier
+#ifdef __CUDA_ARCH__
+  extern cudaStream_t copyStream;
+  cudaStreamSynchronize(copyStream);
+#elif defined __HIP_DEVICE_COMPILE__
+  extern hipStream_t copyStream;
+  hipStreamSynchronize(copyStream);
+#elif defined __SYCL_DEVICE_ONLY__
+  theCopyAccelerator->wait();
+#endif
+};
+inline int  acceleratorIsCommunicable(void *ptr){ return 1; }
+inline void acceleratorMemSet(void *base,int value,size_t bytes)
+{
+  void *base_host = memalign(GRID_ALLOC_ALIGN,bytes);
+  memset(base_host,value,bytes);
+  int devc = omp_get_default_device();
+  int host = omp_get_initial_device();
+  if( omp_target_memcpy( base, base_host, bytes, 0, 0, devc, host ) ) {
+    printf(" omp_target_memcpy device to host failed in MemSet for %ld in device %d \n",bytes,devc);
+  }
+};
+inline void *acceleratorAllocShared(size_t bytes)
+{
+#ifdef __CUDA_ARCH__
+  void *ptr=NULL;
+  auto err = cudaMallocManaged((void **)&ptr,bytes);
+  if( err != cudaSuccess ) {
+    ptr = (void *) NULL;
+    printf(" cudaMallocManaged failed for %d %s \n",bytes,cudaGetErrorString(err));
+  }
+  return ptr;
+#elif defined __HIP_DEVICE_COMPILE__
+  void *ptr=NULL;
+  auto err = hipMallocManaged((void **)&ptr,bytes);
+  if( err != hipSuccess ) {
+    ptr = (void *) NULL;
+    printf(" hipMallocManaged failed for %d %s \n",bytes,cudaGetErrorString(err));
+  }
+  return ptr;
+#elif defined __SYCL_DEVICE_ONLY__
+  queue q;
+  //void *ptr = malloc_shared<void *>(bytes, q);
+  return ptr;
+#else
+  int devc = omp_get_default_device();
+  void *ptr=NULL;
+  ptr = (void *) llvm_omp_target_alloc_shared(bytes, devc);
+  if( ptr == NULL ) {
+    printf(" llvm_omp_target_alloc_shared failed for %ld in device %d \n",bytes,devc);
+  }
+  return ptr;
+#endif
+};
+inline void *acceleratorAllocDevice(size_t bytes)
+{
+  int devc = omp_get_default_device();
+  void *ptr=NULL;
+  ptr = (void *) omp_target_alloc(bytes, devc);
+  if( ptr == NULL ) {
+    printf(" omp_target_alloc failed for %ld in device %d \n",bytes,devc);
+  }
+  return ptr;
+};
+inline void acceleratorFreeShared(void *ptr){omp_target_free(ptr, omp_get_default_device());};
+inline void acceleratorFreeDevice(void *ptr){omp_target_free(ptr, omp_get_default_device());};
 
+//OpenMP CPU threads
+#else
 
 #define accelerator 
 #define accelerator_inline strong_inline
@@ -511,7 +655,14 @@ inline void *acceleratorAllocDevice(size_t bytes){return memalign(GRID_ALLOC_ALI
 inline void acceleratorFreeShared(void *ptr){free(ptr);};
 inline void acceleratorFreeDevice(void *ptr){free(ptr);};
 #endif
+#endif
 
+//////////////////////////////////////////////
+// CPU Target - No accelerator just thread instead
+//////////////////////////////////////////////
+
+#if ( (!defined(GRID_SYCL)) && (!defined(GRID_CUDA)) && (!defined(GRID_HIP)) ) && (!defined(GRID_OMPTARGET))
+#undef GRID_SIMT
 #endif // CPU target
 
 #ifdef HAVE_MM_MALLOC_H
@@ -584,3 +735,5 @@ inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)
 
 
 NAMESPACE_END(Grid);
+#endif
+

@@ -80,7 +80,7 @@ public:
   accelerator_inline uint64_t end(void)   const { return this->_odata_size; };
   accelerator_inline uint64_t size(void)  const { return this->_odata_size; };
 
-  LatticeView(const LatticeAccelerator<vobj> &refer_to_me) : LatticeAccelerator<vobj> (refer_to_me){}
+  LatticeView(const LatticeAccelerator<vobj> &refer_to_me) : LatticeAccelerator<vobj> (refer_to_me){ }
   LatticeView(const LatticeView<vobj> &refer_to_me) = default; // Trivially copyable
   LatticeView(const LatticeAccelerator<vobj> &refer_to_me,ViewMode mode) : LatticeAccelerator<vobj> (refer_to_me)
   {

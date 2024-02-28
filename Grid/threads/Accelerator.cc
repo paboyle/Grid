@@ -16,7 +16,10 @@ void     acceleratorThreads(uint32_t t) {accelerator_threads = t;};
 #define ENV_LOCAL_RANK_MVAPICH "MV2_COMM_WORLD_LOCAL_RANK"
 #define ENV_RANK_MVAPICH       "MV2_COMM_WORLD_RANK"
 
-#ifdef GRID_CUDA
+
+// fold omptarget into device specific acceleratorInit()
+#if defined(GRID_CUDA) || (defined(GRID_OMPTARGET) && defined(__CUDA_ARCH__))
+#include <cuda_runtime_api.h>
 cudaDeviceProp *gpu_props;
 cudaStream_t copyStream;
 cudaStream_t computeStream;
@@ -115,7 +118,7 @@ void acceleratorInit(void)
 }
 #endif
 
-#ifdef GRID_HIP
+#if defined(GRID_HIP) || (defined(GRID_OMPTARGET) && defined(__HIP_DEVICE_COMPILE__))
 hipDeviceProp_t *gpu_props;
 hipStream_t copyStream;
 hipStream_t computeStream;
@@ -200,7 +203,7 @@ void acceleratorInit(void)
 #endif
 
 
-#ifdef GRID_SYCL
+#if defined(GRID_SYCL) //|| (defined(GRID_OMPTARGET) && defined(__SYCL_DEVICE_ONLY__))
 
 cl::sycl::queue *theGridAccelerator;
 cl::sycl::queue *theCopyAccelerator;
@@ -283,7 +286,7 @@ void acceleratorInit(void)
 }
 #endif
 
-#if (!defined(GRID_CUDA)) && (!defined(GRID_SYCL))&& (!defined(GRID_HIP))
+#if (!defined(GRID_CUDA)) && (!defined(GRID_SYCL))&& (!defined(GRID_HIP))// && (!defined(GRID_OMPTARGET))
 void acceleratorInit(void){}
 #endif
 

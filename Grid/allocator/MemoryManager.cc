@@ -222,6 +222,9 @@ void MemoryManager::InitMessage(void) {
 #ifdef GRID_SYCL
   std::cout << GridLogMessage<< "MemoryManager::Init() Using SYCL malloc_shared"<<std::endl;
 #endif
+#ifdef GRID_OMPTARGET
+  std::cout << GridLogMessage<< "MemoryManager::Init() Using OMPTARGET managed memory"<<std::endl;
+#endif
 #else
   std::cout << GridLogMessage<< "MemoryManager::Init() Non unified: Caching accelerator data in dedicated memory"<<std::endl;
 #ifdef GRID_CUDA
@@ -232,6 +235,9 @@ void MemoryManager::InitMessage(void) {
 #endif
 #ifdef GRID_SYCL
   std::cout << GridLogMessage<< "MemoryManager::Init() Using SYCL malloc_device"<<std::endl;
+#endif
+#ifdef GRID_OMPTARGET
+  std::cout << GridLogMessage<< "MemoryManager::Init() Using OMPTARGET omp_alloc_device"<<std::endl;
 #endif
 #endif
 

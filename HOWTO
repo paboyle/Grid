@@ -1,0 +1,25 @@
+1. on Cori GPU, load necessary modules
+source ./load_cgpu_modules.sh 
+
+2. run bootstrap scrip
+./bootstrap.sh
+
+3. Create a build directory, for example, 
+mkdir build-cgpu
+
+3. run configure script in the build directory 
+cd build-cgpu
+sh config-command
+
+Example config-command for single-GPU omp offload: 
+
+../configure \
+    --enable-comms=none \
+    --enable-simd=GEN \
+    --enable-gen-simd-width=16 \
+    CXX=clang++ \
+    LDFLAGS="-L${CUDA_ROOT}/lib64 -lcudart" \
+    CXXFLAGS="-Wno-unknown-cuda-version -I${CUDA_ROOT}/include -fopenmp -std=c++14 -fopenmp-cuda-mode  -O3 -g -fopenmp-targets=nvptx64-nvidia-cuda -Wformat -DOMPTARGET -DOMPTARGET_MANAGED"
+
+4. compile 
+make -j8

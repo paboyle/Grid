@@ -36,19 +36,22 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-#define LMAX (40)
+#define LMAX (8)
 #define LMIN (8)
 #define LADD (8)
 
-  int64_t Nwarm=10;
-  int64_t Nloop=100;
+  int64_t Nwarm=500;
+  int64_t Nloop=1500;
 
   Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();
 
   int64_t threads = GridThread::GetThreads();
-  std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+  int64_t accelerator_threads = acceleratorThreads();
 
+  std::cout<<GridLogMessage << "Grid is setup with LMAX="<< LMAX << ", LMIN=" << LMIN << ", LADD=" << LADD << ", Nwarm, Nloop =" << Nwarm <<"," << Nloop <<std::endl;
+  std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+  std::cout<<GridLogMessage << "Grid is setup to use "<<accelerator_threads<<" GPU threads"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking SU3xSU3  x= x*y"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
@@ -222,6 +225,7 @@ int main (int argc, char ** argv)
 
     }
 
+#if 1
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking SU3xSU3  CovShiftForward(z,x,y)"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
@@ -254,7 +258,9 @@ int main (int argc, char ** argv)
 	    std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
       }
   }
-#if 1
+#endif
+
+#if 0
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking SU3xSU3  z= x * Cshift(y)"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
