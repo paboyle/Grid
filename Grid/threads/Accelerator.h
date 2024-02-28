@@ -294,29 +294,16 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
     unsigned long unum1_divisible_by_nt = ((unum1 + nt - 1) / nt) * nt;	\
     cl::sycl::range<3> local {nt,1,nsimd};				\
     cl::sycl::range<3> global{unum1_divisible_by_nt,unum2,nsimd};	\
-    if (unum1_divisible_by_nt != unum1) {				\
-      cgh.parallel_for(							\
-		       cl::sycl::nd_range<3>(global,local),		\
-		       [=] (cl::sycl::nd_item<3> item) /*mutable*/	\
-		       [[intel::reqd_sub_group_size(16)]]		\
-		       {						\
-			 auto iter1    = item.get_global_id(0);		\
-			 auto iter2    = item.get_global_id(1);		\
-			 auto lane     = item.get_global_id(2);		\
-			 { if (iter1 < unum1){ __VA_ARGS__ } };		\
-		       });						\
-    } else {								\
-      cgh.parallel_for(							\
-		       cl::sycl::nd_range<3>(global,local),		\
-		       [=] (cl::sycl::nd_item<3> item) /*mutable*/	\
-		       [[intel::reqd_sub_group_size(16)]]		\
-		       {						\
-			 auto iter1    = item.get_global_id(0);		\
-			 auto iter2    = item.get_global_id(1);		\
-			 auto lane     = item.get_global_id(2);		\
-			 { __VA_ARGS__ };				\
-		       });						\
-    }									\
+    cgh.parallel_for(							\
+		     cl::sycl::nd_range<3>(global,local),		\
+		     [=] (cl::sycl::nd_item<3> item) /*mutable*/	\
+		     [[intel::reqd_sub_group_size(16)]]			\
+		     {							\
+		       auto iter1    = item.get_global_id(0);		\
+		       auto iter2    = item.get_global_id(1);		\
+		       auto lane     = item.get_global_id(2);		\
+		       { if (iter1 < unum1){ __VA_ARGS__ } };		\
+		     });						\
   });
 
 #define accelerator_barrier(dummy) { theGridAccelerator->wait(); }
