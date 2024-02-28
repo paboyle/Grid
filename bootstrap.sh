@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
-EIGEN_URL='https://gitlab.com/libeigen/eigen/-/archive/3.3.7/eigen-3.3.7.tar.bz2'
-EIGEN_SHA256SUM='685adf14bd8e9c015b78097c1dc22f2f01343756f196acdc76a678e1ae352e11'
+EIGEN_URL='https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.bz2'
+EIGEN_SHA256SUM='b4c198460eba6f28d34894e3a5710998818515104d6e74e5cc331ce31e46e626'
 
 
 echo "-- deploying Eigen source..."
-ARC=`basename ${EIGEN_URL}`
+ARC=$(basename ${EIGEN_URL})
 wget ${EIGEN_URL} --no-check-certificate
 if command -v sha256sum; then
    echo "$EIGEN_SHA256SUM  $(basename "$EIGEN_URL")" \
@@ -14,13 +14,8 @@ if command -v sha256sum; then
 else
    echo "WARNING: could not verify checksum, please install sha256sum" >&2
 fi
-./scripts/update_eigen.sh ${ARC}
-rm ${ARC}
-# patch for non-portable includes in Eigen 3.3.5
-# apparently already fixed in Eigen HEAD so it should not be 
-# a problem in the future (A.P.)
-patch Eigen/unsupported/Eigen/CXX11/Tensor scripts/eigen-3.3.5.Tensor.patch
-
+./scripts/update_eigen.sh "${ARC}"
+rm "${ARC}"
 echo '-- generating Make.inc files...'
 ./scripts/filelist
 echo '-- generating configure script...'
