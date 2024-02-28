@@ -93,5 +93,25 @@ void WilsonTMFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &ou
   RealD b    = tm /sq;
   axpibg5x(out,in,a,b);
 }
+template<class Impl>
+void WilsonTMFermion<Impl>::M(const FermionField &in, FermionField &out) {
+  out.Checkerboard() = in.Checkerboard();
+  this->Dhop(in, out, DaggerNo);
+  FermionField tmp(out.Grid());
+  RealD a = 4.0+this->mass;
+  RealD b = this->mu;
+  axpibg5x(tmp,in,a,b);
+  axpy(out, 1.0, tmp, out);
+}
+template<class Impl>
+void WilsonTMFermion<Impl>::Mdag(const FermionField &in, FermionField &out) {
+  out.Checkerboard() = in.Checkerboard();
+  this->Dhop(in, out, DaggerYes);
+  FermionField tmp(out.Grid());
+  RealD a = 4.0+this->mass;
+  RealD b = -this->mu;
+  axpibg5x(tmp,in,a,b);
+  axpy(out, 1.0, tmp, out);
+}
 
 NAMESPACE_END(Grid);

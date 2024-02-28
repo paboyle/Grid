@@ -469,15 +469,13 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
   Coordinate fine_rdimensions = fine->_rdimensions;
   Coordinate coarse_rdimensions = coarse->_rdimensions;
 
-  vobj zz = Zero();
-  
   accelerator_for(sc,coarse->oSites(),1,{
 
       // One thread per sub block
       Coordinate coor_c(_ndimension);
       Lexicographic::CoorFromIndex(coor_c,sc,coarse_rdimensions);  // Block coordinate
 
-      vobj cd = zz;
+      vobj cd = Zero();
       
       for(int sb=0;sb<blockVol;sb++){
 
