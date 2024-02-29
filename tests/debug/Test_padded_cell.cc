@@ -32,6 +32,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 using namespace std;
 using namespace Grid;
 
+// This is to optimize the SIMD
 template<class vobj> void gpermute(vobj & inout,int perm){
   vobj tmp=inout;
   if (perm & 0x1 ) { permute(inout,tmp,0); tmp=inout;}
@@ -39,7 +40,8 @@ template<class vobj> void gpermute(vobj & inout,int perm){
   if (perm & 0x4 ) { permute(inout,tmp,2); tmp=inout;}
   if (perm & 0x8 ) { permute(inout,tmp,3); tmp=inout;}
 }
-  
+
+
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
@@ -47,20 +49,21 @@ int main (int argc, char ** argv)
   Coordinate latt_size  = GridDefaultLatt();
   Coordinate simd_layout= GridDefaultSimd(Nd,vComplexD::Nsimd());
   Coordinate mpi_layout = GridDefaultMpi();
-  std::cout << " mpi "<<mpi_layout<<std::endl;
-  std::cout << " simd "<<simd_layout<<std::endl;
-  std::cout << " latt "<<latt_size<<std::endl;
+  std::cout << GridLogMessage << " mpi "<<mpi_layout<<std::endl;
+  std::cout << GridLogMessage << " simd "<<simd_layout<<std::endl;
+  std::cout << GridLogMessage << " latt "<<latt_size<<std::endl;
   GridCartesian GRID(latt_size,simd_layout,mpi_layout);
 
+  // Initialize configuration as hot start.
   GridParallelRNG   pRNG(&GRID);
-  pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
   LatticeGaugeField Umu(&GRID);
-
+  pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
   SU<Nc>::HotConfiguration(pRNG,Umu);
 
   Real plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
   LatticeComplex trplaq(&GRID);
 
+  // Store Umu in U. Peek/Poke mean respectively getElement/setElement.
   std::vector<LatticeColourMatrix> U(Nd, Umu.Grid());
   for (int mu = 0; mu < Nd; mu++) {
     U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
@@ -70,9 +73,7 @@ int main (int argc, char ** argv)
 
   LatticeComplex cplaq(&GRID); cplaq=Zero();
 
-  /////////////////////////////////////////////////
   // Create a padded cell of extra padding depth=1
-  /////////////////////////////////////////////////
   int depth = 1;
   PaddedCell Ghost(depth,&GRID);
   LatticeGaugeField Ughost = Ghost.Exchange(Umu);
@@ -114,18 +115,25 @@ int main (int argc, char ** argv)
   }
 #endif
 
-  ///// Array for the site plaquette
+  // Array for the site plaquette
   GridBase *GhostGrid = Ughost.Grid();
   LatticeComplex gplaq(GhostGrid); 
-  
+
+  // Now we're going to put together the "stencil" that will be useful to us when
+  // calculating the plaquette. Our eventual goal is to make the product
+  //    Umu(x) Unu(x+mu) Umu^dag(x+nu) Unu^dag(x),
+  // which requires, in order, the sites x, x+mu, x+nu, and x. We arrive at these
+  // sites relative to x through "shifts", which is represented here by a 4-d
+  // vector of 0s (no movement) and 1s (shift one unit) at each site. The
+  // "stencil" is the set of all these shifts.
   std::vector<Coordinate> shifts;
   for(int mu=0;mu<Nd;mu++){
     for(int nu=mu+1;nu<Nd;nu++){
-  
-      //    Umu(x) Unu(x+mu) Umu^dag(x+nu) Unu^dag(x)
       Coordinate shift_0(Nd,0);
       Coordinate shift_mu(Nd,0); shift_mu[mu]=1;
       Coordinate shift_nu(Nd,0); shift_nu[nu]=1;
+      // push_back creates an element at the end of shifts and
+      // assigns the data in the argument to it.
       shifts.push_back(shift_0);
       shifts.push_back(shift_mu);
       shifts.push_back(shift_nu);
@@ -135,41 +143,51 @@ int main (int argc, char ** argv)
   GeneralLocalStencil gStencil(GhostGrid,shifts);
 
   gplaq=Zero();
-  {
-    autoView( gp_v , gplaq, CpuWrite);
-    autoView( t_v , trplaq, CpuRead);
-    autoView( U_v , Ughost, CpuRead);
-    for(int ss=0;ss<gp_v.size();ss++){
-      int s=0;
-      for(int mu=0;mu<Nd;mu++){
-	for(int nu=mu+1;nu<Nd;nu++){
 
-	  auto SE0 = gStencil.GetEntry(s+0,ss);
-	  auto SE1 = gStencil.GetEntry(s+1,ss);
-	  auto SE2 = gStencil.GetEntry(s+2,ss);
-	  auto SE3 = gStencil.GetEntry(s+3,ss);
-	
-	  int o0 = SE0->_offset;
-	  int o1 = SE1->_offset;
-	  int o2 = SE2->_offset;
-	  int o3 = SE3->_offset;
-	  
-	  auto U0 = U_v[o0](mu);
-	  auto U1 = U_v[o1](nu);
-	  auto U2 = adj(U_v[o2](mu));
-	  auto U3 = adj(U_v[o3](nu));
+  // Before doing accelerator stuff, there is an opening and closing of "Views". I guess the
+  // "Views" are stored in *_v variables listed below.
+  autoView( gp_v , gplaq, CpuWrite);
+  autoView( t_v , trplaq, CpuRead);
+  autoView( U_v , Ughost, CpuRead);
 
-	  gpermute(U0,SE0->_permute);
-	  gpermute(U1,SE1->_permute);
-	  gpermute(U2,SE2->_permute);
-	  gpermute(U3,SE3->_permute);
-	  
-	  gp_v[ss]() =gp_v[ss]() + trace( U0*U1*U2*U3 );
-	  s=s+4;
-	}
-      }
+  // This is now a loop over stencil shift elements. That is, s increases as we make our
+  // way through the spacetimes sites, but also as we make our way around the plaquette.
+  for(int ss=0;ss<gp_v.size();ss++){
+    int s=0;
+    for(int mu=0;mu<Nd;mu++){
+    	for(int nu=mu+1;nu<Nd;nu++){
+    
+    	  auto SE0 = gStencil.GetEntry(s+0,ss);
+    	  auto SE1 = gStencil.GetEntry(s+1,ss);
+    	  auto SE2 = gStencil.GetEntry(s+2,ss);
+    	  auto SE3 = gStencil.GetEntry(s+3,ss);
+
+        // Due to our strategy, each offset corresponds to a site.
+    	  int o0 = SE0->_offset;
+    	  int o1 = SE1->_offset;
+    	  int o2 = SE2->_offset;
+    	  int o3 = SE3->_offset;
+    	  
+    	  auto U0 = U_v[o0](mu);
+    	  auto U1 = U_v[o1](nu);
+    	  auto U2 = adj(U_v[o2](mu));
+    	  auto U3 = adj(U_v[o3](nu));
+    
+    	  gpermute(U0,SE0->_permute);
+    	  gpermute(U1,SE1->_permute);
+    	  gpermute(U2,SE2->_permute);
+    	  gpermute(U3,SE3->_permute);
+    	  
+    	  gp_v[ss]() =gp_v[ss]() + trace( U0*U1*U2*U3 );
+    	  s=s+4;
+    	}
     }
   }
+
+  // Here is my understanding of this part: The padded cell has its own periodic BCs, so
+  // if I take a step to the right at the right-most side of the cell, I end up on the
+  // left-most side. This means that the plaquettes in the padding are wrong. Luckily
+  // all we care about are the plaquettes in the cell, which we obtain from Extract.
   cplaq = Ghost.Extract(gplaq);
   RealD vol = cplaq.Grid()->gSites();
   RealD faces = (Nd * (Nd-1))/2;

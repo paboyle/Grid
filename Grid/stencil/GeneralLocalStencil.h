@@ -137,5 +137,55 @@ public:
   
 };
 
+
+////////////////////////////////////////////////
+// Some machinery to streamline making a stencil 
+////////////////////////////////////////////////
+
+class shiftSignal {
+public:
+    enum {
+        BACKWARD_CONST = 16,
+        NO_SHIFT       = -1
+    };
+};
+
+// TODO: put a check somewhere that BACKWARD_CONST > Nd!
+
+/*!  @brief signals that you want to go backwards in direction dir */
+inline int Back(const int dir) {
+    // generalShift will use BACKWARD_CONST to determine whether we step forward or 
+    // backward. Trick inspired by SIMULATeQCD. 
+    return dir + shiftSignal::BACKWARD_CONST;
+}
+
+/*!  @brief shift one unit in direction dir */
+template<typename... Args>
+void generalShift(Coordinate& shift, int dir) {
+    if (dir >= shiftSignal::BACKWARD_CONST) {
+        dir -= shiftSignal::BACKWARD_CONST;
+        shift[dir]+=-1;
+    } else if (dir == shiftSignal::NO_SHIFT) {
+        ; // do nothing
+    } else {
+        shift[dir]+=1;
+    }
+}
+
+/*!  @brief follow a path of directions, shifting one unit in each direction */
+template<typename... Args>
+void generalShift(Coordinate& shift, int dir, Args... args) {
+    if (dir >= shiftSignal::BACKWARD_CONST) {
+        dir -= shiftSignal::BACKWARD_CONST;
+        shift[dir]+=-1;
+    } else if (dir == shiftSignal::NO_SHIFT) {
+        ; // do nothing
+    } else {
+        shift[dir]+=1;
+    }
+    generalShift(shift, args...);
+}
+
+
 NAMESPACE_END(Grid);
 
