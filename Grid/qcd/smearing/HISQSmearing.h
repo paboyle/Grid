@@ -138,7 +138,7 @@ public:
         for(int nu=0;nu<Nd;nu++) {
             appendShift(shifts,mu);
             appendShift(shifts,nu);
-            appendShift(shifts,NO_SHIFT);
+            appendShift(shifts,shiftSignal::NO_SHIFT);
             appendShift(shifts,mu,Back(nu));
             appendShift(shifts,Back(nu));
             appendShift(shifts,Back(mu));
@@ -173,7 +173,6 @@ public:
             auto gStencil_v = gStencil.View(); 
 
             accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 3-link constructs
-//            for(int site=0;site<Nsites;site++){ // ----------- 3-link constructs
                 stencilElement SE0, SE1, SE2, SE3, SE4, SE5;
                 U3matrix U0, U1, U2, U3, U4, U5, W;
                 for(int nu=0;nu<Nd;nu++) {
@@ -216,7 +215,6 @@ public:
             })
 
             accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 5-link 
-//            for(int site=0;site<Nsites;site++){ // ----------- 5-link
                 stencilElement SE0, SE1, SE2, SE3, SE4, SE5;
                 U3matrix U0, U1, U2, U3, U4, U5, W;
                 int sigmaIndex = 0;
@@ -254,7 +252,6 @@ public:
             })
 
             accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 7-link
-//            for(int site=0;site<Nsites;site++){ // ----------- 7-link
                 stencilElement SE0, SE1, SE2, SE3, SE4, SE5;
                 U3matrix U0, U1, U2, U3, U4, U5, W;
                 int sigmaIndex = 0;
