@@ -65,7 +65,7 @@ struct time_statistics{
 
 void comms_header(){
   std::cout <<GridLogMessage << " L  "<<"\t"<<" Ls  "<<"\t"
-            <<"bytes\t MB/s uni (err/min/max) \t\t MB/s bidi (err/min/max)"<<std::endl;
+            <<"bytes\t MB/s uni  \t\t MB/s bidi "<<std::endl;
 };
 
 struct controls {
@@ -180,10 +180,9 @@ public:
 	  
 	    std::cout<<GridLogMessage << lat<<"\t"<<Ls<<"\t "
 		     << bytes << " \t "
-		     <<xbytes/timestat.mean<<" \t "<< xbytes*timestat.err/(timestat.mean*timestat.mean)<< " \t "
-		     <<xbytes/timestat.max <<" "<< xbytes/timestat.min  
-		     << "\t\t"<< bidibytes/timestat.mean<< "  " << bidibytes*timestat.err/(timestat.mean*timestat.mean) << " "
-		     << bidibytes/timestat.max << " " << bidibytes/timestat.min << std::endl;
+		     <<xbytes/timestat.mean
+		     << "\t\t"
+		     << bidibytes/timestat.mean<< std::endl;
 	    fprintf(FP,"%ld, %d, %f\n",(long)bytes,dir,bidibytes/timestat.mean/1000.);
 	  }
 	}
@@ -256,7 +255,7 @@ public:
 	       << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<"\t\t"<<(stop-start)/1000./1000.
 	       << "\t\t"<< bytes/time/NN <<std::endl;
 
-      fprintf(FP,"%ld, %f\n",(long)bytes,bytes/time/NN/1000.);
+      fprintf(FP,"%ld, %f\n",(long)bytes,bytes/time/NN);
 
     }
     fprintf(FP,"\n\n");
@@ -268,64 +267,61 @@ public:
     //int nbasis, int nrhs, int coarseVol
     int  basis[] = { 16,32,64 };
     int  rhs[]   = { 8,16,32 };
-    int  vols[]  = { 4*4*4*4, 8*8*8*8, 8*8*16*16 };
+    int  vol  = 4*4*4*4;
 
     GridBLAS blas;
     
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << "= batched GEMM (double precision) "<<std::endl;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"Gflop/s / node (coarse mrhs)"<<std::endl;
+    std::cout<<GridLogMessage << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"Gflop/s / rank (coarse mrhs)"<<std::endl;
     std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
   
     fprintf(FP,"GEMM\n\n M, N, K, BATCH, GF/s per rank\n");
 
     for(int b=0;b<3;b++){
     for(int r=0;r<3;r++){
-    for(int v=0;v<3;v++){
       int M=basis[b];
       int N=rhs[r];
       int K=basis[b];
-      int BATCH=vols[v];
-      double p=blas.benchmark(M,rhs[r],vols[v],1);
+      int BATCH=vol;
+      double p=blas.benchmark(M,N,K,BATCH);
 
       fprintf(FP,"%d, %d, %d, %d, %f\n", M, N, K, BATCH, p);
       
       std::cout<<GridLogMessage<<std::setprecision(3) 
 	       << M<<"\t\t"<<N<<"\t\t"<<K<<"\t\t"<<BATCH<<"\t\t"<<p<<std::endl;
-    }}}
+    }}
     std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
-    std::cout<<GridLogMessage << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"Gflop/s / node (block project)"<<std::endl;
+    std::cout<<GridLogMessage << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"Gflop/s / rank (block project)"<<std::endl;
     std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
     for(int b=0;b<3;b++){
     for(int r=0;r<3;r++){
-    for(int v=0;v<2;v++){
       int M=basis[b];
       int N=rhs[r];
-      int K=vols[2];
-      int BATCH=vols[v];
-      double p=blas.benchmark(M,rhs[r],vols[v],1);
+      int K=vol;
+      int BATCH=vol;
+      double p=blas.benchmark(M,N,K,BATCH);
 
       fprintf(FP,"%d, %d, %d, %d, %f\n", M, N, K, BATCH, p);
       std::cout<<GridLogMessage<<std::setprecision(3) 
 	       << M<<"\t\t"<<N<<"\t\t"<<K<<"\t\t"<<BATCH<<"\t\t"<<p<<std::endl;
-    }}}
+    }}
     std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
-    std::cout<<GridLogMessage << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"Gflop/s / node (block promote)"<<std::endl;
+    std::cout<<GridLogMessage << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"Gflop/s / rank (block promote)"<<std::endl;
     std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
     for(int b=0;b<3;b++){
     for(int r=0;r<3;r++){
-    for(int v=0;v<2;v++){
       int M=rhs[r];
-      int N=vols[2];
+      int N=vol;
       int K=basis[b];
-      int BATCH=vols[v];
-      double p=blas.benchmark(M,rhs[r],vols[v],1);
+      int BATCH=vol;
+      double p=blas.benchmark(M,N,K,BATCH);
 
       fprintf(FP,"%d, %d, %d, %d, %f\n", M, N, K, BATCH, p);
       std::cout<<GridLogMessage<<std::setprecision(3) 
 	       << M<<"\t\t"<<N<<"\t\t"<<K<<"\t\t"<<BATCH<<"\t\t"<<p<<std::endl;
-    }}}
+    }}
     fprintf(FP,"\n\n\n");
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   };
@@ -873,10 +869,10 @@ int main (int argc, char ** argv)
 
   int Ls=1;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << " Clover dslash 4D vectorised" <<std::endl;
+  std::cout<<GridLogMessage << " Clover dslash 4D vectorised (temporarily Wilson)" <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   for(int l=0;l<L_list.size();l++){
-    clover.push_back(Benchmark::Clover(L_list[l]));
+    clover.push_back(Benchmark::DWF(1,L_list[l]));
   }
 
   Ls=12;
@@ -942,7 +938,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << " L \t\t Clover\t\t DWF4\t\t Staggered (GF/s per node)" <<std::endl;
     fprintf(FP,"Per node summary table\n");
     fprintf(FP,"\n");
-    fprintf(FP,"L , Wilson, DWF4, Staggered\n");
+    fprintf(FP,"L , Wilson, DWF4, Staggered, GF/s per node\n");
     fprintf(FP,"\n");
     for(int l=0;l<L_list.size();l++){
       std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< clover[l]/NN<<" \t "<<dwf4[l]/NN<< " \t "<<staggered[l]/NN<<std::endl;

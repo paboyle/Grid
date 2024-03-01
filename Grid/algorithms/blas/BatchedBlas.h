@@ -615,9 +615,10 @@ public:
     deviceVector<ComplexD> beta_p(1);
     acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(ComplexD));
     acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(ComplexD));
-    std::cout << "blasZgemmStridedBatched mnk  "<<m<<","<<n<<","<<k<<" count "<<batchCount<<std::endl;
-    std::cout << "blasZgemmStridedBatched ld   "<<lda<<","<<ldb<<","<<ldc<<std::endl;
-    std::cout << "blasZgemmStridedBatched sd   "<<sda<<","<<sdb<<","<<sdc<<std::endl;
+
+    //    std::cout << "blasZgemmStridedBatched mnk  "<<m<<","<<n<<","<<k<<" count "<<batchCount<<std::endl;
+    //    std::cout << "blasZgemmStridedBatched ld   "<<lda<<","<<ldb<<","<<ldc<<std::endl;
+    //    std::cout << "blasZgemmStridedBatched sd   "<<sda<<","<<sdb<<","<<sdc<<std::endl;
 #ifdef GRID_HIP
     auto err = hipblasZgemmStridedBatched(gridblasHandle,
 					  HIPBLAS_OP_N,
@@ -672,21 +673,23 @@ public:
     ComplexD alpha(1.0);
     ComplexD beta (1.0);
     RealD flops = 8.0*M*N*K*BATCH;
-    for(int i=0;i<10;i++){
-      RealD t0 = usecond();
-	gemmStridedBatched(M,N,K,
-			   alpha,
-			   &A[0], // m x k 
-			   &B[0], // k x n
-			   beta, 
-			   &C[0], // m x n
-			   BATCH);
-      synchronise();
-      RealD t1 = usecond();
-      RealD bytes = 1.0*sizeof(ComplexD)*(M*N*2+N*K+M*K)*BATCH;
-      flops = flops/(t1-t0)/1.e3;
+    int ncall=10;
+    RealD t0 = usecond();
+    for(int i=0;i<ncall;i++){
+      gemmStridedBatched(M,N,K,
+			 alpha,
+			 &A[0], // m x k 
+			 &B[0], // k x n
+			 beta, 
+			 &C[0], // m x n
+			 BATCH);
     }
-    return flops;
+    synchronise();
+    RealD t1 = usecond();
+    RealD bytes = 1.0*sizeof(ComplexD)*(M*N*2+N*K+M*K)*BATCH;
+    flops = 8.0*M*N*K*BATCH*ncall;
+    flops = flops/(t1-t0)/1.e3;
+    return flops; // Returns gigaflops
   }
 
 
