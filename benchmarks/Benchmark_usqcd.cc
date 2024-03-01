@@ -842,9 +842,13 @@ public:
 
 int main (int argc, char ** argv)
 {
-
-  FP = fopen("Benchmark_usqcd.csv","w");
   Grid_init(&argc,&argv);
+
+  if (GlobalSharedMemory::WorldRank==0) { 
+    FP = fopen("Benchmark_usqcd.csv","w");
+  } else {
+    FP = fopen("/dev/null","w");
+  }
 
   CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicySequential);
 #ifdef KNL
