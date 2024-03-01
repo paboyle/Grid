@@ -176,6 +176,7 @@ template<class T> using cshiftAllocator = std::allocator<T>;
 template<class T> using Vector        = std::vector<T,uvmAllocator<T> >;           
 template<class T> using stencilVector = std::vector<T,alignedAllocator<T> >;           
 template<class T> using commVector = std::vector<T,devAllocator<T> >;
+template<class T> using deviceVector  = std::vector<T,devAllocator<T> >;
 template<class T> using cshiftVector = std::vector<T,cshiftAllocator<T> >;
 
 NAMESPACE_END(Grid);
