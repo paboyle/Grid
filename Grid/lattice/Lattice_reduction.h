@@ -285,6 +285,7 @@ template<class vobj>
 inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right) {
   GridBase *grid = left.Grid();
   ComplexD nrm = rankInnerProduct(left,right);
+  //  std::cerr<<"flight log " << std::hexfloat << nrm <<" "<<crc(left)<<std::endl;
   grid->GlobalSum(nrm);
   return nrm;
 }

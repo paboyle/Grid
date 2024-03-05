@@ -42,13 +42,13 @@ template<class vobj> void DumpSliceNorm(std::string s,Lattice<vobj> &f,int mu=-1
   }
 }
 
-template<class vobj> uint32_t crc(Lattice<vobj> & buf)
+template<class vobj> uint32_t crc(const Lattice<vobj> & buf)
 {
   autoView( buf_v , buf, CpuRead);
   return ::crc32(0L,(unsigned char *)&buf_v[0],(size_t)sizeof(vobj)*buf.oSites());
 }
 
-#define CRC(U) std::cout << "FingerPrint "<<__FILE__ <<" "<< __LINE__ <<" "<< #U <<" "<<crc(U)<<std::endl;
+#define CRC(U) std::cerr << "FingerPrint "<<__FILE__ <<" "<< __LINE__ <<" "<< #U <<" "<<crc(U)<<std::endl;
 
 NAMESPACE_END(Grid);
 
