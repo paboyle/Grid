@@ -9,10 +9,10 @@ NAMESPACE_BEGIN(Approx);
 #define HVERSION Header Time-stamp: <14-OCT-2004 09:26:51.00 adk@MISSCONTRARY>
 
 #ifndef ZOLOTAREV_INTERNAL
-#ifndef PRECISION
-#define PRECISION double
+#ifndef ZOLO_PRECISION
+#define ZOLO_PRECISION double
 #endif
-#define ZPRECISION PRECISION
+#define ZPRECISION ZOLO_PRECISION
 #define ZOLOTAREV_DATA zolotarev_data
 #endif
 
@@ -77,8 +77,8 @@ typedef struct {
  * zolotarev_data structure. The arguments must satisfy the constraints that
  * epsilon > 0, n > 0, and type = 0 or 1. */
 
-ZOLOTAREV_DATA* higham(PRECISION epsilon, int n) ;
-ZOLOTAREV_DATA* zolotarev(PRECISION epsilon, int n, int type);
+ZOLOTAREV_DATA* higham(ZOLO_PRECISION epsilon, int n) ;
+ZOLOTAREV_DATA* zolotarev(ZOLO_PRECISION epsilon, int n, int type);
 void zolotarev_free(zolotarev_data *zdata);
 #endif
 
@@ -86,3 +86,4 @@ void zolotarev_free(zolotarev_data *zdata);
 NAMESPACE_END(Approx);
 NAMESPACE_END(Grid);
 #endif
+
