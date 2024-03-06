@@ -255,17 +255,13 @@ inline int  acceleratorIsCommunicable(void *ptr)
 #define GRID_SYCL_LEVEL_ZERO_IPC
 
 NAMESPACE_END(Grid);
-#if 0
-#include <CL/sycl.hpp>
-#include <CL/sycl/usm.hpp>
-#include <level_zero/ze_api.h>
-#include <CL/sycl/backend/level_zero.hpp>
-#else
+
+// Force deterministic reductions
+#define SYCL_REDUCTION_DETERMINISTIC
 #include <sycl/CL/sycl.hpp>
 #include <sycl/usm.hpp>
 #include <level_zero/ze_api.h>
 #include <sycl/ext/oneapi/backend/level_zero.hpp>
-#endif
 
 NAMESPACE_BEGIN(Grid);
 
