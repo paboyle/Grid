@@ -73,7 +73,7 @@ public:
   GridBase      * FineGrid(void)       { return _FineGrid; };   // this is all the linalg routines need to know
   GridCartesian * CoarseGrid(void)     { return _CoarseGrid; };   // this is all the linalg routines need to know
 
-  void ShiftMatrix(RealD shift)
+  /*  void ShiftMatrix(RealD shift)
   {
     int Nd=_FineGrid->Nd(); 
     Coordinate zero_shift(Nd,0);
@@ -102,6 +102,7 @@ public:
     assert(nfound==geom.npoint);
     ExchangeCoarseLinks();
   }
+  */
   
   GeneralCoarsenedMatrix(NonLocalStencilGeometry &_geom,GridBase *FineGrid, GridCartesian * CoarseGrid)
     : geom(_geom),
@@ -459,6 +460,9 @@ public:
     CoarseScalar InnerProd(CoarseGrid()); 
     blockOrthogonalise(InnerProd,Subspace.subspace);
 
+    for(int s=0;s<Subspace.subspace.size();s++){
+      std::cout << " subspace norm "<<norm2(Subspace.subspace[s])<<std::endl;
+    }
     const int npoint = geom.npoint;
       
     Coordinate clatt = CoarseGrid()->GlobalDimensions();
@@ -494,6 +498,7 @@ public:
 	}
 	phase=exp(phase*ci);
 	Mkl(k,l) = phase;
+	std::cout<<" Mkl "<<k<<" "<<l<<" "<<phase<<std::endl;
       }
     }
     invMkl = Mkl.inverse();
@@ -548,6 +553,7 @@ public:
 	tmat-=usecond();
 	linop.Op(phaV,MphaV);
 	tmat+=usecond();
+	std::cout << i << " " <<p << " MphaV "<<norm2(MphaV)<<" "<<norm2(phaV)<<std::endl;
 
 	tproj-=usecond();
 	blockProject(coarseInner,MphaV,Subspace.subspace);
@@ -555,6 +561,7 @@ public:
 
 	ComputeProj[p] = coarseInner;
 	tproj+=usecond();
+	std::cout << i << " " <<p << " ComputeProj "<<norm2(ComputeProj[p])<<std::endl;
 
       }
 
@@ -563,6 +570,7 @@ public:
 	FT[k] = Zero();
 	for(int l=0;l<npoint;l++){
 	  FT[k]= FT[k]+ invMkl(l,k)*ComputeProj[l];
+	  std::cout << i << " " <<k <<" "<<l<< " FT "<<norm2(FT[k])<<" "<<invMkl(l,k)<<std::endl;
 	}
       
 	int osites=CoarseGrid()->oSites();
@@ -581,6 +589,10 @@ public:
     if ( ! hermitian ) {
       //      std::cout << GridLogMessage<<"PopulateAdag  "<<std::endl;
       //      PopulateAdag();
+    }
+
+    for(int p=0;p<geom.npoint;p++){
+      std::cout << " _A["<<p<<"] "<<norm2(_A[p])<<std::endl;
     }
 
     // Need to write something to populate Adag from A

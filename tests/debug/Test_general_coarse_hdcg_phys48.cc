@@ -208,9 +208,6 @@ public:
 };
 
 
-gridblasHandle_t GridBLAS::gridblasHandle;
-int            GridBLAS::gridblasInit;
-
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
@@ -281,7 +278,6 @@ int main (int argc, char ** argv)
   typedef LittleDiracOperator::CoarseVector CoarseVector;
 
   NextToNextToNextToNearestStencilGeometry5D geom(Coarse5d);
-  NearestStencilGeometry5D geom_nn(Coarse5d);
   
   // Warning: This routine calls PVdagM.Op, not PVdagM.HermOp
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis> Subspace;
@@ -309,75 +305,12 @@ int main (int argc, char ** argv)
       LoadBasis(Aggregates,subspace_file);
     }
   } else {
-
-    // NBASIS=40
-    // Best so far: ord 2000 [0.01,95], 500,500  -- 466 iters
-    // slurm-398626.out:Grid : Message : 141.295253 s : 500 filt [1] <n|MdagM|n> 0.000103622063
-
-
-    //Grid : Message : 33.870465 s :  Chebyshev subspace pass-1 : ord 2000 [0.001,95]
-    //Grid : Message : 33.870485 s :  Chebyshev subspace pass-2 : nbasis40 min 1000 step 1000 lo0
-    //slurm-1482200.out : filt ~ 0.004 -- not as low mode projecting -- took 626 iters
-
-    // To try: 2000 [0.1,95]  ,2000,500,500 -- slurm-1482213.out 586 iterations
-
-    // To try: 2000 [0.01,95] ,2000,500,500 -- 469 (think I bumped 92 to 95) (??)
-    // To try: 2000 [0.025,95],2000,500,500
-    // To try: 2000 [0.005,95],2000,500,500
-
-    // NBASIS=44 -- HDCG paper was 64 vectors; AMD compiler craps out at 48
-    // To try: 2000 [0.01,95] ,2000,500,500 -- 419 lowest slurm-1482355.out
-    // To try: 2000 [0.025,95] ,2000,500,500 -- 487 
-    // To try: 2000 [0.005,95] ,2000,500,500
-    /*
-      Smoother [3,92] order 16
-slurm-1482355.out:Grid : Message : 35.239686 s :  Chebyshev subspace pass-1 : ord 2000 [0.01,95]
-slurm-1482355.out:Grid : Message : 35.239714 s :  Chebyshev subspace pass-2 : nbasis44 min 500 step 500 lo0
-slurm-1482355.out:Grid : Message : 5561.305552 s : HDCG: Pcg converged in 419 iterations and 2616.202598 s
-
-slurm-1482367.out:Grid : Message : 43.157235 s :  Chebyshev subspace pass-1 : ord 2000 [0.025,95]
-slurm-1482367.out:Grid : Message : 43.157257 s :  Chebyshev subspace pass-2 : nbasis44 min 500 step 500 lo0
-slurm-1482367.out:Grid : Message : 6169.469330 s : HDCG: Pcg converged in 487 iterations and 3131.185821 s
-    */
-		 /*
-		   Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,
-				       95.0,0.0075,
-				       2500,
-				       500,
-				       500,
-				       0.0);
-		 */
-
-		 /*
-		   Aggregates.CreateSubspaceChebyshevPowerLaw(RNG5,HermOpEO,nbasis,
-							      95.0,
-							      2000);
-		 */
-
     Aggregates.CreateSubspaceMultishift(RNG5,HermOpEO,
 					0.0003,1.0e-5,2000); // Lo, tol, maxit
-  /*
-    Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,
-				       95.0,0.05,
-				       2000,
-				       500,
-				       500,
-				       0.0);
- */
-    /*
-      Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,
-				       95.0,0.01,
-				       2000,
-				       500,
-				       500,
-				       0.0);
-    */
-    //    Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,95.,0.01,1500); -- running slurm-1484934.out nbasis 56
 
     //    Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,95.,0.01,1500); <== last run
     SaveBasis(Aggregates,subspace_file);
   }
-  MemoryManager::Print();
 
   if(refine){
     if ( load_refine ) {
@@ -388,15 +321,15 @@ slurm-1482367.out:Grid : Message : 6169.469330 s : HDCG: Pcg converged in 487 it
       SaveBasis(Aggregates,refine_file);
     }
   }
-  MemoryManager::Print();
+
   Aggregates.Orthogonalise();
   if ( load_mat ) {
     LoadOperator(LittleDiracOp,ldop_file);
   } else {
     LittleDiracOp.CoarsenOperator(FineHermOp,Aggregates);
-    SaveOperator(LittleDiracOp,ldop_file);
+    //    SaveOperator(LittleDiracOp,ldop_file);
   }
-
+  
   // I/O test:
   CoarseVector c_src(Coarse5d);   random(CRNG,c_src);
   CoarseVector c_res(Coarse5d); 
@@ -428,31 +361,42 @@ slurm-1482367.out:Grid : Message : 6169.469330 s : HDCG: Pcg converged in 487 it
     std::cout<<GridLogMessage<<" ldop error: "<<norm2(c_proj)<<std::endl;
   }
 
-  
-  // Try projecting to one hop only
-  //  LittleDiracOp.ShiftMatrix(1.0e-4);
-  //  LittleDiracOperator LittleDiracOpProj(geom_nn,FrbGrid,Coarse5d);
-  //  LittleDiracOpProj.ProjectNearestNeighbour(0.01,LittleDiracOp); // smaller shift 0.02? n
+  //////////////////////////////////////
+  // mrhs coarse operator
+  //  Create a higher dim coarse grid
+  //////////////////////////////////////////////////////////////////////////////////////
 
-  typedef HermitianLinearOperator<LittleDiracOperator,CoarseVector> HermMatrix;
-  HermMatrix CoarseOp     (LittleDiracOp);
-  //  HermMatrix CoarseOpProj (LittleDiracOpProj);
+  std::cout << "**************************************"<<std::endl;
+  std::cout << "Building MultiRHS Coarse operator"<<std::endl;
+  std::cout << "**************************************"<<std::endl;
+  ConjugateGradient<CoarseVector>  coarseCG(4.0e-2,20000,true);
+    
+  const int nrhs=vComplex::Nsimd()*3;
+    
+  Coordinate mpi=GridDefaultMpi();
+  Coordinate rhMpi ({1,1,mpi[0],mpi[1],mpi[2],mpi[3]});
+  Coordinate rhLatt({nrhs,1,clatt[0],clatt[1],clatt[2],clatt[3]});
+  Coordinate rhSimd({vComplex::Nsimd(),1, 1,1,1,1});
+    
+  GridCartesian *CoarseMrhs = new GridCartesian(rhLatt,rhSimd,rhMpi); 
+  //  MultiGeneralCoarsenedMatrix mrhs(LittleDiracOp,CoarseMrhs);
+  typedef MultiGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> MultiGeneralCoarsenedMatrix_t;
+  MultiGeneralCoarsenedMatrix_t mrhs(geom,CoarseMrhs);
+  //  mrhs.CopyMatrix(LittleDiracOp);
+  //  mrhs.SetMatrix(LittleDiracOp.);
+  mrhs.CoarsenOperator(FineHermOp,Aggregates,Coarse5d);
+  //  mrhs.CheckMatrix(LittleDiracOp);
   
-  MemoryManager::Print();
   //////////////////////////////////////////
   // Build a coarse lanczos
   //////////////////////////////////////////
-  //  Chebyshev<CoarseVector>      IRLCheby(0.012,40.0,201);  //500 HDCG iters
-  //  int Nk=512; // Didn't save much
-  //  int Nm=640;
-  //  int Nstop=400;
+  std::cout << "**************************************"<<std::endl;
+  std::cout << "Building Coarse Lanczos               "<<std::endl;
+  std::cout << "**************************************"<<std::endl;
 
-  //  Chebyshev<CoarseVector>      IRLCheby(0.005,40.0,201);  //319 HDCG iters @ 128//160 nk.
-  //  int Nk=128;
-  //  int Nm=160;
+  typedef HermitianLinearOperator<LittleDiracOperator,CoarseVector> HermMatrix;
+  HermMatrix CoarseOp     (LittleDiracOp);
 
-  //  Chebyshev<CoarseVector>      IRLCheby(0.005,40.0,201);  //319 HDCG iters @ 128//160 nk.
-  //  Chebyshev<CoarseVector>      IRLCheby(0.04,40.0,201); 
   int Nk=192;
   int Nm=256;
   int Nstop=Nk;
@@ -491,121 +435,13 @@ slurm-1482367.out:Grid : Message : 6169.469330 s : HDCG: Pcg converged in 487 it
   ConjugateGradient<LatticeFermionD>  CGfine(1.0e-8,30000,false);
   ZeroGuesser<CoarseVector> CoarseZeroGuesser;
   
-  
-  //  HPDSolver<CoarseVector> HPDSolve(CoarseOp,CG,CoarseZeroGuesser);
   HPDSolver<CoarseVector> HPDSolve(CoarseOp,CG,DeflCoarseGuesser);
   c_res=Zero();
-  //  HPDSolve(c_src,c_res); c_ref = c_res;
-  //  std::cout << GridLogMessage<<"src norm "<<norm2(c_src)<<std::endl;
-  //  std::cout << GridLogMessage<<"ref norm "<<norm2(c_ref)<<std::endl;
-  //////////////////////////////////////////////////////////////////////////
-  // Deflated (with real op EV's) solve for the projected coarse op
-  // Work towards ADEF1 in the coarse space
-  //////////////////////////////////////////////////////////////////////////
-  //  HPDSolver<CoarseVector> HPDSolveProj(CoarseOpProj,CG,DeflCoarseGuesser);
-  //  c_res=Zero();
-  //  HPDSolveProj(c_src,c_res);
-  //  std::cout << GridLogMessage<<"src norm "<<norm2(c_src)<<std::endl;
-  //  std::cout << GridLogMessage<<"res norm "<<norm2(c_res)<<std::endl;
-  //  c_res = c_res - c_ref;
-  //  std::cout << "Projected solver error "<<norm2(c_res)<<std::endl;
 
-  //////////////////////////////////////////////////////////////////////
-  // Coarse ADEF1 with deflation space
-  //////////////////////////////////////////////////////////////////////
-  //  ChebyshevSmoother<CoarseVector >  CoarseSmoother(1.0,37.,8,CoarseOpProj);  // just go to sloppy 0.1 convergence
-    //  CoarseSmoother(0.1,37.,8,CoarseOpProj);  //
-  //  CoarseSmoother(0.5,37.,6,CoarseOpProj);  //  8 iter 0.36s
-  //    CoarseSmoother(0.5,37.,12,CoarseOpProj);  // 8 iter, 0.55s
-  //    CoarseSmoother(0.5,37.,8,CoarseOpProj);// 7-9 iter
-  //  CoarseSmoother(1.0,37.,8,CoarseOpProj); // 0.4 - 0.5s solve to 0.04, 7-9 iter
-  //  ChebyshevSmoother<CoarseVector,HermMatrix > CoarseSmoother(0.5,36.,10,CoarseOpProj);  // 311
-
-  ////////////////////////////////////////////////////////
-  // CG, Cheby mode spacing 200,200
-  // Unprojected Coarse CG solve to 1e-8 : 190 iters, 4.9s
-  // Unprojected Coarse CG solve to 4e-2 :  33 iters, 0.8s
-  // Projected Coarse CG solve to 1e-8 : 100 iters, 0.36s
-  ////////////////////////////////////////////////////////
-  // CoarseSmoother(1.0,48.,8,CoarseOpProj); 48 evecs 
-  ////////////////////////////////////////////////////////
-  // ADEF1 Coarse solve to 1e-8 : 44 iters, 2.34s  2.1x gain
-  // ADEF1 Coarse solve to 4e-2 : 7 iters, 0.4s
-  // HDCG 38 iters 162s
-  //
-  // CoarseSmoother(1.0,40.,8,CoarseOpProj); 48 evecs 
-  // ADEF1 Coarse solve to 1e-8 : 37 iters, 2.0s  2.1x gain
-  // ADEF1 Coarse solve to 4e-2 : 6 iters, 0.36s
-  // HDCG 38 iters 169s
-
-					       /*
-  TwoLevelADEF1defl<CoarseVector>
-    cADEF1(1.0e-8, 500,
-	   CoarseOp,
-	   CoarseSmoother,
-	   evec,eval);
-					       */
-  //  c_res=Zero();
-  //  cADEF1(c_src,c_res);
-  //  std::cout << GridLogMessage<<"src norm "<<norm2(c_src)<<std::endl;
-  //  std::cout << GridLogMessage<<"cADEF1 res norm "<<norm2(c_res)<<std::endl;
-  //  c_res = c_res - c_ref;
-  //  std::cout << "cADEF1 solver error "<<norm2(c_res)<<std::endl;
-  
-  //  cADEF1.Tolerance = 4.0e-2;
-  //  cADEF1.Tolerance = 1.0e-1;
-  //  cADEF1.Tolerance = 5.0e-2;
-  //  c_res=Zero();
-  //  cADEF1(c_src,c_res);
-  //  std::cout << GridLogMessage<<"src norm "<<norm2(c_src)<<std::endl;
-  //  std::cout << GridLogMessage<<"cADEF1 res norm "<<norm2(c_res)<<std::endl;
-  //  c_res = c_res - c_ref;
-  //  std::cout << "cADEF1 solver error "<<norm2(c_res)<<std::endl;
-  
-  //////////////////////////////////////////
-  // Build a smoother
-  //////////////////////////////////////////
-  //  ChebyshevSmoother<LatticeFermionD,HermFineMatrix > Smoother(10.0,100.0,10,FineHermOp); //499
-  //  ChebyshevSmoother<LatticeFermionD,HermFineMatrix > Smoother(3.0,100.0,10,FineHermOp);  //383
-  //  ChebyshevSmoother<LatticeFermionD,HermFineMatrix > Smoother(1.0,100.0,10,FineHermOp);  //328
-  //  std::vector<RealD> los({0.5,1.0,3.0}); // 147/142/146 nbasis 1
-  //  std::vector<RealD> los({1.0,2.0}); // Nbasis 24: 88,86 iterations
-  //  std::vector<RealD> los({2.0,4.0}); // Nbasis 32 == 52, iters
-  //  std::vector<RealD> los({2.0,4.0}); // Nbasis 40 == 36,36 iters
-
-  //
-  // Turns approx 2700 iterations into 340 fine multiplies with Nbasis 40
-  // Need to measure cost of coarse space.
-  //
-  // -- i) Reduce coarse residual   -- 0.04
-  // -- ii) Lanczos on coarse space -- done
-  // -- iii) Possible 1 hop project and/or preconditioning it - easy - PrecCG it and
-  //         use a limited stencil. Reread BFM code to check on evecs / deflation strategy with prec
-  //
-  //
-  //
-  //
-
-  MemoryManager::Print();
-  //////////////////////////////////////
-  // mrhs coarse solve
-  //  Create a higher dim coarse grid
-  //////////////////////////////////////////////////////////////////////////////////////
-  ConjugateGradient<CoarseVector>  coarseCG(4.0e-2,20000,true);
-    
-  const int nrhs=vComplex::Nsimd()*3;
-    
-  Coordinate mpi=GridDefaultMpi();
-  Coordinate rhMpi ({1,1,mpi[0],mpi[1],mpi[2],mpi[3]});
-  Coordinate rhLatt({nrhs,1,clatt[0],clatt[1],clatt[2],clatt[3]});
-  Coordinate rhSimd({vComplex::Nsimd(),1, 1,1,1,1});
-    
-  GridCartesian *CoarseMrhs = new GridCartesian(rhLatt,rhSimd,rhMpi); 
-  MultiGeneralCoarsenedMatrix mrhs(LittleDiracOp,CoarseMrhs);
-  typedef decltype(mrhs) MultiGeneralCoarsenedMatrix_t;
+  /////////// MRHS test .////////////
   typedef HermitianLinearOperator<MultiGeneralCoarsenedMatrix_t,CoarseVector> MrhsHermMatrix;
   MrhsHermMatrix MrhsCoarseOp     (mrhs);
-  MemoryManager::Print();
+
 #if 1
   { 
     CoarseVector rh_res(CoarseMrhs);
@@ -644,6 +480,7 @@ slurm-1482367.out:Grid : Message : 6169.469330 s : HDCG: Pcg converged in 487 it
       InsertSlice(c_src,rh_src,r,0);
     }
 
+    std::cout << " Calling the multiRHS coarse CG"<<std::endl;
     coarseCG(MrhsCoarseOp,rh_src,rh_res);
 
     //redo with block CG ?
@@ -666,47 +503,11 @@ slurm-1482367.out:Grid : Message : 6169.469330 s : HDCG: Pcg converged in 487 it
   //////////////////////////////////////
   // fine solve
   //////////////////////////////////////
-
   
-  //  std::vector<RealD> los({2.0,2.5}); // Nbasis 40 == 36,36 iters
-  //  std::vector<RealD> los({2.0});
-  //  std::vector<RealD> los({2.5});
-
-  //  std::vector<int> ords({7,8,10}); // Nbasis 40 == 40,38,36 iters (320,342,396 mults)
-  //  std::vector<int> ords({7}); // Nbasis 40 == 40 iters (320 mults)
-  //  std::vector<int> ords({9}); // Nbasis 40 == 40 iters (320 mults)  
-
-  // 148 outer				       
-       //  std::vector<RealD> los({1.0});
-       //  std::vector<int> ords({24}); 
-
-  // 162 outer				       
-       //  std::vector<RealD> los({2.5});
-       //  std::vector<int> ords({9}); 
-
-  // ??? outer				       
   std::vector<RealD> los({2.0});
   std::vector<int> ords({7}); 
 
  /*
-   Smoother opt @56 nbasis, 0.04 convergence, 192 evs
- ord lo
-
- 16   0.1  no converge -- likely sign indefinite
- 32   0.1  no converge -- likely sign indefinite(?)
-
- 16   0.5  422
- 32   0.5  302
- 
- 8   1.0  575
- 12  1.0  449
- 16  1.0  375
- 32  1.0  302
-
- 12  3.0  476
- 16  3.0  319
- 32  3.0  306
-
  Powerlaw setup 62 vecs
 slurm-1494943.out:Grid : Message : 4874.186617 s : HDCG: Pcg converged in 171 iterations and 1706.548006 s 1.0 32
 slurm-1494943.out:Grid : Message : 6490.121648 s : HDCG: Pcg converged in 194 iterations and 1616.219654 s 1.0 16
@@ -727,38 +528,7 @@ slurm-1494242.out:Grid : Message : 6588.727977 s : HDCG: Pcg converged in 205 it
  -- CG smoother    O(16): 290
  -- Cheby smoother O(16): 218 -- getting close to the deflation level I expect 169 from BFM paper @O(7) smoother and 64 nbasis
 
-Grid : Message : 2790.797194 s : HDCG: Pcg converged in 190 iterations and 1049.563182 s 1.0 32
-Grid : Message : 3766.374396 s : HDCG: Pcg converged in 218 iterations and 975.455668 s  1.0 16
-Grid : Message : 4888.746190 s : HDCG: Pcg converged in 191 iterations and 1122.252055 s 0.5 32
-Grid : Message : 5956.679661 s : HDCG: Pcg converged in 231 iterations and 1067.812850 s 0.5 16
-
-Grid : Message : 2767.405829 s : HDCG: Pcg converged in 218 iterations and 967.214067 s -- 16
-Grid : Message : 3816.165905 s : HDCG: Pcg converged in 251 iterations and 1048.636269 s -- 12
-Grid : Message : 5121.206572 s : HDCG: Pcg converged in 318 iterations and 1304.916168 s -- 8
-
- 
-[paboyle@login2.crusher debug]$ grep -v Memory slurm-402426.out  | grep converged | grep HDCG -- [1.0,16] cheby
-Grid : Message : 5185.521063 s : HDCG: Pcg converged in 377 iterations and 1595.843529 s
-
-[paboyle@login2.crusher debug]$ grep HDCG  slurm-402184.out | grep onver
-Grid : Message : 3760.438160 s : HDCG: Pcg converged in 422 iterations and 2129.243141 s
-Grid : Message : 5660.588015 s : HDCG: Pcg converged in 308 iterations and 1900.026821 s
-
- 
-Grid : Message : 4238.206528 s : HDCG: Pcg converged in 575 iterations and 2657.430676 s
-Grid : Message : 6345.880344 s : HDCG: Pcg converged in 449 iterations and 2108.505208 s
-
-grep onverg slurm-401663.out | grep HDCG
-Grid : Message : 3900.817781 s : HDCG: Pcg converged in 476 iterations and 1992.591311 s
-Grid : Message : 5647.202699 s : HDCG: Pcg converged in 306 iterations and 1746.838660 s
-
-
-[paboyle@login2.crusher debug]$ grep converged slurm-401775.out | grep HDCG
-Grid : Message : 3583.177025 s : HDCG: Pcg converged in 375 iterations and 1800.896037 s
-Grid : Message : 5348.342243 s : HDCG: Pcg converged in 302 iterations and 1765.045018 s
-
 Conclusion: higher order smoother is doing better. Much better. Use a Krylov smoother instead Mirs as in BFM version.
-
  */
 				      //
   MemoryManager::Print();
@@ -774,14 +544,6 @@ Conclusion: higher order smoother is doing better. Much better. Use a Krylov smo
       //    ChebyshevSmoother<LatticeFermionD,HermFineMatrix > Smoother(lo,92,10,FineHermOp); // 36 best case
       ChebyshevSmoother<LatticeFermionD > ChebySmooth(lo,95,ords[o],FineHermOp);  // 311
 
-      /*
-       * CG smooth 11 iter: 
-       slurm-403825.out:Grid : Message : 4369.824339 s : HDCG: fPcg converged in 215 iterations 3.0
-       slurm-403908.out:Grid : Message : 3955.897470 s : HDCG: fPcg converged in 236 iterations 1.0
-       slurm-404273.out:Grid : Message : 3843.792191 s : HDCG: fPcg converged in 210 iterations 2.0
-       * CG smooth 9 iter: 
-      */
-      //
       RealD MirsShift = lo;
       ShiftedHermOpLinearOperator<LatticeFermionD> ShiftedFineHermOp(HermOpEO,MirsShift);
       CGSmoother<LatticeFermionD> CGsmooth(ords[o],ShiftedFineHermOp) ;
@@ -820,16 +582,14 @@ Conclusion: higher order smoother is doing better. Much better. Use a Krylov smo
 		 CoarseMrhs,        // Grid needed to Mrhs grid
 		 Aggregates);
 
-  MemoryManager::Print();
       std::cout << "Calling mRHS HDCG"<<std::endl;
       FrbGrid->Barrier();
       
-  MemoryManager::Print();
       std::vector<LatticeFermionD> src_mrhs(nrhs,FrbGrid);
       std::cout << " mRHS source"<<std::endl;
       std::vector<LatticeFermionD> res_mrhs(nrhs,FrbGrid);
       std::cout << " mRHS result"<<std::endl;
-  MemoryManager::Print();
+
   random(RNG5,src_mrhs[0]);
   for(int r=0;r<nrhs;r++){
 	if(r>0)src_mrhs[r]=src_mrhs[0];
