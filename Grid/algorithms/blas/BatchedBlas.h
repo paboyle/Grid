@@ -31,10 +31,16 @@ Author: Peter Boyle <pboyle@bnl.gov>
 #include <hipblas/hipblas.h>
 #endif
 #ifdef GRID_CUDA
-#include <hipblas/hipblas.h>
+#include <cublas_v2.h>
 #endif
 #ifdef GRID_SYCL
-#error // need oneMKL version
+#include <oneapi/mkl.hpp>
+#endif
+#if 0
+#define GRID_ONE_MKL
+#endif
+#ifdef GRID_ONE_MKL
+#include <oneapi/mkl.hpp>
 #endif
 
 ///////////////////////////////////////////////////////////////////////	  
@@ -46,12 +52,15 @@ NAMESPACE_BEGIN(Grid);
   typedef hipblasHandle_t gridblasHandle_t;
 #endif
 #ifdef GRID_CUDA
-  typedef cudablasHandle_t gridblasHandle_t;
+  typedef cublasHandle_t gridblasHandle_t;
 #endif
 #ifdef GRID_SYCL
-  typedef int32_t gridblasHandle_t;
+  typedef cl::sycl::queue *gridblasHandle_t;
 #endif
-#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
+#ifdef GRID_ONE_MKL
+  typedef cl::sycl::queue *gridblasHandle_t;
+#endif
+#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP) && !defined(GRID_ONE_MKL)
   typedef int32_t gridblasHandle_t;
 #endif
 
@@ -70,12 +79,19 @@ public:
 #ifdef GRID_CUDA
       std::cout << "cublasCreate"<<std::endl;
       cublasCreate(&gridblasHandle);
+      cublasSetPointerMode(gridblasHandle, CUBLAS_POINTER_MODE_DEVICE);
 #endif
 #ifdef GRID_HIP
       std::cout << "hipblasCreate"<<std::endl;
       hipblasCreate(&gridblasHandle);
 #endif
 #ifdef GRID_SYCL
+      gridblasHandle = theGridAccelerator;
+#endif
+#ifdef GRID_ONE_MKL
+      cl::sycl::cpu_selector selector;
+      cl::sycl::device selectedDevice { selector };
+      gridblasHandle =new sycl::queue (selectedDevice);
 #endif
       gridblasInit=1;
     }
@@ -110,6 +126,9 @@ public:
 #endif
 #ifdef GRID_SYCL
     accelerator_barrier();
+#endif
+#ifdef GRID_ONE_MKL
+    gridblasHandle->wait();
 #endif
   }
   
@@ -252,13 +271,16 @@ public:
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
     // Need a default/reference implementation
+    int sda = lda*k;
+    int sdb = ldb*k;
+    int sdc = ldc*n;
     for (int p = 0; p < batchCount; ++p) {
       for (int mm = 0; mm < m; ++mm) {
 	for (int nn = 0; nn < n; ++nn) {
 	  ComplexD c_mn(0.0);
-	  for (int kk = 0; kk < k, ++kk)
-	    c_mn += Amk[mm + kk*lda + p*sda] * Bkn[kk + nn*ldb + p*sdb];
-	  Cmn[mm + nn*ldc + p*sdc] =  (*alpha_p)*c_mn + (*beta_p)*Cmn[mm + nn*ldc + p*sdc];
+	  for (int kk = 0; kk < k; ++kk)
+	    c_mn += Amk[p][mm + kk*lda ] * Bkn[p][kk + nn*ldb];
+	  Cmn[p][mm + nn*ldc] =  (alpha)*c_mn + (beta)*Cmn[p][mm + nn*ldc ];
 	}
       }
     }
@@ -348,14 +370,19 @@ public:
 #warning "oneMKL implementation not built "
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
+    int sda = lda*k;
+    int sdb = ldb*k;
+    int sdc = ldc*n;
+    ComplexF alphaf(real(alpha),imag(alpha));
+    ComplexF betaf(real(beta),imag(beta));
     // Need a default/reference implementation
     for (int p = 0; p < batchCount; ++p) {
       for (int mm = 0; mm < m; ++mm) {
 	for (int nn = 0; nn < n; ++nn) {
-	  ComplexD c_mn(0.0);
-	  for (int kk = 0; kk < k, ++kk)
-	    c_mn += Amk[mm + kk*lda + p*sda] * Bkn[kk + nn*ldb + p*sdb];
-	  Cmn[mm + nn*ldc + p*sdc] =  (*alpha_p)*c_mn + (*beta_p)*Cmn[mm + nn*ldc + p*sdc];
+	  ComplexF c_mn(0.0);
+	  for (int kk = 0; kk < k; ++kk)
+	    c_mn += Amk[p][mm + kk*lda ] * Bkn[p][kk + nn*ldb];
+	  Cmn[p][mm + nn*ldc] =  (alphaf)*c_mn + (betaf)*Cmn[p][mm + nn*ldc ];
 	}
       }
     }
@@ -444,14 +471,17 @@ public:
 #warning "oneMKL implementation not built "
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
+    int sda = lda*k;
+    int sdb = ldb*k;
+    int sdc = ldc*n;
     // Need a default/reference implementation
     for (int p = 0; p < batchCount; ++p) {
       for (int mm = 0; mm < m; ++mm) {
 	for (int nn = 0; nn < n; ++nn) {
 	  RealD c_mn(0.0);
-	  for (int kk = 0; kk < k, ++kk)
-	    c_mn += Amk[mm + kk*lda + p*sda] * Bkn[kk + nn*ldb + p*sdb];
-	  Cmn[mm + nn*ldc + p*sdc] =  (*alpha_p)*c_mn + (*beta_p)*Cmn[mm + nn*ldc + p*sdc];
+	  for (int kk = 0; kk < k; ++kk)
+	    c_mn += Amk[p][mm + kk*lda ] * Bkn[p][kk + nn*ldb];
+	  Cmn[p][mm + nn*ldc] =  (alpha)*c_mn + (beta)*Cmn[p][mm + nn*ldc ];
 	}
       }
     }
@@ -558,14 +588,17 @@ public:
 #warning "oneMKL implementation not built "
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
+    int sda = lda*k;
+    int sdb = ldb*k;
+    int sdc = ldc*n;
     // Need a default/reference implementation
     for (int p = 0; p < batchCount; ++p) {
       for (int mm = 0; mm < m; ++mm) {
 	for (int nn = 0; nn < n; ++nn) {
 	  RealD c_mn(0.0);
-	  for (int kk = 0; kk < k, ++kk)
-	    c_mn += Amk[mm + kk*lda + p*sda] * Bkn[kk + nn*ldb + p*sdb];
-	  Cmn[mm + nn*ldc + p*sdc] =  (*alpha_p)*c_mn + (*beta_p)*Cmn[mm + nn*ldc + p*sdc];
+	  for (int kk = 0; kk < k; ++kk)
+	    c_mn += Amk[p][mm + kk*lda ] * Bkn[p][kk + nn*ldb];
+	  Cmn[p][mm + nn*ldc] =  (alpha)*c_mn + (beta)*Cmn[p][mm + nn*ldc ];
 	}
       }
     }
@@ -601,9 +634,9 @@ public:
     deviceVector<ComplexD> beta_p(1);
     acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(ComplexD));
     acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(ComplexD));
-    std::cout << "blasZgemmStridedBatched mnk  "<<m<<","<<n<<","<<k<<" count "<<batchCount<<std::endl;
-    std::cout << "blasZgemmStridedBatched ld   "<<lda<<","<<ldb<<","<<ldc<<std::endl;
-    std::cout << "blasZgemmStridedBatched sd   "<<sda<<","<<sdb<<","<<sdc<<std::endl;
+    //    std::cout << "blasZgemmStridedBatched mnk  "<<m<<","<<n<<","<<k<<" count "<<batchCount<<std::endl;
+    //    std::cout << "blasZgemmStridedBatched ld   "<<lda<<","<<ldb<<","<<ldc<<std::endl;
+    //    std::cout << "blasZgemmStridedBatched sd   "<<sda<<","<<sdb<<","<<sdc<<std::endl;
 #ifdef GRID_HIP
     auto err = hipblasZgemmStridedBatched(gridblasHandle,
 					  HIPBLAS_OP_N,
@@ -629,52 +662,61 @@ public:
 			      (cuDoubleComplex *) Cmn, ldc, sdc,
 			      batchCount);
 #endif
-#ifdef GRID_SYCL
-     #warning "oneMKL implementation not made "
+#if defined(GRID_SYCL) || defined(GRID_ONE_MKL)
+    oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
+						oneapi::mkl::transpose::N,
+						oneapi::mkl::transpose::N,
+						m,n,k,
+						alpha,
+						(const ComplexD *)Amk,lda,sda,
+						(const ComplexD *)Bkn,ldb,sdb,
+						beta,
+						(ComplexD *)Cmn,ldc,sdc,
+						batchCount);
 #endif
-#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
+#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP) && !defined(GRID_ONE_MKL)
      // Need a default/reference implementation
      for (int p = 0; p < batchCount; ++p) {
        for (int mm = 0; mm < m; ++mm) {
 	 for (int nn = 0; nn < n; ++nn) {
 	   ComplexD c_mn(0.0);
-	   for (int kk = 0; kk < k, ++kk)
+	   for (int kk = 0; kk < k; ++kk)
 	     c_mn += Amk[mm + kk*lda + p*sda] * Bkn[kk + nn*ldb + p*sdb];
-	   Cmn[mm + nn*ldc + p*sdc] =  (*alpha_p)*c_mn + (*beta_p)*Cmn[mm + nn*ldc + p*sdc];
+	   Cmn[mm + nn*ldc + p*sdc] =  (alpha)*c_mn + (beta)*Cmn[mm + nn*ldc + p*sdc];
 	 }
        }
      }
 #endif
   }
 
-  void benchmark(int nbasis, int nrhs, int coarseVol, int nstencil)
+  double benchmark(int M, int N, int K, int BATCH)
   {
-    int32_t N_A = nbasis*nbasis*coarseVol*nstencil;
-    int32_t N_B = nbasis*nrhs*coarseVol*nstencil; // One leg of stencil at a time
-    int32_t N_C = nbasis*nrhs*coarseVol*nstencil; 
+    int32_t N_A = M*K*BATCH;
+    int32_t N_B = K*N*BATCH;
+    int32_t N_C = M*N*BATCH;
     deviceVector<ComplexD> A(N_A); acceleratorMemSet(&A[0],0,N_A*sizeof(ComplexD));
     deviceVector<ComplexD> B(N_B); acceleratorMemSet(&B[0],0,N_B*sizeof(ComplexD));
     deviceVector<ComplexD> C(N_C); acceleratorMemSet(&C[0],0,N_C*sizeof(ComplexD));
     ComplexD alpha(1.0);
     ComplexD beta (1.0);
-    for(int i=0;i<10;i++){
-      RealD t0 = usecond();
-      for(int s=0;s<nstencil;s++){
-	gemmStridedBatched(nbasis,nrhs,nbasis,
-			   alpha,
-			   &A[0], // m x k 
-			   &B[0], // k x n
-			   beta, 
-			   &C[0], // m x n
-			   coarseVol);
-      }
-      synchronise();
-      RealD t1 = usecond();
-      RealD flops = 8.0*nbasis*nbasis*nrhs*coarseVol*nstencil;
-      RealD bytes = 1.0*sizeof(ComplexD)*(nbasis*nbasis+nbasis*nrhs*3)*coarseVol*nstencil;
-      std::cout << " batched Blas call "<<i<<" "<< flops/(t1-t0)/1.e3 <<" GF/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
-      std::cout << " batched Blas call "<<i<<" "<< bytes/(t1-t0)/1.e3 <<" GB/s "<<(t1-t0)/1.e3<<" ms "<<std::endl;
+    RealD flops = 8.0*M*N*K*BATCH;
+    int ncall=10;
+    RealD t0 = usecond();
+    for(int i=0;i<ncall;i++){
+      gemmStridedBatched(M,N,K,
+			 alpha,
+			 &A[0], // m x k 
+			 &B[0], // k x n
+			 beta, 
+			 &C[0], // m x n
+			 BATCH);
     }
+    synchronise();
+    RealD t1 = usecond();
+    RealD bytes = 1.0*sizeof(ComplexD)*(M*N*2+N*K+M*K)*BATCH;
+    flops = 8.0*M*N*K*BATCH*ncall;
+    flops = flops/(t1-t0)/1.e3;
+    return flops; // Returns gigaflops
   }
 
 

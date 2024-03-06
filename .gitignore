@@ -1,3 +1,7 @@
+# Doxygen stuff
+html/*
+latex/*
+
 # Compiled Object files #
 #########################
 *.slo

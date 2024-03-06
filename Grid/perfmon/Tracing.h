@@ -34,7 +34,7 @@ class GridTracer {
 };
 inline void tracePush(const char *name) { roctxRangePushA(name); }
 inline void tracePop(const char *name) { roctxRangePop(); }
-inline int  traceStart(const char *name) { roctxRangeStart(name); }
+inline int  traceStart(const char *name) { return roctxRangeStart(name); }
 inline void traceStop(int ID) { roctxRangeStop(ID); }
 #endif
 

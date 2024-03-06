@@ -1,9 +1,8 @@
 #!/bin/bash
 
 num_tile=2
-
-gpu_id=$(( (MPI_LOCAL_RANKID % num_tile ) ))
-tile_id=$((MPI_LOCAL_RANKID / num_tile))
+gpu_id=$(( (MPI_LOCALRANKID / num_tile ) ))
+tile_id=$((MPI_LOCALRANKID % num_tile))
 
 export ZE_AFFINITY_MASK=$gpu_id.$tile_id
 

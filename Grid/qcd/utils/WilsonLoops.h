@@ -464,7 +464,8 @@ public:
   //U_padded: the gauge link fields padded out using the PaddedCell class
   //Cell: the padded cell class
   //gStencil: the precomputed generalized local stencil for the staple
-  static void StaplePaddedAll(std::vector<GaugeMat> &staple, const std::vector<GaugeMat> &U_padded, const PaddedCell &Cell, const GeneralLocalStencil &gStencil) {
+  static void StaplePaddedAll(std::vector<GaugeMat> &staple, const std::vector<GaugeMat> &U_padded, const PaddedCell &Cell, const GeneralLocalStencil &gStencil)
+  {
     double t0 = usecond();
     assert(U_padded.size() == Nd); assert(staple.size() == Nd);
     assert(U_padded[0].Grid() == (GridBase*)Cell.grids.back());
@@ -489,7 +490,7 @@ public:
 	autoView( gStaple_v , gStaple, AcceleratorWrite);
 	auto gStencil_v = gStencil.View(AcceleratorRead);
 	
-	accelerator_for(ss, ggrid->oSites(), ggrid->Nsimd(), {
+	accelerator_for(ss, ggrid->oSites(), (size_t)ggrid->Nsimd(), {
 	    decltype(coalescedRead(Ug_dirs_v[0][0])) stencil_ss;
 	    stencil_ss = Zero();
 	    int off = outer_off;
@@ -1201,7 +1202,7 @@ public:
 	autoView( gStaple_v , gStaple, AcceleratorWrite);
 	auto gStencil_v = gStencil.View(AcceleratorRead);
 
-	accelerator_for(ss, ggrid->oSites(), ggrid->Nsimd(), {
+	accelerator_for(ss, ggrid->oSites(), (size_t)ggrid->Nsimd(), {
 	    decltype(coalescedRead(Ug_dirs_v[0][0])) stencil_ss;
 	    stencil_ss = Zero();
 	    int s=offset;

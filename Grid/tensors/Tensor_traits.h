@@ -34,9 +34,12 @@ NAMESPACE_BEGIN(Grid);
 
   // These are the Grid tensors
   template<typename T>     struct isGridTensor                : public std::false_type { static constexpr bool notvalue = true; };
-  template<class T>        struct isGridTensor<iScalar<T>>    : public std::true_type  { static constexpr bool notvalue = false; };
-  template<class T, int N> struct isGridTensor<iVector<T, N>> : public std::true_type  { static constexpr bool notvalue = false; };
-  template<class T, int N> struct isGridTensor<iMatrix<T, N>> : public std::true_type  { static constexpr bool notvalue = false; };
+  template<class T>        struct isGridTensor<iScalar<T> >   : public std::true_type  { static constexpr bool notvalue = false; };
+  template<class T, int N> struct isGridTensor<iVector<T, N> >: public std::true_type  { static constexpr bool notvalue = false; };
+  template<class T, int N> struct isGridTensor<iMatrix<T, N> >: public std::true_type  { static constexpr bool notvalue = false; };
+
+  template <typename T>  using IfGridTensor    = Invoke<std::enable_if<isGridTensor<T>::value, int> >;
+  template <typename T>  using IfNotGridTensor = Invoke<std::enable_if<!isGridTensor<T>::value, int> >;
 
   // Traits to identify scalars
   template<typename T>     struct isGridScalar                : public std::false_type { static constexpr bool notvalue = true; };
@@ -400,4 +403,13 @@ NAMESPACE_BEGIN(Grid);
     enum { value = sizeof(real_scalar_type)/sizeof(float) };
   };
 NAMESPACE_END(Grid);
+
+
+#ifdef GRID_SYCL
+template<typename T> struct
+sycl::is_device_copyable<T, typename std::enable_if<
+			      Grid::isGridTensor<T>::value  && (!std::is_trivially_copyable<T>::value),
+			      void>::type>
+  : public std::true_type {};
+#endif
 

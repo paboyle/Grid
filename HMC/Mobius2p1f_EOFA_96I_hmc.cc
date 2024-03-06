@@ -128,7 +128,7 @@ template<class FermionOperatorD, class FermionOperatorF, class SchurOperatorD, c
       ////////////////////////////////////////////////////////////////////////////////////
       // Make a mixed precision conjugate gradient
       ////////////////////////////////////////////////////////////////////////////////////
-#if 1
+#if 0
       RealD delta=1.e-4;
       std::cout << GridLogMessage << "Calling reliable update Conjugate Gradient" <<std::endl;
       ConjugateGradientReliableUpdate<FieldD,FieldF> MPCG(Tolerance,MaxInnerIterations*MaxOuterIterations,delta,SinglePrecGrid5,LinOpF,LinOpD);
@@ -180,7 +180,7 @@ int main(int argc, char **argv) {
   // 4/2 => 0.6 dH
   // 3/3 => 0.8 dH .. depth 3, slower
   //MD.MDsteps =  4;
-  MD.MDsteps =  14;
+  MD.MDsteps =  12;
   MD.trajL   = 0.5;
 
   HMCparameters HMCparams;
@@ -204,7 +204,7 @@ int main(int argc, char **argv) {
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
   std::cout << "loaded NERSC checpointer"<<std::endl;
   RNGModuleParameters RNGpar;
-  RNGpar.serial_seeds = "1 2 3 4 5";
+  RNGpar.serial_seeds = "1 2 3 4 5 6 7 8 9 10";
   RNGpar.parallel_seeds = "6 7 8 9 10";
   TheHMC.Resources.SetRNGSeeds(RNGpar);
 
@@ -218,15 +218,14 @@ int main(int argc, char **argv) {
   RealD M5  = 1.8;
   RealD b   = 1.5;
   RealD c   = 0.5;
-  Real beta         = 2.13;
+  RealD beta         = 2.13;
   //  Real light_mass   = 5.4e-4;
   Real light_mass     = 7.8e-4;
+  //  Real light_mass     = 7.8e-3;
   Real strange_mass = 0.0362;
   Real pv_mass      = 1.0;
-  //  std::vector<Real> hasenbusch({ 0.01, 0.045, 0.108, 0.25, 0.51 , pv_mass });
-  //  std::vector<Real> hasenbusch({ light_mass, 0.01, 0.045, 0.108, 0.25, 0.51 , pv_mass });
-  std::vector<Real> hasenbusch({ 0.005, 0.0145, 0.045, 0.108, 0.25, 0.51 }); // Updated
-  //  std::vector<Real> hasenbusch({ light_mass, 0.0145, 0.045, 0.108, 0.25, 0.51 , 0.75 , pv_mass });
+  std::vector<Real> hasenbusch({ 0.005, 0.0145, 0.045, 0.108, 0.25, 0.35 , 0.51, 0.6, 0.8 }); // Updated
+  //std::vector<Real> hasenbusch({ 0.0145, 0.045, 0.108, 0.25, 0.35 , 0.51, 0.6, 0.8 }); // Updated
 
   auto GridPtr   = TheHMC.Resources.GetCartesian();
   auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
@@ -277,20 +276,20 @@ int main(int argc, char **argv) {
 
   //  double StoppingCondition = 1e-14;
   //  double MDStoppingCondition = 1e-9;
-  double StoppingCondition = 1e-9;
-  double MDStoppingCondition = 1e-8;
-  double MDStoppingConditionLoose = 1e-8;
-  double MDStoppingConditionStrange = 1e-8;
-  double MaxCGIterations = 300000;
+  double StoppingCondition = 1e-14;
+  double MDStoppingCondition = 1e-9;
+  double MDStoppingConditionLoose = 1e-9;
+  double MDStoppingConditionStrange = 1e-9;
+  double MaxCGIterations = 50000;
   ConjugateGradient<FermionField>  CG(StoppingCondition,MaxCGIterations);
   ConjugateGradient<FermionField>  MDCG(MDStoppingCondition,MaxCGIterations);
 
   ////////////////////////////////////
   // Collect actions
   ////////////////////////////////////
-  //  ActionLevel<HMCWrapper::Field> Level1(1);
-  ActionLevel<HMCWrapper::Field> Level2(1);
-  ActionLevel<HMCWrapper::Field> Level3(15);
+  ActionLevel<HMCWrapper::Field> Level1(1);
+  ActionLevel<HMCWrapper::Field> Level2(2);
+  ActionLevel<HMCWrapper::Field> Level3(4);
 
   ////////////////////////////////////
   // Strange action
@@ -300,11 +299,11 @@ int main(int argc, char **argv) {
 
   // Probably dominates the force - back to EOFA.
   OneFlavourRationalParams SFRp;
-  SFRp.lo       = 0.1;
+  SFRp.lo       = 0.8;
   SFRp.hi       = 30.0;
   SFRp.MaxIter  = 10000;
-  SFRp.tolerance= 1.0e-8;
-  SFRp.mdtolerance= 2.0e-6;
+  SFRp.tolerance= 1.0e-12;
+  SFRp.mdtolerance= 1.0e-9;
   SFRp.degree   = 10;
   SFRp.precision= 50;
   
@@ -355,8 +354,10 @@ int main(int argc, char **argv) {
   ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> 
     EOFA(Strange_Op_L, Strange_Op_R, 
 	 ActionCG, 
-	 ActionCGL, ActionCGR,
-	 DerivativeCGL, DerivativeCGR,
+	 //	 ActionCGL, ActionCGR,
+	 //	 DerivativeCGL, DerivativeCGR,
+	 ActionCG, ActionCG,
+	 DerivativeCG, DerivativeCG,
 	 SFRp, true);
   Level2.push_back(&EOFA);
 
@@ -443,13 +444,14 @@ int main(int argc, char **argv) {
   }
   int nquo=Quotients.size();
   for(int h=0;h<nquo;h++){
-    Level2.push_back(Quotients[h]);
+    Level1.push_back(Quotients[h]);
   }
 
   /////////////////////////////////////////////////////////////
   // Gauge action
   /////////////////////////////////////////////////////////////
   Level3.push_back(&GaugeAction);
+  TheHMC.TheAction.push_back(Level1);
   TheHMC.TheAction.push_back(Level2);
   TheHMC.TheAction.push_back(Level3);
   std::cout << GridLogMessage << " Action complete "<< std::endl;

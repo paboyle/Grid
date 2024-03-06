@@ -90,11 +90,11 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< "++++++++++++++++++++++++++++++++++++++++++++++++" <<std::endl;
 
   for(int d=0;d<Nd;d++) CommDim[d]= (mpi[d]/shm[d])>1 ? 1 : 0;
-  Dirichlet[0] = 0;
-  Dirichlet[1] = CommDim[0]*latt4[0]/mpi[0] * shm[0];
-  Dirichlet[2] = CommDim[1]*latt4[1]/mpi[1] * shm[1];
-  Dirichlet[3] = CommDim[2]*latt4[2]/mpi[2] * shm[2];
-  Dirichlet[4] = CommDim[3]*latt4[3]/mpi[3] * shm[3];
+  //  Dirichlet[0] = 0;
+  //  Dirichlet[1] = CommDim[0]*latt4[0]/mpi[0] * shm[0];
+  //  Dirichlet[2] = CommDim[1]*latt4[1]/mpi[1] * shm[1];
+  //  Dirichlet[3] = CommDim[2]*latt4[2]/mpi[2] * shm[2];
+  //  Dirichlet[4] = CommDim[3]*latt4[3]/mpi[3] * shm[3];
 
   Benchmark(Ls,Dirichlet);
 
@@ -105,11 +105,11 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< "++++++++++++++++++++++++++++++++++++++++++++++++" <<std::endl;
 
   for(int d=0;d<Nd;d++) CommDim[d]= mpi[d]>1 ? 1 : 0;
-  Dirichlet[0] = 0;
-  Dirichlet[1] = CommDim[0]*latt4[0]/mpi[0];
-  Dirichlet[2] = CommDim[1]*latt4[1]/mpi[1];
-  Dirichlet[3] = CommDim[2]*latt4[2]/mpi[2];
-  Dirichlet[4] = CommDim[3]*latt4[3]/mpi[3];
+  //  Dirichlet[0] = 0;
+  //  Dirichlet[1] = CommDim[0]*latt4[0]/mpi[0];
+  //  Dirichlet[2] = CommDim[1]*latt4[1]/mpi[1];
+  //  Dirichlet[3] = CommDim[2]*latt4[2]/mpi[2];
+  //  Dirichlet[4] = CommDim[3]*latt4[3]/mpi[3];
   
   Benchmark(Ls,Dirichlet);
 
@@ -185,6 +185,7 @@ void Benchmark(int Ls, Coordinate Dirichlet)
   GaugeField Umu(UGrid);
   GaugeField UmuCopy(UGrid);
   SU<Nc>::HotConfiguration(RNG4,Umu);
+  //  SU<Nc>::ColdConfiguration(Umu);
   UmuCopy=Umu;
   std::cout << GridLogMessage << "Random gauge initialised " << std::endl;
 
@@ -306,6 +307,14 @@ void Benchmark(int Ls, Coordinate Dirichlet)
 
     if(( n2e>1.0e-4) ) {
       std::cout<<GridLogMessage << "WRONG RESULT" << std::endl;
+      FGrid->Barrier();
+      std::cout<<GridLogMessage << "RESULT" << std::endl;
+      //      std::cout << result<<std::endl;
+      std::cout << norm2(result)<<std::endl;
+      std::cout<<GridLogMessage << "REF" << std::endl;
+      std::cout << norm2(ref)<<std::endl;
+      std::cout<<GridLogMessage << "ERR" << std::endl;
+      std::cout << norm2(err)<<std::endl;
       FGrid->Barrier();
       exit(-1);
     }

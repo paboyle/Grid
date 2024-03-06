@@ -1141,4 +1141,13 @@ template<class vobj> void gpermute(vobj & inout,int perm){
 
 NAMESPACE_END(Grid);
 
+#ifdef GRID_SYCL
+template<> struct sycl::is_device_copyable<Grid::vComplexF> : public std::true_type {};
+template<> struct sycl::is_device_copyable<Grid::vComplexD> : public std::true_type {};
+template<> struct sycl::is_device_copyable<Grid::vRealF   > : public std::true_type {};
+template<> struct sycl::is_device_copyable<Grid::vRealD   > : public std::true_type {};
+template<> struct sycl::is_device_copyable<Grid::vInteger > : public std::true_type {};
+#endif
+
+
 #endif
