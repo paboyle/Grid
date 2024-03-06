@@ -280,20 +280,16 @@ void StaggeredKernels<Impl>::DhopImproved(StencilImpl &st, LebesgueOrder &lo,
 
   if( interior && exterior ) { 
     if (Opt == OptGeneric    ) { KERNEL_CALL(DhopSiteGeneric,1); return;}
-#ifndef GRID_CUDA
     if (Opt == OptHandUnroll ) { KERNEL_CALL(DhopSiteHand,1);    return;}
+#ifndef GRID_CUDA
     if (Opt == OptInlineAsm  ) {  ASM_CALL(DhopSiteAsm);     return;}
 #endif
   } else if( interior ) {
     if (Opt == OptGeneric    ) { KERNEL_CALL(DhopSiteGenericInt,1); return;}
-#ifndef GRID_CUDA
     if (Opt == OptHandUnroll ) { KERNEL_CALL(DhopSiteHandInt,1);    return;}
-#endif
   } else if( exterior ) { 
     if (Opt == OptGeneric    ) { KERNEL_CALL(DhopSiteGenericExt,1); return;}
-#ifndef GRID_CUDA
     if (Opt == OptHandUnroll ) { KERNEL_CALL(DhopSiteHandExt,1);    return;}
-#endif
   }
   assert(0 && " Kernel optimisation case not covered ");
 }
@@ -322,19 +318,13 @@ void StaggeredKernels<Impl>::DhopNaive(StencilImpl &st, LebesgueOrder &lo,
   
   if( interior && exterior ) { 
     if (Opt == OptGeneric    ) { KERNEL_CALL(DhopSiteGeneric,0); return;}
-#ifndef GRID_CUDA
     if (Opt == OptHandUnroll ) { KERNEL_CALL(DhopSiteHand,0);    return;}
-#endif
   } else if( interior ) {
     if (Opt == OptGeneric    ) { KERNEL_CALL(DhopSiteGenericInt,0); return;}
-#ifndef GRID_CUDA
     if (Opt == OptHandUnroll ) { KERNEL_CALL(DhopSiteHandInt,0);    return;}
-#endif
   } else if( exterior ) { 
     if (Opt == OptGeneric    ) { KERNEL_CALL(DhopSiteGenericExt,0); return;}
-#ifndef GRID_CUDA
     if (Opt == OptHandUnroll ) { KERNEL_CALL(DhopSiteHandExt,0);    return;}
-#endif
   }
 }
 

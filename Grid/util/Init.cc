@@ -393,6 +393,9 @@ void Grid_init(int *argc,char ***argv)
   std::cout << GridLogMessage << "MPI is initialised and logging filters activated "<<std::endl;
   std::cout << GridLogMessage << "================================================ "<<std::endl;
 
+  char hostname[HOST_NAME_MAX+1];
+  gethostname(hostname, HOST_NAME_MAX+1);
+  std::cout << GridLogMessage << "This rank is running on host "<< hostname<<std::endl;
 
   /////////////////////////////////////////////////////////
   // Reporting

@@ -404,3 +404,12 @@ NAMESPACE_BEGIN(Grid);
   };
 NAMESPACE_END(Grid);
 
+
+#ifdef GRID_SYCL
+template<typename T> struct
+sycl::is_device_copyable<T, typename std::enable_if<
+			      Grid::isGridTensor<T>::value  && (!std::is_trivially_copyable<T>::value),
+			      void>::type>
+  : public std::true_type {};
+#endif
+

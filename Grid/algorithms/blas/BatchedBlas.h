@@ -31,12 +31,17 @@ Author: Peter Boyle <pboyle@bnl.gov>
 #include <hipblas/hipblas.h>
 #endif
 #ifdef GRID_CUDA
-#include <hipblas/hipblas.h>
+#include <cublas_v2.h>
 #endif
 #ifdef GRID_SYCL
-#error // need oneMKL version
+#include <oneapi/mkl.hpp>
 #endif
-
+#if 0
+#define GRID_ONE_MKL
+#endif
+#ifdef GRID_ONE_MKL
+#include <oneapi/mkl.hpp>
+#endif
 ///////////////////////////////////////////////////////////////////////	  
 // Need to rearrange lattice data to be in the right format for a
 // batched multiply. Might as well make these static, dense packed
@@ -46,12 +51,15 @@ NAMESPACE_BEGIN(Grid);
   typedef hipblasHandle_t gridblasHandle_t;
 #endif
 #ifdef GRID_CUDA
-  typedef cudablasHandle_t gridblasHandle_t;
+  typedef cublasHandle_t gridblasHandle_t;
 #endif
 #ifdef GRID_SYCL
-  typedef int32_t gridblasHandle_t;
+  typedef cl::sycl::queue *gridblasHandle_t;
 #endif
-#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
+#ifdef GRID_ONE_MKL
+  typedef cl::sycl::queue *gridblasHandle_t;
+#endif
+#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP) && !defined(GRID_ONE_MKL)
   typedef int32_t gridblasHandle_t;
 #endif
 
@@ -70,12 +78,19 @@ public:
 #ifdef GRID_CUDA
       std::cout << "cublasCreate"<<std::endl;
       cublasCreate(&gridblasHandle);
+      cublasSetPointerMode(gridblasHandle, CUBLAS_POINTER_MODE_DEVICE);
 #endif
 #ifdef GRID_HIP
       std::cout << "hipblasCreate"<<std::endl;
       hipblasCreate(&gridblasHandle);
 #endif
 #ifdef GRID_SYCL
+      gridblasHandle = theGridAccelerator;
+#endif
+#ifdef GRID_ONE_MKL
+      cl::sycl::cpu_selector selector;
+      cl::sycl::device selectedDevice { selector };
+      gridblasHandle =new sycl::queue (selectedDevice);
 #endif
       gridblasInit=1;
     }
@@ -110,6 +125,9 @@ public:
 #endif
 #ifdef GRID_SYCL
     accelerator_barrier();
+#endif
+#ifdef GRID_ONE_MKL
+    gridblasHandle->wait();
 #endif
   }
   
@@ -644,10 +662,19 @@ public:
 			      (cuDoubleComplex *) Cmn, ldc, sdc,
 			      batchCount);
 #endif
-#ifdef GRID_SYCL
-     #warning "oneMKL implementation not made "
+#if defined(GRID_SYCL) || defined(GRID_ONE_MKL)
+    oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
+						oneapi::mkl::transpose::N,
+						oneapi::mkl::transpose::N,
+						m,n,k,
+						alpha,
+						(const ComplexD *)Amk,lda,sda,
+						(const ComplexD *)Bkn,ldb,sdb,
+						beta,
+						(ComplexD *)Cmn,ldc,sdc,
+						batchCount);
 #endif
-#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
+#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP) && !defined(GRID_ONE_MKL)
      // Need a default/reference implementation
      for (int p = 0; p < batchCount; ++p) {
        for (int mm = 0; mm < m; ++mm) {
