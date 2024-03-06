@@ -136,10 +136,13 @@ template<class vobj> inline void sliceSumReduction_sycl(const Lattice<vobj> &Dat
   typedef typename vobj::scalar_object sobj;
   size_t subvol_size = e1*e2;
 
-  vobj *mysum = (vobj *) malloc_shared(sizeof(vobj),*theGridAccelerator);
+  vobj *mysum = (vobj *) malloc_shared(rd*sizeof(vobj),*theGridAccelerator);
   vobj vobj_zero;
   zeroit(vobj_zero);
-    
+  for (int r = 0; r<rd; r++) { 
+    mysum[r] = vobj_zero; 
+  }
+
   commVector<vobj> reduction_buffer(rd*subvol_size);    
 
   auto rb_p = &reduction_buffer[0];
@@ -159,9 +162,8 @@ template<class vobj> inline void sliceSumReduction_sycl(const Lattice<vobj> &Dat
   });
 
   for (int r = 0; r < rd; r++) {
-      mysum[0] = vobj_zero; //dirty hack: cannot pass vobj_zero as identity to sycl::reduction as its not device_copyable
       theGridAccelerator->submit([&](cl::sycl::handler &cgh) {
-          auto Reduction = cl::sycl::reduction(mysum,std::plus<>());
+          auto Reduction = cl::sycl::reduction(&mysum[r],std::plus<>());
           cgh.parallel_for(cl::sycl::range<1>{subvol_size},
           Reduction,
           [=](cl::sycl::id<1> item, auto &sum) {
@@ -169,10 +171,13 @@ template<class vobj> inline void sliceSumReduction_sycl(const Lattice<vobj> &Dat
               sum += rb_p[r*subvol_size+s];
           });
       });
-      theGridAccelerator->wait();
-      lvSum[r] = mysum[0];
+      
+     
   }
-  
+  theGridAccelerator->wait();
+  for (int r = 0; r < rd; r++) {
+    lvSum[r] = mysum[r];
+  }
   free(mysum,*theGridAccelerator);
 }
 #endif
