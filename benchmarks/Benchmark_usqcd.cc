@@ -219,7 +219,7 @@ public:
     uint64_t NN;
 
 
-  uint64_t lmax=32;
+  uint64_t lmax=40;
 #define NLOOP (1000*lmax*lmax*lmax*lmax/lat/lat/lat/lat)
 
     GridSerialRNG          sRNG;      sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
@@ -454,11 +454,17 @@ public:
       pickCheckerboard(Even,src_e,src);
       pickCheckerboard(Odd,src_o,src);
 
-      const int num_cases = 1;
+#ifdef AVX512
+      const int num_cases = 3;
+#else 
+      const int num_cases = 2;
+#endif      
       std::string fmt("G/S/C ; G/O/C ; G/S/S ; G/O/S ");
 
       controls Cases [] = {
-	{  WilsonKernelsStatic::OptGeneric   ,  WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicyConcurrent }
+	{  WilsonKernelsStatic::OptGeneric   ,  WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicyConcurrent },
+	{  WilsonKernelsStatic::OptHandUnroll,  WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicyConcurrent },
+	{  WilsonKernelsStatic::OptInlineAsm ,  WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicyConcurrent }
       }; 
 
       for(int c=0;c<num_cases;c++) {
@@ -469,6 +475,10 @@ public:
 
 	std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 	if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+	if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using ASM      WilsonKernels" <<std::endl;
+	if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using UNROLLED WilsonKernels" <<std::endl;
+	if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute ) std::cout << GridLogMessage<< "* Using Overlapped Comms/Compute" <<std::endl;
+	if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute) std::cout << GridLogMessage<< "* Using sequential Comms/Compute" <<std::endl;
 	std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
 	std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
@@ -614,11 +624,13 @@ public:
       pickCheckerboard(Even,src_e,src);
       pickCheckerboard(Odd,src_o,src);
     
-      const int num_cases = 1;
+      const int num_cases = 2;
       std::string fmt("G/S/C ; G/O/C ; G/S/S ; G/O/S ");
       
       controls Cases [] = {
 	{  StaggeredKernelsStatic::OptGeneric   ,  StaggeredKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicyConcurrent  },
+	{  StaggeredKernelsStatic::OptHandUnroll,  StaggeredKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicyConcurrent  },
+	{  StaggeredKernelsStatic::OptInlineAsm ,  StaggeredKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicyConcurrent  }
       }; 
 
       for(int c=0;c<num_cases;c++) {
@@ -847,11 +859,8 @@ int main (int argc, char ** argv)
   }
 
   CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicySequential);
-#ifdef KNL
-  LebesgueOrder::Block = std::vector<int>({8,2,2,2});
-#else
   LebesgueOrder::Block = std::vector<int>({2,2,2,2});
-#endif
+
   Benchmark::Decomposition();
 
   int do_su4=0;
@@ -910,7 +919,7 @@ int main (int argc, char ** argv)
   }
 
   if ( do_blas ) {
-#if defined(GRID_CUDA) || defined(GRID_HIP)    
+#if defined(GRID_CUDA) || defined(GRID_HIP)     || defined(GRID_SYCL)   
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << " Batched BLAS benchmark " <<std::endl;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
