@@ -30,6 +30,10 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 using namespace std;
 using namespace Grid;
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#endif
+
 int main (int argc, char ** argv)
 {
   char hostname[HOST_NAME_MAX+1];
