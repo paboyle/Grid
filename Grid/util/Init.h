@@ -84,6 +84,7 @@ void SetGridNormLoggingModeRecord(void);
 void SetGridNormLoggingModeVerify(void);
 void SetGridNormLoggingMode(GridNormLoggingMode_t mode);
 void GridNormLog(double value);
+void GridMPINormLog(double lcl, double glbl);
 
 NAMESPACE_END(Grid);
 

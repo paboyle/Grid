@@ -96,7 +96,9 @@ static Coordinate Grid_default_mpi;
 ///////////////////////////////////////////////////////
 int GridNormLoggingMode;
 int32_t GridNormLoggingCounter;
+int32_t GridMPINormLoggingCounter;
 std::vector<double> GridNormLogVector;
+std::vector<double> GridMPINormLogVector;
 
 void SetGridNormLoggingMode(GridNormLoggingMode_t mode)
 {
@@ -113,6 +115,7 @@ void SetGridNormLoggingMode(GridNormLoggingMode_t mode)
   case GridNormLoggingModeNone:
     GridNormLoggingMode = mode;
     GridNormLoggingCounter=0;
+    GridMPINormLoggingCounter=0;
     GridNormLogVector.resize(0);
     break;
   default:
@@ -122,19 +125,25 @@ void SetGridNormLoggingMode(GridNormLoggingMode_t mode)
 
 void SetGridNormLoggingModePrint(void)
 {
+  std::cout << " GridNormLogging Reproducibility logging set to print output " <<std::endl;
   GridNormLoggingCounter = 0;
+  GridMPINormLoggingCounter=0;
   GridNormLogVector.resize(0);
   GridNormLoggingMode = GridNormLoggingModePrint;
 }
 void SetGridNormLoggingModeRecord(void)
 {
+  std::cout << " GridNormLogging Reproducibility logging set to RECORD " <<std::endl;
   GridNormLoggingCounter = 0;
+  GridMPINormLoggingCounter=0;
   GridNormLogVector.resize(0);
   GridNormLoggingMode = GridNormLoggingModeRecord;
 }
 void SetGridNormLoggingModeVerify(void)
 {
+  std::cout << " GridNormLogging Reproducibility logging set to VERIFY " << GridNormLogVector.size()<< " log entries "<<std::endl;
   GridNormLoggingCounter = 0;
+  GridMPINormLoggingCounter=0;
   GridNormLoggingMode = GridNormLoggingModeVerify;
 }
 void GridNormLog(double value)
@@ -150,10 +159,45 @@ void GridNormLog(double value)
   if(GridNormLoggingMode == GridNormLoggingModeVerify) {
     assert(GridNormLoggingCounter < GridNormLogVector.size());
     if ( value != GridNormLogVector[GridNormLoggingCounter] ) {
-      fprintf(stderr,"%s Oops, I did it again! Reproduce failure for norm %d/%zu %.16e %.16e\n",GridHostname(),GridNormLoggingCounter,GridNormLogVector.size(),
+      fprintf(stderr,"%s:%d Oops, I did it again! Reproduce failure for norm %d/%zu %.16e %.16e\n",
+	      GridHostname(),
+	      GlobalSharedMemory::WorldShmRank,
+	      GridNormLoggingCounter,GridNormLogVector.size(),
 	      value, GridNormLogVector[GridNormLoggingCounter]); fflush(stderr);
+      assert(0); // Force takedown of job
+    }
+    if ( GridNormLogVector.size()==GridNormLoggingCounter ) {
+      std::cout << " GridNormLogging : Verified entire sequence of "<<GridNormLoggingCounter<<" norms "<<std::endl;
     }
     GridNormLoggingCounter++;
+  }
+}
+void GridMPINormLog(double local,double result)
+{
+  if(GridNormLoggingMode == GridNormLoggingModePrint) {
+    std::cerr<<"GridMPINormLog : "<< GridMPINormLoggingCounter <<" " << std::hexfloat << local << " -> " <<result <<std::endl;
+    GridMPINormLoggingCounter++;
+  }
+  if(GridNormLoggingMode == GridNormLoggingModeRecord) {
+    std::cerr<<"GridMPINormLog RECORDING : "<< GridMPINormLoggingCounter <<" " << std::hexfloat << local << "-> "<< result <<std::endl;
+    GridMPINormLogVector.push_back(result);
+    GridMPINormLoggingCounter++;
+  }
+  if(GridNormLoggingMode == GridNormLoggingModeVerify) {
+    std::cerr<<"GridMPINormLog : "<< GridMPINormLoggingCounter <<" " << std::hexfloat << local << "-> "<< result <<std::endl;
+    assert(GridMPINormLoggingCounter < GridMPINormLogVector.size());
+    if ( result != GridMPINormLogVector[GridMPINormLoggingCounter] ) {
+      fprintf(stderr,"%s:%d MPI_Allreduce did it again! Reproduce failure for norm %d/%zu glb %.16e lcl %.16e hist %.16e\n",
+	      GridHostname(),
+	      GlobalSharedMemory::WorldShmRank,
+	      GridMPINormLoggingCounter,GridMPINormLogVector.size(),
+	      result, local, GridMPINormLogVector[GridMPINormLoggingCounter]); fflush(stderr);
+      assert(0); // Force takedown of job
+    }
+    if ( GridMPINormLogVector.size()==GridMPINormLoggingCounter ) {
+      std::cout << " GridMPINormLogging : Verified entire sequence of "<<GridMPINormLoggingCounter<<" norms "<<std::endl;
+    }
+    GridMPINormLoggingCounter++;
   }
 }
 
