@@ -281,12 +281,14 @@ inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &
   return nrm;
 }
 
+
 template<class vobj>
 inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right) {
   GridBase *grid = left.Grid();
   ComplexD nrm = rankInnerProduct(left,right);
-  //  std::cerr<<"flight log " << std::hexfloat << nrm <<" "<<crc(left)<<std::endl;
+  //  GridNormLog(real(nrm)); // Could log before and after global sum to distinguish local and MPI
   grid->GlobalSum(nrm);
+  //  GridNormLog(real(nrm)); 
   return nrm;
 }
 

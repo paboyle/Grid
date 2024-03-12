@@ -34,6 +34,8 @@ NAMESPACE_BEGIN(Grid);
 void Grid_init(int *argc,char ***argv);
 void Grid_finalize(void);
 
+char * GridHostname(void);
+
 // internal, controled with --handle
 void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr);
 void Grid_debug_handler_init(void);
@@ -67,6 +69,21 @@ void GridParseLayout(char **argv,int argc,
 
 void printHash(void);
 
+
+enum GridNormLoggingMode_t {
+  GridNormLoggingModeNone,
+  GridNormLoggingModePrint,
+  GridNormLoggingModeRecord,
+  GridNormLoggingModeVerify
+};
+extern int GridNormLoggingMode;
+extern int32_t GridNormLoggingCounter;
+extern std::vector<double> GridNormLogVector;
+void SetGridNormLoggingModePrint(void);
+void SetGridNormLoggingModeRecord(void);
+void SetGridNormLoggingModeVerify(void);
+void SetGridNormLoggingMode(GridNormLoggingMode_t mode);
+void GridNormLog(double value);
 
 NAMESPACE_END(Grid);
 
