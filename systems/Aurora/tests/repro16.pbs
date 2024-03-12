@@ -4,7 +4,7 @@
 
 #PBS -q EarlyAppAccess
 #PBS -l select=16
-#PBS -l walltime=01:00:00
+#PBS -l walltime=02:00:00
 #PBS -A LatticeQCD_aesp_CNDA
 
 #export OMP_PROC_BIND=spread
@@ -36,5 +36,6 @@ export MPICH_OFI_NIC_POLICY=GPU
 CMD="mpiexec -np 192 -ppn 12  -envall \
 	     ./gpu_tile_compact.sh \
 	     ./Test_dwf_mixedcg_prec --mpi 2.4.4.6 --grid 64.128.128.192 \
-		--shm-mpi 1 --shm 4096 --device-mem 32000 --accelerator-threads 32 --seconds 3000"
+		--shm-mpi 1 --shm 4096 --device-mem 32000 --accelerator-threads 32 --seconds 6000 "
+#--comms-overlap
 $CMD 
