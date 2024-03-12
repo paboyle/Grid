@@ -31,7 +31,7 @@ Author: Peter Boyle <pboyle@bnl.gov>
 #include <hipblas/hipblas.h>
 #endif
 #ifdef GRID_CUDA
-#include <hipblas/hipblas.h>
+#include <cublas_v2.h>
 #endif
 #ifdef GRID_SYCL
 #include <oneapi/mkl.hpp>
@@ -51,7 +51,7 @@ NAMESPACE_BEGIN(Grid);
   typedef hipblasHandle_t gridblasHandle_t;
 #endif
 #ifdef GRID_CUDA
-  typedef cudablasHandle_t gridblasHandle_t;
+  typedef cublasHandle_t gridblasHandle_t;
 #endif
 #ifdef GRID_SYCL
   typedef cl::sycl::queue *gridblasHandle_t;
@@ -78,6 +78,7 @@ public:
 #ifdef GRID_CUDA
       std::cout << "cublasCreate"<<std::endl;
       cublasCreate(&gridblasHandle);
+      cublasSetPointerMode(gridblasHandle, CUBLAS_POINTER_MODE_DEVICE);
 #endif
 #ifdef GRID_HIP
       std::cout << "hipblasCreate"<<std::endl;

@@ -77,6 +77,10 @@ feenableexcept (unsigned int excepts)
 }
 #endif
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#endif
+
 NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////////////
