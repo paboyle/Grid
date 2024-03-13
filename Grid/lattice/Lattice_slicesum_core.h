@@ -1,5 +1,5 @@
 #pragma once
-#include <type_traits>
+
 #if defined(GRID_CUDA)
 
 #include <cub/cub.cuh>
@@ -90,44 +90,7 @@ template<class vobj> inline void sliceSumReduction_cub_small(const vobj *Data, V
   
 
 }
-
-template<class vobj> inline void sliceSumReduction_cub_large(const vobj *Data, Vector<vobj> &lvSum, const int rd, const int e1, const int e2, const int stride, const int ostride, const int Nsimd) {
-  typedef typename vobj::vector_type vector;
-  const int words = sizeof(vobj)/sizeof(vector);
-  const int osites = rd*e1*e2;
-  commVector<vector>buffer(osites);
-  vector *dat = (vector *)Data;
-  vector *buf = &buffer[0];
-  Vector<vector> lvSum_small(rd);
-  vector *lvSum_ptr = (vector *)&lvSum[0];
-
-  for (int w = 0; w < words; w++) {
-    accelerator_for(ss,osites,1,{
-	    buf[ss] = dat[ss*words+w];
-    });
-
-    sliceSumReduction_cub_small(buf,lvSum_small,rd,e1,e2,stride, ostride,Nsimd);
-      
-    for (int r = 0; r < rd; r++) {
-      lvSum_ptr[w+words*r]=lvSum_small[r];
-    }
-
-  }
-
-  
-}
-
-template<class vobj> inline void sliceSumReduction_cub(const Lattice<vobj> &Data, Vector<vobj> &lvSum, const int rd, const int e1, const int e2, const int stride, const int ostride, const int Nsimd)
-{
-  autoView(Data_v, Data, AcceleratorRead); //hipcub/cub cannot deal with large vobjs so we split into small/large case.
-    if constexpr (sizeof(vobj) <= 256) { 
-      sliceSumReduction_cub_small(&Data_v[0], lvSum, rd, e1, e2, stride, ostride, Nsimd);
-    }
-    else {
-      sliceSumReduction_cub_large(&Data_v[0], lvSum, rd, e1, e2, stride, ostride, Nsimd);
-    }
-}
-#endif
+#endif 
 
 
 #if defined(GRID_SYCL)
@@ -179,9 +142,9 @@ template<class vobj> inline void sliceSumReduction_sycl_small(const vobj *Data, 
   }
   free(mysum,*theGridAccelerator);
 }
+#endif
 
-
-template<class vobj> inline void sliceSumReduction_sycl_large(const vobj *Data, Vector<vobj> &lvSum, const int rd, const int e1, const int e2, const int stride, const int ostride, const int Nsimd) {
+template<class vobj> inline void sliceSumReduction_large(const vobj *Data, Vector<vobj> &lvSum, const int rd, const int e1, const int e2, const int stride, const int ostride, const int Nsimd) {
   typedef typename vobj::vector_type vector;
   const int words = sizeof(vobj)/sizeof(vector);
   const int osites = rd*e1*e2;
@@ -196,29 +159,38 @@ template<class vobj> inline void sliceSumReduction_sycl_large(const vobj *Data, 
 	    buf[ss] = dat[ss*words+w];
     });
 
-    sliceSumReduction_sycl_small(buf,lvSum_small,rd,e1,e2,stride, ostride,Nsimd);
-      
+    #if defined(GRID_CUDA) || defined(GRID_HIP)
+      sliceSumReduction_cub_small(buf,lvSum_small,rd,e1,e2,stride, ostride,Nsimd);
+    #elif defined(GRID_SYCL)
+      sliceSumReduction_sycl_small(buf,lvSum_small,rd,e1,e2,stride, ostride,Nsimd);
+    #endif
+
     for (int r = 0; r < rd; r++) {
       lvSum_ptr[w+words*r]=lvSum_small[r];
     }
 
   }
+
+  
 }
 
-
-template<class vobj> inline void sliceSumReduction_sycl(const Lattice<vobj> &Data, Vector<vobj> &lvSum, const int rd, const int e1, const int e2, const int stride, const int ostride, const int Nsimd)
+template<class vobj> inline void sliceSumReduction_gpu(const Lattice<vobj> &Data, Vector<vobj> &lvSum, const int rd, const int e1, const int e2, const int stride, const int ostride, const int Nsimd)
 {
-  autoView(Data_v, Data, AcceleratorRead); //hipcub/cub cannot deal with large vobjs so we split into small/large case.
+  autoView(Data_v, Data, AcceleratorRead); //reduction libraries cannot deal with large vobjs so we split into small/large case.
     if constexpr (sizeof(vobj) <= 256) { 
-      sliceSumReduction_sycl_small(&Data_v[0], lvSum, rd, e1, e2, stride, ostride, Nsimd);
+
+      #if defined(GRID_CUDA) || defined(GRID_HIP)
+        sliceSumReduction_cub_small(&Data_v[0], lvSum, rd, e1, e2, stride, ostride, Nsimd);
+      #elif defined (GRID_SYCL)
+        sliceSumReduction_sycl_small(&Data_v[0], lvSum, rd, e1, e2, stride, ostride, Nsimd);
+      #endif
+
     }
     else {
-      sliceSumReduction_sycl_large(&Data_v[0], lvSum, rd, e1, e2, stride, ostride, Nsimd);
+      sliceSumReduction_large(&Data_v[0], lvSum, rd, e1, e2, stride, ostride, Nsimd);
     }
 }
-  
 
-#endif
 
 template<class vobj> inline void sliceSumReduction_cpu(const Lattice<vobj> &Data, Vector<vobj> &lvSum, const int &rd, const int &e1, const int &e2, const int &stride, const int &ostride, const int &Nsimd)
 {
@@ -238,13 +210,9 @@ template<class vobj> inline void sliceSumReduction_cpu(const Lattice<vobj> &Data
 
 template<class vobj> inline void sliceSumReduction(const Lattice<vobj> &Data, Vector<vobj> &lvSum, const int &rd, const int &e1, const int &e2, const int &stride, const int &ostride, const int &Nsimd) 
 {
-  #if defined(GRID_CUDA) || defined(GRID_HIP)
+  #if defined(GRID_CUDA) || defined(GRID_HIP) || defined(GRID_SYCL)
   
-  sliceSumReduction_cub(Data, lvSum, rd, e1, e2, stride, ostride, Nsimd);
-  
-  #elif defined(GRID_SYCL)
-  
-  sliceSumReduction_sycl(Data, lvSum, rd, e1, e2, stride, ostride, Nsimd);
+  sliceSumReduction_gpu(Data, lvSum, rd, e1, e2, stride, ostride, Nsimd);
   
   #else
   sliceSumReduction_cpu(Data, lvSum, rd, e1, e2, stride, ostride, Nsimd);
