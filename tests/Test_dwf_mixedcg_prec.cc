@@ -30,6 +30,10 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 using namespace std;
 using namespace Grid;
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#endif
+
 int main (int argc, char ** argv)
 {
   char hostname[HOST_NAME_MAX+1];
@@ -104,6 +108,11 @@ int main (int argc, char ** argv)
   csumref=0;
   int iter=0;
   do {
+    if ( iter == 0 ) {
+      SetGridNormLoggingMode(GridNormLoggingModeRecord);
+    } else {
+      SetGridNormLoggingMode(GridNormLoggingModeVerify);
+    }
     std::cerr << "******************* SINGLE PRECISION SOLVE "<<iter<<std::endl;
     result_o = Zero();
     t1=usecond();
@@ -135,6 +144,11 @@ int main (int argc, char ** argv)
   csumref=0;
   int i=0;
   do { 
+    if ( iter == 0 ) {
+      SetGridNormLoggingMode(GridNormLoggingModeRecord);
+    } else {
+      SetGridNormLoggingMode(GridNormLoggingModeVerify);
+    }
     std::cerr << "******************* DOUBLE PRECISION SOLVE "<<i<<std::endl;
     result_o_2 = Zero();
     t1=usecond();

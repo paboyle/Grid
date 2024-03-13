@@ -3,7 +3,7 @@
 ## qsub -q EarlyAppAccess -A Aurora_Deployment -I -l select=1 -l walltime=60:00
 
 #PBS -q EarlyAppAccess
-#PBS -l select=16
+#PBS -l select=128
 #PBS -l walltime=02:00:00
 #PBS -A LatticeQCD_aesp_CNDA
 
@@ -33,9 +33,9 @@ export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_MAX_NUM_BUFFERS=16
 export MPICH_OFI_NIC_POLICY=GPU
 
 # 12 ppn, 16 nodes, 192 ranks
-CMD="mpiexec -np 192 -ppn 12  -envall \
+# 12 ppn, 128 nodes, 1536 ranks
+CMD="mpiexec -np 1536 -ppn 12  -envall \
 	     ./gpu_tile_compact.sh \
-	     ./Test_dwf_mixedcg_prec --mpi 2.4.4.6 --grid 64.128.128.192 \
-		--shm-mpi 1 --shm 4096 --device-mem 32000 --accelerator-threads 32 --seconds 6000 "
-#--comms-overlap
+	     ./Test_dwf_mixedcg_prec --mpi 4.4.4.24 --grid 128.128.128.384 \
+		--shm-mpi 1 --shm 4096 --device-mem 32000 --accelerator-threads 32 --seconds 7000 --comms-overlap "
 $CMD 

@@ -77,6 +77,10 @@ feenableexcept (unsigned int excepts)
 }
 #endif
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#endif
+
 NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////////////
@@ -86,11 +90,83 @@ NAMESPACE_BEGIN(Grid);
 static Coordinate Grid_default_latt;
 static Coordinate Grid_default_mpi;
 
+
+///////////////////////////////////////////////////////
+// Grid Norm logging for repro testing
+///////////////////////////////////////////////////////
+int GridNormLoggingMode;
+int32_t GridNormLoggingCounter;
+std::vector<double> GridNormLogVector;
+
+void SetGridNormLoggingMode(GridNormLoggingMode_t mode)
+{
+  switch ( mode ) {
+  case GridNormLoggingModePrint:
+    SetGridNormLoggingModePrint();
+    break;
+  case GridNormLoggingModeRecord:
+    SetGridNormLoggingModeRecord();
+    break;
+  case GridNormLoggingModeVerify:
+    SetGridNormLoggingModeVerify();
+    break;
+  case GridNormLoggingModeNone:
+    GridNormLoggingMode = mode;
+    GridNormLoggingCounter=0;
+    GridNormLogVector.resize(0);
+    break;
+  default:
+    assert(0);
+  }
+}
+
+void SetGridNormLoggingModePrint(void)
+{
+  GridNormLoggingCounter = 0;
+  GridNormLogVector.resize(0);
+  GridNormLoggingMode = GridNormLoggingModePrint;
+}
+void SetGridNormLoggingModeRecord(void)
+{
+  GridNormLoggingCounter = 0;
+  GridNormLogVector.resize(0);
+  GridNormLoggingMode = GridNormLoggingModeRecord;
+}
+void SetGridNormLoggingModeVerify(void)
+{
+  GridNormLoggingCounter = 0;
+  GridNormLoggingMode = GridNormLoggingModeVerify;
+}
+void GridNormLog(double value)
+{
+  if(GridNormLoggingMode == GridNormLoggingModePrint) {
+    std::cerr<<"GridNormLog : "<< GridNormLoggingCounter <<" " << std::hexfloat << value <<std::endl;
+    GridNormLoggingCounter++;
+  }
+  if(GridNormLoggingMode == GridNormLoggingModeRecord) {
+    GridNormLogVector.push_back(value);
+    GridNormLoggingCounter++;
+  }
+  if(GridNormLoggingMode == GridNormLoggingModeVerify) {
+    assert(GridNormLoggingCounter < GridNormLogVector.size());
+    if ( value != GridNormLogVector[GridNormLoggingCounter] ) {
+      fprintf(stderr,"%s Oops, I did it again! Reproduce failure for norm %d/%zu %.16e %.16e\n",GridHostname(),GridNormLoggingCounter,GridNormLogVector.size(),
+	      value, GridNormLogVector[GridNormLoggingCounter]); fflush(stderr);
+    }
+    GridNormLoggingCounter++;
+  }
+}
+
 int GridThread::_threads =1;
 int GridThread::_hyperthreads=1;
 int GridThread::_cores=1;
 
+char hostname[HOST_NAME_MAX+1];
 
+char *GridHostname(void)
+{
+  return hostname;
+}
 const Coordinate &GridDefaultLatt(void)     {return Grid_default_latt;};
 const Coordinate &GridDefaultMpi(void)      {return Grid_default_mpi;};
 const Coordinate GridDefaultSimd(int dims,int nsimd)
@@ -393,7 +469,6 @@ void Grid_init(int *argc,char ***argv)
   std::cout << GridLogMessage << "MPI is initialised and logging filters activated "<<std::endl;
   std::cout << GridLogMessage << "================================================ "<<std::endl;
 
-  char hostname[HOST_NAME_MAX+1];
   gethostname(hostname, HOST_NAME_MAX+1);
   std::cout << GridLogMessage << "This rank is running on host "<< hostname<<std::endl;
 
