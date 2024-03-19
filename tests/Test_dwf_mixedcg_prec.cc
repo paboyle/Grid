@@ -34,6 +34,45 @@ using namespace Grid;
 #define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
 #endif
 
+NAMESPACE_BEGIN(Grid);
+template<class Matrix,class Field>
+  class SchurDiagMooeeOperatorParanoid :  public SchurOperatorBase<Field> {
+ public:
+    Matrix &_Mat;
+    SchurDiagMooeeOperatorParanoid (Matrix &Mat): _Mat(Mat){};
+    virtual  void Mpc      (const Field &in, Field &out) {
+      Field tmp(in.Grid());
+      tmp.Checkerboard() = !in.Checkerboard();
+      //      std::cout <<" Mpc starting"<<std::endl;
+
+      RealD nn = norm2(in); // std::cout <<" Mpc Prior to dslash norm is "<<nn<<std::endl;
+      _Mat.Meooe(in,tmp);
+      nn = norm2(tmp); //std::cout <<" Mpc Prior to Mooeinv "<<nn<<std::endl;
+      _Mat.MooeeInv(tmp,out);
+      nn = norm2(out); //std::cout <<" Mpc Prior to dslash norm is "<<nn<<std::endl;
+      _Mat.Meooe(out,tmp);
+      nn = norm2(tmp); //std::cout <<" Mpc Prior to Mooee "<<nn<<std::endl;
+      _Mat.Mooee(in,out);
+      nn = norm2(out); //std::cout <<" Mpc Prior to axpy "<<nn<<std::endl;
+      axpy(out,-1.0,tmp,out);
+    }
+    virtual void MpcDag   (const Field &in, Field &out){
+      Field tmp(in.Grid());
+      //      std::cout <<" MpcDag starting"<<std::endl;
+      RealD nn = norm2(in);// std::cout <<" MpcDag Prior to dslash norm is "<<nn<<std::endl;
+      _Mat.MeooeDag(in,tmp);
+      _Mat.MooeeInvDag(tmp,out);
+      nn = norm2(out);// std::cout <<" MpcDag Prior to dslash norm is "<<nn<<std::endl;
+      _Mat.MeooeDag(out,tmp);
+      nn = norm2(tmp);// std::cout <<" MpcDag Prior to Mooee "<<nn<<std::endl;
+      _Mat.MooeeDag(in,out);
+      nn = norm2(out);// std::cout <<" MpcDag Prior to axpy "<<nn<<std::endl;
+      axpy(out,-1.0,tmp,out);
+    }
+};
+
+NAMESPACE_END(Grid);
+
 int main (int argc, char ** argv)
 {
   char hostname[HOST_NAME_MAX+1];
@@ -82,8 +121,8 @@ int main (int argc, char ** argv)
   result_o_2.Checkerboard() = Odd;
   result_o_2 = Zero();
 
-  SchurDiagMooeeOperator<DomainWallFermionD,LatticeFermionD> HermOpEO(Ddwf);
-  SchurDiagMooeeOperator<DomainWallFermionF,LatticeFermionF> HermOpEO_f(Ddwf_f);
+  SchurDiagMooeeOperatorParanoid<DomainWallFermionD,LatticeFermionD> HermOpEO(Ddwf);
+  SchurDiagMooeeOperatorParanoid<DomainWallFermionF,LatticeFermionF> HermOpEO_f(Ddwf_f);
 
   int nsecs=600;
   if( GridCmdOptionExists(argv,argv+argc,"--seconds") ){
@@ -144,7 +183,7 @@ int main (int argc, char ** argv)
   csumref=0;
   int i=0;
   do { 
-    if ( iter == 0 ) {
+    if ( i == 0 ) {
       SetGridNormLoggingMode(GridNormLoggingModeRecord);
     } else {
       SetGridNormLoggingMode(GridNormLoggingModeVerify);

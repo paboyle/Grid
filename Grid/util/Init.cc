@@ -99,6 +99,7 @@ int32_t GridNormLoggingCounter;
 int32_t GridMPINormLoggingCounter;
 std::vector<double> GridNormLogVector;
 std::vector<double> GridMPINormLogVector;
+std::vector<uint32_t> GridCsumLogVector;
 
 void SetGridNormLoggingMode(GridNormLoggingMode_t mode)
 {
@@ -117,6 +118,8 @@ void SetGridNormLoggingMode(GridNormLoggingMode_t mode)
     GridNormLoggingCounter=0;
     GridMPINormLoggingCounter=0;
     GridNormLogVector.resize(0);
+    GridCsumLogVector.resize(0);
+    GridMPINormLogVector.resize(0);
     break;
   default:
     assert(0);
@@ -129,6 +132,8 @@ void SetGridNormLoggingModePrint(void)
   GridNormLoggingCounter = 0;
   GridMPINormLoggingCounter=0;
   GridNormLogVector.resize(0);
+  GridCsumLogVector.resize(0);
+  GridMPINormLogVector.resize(0);
   GridNormLoggingMode = GridNormLoggingModePrint;
 }
 void SetGridNormLoggingModeRecord(void)
@@ -137,6 +142,8 @@ void SetGridNormLoggingModeRecord(void)
   GridNormLoggingCounter = 0;
   GridMPINormLoggingCounter=0;
   GridNormLogVector.resize(0);
+  GridCsumLogVector.resize(0);
+  GridMPINormLogVector.resize(0);
   GridNormLoggingMode = GridNormLoggingModeRecord;
 }
 void SetGridNormLoggingModeVerify(void)
@@ -146,24 +153,29 @@ void SetGridNormLoggingModeVerify(void)
   GridMPINormLoggingCounter=0;
   GridNormLoggingMode = GridNormLoggingModeVerify;
 }
-void GridNormLog(double value)
+void GridNormLog(double value,uint32_t csum)
 {
   if(GridNormLoggingMode == GridNormLoggingModePrint) {
-    std::cerr<<"GridNormLog : "<< GridNormLoggingCounter <<" " << std::hexfloat << value <<std::endl;
+    std::cerr<<"GridNormLog : "<< GridNormLoggingCounter <<" " << std::hexfloat << value << " csum " <<std::hex<<csum<<std::dec <<std::endl;
     GridNormLoggingCounter++;
   }
   if(GridNormLoggingMode == GridNormLoggingModeRecord) {
     GridNormLogVector.push_back(value);
+    GridCsumLogVector.push_back(csum);
     GridNormLoggingCounter++;
   }
   if(GridNormLoggingMode == GridNormLoggingModeVerify) {
     assert(GridNormLoggingCounter < GridNormLogVector.size());
-    if ( value != GridNormLogVector[GridNormLoggingCounter] ) {
-      fprintf(stderr,"%s:%d Oops, I did it again! Reproduce failure for norm %d/%zu %.16e %.16e\n",
+    if ( (value != GridNormLogVector[GridNormLoggingCounter])
+	 || (csum!=GridCsumLogVector[GridNormLoggingCounter]) ) {
+      std::cerr << " Oops got norm "<< std::hexfloat<<value<<" expect "<<GridNormLogVector[GridNormLoggingCounter] <<std::endl;
+      std::cerr << " Oops got csum "<< std::hex<<csum<<" expect "<<GridCsumLogVector[GridNormLoggingCounter] <<std::endl;
+      fprintf(stderr,"%s:%d Oops, I did it again! Reproduce failure for norm %d/%zu %.16e %.16e %x %x\n",
 	      GridHostname(),
 	      GlobalSharedMemory::WorldShmRank,
 	      GridNormLoggingCounter,GridNormLogVector.size(),
-	      value, GridNormLogVector[GridNormLoggingCounter]); fflush(stderr);
+	      value, GridNormLogVector[GridNormLoggingCounter],
+	      csum, GridCsumLogVector[GridNormLoggingCounter]); fflush(stderr);
       assert(0); // Force takedown of job
     }
     if ( GridNormLogVector.size()==GridNormLoggingCounter ) {

@@ -76,14 +76,14 @@ enum GridNormLoggingMode_t {
   GridNormLoggingModeRecord,
   GridNormLoggingModeVerify
 };
-extern int GridNormLoggingMode;
-extern int32_t GridNormLoggingCounter;
-extern std::vector<double> GridNormLogVector;
+//extern int GridNormLoggingMode;
+//extern int32_t GridNormLoggingCounter;
+//extern std::vector<double> GridNormLogVector;
 void SetGridNormLoggingModePrint(void);
 void SetGridNormLoggingModeRecord(void);
 void SetGridNormLoggingModeVerify(void);
 void SetGridNormLoggingMode(GridNormLoggingMode_t mode);
-void GridNormLog(double value);
+void GridNormLog(double value,uint32_t csum);
 void GridMPINormLog(double lcl, double glbl);
 
 NAMESPACE_END(Grid);

@@ -285,9 +285,11 @@ inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &
 template<class vobj>
 inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right) {
   GridBase *grid = left.Grid();
+  uint32_t csum=0;
+  //  Uint32Checksum(left,csum);
   ComplexD nrm = rankInnerProduct(left,right);
   RealD local = real(nrm);
-  GridNormLog(real(nrm)); // Could log before and after global sum to distinguish local and MPI
+  GridNormLog(real(nrm),csum); // Could log before and after global sum to distinguish local and MPI
   grid->GlobalSum(nrm);
   GridMPINormLog(local,real(nrm)); 
   return nrm;
