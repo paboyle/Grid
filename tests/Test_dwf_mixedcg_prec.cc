@@ -34,6 +34,7 @@ using namespace Grid;
 #define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
 #endif
 
+
 NAMESPACE_BEGIN(Grid);
 template<class Matrix,class Field>
   class SchurDiagMooeeOperatorParanoid :  public SchurOperatorBase<Field> {
@@ -143,14 +144,21 @@ int main (int argc, char ** argv)
 
   time_t start = time(NULL);
 
-  uint32_t csum, csumref;
-  csumref=0;
+  FlightRecorder::ContinueOnFail = 0;
+  FlightRecorder::PrintEntireLog = 0;
+  FlightRecorder::ChecksumComms  = 1;
+  FlightRecorder::ChecksumCommsSend=0;
+
+  if(char *s=getenv("GRID_PRINT_ENTIRE_LOG"))  FlightRecorder::PrintEntireLog     = atoi(s);
+  if(char *s=getenv("GRID_CHECKSUM_RECV_BUF")) FlightRecorder::ChecksumComms      = atoi(s);
+  if(char *s=getenv("GRID_CHECKSUM_SEND_BUF")) FlightRecorder::ChecksumCommsSend  = atoi(s);
+
   int iter=0;
   do {
     if ( iter == 0 ) {
-      SetGridNormLoggingMode(GridNormLoggingModeRecord);
+      FlightRecorder::SetLoggingMode(FlightRecorder::LoggingModeRecord);
     } else {
-      SetGridNormLoggingMode(GridNormLoggingModeVerify);
+      FlightRecorder::SetLoggingMode(FlightRecorder::LoggingModeVerify);
     }
     std::cerr << "******************* SINGLE PRECISION SOLVE "<<iter<<std::endl;
     result_o = Zero();
@@ -162,31 +170,22 @@ int main (int argc, char ** argv)
     flops+= CGsiteflops*FrbGrid->gSites()*iters;
     std::cout << " SinglePrecision iterations/sec "<< iters/(t2-t1)*1000.*1000.<<std::endl;
     std::cout << " SinglePrecision GF/s "<< flops/(t2-t1)/1000.<<std::endl;
+    std::cout << " SinglePrecision error count "<< FlightRecorder::ErrorCount()<<std::endl;
 
-    csum = crc(result_o);
+    assert(FlightRecorder::ErrorCount()==0);
 
-    if ( csumref == 0 ) {
-      csumref = csum;
-    } else {
-      if ( csum != csumref ) { 
-	std::cerr << host<<" FAILURE " <<iter <<" csum "<<std::hex<<csum<< " != "<<csumref <<std::dec<<std::endl;
-	assert(0);
-      } else {
-	std::cout << host <<" OK " <<iter <<" csum "<<std::hex<<csum<<std::dec<<" -- OK! "<<std::endl;
-      }
-    }
+    std::cout << " FlightRecorder is OK! "<<std::endl;
     iter ++;
   } while (time(NULL) < (start + nsecs/2) );
     
   std::cout << GridLogMessage << "::::::::::::: Starting double precision CG" << std::endl;
   ConjugateGradient<LatticeFermionD> CG(1.0e-8,10000);
-  csumref=0;
   int i=0;
   do { 
     if ( i == 0 ) {
-      SetGridNormLoggingMode(GridNormLoggingModeRecord);
+      FlightRecorder::SetLoggingMode(FlightRecorder::LoggingModeRecord);
     } else {
-      SetGridNormLoggingMode(GridNormLoggingModeVerify);
+      FlightRecorder::SetLoggingMode(FlightRecorder::LoggingModeVerify);
     }
     std::cerr << "******************* DOUBLE PRECISION SOLVE "<<i<<std::endl;
     result_o_2 = Zero();
@@ -199,19 +198,9 @@ int main (int argc, char ** argv)
 
     std::cout << " DoublePrecision iterations/sec "<< iters/(t2-t1)*1000.*1000.<<std::endl;
     std::cout << " DoublePrecision GF/s "<< flops/(t2-t1)/1000.<<std::endl;
-
-    csum = crc(result_o);
-
-    if ( csumref == 0 ) {
-      csumref = csum;
-    } else {
-      if ( csum != csumref ) { 
-	std::cerr << i <<" csum "<<std::hex<<csum<< " != "<<csumref <<std::dec<<std::endl;
-	assert(0);
-      } else {
-	std::cout << i <<" csum "<<std::hex<<csum<<std::dec<<" -- OK! "<<std::endl;
-      }
-    }
+    std::cout << " DoublePrecision error count "<< FlightRecorder::ErrorCount()<<std::endl;
+    assert(FlightRecorder::ErrorCount()==0);
+    std::cout << " FlightRecorder is OK! "<<std::endl;
     i++;
   } while (time(NULL) < (start + nsecs) );
 
