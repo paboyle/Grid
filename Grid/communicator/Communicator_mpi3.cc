@@ -348,6 +348,7 @@ double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
   return offbytes;
 }
 
+#undef NVLINK_GET // Define to use get instead of put DMA
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 							 void *xmit,
 							 int dest,int dox,
@@ -380,9 +381,15 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
       list.push_back(rrq);
       off_node_bytes+=rbytes;
     }
+#ifdef NVLINK_GET
+      void *shm = (void *) this->ShmBufferTranslate(from,xmit);
+      assert(shm!=NULL);
+      acceleratorCopyDeviceToDeviceAsynch(shm,recv,rbytes);
+#endif
   }
   
   if (dox) {
+    //  rcrc = crc32(rcrc,(unsigned char *)recv,bytes);
     if ( (gdest == MPI_UNDEFINED) || Stencil_force_mpi ) {
       tag= dir+_processor*32;
       ierr =MPI_Isend(xmit, xbytes, MPI_CHAR,dest,tag,communicator_halo[commdir],&xrq);
@@ -390,9 +397,12 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
       list.push_back(xrq);
       off_node_bytes+=xbytes;
     } else {
+#ifndef NVLINK_GET
       void *shm = (void *) this->ShmBufferTranslate(dest,recv);
       assert(shm!=NULL);
       acceleratorCopyDeviceToDeviceAsynch(xmit,shm,xbytes);
+#endif
+      
     }
   }
 
@@ -401,6 +411,8 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &list,int dir)
 {
   int nreq=list.size();
+
+  acceleratorCopySynchronise();
 
   if (nreq==0) return;
 
