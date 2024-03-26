@@ -39,9 +39,11 @@ Author: Christoph Lehner <christoph@lhnr.de>
 #include <hip/hip_runtime_api.h>
 #endif
 #ifdef GRID_SYCL
+#ifdef ACCELERATOR_AWARE_MPI
 #define GRID_SYCL_LEVEL_ZERO_IPC
+#define SHM_SOCKETS
+#endif 
 #include <syscall.h>
-#define SHM_SOCKETS 
 #endif
 
 #include <sys/socket.h>
