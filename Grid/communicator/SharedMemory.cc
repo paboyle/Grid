@@ -40,6 +40,7 @@ int                 GlobalSharedMemory::_ShmAlloc;
 uint64_t            GlobalSharedMemory::_ShmAllocBytes;
 
 std::vector<void *> GlobalSharedMemory::WorldShmCommBufs;
+void * GlobalSharedMemory::HostCommBuf;
 
 Grid_MPI_Comm       GlobalSharedMemory::WorldShmComm;
 int                 GlobalSharedMemory::WorldShmRank;
@@ -66,6 +67,26 @@ void GlobalSharedMemory::SharedMemoryFree(void)
 /////////////////////////////////
 // Alloc, free shmem region
 /////////////////////////////////
+#ifndef ACCELERATOR_AWARE_MPI
+void *SharedMemory::HostBufferMalloc(size_t bytes){
+  void *ptr = (void *)host_heap_top;
+  host_heap_top  += bytes;
+  host_heap_bytes+= bytes;
+  if (host_heap_bytes >= host_heap_size) {
+    std::cout<< " HostBufferMalloc exceeded heap size -- try increasing with --shm <MB> flag" <<std::endl;
+    std::cout<< " Parameter specified in units of MB (megabytes) " <<std::endl;
+    std::cout<< " Current alloc is " << (bytes/(1024*1024)) <<"MB"<<std::endl;
+    std::cout<< " Current bytes is " << (host_heap_bytes/(1024*1024)) <<"MB"<<std::endl;
+    std::cout<< " Current heap  is " << (host_heap_size/(1024*1024)) <<"MB"<<std::endl;
+    assert(host_heap_bytes<host_heap_size);
+  }
+  return ptr;
+}
+void SharedMemory::HostBufferFreeAll(void) { 
+  host_heap_top  =(size_t)HostCommBuf;
+  host_heap_bytes=0;
+}
+#endif
 void *SharedMemory::ShmBufferMalloc(size_t bytes){
   //  bytes = (bytes+sizeof(vRealD))&(~(sizeof(vRealD)-1));// align up bytes
   void *ptr = (void *)heap_top;
