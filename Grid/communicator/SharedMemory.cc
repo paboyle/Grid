@@ -40,7 +40,9 @@ int                 GlobalSharedMemory::_ShmAlloc;
 uint64_t            GlobalSharedMemory::_ShmAllocBytes;
 
 std::vector<void *> GlobalSharedMemory::WorldShmCommBufs;
+#ifndef ACCELERATOR_AWARE_MPI
 void * GlobalSharedMemory::HostCommBuf;
+#endif
 
 Grid_MPI_Comm       GlobalSharedMemory::WorldShmComm;
 int                 GlobalSharedMemory::WorldShmRank;
