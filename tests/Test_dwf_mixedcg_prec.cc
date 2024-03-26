@@ -176,7 +176,7 @@ int main (int argc, char ** argv)
 
     std::cout << " FlightRecorder is OK! "<<std::endl;
     iter ++;
-  } while (time(NULL) < (start + nsecs/2) );
+  } while (time(NULL) < (start + nsecs/10) );
     
   std::cout << GridLogMessage << "::::::::::::: Starting double precision CG" << std::endl;
   ConjugateGradient<LatticeFermionD> CG(1.0e-8,10000);
