@@ -460,9 +460,9 @@ public:
     CoarseScalar InnerProd(CoarseGrid()); 
     blockOrthogonalise(InnerProd,Subspace.subspace);
 
-    for(int s=0;s<Subspace.subspace.size();s++){
-      std::cout << " subspace norm "<<norm2(Subspace.subspace[s])<<std::endl;
-    }
+    //    for(int s=0;s<Subspace.subspace.size();s++){
+      //      std::cout << " subspace norm "<<norm2(Subspace.subspace[s])<<std::endl;
+    //    }
     const int npoint = geom.npoint;
       
     Coordinate clatt = CoarseGrid()->GlobalDimensions();
@@ -498,7 +498,6 @@ public:
 	}
 	phase=exp(phase*ci);
 	Mkl(k,l) = phase;
-	std::cout<<" Mkl "<<k<<" "<<l<<" "<<phase<<std::endl;
       }
     }
     invMkl = Mkl.inverse();
@@ -553,7 +552,7 @@ public:
 	tmat-=usecond();
 	linop.Op(phaV,MphaV);
 	tmat+=usecond();
-	std::cout << i << " " <<p << " MphaV "<<norm2(MphaV)<<" "<<norm2(phaV)<<std::endl;
+	//	std::cout << i << " " <<p << " MphaV "<<norm2(MphaV)<<" "<<norm2(phaV)<<std::endl;
 
 	tproj-=usecond();
 	blockProject(coarseInner,MphaV,Subspace.subspace);
@@ -561,7 +560,7 @@ public:
 
 	ComputeProj[p] = coarseInner;
 	tproj+=usecond();
-	std::cout << i << " " <<p << " ComputeProj "<<norm2(ComputeProj[p])<<std::endl;
+	//	std::cout << i << " " <<p << " ComputeProj "<<norm2(ComputeProj[p])<<std::endl;
 
       }
 
@@ -570,7 +569,6 @@ public:
 	FT[k] = Zero();
 	for(int l=0;l<npoint;l++){
 	  FT[k]= FT[k]+ invMkl(l,k)*ComputeProj[l];
-	  std::cout << i << " " <<k <<" "<<l<< " FT "<<norm2(FT[k])<<" "<<invMkl(l,k)<<std::endl;
 	}
       
 	int osites=CoarseGrid()->oSites();

@@ -88,7 +88,6 @@ public:
     assert(A.size()==geom_srhs.npoint);
     BLAStoGrid(A[p],BLAS_A[p]);
   }
-  /*
   void CopyMatrix (GeneralCoarseOp &_Op)
   {
     for(int p=0;p<geom.npoint;p++){
@@ -97,6 +96,7 @@ public:
       GridtoBLAS(Aup,BLAS_A[p]);
     }
   }
+  /*
   void CheckMatrix (GeneralCoarseOp &_Op)
   {
     std::cout <<"************* Checking the little direc operator mRHS"<<std::endl;
@@ -388,6 +388,7 @@ public:
 	ComputeProj[p] = coarseInner;
       }
 
+      // Could do this with a block promote or similar BLAS call via the MultiRHSBlockProjector with a const matrix.
       for(int k=0;k<npoint;k++){
 	FT = Zero();
 	for(int l=0;l<npoint;l++){
@@ -496,7 +497,6 @@ Store npoint vectors, get npoint x Nbasis block projection, and 81 fold faster.
     BLAStoGrid(out,BLAS_C);
     t_BtoG+=usecond();
     t_tot+=usecond();
-    /*
     std::cout << GridLogMessage << "New Mrhs coarse DONE "<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult exch "<<t_exch<<" us"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult mult "<<t_mult<<" us"<<std::endl;
@@ -504,11 +504,10 @@ Store npoint vectors, get npoint x Nbasis block projection, and 81 fold faster.
     std::cout << GridLogMessage<<"Coarse Mult BtoG  "<<t_BtoG<<" us"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult tot  "<<t_tot<<" us"<<std::endl;
     std::cout << GridLogMessage<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Kernel flops "<< flops<<std::endl;
+    //    std::cout << GridLogMessage<<"Coarse Kernel flops "<< flops<<std::endl;
     std::cout << GridLogMessage<<"Coarse Kernel flop/s "<< flops/t_mult<<" mflop/s"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Kernel bytes/s "<< bytes/t_mult/1000<<" GB/s"<<std::endl;
+    //    std::cout << GridLogMessage<<"Coarse Kernel bytes/s "<< bytes/t_mult/1000<<" GB/s"<<std::endl;
     std::cout << GridLogMessage<<"Coarse overall flops/s "<< flops/t_tot<<" mflop/s"<<std::endl;
-    */
     //    std::cout << GridLogMessage<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
   };
   virtual  void Mdiag    (const Field &in, Field &out){ assert(0);};
