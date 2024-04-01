@@ -184,12 +184,12 @@ public:
 		  << "\tTarget " << Tolerance << std::endl;
 
 	std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
-        std::cout << GridLogPerformance << "Time breakdown "<<std::endl;
-	std::cout << GridLogPerformance << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
-	std::cout << GridLogPerformance << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
-	std::cout << GridLogPerformance << "\tInner      " << InnerTimer.Elapsed() <<std::endl;
-	std::cout << GridLogPerformance << "\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
-	std::cout << GridLogPerformance << "\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
+        std::cout << GridLogMessage << "Time breakdown "<<std::endl;
+	std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage<< "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
+	std::cout << GridLogPerformance << "\t\tInner      " << InnerTimer.Elapsed() <<std::endl;
+	std::cout << GridLogPerformance << "\t\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
+	std::cout << GridLogPerformance << "\t\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
 
 	std::cout << GridLogDebug << "\tMobius flop rate " << DwfFlops/ usecs<< " Gflops " <<std::endl;
 
