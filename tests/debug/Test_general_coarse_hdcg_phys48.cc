@@ -27,6 +27,8 @@ Author: Peter Boyle <pboyle@bnl.gov>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
+#include <Grid/algorithms/iterative/AdefMrhs.h>
+
 using namespace std;
 using namespace Grid;
 
@@ -146,10 +148,6 @@ void LoadEigenvectors(std::vector<RealD>            &eval,
 #endif
 }
 
-RealD InverseApproximation(RealD x){
-  return 1.0/x;
-}
-
 // Want Op in CoarsenOp to call MatPcDagMatPc
 template<class Field>
 class HermOpAdaptor : public LinearOperatorBase<Field>
@@ -164,26 +162,6 @@ public:
   void OpDir  (const Field &in, Field &out,int dir,int disp) {    assert(0);  }
   void OpDirAll  (const Field &in, std::vector<Field> &out)  {    assert(0);  };
   void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){    assert(0);  }
-};
-template<class Field> class ChebyshevSmoother : public LinearFunction<Field>
-{
-public:
-  using LinearFunction<Field>::operator();
-  typedef LinearOperatorBase<Field> FineOperator;
-  FineOperator   & _SmootherOperator;
-  Chebyshev<Field> Cheby;
-  ChebyshevSmoother(RealD _lo,RealD _hi,int _ord, FineOperator &SmootherOperator) :
-    _SmootherOperator(SmootherOperator),
-    Cheby(_lo,_hi,_ord,InverseApproximation)
-  {
-    std::cout << GridLogMessage<<" Chebyshev smoother order "<<_ord<<" ["<<_lo<<","<<_hi<<"]"<<std::endl;
-  };
-  void operator() (const Field &in, Field &out) 
-  {
-    Field tmp(in.Grid());
-    tmp = in;
-    Cheby(_SmootherOperator,tmp,out);
-  }
 };
 
 template<class Field> class CGSmoother : public LinearFunction<Field>
@@ -214,9 +192,6 @@ int main (int argc, char ** argv)
 
   const int Ls=24;
   const int nbasis = 62;
-  //  const int nbasis = 56;
-  //  const int nbasis = 44;
-  //  const int nbasis = 36;
   const int cb = 0 ;
   RealD mass=0.00078;
   RealD M5=1.8;
@@ -253,12 +228,10 @@ int main (int argc, char ** argv)
 
   ///////////////////////// Configuration /////////////////////////////////
   LatticeGaugeField Umu(UGrid);
-  MemoryManager::Print();
 
   FieldMetaData header;
   std::string file("ckpoint_lat.1000");
   NerscIO::readConfiguration(Umu,header,file);
-  MemoryManager::Print();
 
   //////////////////////// Fermion action //////////////////////////////////
   MobiusFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c);
@@ -288,16 +261,15 @@ int main (int argc, char ** argv)
   ////////////////////////////////////////////////////////////
   LittleDiracOperator LittleDiracOp(geom,FrbGrid,Coarse5d);
 
-  std::string subspace_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Subspace.phys48.rat.18node.62");
-  std::string refine_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Refine.phys48.rat.18node.62");
-  std::string ldop_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/LittleDiracOp.phys48.rat.18node.62");
+  std::string subspace_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Subspace.phys48.new.62");
+  std::string refine_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Refine.phys48.new.62");
+  std::string ldop_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/LittleDiracOp.phys48.new.62");
   std::string evec_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/evecs.scidac");
   std::string eval_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/eval.xml");
-  bool load_agg=true;
-  bool load_refine=true;
-  bool load_mat=true;
+  bool load_agg=false;
+  bool load_refine=false;
+  bool load_mat=false;
   bool load_evec=false;
-  MemoryManager::Print();
 
   int refine=1;
   if ( load_agg ) {
@@ -305,10 +277,11 @@ int main (int argc, char ** argv)
       LoadBasis(Aggregates,subspace_file);
     }
   } else {
-    Aggregates.CreateSubspaceMultishift(RNG5,HermOpEO,
-					0.0003,1.0e-5,2000); // Lo, tol, maxit
-
+    //    Aggregates.CreateSubspaceMultishift(RNG5,HermOpEO,
+    //					0.0003,1.0e-5,2000); // Lo, tol, maxit
     //    Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,95.,0.01,1500); <== last run
+    //    Aggregates.CreateSubspaceChebyshevNew(RNG5,HermOpEO,95.); // 176 with refinement
+    Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,95.,0.001,3000,1500,200,0.0); // Attempt to resurrect
     SaveBasis(Aggregates,subspace_file);
   }
 
@@ -317,7 +290,9 @@ int main (int argc, char ** argv)
       LoadBasis(Aggregates,refine_file);
     } else {
       // HDCG used Pcg to refine
-      Aggregates.RefineSubspace(HermOpEO,0.001,1.0e-3,3000);
+      //Aggregates.RefineSubspace(HermOpEO,0.001,1.0e-3,3000); // 172 iters
+      //Aggregates.RefineSubspace(HermOpEO,0.001,1.0e-3,1500); // 202 iters
+      Aggregates.RefineSubspace(HermOpEO,0.001,1.0e-3,2000);   // 202 iters
       SaveBasis(Aggregates,refine_file);
     }
   }
@@ -327,7 +302,7 @@ int main (int argc, char ** argv)
     LoadOperator(LittleDiracOp,ldop_file);
   } else {
     LittleDiracOp.CoarsenOperator(FineHermOp,Aggregates);
-    //    SaveOperator(LittleDiracOp,ldop_file);
+    SaveOperator(LittleDiracOp,ldop_file);
   }
   
   // I/O test:
@@ -382,13 +357,13 @@ int main (int argc, char ** argv)
   //  MultiGeneralCoarsenedMatrix mrhs(LittleDiracOp,CoarseMrhs);
   typedef MultiGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> MultiGeneralCoarsenedMatrix_t;
   MultiGeneralCoarsenedMatrix_t mrhs(geom,CoarseMrhs);
-  //  mrhs.CopyMatrix(LittleDiracOp);
+  mrhs.CopyMatrix(LittleDiracOp);
   //  mrhs.SetMatrix(LittleDiracOp.);
-  mrhs.CoarsenOperator(FineHermOp,Aggregates,Coarse5d);
+  //  mrhs.CoarsenOperator(FineHermOp,Aggregates,Coarse5d);
   //  mrhs.CheckMatrix(LittleDiracOp);
   
   //////////////////////////////////////////
-  // Build a coarse lanczos
+  // Build a coarse lanczos -- -FIXME -- Must be able to run this on the mrhs operator
   //////////////////////////////////////////
   std::cout << "**************************************"<<std::endl;
   std::cout << "Building Coarse Lanczos               "<<std::endl;
@@ -411,7 +386,7 @@ int main (int argc, char ** argv)
   std::vector<RealD>            eval(Nm);
   std::vector<CoarseVector>     evec(Nm,Coarse5d);
 
-  PowerMethod<CoarseVector>       cPM;   cPM(CoarseOp,c_src);
+  //  PowerMethod<CoarseVector>       cPM;   cPM(CoarseOp,c_src);
 
   if ( load_evec ) {
     eval.resize(Nstop);
@@ -422,17 +397,16 @@ int main (int argc, char ** argv)
     assert(Nstop==eval.size());
     SaveEigenvectors(eval,evec,evec_file,eval_file);
   }
-
   DeflatedGuesser<CoarseVector> DeflCoarseGuesser(evec,eval);
 
   MultiRHSDeflation<CoarseVector> MrhsGuesser;
+  MrhsGuesser.ImportEigenBasis(evec,eval);
   
   //////////////////////////////////////////
   // Build a coarse space solver
   //////////////////////////////////////////
   int maxit=30000;
-  ConjugateGradient<CoarseVector>  CG(1.0e-10,maxit,false);
-  ConjugateGradient<LatticeFermionD>  CGfine(1.0e-8,30000,false);
+  ConjugateGradient<CoarseVector>  CG(5.0e-2,maxit,false);
   ZeroGuesser<CoarseVector> CoarseZeroGuesser;
   
   HPDSolver<CoarseVector> HPDSolve(CoarseOp,CG,DeflCoarseGuesser);
@@ -442,7 +416,7 @@ int main (int argc, char ** argv)
   typedef HermitianLinearOperator<MultiGeneralCoarsenedMatrix_t,CoarseVector> MrhsHermMatrix;
   MrhsHermMatrix MrhsCoarseOp     (mrhs);
 
-#if 1
+#if 0
   { 
     CoarseVector rh_res(CoarseMrhs);
     CoarseVector rh_guess(CoarseMrhs);
@@ -454,7 +428,6 @@ int main (int argc, char ** argv)
     std::cout << "*************************"<<std::endl;
     std::cout << " MrhsGuesser importing"<<std::endl;
     std::cout << "*************************"<<std::endl;
-    MrhsGuesser.ImportEigenBasis(evec,eval);
     std::vector<CoarseVector> BlasGuess(nrhs,Coarse5d);
     std::vector<CoarseVector> BlasSource(nrhs,Coarse5d);
     for(int r=0;r<nrhs;r++){
@@ -503,104 +476,64 @@ int main (int argc, char ** argv)
   //////////////////////////////////////
   // fine solve
   //////////////////////////////////////
-  
   std::vector<RealD> los({2.0});
   std::vector<int> ords({7}); 
-
- /*
- Powerlaw setup 62 vecs
-slurm-1494943.out:Grid : Message : 4874.186617 s : HDCG: Pcg converged in 171 iterations and 1706.548006 s 1.0 32
-slurm-1494943.out:Grid : Message : 6490.121648 s : HDCG: Pcg converged in 194 iterations and 1616.219654 s 1.0 16
-
- Cheby setup: 56vecs
- -- CG smoother O(16): 487
- 
-Power law setup, 56 vecs -- lambda^-5
-slurm-1494383.out:Grid : Message : 4377.173265 s : HDCG: Pcg converged in 204 iterations and 1153.548935 s 1.0 32
-
-Power law setup, 56 vecs -- lambda^-3
-
-slurm-1494242.out:Grid : Message : 4370.464814 s : HDCG: Pcg converged in 204 iterations and 1143.494776 s  1.0 32
-slurm-1494242.out:Grid : Message : 5432.414820 s : HDCG: Pcg converged in 237 iterations and 1061.455882 s  1.0 16
-slurm-1494242.out:Grid : Message : 6588.727977 s : HDCG: Pcg converged in 205 iterations and 1156.565210 s  0.5 32
-
- Power law setup, 56 vecs -- lambda^-4
- -- CG smoother    O(16): 290
- -- Cheby smoother O(16): 218 -- getting close to the deflation level I expect 169 from BFM paper @O(7) smoother and 64 nbasis
-
-Conclusion: higher order smoother is doing better. Much better. Use a Krylov smoother instead Mirs as in BFM version.
- */
-				      //
-  MemoryManager::Print();
   for(int l=0;l<los.size();l++){
 
     RealD lo = los[l];
 
     for(int o=0;o<ords.size();o++){
 
-      ConjugateGradient<CoarseVector>  CGsloppy(4.0e-2,maxit,false);
+      /////////////////////////////////////////////////
+      // Coarse sloppy solve
+      /////////////////////////////////////////////////
+      ConjugateGradient<CoarseVector>  CGsloppy(5.0e-2,maxit,false);
       HPDSolver<CoarseVector> HPDSolveSloppy(CoarseOp,CGsloppy,DeflCoarseGuesser);
-      
-      //    ChebyshevSmoother<LatticeFermionD,HermFineMatrix > Smoother(lo,92,10,FineHermOp); // 36 best case
-      ChebyshevSmoother<LatticeFermionD > ChebySmooth(lo,95,ords[o],FineHermOp);  // 311
 
+      /////////////////////////////////////////////////
+      // Mirs smoother
+      /////////////////////////////////////////////////
       RealD MirsShift = lo;
       ShiftedHermOpLinearOperator<LatticeFermionD> ShiftedFineHermOp(HermOpEO,MirsShift);
       CGSmoother<LatticeFermionD> CGsmooth(ords[o],ShiftedFineHermOp) ;
   
       //////////////////////////////////////////
-      // Build a HDCG solver
-      //////////////////////////////////////////
-      TwoLevelADEF2<LatticeFermion,CoarseVector,Subspace>
-	HDCG(1.0e-8, 700,
-	     FineHermOp,
-	     CGsmooth,
-	     HPDSolveSloppy,
-	     HPDSolve,
-	     Aggregates);
-      //      result=Zero();
-      //      std::cout << "Calling HDCG single RHS"<<std::endl;
-      //      HDCG(src,result);
-
-      //////////////////////////////////////////
       // Build a HDCG mrhs solver
       //////////////////////////////////////////
-#if 1
-  MemoryManager::Print();
+      MultiRHSBlockProject<LatticeFermionD> MrhsProjector;
+      MrhsProjector.Allocate(nbasis,FrbGrid,Coarse5d);
+      MrhsProjector.ImportBasis(Aggregates.subspace);
+
       DoNothingGuesser<CoarseVector> DoNothing;
       HPDSolver<CoarseVector> HPDSolveMrhs(MrhsCoarseOp,CG,DoNothing);
       HPDSolver<CoarseVector> HPDSolveMrhsSloppy(MrhsCoarseOp,CGsloppy,DoNothing);
-      TwoLevelADEF2mrhs<LatticeFermion,CoarseVector,Subspace>
+      TwoLevelADEF2mrhs<LatticeFermion,CoarseVector>
 	HDCGmrhs(1.0e-8, 500,
 		 FineHermOp,
 		 CGsmooth,
-		 //		 HPDSolveSloppy, // Never used
-		 //		 HPDSolve,       // Used in Vstart
 		 HPDSolveMrhsSloppy,    // Used in M1
 		 HPDSolveMrhs,          // Used in Vstart
-		 DeflCoarseGuesser, // single RHS guess used in M1
-		 CoarseMrhs,        // Grid needed to Mrhs grid
-		 Aggregates);
+		 MrhsProjector,
+		 MrhsGuesser,
+		 CoarseMrhs);
 
       std::cout << "Calling mRHS HDCG"<<std::endl;
-      FrbGrid->Barrier();
       
       std::vector<LatticeFermionD> src_mrhs(nrhs,FrbGrid);
       std::cout << " mRHS source"<<std::endl;
       std::vector<LatticeFermionD> res_mrhs(nrhs,FrbGrid);
       std::cout << " mRHS result"<<std::endl;
 
-  random(RNG5,src_mrhs[0]);
-  for(int r=0;r<nrhs;r++){
-	if(r>0)src_mrhs[r]=src_mrhs[0];
+      for(int r=0;r<nrhs;r++){
+	random(RNG5,src_mrhs[r]);
+	//	if(r>0)src_mrhs[r]=src_mrhs[0];
 	res_mrhs[r]=Zero();
 	std::cout << "Setup mrhs source "<<r<<std::endl;
-  }
-  std::cout << "Calling the mRHS HDCG"<<std::endl;
-  MemoryManager::Print();
-  HDCGmrhs(src_mrhs,res_mrhs);
-  MemoryManager::Print();
-#endif
+      }
+
+      std::cout << "Calling the mRHS HDCG"<<std::endl;
+      HDCGmrhs(src_mrhs,res_mrhs);
+
     }
   }
 
@@ -610,6 +543,7 @@ Conclusion: higher order smoother is doing better. Much better. Use a Krylov smo
     LatticeFermion result(FrbGrid); result=Zero();
     LatticeFermion    src(FrbGrid); random(RNG5,src);
     result=Zero();
+    ConjugateGradient<LatticeFermionD>  CGfine(1.0e-8,30000,false);
     CGfine(HermOpEO, src, result);
   }
 #endif  
