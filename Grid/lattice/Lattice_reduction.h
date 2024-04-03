@@ -31,6 +31,7 @@ Author: Christoph Lehner <christoph@lhnr.de>
 #if defined(GRID_SYCL)
 #include <Grid/lattice/Lattice_reduction_sycl.h>
 #endif
+#include <Grid/lattice/Lattice_slicesum_core.h>
 
 NAMESPACE_BEGIN(Grid);
 
@@ -280,11 +281,29 @@ inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &
   return nrm;
 }
 
+
 template<class vobj>
 inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right) {
   GridBase *grid = left.Grid();
+
+#ifdef GRID_SYCL
+  uint64_t csum=0;
+  if ( FlightRecorder::LoggingMode != FlightRecorder::LoggingModeNone)
+  {
+    // Hack
+    // Fast integer xor checksum. Can also be used in comms now.
+    autoView(l_v,left,AcceleratorRead);
+    Integer words = left.Grid()->oSites()*sizeof(vobj)/sizeof(uint64_t);
+    uint64_t *base= (uint64_t *)&l_v[0];
+    csum=svm_xor(base,words);
+  }
+  FlightRecorder::CsumLog(csum);
+#endif
   ComplexD nrm = rankInnerProduct(left,right);
+  RealD local = real(nrm);
+  FlightRecorder::NormLog(real(nrm)); 
   grid->GlobalSum(nrm);
+  FlightRecorder::ReductionLog(local,real(nrm)); 
   return nrm;
 }
 
@@ -448,19 +467,10 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   int e1=    grid->_slice_nblock[orthogdim];
   int e2=    grid->_slice_block [orthogdim];
   int stride=grid->_slice_stride[orthogdim];
-
-  // sum over reduced dimension planes, breaking out orthog dir
-  // Parallel over orthog direction
-  autoView( Data_v, Data, CpuRead);
-  thread_for( r,rd, {
-    int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
-    for(int n=0;n<e1;n++){
-      for(int b=0;b<e2;b++){
-	int ss= so+n*stride+b;
-	lvSum[r]=lvSum[r]+Data_v[ss];
-      }
-    }
-  });
+  int ostride=grid->_ostride[orthogdim];
+  
+  //Reduce Data down to lvSum
+  sliceSumReduction(Data,lvSum,rd, e1,e2,stride,ostride,Nsimd);
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
   Coordinate icoor(Nd);
@@ -503,6 +513,7 @@ sliceSum(const Lattice<vobj> &Data,int orthogdim)
   sliceSum(Data,result,orthogdim);
   return result;
 }
+
 
 template<class vobj>
 static void sliceInnerProductVector( std::vector<ComplexD> & result, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int orthogdim) 

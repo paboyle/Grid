@@ -69,28 +69,29 @@ inline typename vobj::scalar_object sum_gpu_large(const vobj *lat, Integer osite
   return result;
 }
 
-NAMESPACE_END(Grid);
 
-/*
-template<class Double> Double svm_reduce(Double *vec,uint64_t L)
+template<class Word> Word svm_xor(Word *vec,uint64_t L)
 {
-  Double sumResult; zeroit(sumResult);
-  Double *d_sum =(Double *)cl::sycl::malloc_shared(sizeof(Double),*theGridAccelerator);
-  Double identity;  zeroit(identity);
+  Word xorResult; xorResult = 0;
+  Word *d_sum =(Word *)cl::sycl::malloc_shared(sizeof(Word),*theGridAccelerator);
+  Word identity;  identity=0;
   theGridAccelerator->submit([&](cl::sycl::handler &cgh) {
-     auto Reduction = cl::sycl::reduction(d_sum,identity,std::plus<>());
+     auto Reduction = cl::sycl::reduction(d_sum,identity,std::bit_xor<>());
      cgh.parallel_for(cl::sycl::range<1>{L},
 		      Reduction,
 		      [=] (cl::sycl::id<1> index, auto &sum) {
-	 sum +=vec[index];
+	 sum ^=vec[index];
      });
    });
   theGridAccelerator->wait();
-  Double ret = d_sum[0];
+  Word ret = d_sum[0];
   free(d_sum,*theGridAccelerator);
-  std::cout << " svm_reduce finished "<<L<<" sites sum = " << ret <<std::endl;
   return ret;
 }
+
+NAMESPACE_END(Grid);
+
+/*
 
 template <class vobj>
 inline typename vobj::scalar_objectD sumD_gpu_repack(const vobj *lat, Integer osites)

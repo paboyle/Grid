@@ -1,0 +1,60 @@
+#!/bin/bash
+
+## qsub -q EarlyAppAccess -A Aurora_Deployment -I -l select=1 -l walltime=60:00
+
+#PBS -q EarlyAppAccess
+#PBS -l select=1024
+#PBS -l walltime=01:00:00
+#PBS -A LatticeQCD_aesp_CNDA
+
+#export OMP_PROC_BIND=spread
+#unset OMP_PLACES
+
+cd $PBS_O_WORKDIR
+
+source ../sourceme.sh
+
+cat $PBS_NODEFILE
+
+export OMP_NUM_THREADS=3
+export MPIR_CVAR_CH4_OFI_ENABLE_GPU_PIPELINE=1
+
+#unset MPIR_CVAR_CH4_OFI_GPU_PIPELINE_D2H_ENGINE_TYPE
+#unset MPIR_CVAR_CH4_OFI_GPU_PIPELINE_H2D_ENGINE_TYPE
+#unset MPIR_CVAR_GPU_USE_IMMEDIATE_COMMAND_LIST
+
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_D2H_ENGINE_TYPE=0
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_H2D_ENGINE_TYPE=0
+#export MPIR_CVAR_GPU_USE_IMMEDIATE_COMMAND_LIST=1
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_BUFFER_SZ=1048576
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_THRESHOLD=131072
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_NUM_BUFFERS_PER_CHUNK=16
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_MAX_NUM_BUFFERS=16
+export MPICH_OFI_NIC_POLICY=GPU
+export FI_CXI_CQ_FILL_PERCENT=10
+export FI_CXI_DEFAULT_CQ_SIZE=262144
+#export FI_CXI_DEFAULT_CQ_SIZE=131072
+#export FI_CXI_CQ_FILL_PERCENT=20
+
+# 12 ppn, 32 nodes, 384 ranks
+#
+CMD="mpiexec -np 12288 -ppn 12  -envall \
+	     ./gpu_tile_compact.sh \
+	     ./Benchmark_comms_host_device --mpi 8.6.16.16 --grid 64.48.64.284 \
+		--shm-mpi 1 --shm 2048 --device-mem 32000 --accelerator-threads 32"
+
+$CMD 
+
+CMD="mpiexec -np 12288 -ppn 12  -envall \
+	     ./gpu_tile_compact.sh \
+	     ./Benchmark_dwf_fp32 --mpi 8.8.8.24 --grid 128.128.128.384 \
+		--shm-mpi 1 --shm 2048 --device-mem 32000 --accelerator-threads 32 --comms-overlap"
+$CMD | tee 1024node.dwf.small.cq
+
+CMD="mpiexec -np 12288 -ppn 12  -envall \
+	     ./gpu_tile_compact.sh \
+	     ./Benchmark_dwf_fp32 --mpi 16.8.8.12 --grid 256.256.256.384 \
+		--shm-mpi 1 --shm 2048 --device-mem 32000 --accelerator-threads 32 --comms-overlap"
+$CMD | tee 1024node.dwf.cq
+
+

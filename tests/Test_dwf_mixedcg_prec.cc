@@ -30,27 +30,60 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 using namespace std;
 using namespace Grid;
 
-template<class d>
-struct scal {
-  d internal;
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#endif
+
+
+NAMESPACE_BEGIN(Grid);
+template<class Matrix,class Field>
+  class SchurDiagMooeeOperatorParanoid :  public SchurOperatorBase<Field> {
+ public:
+    Matrix &_Mat;
+    SchurDiagMooeeOperatorParanoid (Matrix &Mat): _Mat(Mat){};
+    virtual  void Mpc      (const Field &in, Field &out) {
+      Field tmp(in.Grid());
+      tmp.Checkerboard() = !in.Checkerboard();
+      //      std::cout <<" Mpc starting"<<std::endl;
+
+      RealD nn = norm2(in); // std::cout <<" Mpc Prior to dslash norm is "<<nn<<std::endl;
+      _Mat.Meooe(in,tmp);
+      nn = norm2(tmp); //std::cout <<" Mpc Prior to Mooeinv "<<nn<<std::endl;
+      _Mat.MooeeInv(tmp,out);
+      nn = norm2(out); //std::cout <<" Mpc Prior to dslash norm is "<<nn<<std::endl;
+      _Mat.Meooe(out,tmp);
+      nn = norm2(tmp); //std::cout <<" Mpc Prior to Mooee "<<nn<<std::endl;
+      _Mat.Mooee(in,out);
+      nn = norm2(out); //std::cout <<" Mpc Prior to axpy "<<nn<<std::endl;
+      axpy(out,-1.0,tmp,out);
+    }
+    virtual void MpcDag   (const Field &in, Field &out){
+      Field tmp(in.Grid());
+      //      std::cout <<" MpcDag starting"<<std::endl;
+      RealD nn = norm2(in);// std::cout <<" MpcDag Prior to dslash norm is "<<nn<<std::endl;
+      _Mat.MeooeDag(in,tmp);
+      _Mat.MooeeInvDag(tmp,out);
+      nn = norm2(out);// std::cout <<" MpcDag Prior to dslash norm is "<<nn<<std::endl;
+      _Mat.MeooeDag(out,tmp);
+      nn = norm2(tmp);// std::cout <<" MpcDag Prior to Mooee "<<nn<<std::endl;
+      _Mat.MooeeDag(in,out);
+      nn = norm2(out);// std::cout <<" MpcDag Prior to axpy "<<nn<<std::endl;
+      axpy(out,-1.0,tmp,out);
+    }
 };
 
-  Gamma::Algebra Gmu [] = {
-    Gamma::Algebra::GammaX,
-    Gamma::Algebra::GammaY,
-    Gamma::Algebra::GammaZ,
-    Gamma::Algebra::GammaT
-  };
+NAMESPACE_END(Grid);
 
 int main (int argc, char ** argv)
 {
+  char hostname[HOST_NAME_MAX+1];
+  gethostname(hostname, HOST_NAME_MAX+1);
+  std::string host(hostname);
+  
   Grid_init(&argc,&argv);
 
   const int Ls=12;
 
-  std::cout << GridLogMessage << "::::: NB: to enable a quick bit reproducibility check use the --checksums flag. " << std::endl;
-
-  { 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexD::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
@@ -89,10 +122,17 @@ int main (int argc, char ** argv)
   result_o_2.Checkerboard() = Odd;
   result_o_2 = Zero();
 
-  SchurDiagMooeeOperator<DomainWallFermionD,LatticeFermionD> HermOpEO(Ddwf);
-  SchurDiagMooeeOperator<DomainWallFermionF,LatticeFermionF> HermOpEO_f(Ddwf_f);
+  SchurDiagMooeeOperatorParanoid<DomainWallFermionD,LatticeFermionD> HermOpEO(Ddwf);
+  SchurDiagMooeeOperatorParanoid<DomainWallFermionF,LatticeFermionF> HermOpEO_f(Ddwf_f);
 
-  std::cout << GridLogMessage << "::::::::::::: Starting mixed CG" << std::endl;
+  int nsecs=600;
+  if( GridCmdOptionExists(argv,argv+argc,"--seconds") ){
+    std::string arg = GridCmdOptionPayload(argv,argv+argc,"--seconds");
+    GridCmdOptionInt(arg,nsecs);
+  }
+  
+  std::cout << GridLogMessage << "::::::::::::: Starting mixed CG for "<<nsecs <<" seconds" << std::endl;
+
   MixedPrecisionConjugateGradient<LatticeFermionD,LatticeFermionF> mCG(1.0e-8, 10000, 50, FrbGrid_f, HermOpEO_f, HermOpEO);
   double t1,t2,flops;
   double MdagMsiteflops = 1452; // Mobius (real coeffs)
@@ -101,7 +141,26 @@ int main (int argc, char ** argv)
   std:: cout << " MdagM site flops = "<< 4*MdagMsiteflops<<std::endl;
   std:: cout << " CG    site flops = "<< CGsiteflops <<std::endl;
   int iters;
-  for(int i=0;i<10;i++){
+
+  time_t start = time(NULL);
+
+  FlightRecorder::ContinueOnFail = 0;
+  FlightRecorder::PrintEntireLog = 0;
+  FlightRecorder::ChecksumComms  = 1;
+  FlightRecorder::ChecksumCommsSend=0;
+
+  if(char *s=getenv("GRID_PRINT_ENTIRE_LOG"))  FlightRecorder::PrintEntireLog     = atoi(s);
+  if(char *s=getenv("GRID_CHECKSUM_RECV_BUF")) FlightRecorder::ChecksumComms      = atoi(s);
+  if(char *s=getenv("GRID_CHECKSUM_SEND_BUF")) FlightRecorder::ChecksumCommsSend  = atoi(s);
+
+  int iter=0;
+  do {
+    if ( iter == 0 ) {
+      FlightRecorder::SetLoggingMode(FlightRecorder::LoggingModeRecord);
+    } else {
+      FlightRecorder::SetLoggingMode(FlightRecorder::LoggingModeVerify);
+    }
+    std::cerr << "******************* SINGLE PRECISION SOLVE "<<iter<<std::endl;
     result_o = Zero();
     t1=usecond();
     mCG(src_o,result_o);
@@ -111,10 +170,24 @@ int main (int argc, char ** argv)
     flops+= CGsiteflops*FrbGrid->gSites()*iters;
     std::cout << " SinglePrecision iterations/sec "<< iters/(t2-t1)*1000.*1000.<<std::endl;
     std::cout << " SinglePrecision GF/s "<< flops/(t2-t1)/1000.<<std::endl;
-  }
-  std::cout << GridLogMessage << "::::::::::::: Starting regular CG" << std::endl;
+    std::cout << " SinglePrecision error count "<< FlightRecorder::ErrorCount()<<std::endl;
+
+    assert(FlightRecorder::ErrorCount()==0);
+
+    std::cout << " FlightRecorder is OK! "<<std::endl;
+    iter ++;
+  } while (time(NULL) < (start + nsecs/10) );
+    
+  std::cout << GridLogMessage << "::::::::::::: Starting double precision CG" << std::endl;
   ConjugateGradient<LatticeFermionD> CG(1.0e-8,10000);
-  for(int i=0;i<1;i++){
+  int i=0;
+  do { 
+    if ( i == 0 ) {
+      FlightRecorder::SetLoggingMode(FlightRecorder::LoggingModeRecord);
+    } else {
+      FlightRecorder::SetLoggingMode(FlightRecorder::LoggingModeVerify);
+    }
+    std::cerr << "******************* DOUBLE PRECISION SOLVE "<<i<<std::endl;
     result_o_2 = Zero();
     t1=usecond();
     CG(HermOpEO,src_o,result_o_2);
@@ -122,46 +195,20 @@ int main (int argc, char ** argv)
     iters = CG.IterationsToComplete;
     flops = MdagMsiteflops*4*FrbGrid->gSites()*iters; 
     flops+= CGsiteflops*FrbGrid->gSites()*iters;
-    
+
     std::cout << " DoublePrecision iterations/sec "<< iters/(t2-t1)*1000.*1000.<<std::endl;
     std::cout << " DoublePrecision GF/s "<< flops/(t2-t1)/1000.<<std::endl;
-  }
-  
-  //  MemoryManager::Print();
+    std::cout << " DoublePrecision error count "<< FlightRecorder::ErrorCount()<<std::endl;
+    assert(FlightRecorder::ErrorCount()==0);
+    std::cout << " FlightRecorder is OK! "<<std::endl;
+    i++;
+  } while (time(NULL) < (start + nsecs) );
 
   LatticeFermionD diff_o(FrbGrid);
   RealD diff = axpy_norm(diff_o, -1.0, result_o, result_o_2);
 
   std::cout << GridLogMessage << "::::::::::::: Diff between mixed and regular CG: " << diff << std::endl;
-
-  #ifdef HAVE_LIME
-  if( GridCmdOptionExists(argv,argv+argc,"--checksums") ){
+  assert(diff < 1e-4);
   
-  std::string file1("./Propagator1");
-  emptyUserRecord record;
-  uint32_t nersc_csum;
-  uint32_t scidac_csuma;
-  uint32_t scidac_csumb;
-  typedef SpinColourVectorD   FermionD;
-  typedef vSpinColourVectorD vFermionD;
-
-  BinarySimpleMunger<FermionD,FermionD> munge;
-  std::string format = getFormatString<vFermionD>();
-  
-  BinaryIO::writeLatticeObject<vFermionD,FermionD>(result_o,file1,munge, 0, format,
-						   nersc_csum,scidac_csuma,scidac_csumb);
-
-  std::cout << GridLogMessage << " Mixed checksums "<<std::hex << scidac_csuma << " "<<scidac_csumb<<std::endl;
-
-  BinaryIO::writeLatticeObject<vFermionD,FermionD>(result_o_2,file1,munge, 0, format,
-						   nersc_csum,scidac_csuma,scidac_csumb);
-
-  std::cout << GridLogMessage << " CG checksums "<<std::hex << scidac_csuma << " "<<scidac_csumb<<std::endl;
-  }
-  #endif
-  }
-  
-  MemoryManager::Print();
-
   Grid_finalize();
 }

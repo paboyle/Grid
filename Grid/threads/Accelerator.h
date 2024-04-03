@@ -225,6 +225,8 @@ inline void acceleratorFreeShared(void *ptr){ cudaFree(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ cudaFree(ptr);};
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { cudaMemcpy(to,from,bytes, cudaMemcpyHostToDevice);}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToHost);}
+inline void acceleratorCopyToDeviceAsync(void *from, void *to, size_t bytes, cudaStream_t stream = copyStream) { cudaMemcpyAsync(to,from,bytes, cudaMemcpyHostToDevice, stream);}
+inline void acceleratorCopyFromDeviceAsync(void *from, void *to, size_t bytes, cudaStream_t stream = copyStream) { cudaMemcpyAsync(to,from,bytes, cudaMemcpyDeviceToHost, stream);}
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { cudaMemset(base,value,bytes);}
 inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) // Asynch
 {
@@ -253,17 +255,13 @@ inline int  acceleratorIsCommunicable(void *ptr)
 #define GRID_SYCL_LEVEL_ZERO_IPC
 
 NAMESPACE_END(Grid);
-#if 0
-#include <CL/sycl.hpp>
-#include <CL/sycl/usm.hpp>
-#include <level_zero/ze_api.h>
-#include <CL/sycl/backend/level_zero.hpp>
-#else
+
+// Force deterministic reductions
+#define SYCL_REDUCTION_DETERMINISTIC
 #include <sycl/CL/sycl.hpp>
 #include <sycl/usm.hpp>
 #include <level_zero/ze_api.h>
 #include <sycl/ext/oneapi/backend/level_zero.hpp>
-#endif
 
 NAMESPACE_BEGIN(Grid);
 
@@ -287,23 +285,24 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   theGridAccelerator->submit([&](cl::sycl::handler &cgh) {		\
-      unsigned long nt=acceleratorThreads();				\
-      unsigned long unum1 = num1;					\
-      unsigned long unum2 = num2;					\
-      if(nt < 8)nt=8;							\
-      cl::sycl::range<3> local {nt,1,nsimd};				\
-      cl::sycl::range<3> global{unum1,unum2,nsimd};			\
-      cgh.parallel_for(					\
-      cl::sycl::nd_range<3>(global,local), \
-      [=] (cl::sycl::nd_item<3> item) /*mutable*/     \
-      [[intel::reqd_sub_group_size(16)]]	      \
-      {						      \
-      auto iter1    = item.get_global_id(0);	      \
-      auto iter2    = item.get_global_id(1);	      \
-      auto lane     = item.get_global_id(2);	      \
-      { __VA_ARGS__ };				      \
-     });	   			              \
-    });
+    unsigned long nt=acceleratorThreads();				\
+    if(nt < 8)nt=8;							\
+    unsigned long unum1 = num1;						\
+    unsigned long unum2 = num2;						\
+    unsigned long unum1_divisible_by_nt = ((unum1 + nt - 1) / nt) * nt;	\
+    cl::sycl::range<3> local {nt,1,nsimd};				\
+    cl::sycl::range<3> global{unum1_divisible_by_nt,unum2,nsimd};	\
+    cgh.parallel_for(							\
+		     cl::sycl::nd_range<3>(global,local),		\
+		     [=] (cl::sycl::nd_item<3> item) /*mutable*/	\
+		     [[intel::reqd_sub_group_size(16)]]			\
+		     {							\
+		       auto iter1    = item.get_global_id(0);		\
+		       auto iter2    = item.get_global_id(1);		\
+		       auto lane     = item.get_global_id(2);		\
+		       { if (iter1 < unum1){ __VA_ARGS__ } };		\
+		     });						\
+  });
 
 #define accelerator_barrier(dummy) { theGridAccelerator->wait(); }
 
@@ -442,6 +441,8 @@ inline void acceleratorFreeShared(void *ptr){ auto r=hipFree(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ auto r=hipFree(ptr);};
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { auto r=hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ auto r=hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
+inline void acceleratorCopyToDeviceAsync(void *from, void *to, size_t bytes, hipStream_t stream = copyStream) { auto r = hipMemcpyAsync(to,from,bytes, hipMemcpyHostToDevice, stream);}
+inline void acceleratorCopyFromDeviceAsync(void *from, void *to, size_t bytes, hipStream_t stream = copyStream) { auto r = hipMemcpyAsync(to,from,bytes, hipMemcpyDeviceToHost, stream);}
 //inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyDeviceToDevice);}
 //inline void acceleratorCopySynchronise(void) {  }
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { auto r=hipMemset(base,value,bytes);}

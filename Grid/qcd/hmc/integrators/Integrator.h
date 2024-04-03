@@ -237,7 +237,7 @@ public:
 
     for (int level = 0; level < as.size(); ++level) {
       int multiplier = as.at(level).multiplier;
-      ActionLevel<Field> * Level = new ActionLevel<Field>(multiplier);
+      ActionLevel<Field, RepresentationPolicy> * Level = new ActionLevel<Field, RepresentationPolicy>(multiplier);
       Level->push_back(new EmptyAction<Field>); 
       LevelForces.push_back(*Level);
       // does it copy by value or reference??

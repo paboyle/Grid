@@ -1,6 +1,6 @@
-#ifndef GRID_UTIL_H
-#define GRID_UTIL_H
+#pragma once
 #include <Grid/util/Coordinate.h>
 #include <Grid/util/Lexicographic.h>
 #include <Grid/util/Init.h>
-#endif
+#include <Grid/util/FlightRecorder.h>
+
