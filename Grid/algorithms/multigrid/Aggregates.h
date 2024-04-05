@@ -340,11 +340,15 @@ public:
       Chebyshev<FineField> Cheb4(0.05,hi,500);
       Chebyshev<FineField> Cheb5(0.01,hi,2000);
       */
-      /* 242
-      Chebyshev<FineField> Cheb1(0.1,hi,300);
+      /* 242 */
+      /*
+      Chebyshev<FineField> Cheb3(0.1,hi,300);
       Chebyshev<FineField> Cheb2(0.02,hi,1000);
-      Chebyshev<FineField> Cheb3(0.003,hi,2000);
-      */      
+      Chebyshev<FineField> Cheb1(0.003,hi,2000);
+      8?
+      */
+      /* How many??
+      */
       Chebyshev<FineField> Cheb2(0.001,hi,2500);
       Chebyshev<FineField> Cheb1(0.02,hi,600);
       Cheb1(hermop,noise,Mn); scale = std::pow(norm2(Mn),-0.5); 	noise=Mn*scale;
@@ -424,9 +428,34 @@ public:
       RealD MirsShift = Lo;
       ConjugateGradient<FineField>  CGsloppy(tol,maxit,false);
       ShiftedHermOpLinearOperator<FineField> ShiftedFineHermOp(hermop,MirsShift);
+      tmp=Zero();
       CGsloppy(hermop,subspace[b],tmp);
       RealD scale = std::pow(norm2(tmp),-0.5); 	tmp=tmp*scale;
       subspace[b]=tmp;
+      hermop.Op(subspace[b],tmp);
+      std::cout<<GridLogMessage << "filt ["<<b<<"] <n|MdagM|n> "<<norm2(tmp)<<std::endl;
+    }
+  }
+  virtual void RefineSubspaceHDCG(LinearOperatorBase<FineField> &hermop,
+				  TwoLevelADEF2mrhs<FineField,CoarseVector> & theHDCG,
+				  int nrhs)
+  {
+    std::vector<FineField> src_mrhs(nrhs,FineGrid);
+    std::vector<FineField> res_mrhs(nrhs,FineGrid);
+    FineField tmp(FineGrid);
+    for(int b =0;b<nbasis;b+=nrhs)
+    {
+      for(int r=0;r<MIN(nbasis-b,nrhs);r++){
+	src_mrhs[r] = subspace[b+r];
+      }
+      for(int r=0;r<nrhs;r++){
+	res_mrhs[r] = Zero();
+      }
+      theHDCG(src_mrhs,res_mrhs);
+
+      for(int r=0;r<MIN(nbasis-b,nrhs);r++){
+	subspace[b+r]=res_mrhs[r];
+      }
       hermop.Op(subspace[b],tmp);
       std::cout<<GridLogMessage << "filt ["<<b<<"] <n|MdagM|n> "<<norm2(tmp)<<std::endl;
     }
