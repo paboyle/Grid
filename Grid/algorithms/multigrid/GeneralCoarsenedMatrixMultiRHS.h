@@ -285,6 +285,7 @@ public:
 		       Aggregation<Fobj,CComplex,nbasis> & Subspace,
 		       GridBase *CoarseGrid)
   {
+#if 0
     std::cout << GridLogMessage<< "GeneralCoarsenMatrixMrhs "<< std::endl;
 
     GridBase *grid = Subspace.FineGrid;
@@ -362,7 +363,7 @@ public:
       blockZAXPY(phaF[p],pha[p],one,zz);
     }
 
-    // Could save on storage here
+    // Could save on temporary storage here
     std::vector<CoarseMatrix> _A;
     _A.resize(geom_srhs.npoint,CoarseGrid);
 
@@ -390,6 +391,7 @@ public:
 
       // Could do this with a block promote or similar BLAS call via the MultiRHSBlockProjector with a const matrix.
       for(int k=0;k<npoint;k++){
+
 	FT = Zero();
 	for(int l=0;l<npoint;l++){
 	  FT= FT+ invMkl(l,k)*ComputeProj[l];
@@ -412,7 +414,7 @@ public:
     //      PopulateAdag();
     //    }
     // Need to write something to populate Adag from A
-    
+
     for(int p=0;p<geom_srhs.npoint;p++){
       GridtoBLAS(_A[p],BLAS_A[p]);
     }
@@ -426,7 +428,208 @@ Grid : Message : 11698.730568 s : CoarsenOperator inv    103948313 us
 Takes 600s to compute matrix elements, DOMINATED by the block project.
 Easy to speed up with the batched block project.
 Store npoint vectors, get npoint x Nbasis block projection, and 81 fold faster.
+
+// Block project below taks to 240s
+Grid : Message : 328.193418 s : CoarsenOperator phase      38338 us
+Grid : Message : 328.193434 s : CoarsenOperator phaseBZ  1711226 us
+Grid : Message : 328.193436 s : CoarsenOperator mat    122213270 us
+//Grid : Message : 328.193438 s : CoarsenOperator proj   1181154 us <-- this is mistimed
+//Grid : Message : 11698.730568 s : CoarsenOperator inv  103948313 us <-- Cut this ~10x if lucky by loop fusion
      */
+#else
+    RealD tproj=0.0;
+    RealD tmat=0.0;
+    RealD tphase=0.0;
+    RealD tphaseBZ=0.0;
+    RealD tinv=0.0;
+
+    std::cout << GridLogMessage<< "GeneralCoarsenMatrixMrhs "<< std::endl;
+
+    GridBase *grid = Subspace.FineGrid;
+
+    /////////////////////////////////////////////////////////////
+    // Orthogonalise the subblocks over the basis
+    /////////////////////////////////////////////////////////////
+    CoarseScalar InnerProd(CoarseGrid); 
+    blockOrthogonalise(InnerProd,Subspace.subspace);
+
+
+    MultiRHSBlockProject<Lattice<Fobj> >    Projector;
+    Projector.Allocate(nbasis,grid,CoarseGrid);
+    Projector.ImportBasis(Subspace.subspace);
+    
+    const int npoint = geom_srhs.npoint;
+
+    Coordinate clatt = CoarseGrid->GlobalDimensions();
+    int Nd = CoarseGrid->Nd();
+      /*
+       *     Here, k,l index which possible momentum/shift within the N-points connected by MdagM.
+       *     Matrix index i is mapped to this shift via 
+       *               geom.shifts[i]
+       *
+       *     conj(pha[block]) proj[k (which mom)][j (basis vec cpt)][block] 
+       *       =  \sum_{l in ball}  e^{i q_k . delta_l} < phi_{block,j} | MdagM | phi_{(block+delta_l),i} > 
+       *       =  \sum_{l in ball} e^{iqk.delta_l} A_ji^{b.b+l}
+       *       = M_{kl} A_ji^{b.b+l}
+       *
+       *     Must assemble and invert matrix M_k,l = e^[i q_k . delta_l]
+       *  
+       *     Where q_k = delta_k . (2*M_PI/global_nb[mu])
+       *
+       *     Then A{ji}^{b,b+l} = M^{-1}_{lm} ComputeProj_{m,b,i,j}
+       */
+    Eigen::MatrixXcd Mkl    = Eigen::MatrixXcd::Zero(npoint,npoint);
+    Eigen::MatrixXcd invMkl = Eigen::MatrixXcd::Zero(npoint,npoint);
+    ComplexD ci(0.0,1.0);
+    for(int k=0;k<npoint;k++){ // Loop over momenta
+
+      for(int l=0;l<npoint;l++){ // Loop over nbr relative
+	ComplexD phase(0.0,0.0);
+	for(int mu=0;mu<Nd;mu++){
+	  RealD TwoPiL =  M_PI * 2.0/ clatt[mu];
+	  phase=phase+TwoPiL*geom_srhs.shifts[k][mu]*geom_srhs.shifts[l][mu];
+	}
+	phase=exp(phase*ci);
+	Mkl(k,l) = phase;
+      }
+    }
+    invMkl = Mkl.inverse();
+
+    ///////////////////////////////////////////////////////////////////////
+    // Now compute the matrix elements of linop between the orthonormal
+    // set of vectors.
+    ///////////////////////////////////////////////////////////////////////
+    FineField phaV(grid); // Phased block basis vector
+    FineField MphaV(grid);// Matrix applied
+    std::vector<FineComplexField> phaF(npoint,grid);
+    std::vector<CoarseComplexField> pha(npoint,CoarseGrid);
+    
+    CoarseVector coarseInner(CoarseGrid);
+    
+    tphase=-usecond();
+    typedef typename CComplex::scalar_type SComplex;
+    FineComplexField one(grid); one=SComplex(1.0);
+    FineComplexField zz(grid); zz = Zero();
+    for(int p=0;p<npoint;p++){ // Loop over momenta in npoint
+      /////////////////////////////////////////////////////
+      // Stick a phase on every block
+      /////////////////////////////////////////////////////
+      CoarseComplexField coor(CoarseGrid);
+      pha[p]=Zero();
+      for(int mu=0;mu<Nd;mu++){
+	LatticeCoordinate(coor,mu);
+	RealD TwoPiL =  M_PI * 2.0/ clatt[mu];
+	pha[p] = pha[p] + (TwoPiL * geom_srhs.shifts[p][mu]) * coor;
+      }
+      pha[p]  =exp(pha[p]*ci);	
+
+      blockZAXPY(phaF[p],pha[p],one,zz);
+    }
+    tphase+=usecond();
+
+    // Could save on temporary storage here
+    std::vector<CoarseMatrix> _A;
+    _A.resize(geom_srhs.npoint,CoarseGrid);
+
+    // Count use small chunks than npoint == 81 and save memory
+    std::vector<FineField>    _MphaV;
+    _MphaV.resize(npoint,grid);
+
+    std::vector<CoarseVector> ComputeProj(npoint,CoarseGrid);
+    CoarseVector          FT(CoarseGrid);
+    for(int i=0;i<nbasis;i++){// Loop over basis vectors
+      std::cout << GridLogMessage<< "CoarsenMatrixColoured vec "<<i<<"/"<<nbasis<< std::endl;
+
+      std::cout << GridLogMessage << " phasing the fine vector "<<std::endl;
+      for(int p=0;p<npoint;p++){ // Loop over momenta in npoint
+	tphaseBZ-=usecond();
+	phaV = phaF[p]*Subspace.subspace[i];
+	tphaseBZ+=usecond();
+	/////////////////////////////////////////////////////////////////////
+	// Multiple phased subspace vector by matrix and project to subspace
+	// Remove local bulk phase to leave relative phases
+	/////////////////////////////////////////////////////////////////////
+	tmat-=usecond();
+	linop.Op(phaV,MphaV);
+	_MphaV[p] = MphaV;
+	tmat+=usecond();
+      }
+
+      
+      std::cout << GridLogMessage << " Calling block project "<<std::endl;
+      tproj-=usecond();
+      Projector.blockProject(_MphaV,ComputeProj);
+      tproj+=usecond();
+      
+      std::cout << GridLogMessage << " conj phasing the coarse vectors "<<std::endl;
+      for(int p=0;p<npoint;p++){
+	ComputeProj[p] = conjugate(pha[p])*ComputeProj[p];
+      }
+
+      // Could do this with a block promote or similar BLAS call via the MultiRHSBlockProjector with a const matrix.
+      
+      std::cout << GridLogMessage << " Starting FT inv "<<std::endl;
+      tinv-=usecond();
+      for(int k=0;k<npoint;k++){
+	FT = Zero();
+	// 81 kernel calls as many ComputeProj vectors
+	// Could fuse with a vector of views, but ugly
+	// Could unroll the expression and run fewer kernels -- much more attractive
+	// Could also do non blocking.
+#if 0	
+	for(int l=0;l<npoint;l++){
+	  FT= FT+ invMkl(l,k)*ComputeProj[l];
+	}
+#else
+	const int radix = 9;
+	int ll;
+	for(ll=0;ll+radix-1<npoint;ll+=radix){
+	  // When ll = npoint-radix, ll+radix-1 = npoint-1, and we do it all.
+	  FT = FT 
+	    + invMkl(ll+0,k)*ComputeProj[ll+0]
+	    + invMkl(ll+1,k)*ComputeProj[ll+1]
+	    + invMkl(ll+2,k)*ComputeProj[ll+2]
+	    + invMkl(ll+3,k)*ComputeProj[ll+3]
+	    + invMkl(ll+4,k)*ComputeProj[ll+4]
+	    + invMkl(ll+5,k)*ComputeProj[ll+5]
+	    + invMkl(ll+6,k)*ComputeProj[ll+6]
+	    + invMkl(ll+7,k)*ComputeProj[ll+7]
+	    + invMkl(ll+8,k)*ComputeProj[ll+8];
+	}
+	for(int l=ll;l<npoint;l++){
+	  FT= FT+ invMkl(l,k)*ComputeProj[l];
+	}
+#endif
+      
+	// 1 kernel call -- must be cheaper
+	int osites=CoarseGrid->oSites();
+	autoView( A_v  , _A[k], AcceleratorWrite);
+	autoView( FT_v  , FT, AcceleratorRead);
+	accelerator_for(sss, osites, 1, {
+	    for(int j=0;j<nbasis;j++){
+	      A_v[sss](i,j) = FT_v[sss](j);
+	    }
+        });
+      }
+      tinv+=usecond();
+    }
+
+    // Only needed if nonhermitian
+    //    if ( ! hermitian ) {
+    //      std::cout << GridLogMessage<<"PopulateAdag  "<<std::endl;
+    //      PopulateAdag();
+    //    }
+    // Need to write something to populate Adag from A
+    std::cout << GridLogMessage << " Calling GridtoBLAS "<<std::endl;
+    for(int p=0;p<geom_srhs.npoint;p++){
+      GridtoBLAS(_A[p],BLAS_A[p]);
+    }
+    std::cout << GridLogMessage<<"CoarsenOperator phase  "<<tphase<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"CoarsenOperator phaseBZ "<<tphaseBZ<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"CoarsenOperator mat    "<<tmat <<" us"<<std::endl;
+    std::cout << GridLogMessage<<"CoarsenOperator proj   "<<tproj<<" us"<<std::endl;
+    std::cout << GridLogMessage<<"CoarsenOperator inv    "<<tinv<<" us"<<std::endl;
+#endif
   }
   void Mdag(const CoarseVector &in, CoarseVector &out)
   {
@@ -497,17 +700,19 @@ Store npoint vectors, get npoint x Nbasis block projection, and 81 fold faster.
     BLAStoGrid(out,BLAS_C);
     t_BtoG+=usecond();
     t_tot+=usecond();
+    /*
     std::cout << GridLogMessage << "New Mrhs coarse DONE "<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult exch "<<t_exch<<" us"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult mult "<<t_mult<<" us"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult GtoB  "<<t_GtoB<<" us"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult BtoG  "<<t_BtoG<<" us"<<std::endl;
     std::cout << GridLogMessage<<"Coarse Mult tot  "<<t_tot<<" us"<<std::endl;
-    std::cout << GridLogMessage<<std::endl;
+    */
+    //    std::cout << GridLogMessage<<std::endl;
     //    std::cout << GridLogMessage<<"Coarse Kernel flops "<< flops<<std::endl;
-    std::cout << GridLogMessage<<"Coarse Kernel flop/s "<< flops/t_mult<<" mflop/s"<<std::endl;
+    //    std::cout << GridLogMessage<<"Coarse Kernel flop/s "<< flops/t_mult<<" mflop/s"<<std::endl;
     //    std::cout << GridLogMessage<<"Coarse Kernel bytes/s "<< bytes/t_mult/1000<<" GB/s"<<std::endl;
-    std::cout << GridLogMessage<<"Coarse overall flops/s "<< flops/t_tot<<" mflop/s"<<std::endl;
+    //    std::cout << GridLogMessage<<"Coarse overall flops/s "<< flops/t_tot<<" mflop/s"<<std::endl;
     //    std::cout << GridLogMessage<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
   };
   virtual  void Mdiag    (const Field &in, Field &out){ assert(0);};
