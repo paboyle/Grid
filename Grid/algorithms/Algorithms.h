@@ -74,6 +74,7 @@ NAMESPACE_CHECK(BiCGSTAB);
 #include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
 #include <Grid/algorithms/iterative/PowerMethod.h>
 #include <Grid/algorithms/iterative/AdefGeneric.h>
+#include <Grid/algorithms/iterative/AdefMrhs.h>
 NAMESPACE_CHECK(PowerMethod);
 #include <Grid/algorithms/multigrid/MultiGrid.h>
 NAMESPACE_CHECK(multigrid);
