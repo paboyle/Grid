@@ -26,7 +26,8 @@ Author: Peter Boyle <pboyle@bnl.gov>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
-
+#include <Grid/algorithms/iterative/ImplicitlyRestartedBlockLanczos.h>
+#include <Grid/algorithms/iterative/ImplicitlyRestartedBlockLanczosCoarse.h>
 #include <Grid/algorithms/iterative/AdefMrhs.h>
 
 using namespace std;
@@ -179,8 +180,11 @@ public:
   };
   void operator() (const Field &in, Field &out) 
   {
-    ConjugateGradient<Field>  CG(0.0,iters,false); // non-converge is just fine in a smoother
-    out=Zero();
+    ConjugateGradient<Field>  CG(0.0,iters,false,false); // non-converge is just fine in a smoother
+    RealD t=-usecond();
+    out=Zero(); // 50ms on target volme is pretty slow
+    t+=usecond();
+    std::cout << GridLogMessage<< " zero took "<<t/1e3<<" ms"<<std::endl; 
     CG(_SmootherOperator,in,out);
   }
 };
@@ -242,8 +246,7 @@ int main (int argc, char ** argv)
   HermFineMatrix FineHermOp(HermOpEO);
 
   // Run power method on FineHermOp
-  //  PowerMethod<LatticeFermion>       PM;   PM(HermOpEO,src);
- 
+  // PowerMethod<LatticeFermion>       PM;   PM(HermOpEO,src);
   ////////////////////////////////////////////////////////////
   ///////////// Coarse basis and Little Dirac Operator ///////
   ////////////////////////////////////////////////////////////
@@ -259,18 +262,18 @@ int main (int argc, char ** argv)
   ////////////////////////////////////////////////////////////
   // Need to check about red-black grid coarsening
   ////////////////////////////////////////////////////////////
-  LittleDiracOperator LittleDiracOp(geom,FrbGrid,Coarse5d);
+  //  LittleDiracOperator LittleDiracOp(geom,FrbGrid,Coarse5d);
 
   std::string subspace_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Subspace.phys48.new.62");
   std::string refine_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Refine.phys48.new.62");
   std::string ldop_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/LittleDiracOp.phys48.new.62");
   std::string evec_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/evecs.scidac");
   std::string eval_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/eval.xml");
-  bool load_agg=false;
-  bool load_refine=false;
+  bool load_agg=true;
+  bool load_refine=true;
   bool load_mat=false;
   bool load_evec=false;
-
+  std::cout << GridLogMessage <<" Restoring from checkpoint "<<std::endl;
   int refine=1;
   if ( load_agg ) {
     if ( !(refine) || (!load_refine) ) { 
@@ -280,62 +283,30 @@ int main (int argc, char ** argv)
     //    Aggregates.CreateSubspaceMultishift(RNG5,HermOpEO,
     //					0.0003,1.0e-5,2000); // Lo, tol, maxit
     //    Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,95.,0.01,1500); <== last run
-    //    Aggregates.CreateSubspaceChebyshevNew(RNG5,HermOpEO,95.); // 176 with refinement
-    Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,95.,0.001,3000,1500,200,0.0); // Attempt to resurrect
+    Aggregates.CreateSubspaceChebyshevNew(RNG5,HermOpEO,95.); // 176 with refinement
+    //    Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,95.,0.001,3000,1500,200,0.0); // Attempt to resurrect
     SaveBasis(Aggregates,subspace_file);
   }
 
-  if(refine){
-    if ( load_refine ) {
-      LoadBasis(Aggregates,refine_file);
-    } else {
-      // HDCG used Pcg to refine
-      //Aggregates.RefineSubspace(HermOpEO,0.001,1.0e-3,3000); // 172 iters
-      //Aggregates.RefineSubspace(HermOpEO,0.001,1.0e-3,1500); // 202 iters
-      Aggregates.RefineSubspace(HermOpEO,0.001,1.0e-3,2000);   // 202 iters
-      SaveBasis(Aggregates,refine_file);
-    }
+  if ( load_refine ) {
+    LoadBasis(Aggregates,refine_file);
+  } else {
+    // HDCG used Pcg to refine
+    Aggregates.RefineSubspace(HermOpEO,0.001,1.0e-3,3000); // 172 iters
+    //Aggregates.RefineSubspace(HermOpEO,0.001,1.0e-3,1500); // 202 iters
+    //    Aggregates.RefineSubspace(HermOpEO,0.001,1.0e-3,2000);   // 202 iters
+    SaveBasis(Aggregates,refine_file);
   }
-
   Aggregates.Orthogonalise();
+
+  /*
   if ( load_mat ) {
     LoadOperator(LittleDiracOp,ldop_file);
   } else {
     LittleDiracOp.CoarsenOperator(FineHermOp,Aggregates);
     SaveOperator(LittleDiracOp,ldop_file);
   }
-  
-  // I/O test:
-  CoarseVector c_src(Coarse5d);   random(CRNG,c_src);
-  CoarseVector c_res(Coarse5d); 
-  CoarseVector c_ref(Coarse5d);
-
-  if (0){
-    ///////////////////////////////////////////////////
-    // Test the operator
-    ///////////////////////////////////////////////////
-    CoarseVector c_proj(Coarse5d);
-    LatticeFermionD    tmp(FrbGrid);
-    LatticeFermionD    prom(FrbGrid);
-    
-    blockPromote(c_src,prom,Aggregates.subspace);
-
-    FineHermOp.HermOp(prom,tmp);
-
-    std::cout<<GridLogMessage<<" Calling big dirac op "<<norm2(tmp)<<std::endl;
-    blockProject(c_proj,tmp,Aggregates.subspace);
-
-    std::cout<<GridLogMessage<<" Calling little Dirac Op "<<std::endl;
-
-    LittleDiracOp.M(c_src,c_res);
-
-    std::cout<<GridLogMessage<<"Little dop : "<<norm2(c_res)<<std::endl;
-    std::cout<<GridLogMessage<<"Big dop in subspace : "<<norm2(c_proj)<<std::endl;
-
-    c_proj = c_proj - c_res;
-    std::cout<<GridLogMessage<<" ldop error: "<<norm2(c_proj)<<std::endl;
-  }
-
+  */
   //////////////////////////////////////
   // mrhs coarse operator
   //  Create a higher dim coarse grid
@@ -346,7 +317,7 @@ int main (int argc, char ** argv)
   std::cout << "**************************************"<<std::endl;
   ConjugateGradient<CoarseVector>  coarseCG(4.0e-2,20000,true);
     
-  const int nrhs=vComplex::Nsimd()*3;
+  const int nrhs=vComplex::Nsimd()*3; // 12
     
   Coordinate mpi=GridDefaultMpi();
   Coordinate rhMpi ({1,1,mpi[0],mpi[1],mpi[2],mpi[3]});
@@ -354,12 +325,11 @@ int main (int argc, char ** argv)
   Coordinate rhSimd({vComplex::Nsimd(),1, 1,1,1,1});
     
   GridCartesian *CoarseMrhs = new GridCartesian(rhLatt,rhSimd,rhMpi); 
-  //  MultiGeneralCoarsenedMatrix mrhs(LittleDiracOp,CoarseMrhs);
   typedef MultiGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> MultiGeneralCoarsenedMatrix_t;
   MultiGeneralCoarsenedMatrix_t mrhs(geom,CoarseMrhs);
-  mrhs.CopyMatrix(LittleDiracOp);
+  //  mrhs.CopyMatrix(LittleDiracOp);
   //  mrhs.SetMatrix(LittleDiracOp.);
-  //  mrhs.CoarsenOperator(FineHermOp,Aggregates,Coarse5d);
+  mrhs.CoarsenOperator(FineHermOp,Aggregates,Coarse5d);
   //  mrhs.CheckMatrix(LittleDiracOp);
   
   //////////////////////////////////////////
@@ -369,36 +339,45 @@ int main (int argc, char ** argv)
   std::cout << "Building Coarse Lanczos               "<<std::endl;
   std::cout << "**************************************"<<std::endl;
 
-  typedef HermitianLinearOperator<LittleDiracOperator,CoarseVector> HermMatrix;
-  HermMatrix CoarseOp     (LittleDiracOp);
+  typedef HermitianLinearOperator<MultiGeneralCoarsenedMatrix_t,CoarseVector> MrhsHermMatrix;
+  //  FunctionHermOp<CoarseVector> IRLOpCheby(IRLCheby,CoarseOp);
+  //  PlainHermOp<CoarseVector>    IRLOp    (CoarseOp);
+  Chebyshev<CoarseVector>      IRLCheby(0.005,42.0,301);  // 1 iter
+  MrhsHermMatrix MrhsCoarseOp     (mrhs);
+
+  CoarseVector pm_src(CoarseMrhs);
+  pm_src = ComplexD(1.0);
+  PowerMethod<CoarseVector>       cPM;   cPM(MrhsCoarseOp,pm_src);
 
   int Nk=192;
-  int Nm=256;
+  int Nm=384;
   int Nstop=Nk;
+  int Nconv_test_interval=1;
   
-  Chebyshev<CoarseVector>      IRLCheby(0.005,40.0,201);  // 1 iter
-  FunctionHermOp<CoarseVector> IRLOpCheby(IRLCheby,CoarseOp);
-  PlainHermOp<CoarseVector>    IRLOp    (CoarseOp);
-  
-  ImplicitlyRestartedLanczos<CoarseVector> IRL(IRLOpCheby,IRLOp,Nstop,Nk,Nm,1e-5,10);
+  //  ImplicitlyRestartedLanczos<CoarseVector> IRL(IRLOpCheby,IRLOp,Nstop,Nk,Nm,1e-5,10);
+  ImplicitlyRestartedBlockLanczosCoarse<CoarseVector> IRL(MrhsCoarseOp,
+							  Coarse5d,
+							  CoarseMrhs,
+							  nrhs,
+							  IRLCheby,
+							  Nstop,
+							  Nconv_test_interval,
+							  nrhs,
+							  Nk,
+							  Nm,
+							  1e-5,10);
 
   int Nconv;
   std::vector<RealD>            eval(Nm);
   std::vector<CoarseVector>     evec(Nm,Coarse5d);
-
-  //  PowerMethod<CoarseVector>       cPM;   cPM(CoarseOp,c_src);
-
-  if ( load_evec ) {
-    eval.resize(Nstop);
-    evec.resize(Nstop,Coarse5d);
-    LoadEigenvectors(eval,evec,evec_file,eval_file);
-  } else { 
-    IRL.calc(eval,evec,c_src,Nconv);
-    assert(Nstop==eval.size());
-    SaveEigenvectors(eval,evec,evec_file,eval_file);
+  std::vector<CoarseVector>     c_src(nrhs,Coarse5d);
+  for(int r=0;r<nrhs;r++){
+    random(CRNG,c_src[r]);
   }
-  DeflatedGuesser<CoarseVector> DeflCoarseGuesser(evec,eval);
+  IRL.calc(eval,evec,c_src,Nconv,LanczosType::irbl);
+  //  assert(Nstop==eval.size());
 
+  DeflatedGuesser<CoarseVector> DeflCoarseGuesser(evec,eval);
   MultiRHSDeflation<CoarseVector> MrhsGuesser;
   MrhsGuesser.ImportEigenBasis(evec,eval);
   
@@ -407,71 +386,8 @@ int main (int argc, char ** argv)
   //////////////////////////////////////////
   int maxit=30000;
   ConjugateGradient<CoarseVector>  CG(5.0e-2,maxit,false);
-  ZeroGuesser<CoarseVector> CoarseZeroGuesser;
-  
-  HPDSolver<CoarseVector> HPDSolve(CoarseOp,CG,DeflCoarseGuesser);
-  c_res=Zero();
-
-  /////////// MRHS test .////////////
-  typedef HermitianLinearOperator<MultiGeneralCoarsenedMatrix_t,CoarseVector> MrhsHermMatrix;
-  MrhsHermMatrix MrhsCoarseOp     (mrhs);
-
-#if 0
-  { 
-    CoarseVector rh_res(CoarseMrhs);
-    CoarseVector rh_guess(CoarseMrhs);
-    CoarseVector rh_src(CoarseMrhs);
-
-    rh_res= Zero();
-    rh_guess= Zero();
-
-    std::cout << "*************************"<<std::endl;
-    std::cout << " MrhsGuesser importing"<<std::endl;
-    std::cout << "*************************"<<std::endl;
-    std::vector<CoarseVector> BlasGuess(nrhs,Coarse5d);
-    std::vector<CoarseVector> BlasSource(nrhs,Coarse5d);
-    for(int r=0;r<nrhs;r++){
-      random(CRNG,BlasSource[r]);
-    }
-
-    MrhsGuesser.DeflateSources(BlasSource,BlasGuess);
-
-    for(int r=0;r<nrhs;r++){
-      std::cout << "*************************"<<std::endl;
-      std::cout << "**** DeflCoarseGuesser &&&&& "<<std::endl;
-      std::cout << "*************************"<<std::endl;
-      c_src=BlasSource[r];
-      DeflCoarseGuesser(c_src,c_res);
-      std::cout << "Deflated guess      "<< norm2(c_res)<<std::endl;
-      std::cout << "Blas deflated guess "<< norm2(BlasGuess[r])<<std::endl;
-      std::cout << "*************************"<<std::endl;
-      BlasGuess[r] = BlasGuess[r] - c_res;
-      std::cout << "Diff " <<norm2(BlasGuess[r])<<std::endl;
-      std::cout << "*************************"<<std::endl;
-      InsertSlice(c_res,rh_res,r,0);
-      InsertSlice(c_res,rh_guess,r,0);
-      InsertSlice(c_src,rh_src,r,0);
-    }
-
-    std::cout << " Calling the multiRHS coarse CG"<<std::endl;
-    coarseCG(MrhsCoarseOp,rh_src,rh_res);
-
-    //redo with block CG ?
-    for(int r=0;r<nrhs;r++){
-      std::cout << " compare to single RHS "<<r<<"/"<<nrhs<<std::endl;
-      ExtractSlice(c_src,rh_src,r,0);
-      ExtractSlice(c_res,rh_res,r,0);
-      ExtractSlice(c_ref,rh_guess,r,0);
-      coarseCG(CoarseOp,c_src,c_ref);
-      std::cout << " mrhs [" <<r <<"] "<< norm2(c_res)<<std::endl;
-      std::cout << " srhs [" <<r <<"] "<< norm2(c_ref)<<std::endl;
-      c_ref=c_ref-c_res;
-      RealD diff =norm2(c_ref)/norm2(c_src);
-      std::cout << r << " diff " << diff<<std::endl;
-      assert(diff < 1.0e-1);
-    }
-  }
-#endif
+//  HPDSolver<CoarseVector> HPDSolve(CoarseOp,CG,DeflCoarseGuesser);
+//  c_res=Zero();
 
   //////////////////////////////////////
   // fine solve
@@ -488,7 +404,7 @@ int main (int argc, char ** argv)
       // Coarse sloppy solve
       /////////////////////////////////////////////////
       ConjugateGradient<CoarseVector>  CGsloppy(5.0e-2,maxit,false);
-      HPDSolver<CoarseVector> HPDSolveSloppy(CoarseOp,CGsloppy,DeflCoarseGuesser);
+      //      HPDSolver<CoarseVector> HPDSolveSloppy(CoarseOp,CGsloppy,DeflCoarseGuesser);
 
       /////////////////////////////////////////////////
       // Mirs smoother
@@ -526,7 +442,6 @@ int main (int argc, char ** argv)
 
       for(int r=0;r<nrhs;r++){
 	random(RNG5,src_mrhs[r]);
-	//	if(r>0)src_mrhs[r]=src_mrhs[0];
 	res_mrhs[r]=Zero();
 	std::cout << "Setup mrhs source "<<r<<std::endl;
       }
@@ -538,12 +453,12 @@ int main (int argc, char ** argv)
   }
 
   // Standard CG
-#if 1
+#if 0
   {
     LatticeFermion result(FrbGrid); result=Zero();
     LatticeFermion    src(FrbGrid); random(RNG5,src);
     result=Zero();
-    ConjugateGradient<LatticeFermionD>  CGfine(1.0e-8,30000,false);
+
     CGfine(HermOpEO, src, result);
   }
 #endif  
