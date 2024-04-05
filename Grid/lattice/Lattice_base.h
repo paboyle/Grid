@@ -234,9 +234,12 @@ public:
   }
 
   template<class sobj> inline Lattice<vobj> & operator = (const sobj & r){
-    auto me  = View(CpuWrite);
-    thread_for(ss,me.size(),{
-	me[ss]= r;
+    vobj vtmp;
+    vtmp = r;
+    auto me  = View(AcceleratorWrite);
+    accelerator_for(ss,me.size(),vobj::Nsimd(),{
+	auto stmp=coalescedRead(vtmp);
+	coalescedWrite(me[ss],stmp);
     });
     me.ViewClose();
     return *this;
