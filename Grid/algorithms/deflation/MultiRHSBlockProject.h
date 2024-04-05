@@ -129,7 +129,7 @@ public:
   {
     int nvec = vecs.size();
     typedef typename Field::vector_object vobj;
-    std::cout << " BlockProjector importing "<<nvec<< " vectors" <<std::endl;
+    //    std::cout << GridLogMessage <<" BlockProjector importing "<<nvec<< " fine grid vectors" <<std::endl;
 
     assert(vecs[0].Grid()==fine_grid);
 
@@ -297,12 +297,12 @@ public:
     int nvec = vecs.size();
     typedef typename vobj::scalar_object coarse_scalar_object;
 
-    std::cout << " BlockProjector importing coarse grid "<<nvec<< " vectors" <<std::endl;
+    //    std::cout << " BlockProjector importing "<<nvec<< " coarse grid vectors" <<std::endl;
 
     assert(vecs[0].Grid()==coarse_grid);
 
     int _ndimension = coarse_grid->_ndimension;
-    
+
     uint64_t sz = blas.size();
 
     Coordinate coarse_rdimensions = coarse_grid->_rdimensions;
@@ -351,7 +351,7 @@ public:
   {
     int nvec = vecs.size();
     typedef typename vobj::scalar_object coarse_scalar_object;
-    std::cout << " BlockProjector importing coarse grid "<<nvec<< " vectors" <<std::endl;
+    //    std::cout << GridLogMessage<<" BlockProjector exporting "<<nvec<< " coarse grid vectors" <<std::endl;
 
     assert(vecs[0].Grid()==coarse_grid);
 
