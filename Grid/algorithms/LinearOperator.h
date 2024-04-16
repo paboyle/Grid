@@ -165,10 +165,10 @@ public:
     assert(0);
   };
   void Op     (const Field &in, Field &out){
-    assert(0);
+    HermOp(in,out);
   }
   void AdjOp     (const Field &in, Field &out){
-    assert(0);
+    HermOp(in,out);
   }
   void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
     HermOp(in,out);
