@@ -279,11 +279,11 @@ public:
       Qt = Eigen::MatrixXcd::Identity(Nm,Nm);
       diagonalize(eval2,lmd2,lme2,Nu,Nm,Nm,Qt,grid);
       _sort.push(eval2,Nm);
-      Glog << "#Ritz value before shift: "<< std::endl;
+      //      Glog << "#Ritz value before shift: "<< std::endl;
       for(int i=0; i<Nm; ++i){
-        std::cout.precision(13);
-        std::cout << "[" << std::setw(4)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
-        std::cout << "Rval = "<<std::setw(20)<< std::setiosflags(std::ios_base::left)<< eval2[i] << std::endl;
+	//        std::cout.precision(13);
+	//        std::cout << "[" << std::setw(4)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
+	//        std::cout << "Rval = "<<std::setw(20)<< std::setiosflags(std::ios_base::left)<< eval2[i] << std::endl;
       }
       
       //----------------------------------------------------------------------
@@ -325,11 +325,11 @@ public:
         Qt = Eigen::MatrixXcd::Identity(Nm,Nm);
         diagonalize(eval2,lmd2,lme2,Nu,Nk,Nm,Qt,grid);
         _sort.push(eval2,Nk);
-        Glog << "#Ritz value after shift: "<< std::endl;
+	//        Glog << "#Ritz value after shift: "<< std::endl;
         for(int i=0; i<Nk; ++i){
-          std::cout.precision(13);
-          std::cout << "[" << std::setw(4)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
-          std::cout << "Rval = "<<std::setw(20)<< std::setiosflags(std::ios_base::left)<< eval2[i] << std::endl;
+	  //          std::cout.precision(13);
+	  //          std::cout << "[" << std::setw(4)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
+	  //          std::cout << "Rval = "<<std::setw(20)<< std::setiosflags(std::ios_base::left)<< eval2[i] << std::endl;
         }
       }
       //----------------------------------------------------------------------
@@ -467,10 +467,10 @@ public:
   
     // set initial vector
     for (int i=0; i<Nu; ++i) {
-      Glog << "norm2(src[" << i << "])= "<< norm2(src[i]) << std::endl;
+      //      Glog << "norm2(src[" << i << "])= "<< norm2(src[i]) << std::endl;
       evec[i] = src[i];
       orthogonalize(evec[i],evec,i);
-      Glog << "norm2(evec[" << i << "])= "<< norm2(evec[i]) << std::endl;
+      //      Glog << "norm2(evec[" << i << "])= "<< norm2(evec[i]) << std::endl;
     }
 //    exit(-43);
     
@@ -506,11 +506,11 @@ public:
       Qt = Eigen::MatrixXcd::Identity(Nr,Nr);
       diagonalize(eval2,lmd2,lme2,Nu,Nr,Nr,Qt,grid);
       _sort.push(eval2,Nr);
-      Glog << "#Ritz value: "<< std::endl;
+      //      Glog << "#Ritz value: "<< std::endl;
       for(int i=0; i<Nr; ++i){
-        std::cout.precision(13);
-        std::cout << "[" << std::setw(4)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
-        std::cout << "Rval = "<<std::setw(20)<< std::setiosflags(std::ios_base::left)<< eval2[i] << std::endl;
+	//        std::cout.precision(13);
+	//        std::cout << "[" << std::setw(4)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
+	//        std::cout << "Rval = "<<std::setw(20)<< std::setiosflags(std::ios_base::left)<< eval2[i] << std::endl;
       }
       
       // Convergence test
@@ -639,10 +639,10 @@ private:
       for (int u=0; u<mrhs; ++u) in[u] = evec[L+k_start+u];
       VectorPoly(in,out);
       for (int u=0; u<mrhs; ++u) w[k_start+u] = out[u];
-      for (int u=0; u<mrhs; ++u) Glog << " out["<<u<<"] = "<<norm2(out[u])<<std::endl;
+      //      for (int u=0; u<mrhs; ++u) Glog << " out["<<u<<"] = "<<norm2(out[u])<<std::endl;
       k_start +=mrhs;
     }
-    Glog << "LinAlg "<< std::endl;
+    //    Glog << "LinAlg "<< std::endl;
     
     if (b>0) {
       for (int u=0; u<Nu; ++u) {
@@ -663,7 +663,7 @@ private:
     for (int u=0; u<Nu; ++u) {
       for (int k=L+u; k<R; ++k) {
         lmd[u][k] = innerProduct(evec[k],w[u]);  // lmd = transpose of alpha
-        Glog <<"lmd "<<u<<" "<<k<<lmd[u][k] -conjugate(innerProduct(evec[u+L],w[k-L]))<<std::endl;
+	//        Glog <<"lmd "<<u<<" "<<k<<lmd[u][k] -conjugate(innerProduct(evec[u+L],w[k-L]))<<std::endl;
         lmd[k-L][u+L] = conjugate(lmd[u][k]);     // force hermicity
       }
       lmd[u][L+u] = real(lmd[u][L+u]);  // force diagonal to be real
@@ -676,7 +676,7 @@ private:
       }
       w_copy[u] = w[u];
     }
-    Glog << "LinAlg done"<< std::endl;
+    //    Glog << "LinAlg done"<< std::endl;
     
     // In block version, the steps 6 and 7 in Lanczos construction is
     // replaced by the QR decomposition of new basis block.
@@ -695,7 +695,7 @@ private:
     for (int u=1; u<Nu; ++u) {
       orthogonalize(w[u],w,u);
     }
-    Glog << "Gram Schmidt done "<< std::endl;
+    //    Glog << "Gram Schmidt done "<< std::endl;
     
     Glog << "LinAlg "<< std::endl;
     for (int u=0; u<Nu; ++u) {
@@ -708,10 +708,10 @@ private:
     //lme[0][L] = beta;
     
     for (int u=0; u<Nu; ++u) {
-      Glog << "norm2(w[" << u << "])= "<< norm2(w[u]) << std::endl;
+      //      Glog << "norm2(w[" << u << "])= "<< norm2(w[u]) << std::endl;
       assert (!isnan(norm2(w[u])));
       for (int k=L+u; k<R; ++k) {
-        Glog <<" In block "<< b << "," <<" beta[" << u << "," << k-L << "] = " << lme[u][k] << std::endl;
+	//        Glog <<" In block "<< b << "," <<" beta[" << u << "," << k-L << "] = " << lme[u][k] << std::endl;
       }
     }
     Glog << "LinAlg done "<< std::endl;
