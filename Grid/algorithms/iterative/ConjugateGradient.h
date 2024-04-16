@@ -103,7 +103,7 @@ public:
     // Check if guess is really REALLY good :)
     if (cp <= rsq) {
       TrueResidual = std::sqrt(a/ssq);
-      std::cout << GridLogMessage << "ConjugateGradient guess is converged already " << std::endl;
+      std::cout << GridLogMessage << "ConjugateGradient guess is converged already : cp " << cp <<" rsq "<<rsq <<" ssq "<<ssq<< std::endl;
       IterationsToComplete = 0;	
       return;
     }
@@ -184,9 +184,9 @@ public:
 		  << "\tTarget " << Tolerance << std::endl;
 
 	std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
-        std::cout << GridLogMessage << "Time breakdown "<<std::endl;
-	std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage<< "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
+        std::cout << GridLogPerformance << "Time breakdown "<<std::endl;
+	std::cout << GridLogPerformance << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
+	std::cout << GridLogPerformance << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
 	std::cout << GridLogPerformance << "\t\tInner      " << InnerTimer.Elapsed() <<std::endl;
 	std::cout << GridLogPerformance << "\t\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
 	std::cout << GridLogPerformance << "\t\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
