@@ -132,7 +132,6 @@ public:
 
     int64_t vw = vol * words;
 
-    std::cout << GridLogMessage << "MultiRHSDelation for "<<nrhs<<" sources with "<<nev<<" eigenvectors "<<std::endl;
     RealD t0 = usecond();
     BLAS_R.resize(nrhs * vw); // cost free if size doesn't change
     BLAS_G.resize(nrhs * vw); // cost free if size doesn't change
@@ -227,7 +226,7 @@ public:
       acceleratorCopyDeviceToDevice(&BLAS_G[offset],&v[0],sizeof(scalar_object)*vol);
     }
     RealD t1 = usecond();
-    std::cout << GridLogMessage << "MultiRHSDelation for "<<nrhs<<" sources with "<<nev<<" eigenvectors took " << (t1-t0)/1e3 <<" ms"<<std::endl;
+    std::cout << GridLogMessage << "MultiRHSDeflation for "<<nrhs<<" sources with "<<nev<<" eigenvectors took " << (t1-t0)/1e3 <<" ms"<<std::endl;
   }
 };
 

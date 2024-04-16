@@ -408,6 +408,7 @@ public:
   {
     int nrhs=fine.size();
     int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
+    //    std::cout << "blockProject nbasis " <<nbasis<<" " << _nbasis<<std::endl;
     assert(nbasis==_nbasis);
     
     BLAS_F.resize (fine_vol * words * nrhs );
