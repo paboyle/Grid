@@ -139,7 +139,7 @@ class TwoLevelCGmrhs
       p[rhs][0]=z[rhs];
       ssq[rhs]=norm2(src[rhs]);
       rsq[rhs]=  ssq[rhs]*Tolerance*Tolerance;
-      std::cout << GridLogMessage<<"mrhs HDCG: "<<rhs<<" k=0 residual "<<rtzp[rhs]<<" rsq "<<rsq[rhs]<<"\n";
+      //      std::cout << GridLogMessage<<"mrhs HDCG: "<<rhs<<" k=0 residual "<<rtzp[rhs]<<" rsq "<<rsq[rhs]<<"\n";
     }
 
     ProjectTimer.Reset();
@@ -190,7 +190,7 @@ class TwoLevelCGmrhs
 
 	rtzp[rhs] =real(innerProduct(r[rhs],z[rhs]));
 
-	std::cout << GridLogMessage<<"HDCG::fPcg rhs"<<rhs<<" iteration "<<k<<" : inner rtzp "<<rtzp[rhs]<<"\n";
+	//	std::cout << GridLogMessage<<"HDCG::fPcg rhs"<<rhs<<" iteration "<<k<<" : inner rtzp "<<rtzp[rhs]<<"\n";
 	mu[rhs]=z[rhs];
 
 	p[rhs][peri_kp]=mu[rhs];
@@ -210,7 +210,7 @@ class TwoLevelCGmrhs
 	RealD rtn=sqrt(rtz[rhs]/ssq[rhs]);
 	RealD rtnp=sqrt(rtzp[rhs]/ssq[rhs]);
 	
-	std::cout<<GridLogMessage<<"HDCG: rhs "<<rhs<<"fPcg k= "<<k<<" residual = "<<rrn<<"\n";
+	std::cout<<GridLogMessage<<"HDCG:fPcg rhs "<<rhs<<" k= "<<k<<" residual = "<<rrn<<"\n";
 	if ( rrn > max_rn ) max_rn = rrn;
       }
       LinalgTimer.Stop();
@@ -223,7 +223,7 @@ class TwoLevelCGmrhs
 	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg : Linalg  "<<LinalgTimer.Elapsed()<<std::endl;;
 	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg : fine M3 "<<M3Timer.Elapsed()<<std::endl;;
 	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg : prec M1 "<<M1Timer.Elapsed()<<std::endl;;
-	std::cout<<GridLogMessage<<"**** M3 breakdown:"<<std::endl;
+	std::cout<<GridLogMessage<<"**** M1 breakdown:"<<std::endl;
 	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg : Project "<<ProjectTimer.Elapsed()<<std::endl;;
 	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg : Promote "<<PromoteTimer.Elapsed()<<std::endl;;
 	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg : Deflate "<<DeflateTimer.Elapsed()<<std::endl;;
