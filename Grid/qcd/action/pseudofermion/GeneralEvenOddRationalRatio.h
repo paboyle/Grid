@@ -226,6 +226,13 @@ NAMESPACE_BEGIN(Grid);
       //Access the fermion field
       const FermionField &getPhiOdd() const{ return PhiOdd; }
       
+      //Set the the pseudofermion Phi field for testing or other purposes
+      //Note: this action ignores the contribution from PhiEven
+      void setPhi(const FermionField &phi_in){
+	pickCheckerboard(Even,PhiEven,phi_in);
+	pickCheckerboard(Odd,PhiOdd,phi_in);
+      }
+      
       virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) {
 	std::cout<<GridLogMessage << action_name() << " refresh: starting" << std::endl;
 	FermionField eta(NumOp.FermionGrid());	

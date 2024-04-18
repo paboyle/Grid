@@ -90,7 +90,13 @@ NAMESPACE_BEGIN(Grid);
       } 
 
       
+      void setPhi(const FermionField &phi_in){
+	pickCheckerboard(Even,PhiEven,phi_in);
+	pickCheckerboard(Odd,PhiOdd,phi_in);
+      }
+      
       const FermionField &getPhiOdd() const{ return PhiOdd; }
+      const FermionField &getPhiEven() const{ return PhiEven; }
 
       virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) {
         // P(eta_o) = e^{- eta_o^dag eta_o}

@@ -15,6 +15,7 @@ STAG_FERMION_FILES=`  find . -name '*.cc' -path '*/instantiation/*' -path '*/ins
 GP_FERMION_FILES=`    find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/Gparity*' `
 ADJ_FERMION_FILES=`   find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/WilsonAdj*' `
 TWOIND_FERMION_FILES=`find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/WilsonTwoIndex*'`
+XCONJ_FERMION_FILES=`    find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/Xconj*' `
 SP_FERMION_FILES=`find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/SpWilsonImpl*'`
 SP_TWOIND_FERMION_FILES=`find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/SpWilsonTwo*'`
 
@@ -29,6 +30,7 @@ echo STAG_FERMION_FILES=$STAG_FERMION_FILES   >> Make.inc
 echo GP_FERMION_FILES=$GP_FERMION_FILES   >> Make.inc
 echo ADJ_FERMION_FILES=$ADJ_FERMION_FILES   >> Make.inc
 echo TWOIND_FERMION_FILES=$TWOIND_FERMION_FILES   >> Make.inc
+echo XCONJ_FERMION_FILES=$XCONJ_FERMION_FILES   >> Make.inc
 echo SP_FERMION_FILES=$SP_FERMION_FILES >> Make.inc
 echo SP_TWOIND_FERMION_FILES=$SP_TWOIND_FERMION_FILES >> Make.inc
 

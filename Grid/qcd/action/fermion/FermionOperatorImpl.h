@@ -168,6 +168,10 @@ NAMESPACE_CHECK(ImplBase);
 #include <Grid/qcd/action/fermion/WilsonImpl.h> 
 NAMESPACE_CHECK(ImplWilson);  
    
+#include <Grid/qcd/action/fermion/XconjImpl.h> 
+NAMESPACE_CHECK(ImplXconj);  
+
+   
 ////////////////////////////////////////////////////////////////////////////////////////
 // Flavour doubled spinors; is Gparity the only? what about C*?
 ////////////////////////////////////////////////////////////////////////////////////////
