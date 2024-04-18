@@ -862,9 +862,6 @@ int main (int argc, char ** argv)
       std::cout << "Test reference implementation of real matrix M (expect 0): " << nrm << std::endl;
       assert(nrm < 1e-10);
     }
-    exit(0);
-    
-
   }
 
   //########################################################################
