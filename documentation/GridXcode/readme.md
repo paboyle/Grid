@@ -24,10 +24,6 @@ The following sections explain these steps in more detail
 
 See Apple's [Xcode website][Xcode] for instructions on installing Xcode.
 
-Once Xcode is installed, install the Xcode command-line utilities using:
-
-    xcode-select --install
-
 ## 2. Set Grid environment variables
 
 To make sure we can share Xcode projects via git and have them work without requiring modification, we will define Grid environment variables. To make sure these environment variables will be available to the Xcode build system, issue the following shell command:
@@ -41,33 +37,9 @@ Variable | Typical Value | Use
 `Grid` | `$HOME/src/Grid` | Path to grid source
 `GridPre` | `$HOME/.local` | Path to install directory containing grid pre-requisites built from source
 `GridPkg` | **MacPorts**=`/opt/local`, **Homebrew**=`/usr/local` | Path to package manager install directory
+`Hadrons` | `$HOME/src/Hadrons` | Path to Hadrons source
 
-Choose either of the following ways to do this, and when you're done, log out and in again. To check these have been set:
-
-    printenv|grep -i grid
-
-### Method 1 -- Apple Script
-
-* Start *Script Editor* (cmd-space, *script editor*)
-* Click on *New Document*. Paste the following into the new script, editing the paths appropriately (just replace `user_id` with your *user_id* if you are unsure):
-
-```apple script
-do shell script "launchctl setenv Grid $HOME/src/Grid
-launchctl setenv GridPre $HOME/.local
-launchctl setenv GridPkg /opt/local"
-```
-
-* Save the script inside `~/Applications` and give it the name `GridEnv.app`.
-* Open `System Preferences`, `Users & Groups`
-* Click on `Login Items`
-* Click the plus sign to add a new login item
-* Select the `~/Applications` folder and select `GridEnv.app`
-
-Log out and in again.
-
-### Method 2 -- `environment.plist`
-
-Make the file `environment.plist` in `~/Library/LaunchAgents` with the following contents, editing the paths appropriately (just replace `user_id` with your *user_id* if you are unsure):
+Make the file `Grid.plist` in `~/Library/LaunchAgents` with the following contents, editing the paths appropriately:
 
 ```html
 <?xml version="1.0" encoding="UTF-8"?>
@@ -91,6 +63,10 @@ launchctl setenv GridPkg /opt/local</string>
 </plist>
 ```
 
+Log out and in again. To check these have been set:
+
+    printenv|grep -i Grid
+
 ## 3. Install and build Grid pre-requisites
 
 To simplify the installation of **Grid pre-requisites**, you can use your favourite package manager, e.g.:
@@ -101,7 +77,7 @@ To simplify the installation of **Grid pre-requisites**, you can use your favour
 
 Install [MacPorts][MacPorts] if you haven't done so already, and then install packages with:
 
-    sudo port install openmpi git-flow-avh gmp hdf5 mpfr fftw-3-single lapack wget autoconf automake bison cmake gawk libomp
+    sudo port install openmpi gmp hdf5 mpfr fftw-3-single lapack wget autoconf automake bison cmake gawk libomp
 
 On a Mac without GPUs:
 
@@ -123,8 +99,12 @@ There isn't currently a port for [C-LIME][C-LIME], so download the source and th
 
 [C-LIME]: https://usqcd-software.github.io/c-lime/ "C-language API for Lattice QCD Interchange Message Encapsulation / Large Internet Message Encapsulation"
 
+    autoreconf -fvi
+    mkdir build
+    cd build
     ../configure CC=clang --prefix=$GridPre
-    make -j 4 all install
+    make -j 4 all
+    make install
 
 ### 3.2. [Homebrew][Homebrew]
 
@@ -156,6 +136,10 @@ or
 
 depending on how many times you like to enter your password.
 
+Run the one-time Grid setup:
+
+    ./bootstrap.sh
+
 ### 4.2 Configure Grid
 
 The Xcode build system supports multiple configurations for each project, by default: `Debug` and `Release`, but more configurations can be defined. We will create separate Grid build directories for each configuration, using the Grid **Autoconf** build system to make each configuration. NB: it is **not** necessary to run `make install` on them once they are built (IDE features such as *jump to definition* will work better of you don't).
@@ -166,26 +150,33 @@ Below are shown the `configure` script invocations for three recommended configu
 
 This is the build for every day developing and debugging with Xcode. It uses the Xcode clang c++ compiler, without MPI, and defaults to double-precision. Xcode builds the `Debug` configuration with debug symbols for full debugging:
 
-    ../configure CXX=clang++ CXXFLAGS="-I$GridPkg/include/libomp -Xpreprocessor -fopenmp -std=c++11" LDFLAGS="-L$GridPkg/lib/libomp" LIBS="-lomp" --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre --enable-simd=GEN --enable-comms=none --prefix=$GridPre/Debug
+    ../configure CXX=clang++ CC=clang "CXXFLAGS=-I$GridPkg/include -I$GridPkg/include/libomp -I$GridPre/include -Xpreprocessor -fopenmp" "LDFLAGS=-L$GridPkg/lib -L$GridPkg/lib/libomp -L$GridPre/lib" LIBS=-lomp --enable-comms=none --enable-simd=NEONv8 --prefix=${GridPre}Debug
 
 #### 2. `Release`
 
 Since Grid itself doesn't really have debug configurations, the release build is recommended to be the same as `Debug`:
 
-    ../configure CXX=clang++ CXXFLAGS="-I$GridPkg/include/libomp -Xpreprocessor -fopenmp -std=c++11" LDFLAGS="-L$GridPkg/lib/libomp" LIBS="-lomp" --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre --enable-simd=GEN --enable-comms=none --prefix=$GridPre/Release
+    ../configure CXX=clang++ CC=clang "CXXFLAGS=-I$GridPkg/include -I$GridPkg/include/libomp -I$GridPre/include -Xpreprocessor -fopenmp" "LDFLAGS=-L$GridPkg/lib -L$GridPkg/lib/libomp -L$GridPre/lib" LIBS=-lomp --enable-comms=none --enable-simd=NEONv8 --prefix=${GridPre}Release
 
 #### 3. `MPIDebug`
 
 Debug configuration with MPI:
 
-    ../configure CXX=clang++ CXXFLAGS="-I$GridPkg/include/libomp -Xpreprocessor -fopenmp -std=c++11" LDFLAGS="-L$GridPkg/lib/libomp" LIBS="-lomp" --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre --enable-simd=GEN --enable-comms=mpi-auto MPICXX=$GridPre/bin/mpicxx --prefix=$GridPre/MPIDebug
-
+    ../configure CXX=clang++ CC=clang "CXXFLAGS=-I$GridPkg/include -I$GridPkg/include/libomp -I$GridPre/include -Xpreprocessor -fopenmp" "LDFLAGS=-L$GridPkg/lib -L$GridPkg/lib/libomp -L$GridPre/lib" LIBS=-lomp --enable-comms=mpi-auto --enable-simd=NEONv8 --prefix=${GridPre}MPIDebug
+    
 ### 4.3 Build Grid
 
-Each configuration must be built before they can be used. You can either:
+Each Grid configuration must be built at least once using `automake` before it can be used under Xcode. You can either:
 
 1.  Use automake and the Grid Makefile with `make -j 4` (NB: you **do not** need to run `make install` for these to work with Xcode)
 2. Build `Grid` and `Hadrons` under Xcode (see below)
+
+### 4.4 Configure and build Hadrons
+
+Do this in the usual way for each configuration, `Config=Debug | Release | MPIDebug |` etc. My configure script:
+
+    ../configure CC=clang --with-grid=${GridPre}$Config --prefix=${GridPre}$Config
+    make -j 4
 
 # Make a new application which links to Grid / Hadrons
 
@@ -236,7 +227,7 @@ Obtain a list of header locations required by Grid by running the following from
 
 Output should look similar to (but will likely include duplicates):
 
-    -I$GridPre/include -I$GridPkg/include -O3 -g -std=c++11
+    -I$GridPre/include -I$GridPkg/include -O3 -g
 
 The header locations follow the `-I` switches. You can ignore the other switches, and you can ignore duplicate entries, which just mean that your package manager has installed multiple packages in the same location.
 
