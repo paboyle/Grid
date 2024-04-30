@@ -97,8 +97,8 @@ public:
   }
   void ImportEigenVector(Field &evec,RealD &_eval, int ev)
   {
+    //    std::cout << " ev " <<ev<<" eval "<<_eval<< std::endl;
     assert(ev<eval.size());
-    std::cout << " ev " <<ev<<" eval "<<_eval<< std::endl;
     eval[ev] = _eval;
 
     int64_t offset = ev*vol*words;
