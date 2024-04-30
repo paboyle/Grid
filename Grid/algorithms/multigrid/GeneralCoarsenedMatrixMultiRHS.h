@@ -532,43 +532,49 @@ Grid : Message : 328.193436 s : CoarsenOperator mat    122213270 us
     _A.resize(geom_srhs.npoint,CoarseGrid);
 
     // Count use small chunks than npoint == 81 and save memory
-    std::vector<FineField>    _MphaV;
-    _MphaV.resize(npoint,grid);
+    int batch = 9;
+    std::vector<FineField>    _MphaV(batch,grid);
+    std::vector<CoarseVector> TmpProj(batch,CoarseGrid);
 
     std::vector<CoarseVector> ComputeProj(npoint,CoarseGrid);
     CoarseVector          FT(CoarseGrid);
     for(int i=0;i<nbasis;i++){// Loop over basis vectors
       std::cout << GridLogMessage<< "CoarsenMatrixColoured vec "<<i<<"/"<<nbasis<< std::endl;
 
-      std::cout << GridLogMessage << " phasing the fine vector "<<std::endl;
-      for(int p=0;p<npoint;p++){ // Loop over momenta in npoint
-	tphaseBZ-=usecond();
-	phaV = phaF[p]*Subspace.subspace[i];
-	tphaseBZ+=usecond();
-	/////////////////////////////////////////////////////////////////////
-	// Multiple phased subspace vector by matrix and project to subspace
-	// Remove local bulk phase to leave relative phases
-	/////////////////////////////////////////////////////////////////////
-	tmat-=usecond();
-	linop.Op(phaV,MphaV);
-	_MphaV[p] = MphaV;
-	tmat+=usecond();
-      }
+      //      std::cout << GridLogMessage << " phasing the fine vector "<<std::endl;
+      // Fixme : do this in batches
+      for(int p=0;p<npoint;p+=batch){ // Loop over momenta in npoint
 
-      
-      std::cout << GridLogMessage << " Calling block project "<<std::endl;
-      tproj-=usecond();
-      Projector.blockProject(_MphaV,ComputeProj);
-      tproj+=usecond();
-      
-      std::cout << GridLogMessage << " conj phasing the coarse vectors "<<std::endl;
-      for(int p=0;p<npoint;p++){
-	ComputeProj[p] = conjugate(pha[p])*ComputeProj[p];
+	for(int b=0;b<MIN(batch,npoint-p);b++){
+	  tphaseBZ-=usecond();
+	  phaV = phaF[p+b]*Subspace.subspace[i];
+	  tphaseBZ+=usecond();
+
+	  /////////////////////////////////////////////////////////////////////
+	  // Multiple phased subspace vector by matrix and project to subspace
+	  // Remove local bulk phase to leave relative phases
+	  /////////////////////////////////////////////////////////////////////
+	  // Memory footprint was an issue
+	  tmat-=usecond();
+	  linop.Op(phaV,MphaV);
+	  _MphaV[b] = MphaV;
+	  tmat+=usecond();
+	}      
+
+	//	std::cout << GridLogMessage << " Calling block project "<<std::endl;
+	tproj-=usecond();
+	Projector.blockProject(_MphaV,TmpProj);
+	tproj+=usecond();
+	
+	//	std::cout << GridLogMessage << " conj phasing the coarse vectors "<<std::endl;
+	for(int b=0;b<MIN(batch,npoint-p);b++){
+	  ComputeProj[p+b] = conjugate(pha[p+b])*TmpProj[b];
+	}
       }
 
       // Could do this with a block promote or similar BLAS call via the MultiRHSBlockProjector with a const matrix.
       
-      std::cout << GridLogMessage << " Starting FT inv "<<std::endl;
+      // std::cout << GridLogMessage << " Starting FT inv "<<std::endl;
       tinv-=usecond();
       for(int k=0;k<npoint;k++){
 	FT = Zero();
@@ -620,7 +626,7 @@ Grid : Message : 328.193436 s : CoarsenOperator mat    122213270 us
     //      PopulateAdag();
     //    }
     // Need to write something to populate Adag from A
-    std::cout << GridLogMessage << " Calling GridtoBLAS "<<std::endl;
+    //    std::cout << GridLogMessage << " Calling GridtoBLAS "<<std::endl;
     for(int p=0;p<geom_srhs.npoint;p++){
       GridtoBLAS(_A[p],BLAS_A[p]);
     }
