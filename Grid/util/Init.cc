@@ -77,6 +77,10 @@ feenableexcept (unsigned int excepts)
 }
 #endif
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#endif
+
 NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////////////
@@ -90,7 +94,12 @@ int GridThread::_threads =1;
 int GridThread::_hyperthreads=1;
 int GridThread::_cores=1;
 
+char hostname[HOST_NAME_MAX+1];
 
+char *GridHostname(void)
+{
+  return hostname;
+}
 const Coordinate &GridDefaultLatt(void)     {return Grid_default_latt;};
 const Coordinate &GridDefaultMpi(void)      {return Grid_default_mpi;};
 const Coordinate GridDefaultSimd(int dims,int nsimd)
@@ -394,7 +403,6 @@ void Grid_init(int *argc,char ***argv)
   std::cout << GridLogMessage << "MPI is initialised and logging filters activated "<<std::endl;
   std::cout << GridLogMessage << "================================================ "<<std::endl;
 
-  char hostname[HOST_NAME_MAX+1];
   gethostname(hostname, HOST_NAME_MAX+1);
   std::cout << GridLogMessage << "This rank is running on host "<< hostname<<std::endl;
 

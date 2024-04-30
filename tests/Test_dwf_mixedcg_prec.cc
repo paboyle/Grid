@@ -30,6 +30,50 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 using namespace std;
 using namespace Grid;
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#endif
+
+
+NAMESPACE_BEGIN(Grid);
+template<class Matrix,class Field>
+  class SchurDiagMooeeOperatorParanoid :  public SchurOperatorBase<Field> {
+ public:
+    Matrix &_Mat;
+    SchurDiagMooeeOperatorParanoid (Matrix &Mat): _Mat(Mat){};
+    virtual  void Mpc      (const Field &in, Field &out) {
+      Field tmp(in.Grid());
+      tmp.Checkerboard() = !in.Checkerboard();
+      //      std::cout <<" Mpc starting"<<std::endl;
+
+      RealD nn = norm2(in); // std::cout <<" Mpc Prior to dslash norm is "<<nn<<std::endl;
+      _Mat.Meooe(in,tmp);
+      nn = norm2(tmp); //std::cout <<" Mpc Prior to Mooeinv "<<nn<<std::endl;
+      _Mat.MooeeInv(tmp,out);
+      nn = norm2(out); //std::cout <<" Mpc Prior to dslash norm is "<<nn<<std::endl;
+      _Mat.Meooe(out,tmp);
+      nn = norm2(tmp); //std::cout <<" Mpc Prior to Mooee "<<nn<<std::endl;
+      _Mat.Mooee(in,out);
+      nn = norm2(out); //std::cout <<" Mpc Prior to axpy "<<nn<<std::endl;
+      axpy(out,-1.0,tmp,out);
+    }
+    virtual void MpcDag   (const Field &in, Field &out){
+      Field tmp(in.Grid());
+      //      std::cout <<" MpcDag starting"<<std::endl;
+      RealD nn = norm2(in);// std::cout <<" MpcDag Prior to dslash norm is "<<nn<<std::endl;
+      _Mat.MeooeDag(in,tmp);
+      _Mat.MooeeInvDag(tmp,out);
+      nn = norm2(out);// std::cout <<" MpcDag Prior to dslash norm is "<<nn<<std::endl;
+      _Mat.MeooeDag(out,tmp);
+      nn = norm2(tmp);// std::cout <<" MpcDag Prior to Mooee "<<nn<<std::endl;
+      _Mat.MooeeDag(in,out);
+      nn = norm2(out);// std::cout <<" MpcDag Prior to axpy "<<nn<<std::endl;
+      axpy(out,-1.0,tmp,out);
+    }
+};
+
+NAMESPACE_END(Grid);
+
 int main (int argc, char ** argv)
 {
   char hostname[HOST_NAME_MAX+1];
@@ -78,8 +122,8 @@ int main (int argc, char ** argv)
   result_o_2.Checkerboard() = Odd;
   result_o_2 = Zero();
 
-  SchurDiagMooeeOperator<DomainWallFermionD,LatticeFermionD> HermOpEO(Ddwf);
-  SchurDiagMooeeOperator<DomainWallFermionF,LatticeFermionF> HermOpEO_f(Ddwf_f);
+  SchurDiagMooeeOperatorParanoid<DomainWallFermionD,LatticeFermionD> HermOpEO(Ddwf);
+  SchurDiagMooeeOperatorParanoid<DomainWallFermionF,LatticeFermionF> HermOpEO_f(Ddwf_f);
 
   int nsecs=600;
   if( GridCmdOptionExists(argv,argv+argc,"--seconds") ){
@@ -100,10 +144,22 @@ int main (int argc, char ** argv)
 
   time_t start = time(NULL);
 
-  uint32_t csum, csumref;
-  csumref=0;
+  FlightRecorder::ContinueOnFail = 0;
+  FlightRecorder::PrintEntireLog = 0;
+  FlightRecorder::ChecksumComms  = 1;
+  FlightRecorder::ChecksumCommsSend=0;
+
+  if(char *s=getenv("GRID_PRINT_ENTIRE_LOG"))  FlightRecorder::PrintEntireLog     = atoi(s);
+  if(char *s=getenv("GRID_CHECKSUM_RECV_BUF")) FlightRecorder::ChecksumComms      = atoi(s);
+  if(char *s=getenv("GRID_CHECKSUM_SEND_BUF")) FlightRecorder::ChecksumCommsSend  = atoi(s);
+
   int iter=0;
   do {
+    if ( iter == 0 ) {
+      FlightRecorder::SetLoggingMode(FlightRecorder::LoggingModeRecord);
+    } else {
+      FlightRecorder::SetLoggingMode(FlightRecorder::LoggingModeVerify);
+    }
     std::cerr << "******************* SINGLE PRECISION SOLVE "<<iter<<std::endl;
     result_o = Zero();
     t1=usecond();
@@ -114,27 +170,23 @@ int main (int argc, char ** argv)
     flops+= CGsiteflops*FrbGrid->gSites()*iters;
     std::cout << " SinglePrecision iterations/sec "<< iters/(t2-t1)*1000.*1000.<<std::endl;
     std::cout << " SinglePrecision GF/s "<< flops/(t2-t1)/1000.<<std::endl;
+    std::cout << " SinglePrecision error count "<< FlightRecorder::ErrorCount()<<std::endl;
 
-    csum = crc(result_o);
+    assert(FlightRecorder::ErrorCount()==0);
 
-    if ( csumref == 0 ) {
-      csumref = csum;
-    } else {
-      if ( csum != csumref ) { 
-	std::cerr << host<<" FAILURE " <<iter <<" csum "<<std::hex<<csum<< " != "<<csumref <<std::dec<<std::endl;
-	assert(0);
-      } else {
-	std::cout << host <<" OK " <<iter <<" csum "<<std::hex<<csum<<std::dec<<" -- OK! "<<std::endl;
-      }
-    }
+    std::cout << " FlightRecorder is OK! "<<std::endl;
     iter ++;
-  } while (time(NULL) < (start + nsecs/2) );
+  } while (time(NULL) < (start + nsecs/10) );
     
   std::cout << GridLogMessage << "::::::::::::: Starting double precision CG" << std::endl;
   ConjugateGradient<LatticeFermionD> CG(1.0e-8,10000);
-  csumref=0;
   int i=0;
   do { 
+    if ( i == 0 ) {
+      FlightRecorder::SetLoggingMode(FlightRecorder::LoggingModeRecord);
+    } else {
+      FlightRecorder::SetLoggingMode(FlightRecorder::LoggingModeVerify);
+    }
     std::cerr << "******************* DOUBLE PRECISION SOLVE "<<i<<std::endl;
     result_o_2 = Zero();
     t1=usecond();
@@ -146,19 +198,9 @@ int main (int argc, char ** argv)
 
     std::cout << " DoublePrecision iterations/sec "<< iters/(t2-t1)*1000.*1000.<<std::endl;
     std::cout << " DoublePrecision GF/s "<< flops/(t2-t1)/1000.<<std::endl;
-
-    csum = crc(result_o);
-
-    if ( csumref == 0 ) {
-      csumref = csum;
-    } else {
-      if ( csum != csumref ) { 
-	std::cerr << i <<" csum "<<std::hex<<csum<< " != "<<csumref <<std::dec<<std::endl;
-	assert(0);
-      } else {
-	std::cout << i <<" csum "<<std::hex<<csum<<std::dec<<" -- OK! "<<std::endl;
-      }
-    }
+    std::cout << " DoublePrecision error count "<< FlightRecorder::ErrorCount()<<std::endl;
+    assert(FlightRecorder::ErrorCount()==0);
+    std::cout << " FlightRecorder is OK! "<<std::endl;
     i++;
   } while (time(NULL) < (start + nsecs) );
 
