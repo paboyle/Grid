@@ -349,8 +349,11 @@ public:
       */
       /* How many??
       */
-      Chebyshev<FineField> Cheb2(0.001,hi,2500);
+      Chebyshev<FineField> Cheb2(0.001,hi,2500); // 169 iters on HDCG after refine
       Chebyshev<FineField> Cheb1(0.02,hi,600);
+
+      //      Chebyshev<FineField> Cheb2(0.001,hi,1500);
+      //      Chebyshev<FineField> Cheb1(0.02,hi,600);
       Cheb1(hermop,noise,Mn); scale = std::pow(norm2(Mn),-0.5); 	noise=Mn*scale;
       hermop.Op(noise,tmp); std::cout<<GridLogMessage << "Cheb1 <n|MdagM|n> "<<norm2(tmp)<<std::endl;
       Cheb2(hermop,noise,Mn); scale = std::pow(norm2(Mn),-0.5); 	noise=Mn*scale;
@@ -425,9 +428,8 @@ public:
     FineField tmp(FineGrid);
     for(int b =0;b<nbasis;b++)
     {
-      RealD MirsShift = Lo;
       ConjugateGradient<FineField>  CGsloppy(tol,maxit,false);
-      ShiftedHermOpLinearOperator<FineField> ShiftedFineHermOp(hermop,MirsShift);
+      ShiftedHermOpLinearOperator<FineField> ShiftedFineHermOp(hermop,Lo);
       tmp=Zero();
       CGsloppy(hermop,subspace[b],tmp);
       RealD scale = std::pow(norm2(tmp),-0.5); 	tmp=tmp*scale;
@@ -445,6 +447,12 @@ public:
     FineField tmp(FineGrid);
     for(int b =0;b<nbasis;b+=nrhs)
     {
+      tmp = subspace[b];
+      RealD scale = std::pow(norm2(tmp),-0.5); 	tmp=tmp*scale;
+      subspace[b] =tmp;
+      hermop.Op(subspace[b],tmp);
+      std::cout<<GridLogMessage << "before filt ["<<b<<"] <n|MdagM|n> "<<norm2(tmp)<<std::endl;
+
       for(int r=0;r<MIN(nbasis-b,nrhs);r++){
 	src_mrhs[r] = subspace[b+r];
       }
@@ -454,10 +462,12 @@ public:
       theHDCG(src_mrhs,res_mrhs);
 
       for(int r=0;r<MIN(nbasis-b,nrhs);r++){
-	subspace[b+r]=res_mrhs[r];
+	tmp = res_mrhs[r];
+	RealD scale = std::pow(norm2(tmp),-0.5); tmp=tmp*scale;
+	subspace[b+r]=tmp;
       }
       hermop.Op(subspace[b],tmp);
-      std::cout<<GridLogMessage << "filt ["<<b<<"] <n|MdagM|n> "<<norm2(tmp)<<std::endl;
+      std::cout<<GridLogMessage << "after filt ["<<b<<"] <n|MdagM|n> "<<norm2(tmp)<<std::endl;
     }
   }
 
@@ -465,3 +475,4 @@ public:
   
 };
 NAMESPACE_END(Grid);
+
