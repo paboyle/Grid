@@ -255,7 +255,7 @@ public:
       Glog << "norm2(src[" << i << "])= "<< norm2(src[i]) << std::endl;
       evec[i] = src[i];
       orthogonalize(evec[i],evec,i);
-      Glog << "norm2(evec[" << i << "])= "<< norm2(evec[i]) << std::endl;
+      //      Glog << "norm2(evec[" << i << "])= "<< norm2(evec[i]) << std::endl;
     }
     
     // initial Nblock_k steps
@@ -689,7 +689,7 @@ private:
     }
 
     // re-orthogonalization for numerical stability
-    Glog << "Gram Schmidt"<< std::endl;
+    //    Glog << "Gram Schmidt"<< std::endl;
     orthogonalize(w,Nu,evec,R);
     // QR part
     for (int u=1; u<Nu; ++u) {
@@ -697,7 +697,7 @@ private:
     }
     //    Glog << "Gram Schmidt done "<< std::endl;
     
-    Glog << "LinAlg "<< std::endl;
+    //    Glog << "LinAlg "<< std::endl;
     for (int u=0; u<Nu; ++u) {
       //for (int v=0; v<Nu; ++v) {
       for (int v=u; v<Nu; ++v) {
@@ -714,7 +714,7 @@ private:
 	//        Glog <<" In block "<< b << "," <<" beta[" << u << "," << k-L << "] = " << lme[u][k] << std::endl;
       }
     }
-    Glog << "LinAlg done "<< std::endl;
+    //    Glog << "LinAlg done "<< std::endl;
 
     if (b < Nm/Nu-1) {
       for (int u=0; u<Nu; ++u) {
