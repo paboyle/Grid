@@ -247,9 +247,12 @@ void FlightRecorder::ReductionLog(double local,double global)
 }
 void FlightRecorder::xmitLog(void *buf,uint64_t bytes)
 {
+  if(LoggingMode == LoggingModeNone) return;
+
   if ( ChecksumCommsSend ){
   uint64_t *ubuf = (uint64_t *)buf;
   if(LoggingMode == LoggingModeNone) return;
+  
 #ifdef GRID_SYCL
   uint64_t _xor = svm_xor(ubuf,bytes/sizeof(uint64_t));
   if(LoggingMode == LoggingModePrint) {
@@ -284,14 +287,6 @@ void FlightRecorder::xmitLog(void *buf,uint64_t bytes)
     }
     XmitLoggingCounter++;
   }
-#endif
-  } else {
-    uint64_t word = 1;
-    deviceVector<uint64_t> dev(1);
-    acceleratorCopyToDevice(&word,&dev[0],sizeof(uint64_t));
-    acceleratorCopySynchronise();
-#ifndef GRID_COMMS_NONE
-    MPI_Barrier(MPI_COMM_WORLD);
 #endif
   }
 }
