@@ -7,7 +7,7 @@
 	--disable-fermion-reps \
 	--enable-shm=nvlink \
 	--enable-accelerator=sycl \
-	--enable-accelerator-aware-mpi=no\
+	--enable-accelerator-aware-mpi=yes\
 	--enable-unified=no \
 	MPICXX=mpicxx \
 	CXX=icpx \
