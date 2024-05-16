@@ -285,12 +285,6 @@ void FlightRecorder::xmitLog(void *buf,uint64_t bytes)
     XmitLoggingCounter++;
   }
 #endif
-  } else {
-    uint64_t word = 1;
-    deviceVector<uint64_t> dev(1);
-    acceleratorCopyToDevice(&word,&dev[0],sizeof(uint64_t));
-    acceleratorCopySynchronise();
-    MPI_Barrier(MPI_COMM_WORLD);
   }
 }
 void FlightRecorder::recvLog(void *buf,uint64_t bytes,int rank)
