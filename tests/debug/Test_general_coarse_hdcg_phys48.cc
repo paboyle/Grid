@@ -200,7 +200,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   const int Ls=24;
-  const int nbasis = 60;
+  const int nbasis = 62;
   const int cb = 0 ;
   RealD mass=0.00078;
   RealD M5=1.8;
@@ -274,7 +274,7 @@ int main (int argc, char ** argv)
   std::string ldop_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/LittleDiracOp.phys48.new.62");
   std::string evec_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/evecs.scidac");
   std::string eval_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/eval.xml");
-  bool load_agg=true;
+  bool load_agg=false;
   bool load_refine=false;
   bool load_mat=false;
   bool load_evec=false;
@@ -287,8 +287,8 @@ int main (int argc, char ** argv)
   } else {
     //    Aggregates.CreateSubspaceMultishift(RNG5,HermOpEO,
     //					0.0003,1.0e-5,2000); // Lo, tol, maxit
-    //    Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,95.,0.01,1500); <== last run
-    Aggregates.CreateSubspaceChebyshevNew(RNG5,HermOpEO,95.); // 176 with refinement
+    Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,95.,0.01,1500); <== last run
+    //    Aggregates.CreateSubspaceChebyshevNew(RNG5,HermOpEO,95.); // 176 with refinement
     //    Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,95.,0.001,3000,1500,200,0.0); // Attempt to resurrect
     SaveBasis(Aggregates,subspace_file);
   }

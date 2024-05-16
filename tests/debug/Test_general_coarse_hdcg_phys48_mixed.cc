@@ -41,8 +41,8 @@ void SaveBasis(aggregation &Agg,std::string file)
   ScidacWriter WR(Agg.FineGrid->IsBoss());
   WR.open(file);
   for(int b=0;b<Agg.subspace.size();b++){
-    //    WR.writeScidacFieldRecord(Agg.subspace[b],record,0,BINARYIO_LEXICOGRAPHIC);
-    WR.writeScidacFieldRecord(Agg.subspace[b],record);
+    WR.writeScidacFieldRecord(Agg.subspace[b],record,0,Grid::BinaryIO::BINARYIO_LEXICOGRAPHIC);
+    //    WR.writeScidacFieldRecord(Agg.subspace[b],record);
   }
   WR.close();
 #endif
@@ -55,8 +55,8 @@ void LoadBasis(aggregation &Agg, std::string file)
   ScidacReader RD ;
   RD.open(file);
   for(int b=0;b<Agg.subspace.size();b++){
-    //RD.readScidacFieldRecord(Agg.subspace[b],record,BINARYIO_LEXICOGRAPHIC);
-    RD.readScidacFieldRecord(Agg.subspace[b],record,0);
+    RD.readScidacFieldRecord(Agg.subspace[b],record,Grid::BinaryIO::BINARYIO_LEXICOGRAPHIC);
+    //    RD.readScidacFieldRecord(Agg.subspace[b],record,0);
   }    
   RD.close();
 #endif
@@ -160,7 +160,7 @@ int main (int argc, char ** argv)
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
   // Construct a coarsened grid with 4^4 cell
-  Coordinate Block({4,4,6,4});
+  Coordinate Block({4,4,4,4});
   Coordinate clatt = GridDefaultLatt();
   for(int d=0;d<clatt.size();d++){
     clatt[d] = clatt[d]/Block[d];
@@ -210,14 +210,14 @@ int main (int argc, char ** argv)
   // Need to check about red-black grid coarsening
   ////////////////////////////////////////////////////////////
 
-  //  std::string subspace_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Subspace.phys48.mixed.2500.60");
-  std::string subspace_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Subspace.phys48.new.62");
-  std::string refine_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Refine.phys48.tmp.60");
+  std::string subspace_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Subspace.phys48.mixed.2500.60");
+  //  std::string subspace_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Subspace.phys48.new.62");
+  std::string refine_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/Refine.phys48.mixed.2500.60");
   std::string ldop_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/LittleDiracOp.phys48.mixed.60");
   std::string evec_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/evecs.scidac");
   std::string eval_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/eval.xml");
   bool load_agg=true;
-  bool load_refine=false;
+  bool load_refine=true;
   bool load_mat=false;
   bool load_evec=false;
 
@@ -227,7 +227,10 @@ int main (int argc, char ** argv)
       LoadBasis(Aggregates,subspace_file);
     }
   } else {
-    Aggregates.CreateSubspaceChebyshevNew(RNG5,HermOpEO,95.); // 176 with refinement
+    //    Aggregates.CreateSubspaceMultishift(RNG5,HermOpEO,
+    //    					0.0003,1.0e-5,2000); // Lo, tol, maxit
+    //    Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,95.,0.01,1500);// <== last run
+    Aggregates.CreateSubspaceChebyshevNew(RNG5,HermOpEO,95.); 
     SaveBasis(Aggregates,subspace_file);
   }
 
@@ -236,7 +239,7 @@ int main (int argc, char ** argv)
   std::cout << "**************************************"<<std::endl;
   ConjugateGradient<CoarseVector>  coarseCG(4.0e-2,20000,true);
     
-  const int nrhs=8;
+  const int nrhs=12;
     
   Coordinate mpi=GridDefaultMpi();
   Coordinate rhMpi ({1,1,mpi[0],mpi[1],mpi[2],mpi[3]});
@@ -366,7 +369,7 @@ int main (int argc, char ** argv)
   HDCGmrhs(src_mrhs,res_mrhs);
 
   // Standard CG
-#if 0
+#if 1
   {
   std::cout << "**************************************"<<std::endl;
   std::cout << "Calling red black CG"<<std::endl;
