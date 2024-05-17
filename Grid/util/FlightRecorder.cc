@@ -247,9 +247,12 @@ void FlightRecorder::ReductionLog(double local,double global)
 }
 void FlightRecorder::xmitLog(void *buf,uint64_t bytes)
 {
+  if(LoggingMode == LoggingModeNone) return;
+
   if ( ChecksumCommsSend ){
   uint64_t *ubuf = (uint64_t *)buf;
   if(LoggingMode == LoggingModeNone) return;
+  
 #ifdef GRID_SYCL
   uint64_t _xor = svm_xor(ubuf,bytes/sizeof(uint64_t));
   if(LoggingMode == LoggingModePrint) {

@@ -1,7 +1,9 @@
 #export ONEAPI_DEVICE_SELECTOR=level_zero:0.0
 
-module use /soft/modulefiles
-module load intel_compute_runtime/release/agama-devel-682.22
+module load oneapi/release/2023.12.15.001
+
+#module use /soft/modulefiles
+#module load intel_compute_runtime/release/agama-devel-682.22
 
 export FI_CXI_DEFAULT_CQ_SIZE=131072
 export FI_CXI_CQ_FILL_PERCENT=20
