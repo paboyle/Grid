@@ -276,18 +276,33 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
 
   autoView( coarseData_ , coarseData, AcceleratorWrite);
   autoView( ip_         , ip,         AcceleratorWrite);
+  RealD t_IP=0;
+  RealD t_co=0;
+  RealD t_za=0;
   for(int v=0;v<nbasis;v++) {
+    t_IP-=usecond();
     blockInnerProductD(ip,Basis[v],fineDataRed); // ip = <basis|fine>
+    t_IP+=usecond();
+    t_co-=usecond();
     accelerator_for( sc, coarse->oSites(), vobj::Nsimd(), {
 	convertType(coarseData_[sc](v),ip_[sc]);
     });
+    t_co+=usecond();
 
     // improve numerical stability of projection
     // |fine> = |fine> - <basis|fine> |basis>
     ip=-ip;
+    t_za-=usecond();
     blockZAXPY(fineDataRed,ip,Basis[v],fineDataRed); 
+    t_za+=usecond();
   }
+  //  std::cout << GridLogPerformance << " blockProject : blockInnerProduct :  "<<t_IP<<" us"<<std::endl;
+  //  std::cout << GridLogPerformance << " blockProject : conv              :  "<<t_co<<" us"<<std::endl;
+  //  std::cout << GridLogPerformance << " blockProject : blockZaxpy        :  "<<t_za<<" us"<<std::endl;
 }
+// This only minimises data motion from CPU to GPU
+// there is chance of better implementation that does a vxk loop of inner products to data share
+// at the GPU thread level
 template<class vobj,class CComplex,int nbasis,class VLattice>
 inline void batchBlockProject(std::vector<Lattice<iVector<CComplex,nbasis>>> &coarseData,
                                const std::vector<Lattice<vobj>> &fineData,
@@ -393,8 +408,15 @@ template<class vobj,class CComplex>
   Lattice<dotp> coarse_inner(coarse);
 
   // Precision promotion
+  RealD t;
+  t=-usecond();
   fine_inner = localInnerProductD<vobj>(fineX,fineY);
+  //  t+=usecond(); std::cout << GridLogPerformance << " blockInnerProduct : localInnerProductD "<<t<<" us"<<std::endl;
+  
+  t=-usecond();
   blockSum(coarse_inner,fine_inner);
+  //  t+=usecond(); std::cout << GridLogPerformance << " blockInnerProduct : blockSum "<<t<<" us"<<std::endl;
+  t=-usecond();
   {
     autoView( CoarseInner_  , CoarseInner,AcceleratorWrite);
     autoView( coarse_inner_ , coarse_inner,AcceleratorRead);
@@ -402,6 +424,7 @@ template<class vobj,class CComplex>
       convertType(CoarseInner_[ss], TensorRemove(coarse_inner_[ss]));
     });
   }
+  //  t+=usecond(); std::cout << GridLogPerformance << " blockInnerProduct : convertType "<<t<<" us"<<std::endl;
  
 }
 
@@ -444,6 +467,9 @@ inline void blockNormalise(Lattice<CComplex> &ip,Lattice<vobj> &fineX)
 template<class vobj>
 inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData) 
 {
+  const int maxsubsec=256;
+  typedef iVector<vobj,maxsubsec> vSubsec;
+
   GridBase * fine  = fineData.Grid();
   GridBase * coarse= coarseData.Grid();
 
@@ -463,35 +489,62 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
   autoView( coarseData_ , coarseData, AcceleratorWrite);
   autoView( fineData_   , fineData, AcceleratorRead);
 
-  auto coarseData_p = &coarseData_[0];
-  auto fineData_p = &fineData_[0];
+  auto coarseData_p  = &coarseData_[0];
+  auto fineData_p    = &fineData_[0];
   
   Coordinate fine_rdimensions = fine->_rdimensions;
   Coordinate coarse_rdimensions = coarse->_rdimensions;
 
-  accelerator_for(sc,coarse->oSites(),1,{
+  vobj zz = Zero();
 
+  // Somewhat lazy calculation
+  // Find the biggest power of two subsection divisor less than or equal to maxsubsec
+  int subsec=maxsubsec;
+  int subvol;
+  subvol=blockVol/subsec;
+  while(subvol*subsec!=blockVol){
+    subsec = subsec/2;
+    subvol=blockVol/subsec;
+  };
+
+  Lattice<vSubsec> coarseTmp(coarse);
+  autoView( coarseTmp_, coarseTmp, AcceleratorWriteDiscard);
+  auto coarseTmp_p= &coarseTmp_[0];
+  
+  // Sum within subsecs in a first kernel
+  accelerator_for(sce,subsec*coarse->oSites(),vobj::Nsimd(),{
+
+      int sc=sce/subsec;
+      int e=sce%subsec;
+      
       // One thread per sub block
       Coordinate coor_c(_ndimension);
       Lexicographic::CoorFromIndex(coor_c,sc,coarse_rdimensions);  // Block coordinate
 
-      vobj cd = Zero();
-      
-      for(int sb=0;sb<blockVol;sb++){
-
+      auto cd = coalescedRead(zz);
+      for(int sb=e*subvol;sb<MIN((e+1)*subvol,blockVol);sb++){
 	int sf;
 	Coordinate coor_b(_ndimension);
 	Coordinate coor_f(_ndimension);
 	Lexicographic::CoorFromIndex(coor_b,sb,block_r);               // Block sub coordinate
 	for(int d=0;d<_ndimension;d++) coor_f[d]=coor_c[d]*block_r[d] + coor_b[d];
 	Lexicographic::IndexFromCoor(coor_f,sf,fine_rdimensions);
-
-	cd=cd+fineData_p[sf];
+	
+	cd=cd+coalescedRead(fineData_p[sf]);
       }
 
-      coarseData_p[sc] = cd;
+      coalescedWrite(coarseTmp_[sc](e),cd);
 
     });
+   // Sum across subsecs in a second kernel
+   accelerator_for(sc,coarse->oSites(),vobj::Nsimd(),{
+      auto cd = coalescedRead(coarseTmp_p[sc](0));
+      for(int e=1;e<subsec;e++){
+	cd=cd+coalescedRead(coarseTmp_p[sc](e));
+      }
+      coalescedWrite(coarseData_p[sc],cd);
+   });
+
   return;
 }
 
@@ -548,7 +601,7 @@ inline void blockOrthogonalise(Lattice<CComplex> &ip,std::vector<Lattice<vobj> >
   blockOrthonormalize(ip,Basis);
 }
 
-#if 0
+#ifdef GRID_ACCELERATED
 // TODO: CPU optimized version here
 template<class vobj,class CComplex,int nbasis>
 inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
@@ -574,26 +627,37 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
   autoView( fineData_   , fineData, AcceleratorWrite);
   autoView( coarseData_ , coarseData, AcceleratorRead);
 
+  typedef LatticeView<vobj> Vview;
+  std::vector<Vview> AcceleratorVecViewContainer_h; 
+  for(int v=0;v<nbasis;v++) {
+    AcceleratorVecViewContainer_h.push_back(Basis[v].View(AcceleratorRead));
+  }
+  static deviceVector<Vview> AcceleratorVecViewContainer; AcceleratorVecViewContainer.resize(nbasis); 
+  acceleratorCopyToDevice(&AcceleratorVecViewContainer_h[0],&AcceleratorVecViewContainer[0],nbasis *sizeof(Vview));
+  auto Basis_p = &AcceleratorVecViewContainer[0];
   // Loop with a cache friendly loop ordering
-  accelerator_for(sf,fine->oSites(),1,{
+  Coordinate frdimensions=fine->_rdimensions;
+  Coordinate crdimensions=coarse->_rdimensions;
+  accelerator_for(sf,fine->oSites(),vobj::Nsimd(),{
     int sc;
     Coordinate coor_c(_ndimension);
     Coordinate coor_f(_ndimension);
 
-    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+    Lexicographic::CoorFromIndex(coor_f,sf,frdimensions);
     for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+    Lexicographic::IndexFromCoor(coor_c,sc,crdimensions);
 
-    for(int i=0;i<nbasis;i++) {
-      /*      auto basis_ = Basis[i],  );*/
-      if(i==0) fineData_[sf]=coarseData_[sc](i) *basis_[sf]);
-      else     fineData_[sf]=fineData_[sf]+coarseData_[sc](i)*basis_[sf]);
-    }
+    auto sum= coarseData_(sc)(0) *Basis_p[0](sf);
+    for(int i=1;i<nbasis;i++) sum = sum + coarseData_(sc)(i)*Basis_p[i](sf);
+    coalescedWrite(fineData_[sf],sum);
   });
+  for(int v=0;v<nbasis;v++) {
+    AcceleratorVecViewContainer_h[v].ViewClose();
+  }
   return;
-  
 }
 #else
+// CPU version
 template<class vobj,class CComplex,int nbasis,class VLattice>
 inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
 			 Lattice<vobj>   &fineData,
@@ -680,7 +744,11 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
-  static const int words=sizeof(vobj)/sizeof(vector_type);
+  const int words=sizeof(vobj)/sizeof(vector_type);
+
+  //////////////////////////////////////////////////////////////////////////////////////////
+  // checks should guarantee that the operations are local
+  //////////////////////////////////////////////////////////////////////////////////////////
 
   GridBase *Fg = From.Grid();
   GridBase *Tg = To.Grid();
@@ -695,52 +763,38 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
   for(int d=0;d<nd;d++){
     assert(Fg->_processors[d]  == Tg->_processors[d]);
   }
-  // the above should guarantee that the operations are local
-  
-#if 1
+
+  ///////////////////////////////////////////////////////////
+  // do the index calc on the GPU
+  ///////////////////////////////////////////////////////////
+  Coordinate f_ostride = Fg->_ostride;
+  Coordinate f_istride = Fg->_istride;
+  Coordinate f_rdimensions = Fg->_rdimensions;
+  Coordinate t_ostride = Tg->_ostride;
+  Coordinate t_istride = Tg->_istride;
+  Coordinate t_rdimensions = Tg->_rdimensions;
 
   size_t nsite = 1;
   for(int i=0;i<nd;i++) nsite *= RegionSize[i];
-  
-  size_t tbytes = 4*nsite*sizeof(int);
-  int *table = (int*)malloc(tbytes);
- 
-  thread_for(idx, nsite, {
-      Coordinate from_coor, to_coor;
-      size_t rem = idx;
-      for(int i=0;i<nd;i++){
-	size_t base_i  = rem % RegionSize[i]; rem /= RegionSize[i];
-	from_coor[i] = base_i + FromLowerLeft[i];
-	to_coor[i] = base_i + ToLowerLeft[i];
-      }
-      
-      int foidx = Fg->oIndex(from_coor);
-      int fiidx = Fg->iIndex(from_coor);
-      int toidx = Tg->oIndex(to_coor);
-      int tiidx = Tg->iIndex(to_coor);
-      int* tt = table + 4*idx;
-      tt[0] = foidx;
-      tt[1] = fiidx;
-      tt[2] = toidx;
-      tt[3] = tiidx;
-    });
-  
-  int* table_d = (int*)acceleratorAllocDevice(tbytes);
-  acceleratorCopyToDevice(table,table_d,tbytes);
 
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
 
   autoView(from_v,From,AcceleratorRead);
   autoView(to_v,To,AcceleratorWrite);
-  
+
   accelerator_for(idx,nsite,1,{
-      static const int words=sizeof(vobj)/sizeof(vector_type);
-      int* tt = table_d + 4*idx;
-      int from_oidx = *tt++;
-      int from_lane = *tt++;
-      int to_oidx = *tt++;
-      int to_lane = *tt;
+
+      Coordinate from_coor, to_coor, base;
+      Lexicographic::CoorFromIndex(base,idx,RegionSize);
+      for(int i=0;i<nd;i++){
+	from_coor[i] = base[i] + FromLowerLeft[i];
+	to_coor[i] = base[i] + ToLowerLeft[i];
+      }
+      int from_oidx = 0; for(int d=0;d<nd;d++) from_oidx+=f_ostride[d]*(from_coor[d]%f_rdimensions[d]);
+      int from_lane = 0; for(int d=0;d<nd;d++) from_lane+=f_istride[d]*(from_coor[d]/f_rdimensions[d]);
+      int to_oidx   = 0; for(int d=0;d<nd;d++) to_oidx+=t_ostride[d]*(to_coor[d]%t_rdimensions[d]);
+      int to_lane   = 0; for(int d=0;d<nd;d++) to_lane+=t_istride[d]*(to_coor[d]/t_rdimensions[d]);
 
       const vector_type* from = (const vector_type *)&from_v[from_oidx];
       vector_type* to = (vector_type *)&to_v[to_oidx];
@@ -750,56 +804,146 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
 	stmp = getlane(from[w], from_lane);
 	putlane(to[w], stmp, to_lane);
       }
-    });
-  
-  acceleratorFreeDevice(table_d);    
-  free(table);
-  
-
-#else  
-  Coordinate ldf = Fg->_ldimensions;
-  Coordinate rdf = Fg->_rdimensions;
-  Coordinate isf = Fg->_istride;
-  Coordinate osf = Fg->_ostride;
-  Coordinate rdt = Tg->_rdimensions;
-  Coordinate ist = Tg->_istride;
-  Coordinate ost = Tg->_ostride;
-
-  autoView( t_v , To, CpuWrite);
-  autoView( f_v , From, CpuRead);
-  thread_for(idx,Fg->lSites(),{
-    sobj s;
-    Coordinate Fcoor(nd);
-    Coordinate Tcoor(nd);
-    Lexicographic::CoorFromIndex(Fcoor,idx,ldf);
-    int in_region=1;
-    for(int d=0;d<nd;d++){
-      if ( (Fcoor[d] < FromLowerLeft[d]) || (Fcoor[d]>=FromLowerLeft[d]+RegionSize[d]) ){ 
-	in_region=0;
-      }
-      Tcoor[d] = ToLowerLeft[d]+ Fcoor[d]-FromLowerLeft[d];
-    }
-    if (in_region) {
-#if 0      
-      Integer idx_f = 0; for(int d=0;d<nd;d++) idx_f+=isf[d]*(Fcoor[d]/rdf[d]); // inner index from
-      Integer idx_t = 0; for(int d=0;d<nd;d++) idx_t+=ist[d]*(Tcoor[d]/rdt[d]); // inner index to
-      Integer odx_f = 0; for(int d=0;d<nd;d++) odx_f+=osf[d]*(Fcoor[d]%rdf[d]); // outer index from
-      Integer odx_t = 0; for(int d=0;d<nd;d++) odx_t+=ost[d]*(Tcoor[d]%rdt[d]); // outer index to
-      scalar_type * fp = (scalar_type *)&f_v[odx_f];
-      scalar_type * tp = (scalar_type *)&t_v[odx_t];
-      for(int w=0;w<words;w++){
-	tp[w].putlane(fp[w].getlane(idx_f),idx_t);
-      }
-#else
-    peekLocalSite(s,f_v,Fcoor);
-    pokeLocalSite(s,t_v,Tcoor);
-#endif
-    }
   });
-
-#endif
 }
 
+template<class vobj>
+void InsertSliceFast(const Lattice<vobj> &From,Lattice<vobj> & To,int slice, int orthog)
+{
+  typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  const int words=sizeof(vobj)/sizeof(vector_type);
+
+  //////////////////////////////////////////////////////////////////////////////////////////
+  // checks should guarantee that the operations are local
+  //////////////////////////////////////////////////////////////////////////////////////////
+  GridBase *Fg = From.Grid();
+  GridBase *Tg = To.Grid();
+  assert(!Fg->_isCheckerBoarded);
+  assert(!Tg->_isCheckerBoarded);
+  int Nsimd = Fg->Nsimd();
+  int nF = Fg->_ndimension;
+  int nT = Tg->_ndimension;
+  assert(nF+1 == nT);
+
+  ///////////////////////////////////////////////////////////
+  // do the index calc on the GPU
+  ///////////////////////////////////////////////////////////
+  Coordinate f_ostride = Fg->_ostride;
+  Coordinate f_istride = Fg->_istride;
+  Coordinate f_rdimensions = Fg->_rdimensions;
+  Coordinate t_ostride = Tg->_ostride;
+  Coordinate t_istride = Tg->_istride;
+  Coordinate t_rdimensions = Tg->_rdimensions;
+  Coordinate RegionSize = Fg->_ldimensions;
+  size_t nsite = 1;
+  for(int i=0;i<nF;i++) nsite *= RegionSize[i]; // whole volume of lower dim grid
+
+  typedef typename vobj::vector_type vector_type;
+  typedef typename vobj::scalar_type scalar_type;
+
+  autoView(from_v,From,AcceleratorRead);
+  autoView(to_v,To,AcceleratorWrite);
+
+  accelerator_for(idx,nsite,1,{
+
+      Coordinate from_coor(nF), to_coor(nT);
+      Lexicographic::CoorFromIndex(from_coor,idx,RegionSize);
+      int j=0;
+      for(int i=0;i<nT;i++){
+	if ( i!=orthog ) { 
+	  to_coor[i] = from_coor[j];
+	  j++;
+	} else {
+	  to_coor[i] = slice;
+	}
+      }
+      int from_oidx = 0; for(int d=0;d<nF;d++) from_oidx+=f_ostride[d]*(from_coor[d]%f_rdimensions[d]);
+      int from_lane = 0; for(int d=0;d<nF;d++) from_lane+=f_istride[d]*(from_coor[d]/f_rdimensions[d]);
+      int to_oidx   = 0; for(int d=0;d<nT;d++) to_oidx+=t_ostride[d]*(to_coor[d]%t_rdimensions[d]);
+      int to_lane   = 0; for(int d=0;d<nT;d++) to_lane+=t_istride[d]*(to_coor[d]/t_rdimensions[d]);
+
+      const vector_type* from = (const vector_type *)&from_v[from_oidx];
+      vector_type* to = (vector_type *)&to_v[to_oidx];
+      
+      scalar_type stmp;
+      for(int w=0;w<words;w++){
+	stmp = getlane(from[w], from_lane);
+	putlane(to[w], stmp, to_lane);
+      }
+  });
+}
+
+template<class vobj>
+void ExtractSliceFast(Lattice<vobj> &To,const Lattice<vobj> & From,int slice, int orthog)
+{
+  typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  const int words=sizeof(vobj)/sizeof(vector_type);
+
+  //////////////////////////////////////////////////////////////////////////////////////////
+  // checks should guarantee that the operations are local
+  //////////////////////////////////////////////////////////////////////////////////////////
+  GridBase *Fg = From.Grid();
+  GridBase *Tg = To.Grid();
+  assert(!Fg->_isCheckerBoarded);
+  assert(!Tg->_isCheckerBoarded);
+  int Nsimd = Fg->Nsimd();
+  int nF = Fg->_ndimension;
+  int nT = Tg->_ndimension;
+  assert(nT+1 == nF);
+
+  ///////////////////////////////////////////////////////////
+  // do the index calc on the GPU
+  ///////////////////////////////////////////////////////////
+  Coordinate f_ostride = Fg->_ostride;
+  Coordinate f_istride = Fg->_istride;
+  Coordinate f_rdimensions = Fg->_rdimensions;
+  Coordinate t_ostride = Tg->_ostride;
+  Coordinate t_istride = Tg->_istride;
+  Coordinate t_rdimensions = Tg->_rdimensions;
+  Coordinate RegionSize = Tg->_ldimensions;
+  size_t nsite = 1;
+  for(int i=0;i<nT;i++) nsite *= RegionSize[i]; // whole volume of lower dim grid
+
+  typedef typename vobj::vector_type vector_type;
+  typedef typename vobj::scalar_type scalar_type;
+
+  autoView(from_v,From,AcceleratorRead);
+  autoView(to_v,To,AcceleratorWrite);
+
+  accelerator_for(idx,nsite,1,{
+
+      Coordinate from_coor(nF), to_coor(nT);
+      Lexicographic::CoorFromIndex(to_coor,idx,RegionSize);
+      int j=0;
+      for(int i=0;i<nF;i++){
+	if ( i!=orthog ) { 
+	  from_coor[i] = to_coor[j];
+	  j++;
+	} else {
+	  from_coor[i] = slice;
+	}
+      }
+      int from_oidx = 0; for(int d=0;d<nF;d++) from_oidx+=f_ostride[d]*(from_coor[d]%f_rdimensions[d]);
+      int from_lane = 0; for(int d=0;d<nF;d++) from_lane+=f_istride[d]*(from_coor[d]/f_rdimensions[d]);
+      int to_oidx   = 0; for(int d=0;d<nT;d++) to_oidx+=t_ostride[d]*(to_coor[d]%t_rdimensions[d]);
+      int to_lane   = 0; for(int d=0;d<nT;d++) to_lane+=t_istride[d]*(to_coor[d]/t_rdimensions[d]);
+
+      const vector_type* from = (const vector_type *)&from_v[from_oidx];
+      vector_type* to = (vector_type *)&to_v[to_oidx];
+      
+      scalar_type stmp;
+      for(int w=0;w<words;w++){
+	stmp = getlane(from[w], from_lane);
+	putlane(to[w], stmp, to_lane);
+      }
+  });
+}
 
 template<class vobj>
 void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int orthog)
@@ -889,9 +1033,7 @@ void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slic
 
 }
 
-
-//Insert subvolume orthogonal to direction 'orthog' with slice index 'slice_lo' from 'lowDim' onto slice index 'slice_hi' of higherDim
-//The local dimensions of both 'lowDim' and 'higherDim' orthogonal to 'orthog' should be the same
+//Can I implement with local copyregion??
 template<class vobj>
 void InsertSliceLocal(const Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice_lo,int slice_hi, int orthog)
 {
@@ -912,121 +1054,18 @@ void InsertSliceLocal(const Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int
       assert(lg->_ldimensions[d] == hg->_ldimensions[d]);
     }
   }
-
-#if 1
-  size_t nsite = lg->lSites()/lg->LocalDimensions()[orthog];
-  size_t tbytes = 4*nsite*sizeof(int);
-  int *table = (int*)malloc(tbytes);
-  
-  thread_for(idx,nsite,{
-    Coordinate lcoor(nl);
-    Coordinate hcoor(nh);
-    lcoor[orthog] = slice_lo;
-    hcoor[orthog] = slice_hi;
-    size_t rem = idx;
-    for(int mu=0;mu<nl;mu++){
-      if(mu != orthog){
-	int xmu = rem % lg->LocalDimensions()[mu];  rem /= lg->LocalDimensions()[mu];
-	lcoor[mu] = hcoor[mu] = xmu;
-      }
-    }
-    int loidx = lg->oIndex(lcoor);
-    int liidx = lg->iIndex(lcoor);
-    int hoidx = hg->oIndex(hcoor);
-    int hiidx = hg->iIndex(hcoor);
-    int* tt = table + 4*idx;
-    tt[0] = loidx;
-    tt[1] = liidx;
-    tt[2] = hoidx;
-    tt[3] = hiidx;
-    });
-   
-  int* table_d = (int*)acceleratorAllocDevice(tbytes);
-  acceleratorCopyToDevice(table,table_d,tbytes);
-
-  typedef typename vobj::vector_type vector_type;
-  typedef typename vobj::scalar_type scalar_type;
-
-  autoView(lowDim_v,lowDim,AcceleratorRead);
-  autoView(higherDim_v,higherDim,AcceleratorWrite);
-  
-  accelerator_for(idx,nsite,1,{
-      static const int words=sizeof(vobj)/sizeof(vector_type);
-      int* tt = table_d + 4*idx;
-      int from_oidx = *tt++;
-      int from_lane = *tt++;
-      int to_oidx = *tt++;
-      int to_lane = *tt;
-
-      const vector_type* from = (const vector_type *)&lowDim_v[from_oidx];
-      vector_type* to = (vector_type *)&higherDim_v[to_oidx];
-      
-      scalar_type stmp;
-      for(int w=0;w<words;w++){
-	stmp = getlane(from[w], from_lane);
-	putlane(to[w], stmp, to_lane);
-      }
-    });
-  
-  acceleratorFreeDevice(table_d);    
-  free(table);
-  
-#else
-  // the above should guarantee that the operations are local
-  autoView(lowDimv,lowDim,CpuRead);
-  autoView(higherDimv,higherDim,CpuWrite);
-  thread_for(idx,lg->lSites(),{
-    sobj s;
-    Coordinate lcoor(nl);
-    Coordinate hcoor(nh);
-    lg->LocalIndexToLocalCoor(idx,lcoor);
-    if( lcoor[orthog] == slice_lo ) { 
-      hcoor=lcoor;
-      hcoor[orthog] = slice_hi;
-      peekLocalSite(s,lowDimv,lcoor);
-      pokeLocalSite(s,higherDimv,hcoor);
-    }
-  });
-#endif
+  Coordinate sz = lg->_ldimensions;
+  sz[orthog]=1;
+  Coordinate f_ll(nl,0); f_ll[orthog]=slice_lo;
+  Coordinate t_ll(nh,0); t_ll[orthog]=slice_hi;
+  localCopyRegion(lowDim,higherDim,f_ll,t_ll,sz);
 }
 
 
 template<class vobj>
 void ExtractSliceLocal(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slice_lo,int slice_hi, int orthog)
 {
-  typedef typename vobj::scalar_object sobj;
-
-  GridBase *lg = lowDim.Grid();
-  GridBase *hg = higherDim.Grid();
-  int nl = lg->_ndimension;
-  int nh = hg->_ndimension;
-
-  assert(nl == nh);
-  assert(orthog<nh);
-  assert(orthog>=0);
-
-  for(int d=0;d<nh;d++){
-    if ( d!=orthog ) {
-    assert(lg->_processors[d]  == hg->_processors[d]);
-    assert(lg->_ldimensions[d] == hg->_ldimensions[d]);
-  }
-  }
-
-  // the above should guarantee that the operations are local
-  autoView(lowDimv,lowDim,CpuWrite);
-  autoView(higherDimv,higherDim,CpuRead);
-  thread_for(idx,lg->lSites(),{
-    sobj s;
-    Coordinate lcoor(nl);
-    Coordinate hcoor(nh);
-    lg->LocalIndexToLocalCoor(idx,lcoor);
-    if( lcoor[orthog] == slice_lo ) { 
-      hcoor=lcoor;
-      hcoor[orthog] = slice_hi;
-      peekLocalSite(s,higherDimv,hcoor);
-      pokeLocalSite(s,lowDimv,lcoor);
-    }
-  });
+  InsertSliceLocal(higherDim,lowDim,slice_hi,slice_lo,orthog);
 }
 
 
@@ -1052,7 +1091,7 @@ void Replicate(const Lattice<vobj> &coarse,Lattice<vobj> & fine)
 
   Coordinate fcoor(nd);
   Coordinate ccoor(nd);
-  for(int g=0;g<fg->gSites();g++){
+  for(int64_t g=0;g<fg->gSites();g++){
 
     fg->GlobalIndexToGlobalCoor(g,fcoor);
     for(int d=0;d<nd;d++){
@@ -1737,6 +1776,36 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
     vectorizeFromLexOrdArray(scalardata,full[v]);    
   }
 }
+
+//////////////////////////////////////////////////////
+// Faster but less accurate blockProject
+//////////////////////////////////////////////////////
+template<class vobj,class CComplex,int nbasis,class VLattice>
+inline void blockProjectFast(Lattice<iVector<CComplex,nbasis > > &coarseData,
+			     const             Lattice<vobj>   &fineData,
+			     const VLattice &Basis)
+{
+  GridBase * fine  = fineData.Grid();
+  GridBase * coarse= coarseData.Grid();
+
+  Lattice<iScalar<CComplex> > ip(coarse);
+
+  autoView( coarseData_ , coarseData, AcceleratorWrite);
+  autoView( ip_         , ip,         AcceleratorWrite);
+  RealD t_IP=0;
+  RealD t_co=0;
+  for(int v=0;v<nbasis;v++) {
+    t_IP-=usecond();
+    blockInnerProductD(ip,Basis[v],fineData); 
+    t_IP+=usecond();
+    t_co-=usecond();
+    accelerator_for( sc, coarse->oSites(), vobj::Nsimd(), {
+	convertType(coarseData_[sc](v),ip_[sc]);
+      });
+    t_co+=usecond();
+  }
+}
+
 
 NAMESPACE_END(Grid);
 

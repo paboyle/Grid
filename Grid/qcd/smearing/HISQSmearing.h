@@ -170,7 +170,7 @@ public:
             typedef decltype(coalescedReadGeneralPermute(U_v[0](0),gStencil.GetEntry(0,0)->_permute,Nd)) U3matrix;
 
             int Nsites = U_v.size();
-            auto gStencil_v = gStencil.View(); 
+            auto gStencil_v = gStencil.View(AcceleratorRead); 
 
             accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 3-link constructs
                 stencilElement SE0, SE1, SE2, SE3, SE4, SE5;

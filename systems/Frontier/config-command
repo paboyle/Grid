@@ -15,8 +15,8 @@ CLIME=`spack find --paths c-lime@2-3-9 | grep c-lime| cut -c 15-`
 --with-mpfr=/opt/cray/pe/gcc/mpfr/3.1.4/ \
 --disable-fermion-reps \
 CXX=hipcc MPICXX=mpicxx \
-CXXFLAGS="-fPIC -I{$ROCM_PATH}/include/ -I${MPICH_DIR}/include -L/lib64 -fgpu-sanitize" \
- LDFLAGS="-L/lib64 -L${MPICH_DIR}/lib -lmpi -L${CRAY_MPICH_ROOTDIR}/gtl/lib -lmpi_gtl_hsa -lamdhip64  -lhipblas -lrocblas"
+CXXFLAGS="-fPIC -I{$ROCM_PATH}/include/ -I${MPICH_DIR}/include -L/lib64 " \
+ LDFLAGS="-L/lib64 -L${MPICH_DIR}/lib -lmpi -L${CRAY_MPICH_ROOTDIR}/gtl/lib -lmpi_gtl_hsa -lamdhip64 -lhipblas -lrocblas"
 
 
 

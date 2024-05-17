@@ -146,6 +146,44 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////
+// Create a shifted HermOp
+////////////////////////////////////////////////////////////////////
+template<class Field>
+class ShiftedHermOpLinearOperator : public LinearOperatorBase<Field> {
+  LinearOperatorBase<Field> &_Mat;
+  RealD _shift;
+public:
+  ShiftedHermOpLinearOperator(LinearOperatorBase<Field> &Mat,RealD shift): _Mat(Mat), _shift(shift){};
+  // Support for coarsening to a multigrid
+  void OpDiag (const Field &in, Field &out) {
+    assert(0);
+  }
+  void OpDir  (const Field &in, Field &out,int dir,int disp) {
+    assert(0);
+  }
+  void OpDirAll  (const Field &in, std::vector<Field> &out){
+    assert(0);
+  };
+  void Op     (const Field &in, Field &out){
+    HermOp(in,out);
+  }
+  void AdjOp     (const Field &in, Field &out){
+    HermOp(in,out);
+  }
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
+    HermOp(in,out);
+    ComplexD dot = innerProduct(in,out);
+    n1=real(dot);
+    n2=norm2(out);
+  }
+  void HermOp(const Field &in, Field &out){
+    _Mat.HermOp(in,out);
+    out = out + _shift*in;
+  }
+};
+
+
+////////////////////////////////////////////////////////////////////
 // Wrap an already herm matrix
 ////////////////////////////////////////////////////////////////////
 template<class Matrix,class Field>

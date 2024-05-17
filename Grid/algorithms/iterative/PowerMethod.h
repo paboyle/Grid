@@ -20,7 +20,7 @@ template<class Field> class PowerMethod
     RealD evalMaxApprox = 0.0; 
     auto src_n = src; 
     auto tmp = src; 
-    const int _MAX_ITER_EST_ = 50; 
+    const int _MAX_ITER_EST_ = 100; 
 
     for (int i=0;i<_MAX_ITER_EST_;i++) { 
       

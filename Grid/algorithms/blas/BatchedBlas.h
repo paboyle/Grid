@@ -42,6 +42,7 @@ Author: Peter Boyle <pboyle@bnl.gov>
 #ifdef GRID_ONE_MKL
 #include <oneapi/mkl.hpp>
 #endif
+
 ///////////////////////////////////////////////////////////////////////	  
 // Need to rearrange lattice data to be in the right format for a
 // batched multiply. Might as well make these static, dense packed
@@ -633,7 +634,6 @@ public:
     deviceVector<ComplexD> beta_p(1);
     acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(ComplexD));
     acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(ComplexD));
-
     //    std::cout << "blasZgemmStridedBatched mnk  "<<m<<","<<n<<","<<k<<" count "<<batchCount<<std::endl;
     //    std::cout << "blasZgemmStridedBatched ld   "<<lda<<","<<ldb<<","<<ldc<<std::endl;
     //    std::cout << "blasZgemmStridedBatched sd   "<<sda<<","<<sdb<<","<<sdc<<std::endl;

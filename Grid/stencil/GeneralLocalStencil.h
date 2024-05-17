@@ -32,7 +32,12 @@ NAMESPACE_BEGIN(Grid);
 struct GeneralStencilEntry { 
   uint64_t _offset;            // 4 bytes 
   uint8_t _permute;            // 1 bytes // Horrible alignment properties
+  uint8_t _wrap;               // 1 bytes // Horrible alignment properties
 };
+struct GeneralStencilEntryReordered : public GeneralStencilEntry {
+  uint64_t _input;
+};
+
 // Could pack to 8 + 4 + 4 = 128 bit and use 
 
 class GeneralLocalStencilView {
@@ -46,7 +51,7 @@ class GeneralLocalStencilView {
   accelerator_inline GeneralStencilEntry * GetEntry(int point,int osite) const { 
     return & this->_entries_p[point+this->_npoints*osite]; 
   }
-
+  void ViewClose(void){};
 };
 ////////////////////////////////////////
 // The Stencil Class itself
@@ -61,7 +66,7 @@ protected:
 public: 
   GridBase *Grid(void) const { return _grid; }
 
-  View_type View(void) const {
+  View_type View(int mode) const {
     View_type accessor(*( (View_type *) this));
     return accessor;
   }
@@ -101,17 +106,23 @@ public:
 	  // Simpler version using icoor calculation
 	  ////////////////////////////////////////////////
 	  SE._permute =0;
+	  SE._wrap=0;
 	  for(int d=0;d<Coor.size();d++){
 
 	    int fd = grid->_fdimensions[d];
 	    int rd = grid->_rdimensions[d];
+	    int ld = grid->_ldimensions[d];
 	    int ly = grid->_simd_layout[d];
 
-	    assert((ly==1)||(ly==2));
+	    assert((ly==1)||(ly==2)||(ly==grid->Nsimd()));
 
 	    int shift = (shifts[ii][d]+fd)%fd;  // make it strictly positive 0.. L-1
 	    int x = Coor[d];                // x in [0... rd-1] as an oSite 
 
+	    if ( (x + shift)%fd != (x+shift)%ld ){
+	      SE._wrap = 1;
+	    }
+	    
 	    int permute_dim  = grid->PermuteDim(d);
 	    int permute_slice=0;
 	    if(permute_dim){    

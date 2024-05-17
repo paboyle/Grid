@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
-template<class vobj> void DumpSliceNorm(std::string s,Lattice<vobj> &f,int mu=-1)
+template<class vobj> void DumpSliceNorm(std::string s,const Lattice<vobj> &f,int mu=-1)
 {
   auto ff = localNorm2(f);
   if ( mu==-1 ) mu = f.Grid()->Nd()-1;

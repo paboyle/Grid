@@ -1,6 +1,5 @@
 . /autofs/nccs-svm1_home1/paboyle/Crusher/Grid/spack/share/spack/setup-env.sh
 spack load c-lime
-#export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/sw/crusher/spack-envs/base/opt/cray-sles15-zen3/gcc-11.2.0/gperftools-2.9.1-72ubwtuc5wcz2meqltbfdb76epufgzo2/lib
 module load emacs 
 module load PrgEnv-gnu
 module load rocm

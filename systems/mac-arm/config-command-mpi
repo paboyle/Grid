@@ -1,3 +1,2 @@
 CXXFLAGS=-I/opt/local/include LDFLAGS=-L/opt/local/lib/ CXX=c++-13 MPICXX=mpicxx ../../configure --enable-simd=GEN --enable-comms=mpi-auto --enable-unified=yes --prefix $HOME/QCD/GridInstall --with-lime=/Users/peterboyle/QCD/SciDAC/install/ --with-openssl=$BREW --disable-fermion-reps --disable-gparity --disable-debug 
 
-

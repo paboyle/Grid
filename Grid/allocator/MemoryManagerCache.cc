@@ -8,7 +8,7 @@ NAMESPACE_BEGIN(Grid);
 static char print_buffer [ MAXLINE ];
 
 #define mprintf(...) snprintf (print_buffer,MAXLINE, __VA_ARGS__ ); std::cout << GridLogMemory << print_buffer;
-#define dprintf(...) snprintf (print_buffer,MAXLINE, __VA_ARGS__ ); std::cout << GridLogMemory << print_buffer;
+#define dprintf(...) snprintf (print_buffer,MAXLINE, __VA_ARGS__ ); std::cout << GridLogDebug << print_buffer;
 //#define dprintf(...) 
 
 
@@ -111,7 +111,7 @@ void MemoryManager::AccDiscard(AcceleratorViewEntry &AccCache)
   ///////////////////////////////////////////////////////////
   assert(AccCache.state!=Empty);
   
-  mprintf("MemoryManager: Discard(%lx) %lx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
+  dprintf("MemoryManager: Discard(%lx) %lx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
   assert(AccCache.accLock==0);
   assert(AccCache.cpuLock==0);
   assert(AccCache.CpuPtr!=(uint64_t)NULL);
@@ -141,7 +141,7 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
   ///////////////////////////////////////////////////////////////////////////
   assert(AccCache.state!=Empty);
   
-  mprintf("MemoryManager: Evict cpu %lx acc %lx cpuLock %ld accLock %ld\n",
+  mprintf("MemoryManager: Evict CpuPtr %lx AccPtr %lx cpuLock %ld accLock %ld\n",
 	  (uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr,
 	  (uint64_t)AccCache.cpuLock,(uint64_t)AccCache.accLock); 
   if (AccCache.accLock!=0) return;
@@ -155,7 +155,7 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
     AccCache.AccPtr=(uint64_t)NULL;
     AccCache.state=CpuDirty; // CPU primary now
     DeviceBytes   -=AccCache.bytes;
-    dprintf("MemoryManager: Free(%lx) footprint now %ld \n",(uint64_t)AccCache.AccPtr,DeviceBytes);  
+    dprintf("MemoryManager: Free(AccPtr %lx) footprint now %ld \n",(uint64_t)AccCache.AccPtr,DeviceBytes);  
   }
   //  uint64_t CpuPtr = AccCache.CpuPtr;
   DeviceEvictions++;
@@ -169,7 +169,7 @@ void MemoryManager::Flush(AcceleratorViewEntry &AccCache)
   assert(AccCache.AccPtr!=(uint64_t)NULL);
   assert(AccCache.CpuPtr!=(uint64_t)NULL);
   acceleratorCopyFromDevice((void *)AccCache.AccPtr,(void *)AccCache.CpuPtr,AccCache.bytes);
-  mprintf("MemoryManager: Flush  %lx -> %lx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
+  mprintf("MemoryManager: acceleratorCopyFromDevice Flush AccPtr %lx -> CpuPtr %lx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   DeviceToHostBytes+=AccCache.bytes;
   DeviceToHostXfer++;
   AccCache.state=Consistent;
@@ -184,7 +184,7 @@ void MemoryManager::Clone(AcceleratorViewEntry &AccCache)
     AccCache.AccPtr=(uint64_t)AcceleratorAllocate(AccCache.bytes);
     DeviceBytes+=AccCache.bytes;
   }
-  mprintf("MemoryManager: Clone %lx <- %lx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
+  mprintf("MemoryManager: acceleratorCopyToDevice   Clone AccPtr %lx <- CpuPtr %lx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   acceleratorCopyToDevice((void *)AccCache.CpuPtr,(void *)AccCache.AccPtr,AccCache.bytes);
   HostToDeviceBytes+=AccCache.bytes;
   HostToDeviceXfer++;
@@ -474,6 +474,7 @@ void  MemoryManager::Print(void)
   std::cout << GridLogMessage << DeviceEvictions  << " Evictions from device " << std::endl;
   std::cout << GridLogMessage << DeviceDestroy    << " Destroyed vectors on device " << std::endl;
   std::cout << GridLogMessage << AccViewTable.size()<< " vectors " << LRU.size()<<" evictable"<< std::endl;
+  acceleratorMem();
   std::cout << GridLogMessage << "--------------------------------------------" << std::endl;
 }
 void  MemoryManager::PrintAll(void)

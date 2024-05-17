@@ -209,9 +209,9 @@ private:
   static void     CpuViewClose(uint64_t Ptr);
   static uint64_t CpuViewOpen(uint64_t  CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint);
 #endif
-  static void NotifyDeletion(void * CpuPtr);
 
  public:
+  static void NotifyDeletion(void * CpuPtr);
   static void Print(void);
   static void PrintAll(void);
   static void PrintState( void* CpuPtr);

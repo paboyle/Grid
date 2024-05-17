@@ -1,6 +1,50 @@
-- - Slice sum optimisation & A2A - atomic addition
+i)    Refine subspace with HDCG & recompute
+ii)   Block Lanczos in coarse space
+iii)  Batched block project in the operator computation
+
+-------
+
+i) Clean up CoarsenedMatrix, GeneralCoarsenedMatrix, GeneralCoarsenedMatrixMultiRHS
+
+ -- Ideally want a SINGLE implementation that does MultiRHS **AND** works with one RHS.
+
+ -- -- Getting there. One RHS is hard due to vectorisation & hardwired coarse5d layout
+ -- Compromise: Wrap it in a copy in/out for a slice.
+ 
+ -- Bad for Lanczos: need to do a BLOCK Lanczos instead. Longer term.
+
+ -- **** Make the test do ONLY the single RHS. ****
+ -- I/O for the matrix elements required.
+ -- Make the Adef2 build an eigenvector deflater and a block projector
+ -- 
+ 
+ -- Work with Regensburg on tests.
+ -- Plan interface preserving the coarsened matrix interface (??)
+
+-- Move functionality from GeneralCoarsenedMatrix INTO GeneralCoarsenedMatrixMultiRHS -- DONE
+   -- Don't immediately delete original
+   -- Instead make the new one self contained, then delete.
+   -- New DWF inverter test.
+
+  // void PopulateAdag(void)
+  void CoarsenOperator(LinearOperatorBase<Lattice<Fobj> > &linop, Aggregation<Fobj,CComplex,nbasis> & Subspace) -- DONE
+  ExchangeCoarseLinks();
+
+iii) Aurora -- christoph's problem -- DONE
+     Aurora -- Carleton's problem staggered.
+
+iv) Dennis merge and test Aurora -- DONE (save test)
+
+v) Merge Ed Bennet's request --DONE 
+
+vi) Repro CG  -- get down to the level of single node testing via split grid test 
+
+
+=========================
+
+===============
+- - Slice sum optimisation & A2A - atomic addition -- Dennis
 - - Also faster non-atomic reduction
-- - Remaining PRs
 - - DDHMC
   - - MixedPrec is the action eval, high precision
   - - MixedPrecCleanup is the force eval, low precision
@@ -16,7 +60,6 @@ DDHMC
 -- Reliable Update CG - DONE
 -- Multishift Mixed Precision - DONE
 -- Pole dependent residual  - DONE
-
 
 =======
 -- comms threads issue??

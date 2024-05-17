@@ -29,6 +29,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_ALGORITHMS_H
 #define GRID_ALGORITHMS_H
 
+NAMESPACE_CHECK(blas);
+#include <Grid/algorithms/blas/BatchedBlas.h>
+
 NAMESPACE_CHECK(algorithms);
 #include <Grid/algorithms/SparseMatrix.h>
 #include <Grid/algorithms/LinearOperator.h>
@@ -44,7 +47,10 @@ NAMESPACE_CHECK(SparseMatrix);
 #include <Grid/algorithms/approx/RemezGeneral.h>
 #include <Grid/algorithms/approx/ZMobius.h>
 NAMESPACE_CHECK(approx);
-#include <Grid/algorithms/iterative/Deflation.h>
+#include <Grid/algorithms/deflation/Deflation.h>
+#include <Grid/algorithms/deflation/MultiRHSBlockProject.h>
+#include <Grid/algorithms/deflation/MultiRHSDeflation.h>
+NAMESPACE_CHECK(deflation);
 #include <Grid/algorithms/iterative/ConjugateGradient.h>
 NAMESPACE_CHECK(ConjGrad);
 #include <Grid/algorithms/iterative/BiCGSTAB.h>
@@ -67,10 +73,11 @@ NAMESPACE_CHECK(BiCGSTAB);
 #include <Grid/algorithms/iterative/MixedPrecisionFlexibleGeneralisedMinimalResidual.h>
 #include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
 #include <Grid/algorithms/iterative/PowerMethod.h>
-
+#include <Grid/algorithms/iterative/AdefGeneric.h>
+#include <Grid/algorithms/iterative/AdefMrhs.h>
 NAMESPACE_CHECK(PowerMethod);
-#include <Grid/algorithms/CoarsenedMatrix.h>
-NAMESPACE_CHECK(CoarsendMatrix);
+#include <Grid/algorithms/multigrid/MultiGrid.h>
+NAMESPACE_CHECK(multigrid);
 #include <Grid/algorithms/FFT.h>
 
 #endif

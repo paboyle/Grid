@@ -204,6 +204,27 @@ template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
   return real(nrm); 
 }
 
+
+template<class Op,class T1>
+inline auto norm2(const LatticeUnaryExpression<Op,T1> & expr)  ->RealD
+{
+  return norm2(closure(expr));
+}
+
+template<class Op,class T1,class T2>
+inline auto norm2(const LatticeBinaryExpression<Op,T1,T2> & expr)      ->RealD
+{
+  return norm2(closure(expr));
+}
+
+
+template<class Op,class T1,class T2,class T3>
+inline auto norm2(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr)      ->RealD
+{
+  return norm2(closure(expr));
+}
+
+
 //The global maximum of the site norm2
 template<class vobj> inline RealD maxLocalNorm2(const Lattice<vobj> &arg)
 {
