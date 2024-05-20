@@ -8,4 +8,4 @@
     --disable-unified \
     CXX=nvcc \
     LDFLAGS="-cudart shared " \
-    CXXFLAGS="-ccbin mpicxx -gencode arch=compute_80,code=sm_80 -std=c++17 -cudart shared"
+    CXXFLAGS="-ccbin mpicxx -gencode arch=compute_80,code=sm_80 -std=c++17 -cudart shared --diag-suppress 177,550,611"
