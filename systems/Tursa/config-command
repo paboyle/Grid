@@ -4,6 +4,7 @@
     --enable-shm=nvlink \
     --enable-accelerator=cuda \
     --enable-gen-simd-width=64 \
+    --disable-gparity \
     --with-lime=/mnt/lustre/tursafs1/home/tc002/tc002/dc-boyl1/spack/spack/opt/spack/linux-rhel8-zen/gcc-8.4.1/c-lime-2-3-9-e6wxqrid6rqmd45z7n32dxkvkykpvyez \
     --disable-unified \
     CXX=nvcc \
