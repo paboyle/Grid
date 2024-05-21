@@ -8,5 +8,5 @@
     --with-lime=/mnt/lustre/tursafs1/home/tc002/tc002/dc-boyl1/spack/spack/opt/spack/linux-rhel8-zen/gcc-8.4.1/c-lime-2-3-9-e6wxqrid6rqmd45z7n32dxkvkykpvyez \
     --disable-unified \
     CXX=nvcc \
-    LDFLAGS="-cudart shared " \
+    LDFLAGS="-cudart shared -lcublas " \
     CXXFLAGS="-ccbin mpicxx -gencode arch=compute_80,code=sm_80 -std=c++17 -cudart shared --diag-suppress 177,550,611"
