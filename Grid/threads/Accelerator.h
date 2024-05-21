@@ -539,12 +539,6 @@ inline void acceleratorCopySynchronise(void) { auto discard=hipStreamSynchronize
 
 #endif
 
-inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)
-{
-  acceleratorCopyDeviceToDeviceAsynch(from,to,bytes);
-  acceleratorCopySynchronise();
-}
-
 //////////////////////////////////////////////
 // CPU Target - No accelerator just thread instead
 //////////////////////////////////////////////
@@ -552,7 +546,6 @@ inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)
 #if ( (!defined(GRID_SYCL)) && (!defined(GRID_CUDA)) && (!defined(GRID_HIP)) )
 
 #undef GRID_SIMT
-
 
 inline void acceleratorMem(void)
 {
@@ -654,6 +647,12 @@ accelerator_inline void acceleratorFence(void)
 #endif
 #endif
   return;
+}
+
+inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)
+{
+  acceleratorCopyDeviceToDeviceAsynch(from,to,bytes);
+  acceleratorCopySynchronise();
 }
 
 template<class T> void acceleratorPut(T& dev,T&host)
