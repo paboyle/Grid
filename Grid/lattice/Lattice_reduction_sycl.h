@@ -9,34 +9,29 @@ inline typename vobj::scalar_objectD sumD_gpu_tensor(const vobj *lat, Integer os
 {
   typedef typename vobj::scalar_object sobj;
   typedef typename vobj::scalar_objectD sobjD;
-  //  sobj *mysum =(sobj *) malloc_shared(sizeof(sobj),*theGridAccelerator);
-  //  sobj *mysum =(sobj *) malloc(sizeof(sobj));
-
+  static Vector<sobj> mysum;
+  mysum.resize(1);
+  sobj *mysum_p = & mysum[0];
   sobj identity; zeroit(identity);
+  mysum[0] = identity;
   sobj ret ; 
 
   Integer nsimd= vobj::Nsimd();
 
-  {
-    sycl::buffer<sobj, 1> abuff(&ret, {1});
-    theGridAccelerator->submit([&](cl::sycl::handler &cgh) {
-
-      auto Reduction = cl::sycl::reduction(abuff,cgh,identity,std::plus<>());
-      cgh.parallel_for(cl::sycl::range<1>{osites},
-		       Reduction,
-		       [=] (cl::sycl::id<1> item, auto &sum) {
-			 auto osite   = item[0];
-			 sum +=Reduce(lat[osite]);
-		       });
-    });
-  }
+  const cl::sycl::property_list PropList ({ cl::sycl::property::reduction::initialize_to_identity() });
+  theGridAccelerator->submit([&](cl::sycl::handler &cgh) {
+    auto Reduction = cl::sycl::reduction(mysum_p,identity,std::plus<>(),PropList);
+     cgh.parallel_for(cl::sycl::range<1>{osites},
+		      Reduction,
+		      [=] (cl::sycl::id<1> item, auto &sum) {
+      auto osite   = item[0];
+      sum +=Reduce(lat[osite]);
+     });
+   });
   theGridAccelerator->wait();
-  //  acceleratorCopyFromDevice(mysum,&ret,sizeof(sobj));
-  //  ret = mysum[0];
-
-  sobjD dret; convertType(dret,ret);
+  ret = mysum[0];
   //  free(mysum,*theGridAccelerator);
-  //  free(mysum);
+  sobjD dret; convertType(dret,ret);
   return dret;
 }
 
@@ -82,23 +77,22 @@ inline typename vobj::scalar_object sum_gpu_large(const vobj *lat, Integer osite
 template<class Word> Word svm_xor(Word *vec,uint64_t L)
 {
   Word xorResult; xorResult = 0;
-  //  Word *d_sum =(Word *)cl::sycl::malloc_shared(sizeof(Word),*theGridAccelerator);
+  static Vector<Word> d_sum;
+  d_sum.resize(1);
+  Word *d_sum_p=&d_sum[0];
   Word identity;  identity=0;
-  Word ret;
-  {
-    sycl::buffer<Word, 1> abuff(&ret, {1});
-    theGridAccelerator->submit([&](cl::sycl::handler &cgh) {
-      //     auto Reduction = cl::sycl::reduction(d_sum,identity,std::bit_xor<>());
-      auto Reduction = cl::sycl::reduction(abuff,cgh,identity,std::bit_xor<>());
-      cgh.parallel_for(cl::sycl::range<1>{L},
-		       Reduction,
-		       [=] (cl::sycl::id<1> index, auto &sum) {
-			 sum ^=vec[index];
-		       });
-    });
-  }
+  d_sum[0] = identity;
+  const cl::sycl::property_list PropList ({ cl::sycl::property::reduction::initialize_to_identity() });
+  theGridAccelerator->submit([&](cl::sycl::handler &cgh) {
+    auto Reduction = cl::sycl::reduction(d_sum_p,identity,std::bit_xor<>(),PropList);
+     cgh.parallel_for(cl::sycl::range<1>{L},
+		      Reduction,
+		      [=] (cl::sycl::id<1> index, auto &sum) {
+	 sum^=vec[index];
+     });
+   });
   theGridAccelerator->wait();
-  //  ret = d_sum[0];
+  Word ret = d_sum[0];
   //  free(d_sum,*theGridAccelerator);
   return ret;
 }
