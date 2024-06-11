@@ -13,6 +13,7 @@ inline typename vobj::scalar_objectD sumD_gpu_tensor(const vobj *lat, Integer os
   mysum.resize(1);
   sobj *mysum_p = & mysum[0];
   sobj identity; zeroit(identity);
+  mysum[0] = identity;
   sobj ret ; 
 
   Integer nsimd= vobj::Nsimd();
@@ -80,13 +81,14 @@ template<class Word> Word svm_xor(Word *vec,uint64_t L)
   d_sum.resize(1);
   Word *d_sum_p=&d_sum[0];
   Word identity;  identity=0;
+  d_sum[0] = identity;
   const cl::sycl::property_list PropList ({ cl::sycl::property::reduction::initialize_to_identity() });
   theGridAccelerator->submit([&](cl::sycl::handler &cgh) {
     auto Reduction = cl::sycl::reduction(d_sum_p,identity,std::bit_xor<>(),PropList);
      cgh.parallel_for(cl::sycl::range<1>{L},
 		      Reduction,
 		      [=] (cl::sycl::id<1> index, auto &sum) {
-	 sum ^=vec[index];
+	 sum^=vec[index];
      });
    });
   theGridAccelerator->wait();
