@@ -31,11 +31,13 @@ directory
 
 NAMESPACE_BEGIN(Grid);
 template <class T> void writeFile(T& out, std::string const fname){
+#ifdef HAVE_LIME
   emptyUserRecord record;
   ScidacWriter WR(out.Grid()->IsBoss());
   WR.open(fname);
   WR.writeScidacFieldRecord(out,record,0,Grid::BinaryIO::BINARYIO_LEXICOGRAPHIC);
   WR.close();
+#endif
 }
 NAMESPACE_END(Grid);
 int main(int argc, char **argv) {

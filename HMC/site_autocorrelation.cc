@@ -30,11 +30,13 @@ directory
 #include <string>
 
 template <class T> void readFile(T& out, std::string const fname){
+#ifdef HAVE_LIME
   Grid::emptyUserRecord record;
   Grid::ScidacReader RD;
   RD.open(fname);
   RD.readScidacFieldRecord(out,record);
   RD.close();
+#endif
 }
 
 
