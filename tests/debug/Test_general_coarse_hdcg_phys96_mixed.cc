@@ -160,7 +160,8 @@ int main (int argc, char ** argv)
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
   // Construct a coarsened grid with 4^4 cell
-  Coordinate Block({4,4,6,6});
+  //  Coordinate Block({4,4,6,4});
+  Coordinate Block({4,4,4,4});
   Coordinate clatt = GridDefaultLatt();
   for(int d=0;d<clatt.size();d++){
     clatt[d] = clatt[d]/Block[d];
@@ -217,7 +218,7 @@ int main (int argc, char ** argv)
   std::string evec_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/evecs.scidac");
   std::string eval_file("/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/eval.xml");
   bool load_agg=true;
-  bool load_refine=false;
+  bool load_refine=true;
   bool load_mat=false;
   bool load_evec=false;
 
@@ -276,17 +277,19 @@ int main (int argc, char ** argv)
   std::cout << "**************************************"<<std::endl;
 
   typedef HermitianLinearOperator<MultiGeneralCoarsenedMatrix_t,CoarseVector> MrhsHermMatrix;
-  Chebyshev<CoarseVector>      IRLCheby(0.0012,42.0,301);  // 1 iter
+  //  Chebyshev<CoarseVector>      IRLCheby(0.0012,42.0,301);  // 4.4.6.4
+  Chebyshev<CoarseVector>      IRLCheby(0.0010,42.0,501);  // for 4.4.4.4 blocking
   MrhsHermMatrix MrhsCoarseOp     (mrhs);
 
   CoarseVector pm_src(CoarseMrhs);
   pm_src = ComplexD(1.0);
   PowerMethod<CoarseVector>       cPM;   cPM(MrhsCoarseOp,pm_src);
 
-  int Nk=nrhs*30;
+  //  int Nk=nrhs*30; // 4.4.6.4
   //  int Nk=nrhs*80;
+  int Nk=nrhs*60;
   int Nm=Nk*4;
-  int Nstop=Nk;
+  int Nstop=350;
   int Nconv_test_interval=1;
   
   ImplicitlyRestartedBlockLanczosCoarse<CoarseVector> IRL(MrhsCoarseOp,
@@ -299,7 +302,7 @@ int main (int argc, char ** argv)
 							  nrhs,
 							  Nk,
 							  Nm,
-							  1e-4,20);
+							  3e-4,2);
 
   std::vector<RealD>            eval(Nm);
   std::vector<CoarseVector>     evec(Nm,Coarse5d);
@@ -368,7 +371,7 @@ int main (int argc, char ** argv)
   HDCGmrhs(src_mrhs,res_mrhs);
 
   // Standard CG
-#if 0
+#if 1
   {
   std::cout << "**************************************"<<std::endl;
   std::cout << "Calling red black CG"<<std::endl;
