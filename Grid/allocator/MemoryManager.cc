@@ -16,6 +16,27 @@ NAMESPACE_BEGIN(Grid);
 uint64_t total_shared;
 uint64_t total_device;
 uint64_t total_host;;
+
+void MemoryManager::DisplayMallinfo(void)
+{
+#ifdef __linux__
+  struct mallinfo mi;
+  
+  mi = mallinfo();
+
+  printf("Total non-mmapped bytes (arena):       %d\n", mi.arena);
+  printf("# of free chunks (ordblks):            %d\n", mi.ordblks);
+  printf("# of free fastbin blocks (smblks):     %d\n", mi.smblks);
+  printf("# of mapped regions (hblks):           %d\n", mi.hblks);
+  printf("Bytes in mapped regions (hblkhd):      %d\n", mi.hblkhd);
+  printf("Max. total allocated space (usmblks):  %d\n", mi.usmblks);
+  printf("Free bytes held in fastbins (fsmblks): %d\n", mi.fsmblks);
+  printf("Total allocated space (uordblks):      %d\n", mi.uordblks);
+  printf("Total free space (fordblks):           %d\n", mi.fordblks);
+  printf("Topmost releasable block (keepcost):   %d\n", mi.keepcost);
+#endif
+}
+
 void MemoryManager::PrintBytes(void)
 {
   std::cout << " MemoryManager : ------------------------------------ "<<std::endl;
@@ -35,7 +56,7 @@ void MemoryManager::PrintBytes(void)
 #ifdef GRID_CUDA
   cuda_mem();
 #endif
-  
+  DisplayMallinfo();
 }
 
 uint64_t MemoryManager::DeviceCacheBytes() { return CacheBytes[Acc] + CacheBytes[AccHuge] + CacheBytes[AccSmall]; }
