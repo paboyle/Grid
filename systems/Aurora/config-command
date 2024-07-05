@@ -1,16 +1,18 @@
 
+export LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel -fsycl-targets=spir64_gen -Xs -device -Xs pvc -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel  -fsycl  -lsycl " 
+export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -I$INSTALL/include -Wno-tautological-compare -I$HOME/ -qmkl=parallel  -fsycl -fno-exceptions -fsycl-targets=spir64_gen -Xs -device -Xs pvc "
 ../../configure \
 	--enable-simd=GPU \
 	--enable-gen-simd-width=64 \
 	--enable-comms=mpi-auto \
+	--enable-debug \
 	--disable-gparity \
 	--disable-fermion-reps \
+	--with-lime=$CLIME \
 	--enable-shm=nvlink \
 	--enable-accelerator=sycl \
 	--enable-accelerator-aware-mpi=yes\
 	--enable-unified=no \
 	MPICXX=mpicxx \
-	CXX=icpx \
-	LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel -lsycl" \
-	CXXFLAGS="-fiopenmp -fsycl-unnamed-lambda -fsycl -I$INSTALL/include -Wno-tautological-compare -I$HOME/ -qmkl=parallel"
+	CXX=icpx 
 
