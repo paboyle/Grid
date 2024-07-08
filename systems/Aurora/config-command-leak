@@ -1,0 +1,23 @@
+source ~/spack/share/spack/setup-env.sh 
+spack load c-lime
+export CLIME=`spack find --paths c-lime | grep ^c-lime | awk '{print $2}' `
+export TCMALLOC=`spack find --paths gperftools | grep ^gperftools | awk '{print $2}' `
+export LD_LIBRARY_PATH=${TCMALLOC}/lib:$LD_LIBRARY_PATH
+
+../../configure \
+	--enable-debug \
+	--enable-simd=GPU \
+	--enable-gen-simd-width=64 \
+	--enable-comms=mpi-auto \
+	--disable-gparity \
+	--disable-fermion-reps \
+	--with-lime=$CLIME \
+	--enable-shm=nvlink \
+	--enable-accelerator=sycl \
+	--enable-accelerator-aware-mpi=yes\
+	--enable-unified=no \
+	MPICXX=mpicxx \
+	CXX=icpx \
+	LDFLAGS="-fiopenmp -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel -fsycl  -lsycl -Xarch_host -fsanitize=leak -fsycl-device-code-split=per_kernel" \
+	CXXFLAGS="-fiopenmp -fsycl-unnamed-lambda -I$INSTALL/include -Wno-tautological-compare -I$HOME/ -qmkl=parallel -Xarch_host  -fsycl -fsanitize=leak "
+
