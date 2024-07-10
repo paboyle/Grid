@@ -500,6 +500,87 @@ namespace Grid {
   };
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Site diagonal is identity, left preconditioned by Mee^inv
+  // ( 1 - Mee^inv Meo Moo^inv Moe ) phi = Mee_inv ( Mee - Meo Moo^inv Moe Mee^inv  ) phi =  Mee_inv eta
+  //
+  // Solve:
+  // ( 1 - Mee^inv Meo Moo^inv Moe )^dag ( 1 - Mee^inv Meo Moo^inv Moe ) phi = ( 1 - Mee^inv Meo Moo^inv Moe )^dag  Mee_inv eta
+  //
+  // Old notation e<->o
+  //
+  // Left precon by Moo^-1
+  //  b) (Doo^{dag} M_oo^-dag) (Moo^-1 Doo) psi_o =  [ (D_oo)^dag M_oo^-dag ] Moo^-1 L^{-1}  eta_o
+  //                                   eta_o'     = (D_oo)^dag  M_oo^-dag Moo^-1 (eta_o - Moe Mee^{-1} eta_e)
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////
+  template<class Field> class SchurRedBlackDiagOneSolve : public SchurRedBlackBase<Field> {
+  public:
+    typedef CheckerBoardedSparseMatrixBase<Field> Matrix;
+
+    /////////////////////////////////////////////////////
+    // Wrap the usual normal equations Schur trick
+    /////////////////////////////////////////////////////
+  SchurRedBlackDiagOneSolve(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false,
+      const bool _solnAsInitGuess = false)  
+    : SchurRedBlackBase<Field>(HermitianRBSolver,initSubGuess,_solnAsInitGuess) {};
+
+    virtual void RedBlackSource(Matrix & _Matrix,const Field &src, Field &src_e,Field &src_o)
+    {
+      GridBase *grid = _Matrix.RedBlackGrid();
+      GridBase *fgrid= _Matrix.Grid();
+
+      SchurDiagOneOperator<Matrix,Field> _HermOpEO(_Matrix);
+      
+      Field   tmp(grid);
+      Field  Mtmp(grid);
+
+      pickCheckerboard(Even,src_e,src);
+      pickCheckerboard(Odd ,src_o,src);
+    
+      /////////////////////////////////////////////////////
+      // src_o = Mpcdag *MooeeInv * (source_o - Moe MeeInv source_e)
+      /////////////////////////////////////////////////////
+      _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.Checkerboard() ==Even);
+      _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.Checkerboard() ==Odd);     
+      Mtmp=src_o-Mtmp;                 
+      _Matrix.MooeeInv(Mtmp,tmp);      assert( tmp.Checkerboard() ==Odd);     
+      
+      // get the right MpcDag
+      _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.Checkerboard() ==Odd);       
+    }
+
+    virtual void RedBlackSolution(Matrix & _Matrix,const Field &sol_o, const Field &src_e,Field &sol)
+    {
+      GridBase *grid = _Matrix.RedBlackGrid();
+      GridBase *fgrid= _Matrix.Grid();
+
+      Field   tmp(grid);
+      Field   sol_e(grid);
+
+
+      ///////////////////////////////////////////////////
+      // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
+      ///////////////////////////////////////////////////
+      _Matrix.Meooe(sol_o,tmp);    assert(  tmp.Checkerboard()   ==Even);
+      tmp = src_e-tmp;             assert(  src_e.Checkerboard() ==Even);
+      _Matrix.MooeeInv(tmp,sol_e); assert(  sol_e.Checkerboard() ==Even);
+     
+      setCheckerboard(sol,sol_e);  assert(  sol_e.Checkerboard() ==Even);
+      setCheckerboard(sol,sol_o);  assert(  sol_o.Checkerboard() ==Odd );
+    };
+
+    virtual void RedBlackSolve   (Matrix & _Matrix,const Field &src_o, Field &sol_o)
+    {
+      SchurDiagOneOperator<Matrix,Field> _HermOpEO(_Matrix);
+      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o);
+    };
+    virtual void RedBlackSolve   (Matrix & _Matrix,const std::vector<Field> &src_o,  std::vector<Field> &sol_o)
+    {
+      SchurDiagOneOperator<Matrix,Field> _HermOpEO(_Matrix);
+      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o); 
+    }
+  };
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // Site diagonal is identity, right preconditioned by Mee^inv
   // ( 1 - Meo Moo^inv Moe Mee^inv  ) phi =( 1 - Meo Moo^inv Moe Mee^inv  ) Mee psi =  = eta  = eta
   //=> psi = MeeInv phi
