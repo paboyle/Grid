@@ -40,3 +40,4 @@ directory
 
 #define EXCEPTION_CHECK_BEGIN(A) try {
 #define EXCEPTION_CHECK_END(A)   } catch ( std::exception e ) { BACKTRACEFP(stderr); std::cerr << __PRETTY_FUNCTION__ << " : " <<__LINE__<< " Caught exception "<<e.what()<<std::endl; throw; }
+
