@@ -17,6 +17,21 @@ uint64_t total_shared;
 uint64_t total_device;
 uint64_t total_host;;
 
+#if defined(__has_feature)
+#if __has_feature(leak_sanitizer)
+#define ASAN_LEAK_CHECK
+#endif
+#endif
+
+#ifdef ASAN_LEAK_CHECK
+#include <sanitizer/asan_interface.h>
+#include <sanitizer/common_interface_defs.h>
+#include <sanitizer/lsan_interface.h>
+#define LEAK_CHECK(A) { __lsan_do_recoverable_leak_check(); }
+#else
+#define LEAK_CHECK(A) { }
+#endif
+
 void MemoryManager::DisplayMallinfo(void)
 {
 #ifdef __linux__
@@ -24,17 +39,19 @@ void MemoryManager::DisplayMallinfo(void)
   
   mi = mallinfo();
 
-  printf("Total non-mmapped bytes (arena):       %d\n", mi.arena);
-  printf("# of free chunks (ordblks):            %d\n", mi.ordblks);
-  printf("# of free fastbin blocks (smblks):     %d\n", mi.smblks);
-  printf("# of mapped regions (hblks):           %d\n", mi.hblks);
-  printf("Bytes in mapped regions (hblkhd):      %d\n", mi.hblkhd);
-  printf("Max. total allocated space (usmblks):  %d\n", mi.usmblks);
-  printf("Free bytes held in fastbins (fsmblks): %d\n", mi.fsmblks);
-  printf("Total allocated space (uordblks):      %d\n", mi.uordblks);
-  printf("Total free space (fordblks):           %d\n", mi.fordblks);
-  printf("Topmost releasable block (keepcost):   %d\n", mi.keepcost);
+  std::cout << "MemoryManager: Total non-mmapped bytes (arena):       "<< (size_t)mi.arena<<std::endl;
+  std::cout << "MemoryManager: # of free chunks (ordblks):            "<< (size_t)mi.ordblks<<std::endl;
+  std::cout << "MemoryManager: # of free fastbin blocks (smblks):     "<< (size_t)mi.smblks<<std::endl;
+  std::cout << "MemoryManager: # of mapped regions (hblks):           "<< (size_t)mi.hblks<<std::endl;
+  std::cout << "MemoryManager: Bytes in mapped regions (hblkhd):      "<< (size_t)mi.hblkhd<<std::endl;
+  std::cout << "MemoryManager: Max. total allocated space (usmblks):  "<< (size_t)mi.usmblks<<std::endl;
+  std::cout << "MemoryManager: Free bytes held in fastbins (fsmblks): "<< (size_t)mi.fsmblks<<std::endl;
+  std::cout << "MemoryManager: Total allocated space (uordblks):      "<< (size_t)mi.uordblks<<std::endl;
+  std::cout << "MemoryManager: Total free space (fordblks):           "<< (size_t)mi.fordblks<<std::endl;
+  std::cout << "MemoryManager: Topmost releasable block (keepcost):   "<< (size_t)mi.keepcost<<std::endl;
 #endif
+  LEAK_CHECK();
+ 
 }
 
 void MemoryManager::PrintBytes(void)
