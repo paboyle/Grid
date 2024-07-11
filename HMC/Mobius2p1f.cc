@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
   HMCparameters HMCparams;
   HMCparams.StartTrajectory  = 0;
   HMCparams.Trajectories     = 200;
-  HMCparams.NoMetropolisUntil=  20;
+  HMCparams.NoMetropolisUntil=  0;
   // "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
   HMCparams.StartingType     =std::string("ColdStart");
   HMCparams.MD = MD;
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
   CheckpointerParameters CPparams;
   CPparams.config_prefix = "ckpoint_EODWF_lat";
   CPparams.rng_prefix    = "ckpoint_EODWF_rng";
-  CPparams.saveInterval  = 10;
+  CPparams.saveInterval  = 1;
   CPparams.format        = "IEEE64BIG";
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
 
@@ -186,6 +186,8 @@ int main(int argc, char **argv) {
 
   /////////////////////////////////////////////////////////////
   // HMC parameters are serialisable
+  TheHMC.ReadCommandLine(argc,argv);  // params on CML or from param file                                                                     
+  TheHMC.initializeGaugeFieldAndRNGs(U);
 
   std::cout << GridLogMessage << " Running the HMC "<< std::endl;
   TheHMC.Run();  // no smearing
