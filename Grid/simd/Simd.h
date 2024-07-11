@@ -99,6 +99,8 @@ using std::log;
 using std::exp;
 using std::sin;
 using std::cos;
+using std::asin;
+using std::acos;
 
 
 accelerator_inline RealF    conjugate(const RealF  & r){ return r; }
