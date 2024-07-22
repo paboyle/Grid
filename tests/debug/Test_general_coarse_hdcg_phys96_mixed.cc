@@ -278,7 +278,13 @@ int main (int argc, char ** argv)
 
   typedef HermitianLinearOperator<MultiGeneralCoarsenedMatrix_t,CoarseVector> MrhsHermMatrix;
   //  Chebyshev<CoarseVector>      IRLCheby(0.0012,42.0,301);  // 4.4.6.4
-  Chebyshev<CoarseVector>      IRLCheby(0.0010,42.0,501);  // for 4.4.4.4 blocking
+  //  Chebyshev<CoarseVector>      IRLCheby(0.0012,42.0,501);  // for 4.4.4.4 blocking 350 evs
+  //  Chebyshev<CoarseVector>      IRLCheby(0.0014,42.0,501);  // for 4.4.4.4 blocking 700 evs
+  //  Chebyshev<CoarseVector>      IRLCheby(0.002,42.0,501);  // for 4.4.4.4 blocking 1226 evs
+  //  Chebyshev<CoarseVector>      IRLCheby(0.0025,42.0,501);  // for 4.4.4.4 blocking 1059 evs
+							  //							  3e-4,2);
+  Chebyshev<CoarseVector>      IRLCheby(0.0018,42.0,301);  // for 4.4.4.4 blocking  // 790 evs
+  
   MrhsHermMatrix MrhsCoarseOp     (mrhs);
 
   CoarseVector pm_src(CoarseMrhs);
@@ -287,9 +293,9 @@ int main (int argc, char ** argv)
 
   //  int Nk=nrhs*30; // 4.4.6.4
   //  int Nk=nrhs*80;
-  int Nk=nrhs*60;
-  int Nm=Nk*4;
-  int Nstop=350;
+  int Nk=nrhs*60; // 720
+  int Nm=Nk*4;    // 2880 ; generally finishes at 1440
+  int Nstop=512;
   int Nconv_test_interval=1;
   
   ImplicitlyRestartedBlockLanczosCoarse<CoarseVector> IRL(MrhsCoarseOp,
@@ -334,7 +340,7 @@ int main (int argc, char ** argv)
   // Extra HDCG parameters
   //////////////////////////
   int maxit=3000;
-  ConjugateGradient<CoarseVector>  CG(5.0e-2,maxit,false);
+  ConjugateGradient<CoarseVector>  CG(7.5e-2,maxit,false);
   RealD lo=2.0;
   int ord = 7;
 
@@ -371,7 +377,7 @@ int main (int argc, char ** argv)
   HDCGmrhs(src_mrhs,res_mrhs);
 
   // Standard CG
-#if 1
+#if 0
   {
   std::cout << "**************************************"<<std::endl;
   std::cout << "Calling red black CG"<<std::endl;
