@@ -244,7 +244,7 @@ int main (int argc, char ** argv)
 
   GridCartesian *CoarseMrhs = new GridCartesian(rhLatt,rhSimd,rhMpi); 
 
-  
+#if 0  
   MultiGeneralCoarsenedMatrix mrhs(LittleDiracOp,CoarseMrhs);
   typedef decltype(mrhs) MultiGeneralCoarsenedMatrix_t;
   
@@ -307,7 +307,8 @@ int main (int argc, char ** argv)
     rh_res= Zero();
     mrhsCG(MrhsCoarseOp,rh_src,rh_res);
   }
-  
+
+#endif
   std::cout<<GridLogMessage<<std::endl;
   std::cout<<GridLogMessage<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
