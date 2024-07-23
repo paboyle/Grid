@@ -89,9 +89,10 @@ public:
       gridblasHandle = theGridAccelerator;
 #endif
 #ifdef GRID_ONE_MKL
-      cl::sycl::cpu_selector selector;
+      cl::sycl::gpu_selector selector;
       cl::sycl::device selectedDevice { selector };
-      gridblasHandle =new sycl::queue (selectedDevice);
+      cl::sycl::property_list q_prop{cl::sycl::property::queue::in_order()};
+      gridblasHandle =new sycl::queue (selectedDevice,q_prop);
 #endif
       gridblasInit=1;
     }
@@ -266,8 +267,46 @@ public:
     assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
-    //MKL’s cblas_<T>gemm_batch & OneAPI
-#warning "oneMKL implementation not built "
+    std::cerr << " Calling SYCL batched ZGEMM "<<std::endl;
+      int64_t m64=m;
+      int64_t n64=n;
+      int64_t k64=k;
+      int64_t lda64=lda;
+      int64_t ldb64=ldb;
+      int64_t ldc64=ldc;
+      int64_t batchCount64=batchCount;
+      oneapi::mkl::transpose notransp =oneapi::mkl::transpose::N;
+      oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
+						  &notransp,
+						  &notransp,
+						  &m64,&n64,&k64,
+						  (ComplexD *) &alpha_p[0],
+						  (const ComplexD **)&Amk[0], (const int64_t *)&lda64,
+						  (const ComplexD **)&Bkn[0], (const int64_t *)&ldb64,
+						  (ComplexD *) &beta_p[0],
+						  (ComplexD **)&Cmn[0], (const int64_t *)&ldc64,
+						  (int64_t)1,&batchCount64,std::vector<sycl::event>());
+      synchronise();
+    std::cerr << " Called SYCL batched ZGEMM "<<std::endl;
+      std::vector<ComplexD> A(m*k);  // pointer list to matrices
+      std::vector<ComplexD> B(k*n);
+      std::vector<ComplexD> C(m*n);
+      int sda = lda*k;
+      int sdb = ldb*k;
+      int sdc = ldc*n;
+      for (int p = 0; p < 1; ++p) {
+	acceleratorCopyFromDevice((void *)&Amk[p][0],(void *)&A[0],m*k*sizeof(ComplexD));
+	acceleratorCopyFromDevice((void *)&Bkn[p][0],(void *)&B[0],k*n*sizeof(ComplexD));
+	acceleratorCopyFromDevice((void *)&Cmn[p][0],(void *)&C[0],m*n*sizeof(ComplexD));
+	for (int mm = 0; mm < m; ++mm) {
+	  for (int nn = 0; nn < n; ++nn) {
+	    ComplexD c_mn(0.0);
+	    for (int kk = 0; kk < k; ++kk)
+	      c_mn += A[mm + kk*lda ] * B[kk + nn*ldb];
+	    std::cout << " beta "<<beta<<" C_"<<mm<<","<<nn<<" "<<c_mn<<" "<<C[mm + nn*ldc]<<std::endl;
+	  }
+	}
+      }
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
     // Need a default/reference implementation
@@ -285,7 +324,6 @@ public:
       }
     }
 #endif
-    //    synchronise();
      RealD t1=usecond();
      RealD flops = 8.0*m*n*k*batchCount;
      RealD bytes = 1.0*sizeof(ComplexD)*(m*k+k*n+m*n)*batchCount;
@@ -366,8 +404,25 @@ public:
     assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
-    //MKL’s cblas_<T>gemm_batch & OneAPI
-#warning "oneMKL implementation not built "
+      int64_t m64=m;
+      int64_t n64=n;
+      int64_t k64=k;
+      int64_t lda64=lda;
+      int64_t ldb64=ldb;
+      int64_t ldc64=ldc;
+      int64_t batchCount64=batchCount;
+      oneapi::mkl::transpose notransp =oneapi::mkl::transpose::N;
+      oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
+						  &notransp,
+						  &notransp,
+						  &m64,&n64,&k64,
+						  (ComplexF *) &alpha_p[0],
+						  (const ComplexF **)&Amk[0], (const int64_t *)&lda64,
+						  (const ComplexF **)&Bkn[0], (const int64_t *)&ldb64,
+						  (ComplexF *) &beta_p[0],
+						  (ComplexF **)&Cmn[0], (const int64_t *)&ldc64,
+						  (int64_t)1,&batchCount64,std::vector<sycl::event>());
+    synchronise();
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
     int sda = lda*k;
@@ -467,8 +522,25 @@ public:
     assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
-    //MKL’s cblas_<T>gemm_batch & OneAPI
-#warning "oneMKL implementation not built "
+      int64_t m64=m;
+      int64_t n64=n;
+      int64_t k64=k;
+      int64_t lda64=lda;
+      int64_t ldb64=ldb;
+      int64_t ldc64=ldc;
+      int64_t batchCount64=batchCount;
+      oneapi::mkl::transpose notransp =oneapi::mkl::transpose::N;
+      oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
+						  &notransp,
+						  &notransp,
+						  &m64,&n64,&k64,
+						  (float *) &alpha_p[0],
+						  (const float **)&Amk[0], (const int64_t *)&lda64,
+						  (const float **)&Bkn[0], (const int64_t *)&ldb64,
+						  (float *) &beta_p[0],
+						  (float **)&Cmn[0], (const int64_t *)&ldc64,
+						  (int64_t)1,&batchCount64,std::vector<sycl::event>());
+    synchronise();
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
     int sda = lda*k;
@@ -568,24 +640,25 @@ public:
     assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
-    /*
       int64_t m64=m;
       int64_t n64=n;
       int64_t k64=k;
+      int64_t lda64=lda;
+      int64_t ldb64=ldb;
+      int64_t ldc64=ldc;
       int64_t batchCount64=batchCount;
-      oneapi::mkl::blas::column_major::gemm_batch(*theGridAccelerator,
-      onemkl::transpose::N,
-      onemkl::transpose::N,
-      &m64,&n64,&k64,
-      (double *) &alpha_p[0],
-      (double **)&Amk[0], lda,
-      (double **)&Bkn[0], ldb,
-      (double *) &beta_p[0],
-      (double **)&Cmn[0], ldc,
-      1,&batchCount64);
-     */
-    //MKL’s cblas_<T>gemm_batch & OneAPI
-#warning "oneMKL implementation not built "
+      oneapi::mkl::transpose notransp =oneapi::mkl::transpose::N;
+      oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
+						  &notransp,
+						  &notransp,
+						  &m64,&n64,&k64,
+						  (double *) &alpha_p[0],
+						  (const double **)&Amk[0], (const int64_t *)&lda64,
+						  (const double **)&Bkn[0], (const int64_t *)&ldb64,
+						  (double *) &beta_p[0],
+						  (double **)&Cmn[0], (const int64_t *)&ldc64,
+						  (int64_t)1,&batchCount64,std::vector<sycl::event>());
+    synchronise();
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
     int sda = lda*k;
@@ -673,6 +746,7 @@ public:
 						beta,
 						(ComplexD *)Cmn,ldc,sdc,
 						batchCount);
+    synchronise();
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP) && !defined(GRID_ONE_MKL)
      // Need a default/reference implementation

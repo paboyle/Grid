@@ -16,6 +16,44 @@ NAMESPACE_BEGIN(Grid);
 uint64_t total_shared;
 uint64_t total_device;
 uint64_t total_host;;
+
+#if defined(__has_feature)
+#if __has_feature(leak_sanitizer)
+#define ASAN_LEAK_CHECK
+#endif
+#endif
+
+#ifdef ASAN_LEAK_CHECK
+#include <sanitizer/asan_interface.h>
+#include <sanitizer/common_interface_defs.h>
+#include <sanitizer/lsan_interface.h>
+#define LEAK_CHECK(A) { __lsan_do_recoverable_leak_check(); }
+#else
+#define LEAK_CHECK(A) { }
+#endif
+
+void MemoryManager::DisplayMallinfo(void)
+{
+#ifdef __linux__
+  struct mallinfo mi;
+  
+  mi = mallinfo();
+
+  std::cout << "MemoryManager: Total non-mmapped bytes (arena):       "<< (size_t)mi.arena<<std::endl;
+  std::cout << "MemoryManager: # of free chunks (ordblks):            "<< (size_t)mi.ordblks<<std::endl;
+  std::cout << "MemoryManager: # of free fastbin blocks (smblks):     "<< (size_t)mi.smblks<<std::endl;
+  std::cout << "MemoryManager: # of mapped regions (hblks):           "<< (size_t)mi.hblks<<std::endl;
+  std::cout << "MemoryManager: Bytes in mapped regions (hblkhd):      "<< (size_t)mi.hblkhd<<std::endl;
+  std::cout << "MemoryManager: Max. total allocated space (usmblks):  "<< (size_t)mi.usmblks<<std::endl;
+  std::cout << "MemoryManager: Free bytes held in fastbins (fsmblks): "<< (size_t)mi.fsmblks<<std::endl;
+  std::cout << "MemoryManager: Total allocated space (uordblks):      "<< (size_t)mi.uordblks<<std::endl;
+  std::cout << "MemoryManager: Total free space (fordblks):           "<< (size_t)mi.fordblks<<std::endl;
+  std::cout << "MemoryManager: Topmost releasable block (keepcost):   "<< (size_t)mi.keepcost<<std::endl;
+#endif
+  LEAK_CHECK();
+ 
+}
+
 void MemoryManager::PrintBytes(void)
 {
   std::cout << " MemoryManager : ------------------------------------ "<<std::endl;
@@ -35,7 +73,7 @@ void MemoryManager::PrintBytes(void)
 #ifdef GRID_CUDA
   cuda_mem();
 #endif
-  
+  DisplayMallinfo();
 }
 
 uint64_t MemoryManager::DeviceCacheBytes() { return CacheBytes[Acc] + CacheBytes[AccHuge] + CacheBytes[AccSmall]; }

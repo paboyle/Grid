@@ -373,7 +373,8 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   nrm = real(TensorRemove(sum(inner_tmp_v,sites)));
 #else
   typedef decltype(innerProduct(x_v[0],y_v[0])) inner_t;
-  Vector<inner_t> inner_tmp(sites);
+  deviceVector<inner_t> inner_tmp;
+  inner_tmp.resize(sites);
   auto inner_tmp_v = &inner_tmp[0];
 
   accelerator_for( ss, sites, nsimd,{

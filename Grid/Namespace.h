@@ -30,9 +30,14 @@ directory
 
 #include <type_traits>
 #include <cassert>
+#include <exception>
 
 #define NAMESPACE_BEGIN(A) namespace A {
 #define NAMESPACE_END(A)   }
 #define GRID_NAMESPACE_BEGIN NAMESPACE_BEGIN(Grid)
 #define GRID_NAMESPACE_END   NAMESPACE_END(Grid)
 #define NAMESPACE_CHECK(x) struct namespaceTEST##x {};  static_assert(std::is_same<namespaceTEST##x, ::namespaceTEST##x>::value,"Not in :: at"  ); 
+
+#define EXCEPTION_CHECK_BEGIN(A) try {
+#define EXCEPTION_CHECK_END(A)   } catch ( std::exception e ) { BACKTRACEFP(stderr); std::cerr << __PRETTY_FUNCTION__ << " : " <<__LINE__<< " Caught exception "<<e.what()<<std::endl; throw; }
+

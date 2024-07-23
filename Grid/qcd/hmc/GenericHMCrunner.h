@@ -90,6 +90,7 @@ public:
         exit(1);
       }
       Parameters.StartingType = arg;
+      std::cout <<GridLogMessage << " GenericHMCrunner --StartingType "<<arg<<std::endl;
     }
 
     if (GridCmdOptionExists(argv, argv + argc, "--StartingTrajectory")) {
@@ -97,6 +98,7 @@ public:
       std::vector<int> ivec(0);
       GridCmdOptionIntVector(arg, ivec);
       Parameters.StartTrajectory = ivec[0];
+      std::cout <<GridLogMessage << " GenericHMCrunner --StartingTrajectory "<<ivec[0]<<std::endl;
     }
 
     if (GridCmdOptionExists(argv, argv + argc, "--Trajectories")) {
@@ -104,6 +106,7 @@ public:
       std::vector<int> ivec(0);
       GridCmdOptionIntVector(arg, ivec);
       Parameters.Trajectories = ivec[0];
+      std::cout << GridLogMessage<<" GenericHMCrunner Command Line --Trajectories "<<ivec[0]<<std::endl;
     }
 
     if (GridCmdOptionExists(argv, argv + argc, "--Thermalizations")) {
@@ -111,6 +114,7 @@ public:
       std::vector<int> ivec(0);
       GridCmdOptionIntVector(arg, ivec);
       Parameters.NoMetropolisUntil = ivec[0];
+      std::cout << GridLogMessage<<" GenericHMCrunner --Thermalizations "<<ivec[0]<<std::endl;
     }
     if (GridCmdOptionExists(argv, argv + argc, "--ParameterFile")) {
       arg = GridCmdOptionPayload(argv, argv + argc, "--ParameterFile");
