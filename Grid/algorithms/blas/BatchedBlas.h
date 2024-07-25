@@ -89,9 +89,10 @@ public:
       gridblasHandle = theGridAccelerator;
 #endif
 #ifdef GRID_ONE_MKL
-      cl::sycl::cpu_selector selector;
+      cl::sycl::gpu_selector selector;
       cl::sycl::device selectedDevice { selector };
-      gridblasHandle =new sycl::queue (selectedDevice);
+      cl::sycl::property_list q_prop{cl::sycl::property::queue::in_order()};
+      gridblasHandle =new sycl::queue (selectedDevice,q_prop);
 #endif
       gridblasInit=1;
     }
@@ -207,6 +208,9 @@ public:
     assert(Bkn.size()==batchCount);
     assert(Cmn.size()==batchCount);
 
+    assert(OpA!=GridBLAS_OP_T); // Complex case expect no transpose
+    assert(OpB!=GridBLAS_OP_T);
+
     int lda = m; // m x k column major
     int ldb = k; // k x n column major
     int ldc = m; // m x b column major
@@ -266,26 +270,131 @@ public:
     assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
-    //MKL’s cblas_<T>gemm_batch & OneAPI
-#warning "oneMKL implementation not built "
-#endif
-#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
-    // Need a default/reference implementation
-    int sda = lda*k;
-    int sdb = ldb*k;
-    int sdc = ldc*n;
-    for (int p = 0; p < batchCount; ++p) {
-      for (int mm = 0; mm < m; ++mm) {
-	for (int nn = 0; nn < n; ++nn) {
-	  ComplexD c_mn(0.0);
-	  for (int kk = 0; kk < k; ++kk)
-	    c_mn += Amk[p][mm + kk*lda ] * Bkn[p][kk + nn*ldb];
-	  Cmn[p][mm + nn*ldc] =  (alpha)*c_mn + (beta)*Cmn[p][mm + nn*ldc ];
+    //    std::cerr << " Calling SYCL batched ZGEMM "<<std::endl;
+      int64_t m64=m;
+      int64_t n64=n;
+      int64_t k64=k;
+      int64_t lda64=lda;
+      int64_t ldb64=ldb;
+      int64_t ldc64=ldc;
+      int64_t batchCount64=batchCount;
+
+      oneapi::mkl::transpose iOpA;
+      oneapi::mkl::transpose iOpB;
+      
+      if ( OpA == GridBLAS_OP_N ) iOpA = oneapi::mkl::transpose::N;
+      if ( OpA == GridBLAS_OP_T ) iOpA = oneapi::mkl::transpose::T;
+      if ( OpA == GridBLAS_OP_C ) iOpA = oneapi::mkl::transpose::C;
+      if ( OpB == GridBLAS_OP_N ) iOpB = oneapi::mkl::transpose::N;
+      if ( OpB == GridBLAS_OP_T ) iOpB = oneapi::mkl::transpose::T;
+      if ( OpB == GridBLAS_OP_C ) iOpB = oneapi::mkl::transpose::C;
+
+      oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
+						  &iOpA,
+						  &iOpB,
+						  &m64,&n64,&k64,
+						  (ComplexD *) &alpha_p[0],
+						  (const ComplexD **)&Amk[0], (const int64_t *)&lda64,
+						  (const ComplexD **)&Bkn[0], (const int64_t *)&ldb64,
+						  (ComplexD *) &beta_p[0],
+						  (ComplexD **)&Cmn[0], (const int64_t *)&ldc64,
+						  (int64_t)1,&batchCount64,std::vector<sycl::event>());
+      synchronise();
+#if 0
+      // This code was used to check the mat mul on Sunspot/OneMKL
+      std::cerr << " Called SYCL batched ZGEMM OpA "<< OpA << " OpB "<<OpB <<std::endl;
+      std::vector<ComplexD> A(m*k);  // pointer list to matrices
+      std::vector<ComplexD> B(k*n);
+      std::vector<ComplexD> C(m*n);
+      //      int sda = lda*k;
+      //      int sdb = ldb*k;
+      //      int sdc = ldc*n;
+      std::cerr << " Checking the GEMM results "<<std::endl;
+      for (int p = 0; p < 1; ++p) {
+	ComplexD * Amk_p;  // pointer list to matrices
+	ComplexD * Bkn_p;  // pointer list to matrices
+	ComplexD * Cmn_p;  // pointer list to matrices
+	acceleratorCopyFromDevice((void *)&Amk[p],(void *)&Amk_p,sizeof(ComplexD*));
+	acceleratorCopyFromDevice((void *)&Bkn[p],(void *)&Bkn_p,sizeof(ComplexD*));
+	acceleratorCopyFromDevice((void *)&Cmn[p],(void *)&Cmn_p,sizeof(ComplexD*));
+	std::cerr << " p " << p << " copied pointers "<<std::endl;
+	acceleratorCopyFromDevice((void *)Amk_p,(void *)&A[0],m*k*sizeof(ComplexD));
+	acceleratorCopyFromDevice((void *)Bkn_p,(void *)&B[0],k*n*sizeof(ComplexD));
+	acceleratorCopyFromDevice((void *)Cmn_p,(void *)&C[0],m*n*sizeof(ComplexD));
+	std::cerr << " p " << p << " copied matrices "<<std::endl;
+	std::cerr << " C[0] "<<C[0]<<std::endl;
+	std::cerr << " A[0] "<<A[0]<<std::endl;
+	std::cerr << " B[0] "<<B[0]<<std::endl;
+	std::cerr << " m "<<m<<std::endl;
+	std::cerr << " n "<<n<<std::endl;
+	std::cerr << " k "<<k<<std::endl;
+	for (int mm = 0; mm < m; ++mm) {
+	  for (int nn = 0; nn < n; ++nn) {
+	    ComplexD c_mn(0.0);
+	    for (int kk = 0; kk < k; ++kk) {
+	      int idx_a, idx_b;
+	      //    int lda = m; // m x k column major
+	      //    int ldb = k; // k x n column major
+	      //    int ldc = m; // m x b column major
+	      if(OpA!=GridBLAS_OP_N) {
+		idx_a =kk + mm*lda;
+	      } else {
+		idx_a =mm + kk*lda;
+	      }
+	      if(OpB!=GridBLAS_OP_N) {
+		idx_b =nn + kk*ldb;
+	      } else {
+		idx_b =kk + nn*ldb;
+	      }
+	      //	      std::cerr << " idx_a "<<idx_a<<" idx_b "<<idx_b<<std::endl;
+
+	      ComplexD Ac = A[idx_a];
+	      ComplexD Bc = B[idx_b];
+	      if(OpA==GridBLAS_OP_C) Ac = conjugate(Ac);
+	      if(OpB==GridBLAS_OP_C) Bc = conjugate(Bc);
+	      
+	      c_mn += Ac*Bc;
+	    }
+	    std::cerr << " beta "<<beta<<" alpha "<<alpha<<" C_"<<mm<<","<<nn<<" "<<c_mn<<" "<<C[mm + nn*ldc]<<std::endl;
+	  }
 	}
       }
-    }
 #endif
-    //    synchronise();
+#endif
+#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
+    // Need a default/reference implementation; use Eigen
+      if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_N) ) {
+	thread_for (p, batchCount, {
+	  Eigen::Map<Eigen::MatrixXcd> eAmk(Amk[p],m,k);
+	  Eigen::Map<Eigen::MatrixXcd> eBkn(Bkn[p],k,n);
+	  Eigen::Map<Eigen::MatrixXcd> eCmn(Cmn[p],m,n);
+	  eCmn = beta * eCmn + alpha * eAmk * eBkn ;
+        });
+      } else if ( (OpA == GridBLAS_OP_C ) && (OpB == GridBLAS_OP_N) ) {
+	thread_for (p, batchCount, {
+	  Eigen::Map<Eigen::MatrixXcd> eAmk(Amk[p],k,m);
+	  Eigen::Map<Eigen::MatrixXcd> eBkn(Bkn[p],k,n);
+	  Eigen::Map<Eigen::MatrixXcd> eCmn(Cmn[p],m,n);
+	  eCmn = beta * eCmn + alpha * eAmk.adjoint() * eBkn ;
+	  });
+      } else if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_C) ) {
+	thread_for (p, batchCount, {
+	  Eigen::Map<Eigen::MatrixXcd> eAmk(Amk[p],m,k);
+	  Eigen::Map<Eigen::MatrixXcd> eBkn(Bkn[p],n,k);
+	  Eigen::Map<Eigen::MatrixXcd> eCmn(Cmn[p],m,n);
+	  eCmn = beta * eCmn + alpha * eAmk * eBkn.adjoint() ;
+	  });
+      } else if ( (OpA == GridBLAS_OP_C ) && (OpB == GridBLAS_OP_C) ) {
+	thread_for (p, batchCount, {
+	  Eigen::Map<Eigen::MatrixXcd> eAmk(Amk[p],k,m);
+	  Eigen::Map<Eigen::MatrixXcd> eBkn(Bkn[p],n,k);
+	  Eigen::Map<Eigen::MatrixXcd> eCmn(Cmn[p],m,n);
+	  eCmn = beta * eCmn + alpha * eAmk.adjoint() * eBkn.adjoint() ;
+	  } );
+      } else { 
+	assert(0);
+      }
+#endif
      RealD t1=usecond();
      RealD flops = 8.0*m*n*k*batchCount;
      RealD bytes = 1.0*sizeof(ComplexD)*(m*k+k*n+m*n)*batchCount;
@@ -305,6 +414,9 @@ public:
   {
     RealD t2=usecond();
     int32_t batchCount = Amk.size();
+
+    assert(OpA!=GridBLAS_OP_T); // Complex case expect no transpose
+    assert(OpB!=GridBLAS_OP_T);
 
     int lda = m; // m x k column major
     int ldb = k; // k x n column major
@@ -366,26 +478,69 @@ public:
     assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
-    //MKL’s cblas_<T>gemm_batch & OneAPI
-#warning "oneMKL implementation not built "
+      int64_t m64=m;
+      int64_t n64=n;
+      int64_t k64=k;
+      int64_t lda64=lda;
+      int64_t ldb64=ldb;
+      int64_t ldc64=ldc;
+      int64_t batchCount64=batchCount;
+
+      oneapi::mkl::transpose iOpA;
+      oneapi::mkl::transpose iOpB;
+      
+      if ( OpA == GridBLAS_OP_N ) iOpA = oneapi::mkl::transpose::N;
+      if ( OpA == GridBLAS_OP_T ) iOpA = oneapi::mkl::transpose::T;
+      if ( OpA == GridBLAS_OP_C ) iOpA = oneapi::mkl::transpose::C;
+      if ( OpB == GridBLAS_OP_N ) iOpB = oneapi::mkl::transpose::N;
+      if ( OpB == GridBLAS_OP_T ) iOpB = oneapi::mkl::transpose::T;
+      if ( OpB == GridBLAS_OP_C ) iOpB = oneapi::mkl::transpose::C;
+
+      oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
+						  &iOpA,
+						  &iOpB,
+						  &m64,&n64,&k64,
+						  (ComplexF *) &alpha_p[0],
+						  (const ComplexF **)&Amk[0], (const int64_t *)&lda64,
+						  (const ComplexF **)&Bkn[0], (const int64_t *)&ldb64,
+						  (ComplexF *) &beta_p[0],
+						  (ComplexF **)&Cmn[0], (const int64_t *)&ldc64,
+						  (int64_t)1,&batchCount64,std::vector<sycl::event>());
+      synchronise();
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
-    int sda = lda*k;
-    int sdb = ldb*k;
-    int sdc = ldc*n;
-    ComplexF alphaf(real(alpha),imag(alpha));
-    ComplexF betaf(real(beta),imag(beta));
-    // Need a default/reference implementation
-    for (int p = 0; p < batchCount; ++p) {
-      for (int mm = 0; mm < m; ++mm) {
-	for (int nn = 0; nn < n; ++nn) {
-	  ComplexF c_mn(0.0);
-	  for (int kk = 0; kk < k; ++kk)
-	    c_mn += Amk[p][mm + kk*lda ] * Bkn[p][kk + nn*ldb];
-	  Cmn[p][mm + nn*ldc] =  (alphaf)*c_mn + (betaf)*Cmn[p][mm + nn*ldc ];
-	}
+    // Need a default/reference implementation; use Eigen
+      if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_N) ) {
+	thread_for (p, batchCount, {
+	  Eigen::Map<Eigen::MatrixXcf> eAmk(Amk[p],m,k);
+	  Eigen::Map<Eigen::MatrixXcf> eBkn(Bkn[p],k,n);
+	  Eigen::Map<Eigen::MatrixXcf> eCmn(Cmn[p],m,n);
+	  eCmn = beta * eCmn + alpha * eAmk * eBkn ;
+	  });
+      } else if ( (OpA == GridBLAS_OP_C ) && (OpB == GridBLAS_OP_N) ) {
+	thread_for (p, batchCount, {
+	  Eigen::Map<Eigen::MatrixXcf> eAmk(Amk[p],k,m);
+	  Eigen::Map<Eigen::MatrixXcf> eBkn(Bkn[p],k,n);
+	  Eigen::Map<Eigen::MatrixXcf> eCmn(Cmn[p],m,n);
+	  eCmn = beta * eCmn + alpha * eAmk.adjoint() * eBkn ;
+	  });
+      } else if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_C) ) {
+	thread_for (p, batchCount, {
+	  Eigen::Map<Eigen::MatrixXcf> eAmk(Amk[p],m,k);
+	  Eigen::Map<Eigen::MatrixXcf> eBkn(Bkn[p],n,k);
+	  Eigen::Map<Eigen::MatrixXcf> eCmn(Cmn[p],m,n);
+	  eCmn = beta * eCmn + alpha * eAmk * eBkn.adjoint() ;
+	  });
+      } else if ( (OpA == GridBLAS_OP_C ) && (OpB == GridBLAS_OP_C) ) {
+	thread_for (p, batchCount, {
+	  Eigen::Map<Eigen::MatrixXcf> eAmk(Amk[p],k,m);
+	  Eigen::Map<Eigen::MatrixXcf> eBkn(Bkn[p],n,k);
+	  Eigen::Map<Eigen::MatrixXcf> eCmn(Cmn[p],m,n);
+	  eCmn = beta * eCmn + alpha * eAmk.adjoint() * eBkn.adjoint() ;
+	  } );
+      } else { 
+	assert(0);
       }
-    }
 #endif
      RealD t1=usecond();
      RealD flops = 8.0*m*n*k*batchCount;
@@ -407,6 +562,9 @@ public:
   {
     RealD t2=usecond();
     int32_t batchCount = Amk.size();
+
+    assert(OpA!=GridBLAS_OP_C); // Real case no conjugate
+    assert(OpB!=GridBLAS_OP_C);
 
     int lda = m; // m x k column major
     int ldb = k; // k x n column major
@@ -467,24 +625,69 @@ public:
     assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
-    //MKL’s cblas_<T>gemm_batch & OneAPI
-#warning "oneMKL implementation not built "
+      int64_t m64=m;
+      int64_t n64=n;
+      int64_t k64=k;
+      int64_t lda64=lda;
+      int64_t ldb64=ldb;
+      int64_t ldc64=ldc;
+      int64_t batchCount64=batchCount;
+
+      oneapi::mkl::transpose iOpA;
+      oneapi::mkl::transpose iOpB;
+      
+      if ( OpA == GridBLAS_OP_N ) iOpA = oneapi::mkl::transpose::N;
+      if ( OpA == GridBLAS_OP_T ) iOpA = oneapi::mkl::transpose::T;
+      if ( OpA == GridBLAS_OP_C ) iOpA = oneapi::mkl::transpose::C;
+      if ( OpB == GridBLAS_OP_N ) iOpB = oneapi::mkl::transpose::N;
+      if ( OpB == GridBLAS_OP_T ) iOpB = oneapi::mkl::transpose::T;
+      if ( OpB == GridBLAS_OP_C ) iOpB = oneapi::mkl::transpose::C;
+
+      oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
+						  &iOpA,
+						  &iOpB,
+						  &m64,&n64,&k64,
+						  (float *) &alpha_p[0],
+						  (const float **)&Amk[0], (const int64_t *)&lda64,
+						  (const float **)&Bkn[0], (const int64_t *)&ldb64,
+						  (float *) &beta_p[0],
+						  (float **)&Cmn[0], (const int64_t *)&ldc64,
+						  (int64_t)1,&batchCount64,std::vector<sycl::event>());
+      synchronise();
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
-    int sda = lda*k;
-    int sdb = ldb*k;
-    int sdc = ldc*n;
-    // Need a default/reference implementation
-    for (int p = 0; p < batchCount; ++p) {
-      for (int mm = 0; mm < m; ++mm) {
-	for (int nn = 0; nn < n; ++nn) {
-	  RealD c_mn(0.0);
-	  for (int kk = 0; kk < k; ++kk)
-	    c_mn += Amk[p][mm + kk*lda ] * Bkn[p][kk + nn*ldb];
-	  Cmn[p][mm + nn*ldc] =  (alpha)*c_mn + (beta)*Cmn[p][mm + nn*ldc ];
-	}
+    // Need a default/reference implementation; use Eigen
+      if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_N) ) {
+	thread_for (p, batchCount, {
+	  Eigen::Map<Eigen::MatrixXf> eAmk(Amk[p],m,k);
+	  Eigen::Map<Eigen::MatrixXf> eBkn(Bkn[p],k,n);
+	  Eigen::Map<Eigen::MatrixXf> eCmn(Cmn[p],m,n);
+	  eCmn = beta * eCmn + alpha * eAmk * eBkn ;
+	  });
+      } else if ( (OpA == GridBLAS_OP_T ) && (OpB == GridBLAS_OP_N) ) {
+	thread_for (p, batchCount, {
+	  Eigen::Map<Eigen::MatrixXf> eAmk(Amk[p],k,m);
+	  Eigen::Map<Eigen::MatrixXf> eBkn(Bkn[p],k,n);
+	  Eigen::Map<Eigen::MatrixXf> eCmn(Cmn[p],m,n);
+	  eCmn = beta * eCmn + alpha * eAmk.transpose() * eBkn ;
+	  });
+      } else if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_T) ) {
+	thread_for (p, batchCount, {
+	  Eigen::Map<Eigen::MatrixXf> eAmk(Amk[p],m,k);
+	  Eigen::Map<Eigen::MatrixXf> eBkn(Bkn[p],n,k);
+	  Eigen::Map<Eigen::MatrixXf> eCmn(Cmn[p],m,n);
+	  eCmn = beta * eCmn + alpha * eAmk * eBkn.transpose() ;
+	  });
+      } else if ( (OpA == GridBLAS_OP_T ) && (OpB == GridBLAS_OP_T) ) {
+	thread_for (p, batchCount, {
+	  Eigen::Map<Eigen::MatrixXf> eAmk(Amk[p],k,m);
+	  Eigen::Map<Eigen::MatrixXf> eBkn(Bkn[p],n,k);
+	  Eigen::Map<Eigen::MatrixXf> eCmn(Cmn[p],m,n);
+	  eCmn = beta * eCmn + alpha * eAmk.transpose() * eBkn.transpose() ;
+	  } );
+      } else { 
+	assert(0);
       }
-    }
 #endif
      RealD t1=usecond();
      RealD flops = 2.0*m*n*k*batchCount;
@@ -495,7 +698,6 @@ public:
   ///////////////////////////////////////////////////////////////////////////
   // Double precision real GEMM
   ///////////////////////////////////////////////////////////////////////////
-
   void gemmBatched(GridBLASOperation_t OpA,
 		   GridBLASOperation_t OpB,
 		   int m,int n, int k,
@@ -507,6 +709,9 @@ public:
   {
     RealD t2=usecond();
     int32_t batchCount = Amk.size();
+
+    assert(OpA!=GridBLAS_OP_C); // Real case no conjugate
+    assert(OpB!=GridBLAS_OP_C);
 
     int lda = m; // m x k column major
     int ldb = k; // k x n column major
@@ -568,159 +773,114 @@ public:
     assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
-    /*
       int64_t m64=m;
       int64_t n64=n;
       int64_t k64=k;
+      int64_t lda64=lda;
+      int64_t ldb64=ldb;
+      int64_t ldc64=ldc;
       int64_t batchCount64=batchCount;
-      oneapi::mkl::blas::column_major::gemm_batch(*theGridAccelerator,
-      onemkl::transpose::N,
-      onemkl::transpose::N,
-      &m64,&n64,&k64,
-      (double *) &alpha_p[0],
-      (double **)&Amk[0], lda,
-      (double **)&Bkn[0], ldb,
-      (double *) &beta_p[0],
-      (double **)&Cmn[0], ldc,
-      1,&batchCount64);
-     */
-    //MKL’s cblas_<T>gemm_batch & OneAPI
-#warning "oneMKL implementation not built "
+
+      oneapi::mkl::transpose iOpA;
+      oneapi::mkl::transpose iOpB;
+      
+      if ( OpA == GridBLAS_OP_N ) iOpA = oneapi::mkl::transpose::N;
+      if ( OpA == GridBLAS_OP_T ) iOpA = oneapi::mkl::transpose::T;
+      if ( OpA == GridBLAS_OP_C ) iOpA = oneapi::mkl::transpose::C;
+      if ( OpB == GridBLAS_OP_N ) iOpB = oneapi::mkl::transpose::N;
+      if ( OpB == GridBLAS_OP_T ) iOpB = oneapi::mkl::transpose::T;
+      if ( OpB == GridBLAS_OP_C ) iOpB = oneapi::mkl::transpose::C;
+
+      oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
+						  &iOpA,
+						  &iOpB,
+						  &m64,&n64,&k64,
+						  (double *) &alpha_p[0],
+						  (const double **)&Amk[0], (const int64_t *)&lda64,
+						  (const double **)&Bkn[0], (const int64_t *)&ldb64,
+						  (double *) &beta_p[0],
+						  (double **)&Cmn[0], (const int64_t *)&ldc64,
+						  (int64_t)1,&batchCount64,std::vector<sycl::event>());
+      synchronise();
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
-    int sda = lda*k;
-    int sdb = ldb*k;
-    int sdc = ldc*n;
-    // Need a default/reference implementation
-    for (int p = 0; p < batchCount; ++p) {
-      for (int mm = 0; mm < m; ++mm) {
-	for (int nn = 0; nn < n; ++nn) {
-	  RealD c_mn(0.0);
-	  for (int kk = 0; kk < k; ++kk)
-	    c_mn += Amk[p][mm + kk*lda ] * Bkn[p][kk + nn*ldb];
-	  Cmn[p][mm + nn*ldc] =  (alpha)*c_mn + (beta)*Cmn[p][mm + nn*ldc ];
-	}
+    // Need a default/reference implementation; use Eigen
+      if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_N) ) {
+	thread_for (p, batchCount, {
+	  Eigen::Map<Eigen::MatrixXd> eAmk(Amk[p],m,k);
+	  Eigen::Map<Eigen::MatrixXd> eBkn(Bkn[p],k,n);
+	  Eigen::Map<Eigen::MatrixXd> eCmn(Cmn[p],m,n);
+	  eCmn = beta * eCmn + alpha * eAmk * eBkn ;
+	  });
+      } else if ( (OpA == GridBLAS_OP_T ) && (OpB == GridBLAS_OP_N) ) {
+	thread_for (p, batchCount, {
+	  Eigen::Map<Eigen::MatrixXd> eAmk(Amk[p],k,m);
+	  Eigen::Map<Eigen::MatrixXd> eBkn(Bkn[p],k,n);
+	  Eigen::Map<Eigen::MatrixXd> eCmn(Cmn[p],m,n);
+	  eCmn = beta * eCmn + alpha * eAmk.transpose() * eBkn ;
+	  });
+      } else if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_T) ) {
+	thread_for (p, batchCount, {
+	  Eigen::Map<Eigen::MatrixXd> eAmk(Amk[p],m,k);
+	  Eigen::Map<Eigen::MatrixXd> eBkn(Bkn[p],n,k);
+	  Eigen::Map<Eigen::MatrixXd> eCmn(Cmn[p],m,n);
+	  eCmn = beta * eCmn + alpha * eAmk * eBkn.transpose() ;
+	  });
+      } else if ( (OpA == GridBLAS_OP_T ) && (OpB == GridBLAS_OP_T) ) {
+	thread_for (p, batchCount, {
+	  Eigen::Map<Eigen::MatrixXd> eAmk(Amk[p],k,m);
+	  Eigen::Map<Eigen::MatrixXd> eBkn(Bkn[p],n,k);
+	  Eigen::Map<Eigen::MatrixXd> eCmn(Cmn[p],m,n);
+	  eCmn = beta * eCmn + alpha * eAmk.transpose() * eBkn.transpose() ;
+	  });
+      } else { 
+	assert(0);
       }
-    }
 #endif
      RealD t1=usecond();
      RealD flops = 2.0*m*n*k*batchCount;
      RealD bytes = 1.0*sizeof(RealD)*(m*k+k*n+m*n)*batchCount;
   }
-  
 
-  
-  ////////////////////////////////////////////////////////////////////////////////////////////////
-  // Strided case used by benchmark, but generally unused in Grid
-  // Keep a code example in double complex, but don't generate the single and real variants for now
-  ////////////////////////////////////////////////////////////////////////////////////////////////
-  
-  void gemmStridedBatched(int m,int n, int k,
-			  ComplexD alpha,
-			  ComplexD* Amk,  // pointer list to matrices
-			  ComplexD* Bkn,
-			  ComplexD beta,
-			  ComplexD* Cmn,
-			  int batchCount)
-  {
-    // Use C-row major storage, so transpose calls
-    int lda = m; // m x k column major
-    int ldb = k; // k x n column major
-    int ldc = m; // m x b column major
-    int sda = m*k;
-    int sdb = k*n;
-    int sdc = m*n;
-    deviceVector<ComplexD> alpha_p(1);
-    deviceVector<ComplexD> beta_p(1);
-    acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(ComplexD));
-    acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(ComplexD));
-    //    std::cout << "blasZgemmStridedBatched mnk  "<<m<<","<<n<<","<<k<<" count "<<batchCount<<std::endl;
-    //    std::cout << "blasZgemmStridedBatched ld   "<<lda<<","<<ldb<<","<<ldc<<std::endl;
-    //    std::cout << "blasZgemmStridedBatched sd   "<<sda<<","<<sdb<<","<<sdc<<std::endl;
-#ifdef GRID_HIP
-    auto err = hipblasZgemmStridedBatched(gridblasHandle,
-					  HIPBLAS_OP_N,
-					  HIPBLAS_OP_N,
-					  m,n,k,
-					  (hipblasDoubleComplex *) &alpha_p[0],
-					  (hipblasDoubleComplex *) Amk, lda, sda,
-					  (hipblasDoubleComplex *) Bkn, ldb, sdb,
-					  (hipblasDoubleComplex *) &beta_p[0],
-					  (hipblasDoubleComplex *) Cmn, ldc, sdc,
-					  batchCount);
-    assert(err==HIPBLAS_STATUS_SUCCESS);
-#endif
-#ifdef GRID_CUDA
-    cublasZgemmStridedBatched(gridblasHandle,
-			      CUBLAS_OP_N,
-			      CUBLAS_OP_N,
-			      m,n,k,
-			      (cuDoubleComplex *) &alpha_p[0],
-			      (cuDoubleComplex *) Amk, lda, sda,
-			      (cuDoubleComplex *) Bkn, ldb, sdb,
-			      (cuDoubleComplex *) &beta_p[0],
-			      (cuDoubleComplex *) Cmn, ldc, sdc,
-			      batchCount);
-#endif
-#if defined(GRID_SYCL) || defined(GRID_ONE_MKL)
-    oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
-						oneapi::mkl::transpose::N,
-						oneapi::mkl::transpose::N,
-						m,n,k,
-						alpha,
-						(const ComplexD *)Amk,lda,sda,
-						(const ComplexD *)Bkn,ldb,sdb,
-						beta,
-						(ComplexD *)Cmn,ldc,sdc,
-						batchCount);
-#endif
-#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP) && !defined(GRID_ONE_MKL)
-     // Need a default/reference implementation
-     for (int p = 0; p < batchCount; ++p) {
-       for (int mm = 0; mm < m; ++mm) {
-	 for (int nn = 0; nn < n; ++nn) {
-	   ComplexD c_mn(0.0);
-	   for (int kk = 0; kk < k; ++kk)
-	     c_mn += Amk[mm + kk*lda + p*sda] * Bkn[kk + nn*ldb + p*sdb];
-	   Cmn[mm + nn*ldc + p*sdc] =  (alpha)*c_mn + (beta)*Cmn[mm + nn*ldc + p*sdc];
-	 }
-       }
-     }
-#endif
-  }
-
+  template<class CComplex>
   double benchmark(int M, int N, int K, int BATCH)
   {
     int32_t N_A = M*K*BATCH;
     int32_t N_B = K*N*BATCH;
     int32_t N_C = M*N*BATCH;
-    deviceVector<ComplexD> A(N_A); acceleratorMemSet(&A[0],0,N_A*sizeof(ComplexD));
-    deviceVector<ComplexD> B(N_B); acceleratorMemSet(&B[0],0,N_B*sizeof(ComplexD));
-    deviceVector<ComplexD> C(N_C); acceleratorMemSet(&C[0],0,N_C*sizeof(ComplexD));
-    ComplexD alpha(1.0);
-    ComplexD beta (1.0);
+    deviceVector<CComplex> A(N_A); acceleratorMemSet(&A[0],0,N_A*sizeof(CComplex));
+    deviceVector<CComplex> B(N_B); acceleratorMemSet(&B[0],0,N_B*sizeof(CComplex));
+    deviceVector<CComplex> C(N_C); acceleratorMemSet(&C[0],0,N_C*sizeof(CComplex));
+    CComplex alpha(1.0);
+    CComplex beta (1.0);
     RealD flops = 8.0*M*N*K*BATCH;
     int ncall=10;
     RealD t0 = usecond();
+    deviceVector<CComplex *> As(BATCH);
+    deviceVector<CComplex *> Bs(BATCH);
+    deviceVector<CComplex *> Cs(BATCH);
+    for(int b = 0 ; b < BATCH;b++) {
+      CComplex *ptr;
+      ptr = &A[b*M*K];      acceleratorPut(As[b],ptr);
+      ptr = &B[b*K*N];      acceleratorPut(Bs[b],ptr);
+      ptr = &C[b*M*N];      acceleratorPut(Cs[b],ptr);
+    }
+
     for(int i=0;i<ncall;i++){
-      gemmStridedBatched(M,N,K,
-			 alpha,
-			 &A[0], // m x k 
-			 &B[0], // k x n
-			 beta, 
-			 &C[0], // m x n
-			 BATCH);
+      gemmBatched(M,N,K,
+		  alpha,
+		  As, // m x k 
+		  Bs, // k x n
+		  beta, 
+		  Cs);
     }
     synchronise();
     RealD t1 = usecond();
-    RealD bytes = 1.0*sizeof(ComplexD)*(M*N*2+N*K+M*K)*BATCH;
+    RealD bytes = 1.0*sizeof(CComplex)*(M*N*2+N*K+M*K)*BATCH;
     flops = 8.0*M*N*K*BATCH*ncall;
     flops = flops/(t1-t0)/1.e3;
     return flops; // Returns gigaflops
   }
-
-
-
 
 };
 
