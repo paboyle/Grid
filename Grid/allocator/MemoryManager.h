@@ -108,6 +108,7 @@ private:
   /////////////////////////////////////////////////
   // Free pool
   /////////////////////////////////////////////////
+  static void DisplayMallinfo(void);
   static void *Insert(void *ptr,size_t bytes,int type) ;
   static void *Lookup(size_t bytes,int type) ;
   static void *Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim,uint64_t &cbytes) ;
