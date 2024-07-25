@@ -264,24 +264,8 @@ inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &
   const uint64_t sites = grid->oSites();
   
   // Might make all code paths go this way.
-#if 0
-  typedef decltype(innerProductD(vobj(),vobj())) inner_t;
-  Vector<inner_t> inner_tmp(sites);
-  auto inner_tmp_v = &inner_tmp[0];
-  {
-    autoView( left_v , left, AcceleratorRead);
-    autoView( right_v,right, AcceleratorRead);
-    // This code could read coalesce
-    // GPU - SIMT lane compliance...
-    accelerator_for( ss, sites, nsimd,{
-	auto x_l = left_v(ss);
-	auto y_l = right_v(ss);
-	coalescedWrite(inner_tmp_v[ss],innerProductD(x_l,y_l));
-    });
-  }
-#else
   typedef decltype(innerProduct(vobj(),vobj())) inner_t;
-  Vector<inner_t> inner_tmp(sites);
+  deviceVector<inner_t> inner_tmp(sites);
   auto inner_tmp_v = &inner_tmp[0];
     
   {
@@ -295,7 +279,6 @@ inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &
 	coalescedWrite(inner_tmp_v[ss],innerProduct(x_l,y_l));
     });
   }
-#endif
   // This is in single precision and fails some tests
   auto anrm = sumD(inner_tmp_v,sites);  
   nrm = anrm;
