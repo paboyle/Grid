@@ -117,7 +117,7 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu(UGrid);
 
   FieldMetaData header;
-  std::string file("ckpoint_EODWF_lat.125");
+  std::string file("ckpoint_lat.4000");
   NerscIO::readConfiguration(Umu,header,file);
 
   //////////////////////// Fermion action //////////////////////////////////
@@ -155,7 +155,7 @@ int main (int argc, char ** argv)
   std::cout << "**************************************"<<std::endl;
   std::cout << "Refine Subspace"<<std::endl;
   std::cout << "**************************************"<<std::endl;
-  Aggregates.RefineSubspace(HermOpEO,0.001,1.0e-3,3000); // 172 iters
+  //  Aggregates.RefineSubspace(HermOpEO,0.01,1.0e-3,1000); 
   
   std::cout << "**************************************"<<std::endl;
   std::cout << "Coarsen after refine"<<std::endl;
@@ -185,7 +185,7 @@ int main (int argc, char ** argv)
   std::cout << "**************************************"<<std::endl;
 
   typedef HermitianLinearOperator<MultiGeneralCoarsenedMatrix_t,CoarseVector> MrhsHermMatrix;
-  Chebyshev<CoarseVector>      IRLCheby(0.5,40.0,101);  // 1 iter
+  Chebyshev<CoarseVector>      IRLCheby(0.05,40.0,101);  // 1 iter
   MrhsHermMatrix MrhsCoarseOp     (mrhs);
 
   CoarseVector pm_src(CoarseMrhs);
@@ -195,6 +195,8 @@ int main (int argc, char ** argv)
 
   int Nk=nrhs;
   int Nm=Nk*3;
+  int Nk=36;
+  int Nm=144;
   int Nstop=Nk;
   int Nconv_test_interval=1;
   
@@ -208,7 +210,7 @@ int main (int argc, char ** argv)
 							  nrhs,
 							  Nk,
 							  Nm,
-							  1e-5,10);
+							  1e-4,10);
 
   int Nconv;
   std::vector<RealD>            eval(Nm);
