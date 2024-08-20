@@ -24,13 +24,12 @@ export INTELGT_AUTO_ATTACH_DISABLE=1
 # -ftarget-register-alloc-mode=pvc:small
 # -ftarget-register-alloc-mode=pvc:large
 # -ftarget-register-alloc-mode=pvc:auto
-#
+#export MPIR_CVAR_CH4_OFI_ENABLE_HMEM=1
 
 export HTTP_PROXY=http://proxy.alcf.anl.gov:3128
 export HTTPS_PROXY=http://proxy.alcf.anl.gov:3128
 export http_proxy=http://proxy.alcf.anl.gov:3128
 export https_proxy=http://proxy.alcf.anl.gov:3128
-#export MPIR_CVAR_CH4_OFI_ENABLE_HMEM=1
 git config --global http.proxy http://proxy.alcf.anl.gov:3128
 
 #source ~/spack/share/spack/setup-env.sh

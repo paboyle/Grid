@@ -212,6 +212,7 @@ private:
 #endif
 
  public:
+  static void DisplayMallinfo(void);
   static void NotifyDeletion(void * CpuPtr);
   static void Print(void);
   static void PrintAll(void);

@@ -145,7 +145,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   const int Ls=24;
-  const int nbasis = 60;
+  const int nbasis = 62;
   const int cb = 0 ;
   RealD mass=0.00078;
   RealD M5=1.8;
@@ -160,7 +160,7 @@ int main (int argc, char ** argv)
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
   // Construct a coarsened grid with 4^4 cell
-  Coordinate Block({4,4,4,4});
+  Coordinate Block({4,4,6,4});
   Coordinate clatt = GridDefaultLatt();
   for(int d=0;d<clatt.size();d++){
     clatt[d] = clatt[d]/Block[d];

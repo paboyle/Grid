@@ -270,7 +270,6 @@ public:
     assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
-    //    std::cerr << " Calling SYCL batched ZGEMM "<<std::endl;
       int64_t m64=m;
       int64_t n64=n;
       int64_t k64=k;
@@ -506,7 +505,7 @@ public:
 						  (ComplexF *) &beta_p[0],
 						  (ComplexF **)&Cmn[0], (const int64_t *)&ldc64,
 						  (int64_t)1,&batchCount64,std::vector<sycl::event>());
-      synchronise();
+    synchronise();
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
     // Need a default/reference implementation; use Eigen
