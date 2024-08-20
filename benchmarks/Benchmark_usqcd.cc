@@ -905,6 +905,7 @@ int main (int argc, char ** argv)
     staggered.push_back(result);
   }
 
+
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Summary table Ls="<<Ls <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
@@ -914,37 +915,8 @@ int main (int argc, char ** argv)
   }
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   }
-  
+
   int NN=NN_global;
-  if ( do_memory ) {
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << " Memory benchmark " <<std::endl;
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    Benchmark::Memory();
-  }
-
-  if ( do_blas ) {
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << " Batched BLAS benchmark " <<std::endl;
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    Benchmark::BLAS<ComplexD>();
-    Benchmark::BLAS<ComplexF>();
-  }
-
-  if ( do_su4 ) {
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << " SU(4) benchmark " <<std::endl;
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    Benchmark::SU4();
-  }
-  
-  if ( do_comms ) {
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << " Communications benchmark " <<std::endl;
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    Benchmark::Comms();
-  }
-
   if(do_dslash){
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << " Per Node Summary table Ls="<<Ls <<std::endl;
@@ -966,6 +938,36 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << " Comparison point is 0.5*("<<dwf4[sel]/NN<<"+"<<dwf4[selm1]/NN << ") "<<std::endl;
     std::cout<<std::setprecision(3);
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+  }
+
+  
+  if ( do_memory ) {
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    std::cout<<GridLogMessage << " Memory benchmark " <<std::endl;
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    Benchmark::Memory();
+  }
+
+  if ( do_su4 ) {
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    std::cout<<GridLogMessage << " SU(4) benchmark " <<std::endl;
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    Benchmark::SU4();
+  }
+  
+  if ( do_comms ) {
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    std::cout<<GridLogMessage << " Communications benchmark " <<std::endl;
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    Benchmark::Comms();
+  }
+
+  if ( do_blas ) {
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    std::cout<<GridLogMessage << " Batched BLAS benchmark " <<std::endl;
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    Benchmark::BLAS<ComplexD>();
+    Benchmark::BLAS<ComplexF>();
   }
   
   Grid_finalize();
