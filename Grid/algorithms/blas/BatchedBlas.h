@@ -853,8 +853,7 @@ public:
     CComplex alpha(1.0);
     CComplex beta (1.0);
     RealD flops = 8.0*M*N*K*BATCH;
-    int ncall=10;
-    RealD t0 = usecond();
+    int ncall=1000;
     deviceVector<CComplex *> As(BATCH);
     deviceVector<CComplex *> Bs(BATCH);
     deviceVector<CComplex *> Cs(BATCH);
@@ -865,6 +864,16 @@ public:
       ptr = &C[b*M*N];      acceleratorPut(Cs[b],ptr);
     }
 
+    // Warm up call
+    gemmBatched(M,N,K,
+		alpha,
+		As, // m x k 
+		Bs, // k x n
+		beta, 
+		Cs);
+    synchronise();
+
+    RealD t0 = usecond();
     for(int i=0;i<ncall;i++){
       gemmBatched(M,N,K,
 		  alpha,
@@ -872,8 +881,8 @@ public:
 		  Bs, // k x n
 		  beta, 
 		  Cs);
+      synchronise();
     }
-    synchronise();
     RealD t1 = usecond();
     RealD bytes = 1.0*sizeof(CComplex)*(M*N*2+N*K+M*K)*BATCH;
     flops = 8.0*M*N*K*BATCH*ncall;
