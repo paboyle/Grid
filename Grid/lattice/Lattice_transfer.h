@@ -42,50 +42,21 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
     assert((fine->_rdimensions[d] / coarse->_rdimensions[d])* coarse->_rdimensions[d]==fine->_rdimensions[d]); 
   }
 }
-
  
 ////////////////////////////////////////////////////////////////////////////////////////////
 // remove and insert a half checkerboard
 ////////////////////////////////////////////////////////////////////////////////////////////
+
 template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full)
 {
-  half.Checkerboard() = cb;
-
-  autoView( half_v, half, CpuWrite);
-  autoView( full_v, full, CpuRead);
-  thread_for(ss, full.Grid()->oSites(),{
-    int cbos;
-    Coordinate coor;
-    full.Grid()->oCoorFromOindex(coor,ss);
-    cbos=half.Grid()->CheckerBoard(coor);
-
-    if (cbos==cb) {
-      int ssh=half.Grid()->oIndex(coor);
-      half_v[ssh] = full_v[ss];
-    }
-  });
+  acceleratorPickCheckerboard(cb,half,full);
 }
 template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half)
 {
-  int cb = half.Checkerboard();
-  autoView( half_v , half, CpuRead);
-  autoView( full_v , full, CpuWrite);
-  thread_for(ss,full.Grid()->oSites(),{
-
-    Coordinate coor;
-    int cbos;
-
-    full.Grid()->oCoorFromOindex(coor,ss);
-    cbos=half.Grid()->CheckerBoard(coor);
-      
-    if (cbos==cb) {
-      int ssh=half.Grid()->oIndex(coor);
-      full_v[ss]=half_v[ssh];
-    }
-  });
+  acceleratorSetCheckerboard(full,half);
 }
 
-template<class vobj> inline void acceleratorPickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full, int checker_dim_half=0)
+template<class vobj> inline void acceleratorPickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full, int dummy=0)
 {
   half.Checkerboard() = cb;
   autoView(half_v, half, AcceleratorWrite);
@@ -95,6 +66,7 @@ template<class vobj> inline void acceleratorPickCheckerboard(int cb,Lattice<vobj
   unsigned long ndim_half          = half.Grid()->_ndimension;
   Coordinate checker_dim_mask_half = half.Grid()->_checker_dim_mask;
   Coordinate ostride_half          = half.Grid()->_ostride;
+  int checker_dim_half             = half.Grid()->CheckerDim();
   accelerator_for(ss, full.Grid()->oSites(),full.Grid()->Nsimd(),{
     
     Coordinate coor;
@@ -119,7 +91,7 @@ template<class vobj> inline void acceleratorPickCheckerboard(int cb,Lattice<vobj
     }
   });
 }
-template<class vobj> inline void acceleratorSetCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half, int checker_dim_half=0)
+template<class vobj> inline void acceleratorSetCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half, int dummy=0)
 {
   int cb = half.Checkerboard();
   autoView(half_v , half, AcceleratorRead);
@@ -129,6 +101,7 @@ template<class vobj> inline void acceleratorSetCheckerboard(Lattice<vobj> &full,
   unsigned long ndim_half          = half.Grid()->_ndimension;
   Coordinate checker_dim_mask_half = half.Grid()->_checker_dim_mask;
   Coordinate ostride_half          = half.Grid()->_ostride;
+  int checker_dim_half             = half.Grid()->CheckerDim();
   accelerator_for(ss,full.Grid()->oSites(),full.Grid()->Nsimd(),{
 
     Coordinate coor;

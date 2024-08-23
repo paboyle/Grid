@@ -91,6 +91,7 @@ public:
   ////////////////////////////////////////////////////////////////
   virtual int CheckerBoarded(int dim)=0;
   virtual int CheckerBoard(const Coordinate &site)=0;
+  virtual int CheckerDim(void){ return 0; };
   virtual int CheckerBoardDestination(int source_cb,int shift,int dim)=0;
   virtual int CheckerBoardShift(int source_cb,int dim,int shift,int osite)=0;
   virtual int CheckerBoardShiftForCB(int source_cb,int dim,int shift,int cb)=0;
