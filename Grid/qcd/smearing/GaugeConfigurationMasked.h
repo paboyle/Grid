@@ -32,7 +32,9 @@ private:
   //  Smear_Stout<Gimpl> *StoutSmearing;
   //  std::vector<GaugeField> SmearedSet;
   
+  GridRedBlackCartesian * UrbGrid; // keep a copy of the redblack grid for life of object
   std::vector<LatticeLorentzComplex> masks;
+  std::vector<int> cbs;
 
   typedef typename SU3Adjoint::AMatrix AdjMatrix;
   typedef typename SU3Adjoint::LatticeAdjMatrix  AdjMatrixField;
@@ -147,6 +149,25 @@ private:
     }
     pokeLorentz(Fdet, Fdet_pol, nu);
   }
+
+  void Compute_MpInvJx_dNxxdSy(int cb,
+			       const GaugeLinkField &PlaqL,
+			       const GaugeLinkField &PlaqR,
+			       AdjMatrixField MpInvJx,
+			       AdjVectorField &Fdet2 )
+  {
+    GaugeLinkField PlaqLeo(UrbGrid);
+    GaugeLinkField PlaqReo(UrbGrid);
+    AdjMatrixField MpInvJxeo(UrbGrid);
+    AdjVectorField Fdet2eo(UrbGrid);
+    pickCheckerboard(cb,PlaqLeo,PlaqL);
+    pickCheckerboard(cb,PlaqReo,PlaqR);
+    pickCheckerboard(cb,MpInvJxeo,MpInvJx);
+    Fdet2eo.Checkerboard()=cb;
+    Compute_MpInvJx_dNxxdSy(PlaqLeo,PlaqReo,MpInvJxeo,Fdet2eo);
+    setCheckerboard(Fdet2,Fdet2eo);
+  }
+  
   void Compute_MpInvJx_dNxxdSy(const GaugeLinkField &PlaqL,const GaugeLinkField &PlaqR, AdjMatrixField MpInvJx,AdjVectorField &Fdet2 )
   {
     GaugeLinkField UtaU(PlaqL.Grid());
@@ -278,8 +299,9 @@ public:
     ////////////////////////////////////////////////////////////////////////////////
     // Mask the gauge field
     ////////////////////////////////////////////////////////////////////////////////
+    int cb = cbs[smr];
     auto mask=PeekIndex<LorentzIndex>(masks[smr],mu); // the cb mask
-
+    
     Umsk = U;
     ApplyMask(Umsk,smr);
     Utmp = peekLorentz(Umsk,mu);
@@ -442,7 +464,7 @@ public:
     AdjMatrixField MpInvJx_nu(grid);
     MpInvJx = (-1.0)*MpAdInv * JxAd;// rho is on the plaq factor
 
-    Compute_MpInvJx_dNxxdSy(PlaqL,PlaqR,MpInvJx,FdetV);
+    Compute_MpInvJx_dNxxdSy(cb,PlaqL,PlaqR,MpInvJx,FdetV);
     Fdet2_mu=FdetV;
     Fdet1_mu=Zero();
     
@@ -499,7 +521,7 @@ public:
 
 	time=-usecond();
 	PlaqR=(-1.0)*PlaqR;
-	Compute_MpInvJx_dNxxdSy(PlaqL,PlaqR,MpInvJx,FdetV);
+	Compute_MpInvJx_dNxxdSy(cb,PlaqL,PlaqR,MpInvJx,FdetV);
 	Fdet2_nu = FdetV;
 	time+=usecond();
 	std::cout << GridLogMessage << "Compute_MpInvJx_dNxxSy (occurs 6x) took "<<time<< " us"<<std::endl;
@@ -520,7 +542,7 @@ public:
 	
 
 	MpInvJx_nu = Cshift(MpInvJx,mu,-1);
-	Compute_MpInvJx_dNxxdSy(PlaqL,PlaqR,MpInvJx_nu,FdetV);
+	Compute_MpInvJx_dNxxdSy(cb,PlaqL,PlaqR,MpInvJx_nu,FdetV);
 	Fdet2_nu = Fdet2_nu+FdetV;
 	
 	///////////////// -ve nu /////////////////
@@ -539,7 +561,7 @@ public:
 	Fdet1_nu = Fdet1_nu + transpose(Nxy)*dJdXe_nMpInv_y;
 
 	MpInvJx_nu = Cshift(MpInvJx,nu,1);
-	Compute_MpInvJx_dNxxdSy(PlaqL,PlaqR,MpInvJx_nu,FdetV);
+	Compute_MpInvJx_dNxxdSy(cb,PlaqL,PlaqR,MpInvJx_nu,FdetV);
 	Fdet2_nu = Fdet2_nu+FdetV;
 	
 	// x==
@@ -560,7 +582,7 @@ public:
 
 	MpInvJx_nu = Cshift(MpInvJx,mu,-1);
 	MpInvJx_nu = Cshift(MpInvJx_nu,nu,1);
-	Compute_MpInvJx_dNxxdSy(PlaqL,PlaqR,MpInvJx_nu,FdetV);
+	Compute_MpInvJx_dNxxdSy(cb,PlaqL,PlaqR,MpInvJx_nu,FdetV);
 	Fdet2_nu = Fdet2_nu+FdetV;
 
 	/////////////////////////////////////////////////////////////////////
@@ -589,7 +611,7 @@ public:
 
 	MpInvJx_nu = Cshift(MpInvJx,nu,-1);
 
-	Compute_MpInvJx_dNxxdSy(PlaqL,PlaqR,MpInvJx_nu,FdetV);
+	Compute_MpInvJx_dNxxdSy(cb,PlaqL,PlaqR,MpInvJx_nu,FdetV);
 	Fdet2_mu = Fdet2_mu+FdetV;
 
 	//  __
@@ -609,7 +631,7 @@ public:
 
 	MpInvJx_nu = Cshift(MpInvJx,nu,1);
 
-	Compute_MpInvJx_dNxxdSy(PlaqL,PlaqR,MpInvJx_nu,FdetV);
+	Compute_MpInvJx_dNxxdSy(cb,PlaqL,PlaqR,MpInvJx_nu,FdetV);
 	Fdet2_mu = Fdet2_mu+FdetV;
 	
       }
@@ -931,6 +953,10 @@ private:
 public:
 
   /* Standard constructor */
+  virtual ~SmearedConfigurationMasked()
+  {
+    delete UrbGrid;
+  }
   SmearedConfigurationMasked(GridCartesian* _UGrid, unsigned int Nsmear, Smear_Stout<Gimpl>& Stout)
     : SmearedConfiguration<Gimpl>(_UGrid, Nsmear,Stout)
   {
@@ -939,7 +965,6 @@ public:
     // was resized in base class
     assert(this->SmearedSet.size()==Nsmear);
     
-    GridRedBlackCartesian * UrbGrid;
     UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(_UGrid);
     LatticeComplex one(_UGrid); one = ComplexD(1.0,0.0);
     LatticeComplex tmp(_UGrid);
@@ -947,10 +972,11 @@ public:
     for (unsigned int i = 0; i < this->smearingLevels; ++i) {
 
       masks.push_back(*(new LatticeLorentzComplex(_UGrid)));
-
       int mu= (i/2) %Nd;
       int cb= (i%2);
       LatticeComplex tmpcb(UrbGrid);
+
+      cbs.push_back(cb);
 	
       masks[i]=Zero();
       ////////////////////
@@ -962,7 +988,6 @@ public:
       PokeIndex<LorentzIndex>(masks[i],tmp, mu);
 	
     }
-    delete UrbGrid;
   }
   
   virtual void smeared_force(GaugeField &SigmaTilde) 
