@@ -31,6 +31,58 @@ directory
 
 NAMESPACE_BEGIN(Grid);
 
+template<class Field>
+void InnerProductMatrix(Eigen::MatrixXcd &m , const std::vector<Field> &X, const std::vector<Field> &Y){
+  typedef typename Field::scalar_type scomplex;
+  int Nblock = X.size();
+  for(int b=0;b<Nblock;b++){
+  for(int bp=0;bp<Nblock;bp++) {
+    m(b,bp) = innerProduct(X[b],Y[bp]);  
+  }}
+}
+template<class Field>
+void MaddMatrix(std::vector<Field> &AP, Eigen::MatrixXcd &m , const std::vector<Field> &X,const std::vector<Field> &Y,RealD scale=1.0){
+  // Should make this cache friendly with site outermost, parallel_for
+  // Deal with case AP aliases with either Y or X
+  //
+  //Could pack "X" and "AP" into a Nblock x Volume dense array.
+  // AP(Nrhs x vol) = Y(Nrhs x vol) + scale * m(nrhs x nrhs) * X(nrhs*vol)
+  typedef typename Field::scalar_type scomplex;
+  int Nblock = AP.size();
+  std::vector<Field> tmp(Nblock,X[0]);
+  for(int b=0;b<Nblock;b++){
+    tmp[b]   = Y[b];
+    for(int bp=0;bp<Nblock;bp++) {
+      tmp[b] = tmp[b] +scomplex(scale*m(bp,b))*X[bp]; 
+    }
+  }
+  for(int b=0;b<Nblock;b++){
+    AP[b] = tmp[b];
+  }
+}
+template<class Field>
+void MulMatrix(std::vector<Field> &AP, Eigen::MatrixXcd &m , const std::vector<Field> &X){
+  // Should make this cache friendly with site outermost, parallel_for
+  typedef typename Field::scalar_type scomplex;
+  int Nblock = AP.size();
+  for(int b=0;b<Nblock;b++){
+    AP[b] = Zero();
+    for(int bp=0;bp<Nblock;bp++) {
+      AP[b] += scomplex(m(bp,b))*X[bp]; 
+    }
+  }
+}
+template<class Field>
+double normv(const std::vector<Field> &P){
+  int Nblock = P.size();
+  double nn = 0.0;
+  for(int b=0;b<Nblock;b++) {
+    nn+=norm2(P[b]);
+  }
+  return nn;
+}
+
+
 enum BlockCGtype { BlockCG, BlockCGrQ, CGmultiRHS, BlockCGVec, BlockCGrQVec };
 
 //////////////////////////////////////////////////////////////////////////
@@ -87,10 +139,19 @@ void ThinQRfact (Eigen::MatrixXcd &m_rr,
   sliceInnerProductMatrix(m_rr,R,R,Orthog);
 
   // Force manifest hermitian to avoid rounding related
+  /*
+  int rank=m_rr.rows();
+  for(int r=0;r<rank;r++){
+  for(int s=0;s<rank;s++){
+    std::cout << "QR m_rr["<<r<<","<<s<<"] "<<m_rr(r,s)<<std::endl;
+  }}
+  */
   m_rr = 0.5*(m_rr+m_rr.adjoint());
 
   Eigen::MatrixXcd L    = m_rr.llt().matrixL(); 
 
+//  ComplexD det = L.determinant();
+//  std::cout << " Det m_rr "<<det<<std::endl;
   C    = L.adjoint();
   Cinv = C.inverse();
   ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -110,10 +171,19 @@ void ThinQRfact (Eigen::MatrixXcd &m_rr,
 		 const std::vector<Field> & R)
 {
   InnerProductMatrix(m_rr,R,R);
-
+  /*
+  int rank=m_rr.rows();
+  for(int r=0;r<rank;r++){
+  for(int s=0;s<rank;s++){
+    std::cout << "QRvec m_rr["<<r<<","<<s<<"] "<<m_rr(r,s)<<std::endl;
+  }}
+  */
   m_rr = 0.5*(m_rr+m_rr.adjoint());
 
   Eigen::MatrixXcd L    = m_rr.llt().matrixL(); 
+
+  //  ComplexD det = L.determinant();
+  //  std::cout << " Det m_rr "<<det<<std::endl;
 
   C    = L.adjoint();
   Cinv = C.inverse();
@@ -186,6 +256,7 @@ void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X)
   sliceNorm(ssq,B,Orthog);
   RealD sssum=0;
   for(int b=0;b<Nblock;b++) sssum+=ssq[b];
+  for(int b=0;b<Nblock;b++) std::cout << "src["<<b<<"]" << ssq[b] <<std::endl;
 
   sliceNorm(residuals,B,Orthog);
   for(int b=0;b<Nblock;b++){ assert(std::isnan(residuals[b])==0); }
@@ -221,6 +292,9 @@ void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X)
   Linop.HermOp(X, AD);
   tmp = B - AD;  
 
+  sliceNorm(residuals,tmp,Orthog);
+  for(int b=0;b<Nblock;b++) std::cout << "res["<<b<<"]" << residuals[b] <<std::endl;
+  
   ThinQRfact (m_rr, m_C, m_Cinv, Q, tmp);
   D=Q;
 
@@ -235,6 +309,8 @@ void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X)
   GridStopWatch MatrixTimer;
   GridStopWatch SolverTimer;
   SolverTimer.Start();
+
+  RealD max_resid=0;
 
   int k;
   for (k = 1; k <= MaxIterations; k++) {
@@ -280,7 +356,7 @@ void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X)
      */
     m_rr = m_C.adjoint() * m_C;
 
-    RealD max_resid=0;
+    max_resid=0;
     RealD rrsum=0;
     RealD rr;
 
@@ -322,7 +398,9 @@ void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X)
     }
 
   }
-  std::cout << GridLogMessage << "BlockConjugateGradient(rQ) did NOT converge" << std::endl;
+
+  std::cout << GridLogMessage << "BlockConjugateGradient(rQ) did NOT converge "<<k<<" / "<<MaxIterations
+	    <<" residual "<< std::sqrt(max_resid)<< std::endl;
 
   if (ErrorOnNoConverge) assert(0);
   IterationsToComplete = k;
@@ -466,43 +544,6 @@ void CGmultiRHSsolve(LinearOperatorBase<Field> &Linop, const Field &Src, Field &
   IterationsToComplete = k;
 }
 
-void InnerProductMatrix(Eigen::MatrixXcd &m , const std::vector<Field> &X, const std::vector<Field> &Y){
-  for(int b=0;b<Nblock;b++){
-  for(int bp=0;bp<Nblock;bp++) {
-    m(b,bp) = innerProduct(X[b],Y[bp]);  
-  }}
-}
-void MaddMatrix(std::vector<Field> &AP, Eigen::MatrixXcd &m , const std::vector<Field> &X,const std::vector<Field> &Y,RealD scale=1.0){
-  // Should make this cache friendly with site outermost, parallel_for
-  // Deal with case AP aliases with either Y or X
-  std::vector<Field> tmp(Nblock,X[0]);
-  for(int b=0;b<Nblock;b++){
-    tmp[b]   = Y[b];
-    for(int bp=0;bp<Nblock;bp++) {
-      tmp[b] = tmp[b] + scomplex(scale*m(bp,b))*X[bp]; 
-    }
-  }
-  for(int b=0;b<Nblock;b++){
-    AP[b] = tmp[b];
-  }
-}
-void MulMatrix(std::vector<Field> &AP, Eigen::MatrixXcd &m , const std::vector<Field> &X){
-  // Should make this cache friendly with site outermost, parallel_for
-  for(int b=0;b<Nblock;b++){
-    AP[b] = Zero();
-    for(int bp=0;bp<Nblock;bp++) {
-      AP[b] += scomplex(m(bp,b))*X[bp]; 
-    }
-  }
-}
-double normv(const std::vector<Field> &P){
-  double nn = 0.0;
-  for(int b=0;b<Nblock;b++) {
-    nn+=norm2(P[b]);
-  }
-  return nn;
-}
-
 ////////////////////////////////////////////////////////////////////////////
 // BlockCGrQvec implementation:
 //--------------------------
@@ -549,6 +590,7 @@ void BlockCGrQsolveVec(LinearOperatorBase<Field> &Linop, const std::vector<Field
 
   RealD sssum=0;
   for(int b=0;b<Nblock;b++){ ssq[b] = norm2(B[b]);}
+  for(int b=0;b<Nblock;b++){ std::cout << "ssq["<<b<<"] "<<ssq[b]<<std::endl;}
   for(int b=0;b<Nblock;b++) sssum+=ssq[b];
 
   for(int b=0;b<Nblock;b++){ residuals[b] = norm2(B[b]);}
@@ -585,6 +627,7 @@ void BlockCGrQsolveVec(LinearOperatorBase<Field> &Linop, const std::vector<Field
   for(int b=0;b<Nblock;b++) {
     Linop.HermOp(X[b], AD[b]);
     tmp[b] = B[b] - AD[b];  
+    std::cout << "r0["<<b<<"] "<<norm2(tmp[b])<<std::endl;
   }
 
   ThinQRfact (m_rr, m_C, m_Cinv, Q, tmp);
