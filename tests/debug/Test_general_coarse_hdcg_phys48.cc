@@ -287,8 +287,8 @@ int main (int argc, char ** argv)
   } else {
     //    Aggregates.CreateSubspaceMultishift(RNG5,HermOpEO,
     //					0.0003,1.0e-5,2000); // Lo, tol, maxit
-    Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,95.,0.01,1500); <== last run
-    //    Aggregates.CreateSubspaceChebyshevNew(RNG5,HermOpEO,95.); // 176 with refinement
+    //    Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,95.,0.01,1500); <== last run
+    Aggregates.CreateSubspaceChebyshevNew(RNG5,HermOpEO,95.); // 176 with refinement
     //    Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,95.,0.001,3000,1500,200,0.0); // Attempt to resurrect
     SaveBasis(Aggregates,subspace_file);
   }
