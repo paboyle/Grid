@@ -60,6 +60,32 @@ public:
   }     
 };
 
+template<class Field> class NormalResidual : public LinearFunction<Field>{
+private:
+  SparseMatrixBase<Field> & _Matrix;
+  OperatorFunction<Field> & _HermitianSolver;
+  LinearFunction<Field>   & _Guess;
+public:
+
+  /////////////////////////////////////////////////////
+  // Wrap the usual normal equations trick
+  /////////////////////////////////////////////////////
+ NormalResidual(SparseMatrixBase<Field> &Matrix, OperatorFunction<Field> &HermitianSolver,
+		 LinearFunction<Field> &Guess) 
+   :  _Matrix(Matrix), _HermitianSolver(HermitianSolver), _Guess(Guess) {}; 
+
+  void operator() (const Field &in, Field &out){
+ 
+    Field res(in.Grid());
+    Field tmp(in.Grid());
+
+    MMdagLinearOperator<SparseMatrixBase<Field>,Field> MMdagOp(_Matrix);
+    _Guess(in,res);
+    _HermitianSolver(MMdagOp,in,res);  // M Mdag res = in ;
+    _Matrix.Mdag(res,out);             // out = Mdag res
+  }     
+};
+
 template<class Field> class HPDSolver : public LinearFunction<Field> {
 private:
   LinearOperatorBase<Field> & _Matrix;
