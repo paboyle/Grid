@@ -12,9 +12,6 @@
 #include <iostream>
 #include <sys/time.h>
 
-#undef GRID_SYCL
-#define  GRID_HIP
-#undef  GRID_CUDA
 
 #ifdef GRID_HIP
 #include <hipblas/hipblas.h>
@@ -577,36 +574,6 @@ public:
 		   deviceVector<ComplexF*> &Bkn,
 		   ComplexF beta,
 		   deviceVector<ComplexF*> &Cmn)
-  {
-    gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N,
-		m,n,k,
-		alpha,
-		Amk,
-		Bkn,
-		beta,
-		Cmn);
-  }
-  void gemmBatched(int m,int n, int k,
-		   RealD alpha,
-		   deviceVector<RealD*> &Amk,  // pointer list to matrices
-		   deviceVector<RealD*> &Bkn,
-		   RealD beta,
-		   deviceVector<RealD*> &Cmn)
-  {
-    gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N,
-		m,n,k,
-		alpha,
-		Amk,
-		Bkn,
-		beta,
-		Cmn);
-  }
-  void gemmBatched(int m,int n, int k,
-		   RealF alpha,
-		   deviceVector<RealF*> &Amk,  // pointer list to matrices
-		   deviceVector<RealF*> &Bkn,
-		   RealF beta,
-		   deviceVector<RealF*> &Cmn)
   {
     gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N,
 		m,n,k,

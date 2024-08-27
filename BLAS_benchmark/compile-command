@@ -1,2 +1,2 @@
 
-mpicxx -qmkl=parallel -fsycl BatchBlasBench.cc -o BatchBlasBench
+mpicxx -qmkl=parallel -fsycl BatchBlasBench.cc -o BatchBlasBench -DGRID_SYCL
