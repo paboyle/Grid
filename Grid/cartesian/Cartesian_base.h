@@ -82,6 +82,7 @@ public:
   bool _isCheckerBoarded; 
   int        LocallyPeriodic;
   Coordinate _checker_dim_mask;
+  int              _checker_dim;
 
 public:
 
@@ -89,7 +90,7 @@ public:
   // Checkerboarding interface is virtual and overridden by 
   // GridCartesian / GridRedBlackCartesian
   ////////////////////////////////////////////////////////////////
-  virtual int CheckerBoarded(int dim)=0;
+  virtual int CheckerBoarded(int dim) =0;
   virtual int CheckerBoard(const Coordinate &site)=0;
   virtual int CheckerBoardDestination(int source_cb,int shift,int dim)=0;
   virtual int CheckerBoardShift(int source_cb,int dim,int shift,int osite)=0;
