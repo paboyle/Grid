@@ -382,14 +382,14 @@ public:
       if ( OpB == GridBLAS_OP_C ) iOpB = oneapi::mkl::transpose::C;
 
       oneapi::mkl::blas::column_major::gemm(*gridblasHandle,
-					    &iOpA,
-					    &iOpB,
-					    &m64,&n64,&k64,
+					    iOpA,
+					    iOpB,
+					    m64,n64,k64,
 					    (ComplexD *) &alpha_p[0],
-					    (const ComplexD *)Amk, (const int64_t *)&lda64,
-					    (const ComplexD *)Bkn, (const int64_t *)&ldb64,
+					    (const ComplexD *)Amk, (int64_t )lda64,
+					    (const ComplexD *)Bkn, (int64_t )ldb64,
 					    (ComplexD *) &beta_p[0],
-					    (ComplexD *)Cmn, (const int64_t *)&ldc64);
+					    (ComplexD *)Cmn, (int64_t)ldc64);
       synchronise();
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
@@ -510,14 +510,14 @@ public:
       if ( OpB == GridBLAS_OP_C ) iOpB = oneapi::mkl::transpose::C;
 
       oneapi::mkl::blas::column_major::gemm(*gridblasHandle,
-					    &iOpA,
-					    &iOpB,
-					    &m64,&n64,&k64,
+					    iOpA,
+					    iOpB,
+					    m64,n64,k64,
 					    (ComplexF *) &alpha_p[0],
-					    (const ComplexF *)Amk, (const int64_t *)&lda64,
-					    (const ComplexF *)Bkn, (const int64_t *)&ldb64,
+					    (const ComplexF *)Amk, (int64_t )lda64,
+					    (const ComplexF *)Bkn, (int64_t )ldb64,
 					    (ComplexF *) &beta_p[0],
-					    (ComplexF *)Cmn, (const int64_t *)&ldc64);
+					    (ComplexF *)Cmn, (int64_t )ldc64);
       synchronise();
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
