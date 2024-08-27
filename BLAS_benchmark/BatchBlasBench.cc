@@ -1,31 +1,20 @@
-/*************************************************************************************
+#include <cassert>
+#include <complex>
+#include <memory>
+#include <vector>
+#include <algorithm>
+#include <array>
+#include <string>
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
+#include <ctime>
+#include <iostream>
+#include <sys/time.h>
 
-    Grid physics library, www.github.com/paboyle/Grid 
-
-    Source file: BatchedBlas.h
-
-    Copyright (C) 2023
-
-Author: Peter Boyle <pboyle@bnl.gov>
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
-    See the full license in the file "LICENSE" in the top level distribution directory
-*************************************************************************************/
-/*  END LEGAL */
-#pragma once
+#define GRID_SYCL
+#undef  GRID_HIP
+#undef  GRID_CUDA
 
 #ifdef GRID_HIP
 #include <hipblas/hipblas.h>
@@ -36,18 +25,107 @@ Author: Peter Boyle <pboyle@bnl.gov>
 #ifdef GRID_SYCL
 #include <oneapi/mkl.hpp>
 #endif
-#if 0
-#define GRID_ONE_MKL
+
+#ifdef GRID_SYCL
+#include <sycl/CL/sycl.hpp>
+#include <sycl/usm.hpp>
+cl::sycl::queue *theAccelerator;
+void acceleratorInit(void)
+{
+  int nDevices = 1;
+  cl::sycl::gpu_selector selector;
+  cl::sycl::device selectedDevice { selector };
+  theAccelerator = new sycl::queue (selectedDevice);
+  auto name = theAccelerator->get_device().get_info<sycl::info::device::name>();
+  printf("AcceleratorSyclInit: Selected device is %s\n",name.c_str()); fflush(stdout);
+}
+inline void *acceleratorAllocDevice(size_t bytes){ return malloc_device(bytes,*theAccelerator);};
+inline void acceleratorFreeDevice(void *ptr){free(ptr,*theAccelerator);};
+inline void acceleratorFreeDevice(void *ptr,size_t bytes){free(ptr,*theAccelerator);};
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { theAccelerator->memset(base,value,bytes); theAccelerator->wait();}
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { theAccelerator->memcpy(to,from,bytes); theAccelerator->wait();}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ theAccelerator->memcpy(to,from,bytes); theAccelerator->wait();}
+template<class T> void acceleratorPut(T& dev,T&host)
+{
+  acceleratorCopyToDevice(&host,&dev,sizeof(T));
+}
+template<class T> T acceleratorGet(T& dev)
+{
+  T host;
+  acceleratorCopyFromDevice(&dev,&host,sizeof(T));
+  return host;
+}
+#define accelerator_barrier(dummy) { theAccelerator->wait(); }
 #endif
-#ifdef GRID_ONE_MKL
-#include <oneapi/mkl.hpp>
-#endif
+
+
+/**************************************************************
+ * Allocator
+ **************************************************************
+ */
+template<typename _Tp>
+class devAllocator {
+public: 
+  typedef std::size_t     size_type;
+  typedef std::ptrdiff_t  difference_type;
+  typedef _Tp*       pointer;
+  typedef const _Tp* const_pointer;
+  typedef _Tp&       reference;
+  typedef const _Tp& const_reference;
+  typedef _Tp        value_type;
+
+  template<typename _Tp1>  struct rebind { typedef devAllocator<_Tp1> other; };
+  devAllocator() throw() { }
+  devAllocator(const devAllocator&) throw() { }
+  template<typename _Tp1> devAllocator(const devAllocator<_Tp1>&) throw() { }
+  ~devAllocator() throw() { }
+  pointer       address(reference __x)       const { return &__x; }
+  size_type  max_size() const throw() { return size_t(-1) / sizeof(_Tp); }
+
+  pointer allocate(size_type __n, const void* _p= 0)
+  { 
+    size_type bytes = __n*sizeof(_Tp);
+    _Tp *ptr = (_Tp*) acceleratorAllocDevice(bytes);
+    if ( (_Tp*)ptr == (_Tp *) NULL ) {
+      printf("Grid Device Allocator got NULL for %lu bytes\n",(unsigned long) bytes );
+    }
+    assert( ( (_Tp*)ptr != (_Tp *)NULL ) );
+    return ptr;
+  }
+
+  void deallocate(pointer __p, size_type __n) 
+  { 
+    size_type bytes = __n * sizeof(_Tp);
+    acceleratorFreeDevice((void *)__p,bytes);
+  }
+  void construct(pointer __p, const _Tp& __val) { };
+  void construct(pointer __p) { };
+  void destroy(pointer __p) { };
+};
+
+template<class T> using deviceVector  = std::vector<T,devAllocator<T> >;
+
+/**************************************************************
+ * Microsecond timer
+ **************************************************************
+ */
+inline double usecond(void) {
+  struct timeval tv;
+  gettimeofday(&tv,NULL);
+  return 1.0e6*tv.tv_sec + 1.0*tv.tv_usec;
+}
+
+
+typedef float  RealF;
+typedef double RealD;
+typedef std::complex<float>  ComplexF;
+typedef std::complex<double> ComplexD;
 
 ///////////////////////////////////////////////////////////////////////	  
 // Need to rearrange lattice data to be in the right format for a
 // batched multiply. Might as well make these static, dense packed
 ///////////////////////////////////////////////////////////////////////
-NAMESPACE_BEGIN(Grid);
+
 #ifdef GRID_HIP
   typedef hipblasHandle_t gridblasHandle_t;
 #endif
@@ -86,7 +164,7 @@ public:
       hipblasCreate(&gridblasHandle);
 #endif
 #ifdef GRID_SYCL
-      gridblasHandle = theGridAccelerator;
+      gridblasHandle = theAccelerator;
 #endif
 #ifdef GRID_ONE_MKL
       cl::sycl::gpu_selector selector;
@@ -853,7 +931,7 @@ public:
     CComplex alpha(1.0);
     CComplex beta (1.0);
     RealD flops = 8.0*M*N*K*BATCH;
-    int ncall=1000;
+    int ncall=10;
     deviceVector<CComplex *> As(BATCH);
     deviceVector<CComplex *> Bs(BATCH);
     deviceVector<CComplex *> Cs(BATCH);
@@ -864,7 +942,6 @@ public:
       ptr = &C[b*M*N];      acceleratorPut(Cs[b],ptr);
     }
 
-    // Warm up call
     gemmBatched(M,N,K,
 		alpha,
 		As, // m x k 
@@ -892,4 +969,84 @@ public:
 
 };
 
-NAMESPACE_END(Grid);
+
+gridblasHandle_t GridBLAS::gridblasHandle;
+int              GridBLAS::gridblasInit;
+FILE * FP;
+
+template<class CComplex>
+static void BLAS(void)
+{
+  //int nbasis, int nrhs, int coarseVol
+  int  basis[] = { 16,32,64 };
+  int  rhs[]   = { 8,12,16 };
+  int  vol  = 8*8*8*8;
+  int  blk  = 4*4*4*4;
+  
+  GridBLAS blas;
+  
+  int fpbits = sizeof(CComplex)*4;
+  std::cout<< "=================================================================================="<<std::endl;
+  std::cout<< "= batched GEMM fp"<<fpbits<<std::endl;
+  std::cout<< "=================================================================================="<<std::endl;
+  std::cout << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"Gflop/s / rank (coarse mrhs)"<<std::endl;
+  std::cout << "----------------------------------------------------------"<<std::endl;
+  
+  fprintf(FP,"GEMM\n\n M, N, K, BATCH, GF/s per rank fp%d\n",fpbits);
+  
+  for(int b=0;b<3;b++){
+    for(int r=0;r<3;r++){
+      int M=basis[b];
+      int N=rhs[r];
+      int K=basis[b];
+      int BATCH=vol;
+      double p=blas.benchmark<CComplex>(M,N,K,BATCH);
+      
+      fprintf(FP,"%d, %d, %d, %d, %f\n", M, N, K, BATCH, p);
+      
+      std::cout<< M<<"\t\t"<<N<<"\t\t"<<K<<"\t\t"<<BATCH<<"\t\t"<<p<<std::endl;
+    }}
+  std::cout << "----------------------------------------------------------"<<std::endl;
+  std::cout << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"Gflop/s / rank (block project)"<<std::endl;
+  std::cout << "----------------------------------------------------------"<<std::endl;
+  for(int b=0;b<3;b++){
+    for(int r=0;r<3;r++){
+      int M=basis[b];
+      int N=rhs[r];
+      int K=blk;
+      int BATCH=vol;
+      double p=blas.benchmark<CComplex>(M,N,K,BATCH);
+      
+      fprintf(FP,"%d, %d, %d, %d, %f\n", M, N, K, BATCH, p);
+      std::cout<< M<<"\t\t"<<N<<"\t\t"<<K<<"\t\t"<<BATCH<<"\t\t"<<p<<std::endl;
+    }}
+  std::cout << "----------------------------------------------------------"<<std::endl;
+  std::cout << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"Gflop/s / rank (block promote)"<<std::endl;
+  std::cout << "----------------------------------------------------------"<<std::endl;
+  for(int b=0;b<3;b++){
+    for(int r=0;r<3;r++){
+      int M=rhs[r];
+      int N=blk;
+      int K=basis[b];
+      int BATCH=vol;
+      double p=blas.benchmark<CComplex>(M,N,K,BATCH);
+      
+      fprintf(FP,"%d, %d, %d, %d, %f\n", M, N, K, BATCH, p);
+      std::cout<< M<<"\t\t"<<N<<"\t\t"<<K<<"\t\t"<<BATCH<<"\t\t"<<p<<std::endl;
+    }}
+  fprintf(FP,"\n\n\n");
+  std::cout << "=================================================================================="<<std::endl;
+};
+
+
+int main (int argc, char ** argv)
+{
+  acceleratorInit();
+  FP = fopen("Benchmark_usqcd.csv","w");
+  std::cout << "=================================================================================="<<std::endl;
+  std::cout << " Batched BLAS benchmark " <<std::endl;
+  std::cout << "=================================================================================="<<std::endl;
+  BLAS<ComplexD>();
+  BLAS<ComplexF>();
+  fclose(FP);
+}

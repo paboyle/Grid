@@ -35,7 +35,7 @@ uint64_t total_host;;
 void MemoryManager::DisplayMallinfo(void)
 {
 #ifdef __linux__
-  struct mallinfo mi;
+  struct mallinfo mi; // really want mallinfo2, but glibc version isn't uniform
   
   mi = mallinfo();
 

@@ -460,3 +460,9 @@ void vprefetch(const iMatrix<v, N> &vv) {
 
 NAMESPACE_END(Grid);
 
+
+#ifdef GRID_SYCL
+template<class vec> struct sycl::is_device_copyable<Grid::iScalar<vec> > : public std::true_type {};
+template<class vec,int N> struct sycl::is_device_copyable<Grid::iVector<vec,N> > : public std::true_type {};
+template<class vec,int N> struct sycl::is_device_copyable<Grid::iMatrix<vec,N> > : public std::true_type {};
+#endif
