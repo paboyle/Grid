@@ -59,7 +59,7 @@ public:
     RealD diff = hi-lo;
     RealD delta = diff*1.0e-9;
     for (RealD x=lo; x<hi; x+=delta) {
-      delta*=1.1;
+      delta*=1.02;
       RealD f = approx(x);
       out<< x<<" "<<f<<std::endl;
     }
@@ -113,6 +113,26 @@ public:
   };
 
   void Init(RealD _lo,RealD _hi,int _order, RealD (* func)(RealD))
+  {
+    lo=_lo;
+    hi=_hi;
+    order=_order;
+      
+    if(order < 2) exit(-1);
+    Coeffs.resize(order);
+    for(int j=0;j<order;j++){
+      RealD s=0;
+      for(int k=0;k<order;k++){
+	RealD y=std::cos(M_PI*(k+0.5)/order);
+	RealD x=0.5*(y*(hi-lo)+(hi+lo));
+	RealD f=func(x);
+	s=s+f*std::cos( j*M_PI*(k+0.5)/order );
+      }
+      Coeffs[j] = s * 2.0/order;
+    }
+  };
+  template<class functor>
+  void Init(RealD _lo,RealD _hi,int _order, functor & func)
   {
     lo=_lo;
     hi=_hi;
