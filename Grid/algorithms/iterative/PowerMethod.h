@@ -20,7 +20,7 @@ template<class Field> class PowerMethod
     RealD evalMaxApprox = 0.0; 
     auto src_n = src; 
     auto tmp = src; 
-    const int _MAX_ITER_EST_ = 100; 
+    const int _MAX_ITER_EST_ = 200; 
 
     for (int i=0;i<_MAX_ITER_EST_;i++) { 
       
@@ -30,18 +30,17 @@ template<class Field> class PowerMethod
       RealD vden = norm2(src_n); 
       RealD na = vnum/vden; 
 
-      std::cout << GridLogIterative << "PowerMethod: Current approximation of largest eigenvalue " << na << std::endl;
+      std::cout << GridLogMessage << "PowerMethod: Current approximation of largest eigenvalue " << na << std::endl;
       
-      if ( (fabs(evalMaxApprox/na - 1.0) < 0.001) || (i==_MAX_ITER_EST_-1) ) { 
- 	evalMaxApprox = na; 
-	std::cout << GridLogMessage << " Approximation of largest eigenvalue: " << evalMaxApprox << std::endl;
- 	return evalMaxApprox; 
-      } 
+      //      if ( (fabs(evalMaxApprox/na - 1.0) < 0.0001) || (i==_MAX_ITER_EST_-1) ) { 
+	// 	evalMaxApprox = na; 
+	// 	return evalMaxApprox; 
+      //      } 
       evalMaxApprox = na; 
       src_n = tmp;
     }
-    assert(0);
-    return 0;
+    std::cout << GridLogMessage << " Approximation of largest eigenvalue: " << evalMaxApprox << std::endl;
+    return evalMaxApprox;
   }
 };
 }
