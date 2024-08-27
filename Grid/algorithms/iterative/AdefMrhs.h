@@ -53,6 +53,7 @@ class TwoLevelCGmrhs
   // Fine operator, Smoother, CoarseSolver
   LinearOperatorBase<Field>   &_FineLinop;
   LinearFunction<Field>   &_Smoother;
+  MultiRHSBlockCGLinalg<Field> _BlockCGLinalg;
 
   GridStopWatch ProjectTimer;
   GridStopWatch PromoteTimer;
@@ -79,6 +80,301 @@ class TwoLevelCGmrhs
   
   // Vector case
   virtual void operator() (std::vector<Field> &src, std::vector<Field> &x)
+  {
+    SolveSingleSystem(src,x);
+    //    SolvePrecBlockCG(src,x);
+  }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Thin QR factorisation (google it)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
+  //Dimensions
+  // R_{ferm x Nblock} =  Q_{ferm x Nblock} x  C_{Nblock x Nblock} -> ferm x Nblock
+  //
+  // Rdag R = m_rr = Herm = L L^dag        <-- Cholesky decomposition (LLT routine in Eigen)
+  //
+  //   Q  C = R => Q = R C^{-1}
+  //
+  // Want  Ident = Q^dag Q = C^{-dag} R^dag R C^{-1} = C^{-dag} L L^dag C^{-1} = 1_{Nblock x Nblock} 
+  //
+  // Set C = L^{dag}, and then Q^dag Q = ident 
+  //
+  // Checks:
+  // Cdag C = Rdag R ; passes.
+  // QdagQ  = 1      ; passes
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
+  void ThinQRfact (Eigen::MatrixXcd &m_zz,
+		   Eigen::MatrixXcd &C,
+		   Eigen::MatrixXcd &Cinv,
+		   std::vector<Field> &  Q,
+		   std::vector<Field> & MQ,
+		   const std::vector<Field> & Z,
+		   const std::vector<Field> & MZ)
+  {
+    RealD t0=usecond();
+    _BlockCGLinalg.InnerProductMatrix(m_zz,MZ,Z);
+    RealD t1=usecond();
+
+    m_zz = 0.5*(m_zz+m_zz.adjoint());
+    
+    Eigen::MatrixXcd L    = m_zz.llt().matrixL(); 
+    
+    C    = L.adjoint();
+    Cinv = C.inverse();
+    
+    RealD t3=usecond();
+    _BlockCGLinalg.MulMatrix( Q,Cinv,Z);
+    _BlockCGLinalg.MulMatrix(MQ,Cinv,MZ);
+    RealD t4=usecond();
+    std::cout << " ThinQRfact IP    :"<< t1-t0<<" us"<<std::endl;
+    std::cout << " ThinQRfact Eigen :"<< t3-t1<<" us"<<std::endl;
+    std::cout << " ThinQRfact MulMat:"<< t4-t3<<" us"<<std::endl;
+  }
+
+  virtual void SolvePrecBlockCG (std::vector<Field> &src, std::vector<Field> &X)
+  {
+    std::cout << GridLogMessage<<"HDCG: mrhs fPrecBlockcg starting"<<std::endl;
+    src[0].Grid()->Barrier();
+    int nrhs = src.size();
+    //    std::vector<RealD> f(nrhs);
+    //    std::vector<RealD> rtzp(nrhs);
+    //    std::vector<RealD> rtz(nrhs);
+    //    std::vector<RealD> a(nrhs);
+    //    std::vector<RealD> d(nrhs);
+    //    std::vector<RealD> b(nrhs);
+    //    std::vector<RealD> rptzp(nrhs);
+
+    ////////////////////////////////////////////
+    //Initial residual computation & set up
+    ////////////////////////////////////////////
+    std::vector<RealD> ssq(nrhs);
+    for(int rhs=0;rhs<nrhs;rhs++){
+      ssq[rhs]=norm2(src[rhs]); assert(ssq[rhs]!=0.0);
+    }      
+
+    ///////////////////////////
+    // Fields -- eliminate duplicates between fPcg and block cg
+    ///////////////////////////
+    std::vector<Field> Mtmp(nrhs,grid);
+    std::vector<Field> tmp(nrhs,grid);
+    std::vector<Field>   Z(nrhs,grid); // Rename Z to R
+    std::vector<Field>  MZ(nrhs,grid); // Rename MZ to Z
+    std::vector<Field>   Q(nrhs,grid); // 
+    std::vector<Field>  MQ(nrhs,grid); // Rename to P
+    std::vector<Field>   D(nrhs,grid);
+    std::vector<Field>  AD(nrhs,grid);
+    
+    /************************************************************************
+     * Preconditioned Block conjugate gradient rQ
+     * Generalise Sebastien Birk Thesis, after Dubrulle 2001.
+     * Introduce preconditioning following Saad Ch9
+     ************************************************************************
+     * Dimensions:
+     *
+     *   X,B etc... ==(Nferm x nrhs)
+     *  Matrix A==(Nferm x Nferm)
+     *  
+     * Nferm = Nspin x Ncolour x Ncomplex x Nlattice_site
+     * QC => Thin QR factorisation (google it)
+     *
+     * R = B-AX
+     * Z = Mi R
+     * QC = Z
+     * D = Q 
+     * for k: 
+     *   R  = AD
+     *   Z  = Mi R
+     *   M  = [D^dag R]^{-1}
+     *   X  = X + D M C
+     *   QS = Q - Z.M
+     *   D  = Q + D S^dag
+     *   C  = S C
+     */
+    Eigen::MatrixXcd m_DZ     = Eigen::MatrixXcd::Identity(nrhs,nrhs);
+    Eigen::MatrixXcd m_M      = Eigen::MatrixXcd::Identity(nrhs,nrhs);
+    Eigen::MatrixXcd m_zz     = Eigen::MatrixXcd::Zero(nrhs,nrhs);
+    Eigen::MatrixXcd m_rr     = Eigen::MatrixXcd::Zero(nrhs,nrhs);
+    
+    Eigen::MatrixXcd m_C      = Eigen::MatrixXcd::Zero(nrhs,nrhs);
+    Eigen::MatrixXcd m_Cinv   = Eigen::MatrixXcd::Zero(nrhs,nrhs);
+    Eigen::MatrixXcd m_S      = Eigen::MatrixXcd::Zero(nrhs,nrhs);
+    Eigen::MatrixXcd m_Sinv   = Eigen::MatrixXcd::Zero(nrhs,nrhs);
+    
+    Eigen::MatrixXcd m_tmp    = Eigen::MatrixXcd::Identity(nrhs,nrhs);
+    Eigen::MatrixXcd m_tmp1   = Eigen::MatrixXcd::Identity(nrhs,nrhs);
+
+    GridStopWatch HDCGTimer;
+
+    //////////////////////////
+    // x0 = Vstart -- possibly modify guess
+    //////////////////////////
+    Vstart(X,src);
+
+    //////////////////////////
+    // R = B-AX
+    //////////////////////////
+    for(int rhs=0;rhs<nrhs;rhs++){
+      // r0 = b -A x0
+      _FineLinop.HermOp(X[rhs],tmp[rhs]);
+      axpy (Z[rhs], -1.0,tmp[rhs], src[rhs]);    // Computes R=Z=src - A X0
+    }
+
+    //////////////////////////////////
+    // Compute MZ = M1 Z = M1 B - M1 A x0
+    //////////////////////////////////
+    PcgM1(Z,MZ);  
+
+    //////////////////////////////////
+    // QC = Z
+    //////////////////////////////////
+    ThinQRfact (m_zz, m_C, m_Cinv, Q, MQ, Z, MZ);
+
+    //////////////////////////////////
+    // D=MQ
+    //////////////////////////////////
+    for(int b=0;b<nrhs;b++) D[b]=MQ[b]; // LLT rotation of the MZ basis of search dirs
+
+    std::cout << GridLogMessage<<"PrecBlockCGrQ vec computed initial residual and QR fact " <<std::endl;
+
+    ProjectTimer.Reset();
+    PromoteTimer.Reset();
+    DeflateTimer.Reset();
+    CoarseTimer.Reset();
+    SmoothTimer.Reset();
+    FineTimer.Reset();
+    InsertTimer.Reset();
+
+    GridStopWatch M1Timer;
+    GridStopWatch M2Timer;
+    GridStopWatch M3Timer;
+    GridStopWatch LinalgTimer;
+    GridStopWatch InnerProdTimer;
+
+    HDCGTimer.Start();
+
+    std::vector<RealD> rn(nrhs);
+    for (int k=0;k<=MaxIterations;k++){
+
+      ////////////////////
+      // Z  = AD
+      ////////////////////
+      M3Timer.Start();
+      for(int b=0;b<nrhs;b++) _FineLinop.HermOp(D[b], Z[b]);      
+      M3Timer.Stop();
+
+      ////////////////////
+      // MZ  = M1 Z <==== the Multigrid preconditioner
+      ////////////////////
+      M1Timer.Start();
+      PcgM1(Z,MZ);
+      M1Timer.Stop();
+
+      FineTimer.Start();
+      ////////////////////
+      // M  = [D^dag Z]^{-1} = (<Ddag MZ>_M)^{-1} inner prod, generalising Saad derivation of Precon CG
+      ////////////////////
+      InnerProdTimer.Start();
+      _BlockCGLinalg.InnerProductMatrix(m_DZ,D,Z);
+      InnerProdTimer.Stop();
+      m_M       = m_DZ.inverse();
+
+      ///////////////////////////
+      // X  = X + D MC
+      ///////////////////////////
+      m_tmp     = m_M * m_C;
+      LinalgTimer.Start();
+      _BlockCGLinalg.MaddMatrix(X,m_tmp, D,X);     // D are the search directions and X takes the updates 
+      LinalgTimer.Stop();
+
+      ///////////////////////////
+      // QS = Q - M Z
+      // (MQ) S = MQ - M (M1Z)
+      ///////////////////////////
+      LinalgTimer.Start();
+      _BlockCGLinalg.MaddMatrix(tmp ,m_M, Z, Q,-1.0);
+      _BlockCGLinalg.MaddMatrix(Mtmp,m_M,MZ,MQ,-1.0);
+      ThinQRfact (m_zz, m_S, m_Sinv, Q, MQ, tmp, Mtmp);
+      LinalgTimer.Stop();
+
+      ////////////////////////////
+      // D  = MQ + D S^dag
+      ////////////////////////////
+      m_tmp = m_S.adjoint();
+      LinalgTimer.Start();
+      _BlockCGLinalg.MaddMatrix(D,m_tmp,D,MQ);
+      LinalgTimer.Stop();
+
+      ////////////////////////////
+      // C  = S C
+      ////////////////////////////
+      m_C = m_S*m_C;
+      
+      ////////////////////////////
+      // convergence monitor
+      ////////////////////////////
+      m_rr = m_C.adjoint() * m_C;
+      
+      FineTimer.Stop();
+
+      RealD max_resid=0;
+      RealD rrsum=0;
+      RealD sssum=0;
+      RealD rr;
+
+      for(int b=0;b<nrhs;b++) {
+	rrsum+=real(m_rr(b,b));
+	sssum+=ssq[b];
+	rr = real(m_rr(b,b))/ssq[b];
+	if ( rr > max_resid ) max_resid = rr;
+      }
+      std::cout << GridLogMessage <<
+	  "\t Prec BlockCGrQ Iteration "<<k<<" ave resid "<< std::sqrt(rrsum/sssum) << " max "<< std::sqrt(max_resid) <<std::endl;
+
+
+      if ( max_resid < Tolerance*Tolerance ) { 
+
+	HDCGTimer.Stop();
+	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ converged in "<<k<<" iterations and "<<HDCGTimer.Elapsed()<<std::endl;;
+	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : Linalg  "<<LinalgTimer.Elapsed()<<std::endl;;
+	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : fine H  "<<M3Timer.Elapsed()<<std::endl;;
+	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : prec M1 "<<M1Timer.Elapsed()<<std::endl;;
+	std::cout<<GridLogMessage<<"**** M1 breakdown:"<<std::endl;
+	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : Project "<<ProjectTimer.Elapsed()<<std::endl;;
+	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : Promote "<<PromoteTimer.Elapsed()<<std::endl;;
+	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : Deflate "<<DeflateTimer.Elapsed()<<std::endl;;
+	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : Coarse  "<<CoarseTimer.Elapsed()<<std::endl;;
+	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : Fine    "<<FineTimer.Elapsed()<<std::endl;;
+	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : Smooth  "<<SmoothTimer.Elapsed()<<std::endl;;
+	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : Insert  "<<InsertTimer.Elapsed()<<std::endl;;
+
+	for(int rhs=0;rhs<nrhs;rhs++){
+
+	  _FineLinop.HermOp(X[rhs],tmp[rhs]);			  
+
+	  Field mytmp(grid);
+	  axpy(mytmp,-1.0,src[rhs],tmp[rhs]);
+      
+	  RealD  xnorm   = sqrt(norm2(X[rhs]));
+	  RealD  srcnorm = sqrt(norm2(src[rhs]));
+	  RealD  tmpnorm = sqrt(norm2(mytmp));
+	  RealD  true_residual = tmpnorm/srcnorm;
+	  std::cout<<GridLogMessage
+		   <<"HDCG: true residual ["<<rhs<<"] is "<<true_residual
+		   <<" solution "<<xnorm
+		   <<" source "<<srcnorm
+		   <<std::endl;
+	}
+	return;
+      }
+      
+    }
+    HDCGTimer.Stop();
+    std::cout<<GridLogMessage<<"HDCG: PrecBlockCGrQ not converged "<<HDCGTimer.Elapsed()<<std::endl;
+    assert(0);
+  }
+
+  virtual void SolveSingleSystem (std::vector<Field> &src, std::vector<Field> &x)
   {
     std::cout << GridLogMessage<<"HDCG: mrhs fPcg starting"<<std::endl;
     src[0].Grid()->Barrier();
@@ -361,15 +657,23 @@ public:
     CoarseField PleftProjMrhs(this->coarsegridmrhs);
     CoarseField PleftMss_projMrhs(this->coarsegridmrhs);
 
+#undef SMOOTHER_BLOCK_SOLVE
+#if SMOOTHER_BLOCK_SOLVE
+    this->SmoothTimer.Start();
+    this->_Smoother(in,Min);
+    this->SmoothTimer.Stop();
+#else
     for(int rhs=0;rhs<nrhs;rhs++) {
-
       this->SmoothTimer.Start();
       this->_Smoother(in[rhs],Min[rhs]);
       this->SmoothTimer.Stop();
-
+    }
+#endif
+    
+    for(int rhs=0;rhs<nrhs;rhs++) {
+      
       this->FineTimer.Start();
       this->_FineLinop.HermOp(Min[rhs],out[rhs]);
-
       axpy(tmp[rhs],-1.0,out[rhs],in[rhs]);          // resid  = in - A Min
       this->FineTimer.Stop();
 
@@ -407,7 +711,7 @@ public:
     this->FineTimer.Stop();
   }
 };
-  
+
 
 NAMESPACE_END(Grid);
 
