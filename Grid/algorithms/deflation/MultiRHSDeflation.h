@@ -182,10 +182,10 @@ public:
     /////////////////////////////////////////
     BLAS.gemmBatched(GridBLAS_OP_C,GridBLAS_OP_N, 
     		     nev,nrhs,vw,
-		     ComplexD(1.0),
+		     scalar(1.0),
 		     Ed,
 		     Rd,
-		     ComplexD(0.0),  // wipe out C
+		     scalar(0.0),  // wipe out C
 		     Cd);
     BLAS.synchronise();
 
@@ -210,10 +210,10 @@ public:
     /////////////////////////////////////////
     BLAS.gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N, 
 		     vw,nrhs,nev,
-		     ComplexD(1.0),
+		     scalar(1.0),
 		     Ed, // x . nev
 		     Cd, // nev . nrhs
-		     ComplexD(0.0),
+		     scalar(0.0),
 		     Gd);
     BLAS.synchronise();
 

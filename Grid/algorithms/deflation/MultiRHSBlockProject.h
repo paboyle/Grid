@@ -447,10 +447,10 @@ public:
     /////////////////////////////////////////
     BLAS.gemmBatched(GridBLAS_OP_C,GridBLAS_OP_N, 
     		     nbasis,nrhs,vw,
-		     ComplexD(1.0),
+		     scalar(1.0),
 		     Vd,
 		     Fd,
-		     ComplexD(0.0),  // wipe out C
+		     scalar(0.0),  // wipe out C
 		     Cd);
     BLAS.synchronise();
     //    std::cout << "BlockProject done"<<std::endl;
@@ -497,10 +497,10 @@ public:
     int64_t vw = block_vol * words;
     BLAS.gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N, 
     		     vw,nrhs,nbasis,
-		     ComplexD(1.0),
+		     scalar(1.0),
 		     Vd,
 		     Cd,
-		     ComplexD(0.0),  // wipe out C
+		     scalar(0.0),  // wipe out C
 		     Fd);
     BLAS.synchronise();
     //    std::cout << " blas call done"<<std::endl;
