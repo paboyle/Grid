@@ -4,7 +4,7 @@
 #PBS -q EarlyAppAccess
 #PBS -A LatticeQCD_aesp_CNDA
 #PBS -l walltime=02:00:00
-#PBS -N reproN
+#PBS -N reproBigJob
 #PBS -k doe
 
 #export OMP_PROC_BIND=spread
@@ -44,56 +44,20 @@ unset MPIR_CVAR_CH4_POSIX_COLL_SELECTION_TUNING_JSON_FILE
 
 cd $PBS_O_WORKDIR
 
-NN=`cat $PBS_NODEFILE | wc -l`
-echo $PBS_NODEFILE
-cat $PBS_NODEFILE
-
-echo $NN nodes in node file
-for n in `eval echo {1..$NN}`
-do
-
-cd $PBS_O_WORKDIR
-
-THIS_NODE=`head -n$n $PBS_NODEFILE | tail -n1 `
-echo Node $n is $THIS_NODE
-
-DIR=reproN.$PBS_JOBID/node-$n-$THIS_NODE
+DIR=reproBigJob.$PBS_JOBID
 
 mkdir -p $DIR
 cd $DIR
 
-echo $THIS_NODE > nodefile
+cp $PBS_NODEFILE nodefile
 
-#CMD="mpiexec -np 12 -ppn 12  -envall --hostfile nodefile \
-#	     ../../gpu_tile_compact.sh \
-#	     ../../Test_dwf_mixedcg_prec --mpi 1.2.2.3 --grid 32.64.64.96 \
-#		--shm-mpi 0 --shm 4096 --device-mem 32000 --accelerator-threads 32 --seconds 6000 --debug-stdout --log Message --comms-overlap"
-
-CMD="mpiexec -np 12 -ppn 12  -envall --hostfile nodefile \
-	     ../../gpu_tile_compact.sh \
-	     ../../Test_dwf_mixedcg_prec --mpi 1.2.2.3 --grid 32.64.64.96 \
-		--shm-mpi 1 --shm 4096 --device-mem 32000 --accelerator-threads 32 --seconds 6000 --debug-stdout --log Message --comms-overlap"
+CMD="mpiexec -np 192 -ppn 12  -envall --hostfile nodefile \
+	     ../gpu_tile_compact.sh \
+	     ../Test_dwf_mixedcg_prec --mpi 4.4.4.3 --grid 128.128.128.96 \
+		--shm-mpi 0 --shm 4096 --device-mem 32000 --accelerator-threads 32 --seconds 6000 --debug-stdout --log Message --comms-overlap"
 
 echo $CMD > command-line
 env > environment
-$CMD &
-
-done
-
-# Suspicious wait is allowing jobs to collide and knock out
-#wait
-
-sleep 6500
-
-for n in ` eval echo {1..$NN} `
-do
-
-THIS_NODE=`head -n$n $PBS_NODEFILE | tail -n1 `
-DIR=reproN.$PBS_JOBID/node-$n-$THIS_NODE
-
-cd $DIR
-
+$CMD
 grep Oops Grid.stderr.* > failures.$PBS_JOBID
 rm core.*
-
-done
