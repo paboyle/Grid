@@ -69,10 +69,10 @@ public:
   // Instantiate different versions depending on Impl
   /////////////////////////////////////////////////////
   void M5D(const FermionField& psi, const FermionField& phi, FermionField& chi,
-	   Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper);
+	   std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper);
 
   void M5Ddag(const FermionField& psi, const FermionField& phi, FermionField& chi,
-	      Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper);
+	      std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper);
 
   virtual void RefreshShiftCoefficients(RealD new_shift);
 
@@ -83,7 +83,7 @@ public:
 			RealD _M5, const ImplParams& p=ImplParams());
 
 protected:
-  void SetCoefficientsInternal(RealD zolo_hi, Vector<Coeff_t>& gamma, RealD b, RealD c);
+  void SetCoefficientsInternal(RealD zolo_hi, std::vector<Coeff_t>& gamma, RealD b, RealD c);
 };
 
 NAMESPACE_END(Grid);

@@ -174,21 +174,11 @@ template<typename _Tp>  inline bool operator!=(const devAllocator<_Tp>&, const d
 ////////////////////////////////////////////////////////////////////////////////
 // Template typedefs
 ////////////////////////////////////////////////////////////////////////////////
-#ifdef ACCELERATOR_CSHIFT
-// Cshift on device
-template<class T> using cshiftAllocator = devAllocator<T>;
-#else
-// Cshift on host
-template<class T> using cshiftAllocator = std::allocator<T>;
-#endif
+template<class T> using hostVector          = std::vector<T,alignedAllocator<T> >;           // Needs autoview
+template<class T> using Vector              = std::vector<T,uvmAllocator<T> >;               // 
+template<class T> using uvmVector           = std::vector<T,uvmAllocator<T> >;               // auto migrating page
+template<class T> using deviceVector        = std::vector<T,devAllocator<T> >;               // device vector
 
-template<class T> using Vector        = std::vector<T,uvmAllocator<T> >;           
-template<class T> using stencilVector = std::vector<T,alignedAllocator<T> >;           
-template<class T> using commVector    = std::vector<T,devAllocator<T> >;
-template<class T> using deviceVector  = std::vector<T,devAllocator<T> >;
-template<class T> using cshiftVector  = std::vector<T,cshiftAllocator<T> >;
-
-/*
 template<class T> class vecView
 {
  protected:
@@ -197,8 +187,9 @@ template<class T> class vecView
   ViewMode mode;
   void * cpu_ptr;
  public:
+  // Rvalue accessor
   accelerator_inline T & operator[](size_t i) const { return this->data[i]; };
-  vecView(std::vector<T> &refer_to_me,ViewMode _mode)
+  vecView(Vector<T> &refer_to_me,ViewMode _mode)
   {
     cpu_ptr = &refer_to_me[0];
     size = refer_to_me.size();
@@ -214,26 +205,15 @@ template<class T> class vecView
   }
 };
 
-template<class T> vecView<T> VectorView(std::vector<T> &vec,ViewMode _mode)
+template<class T> vecView<T> VectorView(Vector<T> &vec,ViewMode _mode)
 {
   vecView<T> ret(vec,_mode); // does the open
   return ret;                // must be closed
 }
 
-// Little autoscope assister
-template<class View> 
-class VectorViewCloser
-{
-  View v;  // Take a copy of view and call view close when I go out of scope automatically
- public:
-  VectorViewCloser(View &_v) : v(_v) {};
-  ~VectorViewCloser() { auto ptr = v.cpu_ptr; v.ViewClose();  MemoryManager::NotifyDeletion(ptr);}
-};
-
 #define autoVecView(v_v,v,mode)					\
   auto v_v = VectorView(v,mode);				\
   ViewCloser<decltype(v_v)> _autoView##v_v(v_v);
-*/
 
 NAMESPACE_END(Grid);
 

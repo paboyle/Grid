@@ -42,11 +42,11 @@ public:
 
 public:
   // Shift operator coefficients for red-black preconditioned Mobius EOFA
-  Vector<Coeff_t> Mooee_shift;
-  Vector<Coeff_t> MooeeInv_shift_lc;
-  Vector<Coeff_t> MooeeInv_shift_norm;
-  Vector<Coeff_t> MooeeInvDag_shift_lc;
-  Vector<Coeff_t> MooeeInvDag_shift_norm;
+  std::vector<Coeff_t> Mooee_shift;
+  std::vector<Coeff_t> MooeeInv_shift_lc;
+  std::vector<Coeff_t> MooeeInv_shift_norm;
+  std::vector<Coeff_t> MooeeInvDag_shift_lc;
+  std::vector<Coeff_t> MooeeInvDag_shift_norm;
 
   virtual void Instantiatable(void) {};
 
@@ -74,18 +74,18 @@ public:
   // Instantiate different versions depending on Impl
   /////////////////////////////////////////////////////
   void M5D(const FermionField& psi, const FermionField& phi, FermionField& chi,
-	   Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper);
+	   std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper);
 
   void M5D_shift(const FermionField& psi, const FermionField& phi, FermionField& chi,
-		 Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper,
-		 Vector<Coeff_t>& shift_coeffs);
+		 std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper,
+		 std::vector<Coeff_t>& shift_coeffs);
 
   void M5Ddag(const FermionField& psi, const FermionField& phi, FermionField& chi,
-	      Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper);
+	      std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper);
 
   void M5Ddag_shift(const FermionField& psi, const FermionField& phi, FermionField& chi,
-		    Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper,
-		    Vector<Coeff_t>& shift_coeffs);
+		    std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper,
+		    std::vector<Coeff_t>& shift_coeffs);
 
   virtual void RefreshShiftCoefficients(RealD new_shift);
 

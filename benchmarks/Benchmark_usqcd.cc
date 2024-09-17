@@ -861,7 +861,7 @@ int main (int argc, char ** argv)
   }
 
   CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicySequential);
-  LebesgueOrder::Block = std::vector<int>({2,2,2,2});
+  //  LebesgueOrder::Block = std::vector<int>({2,2,2,2});
 
   Benchmark::Decomposition();
 

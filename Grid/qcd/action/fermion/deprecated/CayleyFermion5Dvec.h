@@ -1,3 +1,5 @@
+#if 0
+
 /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -818,3 +820,5 @@ CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField &chi,
 }
 
 NAMESPACE_END(Grid);
+
+#endif

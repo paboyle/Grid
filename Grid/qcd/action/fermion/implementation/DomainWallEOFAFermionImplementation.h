@@ -131,9 +131,9 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi, FermionField& chi
     else{ shiftm = -shift*(mq3-mq2); }
   }
 
-  Vector<Coeff_t> diag(Ls,1.0);
-  Vector<Coeff_t> upper(Ls,-1.0); upper[Ls-1] = mq1 + shiftm;
-  Vector<Coeff_t> lower(Ls,-1.0); lower[0]    = mq1 + shiftp;
+  std::vector<Coeff_t> diag(Ls,1.0);
+  std::vector<Coeff_t> upper(Ls,-1.0); upper[Ls-1] = mq1 + shiftm;
+  std::vector<Coeff_t> lower(Ls,-1.0); lower[0]    = mq1 + shiftp;
 
 #if(0)
   std::cout << GridLogMessage << "DomainWallEOFAFermion::M5D(FF&,FF&):" << std::endl;
@@ -168,9 +168,9 @@ void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi, FermionField& 
     else{ shiftm = -shift*(mq3-mq2); }
   }
 
-  Vector<Coeff_t> diag(Ls,1.0);
-  Vector<Coeff_t> upper(Ls,-1.0); upper[Ls-1] = mq1 + shiftp;
-  Vector<Coeff_t> lower(Ls,-1.0); lower[0]    = mq1 + shiftm;
+  std::vector<Coeff_t> diag(Ls,1.0);
+  std::vector<Coeff_t> upper(Ls,-1.0); upper[Ls-1] = mq1 + shiftp;
+  std::vector<Coeff_t> lower(Ls,-1.0); lower[0]    = mq1 + shiftm;
 
   this->M5Ddag(psi, chi, chi, lower, diag, upper);
 }
@@ -181,9 +181,9 @@ void DomainWallEOFAFermion<Impl>::Mooee(const FermionField& psi, FermionField& c
 {
   int Ls = this->Ls;
 
-  Vector<Coeff_t> diag = this->bee;
-  Vector<Coeff_t> upper(Ls);
-  Vector<Coeff_t> lower(Ls);
+  std::vector<Coeff_t> diag = this->bee;
+  std::vector<Coeff_t> upper(Ls);
+  std::vector<Coeff_t> lower(Ls);
 
   for(int s=0; s<Ls; s++){
     upper[s] = -this->cee[s];
@@ -200,9 +200,9 @@ void DomainWallEOFAFermion<Impl>::MooeeDag(const FermionField& psi, FermionField
 {
   int Ls = this->Ls;
 
-  Vector<Coeff_t> diag = this->bee;
-  Vector<Coeff_t> upper(Ls);
-  Vector<Coeff_t> lower(Ls);
+  std::vector<Coeff_t> diag = this->bee;
+  std::vector<Coeff_t> upper(Ls);
+  std::vector<Coeff_t> lower(Ls);
 
   for(int s=0; s<Ls; s++){
     upper[s] = -this->cee[s];
@@ -218,7 +218,7 @@ void DomainWallEOFAFermion<Impl>::MooeeDag(const FermionField& psi, FermionField
 
 //Zolo
 template<class Impl>
-void DomainWallEOFAFermion<Impl>::SetCoefficientsInternal(RealD zolo_hi, Vector<Coeff_t>& gamma, RealD b, RealD c)
+void DomainWallEOFAFermion<Impl>::SetCoefficientsInternal(RealD zolo_hi, std::vector<Coeff_t>& gamma, RealD b, RealD c)
 {
   int   Ls    = this->Ls;
   int   pm    = this->pm;

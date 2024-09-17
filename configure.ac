@@ -225,18 +225,6 @@ case ${ac_SFW_FP16} in
       AC_MSG_ERROR(["SFW FP16 option not supported ${ac_SFW_FP16}"]);;
 esac
 
-############### Default to accelerator cshift, but revert to host if UCX is buggy or other reasons
-AC_ARG_ENABLE([accelerator-aware-mpi],
-    [AS_HELP_STRING([--enable-accelerator-aware-mpi=yes|no],[run mpi transfers from device])],
-    [ac_ACCELERATOR_AWARE_MPI=${enable_accelerator_aware_mpi}], [ac_ACCELERATOR_AWARE_MPI=yes])
-
-case ${ac_ACCELERATOR_AWARE_MPI} in
-    yes)
-      AC_DEFINE([ACCELERATOR_CSHIFT],[1],[ Cshift runs on host])
-      AC_DEFINE([ACCELERATOR_AWARE_MPI],[1],[ Stencil can use device pointers]);;
-    *);;
-esac
-
 
 ############### SYCL/CUDA/HIP/none
 AC_ARG_ENABLE([accelerator],
@@ -660,16 +648,6 @@ AC_ARG_ENABLE([shm-fast-path],[AS_HELP_STRING([--enable-shm-fast-path],[Allow ke
 case ${ac_SHM_FAST_PATH} in
      yes)
         AC_DEFINE([SHM_FAST_PATH],[1],[SHM_FAST_PATH] )
-      ;;
-     *) ;;
-esac
-
-############### communication type selection
-AC_ARG_ENABLE([comms-threads],[AS_HELP_STRING([--enable-comms-threads | --disable-comms-threads],[Use multiple threads in MPI calls])],[ac_COMMS_THREADS=${enable_comms_threads}],[ac_COMMS_THREADS=yes])
-
-case ${ac_COMMS_THREADS} in
-     yes)
-        AC_DEFINE([GRID_COMMS_THREADING],[1],[GRID_COMMS_NONE] )
       ;;
      *) ;;
 esac

@@ -19,7 +19,7 @@ public:
   static int PartialCompressionFactor(GridBase *grid) {return 1;};
   // Decompress is after merge so ok
   template<class vobj,class cobj,class compressor> 
-  static void Gather_plane_simple (commVector<std::pair<int,int> >& table,
+  static void Gather_plane_simple (deviceVector<std::pair<int,int> >& table,
 				   const Lattice<vobj> &rhs,
 				   cobj *buffer,
 				   compressor &compress,
@@ -35,7 +35,7 @@ public:
     rhs_v.ViewClose();
   }
   template<class vobj,class cobj,class compressor>
-  static void Gather_plane_exchange(commVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
+  static void Gather_plane_exchange(deviceVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
 				    std::vector<cobj *> pointers,int dimension,int plane,int cbmask,
 				    compressor &compress,int type,int partial)
   {
@@ -83,25 +83,6 @@ public:
 // Wilson compressor will add alternate policies for Dirichlet
 // and possibly partial Dirichlet for DWF
 ////////////////////////////////////
-/*
-class FaceGatherDirichlet
-{
-  // If it's dirichlet we don't assemble comms buffers
-  //
-  // Rely on zeroes in gauge field to drive the correct result
-  // NAN propgagation: field will locally wrap, so fermion should NOT contain NAN and just permute
-  template<class vobj,class cobj,class compressor>
-  static void Gather_plane_simple (commVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so){};
-  template<class vobj,class cobj,class compressor>
-  static void Gather_plane_exchange(commVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
-				   Vector<cobj *> pointers,int dimension,int plane,int cbmask,
-				   compressor &compress,int type) {}
-  template<class decompressor,class Merger>
-  static void Merge(decompressor decompress,Merge &mm)  {  }
-  template<class decompressor,class Decompression>
-  static void Decompress(decompressor decompress,Decompression &dd) {}
-};
-*/
 
 template<class vobj,class FaceGather>
 class SimpleCompressorGather : public FaceGather {

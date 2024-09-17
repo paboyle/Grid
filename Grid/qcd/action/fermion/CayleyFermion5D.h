@@ -90,16 +90,16 @@ public:
   void M5D(const FermionField &psi,
 	   const FermionField &phi,
 	   FermionField &chi,
-	   Vector<Coeff_t> &lower,
-	   Vector<Coeff_t> &diag,
-	   Vector<Coeff_t> &upper);
+	   std::vector<Coeff_t> &lower,
+	   std::vector<Coeff_t> &diag,
+	   std::vector<Coeff_t> &upper);
 
   void M5Ddag(const FermionField &psi,
 	      const FermionField &phi,
 	      FermionField &chi,
-	      Vector<Coeff_t> &lower,
-	      Vector<Coeff_t> &diag,
-	      Vector<Coeff_t> &upper);
+	      std::vector<Coeff_t> &lower,
+	      std::vector<Coeff_t> &diag,
+	      std::vector<Coeff_t> &upper);
 
   virtual void   Instantiatable(void)=0;
 
@@ -119,35 +119,35 @@ public:
   RealD mass_plus, mass_minus;
 
   // Save arguments to SetCoefficientsInternal
-  Vector<Coeff_t> _gamma;
+  std::vector<Coeff_t> _gamma;
   RealD                _zolo_hi;
   RealD                _b;
   RealD                _c;
 
   // Cayley form Moebius (tanh and zolotarev)
-  Vector<Coeff_t> omega;
-  Vector<Coeff_t> bs;    // S dependent coeffs
-  Vector<Coeff_t> cs;
-  Vector<Coeff_t> as;
+  std::vector<Coeff_t> omega;
+  std::vector<Coeff_t> bs;    // S dependent coeffs
+  std::vector<Coeff_t> cs;
+  std::vector<Coeff_t> as;
   // For preconditioning Cayley form
-  Vector<Coeff_t> bee;
-  Vector<Coeff_t> cee;
-  Vector<Coeff_t> aee;
-  Vector<Coeff_t> beo;
-  Vector<Coeff_t> ceo;
-  Vector<Coeff_t> aeo;
+  std::vector<Coeff_t> bee;
+  std::vector<Coeff_t> cee;
+  std::vector<Coeff_t> aee;
+  std::vector<Coeff_t> beo;
+  std::vector<Coeff_t> ceo;
+  std::vector<Coeff_t> aeo;
   // LDU factorisation of the eeoo matrix
-  Vector<Coeff_t> lee;
-  Vector<Coeff_t> leem;
-  Vector<Coeff_t> uee;
-  Vector<Coeff_t> ueem;
-  Vector<Coeff_t> dee;
+  std::vector<Coeff_t> lee;
+  std::vector<Coeff_t> leem;
+  std::vector<Coeff_t> uee;
+  std::vector<Coeff_t> ueem;
+  std::vector<Coeff_t> dee;
 
   // Matrices of 5d ee inverse params
-  Vector<iSinglet<Simd> >  MatpInv;
-  Vector<iSinglet<Simd> >  MatmInv;
-  Vector<iSinglet<Simd> >  MatpInvDag;
-  Vector<iSinglet<Simd> >  MatmInvDag;
+  //  std::vector<iSinglet<Simd> >  MatpInv;
+  //  std::vector<iSinglet<Simd> >  MatmInv;
+  //  std::vector<iSinglet<Simd> >  MatpInvDag;
+  //  std::vector<iSinglet<Simd> >  MatmInvDag;
 
   ///////////////////////////////////////////////////////////////
   // Conserved current utilities
@@ -187,7 +187,7 @@ public:
 protected:
   virtual void SetCoefficientsZolotarev(RealD zolohi,Approx::zolotarev_data *zdata,RealD b,RealD c);
   virtual void SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c);
-  virtual void SetCoefficientsInternal(RealD zolo_hi,Vector<Coeff_t> & gamma,RealD b,RealD c);
+  virtual void SetCoefficientsInternal(RealD zolo_hi,std::vector<Coeff_t> & gamma,RealD b,RealD c);
 };
 
 NAMESPACE_END(Grid);

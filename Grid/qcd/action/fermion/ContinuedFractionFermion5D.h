@@ -90,12 +90,12 @@ protected:
   RealD mass;
   RealD R;
   RealD ZoloHiInv;
-  Vector<double> Beta;
-  Vector<double> cc;;
-  Vector<double> cc_d;;
-  Vector<double> sqrt_cc;
-  Vector<double> See;
-  Vector<double> Aee;
+  std::vector<double> Beta;
+  std::vector<double> cc;;
+  std::vector<double> cc_d;;
+  std::vector<double> sqrt_cc;
+  std::vector<double> See;
+  std::vector<double> Aee;
 
 };
 

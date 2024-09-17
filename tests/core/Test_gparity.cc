@@ -54,6 +54,7 @@ static_assert(same_vComplex == 1, "Dirac Operators must have same underlying SIM
 
 int main (int argc, char ** argv)
 {
+#ifdef ENABLE_GPARITY
   int nu = 0;
   int tbc_aprd = 0; //use antiperiodic BCs in the time direction?
   
@@ -325,4 +326,5 @@ int main (int argc, char ** argv)
   
 
   Grid_finalize();
+#endif
 }

@@ -72,7 +72,7 @@ public:
   }
 
   // Resident in managed memory
-  Vector<GeneralStencilEntry>  _entries; 
+  deviceVector<GeneralStencilEntry>  _entries; 
 
   GeneralLocalStencil(GridBase *grid, const std::vector<Coordinate> &shifts)
   {
@@ -141,7 +141,7 @@ public:
 	  ////////////////////////////////////////////////
 	  // Store in look up table
 	  ////////////////////////////////////////////////
-	  this->_entries[lex] = SE;
+	  acceleratorPut(this->_entries[lex],SE);
 	}
       });
   }

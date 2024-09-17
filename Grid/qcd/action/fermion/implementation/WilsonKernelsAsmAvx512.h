@@ -40,11 +40,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 /// Switch off the 5d vectorised code optimisations
 #undef DWFVEC5D
 
-static Vector<vComplexF> signsF;
+static std::vector<vComplexF> signsF;
 
   template<typename vtype>    
-  int setupSigns(Vector<vtype>& signs ){
-    Vector<vtype> bother(2);
+  int setupSigns(std::vector<vtype>& signs ){
+    std::vector<vtype> bother(2);
     signs = bother;
     vrsign(signs[0]);
     visign(signs[1]);
@@ -364,7 +364,7 @@ WilsonKernels<ZDomainWallVec5dImplF>::AsmDhopSiteDagExt(StencilView &st, Doubled
 
 #include <simd/Intel512double.h>
     
-static Vector<vComplexD> signsD;
+static std::vector<vComplexD> signsD;
 static int signInitD = setupSigns(signsD);
     
 #define MAYBEPERM(A,perm) if (perm) { A ; }

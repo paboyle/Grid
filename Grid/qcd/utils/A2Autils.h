@@ -158,12 +158,12 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
   int MFrvol = rd*Lblock*Rblock*Nmom;
   int MFlvol = ld*Lblock*Rblock*Nmom;
 
-  Vector<SpinMatrix_v > lvSum(MFrvol);
+  std::vector<SpinMatrix_v > lvSum(MFrvol);
   thread_for( r, MFrvol,{
     lvSum[r] = Zero();
   });
 
-  Vector<SpinMatrix_s > lsSum(MFlvol);             
+  std::vector<SpinMatrix_s > lsSum(MFlvol);             
   thread_for(r,MFlvol,{
     lsSum[r]=scalar_type(0.0);
   });
@@ -346,12 +346,12 @@ void A2Autils<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat,
   int MFrvol = rd*Lblock*Rblock;
   int MFlvol = ld*Lblock*Rblock;
 
-  Vector<vector_type > lvSum(MFrvol);
+  std::vector<vector_type > lvSum(MFrvol);
   thread_for(r,MFrvol,{
     lvSum[r] = Zero();
   });
 
-  Vector<scalar_type > lsSum(MFlvol);             
+  std::vector<scalar_type > lsSum(MFlvol);             
   thread_for(r,MFlvol,{
     lsSum[r]=scalar_type(0.0);
   });
@@ -493,12 +493,12 @@ void A2Autils<FImpl>::PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat,
   int MFrvol = rd*Lblock*Rblock*Nmom;
   int MFlvol = ld*Lblock*Rblock*Nmom;
 
-  Vector<vector_type > lvSum(MFrvol);
+  std::vector<vector_type > lvSum(MFrvol);
   thread_for(r,MFrvol,{
     lvSum[r] = Zero();
   });
 
-  Vector<scalar_type > lsSum(MFlvol);             
+  std::vector<scalar_type > lsSum(MFlvol);             
   thread_for(r,MFlvol,{
     lsSum[r]=scalar_type(0.0);
   });
@@ -700,13 +700,13 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
     int MFrvol = rd*Lblock*Rblock*Nem;
     int MFlvol = ld*Lblock*Rblock*Nem;
 
-    Vector<vector_type> lvSum(MFrvol);
+    std::vector<vector_type> lvSum(MFrvol);
     thread_for(r,MFrvol,
     {
       lvSum[r] = Zero();
     });
 
-    Vector<scalar_type> lsSum(MFlvol);             
+    std::vector<scalar_type> lsSum(MFlvol);             
     thread_for(r,MFlvol,
     {
         lsSum[r] = scalar_type(0.0);

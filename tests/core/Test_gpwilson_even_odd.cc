@@ -35,7 +35,7 @@ using namespace Grid;
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
-
+#ifdef ENABLE_GPARITY
   Coordinate latt_size   = GridDefaultLatt();
   Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();
@@ -216,6 +216,6 @@ int main (int argc, char ** argv)
 
   std::cout<<GridLogMessage <<"pDce - conj(cDpo) "<< pDco-conj(cDpo) <<std::endl;
   std::cout<<GridLogMessage <<"pDco - conj(cDpe) "<< pDce-conj(cDpe) <<std::endl;
-  
+#endif  
   Grid_finalize();
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#PBS -q workq
+#PBS -q EarlyAppAccess
 #PBS -l select=2
 #PBS -l walltime=00:20:00
 #PBS -A LatticeQCD_aesp_CNDA
@@ -43,13 +43,13 @@ $CMD | tee 2node.comms
 CMD="mpiexec -np 24 -ppn 12  -envall \
 	     ./gpu_tile_compact.sh \
 	     ./Benchmark_dwf_fp32 --mpi 2.2.2.3 --grid 32.32.64.48 \
-		--shm-mpi 0 --shm 2048 --device-mem 32000 --accelerator-threads 32 --comms-overlap"
+		--shm-mpi 1 --shm 2048 --device-mem 32000 --accelerator-threads 32 "
 $CMD | tee 2node.32.32.64.48.dwf
 
 
 CMD="mpiexec -np 24 -ppn 12  -envall \
 	     ./gpu_tile_compact.sh \
 	     ./Benchmark_dwf_fp32 --mpi 2.2.2.3 --grid 64.64.64.96 \
-		--shm-mpi 0 --shm 2048 --device-mem 32000 --accelerator-threads 32 --comms-overlap"
+		--shm-mpi 1 --shm 2048 --device-mem 32000 --accelerator-threads 32 "
 $CMD | tee 2node.64.64.64.96.dwf
 

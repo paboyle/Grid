@@ -99,7 +99,7 @@ public:
   CoarseMatrix AselfInvEven;
   CoarseMatrix AselfInvOdd;
 
-  Vector<RealD> dag_factor;
+  deviceVector<RealD> dag_factor;
 
   ///////////////////////
   // Interface
@@ -124,9 +124,13 @@ public:
     int npoint = geom.npoint;
     typedef LatticeView<Cobj> Aview;
       
-    Vector<Aview> AcceleratorViewContainer;
+    deviceVector<Aview> AcceleratorViewContainer(geom.npoint);
+    hostVector<Aview>   hAcceleratorViewContainer(geom.npoint);
   
-    for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer.push_back(A[p].View(AcceleratorRead));
+    for(int p=0;p<geom.npoint;p++) {
+      hAcceleratorViewContainer[p] = A[p].View(AcceleratorRead);
+      acceleratorPut(AcceleratorViewContainer[p],hAcceleratorViewContainer[p]);
+    }
     Aview *Aview_p = & AcceleratorViewContainer[0];
 
     const int Nsimd = CComplex::Nsimd();
@@ -161,7 +165,7 @@ public:
       coalescedWrite(out_v[ss](b),res);
       });
 
-    for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer[p].ViewClose();
+    for(int p=0;p<geom.npoint;p++) hAcceleratorViewContainer[p].ViewClose();
   };
 
   void Mdag (const CoarseVector &in, CoarseVector &out)
@@ -190,9 +194,14 @@ public:
     int npoint = geom.npoint;
     typedef LatticeView<Cobj> Aview;
 
-    Vector<Aview> AcceleratorViewContainer;
 
-    for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer.push_back(A[p].View(AcceleratorRead));
+    deviceVector<Aview> AcceleratorViewContainer(geom.npoint);
+    hostVector<Aview>   hAcceleratorViewContainer(geom.npoint);
+  
+    for(int p=0;p<geom.npoint;p++) {
+      hAcceleratorViewContainer[p] = A[p].View(AcceleratorRead);
+      acceleratorPut(AcceleratorViewContainer[p],hAcceleratorViewContainer[p]);
+    }
     Aview *Aview_p = & AcceleratorViewContainer[0];
 
     const int Nsimd = CComplex::Nsimd();
@@ -201,10 +210,10 @@ public:
 
     int osites=Grid()->oSites();
 
-    Vector<int> points(geom.npoint, 0);
-    for(int p=0; p<geom.npoint; p++)
-      points[p] = geom.points_dagger[p];
-
+    deviceVector<int> points(geom.npoint);
+    for(int p=0; p<geom.npoint; p++) { 
+      acceleratorPut(points[p],geom.points_dagger[p]);
+    }
     auto points_p = &points[0];
 
     RealD* dag_factor_p = &dag_factor[0];
@@ -236,7 +245,7 @@ public:
       coalescedWrite(out_v[ss](b),res);
       });
 
-    for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer[p].ViewClose();
+    for(int p=0;p<geom.npoint;p++) hAcceleratorViewContainer[p].ViewClose();
   }
 
   void MdirComms(const CoarseVector &in)
@@ -251,8 +260,14 @@ public:
     out.Checkerboard() = in.Checkerboard();
 
     typedef LatticeView<Cobj> Aview;
-    Vector<Aview> AcceleratorViewContainer;
-    for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer.push_back(A[p].View(AcceleratorRead));
+
+    deviceVector<Aview> AcceleratorViewContainer(geom.npoint);
+    hostVector<Aview>   hAcceleratorViewContainer(geom.npoint);
+  
+    for(int p=0;p<geom.npoint;p++) {
+      hAcceleratorViewContainer[p] = A[p].View(AcceleratorRead);
+      acceleratorPut(AcceleratorViewContainer[p],hAcceleratorViewContainer[p]);
+    }
     Aview *Aview_p = & AcceleratorViewContainer[0];
 
     autoView( out_v , out, AcceleratorWrite);
@@ -285,7 +300,7 @@ public:
       }
       coalescedWrite(out_v[ss](b),res);
     });
-    for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer[p].ViewClose();
+    for(int p=0;p<geom.npoint;p++) hAcceleratorViewContainer[p].ViewClose();
   }
   void MdirAll(const CoarseVector &in,std::vector<CoarseVector> &out)
   {
@@ -469,14 +484,20 @@ public:
 
     // determine in what order we need the points
     int npoint = geom.npoint-1;
-    Vector<int> points(npoint, 0);
-    for(int p=0; p<npoint; p++)
-      points[p] = (dag && !hermitian) ? geom.points_dagger[p] : p;
-
+    deviceVector<int> points(npoint);
+    for(int p=0; p<npoint; p++) {
+      int val = (dag && !hermitian) ? geom.points_dagger[p] : p;
+      acceleratorPut(points[p], val);
+    }
     auto points_p = &points[0];
 
-    Vector<Aview> AcceleratorViewContainer;
-    for(int p=0;p<npoint;p++) AcceleratorViewContainer.push_back(a[p].View(AcceleratorRead));
+    deviceVector<Aview> AcceleratorViewContainer(geom.npoint);
+    hostVector<Aview>   hAcceleratorViewContainer(geom.npoint);
+  
+    for(int p=0;p<geom.npoint;p++) {
+      hAcceleratorViewContainer[p] = a[p].View(AcceleratorRead);
+      acceleratorPut(AcceleratorViewContainer[p],hAcceleratorViewContainer[p]);
+    }
     Aview *Aview_p = & AcceleratorViewContainer[0];
 
     const int Nsimd = CComplex::Nsimd();
@@ -539,7 +560,7 @@ public:
       });
     }
 
-    for(int p=0;p<npoint;p++) AcceleratorViewContainer[p].ViewClose();
+    for(int p=0;p<npoint;p++) hAcceleratorViewContainer[p].ViewClose();
   }
   
   CoarsenedMatrix(GridCartesian &CoarseGrid, int hermitian_=0) 	:
@@ -590,11 +611,13 @@ public:
     }
 
     // GPU readable prefactor
+    std::vector<RealD> h_dag_factor(nbasis*nbasis);
     thread_for(i, nbasis*nbasis, {
       int j = i/nbasis;
       int k = i%nbasis;
-      dag_factor[i] = dag_factor_eigen(j, k);
+      h_dag_factor[i] = dag_factor_eigen(j, k);
     });
+    acceleratorCopyToDevice(&h_dag_factor[0],&dag_factor[0],dag_factor.size()*sizeof(RealD));
   }
 
   void CoarsenOperator(GridBase *FineGrid,LinearOperatorBase<Lattice<Fobj> > &linop,

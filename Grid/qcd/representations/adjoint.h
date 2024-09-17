@@ -40,7 +40,7 @@ public:
     U = Zero();
     LatticeColourMatrix tmp(Uin.Grid());
 
-    Vector<typename SU<ncolour>::Matrix> ta(Dimension);
+    std::vector<typename SU<ncolour>::Matrix> ta(Dimension);
 
     // Debug lines
     // LatticeMatrix uno(Uin.Grid());

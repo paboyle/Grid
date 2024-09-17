@@ -87,8 +87,8 @@ static void run_generators_checks() {
     typedef typename Sp_TwoIndex<this_nc, S>::template iGroupMatrix<Complex> Matrix;
     int sum = 0;
     int sum_im = 0;
-    Vector<Matrix> ta_fund(this_algebra_dim);
-    Vector<Matrix> eij(this_irrep_dim);
+    std::vector<Matrix> ta_fund(this_algebra_dim);
+    std::vector<Matrix> eij(this_irrep_dim);
     Matrix tmp_l;
     Matrix tmp_r;
     for (int n = 0; n < this_algebra_dim; n++)

@@ -464,16 +464,12 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Performance:"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
-    std::cout<<GridLogMessage<<"  --comms-concurrent : Asynchronous MPI calls; several dirs at a time "<<std::endl;    
-    std::cout<<GridLogMessage<<"  --comms-sequential : Synchronous MPI calls; one dirs at a time "<<std::endl;    
     std::cout<<GridLogMessage<<"  --comms-overlap    : Overlap comms with compute "<<std::endl;    
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"  --dslash-generic: Wilson kernel for generic Nc"<<std::endl;    
     std::cout<<GridLogMessage<<"  --dslash-unroll : Wilson kernel for Nc=3"<<std::endl;    
     std::cout<<GridLogMessage<<"  --dslash-asm    : Wilson kernel for AVX512"<<std::endl;    
     std::cout<<GridLogMessage<<std::endl;
-    std::cout<<GridLogMessage<<"  --lebesgue      : Cache oblivious Lebesgue curve/Morton order/Z-graph stencil looping"<<std::endl;    
-    std::cout<<GridLogMessage<<"  --cacheblocking n.m.o.p : Hypercuboidal cache blocking"<<std::endl;    
     std::cout<<GridLogMessage<<std::endl;
     exit(EXIT_SUCCESS);
   }
@@ -501,28 +497,8 @@ void Grid_init(int *argc,char ***argv)
     WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsThenCompute;
     StaggeredKernelsStatic::Comms = StaggeredKernelsStatic::CommsThenCompute;
   }
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-concurrent") ){
-    CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicyConcurrent);
-  }
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-sequential") ){
-    CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicySequential);
-  }
 
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
-    LebesgueOrder::UseLebesgueOrder=1;
-  }
   CartesianCommunicator::nCommThreads = 1;
-#ifdef GRID_COMMS_THREADS  
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-threads") ){
-    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--comms-threads");
-    GridCmdOptionInt(arg,CartesianCommunicator::nCommThreads);
-    assert(CartesianCommunicator::nCommThreads > 0);
-  }
-#endif  
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--cacheblocking") ){
-    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--cacheblocking");
-    GridCmdOptionIntVector(arg,LebesgueOrder::Block);
-  }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--notimestamp") ){
     GridLogTimestamp(0);
   } else {

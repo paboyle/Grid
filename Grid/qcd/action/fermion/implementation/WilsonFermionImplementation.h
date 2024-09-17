@@ -52,17 +52,12 @@ WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
     StencilEven(&Hgrid, npoint, Even, directions,displacements,p),  // source is Even
     StencilOdd(&Hgrid, npoint, Odd, directions,displacements,p),  // source is Odd
     mass(_mass),
-    Lebesgue(_grid),
-    LebesgueEvenOdd(_cbgrid),
     Umu(&Fgrid),
     UmuEven(&Hgrid),
     UmuOdd(&Hgrid),
       _tmp(&Hgrid),
       anisotropyCoeff(anis)
 {
-  Stencil.lo     = &Lebesgue;
-  StencilEven.lo = &LebesgueEvenOdd;
-  StencilOdd.lo  = &LebesgueEvenOdd;
   // Allocate the required comms buffer
   ImportGauge(_Umu);
   if  (anisotropyCoeff.isAnisotropic){
@@ -314,7 +309,7 @@ void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int da
 
   out.Checkerboard() = in.Checkerboard();
 
-  DhopInternal(Stencil, Lebesgue, Umu, in, out, dag);
+  DhopInternal(Stencil, Umu, in, out, dag);
 }
 
 template <class Impl>
@@ -326,7 +321,7 @@ void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int 
   assert(in.Checkerboard() == Even);
   out.Checkerboard() = Odd;
 
-  DhopInternal(StencilEven, LebesgueEvenOdd, UmuOdd, in, out, dag);
+  DhopInternal(StencilEven, UmuOdd, in, out, dag);
 }
 
 template <class Impl>
@@ -338,7 +333,7 @@ void WilsonFermion<Impl>::DhopEO(const FermionField &in, FermionField &out,int d
   assert(in.Checkerboard() == Odd);
   out.Checkerboard() = Even;
 
-  DhopInternal(StencilOdd, LebesgueEvenOdd, UmuEven, in, out, dag);
+  DhopInternal(StencilOdd, UmuEven, in, out, dag);
 }
 
 template <class Impl>
@@ -391,21 +386,21 @@ void WilsonFermion<Impl>::DhopDirCalc(const FermionField &in, FermionField &out,
 };
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
+void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, 
                                        DoubledGaugeField &U,
                                        const FermionField &in,
                                        FermionField &out, int dag)
 {
 #ifdef GRID_OMP
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute )
-    DhopInternalOverlappedComms(st,lo,U,in,out,dag);
+    DhopInternalOverlappedComms(st,U,in,out,dag);
   else
 #endif
-    DhopInternalSerial(st,lo,U,in,out,dag);
+    DhopInternalSerial(st,U,in,out,dag);
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, LebesgueOrder &lo,
+void WilsonFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, 
 						      DoubledGaugeField &U,
 						      const FermionField &in,
 						      FermionField &out, int dag)
@@ -474,10 +469,10 @@ void WilsonFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, LebesgueO
 
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopInternalSerial(StencilImpl &st, LebesgueOrder &lo,
-                                       DoubledGaugeField &U,
-                                       const FermionField &in,
-                                       FermionField &out, int dag)
+void WilsonFermion<Impl>::DhopInternalSerial(StencilImpl &st, 
+					     DoubledGaugeField &U,
+					     const FermionField &in,
+					     FermionField &out, int dag)
 {
   GRID_TRACE("DhopSerial");
   assert((dag == DaggerNo) || (dag == DaggerYes));

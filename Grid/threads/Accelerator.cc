@@ -207,10 +207,10 @@ cl::sycl::queue *theCopyAccelerator;
 void acceleratorInit(void)
 {
   int nDevices = 1;
-  cl::sycl::gpu_selector selector;
-  cl::sycl::device selectedDevice { selector };
-  theGridAccelerator = new sycl::queue (selectedDevice);
-  theCopyAccelerator = new sycl::queue (selectedDevice);
+  //  cl::sycl::gpu_selector selector;
+  //  cl::sycl::device selectedDevice { selector };
+  theGridAccelerator = new sycl::queue (sycl::gpu_selector_v);
+  theCopyAccelerator = new sycl::queue (sycl::gpu_selector_v);
   //  theCopyAccelerator = theGridAccelerator; // Should proceed concurrenlty anyway.
 
 #ifdef GRID_SYCL_LEVEL_ZERO_IPC

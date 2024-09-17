@@ -58,15 +58,9 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   Umu(_FourDimGrid),
   UmuEven(_FourDimRedBlackGrid),
   UmuOdd (_FourDimRedBlackGrid),
-  Lebesgue(_FourDimGrid),
-  LebesgueEvenOdd(_FourDimRedBlackGrid),
   _tmp(&FiveDimRedBlackGrid),
   Dirichlet(0)
 {
-  Stencil.lo     = &Lebesgue;
-  StencilEven.lo = &LebesgueEvenOdd;
-  StencilOdd.lo  = &LebesgueEvenOdd;
-  
   // some assertions
   assert(FiveDimGrid._ndimension==5);
   assert(FourDimGrid._ndimension==4);
@@ -305,19 +299,19 @@ void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
 }
 
 template<class Impl>
-void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
+void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st,
                                          DoubledGaugeField & U,
                                          const FermionField &in, FermionField &out,int dag)
 {
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute )
-    DhopInternalOverlappedComms(st,lo,U,in,out,dag);
+    DhopInternalOverlappedComms(st,U,in,out,dag);
   else 
-    DhopInternalSerialComms(st,lo,U,in,out,dag);
+    DhopInternalSerialComms(st,U,in,out,dag);
 }
 
 
 template<class Impl>
-void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, LebesgueOrder &lo,
+void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st,
 							DoubledGaugeField & U,
 							const FermionField &in, FermionField &out,int dag)
 {
@@ -331,10 +325,12 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   // Start comms  // Gather intranode and extra node differentiated??
   /////////////////////////////
   {
+    std::cout << " WilsonFermion5D gather " <<std::endl;
     GRID_TRACE("Gather");
     st.HaloExchangeOptGather(in,compressor); // Put the barrier in the routine
   }
   
+  std::cout << " WilsonFermion5D Communicate Begin " <<std::endl;
   std::vector<std::vector<CommsRequest_t> > requests;
   auto id=traceStart("Communicate overlapped");
   st.CommunicateBegin(requests);
@@ -343,6 +339,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   // Overlap with comms
   /////////////////////////////
   {
+  std::cout << " WilsonFermion5D Comms merge " <<std::endl;
     GRID_TRACE("MergeSHM");
     st.CommsMergeSHM(compressor);// Could do this inside parallel region overlapped with comms
   }
@@ -350,6 +347,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   /////////////////////////////
   // do the compute interior
   /////////////////////////////
+  std::cout << " WilsonFermion5D Interior " <<std::endl;
   int Opt = WilsonKernelsStatic::Opt; // Why pass this. Kernels should know
   if (dag == DaggerYes) {
     GRID_TRACE("DhopDagInterior");
@@ -362,6 +360,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   /////////////////////////////
   // Complete comms
   /////////////////////////////
+  std::cout << " WilsonFermion5D Comms Complete " <<std::endl;
   st.CommunicateComplete(requests);
   traceStop(id);
 
@@ -369,11 +368,13 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   // do the compute exterior
   /////////////////////////////
   {
+    std::cout << " WilsonFermion5D Comms Merge " <<std::endl;
     GRID_TRACE("Merge");
     st.CommsMerge(compressor);
   }
   
 
+  std::cout << " WilsonFermion5D Exterior " <<std::endl;
   if (dag == DaggerYes) {
     GRID_TRACE("DhopDagExterior");
     Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,0,1);
@@ -381,11 +382,12 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
     GRID_TRACE("DhopExterior");
     Kernels::DhopKernel   (Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,0,1);
   }
+  std::cout << " WilsonFermion5D Done " <<std::endl;
 }
 
 
 template<class Impl>
-void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOrder &lo,
+void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, 
 						    DoubledGaugeField & U,
 						    const FermionField &in, 
 						    FermionField &out,int dag)
@@ -395,11 +397,13 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOr
 
   int LLs = in.Grid()->_rdimensions[0];
 
+  std::cout << " WilsonFermion5D Halo exch " <<std::endl;
   {
     GRID_TRACE("HaloExchange");
     st.HaloExchangeOpt(in,compressor);
   }
   
+  std::cout << " WilsonFermion5D Dhop " <<std::endl;
   int Opt = WilsonKernelsStatic::Opt;
   if (dag == DaggerYes) {
     GRID_TRACE("DhopDag");
@@ -408,6 +412,7 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOr
     GRID_TRACE("Dhop");
     Kernels::DhopKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out);
   }
+  std::cout << " WilsonFermion5D Done " <<std::endl;
 }
 
 
@@ -420,7 +425,7 @@ void WilsonFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int
   assert(in.Checkerboard()==Even);
   out.Checkerboard() = Odd;
 
-  DhopInternal(StencilEven,LebesgueEvenOdd,UmuOdd,in,out,dag);
+  DhopInternal(StencilEven,UmuOdd,in,out,dag);
 }
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
@@ -431,7 +436,7 @@ void WilsonFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int
   assert(in.Checkerboard()==Odd);
   out.Checkerboard() = Even;
 
-  DhopInternal(StencilOdd,LebesgueEvenOdd,UmuEven,in,out,dag);
+  DhopInternal(StencilOdd,UmuEven,in,out,dag);
 }
 template<class Impl>
 void WilsonFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int dag)
@@ -441,7 +446,7 @@ void WilsonFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int d
 
   out.Checkerboard() = in.Checkerboard();
 
-  DhopInternal(Stencil,Lebesgue,Umu,in,out,dag);
+  DhopInternal(Stencil,Umu,in,out,dag);
 }
 template<class Impl>
 void WilsonFermion5D<Impl>::DW(const FermionField &in, FermionField &out,int dag)

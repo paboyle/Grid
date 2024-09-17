@@ -168,6 +168,7 @@ public:
   template<class vobj>
   void FFT_dim(Lattice<vobj> &result,const Lattice<vobj> &source,int dim, int sign){
 #ifndef HAVE_FFTW
+    std::cerr << "FFTW is not compiled but is called"<<std::endl;
     assert(0);
 #else
     conformable(result.Grid(),vgrid);
@@ -190,7 +191,8 @@ public:
       
     Lattice<sobj> pgbuf(&pencil_g);
     autoView(pgbuf_v , pgbuf, CpuWrite);
-
+    std::cout << "CPU view" << std::endl;
+    
     typedef typename FFTW<scalar>::FFTW_scalar FFTW_scalar;
     typedef typename FFTW<scalar>::FFTW_plan   FFTW_plan;
       
@@ -213,6 +215,7 @@ public:
     else if ( sign == forward ) div = 1.0;
     else assert(0);
       
+    std::cout << "Making FFTW plan" << std::endl;
     FFTW_plan p;
     {
       FFTW_scalar *in = (FFTW_scalar *)&pgbuf_v[0];
@@ -226,6 +229,7 @@ public:
     }
       
     // Barrel shift and collect global pencil
+    std::cout << "Making pencil" << std::endl;
     Coordinate lcoor(Nd), gcoor(Nd);
     result = source;
     int pc = processor_coor[dim];
@@ -247,6 +251,7 @@ public:
       }
     }
       
+    std::cout << "Looping orthog" << std::endl;
     // Loop over orthog coords
     int NN=pencil_g.lSites();
     GridStopWatch timer;
@@ -269,6 +274,7 @@ public:
     usec += timer.useconds();
     flops+= flops_call*NN;
       
+    std::cout << "Writing back results " << std::endl;
     // writing out result
     {
       autoView(pgbuf_v,pgbuf,CpuRead);
@@ -285,6 +291,7 @@ public:
     }
     result = result*div;
       
+    std::cout << "Destroying plan " << std::endl;
     // destroying plan
     FFTW<scalar>::fftw_destroy_plan(p);
 #endif

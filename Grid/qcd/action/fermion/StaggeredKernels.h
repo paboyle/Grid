@@ -49,10 +49,10 @@ template<class Impl> class StaggeredKernels : public FermionOperator<Impl> , pub
    
  public:
 
-  void DhopImproved(StencilImpl &st, LebesgueOrder &lo, 
+  void DhopImproved(StencilImpl &st,
 		    DoubledGaugeField &U, DoubledGaugeField &UUU, 
 		    const FermionField &in, FermionField &out, int dag, int interior,int exterior);
-  void DhopNaive(StencilImpl &st, LebesgueOrder &lo, 
+  void DhopNaive(StencilImpl &st,
 		 DoubledGaugeField &U,
 		 const FermionField &in, FermionField &out, int dag, int interior,int exterior);
   

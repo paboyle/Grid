@@ -102,11 +102,11 @@ public:
     assert(mass.size()==nshift);
     assert(mresidual.size()==nshift);
   
-    // dynamic sized arrays on stack; 2d is a pain with vector
-    RealD  bs[nshift];
-    RealD  rsq[nshift];
-    RealD  z[nshift][2];
-    int     converged[nshift];
+    // remove dynamic sized arrays on stack; 2d is a pain with vector
+    std::vector<RealD>  bs(nshift);
+    std::vector<RealD>  rsq(nshift);
+    std::vector<std::array<RealD,2> >  z(nshift);
+    std::vector<int>     converged(nshift);
   
     const int       primary =0;
   

@@ -54,7 +54,7 @@ struct CshiftImplGauge: public CshiftImplBase<typename Gimpl::GaugeLinkField::ve
  *
  */
 
-template<class vobj> inline void ScatterSlice(const cshiftVector<vobj> &buf,
+template<class vobj> inline void ScatterSlice(const deviceVector<vobj> &buf,
 					      Lattice<vobj> &lat,
 					      int x,
 					      int dim,
@@ -140,7 +140,7 @@ template<class vobj> inline void ScatterSlice(const cshiftVector<vobj> &buf,
   });
 }
 
-template<class vobj> inline void GatherSlice(cshiftVector<vobj> &buf,
+template<class vobj> inline void GatherSlice(deviceVector<vobj> &buf,
 					     const Lattice<vobj> &lat,
 					     int x,
 					     int dim,
@@ -462,8 +462,8 @@ public:
     int rNsimd = Nsimd / simd[dimension];
     assert( buffer_size == from.Grid()->_slice_nblock[dimension]*from.Grid()->_slice_block[dimension] / simd[dimension]);
 
-    static cshiftVector<vobj> send_buf; 
-    static cshiftVector<vobj> recv_buf;
+    static deviceVector<vobj> send_buf; 
+    static deviceVector<vobj> recv_buf;
     send_buf.resize(buffer_size*2*depth);    
     recv_buf.resize(buffer_size*2*depth);
 

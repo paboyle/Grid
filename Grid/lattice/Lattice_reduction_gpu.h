@@ -214,22 +214,12 @@ inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osi
   // Move out of UVM
   // Turns out I had messed up the synchronise after move to compute stream
   // as running this on the default stream fools the synchronise
-#undef UVM_BLOCK_BUFFER  
-#ifndef UVM_BLOCK_BUFFER  
-  commVector<sobj> buffer(numBlocks);
+  deviceVector<sobj> buffer(numBlocks);
   sobj *buffer_v = &buffer[0];
   sobj result;
   reduceKernel<<< numBlocks, numThreads, smemSize, computeStream >>>(lat, buffer_v, size);
   accelerator_barrier();
   acceleratorCopyFromDevice(buffer_v,&result,sizeof(result));
-#else
-  Vector<sobj> buffer(numBlocks);
-  sobj *buffer_v = &buffer[0];
-  sobj result;
-  reduceKernel<<< numBlocks, numThreads, smemSize, computeStream >>>(lat, buffer_v, size);
-  accelerator_barrier();
-  result = *buffer_v;
-#endif
   return result;
 }
 
@@ -244,7 +234,7 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
   
   const int words = sizeof(vobj)/sizeof(vector);
 
-  Vector<vector> buffer(osites);
+  deviceVector<vector> buffer(osites);
   vector *dat = (vector *)lat;
   vector *buf = &buffer[0];
   iScalar<vector> *tbuf =(iScalar<vector> *)  &buffer[0];

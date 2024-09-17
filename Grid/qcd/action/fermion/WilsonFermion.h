@@ -126,14 +126,17 @@ public:
   void DerivInternal(StencilImpl &st, DoubledGaugeField &U, GaugeField &mat,
                      const FermionField &A, const FermionField &B, int dag);
 
-  void DhopInternal(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+  void DhopInternal(StencilImpl &st,
+		    DoubledGaugeField &U,
                     const FermionField &in, FermionField &out, int dag);
 
-  void DhopInternalSerial(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-                    const FermionField &in, FermionField &out, int dag);
+  void DhopInternalSerial(StencilImpl &st,
+			  DoubledGaugeField &U,
+			  const FermionField &in, FermionField &out, int dag);
 
-  void DhopInternalOverlappedComms(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-                    const FermionField &in, FermionField &out, int dag);
+  void DhopInternalOverlappedComms(StencilImpl &st,
+				   DoubledGaugeField &U,
+				   const FermionField &in, FermionField &out, int dag);
 
   // Constructor
   WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
@@ -167,9 +170,6 @@ public:
   DoubledGaugeField Umu;
   DoubledGaugeField UmuEven;
   DoubledGaugeField UmuOdd;
-
-  LebesgueOrder Lebesgue;
-  LebesgueOrder LebesgueEvenOdd;
 
   WilsonAnisotropyCoefficients anisotropyCoeff;
 

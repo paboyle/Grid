@@ -15,10 +15,10 @@ void check_huge_pages(void *Buf,uint64_t BYTES)
   uint64_t virt_pfn = (uint64_t)Buf / page_size;
   off_t offset = sizeof(uint64_t) * virt_pfn;
   uint64_t npages = (BYTES + page_size-1) / page_size;
-  uint64_t pagedata[npages];
+  std::vector<uint64_t> pagedata(npages);
   uint64_t ret = lseek(fd, offset, SEEK_SET);
   assert(ret == offset);
-  ret = ::read(fd, pagedata, sizeof(uint64_t)*npages);
+  ret = ::read(fd, &pagedata[0], sizeof(uint64_t)*npages);
   assert(ret == sizeof(uint64_t) * npages);
   int nhugepages = npages / 512;
   int n4ktotal, nnothuge;

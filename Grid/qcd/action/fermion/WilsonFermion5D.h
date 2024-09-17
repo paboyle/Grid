@@ -135,21 +135,18 @@ public:
 		     int dag);
     
   void DhopInternal(StencilImpl & st,
-		    LebesgueOrder &lo,
 		    DoubledGaugeField &U,
 		    const FermionField &in, 
 		    FermionField &out,
 		    int dag);
 
   void DhopInternalOverlappedComms(StencilImpl & st,
-				   LebesgueOrder &lo,
 				   DoubledGaugeField &U,
 				   const FermionField &in, 
 				   FermionField &out,
 				   int dag);
 
   void DhopInternalSerialComms(StencilImpl & st,
-			       LebesgueOrder &lo,
 			       DoubledGaugeField &U,
 			       const FermionField &in, 
 			       FermionField &out,
@@ -202,9 +199,6 @@ public:
   DoubledGaugeField Umu;
   DoubledGaugeField UmuEven;
   DoubledGaugeField UmuOdd;
-    
-  LebesgueOrder Lebesgue;
-  LebesgueOrder LebesgueEvenOdd;
     
   // Comms buffer
   //  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;

@@ -30,6 +30,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 using namespace Grid;
 
+#ifdef ENABLE_GPARITY
 static constexpr double                      tolerance = 1.0e-6;
 static std::array<GparityFlavourMatrix, GparityFlavour::nSigma> testAlgebra;
 
@@ -148,11 +149,12 @@ void checkSigma(const GparityFlavour::Algebra a, GridSerialRNG &rng)
   test(m*g, m*testg);
   std::cout << std::endl;
 }
+#endif
 
 int main(int argc, char *argv[])
 {
   Grid_init(&argc,&argv);
-  
+#ifdef ENABLE_GPARITY  
   Coordinate latt_size   = GridDefaultLatt();
   Coordinate simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();
@@ -170,7 +172,7 @@ int main(int argc, char *argv[])
     checkSigma(i, sRNG);
   }
   std::cout << GridLogMessage << std::endl;
-  
+#endif  
   Grid_finalize();
   
   return EXIT_SUCCESS;
