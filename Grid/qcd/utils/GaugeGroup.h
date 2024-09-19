@@ -418,32 +418,32 @@ static void LieAlgebraProject(LatticeAlgebraMatrix &out,const LatticeMatrix &in,
   int hNNm1= NNm1/2;
   RealD sqrt_2 = sqrt(2.0);
   Complex ci(0.0,1.0);
-  for(int su2Index=0;su2Index<hNNm1;su2Index++){
-    int i1, i2;
-    su2SubGroupIndex(i1, i2, su2Index);
-    int ax = su2Index*2;
-    int ay = su2Index*2+1;
-    accelerator_for(ss,grid->oSites(),1,{
+
+  const int nsimd=  Matrix::Nsimd();
+  accelerator_for(ss,grid->oSites(),nsimd,{
+      for(int su2Index=0;su2Index<hNNm1;su2Index++){
+	int i1, i2;
+	su2SubGroupIndex(i1, i2, su2Index);
+	int ax = su2Index*2;
+	int ay = su2Index*2+1;
 	// in is traceless ANTI-hermitian whereas Grid generators are Hermitian.
 	// trace( Ta x Ci in)
 	// Bet I need to move to real part with mult by -i
-	out_v[ss]()()(ax,b) = 0.5*(real(in_v[ss]()()(i2,i1)) - real(in_v[ss]()()(i1,i2)));
-	out_v[ss]()()(ay,b) = 0.5*(imag(in_v[ss]()()(i1,i2)) + imag(in_v[ss]()()(i2,i1)));
-      });
-  }
-  for(int diagIndex=0;diagIndex<N-1;diagIndex++){
-    int k = diagIndex + 1; // diagIndex starts from 0
-    int a = NNm1+diagIndex;
-    RealD scale = 1.0/sqrt(2.0*k*(k+1));
-    accelerator_for(ss,grid->oSites(),vComplex::Nsimd(),{
-	auto tmp = in_v[ss]()()(0,0);
+	coalescedWrite(out_v[ss]()()(ax,b),0.5*(real(in_v(ss)()()(i2,i1)) - real(in_v(ss)()()(i1,i2))));
+	coalescedWrite(out_v[ss]()()(ay,b),0.5*(imag(in_v(ss)()()(i1,i2)) + imag(in_v(ss)()()(i2,i1))));
+      }
+      for(int diagIndex=0;diagIndex<N-1;diagIndex++){
+	int k = diagIndex + 1; // diagIndex starts from 0
+	int a = NNm1+diagIndex;
+	RealD scale = 1.0/sqrt(2.0*k*(k+1));
+	auto tmp = in_v(ss)()()(0,0);
 	for(int i=1;i<k;i++){
-	  tmp=tmp+in_v[ss]()()(i,i);
+	  tmp=tmp+in_v(ss)()()(i,i);
 	}
-	tmp = tmp - in_v[ss]()()(k,k)*k;
-	out_v[ss]()()(a,b) =imag(tmp) * scale;
-      });
-    }
+	tmp = tmp - in_v(ss)()()(k,k)*k;
+	coalescedWrite(out_v[ss]()()(a,b),imag(tmp) * scale);
+      }
+    });
 }
 
   
