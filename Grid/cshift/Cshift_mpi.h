@@ -55,13 +55,13 @@ template<class vobj> Lattice<vobj> Cshift(const Lattice<vobj> &rhs,int dimension
   RealD t1,t0;
   t0=usecond();
   if ( !comm_dim ) {
-    std::cout << "CSHIFT: Cshift_local" <<std::endl;
+    //    std::cout << "CSHIFT: Cshift_local" <<std::endl;
     Cshift_local(ret,rhs,dimension,shift); // Handles checkerboarding
   } else if ( splice_dim ) {
-    std::cout << "CSHIFT: Cshift_comms_simd call - splice_dim = " << splice_dim << " shift " << shift << " dimension = " << dimension << std::endl;
+    //    std::cout << "CSHIFT: Cshift_comms_simd call - splice_dim = " << splice_dim << " shift " << shift << " dimension = " << dimension << std::endl;
     Cshift_comms_simd(ret,rhs,dimension,shift);
   } else {
-    std::cout << "CSHIFT: Cshift_comms" <<std::endl;
+    //    std::cout << "CSHIFT: Cshift_comms" <<std::endl;
     Cshift_comms(ret,rhs,dimension,shift);
   }
   t1=usecond();
@@ -76,12 +76,12 @@ template<class vobj> void Cshift_comms(Lattice<vobj>& ret,const Lattice<vobj> &r
   sshift[0] = rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Even);
   sshift[1] = rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Odd);
 
-  std::cout << "Cshift_comms dim "<<dimension<<"cb "<<rhs.Checkerboard()<<"shift "<<shift<<" sshift " << sshift[0]<<" "<<sshift[1]<<std::endl;
+  //  std::cout << "Cshift_comms dim "<<dimension<<"cb "<<rhs.Checkerboard()<<"shift "<<shift<<" sshift " << sshift[0]<<" "<<sshift[1]<<std::endl;
   if ( sshift[0] == sshift[1] ) {
-    std::cout << "Single pass Cshift_comms" <<std::endl;
+    //    std::cout << "Single pass Cshift_comms" <<std::endl;
     Cshift_comms(ret,rhs,dimension,shift,0x3);
   } else {
-    std::cout << "Two pass Cshift_comms" <<std::endl;
+    //    std::cout << "Two pass Cshift_comms" <<std::endl;
     Cshift_comms(ret,rhs,dimension,shift,0x1);// if checkerboard is unfavourable take two passes
     Cshift_comms(ret,rhs,dimension,shift,0x2);// both with block stride loop iteration
   }
@@ -94,12 +94,12 @@ template<class vobj> void Cshift_comms_simd(Lattice<vobj>& ret,const Lattice<vob
   sshift[0] = rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Even);
   sshift[1] = rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Odd);
 
-  std::cout << "Cshift_comms_simd dim "<<dimension<<"cb "<<rhs.Checkerboard()<<"shift "<<shift<<" sshift " << sshift[0]<<" "<<sshift[1]<<std::endl;
+  //  std::cout << "Cshift_comms_simd dim "<<dimension<<"cb "<<rhs.Checkerboard()<<"shift "<<shift<<" sshift " << sshift[0]<<" "<<sshift[1]<<std::endl;
   if ( sshift[0] == sshift[1] ) {
-    std::cout << "Single pass Cshift_comms" <<std::endl;
+    //    std::cout << "Single pass Cshift_comms" <<std::endl;
     Cshift_comms_simd(ret,rhs,dimension,shift,0x3);
   } else {
-    std::cout << "Two pass Cshift_comms" <<std::endl;
+    //    std::cout << "Two pass Cshift_comms" <<std::endl;
     Cshift_comms_simd(ret,rhs,dimension,shift,0x1);// if checkerboard is unfavourable take two passes
     Cshift_comms_simd(ret,rhs,dimension,shift,0x2);// both with block stride loop iteration
   }
@@ -197,9 +197,9 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
   int simd_layout     = grid->_simd_layout[dimension];
   int comm_dim        = grid->_processors[dimension] >1 ;
 
-  std::cout << "Cshift_comms_simd dim "<< dimension << " fd "<<fd<<" rd "<<rd
-	    << " ld "<<ld<<" pd " << pd<<" simd_layout "<<simd_layout 
-	    << " comm_dim " << comm_dim << " cbmask " << cbmask <<std::endl;
+  //  std::cout << "Cshift_comms_simd dim "<< dimension << " fd "<<fd<<" rd "<<rd
+  //	    << " ld "<<ld<<" pd " << pd<<" simd_layout "<<simd_layout 
+  //	    << " comm_dim " << comm_dim << " cbmask " << cbmask <<std::endl;
 
   assert(comm_dim==1);
   assert(simd_layout==2);
