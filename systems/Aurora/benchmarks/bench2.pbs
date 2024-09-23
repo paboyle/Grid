@@ -11,17 +11,16 @@
 cd $PBS_O_WORKDIR
 
 source ../sourceme.sh
-module load pti-gpu
+#module load pti-gpu
 
-#cat $PBS_NODEFILE
+
+cp $PBS_NODEFILE nodefile
 
 export OMP_NUM_THREADS=4
 export MPIR_CVAR_CH4_OFI_ENABLE_GPU_PIPELINE=1
-
 #unset MPIR_CVAR_CH4_OFI_GPU_PIPELINE_D2H_ENGINE_TYPE
 #unset MPIR_CVAR_CH4_OFI_GPU_PIPELINE_H2D_ENGINE_TYPE
 #unset MPIR_CVAR_GPU_USE_IMMEDIATE_COMMAND_LIST
-
 export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_D2H_ENGINE_TYPE=0
 export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_H2D_ENGINE_TYPE=0
 export MPIR_CVAR_GPU_USE_IMMEDIATE_COMMAND_LIST=1
@@ -34,22 +33,26 @@ export MPICH_OFI_NIC_POLICY=GPU
 # 12 ppn, 2 nodes, 24 ranks
 #
 CMD="mpiexec -np 24 -ppn 12  -envall \
-	     ./gpu_tile_compact.sh \
+	     ./gpu_tile.sh \
 	     ./Benchmark_comms_host_device --mpi 2.2.2.3 --grid 24.32.32.24 \
 		--shm-mpi 0 --shm 2048 --device-mem 32000 --accelerator-threads 32" 
-$CMD | tee 2node.comms
+#$CMD | tee 2node.comms.hbm
 
 
 CMD="mpiexec -np 24 -ppn 12  -envall \
-	     ./gpu_tile_compact.sh \
 	     ./Benchmark_dwf_fp32 --mpi 2.2.2.3 --grid 32.32.64.48 \
-		--shm-mpi 1 --shm 2048 --device-mem 32000 --accelerator-threads 32 "
-$CMD | tee 2node.32.32.64.48.dwf
+		--shm-mpi 1 --shm 2048 --device-mem 32000 --accelerator-threads 32 --comms-overlap --debug-signals"
 
+#for f in 1 2 3 4 5 6 7 8
+for f in 1
+do
+echo $CMD
+$CMD | tee 2node.32.32.64.48.dwf.hbm.$f
+done
 
 CMD="mpiexec -np 24 -ppn 12  -envall \
-	     ./gpu_tile_compact.sh \
+	     ./gpu_tile.sh \
 	     ./Benchmark_dwf_fp32 --mpi 2.2.2.3 --grid 64.64.64.96 \
-		--shm-mpi 1 --shm 2048 --device-mem 32000 --accelerator-threads 32 "
-$CMD | tee 2node.64.64.64.96.dwf
+		--shm-mpi 0 --shm 2048 --device-mem 32000 --accelerator-threads 32 --comms-overlap"
+#$CMD | tee 2node.64.64.64.96.dwf.hbm
 

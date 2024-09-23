@@ -549,8 +549,31 @@ void GridLogLayout() {
 
 void * Grid_backtrace_buffer[_NBACKTRACE];
 
+void Grid_usr_signal_handler(int sig,siginfo_t *si,void * ptr)
+{
+  fprintf(stderr,"Signal handler on host %s\n",hostname);
+  fprintf(stderr,"Caught signal %d\n",si->si_signo);
+  fprintf(stderr,"  mem address %llx\n",(unsigned long long)si->si_addr);
+  fprintf(stderr,"         code %d\n",si->si_code);
+  // x86 64bit
+#ifdef __linux__
+#ifdef __x86_64__
+  ucontext_t * uc= (ucontext_t *)ptr;
+  struct sigcontext *sc = (struct sigcontext *)&uc->uc_mcontext;
+  fprintf(stderr,"  instruction %llx\n",(unsigned long long)sc->rip);
+#endif
+#endif
+  fflush(stderr);
+  BACKTRACEFP(stderr);
+  fprintf(stderr,"Called backtrace\n");
+  fflush(stdout);
+  fflush(stderr);
+  return;
+}
+
 void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
 {
+  fprintf(stderr,"Signal handler on host %s\n",hostname);
   fprintf(stderr,"Caught signal %d\n",si->si_signo);
   fprintf(stderr,"  mem address %llx\n",(unsigned long long)si->si_addr);
   fprintf(stderr,"         code %d\n",si->si_code);
@@ -561,7 +584,7 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   ucontext_t * uc= (ucontext_t *)ptr;
   struct sigcontext *sc = (struct sigcontext *)&uc->uc_mcontext;
   fprintf(stderr,"  instruction %llx\n",(unsigned long long)sc->rip);
-#define REG(A)  printf("  %s %lx\n",#A,sc-> A);
+#define REG(A)  fprintf(stderr,"  %s %lx\n",#A,sc-> A);
   REG(rdi);
   REG(rsi);
   REG(rbp);
@@ -594,8 +617,8 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
 
 void Grid_exit_handler(void)
 {
-  BACKTRACEFP(stdout);
-  fflush(stdout);
+  //  BACKTRACEFP(stdout);
+  //  fflush(stdout);
 }
 void Grid_debug_handler_init(void)
 {
@@ -603,10 +626,10 @@ void Grid_debug_handler_init(void)
   sigemptyset (&sa.sa_mask);
   sa.sa_sigaction= Grid_sa_signal_handler;
   sa.sa_flags    = SA_SIGINFO;
-  sigaction(SIGSEGV,&sa,NULL);
+  //  sigaction(SIGSEGV,&sa,NULL);
   sigaction(SIGTRAP,&sa,NULL);
   sigaction(SIGBUS,&sa,NULL);
-  sigaction(SIGUSR2,&sa,NULL);
+  //  sigaction(SIGUSR2,&sa,NULL);
 
   feenableexcept( FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO);
 
@@ -614,7 +637,14 @@ void Grid_debug_handler_init(void)
   sigaction(SIGKILL,&sa,NULL);
   sigaction(SIGILL,&sa,NULL);
 
-  atexit(Grid_exit_handler);
+  // Non terminating SIGUSR1/2 handler
+  struct sigaction sa_ping;
+  sigemptyset (&sa_ping.sa_mask);
+  sa_ping.sa_sigaction= Grid_usr_signal_handler;
+  sa_ping.sa_flags    = SA_SIGINFO;
+  sigaction(SIGHUP,&sa_ping,NULL);
+
+  //  atexit(Grid_exit_handler);
 }
 
 NAMESPACE_END(Grid);

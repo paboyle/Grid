@@ -365,8 +365,8 @@ public:
   void CommunicateBegin(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
     // All GPU kernel tasks must complete
-    //    accelerator_barrier();     // All kernels should ALREADY be complete
-    //    _grid->StencilBarrier();   // Everyone is here, so noone running slow and still using receive buffer
+    accelerator_barrier();     // All kernels should ALREADY be complete
+    _grid->StencilBarrier();   // Everyone is here, so noone running slow and still using receive buffer
                                // But the HaloGather had a barrier too.
     for(int i=0;i<Packets.size();i++){
       _grid->StencilSendToRecvFromBegin(MpiReqs,
@@ -390,8 +390,8 @@ public:
     if   ( this->partialDirichlet ) DslashLogPartial();
     else if ( this->fullDirichlet ) DslashLogDirichlet();
     else DslashLogFull();
-    // acceleratorCopySynchronise() is in the StencilSendToRecvFromComplete
-    //    accelerator_barrier(); 
+    acceleratorCopySynchronise();// is in the StencilSendToRecvFromComplete
+    accelerator_barrier(); 
     _grid->StencilBarrier(); 
     // run any checksums
     for(int i=0;i<Packets.size();i++){
@@ -473,7 +473,7 @@ public:
   template<class compressor>
   void HaloGather(const Lattice<vobj> &source,compressor &compress)
   {
-    //    accelerator_barrier();
+    accelerator_barrier();
     _grid->StencilBarrier();// Synch shared memory on a single nodes
 
     assert(source.Grid()==_grid);
@@ -487,6 +487,7 @@ public:
       HaloGatherDir(source,compress,point,face_idx);
     }
     accelerator_barrier(); // All my local gathers are complete
+    _grid->StencilBarrier();// Synch shared memory on a single nodes
     face_table_computed=1;
     assert(u_comm_offset==_unified_buffer_size);
   }
@@ -653,7 +654,9 @@ public:
 	}
       }
     }
+    std::cout << "BuildSurfaceList size is "<<surface_list.size()<<std::endl;
     surface_list.resize(surface_list_size);
+    std::vector<int> surface_list_host(surface_list_size);
     int32_t ss=0;
     for(int site = 0 ;site< vol4;site++){
       int local = 1;
@@ -665,12 +668,12 @@ public:
       if(local == 0) {
 	for(int s=0;s<Ls;s++){
 	  int idx=site*Ls+s;
-	  acceleratorPut(surface_list[ss],idx);
+	  surface_list_host[ss]= idx;
 	  ss++;
 	}
       }
     }
-    std::cout << "BuildSurfaceList size is "<<surface_list.size()<<std::endl;
+    acceleratorCopyToDevice(&surface_list_host[0],&surface_list[0],surface_list_size*sizeof(int));
   }
   /// Introduce a block structure and switch off comms on boundaries
   void DirichletBlock(const Coordinate &dirichlet_block)

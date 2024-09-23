@@ -325,12 +325,12 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st,
   // Start comms  // Gather intranode and extra node differentiated??
   /////////////////////////////
   {
-    std::cout << " WilsonFermion5D gather " <<std::endl;
+    //    std::cout << " WilsonFermion5D gather " <<std::endl;
     GRID_TRACE("Gather");
     st.HaloExchangeOptGather(in,compressor); // Put the barrier in the routine
   }
   
-  std::cout << " WilsonFermion5D Communicate Begin " <<std::endl;
+  //  std::cout << " WilsonFermion5D Communicate Begin " <<std::endl;
   std::vector<std::vector<CommsRequest_t> > requests;
   auto id=traceStart("Communicate overlapped");
   st.CommunicateBegin(requests);
@@ -339,7 +339,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st,
   // Overlap with comms
   /////////////////////////////
   {
-  std::cout << " WilsonFermion5D Comms merge " <<std::endl;
+    //  std::cout << " WilsonFermion5D Comms merge " <<std::endl;
     GRID_TRACE("MergeSHM");
     st.CommsMergeSHM(compressor);// Could do this inside parallel region overlapped with comms
   }
@@ -347,7 +347,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st,
   /////////////////////////////
   // do the compute interior
   /////////////////////////////
-  std::cout << " WilsonFermion5D Interior " <<std::endl;
+  //  std::cout << " WilsonFermion5D Interior " <<std::endl;
   int Opt = WilsonKernelsStatic::Opt; // Why pass this. Kernels should know
   if (dag == DaggerYes) {
     GRID_TRACE("DhopDagInterior");
@@ -360,7 +360,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st,
   /////////////////////////////
   // Complete comms
   /////////////////////////////
-  std::cout << " WilsonFermion5D Comms Complete " <<std::endl;
+  //  std::cout << " WilsonFermion5D Comms Complete " <<std::endl;
   st.CommunicateComplete(requests);
   traceStop(id);
 
@@ -368,13 +368,13 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st,
   // do the compute exterior
   /////////////////////////////
   {
-    std::cout << " WilsonFermion5D Comms Merge " <<std::endl;
+    //    std::cout << " WilsonFermion5D Comms Merge " <<std::endl;
     GRID_TRACE("Merge");
     st.CommsMerge(compressor);
   }
   
 
-  std::cout << " WilsonFermion5D Exterior " <<std::endl;
+  //  std::cout << " WilsonFermion5D Exterior " <<std::endl;
   if (dag == DaggerYes) {
     GRID_TRACE("DhopDagExterior");
     Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,0,1);
@@ -382,7 +382,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st,
     GRID_TRACE("DhopExterior");
     Kernels::DhopKernel   (Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,0,1);
   }
-  std::cout << " WilsonFermion5D Done " <<std::endl;
+  //  std::cout << " WilsonFermion5D Done " <<std::endl;
 }
 
 
@@ -397,13 +397,13 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st,
 
   int LLs = in.Grid()->_rdimensions[0];
 
-  std::cout << " WilsonFermion5D Halo exch " <<std::endl;
+  //  std::cout << " WilsonFermion5D Halo exch " <<std::endl;
   {
     GRID_TRACE("HaloExchange");
     st.HaloExchangeOpt(in,compressor);
   }
   
-  std::cout << " WilsonFermion5D Dhop " <<std::endl;
+  //  std::cout << " WilsonFermion5D Dhop " <<std::endl;
   int Opt = WilsonKernelsStatic::Opt;
   if (dag == DaggerYes) {
     GRID_TRACE("DhopDag");
@@ -412,7 +412,7 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st,
     GRID_TRACE("Dhop");
     Kernels::DhopKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out);
   }
-  std::cout << " WilsonFermion5D Done " <<std::endl;
+  //  std::cout << " WilsonFermion5D Done " <<std::endl;
 }
 
 
