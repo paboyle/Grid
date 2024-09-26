@@ -175,8 +175,8 @@ public:
 	    timestat.statistics(t_time);
 	  
 	    dbytes=dbytes*ppn;
-	    double xbytes    = dbytes*0.5;
-	    double bidibytes = dbytes;
+	    double xbytes    = dbytes;
+	    double bidibytes = dbytes*2.0;
 	  
 	    std::cout<<GridLogMessage << lat<<"\t"<<Ls<<"\t "
 		     << bytes << " \t "
