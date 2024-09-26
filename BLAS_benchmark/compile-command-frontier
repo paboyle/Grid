@@ -1,0 +1,5 @@
+CXX=hipcc
+MPICXX=mpicxx 
+CXXFLAGS="-fPIC -I{$ROCM_PATH}/include/ -I${MPICH_DIR}/include -L/lib64 -I/opt/cray/pe/mpich/8.1.28/ofi/gnu/12.3/include -DGRID_HIP"
+LDFLAGS="-L/lib64 -L${MPICH_DIR}/lib -lmpi -L${CRAY_MPICH_ROOTDIR}/gtl/lib -lmpi_gtl_hsa -lamdhip64 -lhipblas -lrocblas -lmpi_gnu_123"
+hipcc $CXXFLAGS $LDFLAGS BatchBlasBench.cc -o BatchBlasBench
