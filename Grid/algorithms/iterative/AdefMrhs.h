@@ -63,7 +63,12 @@ class TwoLevelCGmrhs
   GridStopWatch SmoothTimer;
   GridStopWatch InsertTimer;
 
-  
+  /*
+    Field rrr;
+  Field sss;
+  Field qqq;
+  Field zzz;
+  */  
   // more most opertor functions
   TwoLevelCGmrhs(RealD tol,
 		 Integer maxit,
@@ -74,6 +79,12 @@ class TwoLevelCGmrhs
     MaxIterations(maxit),
     _FineLinop(FineLinop),
     _Smoother(Smoother)
+    /*
+    rrr(fine),
+    sss(fine),
+    qqq(fine),
+    zzz(fine)
+*/
   {
     grid       = fine;
   };
@@ -81,8 +92,8 @@ class TwoLevelCGmrhs
   // Vector case
   virtual void operator() (std::vector<Field> &src, std::vector<Field> &x)
   {
-    SolveSingleSystem(src,x);
-    //    SolvePrecBlockCG(src,x);
+    //    SolveSingleSystem(src,x);
+    SolvePrecBlockCG(src,x);
   }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -657,6 +668,8 @@ public:
     CoarseField PleftProjMrhs(this->coarsegridmrhs);
     CoarseField PleftMss_projMrhs(this->coarsegridmrhs);
 
+    //    this->rrr=in[0];
+
 #undef SMOOTHER_BLOCK_SOLVE
 #if SMOOTHER_BLOCK_SOLVE
     this->SmoothTimer.Start();
@@ -669,6 +682,7 @@ public:
       this->SmoothTimer.Stop();
     }
 #endif
+    //    this->sss=Min[0];
     
     for(int rhs=0;rhs<nrhs;rhs++) {
       
@@ -705,9 +719,11 @@ public:
     this->_Projector.blockPromote(tmp,PleftMss_proj);// tmp= Q[in - A Min]  
     this->PromoteTimer.Stop();
     this->FineTimer.Start();
+    //    this->qqq=tmp[0];
     for(int rhs=0;rhs<nrhs;rhs++) {
       axpy(out[rhs],1.0,Min[rhs],tmp[rhs]); // Min+tmp
     }
+    //    this->zzz=out[0];
     this->FineTimer.Stop();
   }
 };
