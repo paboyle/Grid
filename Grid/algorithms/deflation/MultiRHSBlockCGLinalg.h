@@ -144,11 +144,11 @@ public:
       acceleratorCopyDeviceToDevice(&BLAS_Y[offset],&y_v[0],sizeof(scalar_object)*vol);
     }    
     RealD t4 = usecond();
-    std::cout << "MulMatrix alloc    took "<< t1-t0<<" us"<<std::endl;
-    std::cout << "MulMatrix preamble took "<< t2-t1<<" us"<<std::endl;
-    std::cout << "MulMatrix blas     took "<< t3-t2<<" us"<<std::endl;
-    std::cout << "MulMatrix copy     took "<< t4-t3<<" us"<<std::endl;
-    std::cout << "MulMatrix total "<< t4-t0<<" us"<<std::endl;
+    std::cout <<GridLogPerformance << "MulMatrix alloc    took "<< t1-t0<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "MulMatrix preamble took "<< t2-t1<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "MulMatrix blas     took "<< t3-t2<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "MulMatrix copy     took "<< t4-t3<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "MulMatrix total "<< t4-t0<<" us"<<std::endl;
   }
   
   void InnerProductMatrix(Eigen::MatrixXcd &m , const std::vector<Field> &X, const std::vector<Field> &Y)
@@ -242,16 +242,16 @@ public:
     RealD flops = 8.0*M*N*K;
     flops = flops/(t4-t3)/1.e3;
     bytes = bytes/(t4-t3)/1.e3;
-    std::cout << "InnerProductMatrix m,n,k "<< M<<","<<N<<","<<K<<std::endl;
-    std::cout << "InnerProductMatrix alloc t1 "<< t1-t0<<" us"<<std::endl;
-    std::cout << "InnerProductMatrix cp    t2 "<< t2-t1<<" us"<<std::endl;
-    std::cout << "InnerProductMatrix setup t3 "<< t3-t2<<" us"<<std::endl;
-    std::cout << "InnerProductMatrix blas t4 "<< t4-t3<<" us"<<std::endl;
-    std::cout << "InnerProductMatrix blas    "<< flops<<" GF/s"<<std::endl;
-    std::cout << "InnerProductMatrix blas    "<< bytes<<" GB/s"<<std::endl;
-    std::cout << "InnerProductMatrix gsum t5 "<< t5-t4<<" us"<<std::endl;
-    std::cout << "InnerProductMatrix cp   t6 "<< t6-t5<<" us"<<std::endl;
-    std::cout << "InnerProductMatrix took "<< t6-t0<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix m,n,k "<< M<<","<<N<<","<<K<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix alloc t1 "<< t1-t0<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix cp    t2 "<< t2-t1<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix setup t3 "<< t3-t2<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix blas t4 "<< t4-t3<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix blas    "<< flops<<" GF/s"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix blas    "<< bytes<<" GB/s"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix gsum t5 "<< t5-t4<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix cp   t6 "<< t6-t5<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix took "<< t6-t0<<" us"<<std::endl;
 #else
     int nrhs;
     GridBase *grid;
@@ -358,17 +358,17 @@ public:
     flops = flops/(t4-t3)/1.e3;
     bytes = bytes/(t4-t3)/1.e3;
     xybytes = 4*xybytes/(t2-t1)/1.e3;
-    std::cout << "InnerProductMatrix m,n,k "<< M<<","<<N<<","<<K<<std::endl;
-    std::cout << "InnerProductMatrix alloc t1 "<< t1-t0<<" us"<<std::endl;
-    std::cout << "InnerProductMatrix cp    t2 "<< t2-t1<<" us "<<xybytes<<" GB/s"<<std::endl;
-    std::cout << "InnerProductMatrix setup t3 "<< t3-t2<<" us"<<std::endl;
-    std::cout << "InnerProductMatrix blas t4 "<< t4-t3<<" us"<<std::endl;
-    std::cout << "InnerProductMatrix blas    "<< flops<<" GF/s"<<std::endl;
-    std::cout << "InnerProductMatrix blas    "<< bytes<<" GB/s"<<std::endl;
-    std::cout << "InnerProductMatrix cp     t5 "<< t5-t4<<" us"<<std::endl;
-    std::cout << "InnerProductMatrix lsum   t6l "<< t6l-t5<<" us"<<std::endl;
-    std::cout << "InnerProductMatrix gsum   t6 "<< t6-t6l<<" us"<<std::endl;
-    std::cout << "InnerProductMatrix took "<< t6-t0<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix m,n,k "<< M<<","<<N<<","<<K<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix alloc t1 "<< t1-t0<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix cp    t2 "<< t2-t1<<" us "<<xybytes<<" GB/s"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix setup t3 "<< t3-t2<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix blas t4 "<< t4-t3<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix blas    "<< flops<<" GF/s"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix blas    "<< bytes<<" GB/s"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix cp     t5 "<< t5-t4<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix lsum   t6l "<< t6l-t5<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix gsum   t6 "<< t6-t6l<<" us"<<std::endl;
+    std::cout <<GridLogPerformance<< "InnerProductMatrix took "<< t6-t0<<" us"<<std::endl;
 #endif
   }
 };
