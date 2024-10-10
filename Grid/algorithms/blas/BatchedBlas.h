@@ -55,10 +55,10 @@ NAMESPACE_BEGIN(Grid);
   typedef cublasHandle_t gridblasHandle_t;
 #endif
 #ifdef GRID_SYCL
-  typedef cl::sycl::queue *gridblasHandle_t;
+  typedef sycl::queue *gridblasHandle_t;
 #endif
 #ifdef GRID_ONE_MKL
-  typedef cl::sycl::queue *gridblasHandle_t;
+  typedef sycl::queue *gridblasHandle_t;
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP) && !defined(GRID_ONE_MKL)
   typedef int32_t gridblasHandle_t;
@@ -89,9 +89,9 @@ public:
       gridblasHandle = theGridAccelerator;
 #endif
 #ifdef GRID_ONE_MKL
-      cl::sycl::gpu_selector selector;
-      cl::sycl::device selectedDevice { selector };
-      cl::sycl::property_list q_prop{cl::sycl::property::queue::in_order()};
+      sycl::gpu_selector selector;
+      sycl::device selectedDevice { selector };
+      sycl::property_list q_prop{sycl::property::queue::in_order()};
       gridblasHandle =new sycl::queue (selectedDevice,q_prop);
 #endif
       gridblasInit=1;
