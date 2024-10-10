@@ -364,9 +364,10 @@ public:
   ////////////////////////////////////////////////////////////////////////
   void CommunicateBegin(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
+    FlightRecorder::StepLog("Communicate begin");
     // All GPU kernel tasks must complete
-    accelerator_barrier();     // All kernels should ALREADY be complete
-    _grid->StencilBarrier();   // Everyone is here, so noone running slow and still using receive buffer
+    //    accelerator_barrier();     // All kernels should ALREADY be complete
+    //    _grid->StencilBarrier();   // Everyone is here, so noone running slow and still using receive buffer
                                // But the HaloGather had a barrier too.
     for(int i=0;i<Packets.size();i++){
       _grid->StencilSendToRecvFromBegin(MpiReqs,
@@ -386,18 +387,20 @@ public:
 
   void CommunicateComplete(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
+    FlightRecorder::StepLog("Start communicate complete");
     _grid->StencilSendToRecvFromComplete(MpiReqs,0); // MPI is done
     if   ( this->partialDirichlet ) DslashLogPartial();
     else if ( this->fullDirichlet ) DslashLogDirichlet();
     else DslashLogFull();
-    acceleratorCopySynchronise();// is in the StencilSendToRecvFromComplete
-    accelerator_barrier(); 
+    //    acceleratorCopySynchronise();// is in the StencilSendToRecvFromComplete
+    //    accelerator_barrier(); 
     _grid->StencilBarrier(); 
     // run any checksums
     for(int i=0;i<Packets.size();i++){
       if ( Packets[i].do_recv )
 	FlightRecorder::recvLog(Packets[i].recv_buf,Packets[i].rbytes,Packets[i].from_rank);
     }
+    FlightRecorder::StepLog("Finish communicate complete");
   }
   ////////////////////////////////////////////////////////////////////////
   // Blocking send and receive. Either sequential or parallel.
@@ -473,7 +476,7 @@ public:
   template<class compressor>
   void HaloGather(const Lattice<vobj> &source,compressor &compress)
   {
-    accelerator_barrier();
+    //    accelerator_barrier();
     _grid->StencilBarrier();// Synch shared memory on a single nodes
 
     assert(source.Grid()==_grid);
@@ -487,7 +490,7 @@ public:
       HaloGatherDir(source,compress,point,face_idx);
     }
     accelerator_barrier(); // All my local gathers are complete
-    _grid->StencilBarrier();// Synch shared memory on a single nodes
+    //    _grid->StencilBarrier();// Synch shared memory on a single nodes
     face_table_computed=1;
     assert(u_comm_offset==_unified_buffer_size);
   }
