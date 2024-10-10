@@ -141,11 +141,11 @@ inline void sliceSumReduction_sycl_small(const vobj *Data,
   });
 
   for (int r = 0; r < rd; r++) {
-      theGridAccelerator->submit([&](cl::sycl::handler &cgh) {
-          auto Reduction = cl::sycl::reduction(&mysum[r],std::plus<>());
-          cgh.parallel_for(cl::sycl::range<1>{subvol_size},
+      theGridAccelerator->submit([&](sycl::handler &cgh) {
+          auto Reduction = sycl::reduction(&mysum[r],std::plus<>());
+          cgh.parallel_for(sycl::range<1>{subvol_size},
           Reduction,
-          [=](cl::sycl::id<1> item, auto &sum) {
+          [=](sycl::id<1> item, auto &sum) {
               auto s = item[0];
               sum += rb_p[r*subvol_size+s];
           });

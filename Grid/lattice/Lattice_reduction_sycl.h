@@ -16,11 +16,11 @@ inline typename vobj::scalar_objectD sumD_gpu_tensor(const vobj *lat, Integer os
   Integer nsimd= vobj::Nsimd();
   { 
     sycl::buffer<sobj, 1> abuff(&ret, {1});
-    theGridAccelerator->submit([&](cl::sycl::handler &cgh) {
-      auto Reduction = cl::sycl::reduction(abuff,cgh,identity,std::plus<>());
-      cgh.parallel_for(cl::sycl::range<1>{osites},
+    theGridAccelerator->submit([&](sycl::handler &cgh) {
+      auto Reduction = sycl::reduction(abuff,cgh,identity,std::plus<>());
+      cgh.parallel_for(sycl::range<1>{osites},
                       Reduction,
-                      [=] (cl::sycl::id<1> item, auto &sum) {
+                      [=] (sycl::id<1> item, auto &sum) {
                         auto osite   = item[0];
                         sum +=Reduce(lat[osite]);
                       });
@@ -75,11 +75,11 @@ template<class Word> Word svm_xor(Word *vec,uint64_t L)
   Word ret = 0;
   { 
     sycl::buffer<Word, 1> abuff(&ret, {1});
-    theGridAccelerator->submit([&](cl::sycl::handler &cgh) {
-      auto Reduction = cl::sycl::reduction(abuff,cgh,identity,std::bit_xor<>());
-      cgh.parallel_for(cl::sycl::range<1>{L},
+    theGridAccelerator->submit([&](sycl::handler &cgh) {
+      auto Reduction = sycl::reduction(abuff,cgh,identity,std::bit_xor<>());
+      cgh.parallel_for(sycl::range<1>{L},
                       Reduction,
-                      [=] (cl::sycl::id<1> index, auto &sum) {
+                      [=] (sycl::id<1> index, auto &sum) {
                         sum ^=vec[index];
                       });
     });
