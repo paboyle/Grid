@@ -552,6 +552,9 @@ void * Grid_backtrace_buffer[_NBACKTRACE];
 void Grid_usr_signal_handler(int sig,siginfo_t *si,void * ptr)
 {
   fprintf(stderr,"Signal handler on host %s\n",hostname);
+  fprintf(stderr,"FlightRecorder step %d stage %s \n",
+	  FlightRecorder::StepLoggingCounter,
+	  FlightRecorder::StepName);
   fprintf(stderr,"Caught signal %d\n",si->si_signo);
   fprintf(stderr,"  mem address %llx\n",(unsigned long long)si->si_addr);
   fprintf(stderr,"         code %d\n",si->si_code);

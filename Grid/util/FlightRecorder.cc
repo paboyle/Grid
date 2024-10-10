@@ -39,6 +39,8 @@ int FlightRecorder::ContinueOnFail;
 int FlightRecorder::LoggingMode;
 int FlightRecorder::ChecksumComms;
 int FlightRecorder::ChecksumCommsSend;
+const char *   FlightRecorder::StepName;
+int32_t  FlightRecorder::StepLoggingCounter;
 int32_t  FlightRecorder::XmitLoggingCounter;
 int32_t  FlightRecorder::RecvLoggingCounter;
 int32_t  FlightRecorder::CsumLoggingCounter;
@@ -58,6 +60,8 @@ void FlightRecorder::ResetCounters(void)
   CsumLoggingCounter=0;
   NormLoggingCounter=0;
   ReductionLoggingCounter=0;
+  StepName = "No steps started";
+  StepLoggingCounter=0;
 }
 void FlightRecorder::Truncate(void)
 {
@@ -88,6 +92,11 @@ void FlightRecorder::SetLoggingMode(FlightRecorder::LoggingMode_t mode)
     assert(0);
   }
 }
+bool FlightRecorder::StepLog(const char *name)
+{
+  StepName = name;
+  StepLoggingCounter ++;
+}
 
 void FlightRecorder::SetLoggingModePrint(void)
 {
@@ -111,17 +120,19 @@ uint64_t FlightRecorder::ErrorCount(void)
 {
   return ErrorCounter;
 }
-void FlightRecorder::NormLog(double value)
+bool FlightRecorder::NormLog(double value)
 {
   uint64_t hex = * ( (uint64_t *)&value );
   if(LoggingMode == LoggingModePrint) {
     std::cerr<<"FlightRecorder::NormLog : "<< NormLoggingCounter <<" "<<std::hex<< hex<<std::dec <<std::endl;
     NormLoggingCounter++;
+    return true;
   }
   if(LoggingMode == LoggingModeRecord) {
     std::cerr<<"FlightRecorder::NormLog RECORDING : "<< NormLoggingCounter <<" "<<std::hex<< hex<<std::dec <<std::endl;
     NormLogVector.push_back(value);
     NormLoggingCounter++;
+    return true;
   }
   if(LoggingMode == LoggingModeVerify) {
 
@@ -130,6 +141,9 @@ void FlightRecorder::NormLog(double value)
 
       if ( (value != NormLogVector[NormLoggingCounter]) || std::isnan(value) ) {
 
+	fprintf(stderr,"FlightRecorder Oops step %d stage %s \n",
+		FlightRecorder::StepLoggingCounter,
+		FlightRecorder::StepName);
 	std::cerr<<"FlightRecorder::NormLog Oops, I did it again "<< NormLoggingCounter
 		 <<std::hex<<" "<<hex<<" "<<hexref<<std::dec<<" "
 		 <<std::hexfloat<<value<<" "<< NormLogVector[NormLoggingCounter]<<std::endl;
@@ -142,7 +156,9 @@ void FlightRecorder::NormLog(double value)
 		NormLoggingCounter,NormLogVector.size(),
 		value, NormLogVector[NormLoggingCounter]); fflush(stderr);
 
-	if(!ContinueOnFail)assert(0); // Force takedown of job
+	BACKTRACEFP(stderr);
+
+	if(!ContinueOnFail) return false;
 	  
 	ErrorCounter++;
       } else {
@@ -159,18 +175,21 @@ void FlightRecorder::NormLog(double value)
     }
     NormLoggingCounter++;
   }
+  return true;
 }
-void FlightRecorder::CsumLog(uint64_t hex)
+bool FlightRecorder::CsumLog(uint64_t hex)
 {
   if(LoggingMode == LoggingModePrint) {
     std::cerr<<"FlightRecorder::CsumLog : "<< CsumLoggingCounter <<" "<<std::hex<< hex<<std::dec <<std::endl;
     CsumLoggingCounter++;
+    return true;
   }
 
   if(LoggingMode == LoggingModeRecord) {
     std::cerr<<"FlightRecorder::CsumLog RECORDING : "<< NormLoggingCounter <<" "<<std::hex<< hex<<std::dec <<std::endl;
     CsumLogVector.push_back(hex);
     CsumLoggingCounter++;
+    return true;
   }
 
   if(LoggingMode == LoggingModeVerify) {
@@ -181,6 +200,9 @@ void FlightRecorder::CsumLog(uint64_t hex)
 
       if ( hex != hexref ) {
 
+	fprintf(stderr,"FlightRecorder Oops step %d stage %s \n",
+		FlightRecorder::StepLoggingCounter,
+		FlightRecorder::StepName);
         std::cerr<<"FlightRecorder::CsumLog Oops, I did it again "<< CsumLoggingCounter
 		 <<std::hex<<" "<<hex<<" "<<hexref<<std::dec<<std::endl;
 
@@ -188,9 +210,10 @@ void FlightRecorder::CsumLog(uint64_t hex)
 		GridHostname(),
 		GlobalSharedMemory::WorldShmRank,
 		CsumLoggingCounter,hex, hexref);
+	BACKTRACEFP(stderr);
 	fflush(stderr);
 
-	if(!ContinueOnFail) assert(0); // Force takedown of job
+	if(!ContinueOnFail) return false;
 	  
 	ErrorCounter++;
 
@@ -207,7 +230,9 @@ void FlightRecorder::CsumLog(uint64_t hex)
     }
     CsumLoggingCounter++;
   }
+  return true;
 }
+
 void FlightRecorder::ReductionLog(double local,double global)
 {
   uint64_t hex_l = * ( (uint64_t *)&local );
@@ -224,11 +249,15 @@ void FlightRecorder::ReductionLog(double local,double global)
   if(LoggingMode == LoggingModeVerify) {
     if(ReductionLoggingCounter < ReductionLogVector.size()){
       if ( global != ReductionLogVector[ReductionLoggingCounter] ) {
+	fprintf(stderr,"FlightRecorder Oops step %d stage %s \n",
+		FlightRecorder::StepLoggingCounter,
+		FlightRecorder::StepName);
 	fprintf(stderr,"%s:%d Oops, MPI_Allreduce did it again! Reproduce failure for norm %d/%zu glb %.16e lcl %.16e expect glb %.16e\n",
 		GridHostname(),
 		GlobalSharedMemory::WorldShmRank,
 		ReductionLoggingCounter,ReductionLogVector.size(),
 		global, local, ReductionLogVector[ReductionLoggingCounter]); fflush(stderr);
+	BACKTRACEFP(stderr);
 	
 	if ( !ContinueOnFail ) assert(0);
 
@@ -267,11 +296,15 @@ void FlightRecorder::xmitLog(void *buf,uint64_t bytes)
   if(LoggingMode == LoggingModeVerify) {
     if(XmitLoggingCounter < XmitLogVector.size()){
       if ( _xor != XmitLogVector[XmitLoggingCounter] ) {
+	fprintf(stderr,"FlightRecorder Oops step %d stage %s \n",
+		FlightRecorder::StepLoggingCounter,
+		FlightRecorder::StepName);
 	fprintf(stderr,"%s:%d Oops, send buf difference! Reproduce failure for xmit %d/%zu  %lx expect glb %lx\n",
 		GridHostname(),
 		GlobalSharedMemory::WorldShmRank,
 		XmitLoggingCounter,XmitLogVector.size(),
 		_xor, XmitLogVector[XmitLoggingCounter]); fflush(stderr);
+	BACKTRACEFP(stderr);
 	
 	if ( !ContinueOnFail ) assert(0);
 
@@ -309,11 +342,15 @@ void FlightRecorder::recvLog(void *buf,uint64_t bytes,int rank)
   if(LoggingMode == LoggingModeVerify) {
     if(RecvLoggingCounter < RecvLogVector.size()){
       if ( _xor != RecvLogVector[RecvLoggingCounter] ) {
+	fprintf(stderr,"FlightRecorder Oops step %d stage %s \n",
+		FlightRecorder::StepLoggingCounter,
+		FlightRecorder::StepName);
 	fprintf(stderr,"%s:%d Oops, recv buf difference! Reproduce failure for recv %d/%zu  %lx expect glb %lx from MPI rank %d\n",
 		GridHostname(),
 		GlobalSharedMemory::WorldShmRank,
 		RecvLoggingCounter,RecvLogVector.size(),
 		_xor, RecvLogVector[RecvLoggingCounter],rank); fflush(stderr);
+	BACKTRACEFP(stderr);
 	
 	if ( !ContinueOnFail ) assert(0);
 
