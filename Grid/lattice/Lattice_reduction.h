@@ -290,8 +290,10 @@ template<class vobj>
 inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right) {
   GridBase *grid = left.Grid();
 
+  bool ok;
 #ifdef GRID_SYCL
   uint64_t csum=0;
+  uint64_t csum2=0;
   if ( FlightRecorder::LoggingMode != FlightRecorder::LoggingModeNone)
   {
     // Hack
@@ -300,13 +302,33 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
     Integer words = left.Grid()->oSites()*sizeof(vobj)/sizeof(uint64_t);
     uint64_t *base= (uint64_t *)&l_v[0];
     csum=svm_xor(base,words);
+    ok = FlightRecorder::CsumLog(csum);
+    if ( !ok ) {
+      csum2=svm_xor(base,words);
+      std::cerr<< " Bad CSUM " << std::hex<< csum << " recomputed as "<<csum2<<std::dec<<std::endl;
+    } else {
+      //      csum2=svm_xor(base,words);
+      //      std::cerr<< " ok CSUM " << std::hex<< csum << " recomputed as "<<csum2<<std::dec<<std::endl;
+    }
+    assert(ok);
   }
-  FlightRecorder::CsumLog(csum);
 #endif
+  FlightRecorder::StepLog("rank inner product");
   ComplexD nrm = rankInnerProduct(left,right);
+  //  ComplexD nrmck=nrm;
   RealD local = real(nrm);
-  FlightRecorder::NormLog(real(nrm)); 
-  grid->GlobalSum(nrm);
+  ok = FlightRecorder::NormLog(real(nrm));
+  if ( !ok ) {
+    ComplexD nrm2 = rankInnerProduct(left,right);
+    RealD local2 = real(nrm2);
+    std::cerr<< " Bad NORM " << local << " recomputed as "<<local2<<std::endl;
+    assert(ok);
+  }
+  FlightRecorder::StepLog("Start global sum");
+  grid->GlobalSumP2P(nrm);
+  //  grid->GlobalSum(nrm);
+  FlightRecorder::StepLog("Finished global sum");
+  //  std::cout << " norm "<< nrm << " p2p norm "<<nrmck<<std::endl;
   FlightRecorder::ReductionLog(local,real(nrm)); 
   return nrm;
 }
