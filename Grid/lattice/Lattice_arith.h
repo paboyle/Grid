@@ -257,17 +257,30 @@ void axpby(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice
   });
 }
 
+#define FAST_AXPY_NORM
 template<class sobj,class vobj> inline
 RealD axpy_norm(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y)
 {
   GRID_TRACE("axpy_norm");
-    return axpy_norm_fast(ret,a,x,y);
+#ifdef FAST_AXPY_NORM
+  return axpy_norm_fast(ret,a,x,y);
+#else
+  ret = a*x+y;
+  RealD nn=norm2(ret);
+  return nn;
+#endif
 }
 template<class sobj,class vobj> inline
 RealD axpby_norm(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y)
 {
   GRID_TRACE("axpby_norm");
-    return axpby_norm_fast(ret,a,b,x,y);
+#ifdef FAST_AXPY_NORM
+  return axpby_norm_fast(ret,a,b,x,y);
+#else
+  ret = a*x+b*y;
+  RealD nn=norm2(ret);
+  return nn;
+#endif
 }
 
 /// Trace product
