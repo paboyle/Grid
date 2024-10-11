@@ -375,8 +375,44 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
       coalescedWrite(inner_tmp_v[ss],innerProduct(tmp,tmp));
       coalescedWrite(z_v[ss],tmp);
   });
+  bool ok;
+  uint64_t csum=0;
+  uint64_t csum2=0;
+#ifdef GRID_SYCL
+  if ( FlightRecorder::LoggingMode != FlightRecorder::LoggingModeNone)
+  {
+    // z_v
+    {
+      Integer words = sites*sizeof(vobj)/sizeof(uint64_t);
+      uint64_t *base= (uint64_t *)&z_v[0];
+      csum=svm_xor(base,words);
+      ok = FlightRecorder::CsumLog(csum);
+      if ( !ok ) {
+	csum2=svm_xor(base,words);
+	std::cerr<< " Bad z_v CSUM " << std::hex<< csum << " recomputed as "<<csum2<<std::dec<<std::endl;
+      }
+      assert(ok);
+    }
+    // inner_v
+    {
+      Integer words = sites*sizeof(inner_t)/sizeof(uint64_t);
+      uint64_t *base= (uint64_t *)&inner_tmp_v[0];
+      csum=svm_xor(base,words);
+      ok = FlightRecorder::CsumLog(csum);
+      if ( !ok ) {
+	csum2=svm_xor(base,words);
+	std::cerr<< " Bad inner_tmp_v CSUM " << std::hex<< csum << " recomputed as "<<csum2<<std::dec<<std::endl;
+      }
+      assert(ok);
+    }
+  }
+#endif
   nrm = real(TensorRemove(sumD(inner_tmp_v,sites)));
-  grid->GlobalSum(nrm);
+  ok = FlightRecorder::NormLog(real(nrm));
+  assert(ok);
+  RealD local = real(nrm);
+  grid->GlobalSumP2P(nrm);
+  FlightRecorder::ReductionLog(local,real(nrm));
   return nrm; 
 }
  
