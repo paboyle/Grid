@@ -96,6 +96,7 @@ bool FlightRecorder::StepLog(const char *name)
 {
   StepName = name;
   StepLoggingCounter ++;
+  return true;
 }
 
 void FlightRecorder::SetLoggingModePrint(void)
