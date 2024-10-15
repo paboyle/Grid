@@ -57,17 +57,28 @@ int                      CartesianCommunicator::ProcessorCount(void)    { return
 // very VERY rarely (Log, serial RNG) we need world without a grid
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifdef USE_GRID_REDUCTION
+void CartesianCommunicator::GlobalSum(ComplexF &c)
+{
+  GlobalSumP2P(c);
+}
+void CartesianCommunicator::GlobalSum(ComplexD &c)
+{
+  GlobalSumP2P(c);
+}
+#else
 void CartesianCommunicator::GlobalSum(ComplexF &c)
 {
   GlobalSumVector((float *)&c,2);
 }
-void CartesianCommunicator::GlobalSumVector(ComplexF *c,int N)
-{
-  GlobalSumVector((float *)c,2*N);
-}
 void CartesianCommunicator::GlobalSum(ComplexD &c)
 {
   GlobalSumVector((double *)&c,2);
+}
+#endif
+void CartesianCommunicator::GlobalSumVector(ComplexF *c,int N)
+{
+  GlobalSumVector((float *)c,2*N);
 }
 void CartesianCommunicator::GlobalSumVector(ComplexD *c,int N)
 {

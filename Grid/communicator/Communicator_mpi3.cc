@@ -257,6 +257,25 @@ CartesianCommunicator::~CartesianCommunicator()
     }
   }
 }
+#ifdef USE_GRID_REDUCTION
+void CartesianCommunicator::GlobalSum(float &f){
+  CartesianCommunicator::GlobalSumP2P(f);
+}
+void CartesianCommunicator::GlobalSum(double &d)
+{
+  CartesianCommunicator::GlobalSumP2P(d);
+}
+#else
+void CartesianCommunicator::GlobalSum(float &f){
+  int ierr=MPI_Allreduce(MPI_IN_PLACE,&f,1,MPI_FLOAT,MPI_SUM,communicator);
+  assert(ierr==0);
+}
+void CartesianCommunicator::GlobalSum(double &d)
+{
+  int ierr = MPI_Allreduce(MPI_IN_PLACE,&d,1,MPI_DOUBLE,MPI_SUM,communicator);
+  assert(ierr==0);
+}
+#endif
 void CartesianCommunicator::GlobalSum(uint32_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
   assert(ierr==0);
@@ -287,18 +306,9 @@ void CartesianCommunicator::GlobalMax(double &d)
   int ierr = MPI_Allreduce(MPI_IN_PLACE,&d,1,MPI_DOUBLE,MPI_MAX,communicator);
   assert(ierr==0);
 }
-void CartesianCommunicator::GlobalSum(float &f){
-  int ierr=MPI_Allreduce(MPI_IN_PLACE,&f,1,MPI_FLOAT,MPI_SUM,communicator);
-  assert(ierr==0);
-}
 void CartesianCommunicator::GlobalSumVector(float *f,int N)
 {
   int ierr=MPI_Allreduce(MPI_IN_PLACE,f,N,MPI_FLOAT,MPI_SUM,communicator);
-  assert(ierr==0);
-}
-void CartesianCommunicator::GlobalSum(double &d)
-{
-  int ierr = MPI_Allreduce(MPI_IN_PLACE,&d,1,MPI_DOUBLE,MPI_SUM,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalSumVector(double *d,int N)
