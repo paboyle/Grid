@@ -128,6 +128,20 @@ case ${ac_LAPACK} in
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK]);;
 esac
 
+############### internal reduction
+AC_ARG_ENABLE([reduction],
+    [AS_HELP_STRING([--enable-reduction=mpi|grid],[enable reduction])],
+    [ac_REDUCTION=${enable_reduction}], [ac_REDUCTION=grid])
+
+case ${ac_REDUCTION} in
+    mpi)
+        ;;
+    grid)
+        AC_DEFINE([USE_GRID_REDUCTION],[1],[use GRID REDUCTION]);;
+    *)
+        AC_DEFINE([USE_GRID_REDUCTION],[1],[use GRID REDUCTION]);;
+esac
+
 ############### tracing
 AC_ARG_ENABLE([tracing],
     [AS_HELP_STRING([--enable-tracing=none|nvtx|roctx|timer],[enable tracing])],
