@@ -325,8 +325,8 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
     assert(ok);
   }
   FlightRecorder::StepLog("Start global sum");
-  grid->GlobalSumP2P(nrm);
-  //  grid->GlobalSum(nrm);
+  //  grid->GlobalSumP2P(nrm);
+  grid->GlobalSum(nrm);
   FlightRecorder::StepLog("Finished global sum");
   //  std::cout << " norm "<< nrm << " p2p norm "<<nrmck<<std::endl;
   FlightRecorder::ReductionLog(local,real(nrm)); 
@@ -411,7 +411,7 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   ok = FlightRecorder::NormLog(real(nrm));
   assert(ok);
   RealD local = real(nrm);
-  grid->GlobalSumP2P(nrm);
+  grid->GlobalSum(nrm);
   FlightRecorder::ReductionLog(local,real(nrm));
   return nrm; 
 }
