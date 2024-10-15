@@ -1,7 +1,8 @@
-module load oneapi/release/2023.12.15.001
+#module load oneapi/release/2023.12.15.001
 #module load mpich/icc-all-debug-pmix-gpu/52.2
 #module load mpich-config/mode/deterministic
 #module load intel_compute_runtime/release/821.35
+
 source ~/spack/share/spack/setup-env.sh 
 spack load c-lime
 spack load openssl
