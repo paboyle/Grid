@@ -1,7 +1,6 @@
     /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
-
     Source file: ./tests/qdpxx/Test_qdpxx_munprec.cc
 
     Copyright (C) 2015
@@ -26,13 +25,17 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+#include <chroma.h>
+#include <actions/ferm/invert/syssolver_linop_cg_array.h>
+#include <actions/ferm/invert/syssolver_linop_aggregate.h>
+
 #include <Grid/Grid.h>
 
 int    Ls=8;
 double M5=1.6;
 double mq=0.01;
-double zolo_lo = 0.1;
-double zolo_hi = 2.0;
+double zolo_lo = 0.01;
+double zolo_hi = 7.0;
 double mobius_scale=2.0;
 
 enum ChromaAction {
@@ -55,11 +58,6 @@ enum ChromaAction {
 void calc_grid      (ChromaAction action,Grid::LatticeGaugeField & lat, Grid::LatticeFermion &src, Grid::LatticeFermion &res,int dag);
 void calc_chroma    (ChromaAction action,Grid::LatticeGaugeField & lat, Grid::LatticeFermion &src, Grid::LatticeFermion &res,int dag);
 
-#include <chroma.h>
-#include <actions/ferm/invert/syssolver_linop_cg_array.h>
-#include <actions/ferm/invert/syssolver_linop_aggregate.h>
-
-
 
 namespace Chroma { 
 
@@ -81,7 +79,7 @@ public:
 
     std::vector<int> x(4);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr.Grid()->GlobalDimensions();
+    Grid::Coordinate gd = gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -124,7 +122,7 @@ public:
 
     std::vector<int> x(5);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr.Grid()->GlobalDimensions();
+    Grid::Coordinate gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -166,7 +164,7 @@ public:
 
     std::vector<int> x(5);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr.Grid()->GlobalDimensions();
+    Grid::Coordinate gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -304,7 +302,30 @@ public:
      //     param.approximation_type=COEFF_TYPE_TANH_UNSCALED;
      //     param.approximation_type=COEFF_TYPE_TANH;
      param.tuning_strategy_xml=
-"<TuningStrategy><Name>OVEXT_CONSTANT_STRATEGY</Name></TuningStrategy>\n";
+"<TuningStrategy><Name>OVEXT_CONSTANT_STRATEGY</Name><TuningConstant>1.0</TuningConstant></TuningStrategy>\n";
+     UnprecOvExtFermActArray S_f(cfs,param);
+     Handle< FermState<T4,U,U> > fs( S_f.createState(u) );
+     Handle< LinearOperatorArray<T4> > M(S_f.linOp(fs));
+     return M;
+   }
+   if ( parms == HwPartFracTanh ) {
+     if ( Ls%2 == 0 ) { 
+       printf("Ls is not odd\n");
+       exit(-1);
+     }
+     UnprecOvExtFermActArrayParams param;
+     param.OverMass=M5; 
+     param.Mass=_mq;
+     param.RatPolyDeg = Ls;
+     param.ApproxMin =eps_lo;
+     param.ApproxMax =eps_hi;
+     param.b5 =1.0;
+     param.c5 =1.0;
+     //     param.approximation_type=COEFF_TYPE_ZOLOTAREV;
+     param.approximation_type=COEFF_TYPE_TANH_UNSCALED;
+     //param.approximation_type=COEFF_TYPE_TANH;
+     param.tuning_strategy_xml=
+       "<TuningStrategy><Name>OVEXT_CONSTANT_STRATEGY</Name><TuningConstant>1.0</TuningConstant></TuningStrategy>\n";
      UnprecOvExtFermActArray S_f(cfs,param);
      Handle< FermState<T4,U,U> > fs( S_f.createState(u) );
      Handle< LinearOperatorArray<T4> > M(S_f.linOp(fs));
@@ -316,7 +337,35 @@ public:
      param.ApproxMin=eps_lo;
      param.ApproxMax=eps_hi;
      param.approximation_type=COEFF_TYPE_ZOLOTAREV;
-     param.RatPolyDeg=Ls;
+     param.RatPolyDeg=Ls-1;
+     // The following is why I think Chroma made some directional errors:
+     param.AuxFermAct= std::string(
+"<AuxFermAct>\n"
+"  <FermAct>UNPRECONDITIONED_WILSON</FermAct>\n"
+"  <Mass>-1.8</Mass>\n"
+"  <b5>1</b5>\n"
+"  <c5>0</c5>\n"
+"  <MaxCG>1000</MaxCG>\n"
+"  <RsdCG>1.0e-9</RsdCG>\n"
+"  <FermionBC>\n"
+"      <FermBC>SIMPLE_FERMBC</FermBC>\n"
+"      <boundary>1 1 1 1</boundary>\n"
+"   </FermionBC> \n"
+"</AuxFermAct>"
+);
+     param.AuxFermActGrp= std::string("");
+     UnprecOvlapContFrac5DFermActArray S_f(fbc,param);
+     Handle< FermState<T4,U,U> > fs( S_f.createState(u) );
+     Handle< LinearOperatorArray<T4> > M(S_f.linOp(fs));
+     return  M;
+   }
+   if ( parms == HwContFracTanh ) {
+     UnprecOvlapContFrac5DFermActParams param;
+     param.Mass=_mq; // How is M5 set? Wilson mass In AuxFermAct
+     param.ApproxMin=eps_lo;
+     param.ApproxMax=eps_hi;
+     param.approximation_type=COEFF_TYPE_TANH_UNSCALED;
+     param.RatPolyDeg=Ls-1;
      // The following is why I think Chroma made some directional errors:
      param.AuxFermAct= std::string(
 "<AuxFermAct>\n"
@@ -378,7 +427,14 @@ int main (int argc,char **argv )
    * Setup QDP
    *********************************************************/
   Chroma::initialize(&argc,&argv);
-  Chroma::WilsonTypeFermActs4DEnv::registerAll(); 
+  //  Chroma::WilsonTypeFermActs4DEnv::registerAll(); 
+  Chroma::WilsonTypeFermActsEnv::registerAll(); 
+  //bool linkageHack(void)
+  //{
+  //  bool foo = true;
+  // Inline Measurements
+  //  InlineAggregateEnv::registerAll();
+  //  GaugeInitEnv::registerAll();
 
   /********************************************************
    * Setup Grid
@@ -388,26 +444,34 @@ int main (int argc,char **argv )
                                                                        Grid::GridDefaultSimd(Grid::Nd,Grid::vComplex::Nsimd()),
                                                                        Grid::GridDefaultMpi());
   
-  std::vector<int> gd = UGrid->GlobalDimensions();
+  Grid::Coordinate gd = UGrid->GlobalDimensions();
   QDP::multi1d<int> nrow(QDP::Nd);
   for(int mu=0;mu<4;mu++) nrow[mu] = gd[mu];
 
   QDP::Layout::setLattSize(nrow);
   QDP::Layout::create();
 
-  Grid::GridCartesian         * FGrid   = Grid::SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
-  Grid::LatticeGaugeField lat(UGrid);
-  Grid::LatticeFermion    src(FGrid);
-  Grid::LatticeFermion    res_chroma(FGrid);
-  Grid::LatticeFermion    res_grid  (FGrid);
-  
   std::vector<ChromaAction> ActionList({
 		 HtCayleyTanh, // Plain old DWF.
 		 HmCayleyTanh,
 		 HwCayleyTanh,
 		 HtCayleyZolo, // Plain old DWF.
 		 HmCayleyZolo,
-		 HwCayleyZolo
+		 HwCayleyZolo,
+		 HwPartFracZolo,
+		 HwContFracZolo,
+		 HwContFracTanh
+  });
+  std::vector<int> LsList({
+      8,//HtCayleyTanh, // Plain old DWF.
+      8,//HmCayleyTanh,
+      8,//HwCayleyTanh,
+      8,//HtCayleyZolo, // Plain old DWF.
+      8,//HmCayleyZolo,
+      8,//HwCayleyZolo,
+      9,//HwPartFracZolo
+      9, //HwContFracZolo
+      9 //HwContFracTanh
   });
   std::vector<std::string> ActionName({
         "HtCayleyTanh",
@@ -415,10 +479,19 @@ int main (int argc,char **argv )
 	"HwCayleyTanh",
 	"HtCayleyZolo",
 	"HmCayleyZolo",
-        "HwCayleyZolo"
+        "HwCayleyZolo",
+	"HwPartFracZolo",
+	"HwContFracZolo",
+	"HwContFracTanh"
   });
 
   for(int i=0;i<ActionList.size();i++) {
+    Ls = LsList[i];
+    Grid::GridCartesian      * FGrid   = Grid::SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
+    Grid::LatticeGaugeField lat(UGrid);
+    Grid::LatticeFermion    src(FGrid);
+    Grid::LatticeFermion    res_chroma(FGrid);
+    Grid::LatticeFermion    res_grid  (FGrid);
     std::cout << "*****************************"<<std::endl;
     std::cout << "Action "<<ActionName[i]<<std::endl;
     std::cout << "*****************************"<<std::endl;
@@ -439,6 +512,7 @@ int main (int argc,char **argv )
       
       std::cout << "Norm of difference "<<Grid::norm2(res_chroma)<<std::endl;
     }
+    delete FGrid;
   }
 
   std::cout << "Finished test "<<std::endl;
@@ -502,7 +576,7 @@ void calc_grid(ChromaAction action,Grid::LatticeGaugeField & Umu, Grid::LatticeF
   Grid::gaussian(RNG5,src);
   Grid::gaussian(RNG5,res);
 
-  Grid::SU<Nc>::HotConfiguration(RNG4,Umu);
+  Grid::SU<Grid::Nc>::HotConfiguration(RNG4,Umu);
 
   /*
   Grid::LatticeColourMatrix U(UGrid);
@@ -519,7 +593,7 @@ void calc_grid(ChromaAction action,Grid::LatticeGaugeField & Umu, Grid::LatticeF
 
   if ( action == HtCayleyTanh ) { 
 
-    Grid::DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5);
+    Grid::DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5);
 
     std::cout << Grid::GridLogMessage <<" Calling domain wall multiply "<<std::endl;
 
@@ -535,7 +609,7 @@ void calc_grid(ChromaAction action,Grid::LatticeGaugeField & Umu, Grid::LatticeF
 
     Grid::Real _b = 0.5*(mobius_scale +1.0);
     Grid::Real _c = 0.5*(mobius_scale -1.0);
-    Grid::MobiusZolotarevFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,_b,_c,zolo_lo,zolo_hi);
+    Grid::MobiusZolotarevFermionD D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,_b,_c,zolo_lo,zolo_hi);
 
     std::cout << Grid::GridLogMessage <<" Calling mobius zolo multiply "<<std::endl;
 
@@ -549,7 +623,7 @@ void calc_grid(ChromaAction action,Grid::LatticeGaugeField & Umu, Grid::LatticeF
 
   if ( action == HtCayleyZolo ) {
 
-    Grid::ShamirZolotarevFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,zolo_lo,zolo_hi);
+    Grid::ShamirZolotarevFermionD D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,zolo_lo,zolo_hi);
 
     std::cout << Grid::GridLogMessage <<" Calling shamir zolo multiply "<<std::endl;
 
@@ -561,6 +635,60 @@ void calc_grid(ChromaAction action,Grid::LatticeGaugeField & Umu, Grid::LatticeF
     return;
   }
 
+  if ( action == HwPartFracTanh ) {
+
+    Grid::OverlapWilsonPartialFractionTanhFermionD Dov(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,1.0);
+
+    std::cout << Grid::GridLogMessage <<" Calling part frac tanh multiply "<<std::endl;
+
+    if ( dag ) 
+      Dov.Mdag(src,res);  
+    else 
+      Dov.M(src,res);  
+
+    return;
+  }
+
+  if ( action == HwContFracTanh ) {
+
+    Grid::OverlapWilsonContFracTanhFermionD Dov(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,1.0);
+
+    std::cout << Grid::GridLogMessage <<" Calling cont frac tanh multiply "<<std::endl;
+
+    if ( dag ) 
+      Dov.Mdag(src,res);  
+    else 
+      Dov.M(src,res);  
+
+    return;
+  }
+  if ( action == HwContFracZolo ) {
+
+    Grid::OverlapWilsonContFracZolotarevFermionD Dov(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,zolo_lo,zolo_hi);
+
+    std::cout << Grid::GridLogMessage <<" Calling cont frac zolo multiply "<<std::endl;
+
+    if ( dag ) 
+      Dov.Mdag(src,res);  
+    else 
+      Dov.M(src,res);  
+
+    return;
+  }
+
+  if ( action == HwPartFracZolo ) {
+
+    Grid::OverlapWilsonPartialFractionZolotarevFermionD Dov(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,zolo_lo,zolo_hi);
+    std::cout << Grid::GridLogMessage <<" Calling part frac zolotarev multiply "<<std::endl;
+
+    if ( dag ) 
+      Dov.Mdag(src,res);  
+    else 
+      Dov.M(src,res);  
+
+    return;
+  }
+  
   /*
   if ( action == HmCayleyTanh ) {
     Grid::Real _b = 0.5*(mobius_scale +1.0);
@@ -581,7 +709,7 @@ void calc_grid(ChromaAction action,Grid::LatticeGaugeField & Umu, Grid::LatticeF
 
   if ( action == HmCayleyTanh ) {
 
-    Grid::ScaledShamirFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,mobius_scale);
+    Grid::ScaledShamirFermionD D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,mobius_scale);
 
     std::cout << Grid::GridLogMessage <<" Calling scaled shamir multiply "<<std::endl;
 
@@ -595,7 +723,7 @@ void calc_grid(ChromaAction action,Grid::LatticeGaugeField & Umu, Grid::LatticeF
 
   if ( action == HwCayleyTanh ) {
 
-    Grid::OverlapWilsonCayleyTanhFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,1.0);
+    Grid::OverlapWilsonCayleyTanhFermionD D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,1.0);
 
     if ( dag ) 
       D.Mdag(src,res);  
@@ -607,7 +735,7 @@ void calc_grid(ChromaAction action,Grid::LatticeGaugeField & Umu, Grid::LatticeF
 
   if ( action == HwCayleyZolo ) {
 
-    Grid::OverlapWilsonCayleyZolotarevFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,zolo_lo,zolo_hi);
+    Grid::OverlapWilsonCayleyZolotarevFermionD D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,zolo_lo,zolo_hi);
 
     if ( dag ) 
       D.Mdag(src,res);  
