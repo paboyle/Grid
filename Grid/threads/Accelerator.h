@@ -132,27 +132,17 @@ inline void cuda_mem(void)
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   {									\
-    int nt=acceleratorThreads();					\
-    typedef uint64_t Iterator;						\
-    auto lambda = [=] accelerator					\
-      (Iterator iter1,Iterator iter2,Iterator lane) mutable {		\
-      __VA_ARGS__;							\
-    };									\
-    dim3 cu_threads(nsimd,acceleratorThreads(),1);			\
-    dim3 cu_blocks ((num1+nt-1)/nt,num2,1);				\
-    LambdaApply<<<cu_blocks,cu_threads,0,computeStream>>>(num1,num2,nsimd,lambda);	\
-  }
-#define prof_accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
-  {									\
-    int nt=acceleratorThreads();					\
-    typedef uint64_t Iterator;						\
-    auto lambda = [=] accelerator					\
-      (Iterator iter1,Iterator iter2,Iterator lane) mutable {		\
-      __VA_ARGS__;							\
-    };									\
-    dim3 cu_threads(nsimd,acceleratorThreads(),1);			\
-    dim3 cu_blocks ((num1+nt-1)/nt,num2,1);				\
-    ProfileLambdaApply<<<cu_blocks,cu_threads,0,computeStream>>>(num1,num2,nsimd,lambda); \
+    if ( num1*num2 ) {							\
+      int nt=acceleratorThreads();					\
+      typedef uint64_t Iterator;					\
+      auto lambda = [=] accelerator					\
+	(Iterator iter1,Iterator iter2,Iterator lane) mutable {		\
+		      __VA_ARGS__;					\
+		    };							\
+      dim3 cu_threads(nsimd,acceleratorThreads(),1);			\
+      dim3 cu_blocks ((num1+nt-1)/nt,num2,1);				\
+      LambdaApply<<<cu_blocks,cu_threads,0,computeStream>>>(num1,num2,nsimd,lambda); \
+    }									\
   }
 
 #define accelerator_for6dNB(iter1, num1,				\
@@ -175,32 +165,8 @@ inline void cuda_mem(void)
   }
 
 
-#define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
-  {									\
-    int nt=acceleratorThreads();					\
-    typedef uint64_t Iterator;						\
-    auto lambda = [=] accelerator					\
-      (Iterator iter1,Iterator iter2,Iterator lane) mutable {		\
-      __VA_ARGS__;							\
-    };									\
-    dim3 cu_threads(nsimd,acceleratorThreads(),1);			\
-    dim3 cu_blocks ((num1+nt-1)/nt,num2,1);				\
-    LambdaApply<<<cu_blocks,cu_threads,0,computeStream>>>(num1,num2,nsimd,lambda);	\
-  }
-
 template<typename lambda>  __global__
 void LambdaApply(uint64_t num1, uint64_t num2, uint64_t num3, lambda Lambda)
-{
-  // Weird permute is to make lane coalesce for large blocks
-  uint64_t x = threadIdx.y + blockDim.y*blockIdx.x;
-  uint64_t y = threadIdx.z + blockDim.z*blockIdx.y;
-  uint64_t z = threadIdx.x;
-  if ( (x < num1) && (y<num2) && (z<num3) ) {
-    Lambda(x,y,z);
-  }
-}
-template<typename lambda>  __global__
-void ProfileLambdaApply(uint64_t num1, uint64_t num2, uint64_t num3, lambda Lambda)
 {
   // Weird permute is to make lane coalesce for large blocks
   uint64_t x = threadIdx.y + blockDim.y*blockIdx.x;
@@ -523,9 +489,6 @@ inline void acceleratorCopySynchronise(void) { auto discard=hipStreamSynchronize
 #if defined(GRID_SYCL) || defined(GRID_CUDA) || defined(GRID_HIP)
 // FIXME -- the non-blocking nature got broken March 30 2023 by PAB
 #define accelerator_forNB( iter1, num1, nsimd, ... ) accelerator_for2dNB( iter1, num1, iter2, 1, nsimd, {__VA_ARGS__} );  
-#define prof_accelerator_for( iter1, num1, nsimd, ... ) \
-  prof_accelerator_for2dNB( iter1, num1, iter2, 1, nsimd, {__VA_ARGS__} );\
-  accelerator_barrier(dummy);
 
 #define accelerator_for( iter, num, nsimd, ... )		\
   accelerator_forNB(iter, num, nsimd, { __VA_ARGS__ } );	\
