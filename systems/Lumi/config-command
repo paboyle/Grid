@@ -1,7 +1,7 @@
 spack load c-lime
 spack load gmp
 spack load mpfr
-CLIME=`spack find --paths c-lime | grep c-lime| cut -c 15-`
+CLIME=`spack find --paths c-lime | grep c-lime| cut -c 13-`
 GMP=`spack find --paths gmp | grep gmp | cut -c 12-`
 MPFR=`spack find --paths mpfr | grep mpfr | cut -c 13-`
 echo clime X$CLIME
