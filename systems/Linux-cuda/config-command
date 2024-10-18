@@ -4,6 +4,8 @@
     --enable-gen-simd-width=64 \
     --enable-shm=nvlink \
     --with-lime=$CLIME \
+    --with-hdf5=$HDF5 \
+    --with-fftw=$FFTW \
     --with-gmp=$GMP \
     --with-mpfr=$MPFR \
     --enable-accelerator=cuda \

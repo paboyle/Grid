@@ -31,7 +31,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 using namespace Grid;
 
 const int TSRC = 0;  //timeslice where rho is nonzero
-const int VDIM = 5; //length of each vector
+const int VDIM = 8; //length of each vector
 
 typedef typename DomainWallFermionD::ComplexField ComplexField;
 typedef typename DomainWallFermionD::FermionField FermionField;
@@ -55,15 +55,26 @@ int main(int argc, char *argv[])
   pRNG.SeedFixedIntegers(seeds);
 
   // MesonField lhs and rhs vectors
+  const int Nem=1;
   std::vector<FermionField> phi(VDIM,&grid);
+  std::vector<ComplexField> B0(Nem,&grid);
+  std::vector<ComplexField> B1(Nem,&grid);
   std::cout << GridLogMessage << "Initialising random meson fields" << std::endl;
   for (unsigned int i = 0; i < VDIM; ++i){
     random(pRNG,phi[i]);
+  }
+  for (unsigned int i = 0; i < Nem; ++i){
+    random(pRNG,B0[i]);
+    random(pRNG,B1[i]);
   }
   std::cout << GridLogMessage << "Meson fields initialised, rho non-zero only for t = " << TSRC << std::endl;
 
   // Gamma matrices used in the contraction
   std::vector<Gamma::Algebra> Gmu = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT,
     Gamma::Algebra::GammaX,
     Gamma::Algebra::GammaY,
     Gamma::Algebra::GammaZ,
@@ -74,11 +85,15 @@ int main(int argc, char *argv[])
   std::vector<std::vector<double>> momenta = {
 	  {0.,0.,0.},
 	  {1.,0.,0.},
+	  {-1.,0.,0.},
+	  {0,1.,0.},
+	  {0,-1.,0.},
+	  {0,0,1.},
+	  {0,0,-1.},
 	  {1.,1.,0.},
 	  {1.,1.,1.},
 	  {2.,0.,0.}
   };
-  // 5 momenta x VDIMxVDIM = 125 calls (x 16 spins) 1.4s => 1400/125 ~10ms per call
   std::cout << GridLogMessage << "Meson fields will be created for " << Gmu.size() << " Gamma matrices and " << momenta.size() << " momenta." << std::endl;
 
   std::cout << GridLogMessage << "Computing complex phases" << std::endl;
@@ -98,46 +113,28 @@ int main(int argc, char *argv[])
   std::cout << GridLogMessage << "Computing complex phases done." << std::endl;
 
   Eigen::Tensor<ComplexD,5, Eigen::RowMajor> Mpp(momenta.size(),Gmu.size(),Nt,VDIM,VDIM);
-  Eigen::Tensor<ComplexD,5, Eigen::RowMajor> Mpp_gpu(momenta.size(),Gmu.size(),Nt,VDIM,VDIM);
+  Eigen::Tensor<ComplexD,5, Eigen::RowMajor> App(B0.size(),1,Nt,VDIM,VDIM);
 
   // timer
   double start,stop;
 
+  /////////////////////////////////////////////////////////////////////////
   //execute meson field routine
-  std::cout << GridLogMessage << "Meson Field Warmup Begin" << std::endl;
+  /////////////////////////////////////////////////////////////////////////
   A2Autils<WilsonImplR>::MesonField(Mpp,&phi[0],&phi[0],Gmu,phases,Tp);
-  std::cout << GridLogMessage << "Meson Field Timing Begin" << std::endl;
   start = usecond();
   A2Autils<WilsonImplR>::MesonField(Mpp,&phi[0],&phi[0],Gmu,phases,Tp);
   stop = usecond();
   std::cout << GridLogMessage << "M(phi,phi) created, execution time " << stop-start << " us" << std::endl;
 
-  std::cout << GridLogMessage << "Meson Field GPU Warmup Begin" << std::endl;
-  A2Autils<WilsonImplR>::MesonFieldGPU(Mpp_gpu,&phi[0],&phi[0],Gmu,phases,Tp);
-  std::cout << GridLogMessage << "Meson Field GPU Timing Begin" << std::endl;
+  /////////////////////////////////////////////////////////////////////////
+  //execute aslash field routine
+  /////////////////////////////////////////////////////////////////////////
+  A2Autils<WilsonImplR>::AslashField(App,&phi[0],&phi[0],B0,B1,Tp);
   start = usecond();
-  A2Autils<WilsonImplR>::MesonFieldGPU(Mpp_gpu,&phi[0],&phi[0],Gmu,phases,Tp);
+  A2Autils<WilsonImplR>::AslashField(App,&phi[0],&phi[0],B0,B1,Tp);
   stop = usecond();
-  std::cout << GridLogMessage << "M_gpu(phi,phi) created, execution time " << stop-start << " us" << std::endl;
-
-  for(int mom=0;mom<momenta.size();mom++){
-    for(int mu=0;mu<Gmu.size();mu++){
-      for(int t=0;t<Nt;t++){
-	for(int v=0;v<VDIM;v++){
-	  for(int w=0;w<VDIM;w++){
-	    std::cout << GridLogMessage
-		      << " " << mom
-		      << " " << mu
-		      << " " << t
-		      << " " << v
-		      << " " << w
-		      << " " << Mpp_gpu(mom,mu,t,v,w)
-		      << " " << Mpp(mom,mu,t,v,w) << std::endl;
-	  }
-	}
-      }
-    }
-  }
+  std::cout << GridLogMessage << "Alash(phi,phi) created, execution time " << stop-start << " us" << std::endl;
   
   std::string FileName = "Meson_Fields";
 #ifdef HAVE_HDF5
@@ -151,8 +148,8 @@ int main(int argc, char *argv[])
 #endif
   {
     Default_Writer w(FileName);
-    write(w,"phi_phi",Mpp);
-    write(w,"phi_phi_gpu",Mpp_gpu);
+    write(w,"MesonField",Mpp);
+    write(w,"AslashField",App);
   }
   // epilogue
   std::cout << GridLogMessage << "Grid is finalizing now" << std::endl;

@@ -98,7 +98,7 @@ public:
   virtual RealD S(const GaugeField& U) = 0;                             // evaluate the action
   virtual RealD Sinitial(const GaugeField& U) { return this->S(U); } ;  // if the refresh computes the action, can cache it. Alternately refreshAndAction() ?
   virtual void deriv(const GaugeField& U, GaugeField& dSdU) = 0;        // evaluate the action derivative
-
+ 
   /////////////////////////////////////////////////////////////
   // virtual smeared interface through configuration container
   /////////////////////////////////////////////////////////////
@@ -132,6 +132,10 @@ public:
 template <class GaugeField >
 class EmptyAction : public Action <GaugeField>
 {
+  using Action<GaugeField>::refresh;
+  using Action<GaugeField>::Sinitial;
+  using Action<GaugeField>::deriv;
+
   virtual void refresh(const GaugeField& U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) { assert(0);}; // refresh pseudofermions
   virtual RealD S(const GaugeField& U) { return 0.0;};                             // evaluate the action
   virtual void deriv(const GaugeField& U, GaugeField& dSdU) { assert(0); };        // evaluate the action derivative

@@ -1,7 +1,6 @@
 #include <Grid/GridCore.h>
 #ifndef GRID_UVM
 
-#warning "Using explicit device memory copies"
 NAMESPACE_BEGIN(Grid);
 
 #define MAXLINE 512
