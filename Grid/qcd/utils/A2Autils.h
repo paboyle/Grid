@@ -354,7 +354,7 @@ void A2Autils<FImpl>::MesonFieldGPU(TensorType &mat,
   int Lblock = mat.dimension(3); 
   int Rblock = mat.dimension(4);
 
-  assert(Lblock % block==0);
+  //  assert(Lblock % block==0);
   //  assert(Rblock % block==0);
   
   GridBase *grid = lhs_wi[0].Grid();
@@ -387,7 +387,6 @@ void A2Autils<FImpl>::MesonFieldGPU(TensorType &mat,
 	//////////////////////////////////////////
 	// Should write a SpinOuterColorTrace
 	//////////////////////////////////////////
-	std::cout <<GridLogMessage << "accelerator_for for i="<<i<<" j="<<j<<std::endl;
 	t_afor-=usecond();
 	accelerator_for(ss,grid->oSites(),(size_t)Nsimd,{
 	    auto left = conjugate(lhs_v(ss));
@@ -401,11 +400,10 @@ void A2Autils<FImpl>::MesonFieldGPU(TensorType &mat,
 	      }}
 	    coalescedWrite(SpinMat_v[ss],vv);
 	  });
+	t_afor+=usecond();
       }// j within block
-      t_afor+=usecond();
       // After getting the sitewise product do the mom phase loop
       for(int m=0;m<Nmom;m++){
-	std::cout <<GridLogMessage << "mom "<<m<<" i="<<i<<" jo="<<jo<<std::endl;
 	t_pha-=usecond();
 	MomSpinMat   = SpinMat * mom[m];
 	t_pha+=usecond();
@@ -415,7 +413,6 @@ void A2Autils<FImpl>::MesonFieldGPU(TensorType &mat,
 	t_sum+=usecond();
 	t_trace-=usecond();
 	for(int mu=0;mu<Ngamma;mu++){
-	  std::cout <<GridLogMessage << "trace Gamma "<<mu<<std::endl;
 	  for(int t=0;t<sliced.size();t++){
 	    for(int j=jo;j<MIN(Rblock,jo+block);j++){
 	      int jj=j%block;
