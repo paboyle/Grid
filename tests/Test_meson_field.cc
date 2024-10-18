@@ -56,13 +56,9 @@ int main(int argc, char *argv[])
 
   // MesonField lhs and rhs vectors
   std::vector<FermionField> phi(VDIM,&grid);
-  std::vector<FermionField> rho(VDIM,&grid);
-  FermionField rho_tmp(&grid);
   std::cout << GridLogMessage << "Initialising random meson fields" << std::endl;
   for (unsigned int i = 0; i < VDIM; ++i){
     random(pRNG,phi[i]);
-    random(pRNG,rho_tmp); //ideally only nonzero on t=0
-    rho[i] = where((t==TSRC), rho_tmp, 0.*rho_tmp); //ideally only nonzero on t=0
   }
   std::cout << GridLogMessage << "Meson fields initialised, rho non-zero only for t = " << TSRC << std::endl;
 
@@ -82,7 +78,7 @@ int main(int argc, char *argv[])
 	  {1.,1.,1.},
 	  {2.,0.,0.}
   };
-
+  // 5 momenta x VDIMxVDIM = 125 calls (x 16 spins) 1.4s => 1400/125 ~10ms per call
   std::cout << GridLogMessage << "Meson fields will be created for " << Gmu.size() << " Gamma matrices and " << momenta.size() << " momenta." << std::endl;
 
   std::cout << GridLogMessage << "Computing complex phases" << std::endl;
@@ -102,28 +98,47 @@ int main(int argc, char *argv[])
   std::cout << GridLogMessage << "Computing complex phases done." << std::endl;
 
   Eigen::Tensor<ComplexD,5, Eigen::RowMajor> Mpp(momenta.size(),Gmu.size(),Nt,VDIM,VDIM);
-  Eigen::Tensor<ComplexD,5, Eigen::RowMajor> Mpr(momenta.size(),Gmu.size(),Nt,VDIM,VDIM);
-  Eigen::Tensor<ComplexD,5, Eigen::RowMajor> Mrr(momenta.size(),Gmu.size(),Nt,VDIM,VDIM);
+  Eigen::Tensor<ComplexD,5, Eigen::RowMajor> Mpp_gpu(momenta.size(),Gmu.size(),Nt,VDIM,VDIM);
 
   // timer
   double start,stop;
 
   //execute meson field routine
+  std::cout << GridLogMessage << "Meson Field Warmup Begin" << std::endl;
+  A2Autils<WilsonImplR>::MesonField(Mpp,&phi[0],&phi[0],Gmu,phases,Tp);
+  std::cout << GridLogMessage << "Meson Field Timing Begin" << std::endl;
   start = usecond();
   A2Autils<WilsonImplR>::MesonField(Mpp,&phi[0],&phi[0],Gmu,phases,Tp);
   stop = usecond();
   std::cout << GridLogMessage << "M(phi,phi) created, execution time " << stop-start << " us" << std::endl;
-  start = usecond();
-  /* Ideally, for this meson field we could pass TSRC (even better a list of timeslices)
-   * to the routine so that all the compnents which are predictably equal to zero are not computed. */
-  A2Autils<WilsonImplR>::MesonField(Mpr,&phi[0],&rho[0],Gmu,phases,Tp);
-  stop = usecond();
-  std::cout << GridLogMessage << "M(phi,rho) created, execution time " << stop-start << " us" << std::endl;
-  start = usecond();
-  A2Autils<WilsonImplR>::MesonField(Mrr,&rho[0],&rho[0],Gmu,phases,Tp);
-  stop = usecond();
-  std::cout << GridLogMessage << "M(rho,rho) created, execution time " << stop-start << " us" << std::endl;
 
+  std::cout << GridLogMessage << "Meson Field GPU Warmup Begin" << std::endl;
+  A2Autils<WilsonImplR>::MesonFieldGPU(Mpp_gpu,&phi[0],&phi[0],Gmu,phases,Tp);
+  std::cout << GridLogMessage << "Meson Field GPU Timing Begin" << std::endl;
+  start = usecond();
+  A2Autils<WilsonImplR>::MesonFieldGPU(Mpp_gpu,&phi[0],&phi[0],Gmu,phases,Tp);
+  stop = usecond();
+  std::cout << GridLogMessage << "M_gpu(phi,phi) created, execution time " << stop-start << " us" << std::endl;
+
+  for(int mom=0;mom<momenta.size();mom++){
+    for(int mu=0;mu<Gmu.size();mu++){
+      for(int t=0;t<Nt;t++){
+	for(int v=0;v<VDIM;v++){
+	  for(int w=0;w<VDIM;w++){
+	    std::cout << GridLogMessage
+		      << " " << mom
+		      << " " << mu
+		      << " " << t
+		      << " " << v
+		      << " " << w
+		      << " " << Mpp_gpu(mom,mu,t,v,w)
+		      << " " << Mpp(mom,mu,t,v,w) << std::endl;
+	  }
+	}
+      }
+    }
+  }
+  
   std::string FileName = "Meson_Fields";
 #ifdef HAVE_HDF5
   using Default_Reader = Grid::Hdf5Reader;
@@ -134,12 +149,11 @@ int main(int argc, char *argv[])
   using Default_Writer = Grid::BinaryWriter;
   FileName.append(".bin");
 #endif
-
-  Default_Writer w(FileName);
-  write(w,"phi_phi",Mpp);
-  write(w,"phi_rho",Mpr);
-  write(w,"rho_rho",Mrr);
-
+  {
+    Default_Writer w(FileName);
+    write(w,"phi_phi",Mpp);
+    write(w,"phi_phi_gpu",Mpp_gpu);
+  }
   // epilogue
   std::cout << GridLogMessage << "Grid is finalizing now" << std::endl;
   Grid_finalize();

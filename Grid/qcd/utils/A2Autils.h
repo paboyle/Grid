@@ -6,6 +6,34 @@ NAMESPACE_BEGIN(Grid);
 
 #undef DELTA_F_EQ_2
 
+///////////////////////////////////////////////////////////////////
+//Meson 
+// Interested in
+//
+//      sum_x,y Trace[ G S(x,tx,y,ty) G S(y,ty,x,tx) ]
+//
+// Conventional meson field:
+//                 
+//    = sum_x,y Trace[ sum_j G |v_j(y,ty)> <w_j(x,tx)|  G sum_i |v_i(x,tx) ><w_i(y,ty)| ]
+//    = sum_ij sum_x,y < w_j(x,tx)| G |v_i(x,tx) > <w_i(y,ty) (x)|G| v_j(y,ty) >
+//    = sum_ij PI_ji(tx) PI_ij(ty)
+//
+// G5-Hermiticity
+//
+//      sum_x,y Trace[ G S(x,tx,y,ty) G S(y,ty,x,tx) ]
+//    = sum_x,y Trace[ G S(x,tx,y,ty) G g5 S^dag(x,tx,y,ty) g5 ]
+//    = sum_x,y Trace[ g5 G sum_j |v_j(y,ty)> <w_j(x,tx)|  G g5 sum_i   (|v_j(y,ty)> <w_i(x,tx)|)^dag ]      --  (*)
+//
+// NB:  Dag applies to internal indices spin,colour,complex
+//
+//    = sum_ij sum_x,y Trace[ g5 G |v_j(y,ty)> <w_j(x,tx)|  G g5  |w_i(x,tx)> <v_i(y,ty)| ]
+//    = sum_ij sum_x,y <v_i(y,ty)|g5 G |v_j(y,ty)> <w_j(x,tx)|  G g5 |w_i(x,tx)> 
+//    = sum_ij  PionVV(ty) PionWW(tx)
+//
+// (*) is only correct estimator if w_i and w_j come from distinct noise sets to preserve the kronecker
+//     expectation value. Otherwise biased.
+////////////////////////////////////////////////////////////////////
+
 template <typename FImpl>
 class A2Autils 
 {
@@ -26,7 +54,9 @@ public:
 
   typedef iSpinColourMatrix<vector_type> SpinColourMatrix_v;
 
-  template <typename TensorType> // output: rank 5 tensor, e.g. Eigen::Tensor<ComplexD, 5>
+  
+  // output: rank 5 tensor, e.g. Eigen::Tensor<ComplexD, 5>
+  template <typename TensorType> 
   static void MesonField(TensorType &mat, 
 			 const FermionField *lhs_wi,
 			 const FermionField *rhs_vj,
@@ -34,6 +64,14 @@ public:
 			 const std::vector<ComplexField > &mom,
 			 int orthogdim, double *t_kernel = nullptr, double *t_gsum = nullptr);
 
+  template <typename TensorType> 
+  static void MesonFieldGPU(TensorType &mat, 
+			 const FermionField *lhs_wi,
+			 const FermionField *rhs_vj,
+			 std::vector<Gamma::Algebra> gammas,
+			 const std::vector<ComplexField > &mom,
+			 int orthogdim, double *t_kernel = nullptr, double *t_gsum = nullptr);
+  /*
   static void PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat, 
 			     const FermionField *wi,
 			     const FermionField *vj,
@@ -58,7 +96,8 @@ public:
 			  const FermionField *vi,
 			  const FermionField *vj,
 			  int orthogdim);
-
+  */
+  
   template <typename TensorType> // output: rank 5 tensor, e.g. Eigen::Tensor<ComplexD, 5>
   static void AslashField(TensorType &mat, 
         const FermionField *lhs_wi,
@@ -159,14 +198,14 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
   int MFlvol = ld*Lblock*Rblock*Nmom;
 
   std::vector<SpinMatrix_v > lvSum(MFrvol);
-  thread_for( r, MFrvol,{
+  for(int r=0;r<MFrvol;r++){
     lvSum[r] = Zero();
-  });
+  }
 
   std::vector<SpinMatrix_s > lsSum(MFlvol);             
-  thread_for(r,MFlvol,{
+  for(int r=0;r<MFlvol;r++){
     lsSum[r]=scalar_type(0.0);
-  });
+  }
 
   int e1=    grid->_slice_nblock[orthogdim];
   int e2=    grid->_slice_block [orthogdim];
@@ -174,7 +213,7 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
 
   // potentially wasting cores here if local time extent too small
   if (t_kernel) *t_kernel = -usecond();
-  thread_for(r,rd,{
+  for(int r=0;r<rd;r++) {
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
@@ -213,10 +252,10 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
 	}
       }
     }
-  });
+  };
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
-  thread_for(rt,rd,{
+  for(int rt=0;rt<rd;rt++){
 
     Coordinate icoor(Nd);
     ExtractBuffer<SpinMatrix_s> extracted(Nsimd);               
@@ -241,7 +280,7 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
 
       }
     }}}
-  });
+  }
   if (t_kernel) *t_kernel += usecond();
   assert(mat.dimension(0) == Nmom);
   assert(mat.dimension(1) == Ngamma);
@@ -290,35 +329,115 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
   if (t_gsum) *t_gsum += usecond();
 }
 
+const int A2Ablocking=8;
+template<typename vtype> using iVecSpinMatrix = iVector<iMatrix<iScalar<vtype>, Ns>, A2Ablocking>;
+typedef iVecSpinMatrix<Complex  >             VecSpinMatrix;
+typedef iVecSpinMatrix<vComplex >             vVecSpinMatrix;
+typedef Lattice<vVecSpinMatrix>               LatticeVecSpinMatrix;
 
-///////////////////////////////////////////////////////////////////
-//Meson 
-// Interested in
-//
-//      sum_x,y Trace[ G S(x,tx,y,ty) G S(y,ty,x,tx) ]
-//
-// Conventional meson field:
-//                 
-//    = sum_x,y Trace[ sum_j G |v_j(y,ty)> <w_j(x,tx)|  G sum_i |v_i(x,tx) ><w_i(y,ty)| ]
-//    = sum_ij sum_x,y < w_j(x,tx)| G |v_i(x,tx) > <w_i(y,ty) (x)|G| v_j(y,ty) >
-//    = sum_ij PI_ji(tx) PI_ij(ty)
-//
-// G5-Hermiticity
-//
-//      sum_x,y Trace[ G S(x,tx,y,ty) G S(y,ty,x,tx) ]
-//    = sum_x,y Trace[ G S(x,tx,y,ty) G g5 S^dag(x,tx,y,ty) g5 ]
-//    = sum_x,y Trace[ g5 G sum_j |v_j(y,ty)> <w_j(x,tx)|  G g5 sum_i   (|v_j(y,ty)> <w_i(x,tx)|)^dag ]      --  (*)
-//
-// NB:  Dag applies to internal indices spin,colour,complex
-//
-//    = sum_ij sum_x,y Trace[ g5 G |v_j(y,ty)> <w_j(x,tx)|  G g5  |w_i(x,tx)> <v_i(y,ty)| ]
-//    = sum_ij sum_x,y <v_i(y,ty)|g5 G |v_j(y,ty)> <w_j(x,tx)|  G g5 |w_i(x,tx)> 
-//    = sum_ij  PionVV(ty) PionWW(tx)
-//
-// (*) is only correct estimator if w_i and w_j come from distinct noise sets to preserve the kronecker
-//     expectation value. Otherwise biased.
-////////////////////////////////////////////////////////////////////
+template <class FImpl>
+template <typename TensorType>
+void A2Autils<FImpl>::MesonFieldGPU(TensorType &mat, 
+				    const FermionField *lhs_wi,
+				    const FermionField *rhs_vj,
+				    std::vector<Gamma::Algebra> gammas,
+				    const std::vector<ComplexField > &mom,
+				    int orthogdim, double *t_kernel, double *t_gsum) 
+{
+  const int block=A2Ablocking;
+  typedef typename FImpl::SiteSpinor vobj;
 
+  typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  int Lblock = mat.dimension(3); 
+  int Rblock = mat.dimension(4);
+
+  assert(Lblock % block==0);
+  //  assert(Rblock % block==0);
+  
+  GridBase *grid = lhs_wi[0].Grid();
+  
+  const int    Nd = grid->_ndimension;
+  const int Nsimd = grid->Nsimd();
+
+  int Nt     = grid->GlobalDimensions()[orthogdim];
+  int Ngamma = gammas.size();
+  int Nmom   = mom.size();
+
+
+  LatticeVecSpinMatrix SpinMat(grid);
+  LatticeVecSpinMatrix MomSpinMat(grid);
+  
+  RealD t_afor = 0.0;
+  RealD t_sum  = 0.0;
+  RealD t_pha  = 0.0;
+  RealD t_trace= 0.0;
+  uint64_t ncall=0;
+  
+  std::vector<VecSpinMatrix> sliced;
+  for(int i=0;i<Lblock;i++){
+    autoView(SpinMat_v,SpinMat,AcceleratorWrite);
+    autoView(lhs_v,lhs_wi[i],AcceleratorRead);
+    for(int jo=0;jo<Rblock;jo+=block){
+      for(int j=jo;j<MIN(Rblock,jo+block);j++){
+	int jj=j%block;
+	autoView(rhs_v,rhs_vj[j],AcceleratorRead); // Create a vector of views
+	//////////////////////////////////////////
+	// Should write a SpinOuterColorTrace
+	//////////////////////////////////////////
+	std::cout <<GridLogMessage << "accelerator_for for i="<<i<<" j="<<j<<std::endl;
+	t_afor-=usecond();
+	accelerator_for(ss,grid->oSites(),(size_t)Nsimd,{
+	    auto left = conjugate(lhs_v(ss));
+	    auto right = rhs_v(ss);
+	    auto vv =  SpinMat_v(ss);
+	    for(int s1=0;s1<Ns;s1++){
+	      for(int s2=0;s2<Ns;s2++){
+		vv(jj)(s1,s2)() = left()(s2)(0) * right()(s1)(0)
+		  +               left()(s2)(1) * right()(s1)(1)
+		  +               left()(s2)(2) * right()(s1)(2);
+	      }}
+	    coalescedWrite(SpinMat_v[ss],vv);
+	  });
+      }// j within block
+      t_afor+=usecond();
+      // After getting the sitewise product do the mom phase loop
+      for(int m=0;m<Nmom;m++){
+	std::cout <<GridLogMessage << "mom "<<m<<" i="<<i<<" jo="<<jo<<std::endl;
+	t_pha-=usecond();
+	MomSpinMat   = SpinMat * mom[m];
+	t_pha+=usecond();
+	t_sum-=usecond();
+	ncall++;
+	sliceSum(MomSpinMat,sliced,orthogdim);
+	t_sum+=usecond();
+	t_trace-=usecond();
+	for(int mu=0;mu<Ngamma;mu++){
+	  std::cout <<GridLogMessage << "trace Gamma "<<mu<<std::endl;
+	  for(int t=0;t<sliced.size();t++){
+	    for(int j=jo;j<MIN(Rblock,jo+block);j++){
+	      int jj=j%block;
+	      auto tmp = sliced[t](jj);
+	      auto trSG = trace(tmp*Gamma(gammas[mu]));
+	      mat(m,mu,t,i,j) = trSG()();
+	    }
+	  }
+	}
+	t_trace+=usecond();
+      }
+    }//jo
+  }
+  std::cout << GridLogMessage<< " A2AUtils::MesonFieldGPU t_afor  "<<t_afor<<" us"<<std::endl;
+  std::cout << GridLogMessage<< " A2AUtils::MesonFieldGPU t_pha   "<<t_pha<<" us"<<std::endl;
+  std::cout << GridLogMessage<< " A2AUtils::MesonFieldGPU t_sum   "<<t_sum<<" us"<<std::endl;
+  std::cout << GridLogMessage<< " A2AUtils::MesonFieldGPU N_sum   "<<ncall<<" calls"<<std::endl;
+  std::cout << GridLogMessage<< " A2AUtils::MesonFieldGPU t_trace "<<t_trace<<" us"<<std::endl;
+}
+
+
+/*
 template<class FImpl>
 void A2Autils<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat, 
 				  const FermionField *wi,
@@ -645,6 +764,7 @@ void A2Autils<FImpl>::PionFieldVV(Eigen::Tensor<ComplexD,3> &mat,
   const int nog5=0;
   PionFieldXX(mat,vi,vj,orthogdim,nog5);
 }
+*/
 
 // "A-slash" field w_i(x)^dag * i * A_mu * gamma_mu * v_j(x)
 //
@@ -992,9 +1112,9 @@ typename std::enable_if<(std::is_same<Eigen::Tensor<ComplexD,3>, TensorType>::va
                          std::is_same<Eigen::TensorMap<Eigen::Tensor<Complex, 3, Eigen::RowMajor>>, TensorType>::value),
                          void>::type
 A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
-				   const TensorType &WW_sd,
-				   const FermionField *vs,
-				   const FermionField *vd)
+			      const TensorType &WW_sd,
+			      const FermionField *vs,
+			      const FermionField *vd)
 {
   GridBase *grid = vs[0].Grid();
 
@@ -1062,7 +1182,6 @@ A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
   }
 
   for (int t = 0; t < N_t; t++){
-    std::cout << GridLogMessage << "Contraction t = " << t << std::endl;
     buf = WW_sd[t];
     thread_for(ss,grid->oSites(),{
       for(int d_o=0;d_o<N_d;d_o+=d_unroll){

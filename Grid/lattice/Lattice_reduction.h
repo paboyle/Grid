@@ -522,11 +522,14 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,
   int ostride=grid->_ostride[orthogdim];
   
   //Reduce Data down to lvSum
+  RealD t_sum =-usecond();
   sliceSumReduction(Data,lvSum,rd, e1,e2,stride,ostride,Nsimd);
+  t_sum +=usecond();
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
   Coordinate icoor(Nd);
 
+  RealD t_rest =-usecond();
   for(int rt=0;rt<rd;rt++){
 
     extract(lvSum[rt],extracted);
@@ -556,6 +559,9 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,
   scalar_type * ptr = (scalar_type *) &result[0];
   int words = fd*sizeof(sobj)/sizeof(scalar_type);
   grid->GlobalSumVector(ptr, words);
+  t_rest +=usecond();
+  std::cout << GridLogMessage << " sliceSum local"<<t_sum<<" us, host+mpi "<<t_rest<<std::endl;
+  
 }
 template<class vobj> inline
 std::vector<typename vobj::scalar_object> 
