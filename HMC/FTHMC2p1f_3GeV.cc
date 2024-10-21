@@ -24,14 +24,22 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
+
 #include <Grid/Grid.h>
+
+#if Nc == 3
 #include <Grid/qcd/smearing/GaugeConfigurationMasked.h>
 #include <Grid/qcd/smearing/JacobianAction.h>
+#endif
 
 using namespace Grid;
 
 int main(int argc, char **argv)
 {
+#if Nc != 3
+#warning FTHMC2p1f_3GeV will not work for Nc != 3
+  std::cout << "This program will currently only work for Nc == 3." << std::endl;
+#else
   std::cout << std::setprecision(12);
   
   Grid_init(&argc, &argv);
@@ -220,6 +228,7 @@ int main(int argc, char **argv)
   TheHMC.Run(SmearingPolicy); // for smearing
 
   Grid_finalize();
+#endif
 } // main
 
 
