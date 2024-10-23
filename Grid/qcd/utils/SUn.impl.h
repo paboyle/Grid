@@ -118,7 +118,7 @@ static void generatorDiagonal(int diagIndex, iGroupMatrix<cplx> &ta) {
 ////////////////////////////////////////////////////////////////////////
 // Map a su2 subgroup number to the pair of rows that are non zero
 ////////////////////////////////////////////////////////////////////////
-static void su2SubGroupIndex(int &i1, int &i2, int su2_index, GroupName::SU) {
+static accelerator_inline void su2SubGroupIndex(int &i1, int &i2, int su2_index, GroupName::SU) {
   assert((su2_index >= 0) && (su2_index < (ncolour * (ncolour - 1)) / 2));
 
   int spare = su2_index;
