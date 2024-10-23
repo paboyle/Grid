@@ -39,7 +39,7 @@ class PartialFractionFermion5D : public WilsonFermion5D<Impl>
 public:
   INHERIT_IMPL_TYPES(Impl);
 
-  const int part_frac_chroma_convention=1;
+  const int part_frac_chroma_convention=0;
 
   void   Meooe_internal(const FermionField &in, FermionField &out,int dag);
   void   Mooee_internal(const FermionField &in, FermionField &out,int dag);

@@ -41,6 +41,10 @@ public:
 public:
 
   // Constructors
+  virtual void   Instantiatable(void){};
+  void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m,std::vector<double> twist) {
+    this->MomentumSpacePropagatorHw(out,in,_m,twist);
+  };
 
   OverlapWilsonCayleyZolotarevFermion(GaugeField &_Umu,
 				      GridCartesian         &FiveDimGrid,

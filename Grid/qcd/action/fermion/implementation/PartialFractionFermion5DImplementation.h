@@ -411,17 +411,18 @@ void  PartialFractionFermion5D<Impl>::SetCoefficientsZolotarev(RealD zolo_hi,App
       int Ls = this->Ls;
       conformable(solution5d.Grid(),this->FermionGrid());
       conformable(exported4d.Grid(),this->GaugeGrid());
-      ExtractSlice(exported4d, solution5d, Ls-1, Ls-1);
+      ExtractSlice(exported4d, solution5d, Ls-1, 0);
     }
     template<class Impl>
     void PartialFractionFermion5D<Impl>::ImportPhysicalFermionSource(const FermionField &input4d,FermionField &imported5d)
     {
+      //void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int orthog)
       int Ls = this->Ls;
       conformable(imported5d.Grid(),this->FermionGrid());
       conformable(input4d.Grid()   ,this->GaugeGrid());
       FermionField tmp(this->FermionGrid());
       tmp=Zero();
-      InsertSlice(input4d, tmp, Ls-1, Ls-1);
+      InsertSlice(input4d, tmp, Ls-1, 0);
       tmp=Gamma(Gamma::Algebra::Gamma5)*tmp;
       this->Dminus(tmp,imported5d);
     }

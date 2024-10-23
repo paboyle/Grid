@@ -55,6 +55,11 @@ public:
   RealD alpha; // Mobius scale
   RealD k;     // EOFA normalization constant
 
+  // Device resident
+  deviceVector<Coeff_t> d_shift_coefficients;
+  deviceVector<Coeff_t> d_MooeeInv_shift_lc;
+  deviceVector<Coeff_t> d_MooeeInv_shift_norm;
+  
   virtual void Instantiatable(void) = 0;
 
   // EOFA-specific operations
@@ -92,6 +97,11 @@ public:
     this->k = this->alpha * (_mq3-_mq2) * std::pow(this->alpha+1.0,2*Ls) /
       ( std::pow(this->alpha+1.0,Ls) + _mq2*std::pow(this->alpha-1.0,Ls) ) /
       ( std::pow(this->alpha+1.0,Ls) + _mq3*std::pow(this->alpha-1.0,Ls) );
+    
+    d_shift_coefficients.resize(Ls);
+    d_MooeeInv_shift_lc.resize(Ls);
+    d_MooeeInv_shift_norm.resize(Ls);
+
   };
 };
 

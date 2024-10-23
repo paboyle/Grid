@@ -57,9 +57,9 @@ CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
 
   int Ls =this->Ls;
 
-  static deviceVector<Coeff_t> d_diag(Ls) ; acceleratorCopyToDevice(&diag[0] ,&d_diag[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_upper(Ls); acceleratorCopyToDevice(&upper[0],&d_upper[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_lower(Ls); acceleratorCopyToDevice(&lower[0],&d_lower[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&diag[0] ,&this->d_diag[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&upper[0],&this->d_upper[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&lower[0],&this->d_lower[0],Ls*sizeof(Coeff_t));
   
   auto pdiag = &d_diag[0];
   auto pupper = &d_upper[0];
@@ -99,9 +99,9 @@ CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
 
   int Ls=this->Ls;
 
-  static deviceVector<Coeff_t> d_diag(Ls) ; acceleratorCopyToDevice(&diag[0] ,&d_diag[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_upper(Ls); acceleratorCopyToDevice(&upper[0],&d_upper[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_lower(Ls); acceleratorCopyToDevice(&lower[0],&d_lower[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&diag[0] ,&this->d_diag[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&upper[0],&this->d_upper[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&lower[0],&this->d_lower[0],Ls*sizeof(Coeff_t));
   
   auto pdiag = &d_diag[0];
   auto pupper = &d_upper[0];
@@ -134,11 +134,11 @@ CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi_i, FermionField &chi
 
   int Ls=this->Ls;
 
-  static deviceVector<Coeff_t> d_lee(Ls); acceleratorCopyToDevice(&lee[0],&d_lee[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_dee(Ls); acceleratorCopyToDevice(&dee[0],&d_dee[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_uee(Ls); acceleratorCopyToDevice(&uee[0],&d_uee[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_leem(Ls); acceleratorCopyToDevice(&leem[0],&d_leem[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_ueem(Ls); acceleratorCopyToDevice(&ueem[0],&d_ueem[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&lee[0],&d_lee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&dee[0],&d_dee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&uee[0],&d_uee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&leem[0],&d_leem[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&ueem[0],&d_ueem[0],Ls*sizeof(Coeff_t));
 
   auto plee  = & d_lee [0];
   auto pdee  = & d_dee [0];
@@ -196,11 +196,11 @@ CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi_i, FermionField &chi
   autoView(psi , psi_i,AcceleratorRead);
   autoView(chi , chi_i,AcceleratorWrite);
 
-  static deviceVector<Coeff_t> d_lee(Ls); acceleratorCopyToDevice(&lee[0],&d_lee[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_dee(Ls); acceleratorCopyToDevice(&dee[0],&d_dee[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_uee(Ls); acceleratorCopyToDevice(&uee[0],&d_uee[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_leem(Ls); acceleratorCopyToDevice(&leem[0],&d_leem[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_ueem(Ls); acceleratorCopyToDevice(&ueem[0],&d_ueem[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&lee[0],&d_lee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&dee[0],&d_dee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&uee[0],&d_uee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&leem[0],&d_leem[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&ueem[0],&d_ueem[0],Ls*sizeof(Coeff_t));
 
   auto plee  = & d_lee [0];
   auto pdee  = & d_dee [0];

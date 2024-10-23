@@ -414,29 +414,6 @@ public:
     //    surface_list.resize(0);
     this->same_node.resize(npoints);
   };
-
-  /*
-  void BuildSurfaceList(int Ls,int vol4){
-
-    // find same node for SHM
-    // Here we know the distance is 1 for WilsonStencil
-    for(int point=0;point<this->_npoints;point++){
-      this->same_node[point] = this->SameNode(point);
-    }
-    
-    for(int site = 0 ;site< vol4;site++){
-      int local = 1;
-      for(int point=0;point<this->_npoints;point++){
-	if( (!this->GetNodeLocal(site*Ls,point)) && (!this->same_node[point]) ){ 
-	  local = 0;
-	}
-      }
-      if(local == 0) { 
-	surface_list.push_back(site);
-      }
-    }
-  }
-  */
   
   template < class compressor>
   void HaloExchangeOpt(const Lattice<vobj> &source,compressor &compress) 

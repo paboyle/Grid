@@ -42,7 +42,7 @@ public:
 
      void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m,std::vector<double> twist) {
        this->MomentumSpacePropagatorHw(out,in,_m,twist);
-  };
+     };
 
   // Constructors
   OverlapWilsonCayleyTanhFermion(GaugeField &_Umu,

@@ -51,13 +51,13 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi_i, const FermionFi
   autoView( chi , chi_i, AcceleratorWrite);
   assert(phi.Checkerboard() == psi.Checkerboard());
 
-  static deviceVector<Coeff_t> d_diag(Ls); acceleratorCopyToDevice(&diag[0],&d_diag[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_upper(Ls);acceleratorCopyToDevice(&upper[0],&d_upper[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_lower(Ls);acceleratorCopyToDevice(&lower[0],&d_lower[0],Ls*sizeof(Coeff_t));
-  
-  auto pdiag = &d_diag[0];
-  auto pupper = &d_upper[0];
-  auto plower = &d_lower[0];
+  auto pdiag  = &this->d_diag[0];
+  auto pupper = &this->d_upper[0];
+  auto plower = &this->d_lower[0];
+
+  acceleratorCopyToDevice(&diag[0],&pdiag[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&upper[0],&pupper[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&lower[0],&plower[0],Ls*sizeof(Coeff_t));
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   
@@ -89,14 +89,14 @@ void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi_i, const Fermio
   autoView( phi , phi_i, AcceleratorRead);
   autoView( chi , chi_i, AcceleratorWrite);
   assert(phi.Checkerboard() == psi.Checkerboard());
-
-  static deviceVector<Coeff_t> d_diag(Ls); acceleratorCopyToDevice(&diag[0],&d_diag[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_upper(Ls);acceleratorCopyToDevice(&upper[0],&d_upper[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_lower(Ls);acceleratorCopyToDevice(&lower[0],&d_lower[0],Ls*sizeof(Coeff_t));
   
-  auto pdiag = &d_diag[0];
-  auto pupper = &d_upper[0];
-  auto plower = &d_lower[0];
+  auto pdiag  = &this->d_diag[0];
+  auto pupper = &this->d_upper[0];
+  auto plower = &this->d_lower[0];
+
+  acceleratorCopyToDevice(&diag[0] ,&pdiag[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&upper[0],&pupper[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&lower[0],&plower[0],Ls*sizeof(Coeff_t));
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
 
@@ -125,18 +125,18 @@ void DomainWallEOFAFermion<Impl>::MooeeInv(const FermionField& psi_i, FermionFie
   autoView( chi, chi_i, AcceleratorWrite);
   int Ls = this->Ls;
 
-  static deviceVector<Coeff_t> d_lee(Ls); acceleratorCopyToDevice(&this->lee[0],&d_lee[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_dee(Ls); acceleratorCopyToDevice(&this->dee[0],&d_dee[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_uee(Ls); acceleratorCopyToDevice(&this->uee[0],&d_uee[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_leem(Ls); acceleratorCopyToDevice(&this->leem[0],&d_leem[0],Ls*sizeof(Coeff_t));
-  static deviceVector<Coeff_t> d_ueem(Ls); acceleratorCopyToDevice(&this->ueem[0],&d_ueem[0],Ls*sizeof(Coeff_t));
-
-  auto plee  = & d_lee [0];
-  auto pdee  = & d_dee [0];
-  auto puee  = & d_uee [0];
-  auto pleem = & d_leem[0];
-  auto pueem = & d_ueem[0];
+  auto plee  = & this->d_lee [0];
+  auto pdee  = & this->d_dee [0];
+  auto puee  = & this->d_uee [0];
+  auto pleem = & this->d_leem[0];
+  auto pueem = & this->d_ueem[0];
   
+  acceleratorCopyToDevice(&this->lee[0],&plee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->dee[0],&pdee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->uee[0],&puee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->leem[0],&pleem[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->ueem[0],&pueem[0],Ls*sizeof(Coeff_t));
+
   uint64_t nloop=grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
     uint64_t ss=sss*Ls;

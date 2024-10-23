@@ -488,7 +488,7 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
   leem.resize(Ls);
   uee.resize(Ls);
   ueem.resize(Ls);
-  
+
   for(int i=0;i<Ls;i++){
     
     dee[i] = bee[i];
@@ -529,6 +529,18 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
     dee[Ls-1] += delta_d;
   }  
 
+  //////////////////////////////////////////
+  // Device buffers
+  //////////////////////////////////////////
+  d_diag.resize(Ls);
+  d_upper.resize(Ls);
+  d_lower.resize(Ls);
+
+  d_dee.resize(Ls);
+  d_lee.resize(Ls);
+  d_uee.resize(Ls);
+  d_leem.resize(Ls);
+  d_ueem.resize(Ls);
   //  int inv=1;
   //  this->MooeeInternalCompute(0,inv,MatpInv,MatmInv);
   //  this->MooeeInternalCompute(1,inv,MatpInvDag,MatmInvDag);
