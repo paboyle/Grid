@@ -6,10 +6,9 @@ NAMESPACE_BEGIN(Grid);
 #define MAXLINE 512
 static char print_buffer [ MAXLINE ];
 
-#define mprintf(...) snprintf (print_buffer,MAXLINE, __VA_ARGS__ ); std::cout << GridLogMemory << print_buffer;
-#define dprintf(...) snprintf (print_buffer,MAXLINE, __VA_ARGS__ ); std::cout << GridLogDebug << print_buffer;
+#define mprintf(...) snprintf (print_buffer,MAXLINE, __VA_ARGS__ ); std::cout << GridLogMemory << print_buffer << std::endl;
+#define dprintf(...) snprintf (print_buffer,MAXLINE, __VA_ARGS__ ); std::cout << GridLogDebug  << print_buffer << std::endl;
 //#define dprintf(...) 
-
 
 ////////////////////////////////////////////////////////////
 // For caching copies of data on device
@@ -168,7 +167,7 @@ void MemoryManager::Flush(AcceleratorViewEntry &AccCache)
   assert(AccCache.AccPtr!=(uint64_t)NULL);
   assert(AccCache.CpuPtr!=(uint64_t)NULL);
   acceleratorCopyFromDevice((void *)AccCache.AccPtr,(void *)AccCache.CpuPtr,AccCache.bytes);
-  mprintf("MemoryManager: acceleratorCopyFromDevice Flush AccPtr %lx -> CpuPtr %lx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
+  mprintf("MemoryManager: acceleratorCopyFromDevice Flush size %ld AccPtr %lx -> CpuPtr %lx\n",(uint64_t)AccCache.bytes,(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   DeviceToHostBytes+=AccCache.bytes;
   DeviceToHostXfer++;
   AccCache.state=Consistent;
@@ -183,7 +182,9 @@ void MemoryManager::Clone(AcceleratorViewEntry &AccCache)
     AccCache.AccPtr=(uint64_t)AcceleratorAllocate(AccCache.bytes);
     DeviceBytes+=AccCache.bytes;
   }
-  mprintf("MemoryManager: acceleratorCopyToDevice   Clone AccPtr %lx <- CpuPtr %lx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
+  mprintf("MemoryManager: acceleratorCopyToDevice   Clone size %ld AccPtr %lx <- CpuPtr %lx\n",
+	  (uint64_t)AccCache.bytes,
+	  (uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   acceleratorCopyToDevice((void *)AccCache.CpuPtr,(void *)AccCache.AccPtr,AccCache.bytes);
   HostToDeviceBytes+=AccCache.bytes;
   HostToDeviceXfer++;
@@ -264,7 +265,7 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
   assert(AccCache.cpuLock==0);  // Programming error
 
   if(AccCache.state!=Empty) {
-    dprintf("ViewOpen found entry %lx %lx : %ld %ld accLock %ld\n",
+    dprintf("ViewOpen found entry %lx %lx : sizes %ld %ld accLock %ld\n",
 		    (uint64_t)AccCache.CpuPtr,
 		    (uint64_t)CpuPtr,
 		    (uint64_t)AccCache.bytes,
