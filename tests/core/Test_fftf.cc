@@ -39,7 +39,8 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   Coordinate latt_size   = GridDefaultLatt();
-  Coordinate simd_layout( { vComplexF::Nsimd(),1,1,1});
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplexF::Nsimd());
+  //  Coordinate simd_layout( { vComplexF::Nsimd(),1,1,1});
   Coordinate mpi_layout  = GridDefaultMpi();
 
   int vol = 1;
