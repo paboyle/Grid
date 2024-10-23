@@ -121,17 +121,22 @@ class CartesianStencilAccelerator {
   StencilVector same_node;
   Coordinate    _simd_layout;
   Parameters    parameters;
+  ViewMode mode;
   StencilEntry*  _entries_p;
+  StencilEntry*  _entries_host_p;
   cobj* u_recv_buf_p;
   cobj* u_send_buf_p;
 
   accelerator_inline cobj *CommBuf(void) const { return u_recv_buf_p; }
 
-  accelerator_inline int GetNodeLocal(int osite,int point) const {
-    return this->_entries_p[point+this->_npoints*osite]._is_local;
+  // Not a device function
+  inline int GetNodeLocal(int osite,int point) const {
+    StencilEntry SE=this->_entries_host_p[point+this->_npoints*osite];
+    return SE._is_local;
   }
   accelerator_inline StencilEntry * GetEntry(int &ptype,int point,int osite) const {
-    ptype = this->_permute_type[point]; return & this->_entries_p[point+this->_npoints*osite];
+    ptype = this->_permute_type[point];
+    return & this->_entries_p[point+this->_npoints*osite];
   }
 
   accelerator_inline uint64_t GetInfo(int &ptype,int &local,int &perm,int point,int ent,uint64_t base) const {
@@ -164,28 +169,22 @@ class CartesianStencilView : public CartesianStencilAccelerator<vobj,cobj,Parame
 {
 public:
   int *closed;
-  StencilEntry *cpu_ptr;
-  ViewMode      mode;
+  //  StencilEntry *cpu_ptr;
  public:
   // default copy constructor
   CartesianStencilView (const CartesianStencilView &refer_to_me) = default;
 
   CartesianStencilView (const CartesianStencilAccelerator<vobj,cobj,Parameters> &refer_to_me,ViewMode _mode)
-    : CartesianStencilAccelerator<vobj,cobj,Parameters>(refer_to_me),
-    cpu_ptr(this->_entries_p),
-    mode(_mode)
+    : CartesianStencilAccelerator<vobj,cobj,Parameters>(refer_to_me)
   {
-    this->_entries_p =(StencilEntry *)
-      MemoryManager::ViewOpen(this->_entries_p,
-			      this->_npoints*this->_osites*sizeof(StencilEntry),
-			      mode,
-			      AdviseDefault);
+    this->ViewOpen(_mode);
+  }
+  void ViewOpen(ViewMode _mode)
+  {
+    this->mode = _mode;
   }
 
-  void ViewClose(void)
-  {
-    MemoryManager::ViewClose(this->cpu_ptr,this->mode);
-  }
+  void ViewClose(void)  {  }
 
 };
 
@@ -274,8 +273,8 @@ public:
   std::vector<deviceVector<std::pair<int,int> > > face_table ;
   deviceVector<int> surface_list;
 
-  std::vector<StencilEntry>  _entries; // Resident in host memory
-  deviceVector<StencilEntry>     _entries_device; // Resident in device memory
+  std::vector<StencilEntry>   _entries; // Resident in host memory
+  deviceVector<StencilEntry>  _entries_device; // Resident in device memory
   std::vector<Packet> Packets;
   std::vector<Merge> Mergers;
   std::vector<Merge> MergersSHM;
@@ -626,10 +625,10 @@ public:
   ////////////////////////////////////////
   void PrecomputeByteOffsets(void){
     for(int i=0;i<_entries.size();i++){
-      if( _entries[i]._is_local ) {
-	_entries[i]._byte_offset = _entries[i]._offset*sizeof(vobj);
+      if( this->_entries[i]._is_local ) {
+	this->_entries[i]._byte_offset = this->_entries[i]._offset*sizeof(vobj);
       } else {
-	_entries[i]._byte_offset = _entries[i]._offset*sizeof(cobj);
+	this->_entries[i]._byte_offset = this->_entries[i]._offset*sizeof(cobj);
       }
     }
   };
@@ -764,7 +763,13 @@ public:
     this->_osites  = _grid->oSites();
 
     _entries.resize(this->_npoints* this->_osites);
-    this->_entries_p = &_entries[0];
+    _entries_device.resize(this->_npoints* this->_osites);
+    this->_entries_host_p = &_entries[0];
+    this->_entries_p = &_entries_device[0];
+
+    std::cout << GridLogMessage << " Stencil object allocated for "<<std::dec<<this->_osites
+	      <<" sites table "<<std::hex<<this->_entries_p<< " GridPtr "<<_grid<<std::dec<<std::endl;
+    
     for(int ii=0;ii<npoints;ii++){
 
       int i = ii; // reverse direction to get SIMD comms done first
@@ -841,6 +846,7 @@ public:
       u_simd_send_buf[l] = (cobj *)_grid->ShmBufferMalloc(_unified_buffer_size*sizeof(cobj));
     }
     PrecomputeByteOffsets();
+    acceleratorCopyToDevice(&this->_entries[0],&this->_entries_device[0],this->_entries.size()*sizeof(StencilEntry));
   }
 
   void Local     (int point, int dimension,int shiftpm,int cbmask)
@@ -996,10 +1002,10 @@ public:
       for(int n=0;n<_grid->_slice_nblock[dimension];n++){
 	for(int b=0;b<_grid->_slice_block[dimension];b++){
 	  int idx=point+(lo+o+b)*this->_npoints;
-	  _entries[idx]._offset  =ro+o+b;
-	  _entries[idx]._permute=permute;
-	  _entries[idx]._is_local=1;
-	  _entries[idx]._around_the_world=wrap;
+	  this->_entries[idx]._offset  =ro+o+b;
+	  this->_entries[idx]._permute=permute;
+	  this->_entries[idx]._is_local=1;
+	  this->_entries[idx]._around_the_world=wrap;
 	}
 	o +=_grid->_slice_stride[dimension];
       }
@@ -1017,10 +1023,10 @@ public:
 
 	  if ( ocb&cbmask ) {
 	    int idx = point+(lo+o+b)*this->_npoints;
-	    _entries[idx]._offset =ro+o+b;
-	    _entries[idx]._is_local=1;
-	    _entries[idx]._permute=permute;
-	    _entries[idx]._around_the_world=wrap;
+	    this->_entries[idx]._offset =ro+o+b;
+	    this->_entries[idx]._is_local=1;
+	    this->_entries[idx]._permute=permute;
+	    this->_entries[idx]._around_the_world=wrap;
 	  }
 
 	}
@@ -1044,10 +1050,10 @@ public:
       for(int n=0;n<_grid->_slice_nblock[dimension];n++){
 	for(int b=0;b<_grid->_slice_block[dimension];b++){
 	  int idx=point+(so+o+b)*this->_npoints;
-	  _entries[idx]._offset  =offset+(bo++);
-	  _entries[idx]._is_local=0;
-	  _entries[idx]._permute=0;
-	  _entries[idx]._around_the_world=wrap;
+	  this->_entries[idx]._offset  =offset+(bo++);
+	  this->_entries[idx]._is_local=0;
+	  this->_entries[idx]._permute=0;
+	  this->_entries[idx]._around_the_world=wrap;
 	}
 	o +=_grid->_slice_stride[dimension];
       }
@@ -1064,10 +1070,10 @@ public:
 	  int ocb=1<<_grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
 	  if ( ocb & cbmask ) {
 	    int idx = point+(so+o+b)*this->_npoints;
-	    _entries[idx]._offset  =offset+(bo++);
-	    _entries[idx]._is_local=0;
-	    _entries[idx]._permute =0;
-	    _entries[idx]._around_the_world=wrap;
+	    this->_entries[idx]._offset  =offset+(bo++);
+	    this->_entries[idx]._is_local=0;
+	    this->_entries[idx]._permute =0;
+	    this->_entries[idx]._around_the_world=wrap;
 	  }
 	}
 	o +=_grid->_slice_stride[dimension];
