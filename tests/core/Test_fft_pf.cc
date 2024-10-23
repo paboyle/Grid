@@ -38,7 +38,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   Coordinate latt_size   = GridDefaultLatt();
-  Coordinate simd_layout( { vComplexD::Nsimd(),1,1,1});
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();
 
   int vol = 1;
@@ -74,7 +74,7 @@ int main (int argc, char ** argv)
   
   {
     std::cout<<"****************************************"<<std::endl;
-    std::cout << "Testing PartialFraction Hw kernel Mom space 4d propagator \n";
+    std::cout << "Testing OverlapWilsonPartialFractionZolotarevFermionD Hw kernel Mom space 4d propagator \n";
     std::cout<<"****************************************"<<std::endl;
 
     //    LatticeFermionD    src(&GRID); gaussian(pRNG,src);
@@ -122,6 +122,7 @@ int main (int argc, char ** argv)
     MdagMLinearOperator<OverlapWilsonPartialFractionZolotarevFermionD,LatticeFermionD> HermOp(Dov);
     ConjugateGradient<LatticeFermionD> CG(1.0e-8,10000);
     CG(HermOp,src5,result5);
+    std::cout << " Solved by Conjugate Gradient (CGNE)" <<std::endl;
     ////////////////////////////////////////////////////////////////////////
     // Domain wall physical field propagator
     ////////////////////////////////////////////////////////////////////////
@@ -153,7 +154,7 @@ int main (int argc, char ** argv)
   ////////////////////////////////////////////////////
   {
     std::cout<<"****************************************"<<std::endl;
-    std::cout << "Testing Dov(Hw) Mom space 4d propagator \n";
+    std::cout << "Testing OverlapWilsonCayleyTanhFermionD space 4d propagator \n";
     std::cout<<"****************************************"<<std::endl;
 
     LatticeFermionD    tmp(&GRID);
@@ -228,7 +229,7 @@ int main (int argc, char ** argv)
   
   {
     std::cout<<"****************************************"<<std::endl;
-    std::cout << "Testing PartialFraction Hw kernel Mom space 4d propagator with q\n";
+    std::cout<<"Testing OverlapWilsonPartialFractionZolotarevFermionD Hw kernel Mom space 4d propagator with q\n";
     std::cout<<"****************************************"<<std::endl;
 
     //    LatticeFermionD    src(&GRID); gaussian(pRNG,src);
