@@ -40,6 +40,11 @@ public:
 
   INHERIT_GIMPL_TYPES(Gimpl);
 
+  using Action<GaugeField>::S;
+  using Action<GaugeField>::Sinitial;
+  using Action<GaugeField>::deriv;
+  using Action<GaugeField>::refresh;
+
 private:
   RealD c_plaq;
   RealD c_rect;
