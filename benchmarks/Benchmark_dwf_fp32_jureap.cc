@@ -46,6 +46,7 @@ Gamma::Algebra Gmu [] = {
 void Benchmark(int Ls, Coordinate Dirichlet);
 
 #include <chrono>
+#include <thread>
 
 int main (int argc, char ** argv)
 {
