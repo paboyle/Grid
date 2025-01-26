@@ -45,6 +45,9 @@ Gamma::Algebra Gmu [] = {
 
 void Benchmark(int Ls, Coordinate Dirichlet);
 
+#include <chrono>
+#include <thread>
+
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
@@ -247,13 +250,25 @@ void Benchmark(int Ls, Coordinate Dirichlet)
     FGrid->Barrier();
     Dw.Dhop(src,result,0);
     std::cout<<GridLogMessage<<"Called warmup"<<std::endl;
+    
+    FGrid->Barrier();
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    auto cpu_start = std::chrono::system_clock::now();
     double t0=usecond();
     for(int i=0;i<ncall;i++){
       Dw.Dhop(src,result,0);
     }
     double t1=usecond();
     FGrid->Barrier();
+    auto cpu_stop = std::chrono::system_clock::now();
+    std::this_thread::sleep_for(std::chrono::seconds(5));
 
+    if (FGrid->ThisRank() == 0) {
+      std::ofstream  file("energy.times");
+      file<<"energy_start:"<<  std::chrono::duration_cast<std::chrono::milliseconds>(cpu_start.time_since_epoch()).count()<<std::endl;
+      file<<"energy_stop:"<<  std::chrono::duration_cast<std::chrono::milliseconds>(cpu_stop.time_since_epoch()).count()<<std::endl;
+    }
+    
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=single_site_flops*volume*ncall;
 
