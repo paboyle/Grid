@@ -95,6 +95,13 @@ static constexpr int MaxDims = GRID_MAX_LATTICE_DIMENSION;
 typedef AcceleratorVector<int,MaxDims> Coordinate;
 
 template<class T,int _ndim>
+inline bool operator==(const AcceleratorVector<T,_ndim> &v,const AcceleratorVector<T,_ndim> &w)
+{
+  if (v.size()!=w.size()) return false;
+  for(int i=0;i<v.size();i++) if ( v[i]!=w[i] ) return false;
+  return true;
+}
+template<class T,int _ndim>
 inline std::ostream & operator<<(std::ostream &os, const AcceleratorVector<T,_ndim> &v)
 {
   os << "[";

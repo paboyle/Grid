@@ -1,0 +1,82 @@
+#!/bin/bash
+
+#PBS -l select=16:system=sunspot,place=scatter
+#PBS -A LatticeQCD_aesp_CNDA
+#PBS -l walltime=02:00:00
+#PBS -N repro1gpu
+#PBS -k doe
+
+#export OMP_PROC_BIND=spread
+#unset OMP_PLACES
+
+module load oneapi/eng-compiler/2023.05.15.003
+module load mpich/51.2/icc-all-deterministic-pmix-gpu
+
+# 56 cores / 6 threads ~9
+export OMP_NUM_THREADS=6
+export MPIR_CVAR_CH4_OFI_ENABLE_GPU_PIPELINE=1
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_D2H_ENGINE_TYPE=0
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_H2D_ENGINE_TYPE=0
+export MPIR_CVAR_GPU_USE_IMMEDIATE_COMMAND_LIST=1
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_BUFFER_SZ=1048576
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_THRESHOLD=131072
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_NUM_BUFFERS_PER_CHUNK=16
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_MAX_NUM_BUFFERS=16
+export MPICH_OFI_NIC_POLICY=GPU
+
+export MPIR_CVAR_ALLREDUCE_DEVICE_COLLECTIVE=0
+export MPIR_CVAR_REDUCE_DEVICE_COLLECTIVE=0
+export MPIR_CVAR_ALLREDUCE_INTRA_ALGORITHM=recursive_doubling
+unset MPIR_CVAR_CH4_COLL_SELECTION_TUNING_JSON_FILE
+unset MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE
+unset MPIR_CVAR_CH4_POSIX_COLL_SELECTION_TUNING_JSON_FILE
+export SYCL_PROGRAM_COMPILE_OPTIONS="-ze-opt-large-register-file"
+
+cd $PBS_O_WORKDIR
+
+NN=`cat $PBS_NODEFILE | wc -l`
+echo $PBS_NODEFILE
+cat $PBS_NODEFILE
+
+echo $NN nodes in node file
+for n in `eval echo {1..$NN}`
+do
+
+THIS_NODE=`head -n$n $PBS_NODEFILE | tail -n1 `
+echo Node $n is $THIS_NODE
+
+
+for g in {0..11}
+do
+export NUMA_MAP=(0 0 0 1 1 1 0 0 0 1 1 1 )
+export TILE_MAP=(0 0 0 0 0 0 1 1 1 1 1 1 )
+export  GPU_MAP=(0 1 2 3 4 5 0 1 2 3 4 5 )
+
+export numa=${NUMA_MAP[$g]}
+export gpu_id=${GPU_MAP[$g]}
+export tile_id=${TILE_MAP[$g]}
+export gpu=$gpu_id.$tile_id
+
+cd $PBS_O_WORKDIR
+
+DIR=repro.1gpu.$PBS_JOBID/node-$n-$THIS_NODE-GPU-$gpu
+mkdir -p $DIR
+cd $DIR
+
+echo $THIS_NODE > nodefile
+echo $gpu > gpu
+
+export ZE_AFFINITY_MASK=$gpu
+export ONEAPI_DEVICE_FILTER=gpu,level_zero
+
+CMD="mpiexec -np 1 -ppn 1  -envall --hostfile nodefile \
+	     numactl -N $numa -m $numa ../../Test_dwf_mixedcg_prec --mpi 1.1.1.1 --grid 16.16.32.32 \
+		--shm-mpi 0 --shm 4096 --device-mem 32000 --accelerator-threads 32 --seconds 6000 --debug-stdout --log Message"
+echo $CMD
+$CMD &
+
+done
+done
+
+wait
+

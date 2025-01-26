@@ -9,14 +9,18 @@ inline typename vobj::scalar_objectD sumD_gpu_tensor(const vobj *lat, Integer os
 {
   typedef typename vobj::scalar_object sobj;
   typedef typename vobj::scalar_objectD sobjD;
-  sobj *mysum =(sobj *) malloc_shared(sizeof(sobj),*theGridAccelerator);
+  static Vector<sobj> mysum;
+  mysum.resize(1);
+  sobj *mysum_p = & mysum[0];
   sobj identity; zeroit(identity);
+  mysum[0] = identity;
   sobj ret ; 
 
   Integer nsimd= vobj::Nsimd();
-  
+
+  const cl::sycl::property_list PropList ({ cl::sycl::property::reduction::initialize_to_identity() });
   theGridAccelerator->submit([&](cl::sycl::handler &cgh) {
-     auto Reduction = cl::sycl::reduction(mysum,identity,std::plus<>());
+    auto Reduction = cl::sycl::reduction(mysum_p,identity,std::plus<>(),PropList);
      cgh.parallel_for(cl::sycl::range<1>{osites},
 		      Reduction,
 		      [=] (cl::sycl::id<1> item, auto &sum) {
@@ -26,7 +30,7 @@ inline typename vobj::scalar_objectD sumD_gpu_tensor(const vobj *lat, Integer os
    });
   theGridAccelerator->wait();
   ret = mysum[0];
-  free(mysum,*theGridAccelerator);
+  //  free(mysum,*theGridAccelerator);
   sobjD dret; convertType(dret,ret);
   return dret;
 }
@@ -69,28 +73,33 @@ inline typename vobj::scalar_object sum_gpu_large(const vobj *lat, Integer osite
   return result;
 }
 
-NAMESPACE_END(Grid);
 
-/*
-template<class Double> Double svm_reduce(Double *vec,uint64_t L)
+template<class Word> Word svm_xor(Word *vec,uint64_t L)
 {
-  Double sumResult; zeroit(sumResult);
-  Double *d_sum =(Double *)cl::sycl::malloc_shared(sizeof(Double),*theGridAccelerator);
-  Double identity;  zeroit(identity);
+  Word xorResult; xorResult = 0;
+  static Vector<Word> d_sum;
+  d_sum.resize(1);
+  Word *d_sum_p=&d_sum[0];
+  Word identity;  identity=0;
+  d_sum[0] = identity;
+  const cl::sycl::property_list PropList ({ cl::sycl::property::reduction::initialize_to_identity() });
   theGridAccelerator->submit([&](cl::sycl::handler &cgh) {
-     auto Reduction = cl::sycl::reduction(d_sum,identity,std::plus<>());
+    auto Reduction = cl::sycl::reduction(d_sum_p,identity,std::bit_xor<>(),PropList);
      cgh.parallel_for(cl::sycl::range<1>{L},
 		      Reduction,
 		      [=] (cl::sycl::id<1> index, auto &sum) {
-	 sum +=vec[index];
+	 sum^=vec[index];
      });
    });
   theGridAccelerator->wait();
-  Double ret = d_sum[0];
-  free(d_sum,*theGridAccelerator);
-  std::cout << " svm_reduce finished "<<L<<" sites sum = " << ret <<std::endl;
+  Word ret = d_sum[0];
+  //  free(d_sum,*theGridAccelerator);
   return ret;
 }
+
+NAMESPACE_END(Grid);
+
+/*
 
 template <class vobj>
 inline typename vobj::scalar_objectD sumD_gpu_repack(const vobj *lat, Integer osites)

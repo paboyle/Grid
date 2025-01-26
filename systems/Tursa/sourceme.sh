@@ -1,6 +1,7 @@
-module load cuda/11.4.1  openmpi/4.1.1-cuda11.4.1  ucx/1.12.0-cuda11.4.1  
-#module load cuda/11.4.1 openmpi/4.1.1 ucx/1.10.1
-export PREFIX=/home/tc002/tc002/shared/env/prefix/
-export LD_LIBRARY_PATH=$PREFIX/lib/:$LD_LIBRARY_PATH
+module load cuda/12.3 
+module load ucx/1.15.0-cuda12.3  
+module load openmpi/4.1.5-cuda12.3
+source /home/dp207/dp207/shared/env/production/env-base.sh 
+source /home/dp207/dp207/shared/env/production/env-gpu.sh 
 unset SBATCH_EXPORT
 

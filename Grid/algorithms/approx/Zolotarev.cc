@@ -293,7 +293,7 @@ static void sncndnFK(INTERNAL_PRECISION u, INTERNAL_PRECISION k,
  * Set type = 0 for the Zolotarev approximation, which is zero at x = 0, and
  * type = 1 for the approximation which is infinite at x = 0. */
 
-zolotarev_data* zolotarev(PRECISION epsilon, int n, int type) {
+zolotarev_data* zolotarev(ZOLO_PRECISION epsilon, int n, int type) {
   INTERNAL_PRECISION A, c, cp, kp, ksq, sn, cn, dn, Kp, Kj, z, z0, t, M, F,
     l, invlambda, xi, xisq, *tv, s, opl;
   int m, czero, ts;
@@ -375,12 +375,12 @@ zolotarev_data* zolotarev(PRECISION epsilon, int n, int type) {
   construct_partfrac(d);
   construct_contfrac(d);
 
-  /* Converting everything to PRECISION for external use only */
+  /* Converting everything to ZOLO_PRECISION for external use only */
 
   zd = (zolotarev_data*) malloc(sizeof(zolotarev_data));
-  zd -> A = (PRECISION) d -> A;
-  zd -> Delta = (PRECISION) d -> Delta;
-  zd -> epsilon = (PRECISION) d -> epsilon;
+  zd -> A = (ZOLO_PRECISION) d -> A;
+  zd -> Delta = (ZOLO_PRECISION) d -> Delta;
+  zd -> epsilon = (ZOLO_PRECISION) d -> epsilon;
   zd -> n = d -> n;
   zd -> type = d -> type;
   zd -> dn = d -> dn;
@@ -390,24 +390,24 @@ zolotarev_data* zolotarev(PRECISION epsilon, int n, int type) {
   zd -> deg_num = d -> deg_num;
   zd -> deg_denom = d -> deg_denom;
 
-  zd -> a = (PRECISION*) malloc(zd -> dn * sizeof(PRECISION));
-  for (m = 0; m < zd -> dn; m++) zd -> a[m] = (PRECISION) d -> a[m];
+  zd -> a = (ZOLO_PRECISION*) malloc(zd -> dn * sizeof(ZOLO_PRECISION));
+  for (m = 0; m < zd -> dn; m++) zd -> a[m] = (ZOLO_PRECISION) d -> a[m];
   free(d -> a);
 
-  zd -> ap = (PRECISION*) malloc(zd -> dd * sizeof(PRECISION));
-  for (m = 0; m < zd -> dd; m++) zd -> ap[m] = (PRECISION) d -> ap[m];
+  zd -> ap = (ZOLO_PRECISION*) malloc(zd -> dd * sizeof(ZOLO_PRECISION));
+  for (m = 0; m < zd -> dd; m++) zd -> ap[m] = (ZOLO_PRECISION) d -> ap[m];
   free(d -> ap);
 
-  zd -> alpha = (PRECISION*) malloc(zd -> da * sizeof(PRECISION));
-  for (m = 0; m < zd -> da; m++) zd -> alpha[m] = (PRECISION) d -> alpha[m];
+  zd -> alpha = (ZOLO_PRECISION*) malloc(zd -> da * sizeof(ZOLO_PRECISION));
+  for (m = 0; m < zd -> da; m++) zd -> alpha[m] = (ZOLO_PRECISION) d -> alpha[m];
   free(d -> alpha);
 
-  zd -> beta = (PRECISION*) malloc(zd -> db * sizeof(PRECISION));
-  for (m = 0; m < zd -> db; m++) zd -> beta[m] = (PRECISION) d -> beta[m];
+  zd -> beta = (ZOLO_PRECISION*) malloc(zd -> db * sizeof(ZOLO_PRECISION));
+  for (m = 0; m < zd -> db; m++) zd -> beta[m] = (ZOLO_PRECISION) d -> beta[m];
   free(d -> beta);
 
-  zd -> gamma = (PRECISION*) malloc(zd -> n * sizeof(PRECISION));
-  for (m = 0; m < zd -> n; m++) zd -> gamma[m] = (PRECISION) d -> gamma[m];
+  zd -> gamma = (ZOLO_PRECISION*) malloc(zd -> n * sizeof(ZOLO_PRECISION));
+  for (m = 0; m < zd -> n; m++) zd -> gamma[m] = (ZOLO_PRECISION) d -> gamma[m];
   free(d -> gamma);
 
   free(d);
@@ -426,7 +426,7 @@ void zolotarev_free(zolotarev_data *zdata)
 }
 
 
-zolotarev_data* higham(PRECISION epsilon, int n) {
+zolotarev_data* higham(ZOLO_PRECISION epsilon, int n) {
   INTERNAL_PRECISION A, M, c, cp, z, z0, t, epssq;
   int m, czero;
   zolotarev_data *zd;
@@ -481,9 +481,9 @@ zolotarev_data* higham(PRECISION epsilon, int n) {
   /* Converting everything to PRECISION for external use only */
 
   zd = (zolotarev_data*) malloc(sizeof(zolotarev_data));
-  zd -> A = (PRECISION) d -> A;
-  zd -> Delta = (PRECISION) d -> Delta;
-  zd -> epsilon = (PRECISION) d -> epsilon;
+  zd -> A = (ZOLO_PRECISION) d -> A;
+  zd -> Delta = (ZOLO_PRECISION) d -> Delta;
+  zd -> epsilon = (ZOLO_PRECISION) d -> epsilon;
   zd -> n = d -> n;
   zd -> type = d -> type;
   zd -> dn = d -> dn;
@@ -493,24 +493,24 @@ zolotarev_data* higham(PRECISION epsilon, int n) {
   zd -> deg_num = d -> deg_num;
   zd -> deg_denom = d -> deg_denom;
 
-  zd -> a = (PRECISION*) malloc(zd -> dn * sizeof(PRECISION));
-  for (m = 0; m < zd -> dn; m++) zd -> a[m] = (PRECISION) d -> a[m];
+  zd -> a = (ZOLO_PRECISION*) malloc(zd -> dn * sizeof(ZOLO_PRECISION));
+  for (m = 0; m < zd -> dn; m++) zd -> a[m] = (ZOLO_PRECISION) d -> a[m];
   free(d -> a);
 
-  zd -> ap = (PRECISION*) malloc(zd -> dd * sizeof(PRECISION));
-  for (m = 0; m < zd -> dd; m++) zd -> ap[m] = (PRECISION) d -> ap[m];
+  zd -> ap = (ZOLO_PRECISION*) malloc(zd -> dd * sizeof(ZOLO_PRECISION));
+  for (m = 0; m < zd -> dd; m++) zd -> ap[m] = (ZOLO_PRECISION) d -> ap[m];
   free(d -> ap);
 
-  zd -> alpha = (PRECISION*) malloc(zd -> da * sizeof(PRECISION));
-  for (m = 0; m < zd -> da; m++) zd -> alpha[m] = (PRECISION) d -> alpha[m];
+  zd -> alpha = (ZOLO_PRECISION*) malloc(zd -> da * sizeof(ZOLO_PRECISION));
+  for (m = 0; m < zd -> da; m++) zd -> alpha[m] = (ZOLO_PRECISION) d -> alpha[m];
   free(d -> alpha);
 
-  zd -> beta = (PRECISION*) malloc(zd -> db * sizeof(PRECISION));
-  for (m = 0; m < zd -> db; m++) zd -> beta[m] = (PRECISION) d -> beta[m];
+  zd -> beta = (ZOLO_PRECISION*) malloc(zd -> db * sizeof(ZOLO_PRECISION));
+  for (m = 0; m < zd -> db; m++) zd -> beta[m] = (ZOLO_PRECISION) d -> beta[m];
   free(d -> beta);
 
-  zd -> gamma = (PRECISION*) malloc(zd -> n * sizeof(PRECISION));
-  for (m = 0; m < zd -> n; m++) zd -> gamma[m] = (PRECISION) d -> gamma[m];
+  zd -> gamma = (ZOLO_PRECISION*) malloc(zd -> n * sizeof(ZOLO_PRECISION));
+  for (m = 0; m < zd -> n; m++) zd -> gamma[m] = (ZOLO_PRECISION) d -> gamma[m];
   free(d -> gamma);
 
   free(d);
@@ -523,17 +523,17 @@ NAMESPACE_END(Grid);
 #ifdef TEST
 
 #undef ZERO
-#define ZERO ((PRECISION) 0)
+#define ZERO ((ZOLO_PRECISION) 0)
 #undef ONE
-#define ONE ((PRECISION) 1)
+#define ONE ((ZOLO_PRECISION) 1)
 #undef TWO
-#define TWO ((PRECISION) 2)
+#define TWO ((ZOLO_PRECISION) 2)
 
 /* Evaluate the rational approximation R(x) using the factored form */
 
-static PRECISION zolotarev_eval(PRECISION x, zolotarev_data* rdata) {
+static ZOLO_PRECISION zolotarev_eval(ZOLO_PRECISION x, zolotarev_data* rdata) {
   int m;
-  PRECISION R;
+  ZOLO_PRECISION R;
 
   if (rdata -> type == 0) {
     R = rdata -> A * x;
@@ -551,9 +551,9 @@ static PRECISION zolotarev_eval(PRECISION x, zolotarev_data* rdata) {
 
 /* Evaluate the rational approximation R(x) using the partial fraction form */
 
-static PRECISION zolotarev_partfrac_eval(PRECISION x, zolotarev_data* rdata) {
+static ZOLO_PRECISION zolotarev_partfrac_eval(ZOLO_PRECISION x, zolotarev_data* rdata) {
   int m;
-  PRECISION R = rdata -> alpha[rdata -> da - 1];
+  ZOLO_PRECISION R = rdata -> alpha[rdata -> da - 1];
   for (m = 0; m < rdata -> dd; m++)
     R += rdata -> alpha[m] / (x * x - rdata -> ap[m]);
   if (rdata -> type == 1) R += rdata -> alpha[rdata -> dd] / (x * x);
@@ -568,18 +568,18 @@ static PRECISION zolotarev_partfrac_eval(PRECISION x, zolotarev_data* rdata) {
  * non-signalling overflow this will work correctly since 1/(1/0) = 1/INF = 0,
  * but with signalling overflow you will get an error message. */
 
-static PRECISION zolotarev_contfrac_eval(PRECISION x, zolotarev_data* rdata) {
+static ZOLO_PRECISION zolotarev_contfrac_eval(ZOLO_PRECISION x, zolotarev_data* rdata) {
   int m;
-  PRECISION R = rdata -> beta[0] * x;
+  ZOLO_PRECISION R = rdata -> beta[0] * x;
   for (m = 1; m < rdata -> db; m++) R = rdata -> beta[m] * x + ONE / R;
   return R;
 }    
 
 /* Evaluate the rational approximation R(x) using Cayley form */
 
-static PRECISION zolotarev_cayley_eval(PRECISION x, zolotarev_data* rdata) {
+static ZOLO_PRECISION zolotarev_cayley_eval(ZOLO_PRECISION x, zolotarev_data* rdata) {
   int m;
-  PRECISION T;
+  ZOLO_PRECISION T;
 
   T = rdata -> type == 0 ? ONE : -ONE;
   for (m = 0; m < rdata -> n; m++)
@@ -607,7 +607,7 @@ int main(int argc, char** argv) {
   int m, n, plotpts = 5000, type = 0;
   float eps, x, ypferr, ycferr, ycaylerr, maxypferr, maxycferr, maxycaylerr;
   zolotarev_data *rdata;
-  PRECISION y;
+  ZOLO_PRECISION y;
   FILE *plot_function, *plot_error, 
     *plot_partfrac, *plot_contfrac, *plot_cayley;
 
@@ -626,13 +626,13 @@ int main(int argc, char** argv) {
   }
 
   rdata = type == 2 
-    ? higham((PRECISION) eps, n) 
-    : zolotarev((PRECISION) eps, n, type);
+    ? higham((ZOLO_PRECISION) eps, n) 
+    : zolotarev((ZOLO_PRECISION) eps, n, type);
 
   printf("Zolotarev Test: R(epsilon = %g, n = %d, type = %d)\n\t" 
 	 STRINGIFY(VERSION) "\n\t" STRINGIFY(HVERSION)
 	 "\n\tINTERNAL_PRECISION = " STRINGIFY(INTERNAL_PRECISION)
-	 "\tPRECISION = " STRINGIFY(PRECISION)
+	 "\tZOLO_PRECISION = " STRINGIFY(ZOLO_PRECISION)
 	 "\n\n\tRational approximation of degree (%d,%d), %s at x = 0\n"
 	 "\tDelta = %g (maximum error)\n\n"
 	 "\tA = %g (overall factor)\n",
@@ -681,15 +681,15 @@ int main(int argc, char** argv) {
     x = 2.4 * (float) m / plotpts - 1.2;
     if (rdata -> type == 0 || fabs(x) * (float) plotpts > 1.0) {
       /* skip x = 0 for type 1, as R(0) is singular */
-      y = zolotarev_eval((PRECISION) x, rdata);
+      y = zolotarev_eval((ZOLO_PRECISION) x, rdata);
       fprintf(plot_function, "%g %g\n", x, (float) y);
       fprintf(plot_error, "%g %g\n",
 	      x, (float)((y - ((x > 0.0 ? ONE : -ONE))) / rdata -> Delta));
-      ypferr = (float)((zolotarev_partfrac_eval((PRECISION) x, rdata) - y)
+      ypferr = (float)((zolotarev_partfrac_eval((ZOLO_PRECISION) x, rdata) - y)
 		       / rdata -> Delta);
-      ycferr = (float)((zolotarev_contfrac_eval((PRECISION) x, rdata) - y)
+      ycferr = (float)((zolotarev_contfrac_eval((ZOLO_PRECISION) x, rdata) - y)
 		       / rdata -> Delta);
-      ycaylerr = (float)((zolotarev_cayley_eval((PRECISION) x, rdata) - y)
+      ycaylerr = (float)((zolotarev_cayley_eval((ZOLO_PRECISION) x, rdata) - y)
 		       / rdata -> Delta);
       if (fabs(x) < 1.0 && fabs(x) > rdata -> epsilon) {
 	maxypferr = MAX(maxypferr, fabs(ypferr));

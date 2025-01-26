@@ -1,4 +1,4 @@
-TOOLS=$HOME/tools
+
 ../../configure \
 	--enable-simd=GPU \
 	--enable-gen-simd-width=64 \
@@ -11,6 +11,6 @@ TOOLS=$HOME/tools
 	--enable-unified=no \
 	MPICXX=mpicxx \
 	CXX=icpx \
-	LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel -fsycl-device-lib=all -lze_loader -L$TOOLS/lib64/" \
-	CXXFLAGS="-fiopenmp -fsycl-unnamed-lambda -fsycl -I$INSTALL/include -Wno-tautological-compare -I$HOME/ -I$TOOLS/include"
+	LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel -lsycl" \
+	CXXFLAGS="-fiopenmp -fsycl-unnamed-lambda -fsycl -I$INSTALL/include -Wno-tautological-compare -I$HOME/ -qmkl=parallel"
 
