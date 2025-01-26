@@ -75,7 +75,9 @@ public:
   static int           Hugepages;
 
   static std::vector<void *> WorldShmCommBufs;
-
+#ifndef ACCELERATOR_AWARE_MPI
+  static void *HostCommBuf;
+#endif
   static Grid_MPI_Comm WorldComm;
   static int           WorldRank;
   static int           WorldSize;
@@ -120,6 +122,13 @@ private:
   size_t heap_bytes;
   size_t heap_size;
 
+#ifndef ACCELERATOR_AWARE_MPI
+  size_t host_heap_top;  // set in free all
+  size_t host_heap_bytes;// set in free all
+  void *HostCommBuf;     // set in SetCommunicator
+  size_t host_heap_size; // set in SetCommunicator
+#endif
+  
 protected:
 
   Grid_MPI_Comm    ShmComm; // for barriers
@@ -151,7 +160,10 @@ public:
   void *ShmBufferTranslate(int rank,void * local_p);
   void *ShmBufferMalloc(size_t bytes);
   void  ShmBufferFreeAll(void) ;
-  
+#ifndef ACCELERATOR_AWARE_MPI
+  void *HostBufferMalloc(size_t bytes);
+  void HostBufferFreeAll(void);
+#endif  
   //////////////////////////////////////////////////////////////////////////
   // Make info on Nodes & ranks and Shared memory available
   //////////////////////////////////////////////////////////////////////////

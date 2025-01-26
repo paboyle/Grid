@@ -392,9 +392,27 @@ void  TestCGschur(What & Ddwf,
 		   GridParallelRNG *RNG5)
 {
   LatticeFermion src   (FGrid); random(*RNG5,src);
-  LatticeFermion result(FGrid); result=Zero();
+  LatticeFermion result1(FGrid); result1=Zero();
+  LatticeFermion result2(FGrid); result2=Zero();
+  LatticeFermion result3(FGrid); result3=Zero();
 
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
   SchurRedBlackDiagMooeeSolve<LatticeFermion> SchurSolver(CG);
-  SchurSolver(Ddwf,src,result);
+  SchurSolver(Ddwf,src,result1);
+
+  SchurRedBlackDiagOneSolve<LatticeFermion> SchurSolverSymm1(CG);
+  SchurSolverSymm1(Ddwf,src,result2);
+
+  SchurRedBlackDiagTwoSolve<LatticeFermion> SchurSolverSymm2(CG);
+  SchurSolverSymm2(Ddwf,src,result3);
+
+  std::cout << GridLogMessage << " Standard " <<norm2(result1)<<std::endl;
+
+  std::cout << GridLogMessage << " Symm1    " <<norm2(result2)<<std::endl; 
+  result2=result2-result1;
+  std::cout << GridLogMessage << " diff " <<norm2(result2) <<std::endl; 
+
+  std::cout << GridLogMessage << " Symm2    " <<norm2(result3)<<std::endl; 
+  result3=result3-result1;
+  std::cout << GridLogMessage << " diff " <<norm2(result3) <<std::endl; 
 }

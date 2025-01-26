@@ -1130,7 +1130,24 @@ static_assert(sizeof(SIMD_Ftype) == sizeof(SIMD_Itype), "SIMD vector lengths inc
 #endif
 #endif
 
+// Fixme need coalesced read gpermute
+template<class vobj> void gpermute(vobj & inout,int perm){
+  vobj tmp=inout;
+  if (perm & 0x1 ) { permute(inout,tmp,0); tmp=inout;}
+  if (perm & 0x2 ) { permute(inout,tmp,1); tmp=inout;}
+  if (perm & 0x4 ) { permute(inout,tmp,2); tmp=inout;}
+  if (perm & 0x8 ) { permute(inout,tmp,3); tmp=inout;}
+}
 
 NAMESPACE_END(Grid);
+
+#ifdef GRID_SYCL
+template<> struct sycl::is_device_copyable<Grid::vComplexF> : public std::true_type {};
+template<> struct sycl::is_device_copyable<Grid::vComplexD> : public std::true_type {};
+template<> struct sycl::is_device_copyable<Grid::vRealF   > : public std::true_type {};
+template<> struct sycl::is_device_copyable<Grid::vRealD   > : public std::true_type {};
+template<> struct sycl::is_device_copyable<Grid::vInteger > : public std::true_type {};
+#endif
+
 
 #endif

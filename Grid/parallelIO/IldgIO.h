@@ -162,8 +162,14 @@ template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
  {
    uint32_t scidac_checksuma = stoull(scidacChecksum_.suma,0,16);
    uint32_t scidac_checksumb = stoull(scidacChecksum_.sumb,0,16);
-   if ( scidac_csuma !=scidac_checksuma) return 0;
-   if ( scidac_csumb !=scidac_checksumb) return 0;
+   std::cout << GridLogMessage << " scidacChecksumVerify computed "<<scidac_csuma<<" expected "<<scidac_checksuma <<std::endl;
+   std::cout << GridLogMessage << " scidacChecksumVerify computed "<<scidac_csumb<<" expected "<<scidac_checksumb <<std::endl;
+   if ( scidac_csuma !=scidac_checksuma) {
+     return 0;
+   };
+   if ( scidac_csumb !=scidac_checksumb) {
+     return 0;
+   };
    return 1;
  }
 
@@ -206,7 +212,7 @@ class GridLimeReader : public BinaryIO {
   // Read a generic lattice field and verify checksum
   ////////////////////////////////////////////
   template<class vobj>
-  void readLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name)
+  void readLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name,int control=BINARYIO_LEXICOGRAPHIC)
   {
     typedef typename vobj::scalar_object sobj;
     scidacChecksum scidacChecksum_;
@@ -238,7 +244,7 @@ class GridLimeReader : public BinaryIO {
 	uint64_t offset= ftello(File);
 	//	std::cout << " ReadLatticeObject from offset "<<offset << std::endl;
 	BinarySimpleMunger<sobj,sobj> munge;
-	BinaryIO::readLatticeObject< vobj, sobj >(field, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
+	BinaryIO::readLatticeObject< vobj, sobj >(field, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb,control);
 	std::cout << GridLogMessage << "SciDAC checksum A " << std::hex << scidac_csuma << std::dec << std::endl;
 	std::cout << GridLogMessage << "SciDAC checksum B " << std::hex << scidac_csumb << std::dec << std::endl;
 	/////////////////////////////////////////////
@@ -408,7 +414,7 @@ class GridLimeWriter : public BinaryIO
   // in communicator used by the field.Grid()
   ////////////////////////////////////////////////////
   template<class vobj>
-  void writeLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name)
+  void writeLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name,int control=BINARYIO_LEXICOGRAPHIC)
   {
     ////////////////////////////////////////////////////////////////////
     // NB: FILE and iostream are jointly writing disjoint sequences in the
@@ -459,7 +465,7 @@ class GridLimeWriter : public BinaryIO
     ///////////////////////////////////////////
     std::string format = getFormatString<vobj>();
     BinarySimpleMunger<sobj,sobj> munge;
-    BinaryIO::writeLatticeObject<vobj,sobj>(field, filename, munge, offset1, format,nersc_csum,scidac_csuma,scidac_csumb);
+    BinaryIO::writeLatticeObject<vobj,sobj>(field, filename, munge, offset1, format,nersc_csum,scidac_csuma,scidac_csumb,control);
 
     ///////////////////////////////////////////
     // Wind forward and close the record
@@ -512,7 +518,8 @@ class ScidacWriter : public GridLimeWriter {
   ////////////////////////////////////////////////
   template <class vobj, class userRecord>
   void writeScidacFieldRecord(Lattice<vobj> &field,userRecord _userRecord,
-                              const unsigned int recordScientificPrec = 0) 
+                              const unsigned int recordScientificPrec = 0,
+			      int control=BINARYIO_LEXICOGRAPHIC)
   {
     GridBase * grid = field.Grid();
 
@@ -534,7 +541,7 @@ class ScidacWriter : public GridLimeWriter {
       writeLimeObject(0,0,_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML));
     }
     // Collective call
-    writeLimeLatticeBinaryObject(field,std::string(ILDG_BINARY_DATA));      // Closes message with checksum
+    writeLimeLatticeBinaryObject(field,std::string(ILDG_BINARY_DATA),control);      // Closes message with checksum
   }
 };
 
@@ -553,7 +560,8 @@ class ScidacReader : public GridLimeReader {
   // Write generic lattice field in scidac format
   ////////////////////////////////////////////////
   template <class vobj, class userRecord>
-  void readScidacFieldRecord(Lattice<vobj> &field,userRecord &_userRecord) 
+  void readScidacFieldRecord(Lattice<vobj> &field,userRecord &_userRecord,
+			     int control=BINARYIO_LEXICOGRAPHIC) 
   {
     typedef typename vobj::scalar_object sobj;
     GridBase * grid = field.Grid();
@@ -571,7 +579,7 @@ class ScidacReader : public GridLimeReader {
     readLimeObject(header ,std::string("FieldMetaData"),std::string(GRID_FORMAT)); // Open message 
     readLimeObject(_userRecord,_userRecord.SerialisableClassName(),std::string(SCIDAC_RECORD_XML));
     readLimeObject(_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML));
-    readLimeLatticeBinaryObject(field,std::string(ILDG_BINARY_DATA));
+    readLimeLatticeBinaryObject(field,std::string(ILDG_BINARY_DATA),control);
   }
   void skipPastBinaryRecord(void) {
     std::string rec_name(ILDG_BINARY_DATA);

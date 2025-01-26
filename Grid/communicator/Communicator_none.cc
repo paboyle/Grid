@@ -91,6 +91,17 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
 {
   assert(0);
 }
+void CartesianCommunicator::CommsComplete(std::vector<CommsRequest_t> &list){ assert(0);}
+void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+						void *xmit,
+						int dest,
+						void *recv,
+						int from,
+						int bytes,int dir)
+{
+  assert(0);
+}
+
 void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,uint64_t words,uint64_t bytes)
 {
   bcopy(in,out,bytes*words);

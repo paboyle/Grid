@@ -365,9 +365,14 @@ public:
     _bernoulli.resize(_vol,std::discrete_distribution<int32_t>{1,1});
     _uid.resize(_vol,std::uniform_int_distribution<uint32_t>() );
   }
-
-  template <class vobj,class distribution> inline void fill(Lattice<vobj> &l,std::vector<distribution> &dist){
-
+  template <class vobj,class distribution> inline void fill(Lattice<vobj> &l,std::vector<distribution> &dist)
+  {
+    if ( l.Grid()->_isCheckerBoarded ) {
+      Lattice<vobj> tmp(_grid);
+      fill(tmp,dist);
+      pickCheckerboard(l.Checkerboard(),l,tmp);
+      return;
+    }
     typedef typename vobj::scalar_object scalar_object;
     typedef typename vobj::scalar_type scalar_type;
     typedef typename vobj::vector_type vector_type;
@@ -411,7 +416,7 @@ public:
       std::cout << GridLogMessage << "Seed SHA256: " << GridChecksum::sha256_string(seeds) << std::endl;
       SeedFixedIntegers(seeds);
     }
-  void SeedFixedIntegers(const std::vector<int> &seeds){
+  void SeedFixedIntegers(const std::vector<int> &seeds, int britney=0){
 
     // Everyone generates the same seed_seq based on input seeds
     CartesianCommunicator::BroadcastWorld(0,(void *)&seeds[0],sizeof(int)*seeds.size());
@@ -428,10 +433,9 @@ public:
     // MT implementation does not implement fast discard even though
     // in principle this is possible
     ////////////////////////////////////////////////
-#if 1
     thread_for( lidx, _grid->lSites(), {
 
-	int gidx;
+	int64_t gidx;
 	int o_idx;
 	int i_idx;
 	int rank;
@@ -449,29 +453,12 @@ public:
 	
 	int l_idx=generator_idx(o_idx,i_idx);
 	_generators[l_idx] = master_engine;
-	Skip(_generators[l_idx],gidx); // Skip to next RNG sequence
-    });
-#else
-    // Everybody loops over global volume.
-    thread_for( gidx, _grid->_gsites, {
-
-	// Where is it?
-	int rank;
-	int o_idx;
-	int i_idx;
-
-	Coordinate gcoor;
-	_grid->GlobalIndexToGlobalCoor(gidx,gcoor);
-	_grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
-	
-	// If this is one of mine we take it
-	if( rank == _grid->ThisRank() ){
-	  int l_idx=generator_idx(o_idx,i_idx);
-	  _generators[l_idx] = master_engine;
+	if ( britney ) { 
+	  Skip(_generators[l_idx],l_idx); // Skip to next RNG sequence
+	} else { 	
 	  Skip(_generators[l_idx],gidx); // Skip to next RNG sequence
 	}
     });
-#endif
 #else 
     ////////////////////////////////////////////////////////////////
     // Machine and thread decomposition dependent seeding is efficient

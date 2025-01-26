@@ -117,12 +117,17 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 #endif
 } // CUDA specific
 
-inline void cuda_mem(void)
+inline void acceleratorMem(void)
 {
   size_t free_t,total_t,used_t;
   cudaMemGetInfo(&free_t,&total_t);
   used_t=total_t-free_t;
   std::cout << " MemoryManager : GPU used "<<used_t<<" free "<<free_t<< " total "<<total_t<<std::endl;
+}
+
+inline void cuda_mem(void)
+{
+  acceleratorMem();
 }
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
@@ -136,6 +141,18 @@ inline void cuda_mem(void)
     dim3 cu_threads(nsimd,acceleratorThreads(),1);			\
     dim3 cu_blocks ((num1+nt-1)/nt,num2,1);				\
     LambdaApply<<<cu_blocks,cu_threads,0,computeStream>>>(num1,num2,nsimd,lambda);	\
+  }
+#define prof_accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
+  {									\
+    int nt=acceleratorThreads();					\
+    typedef uint64_t Iterator;						\
+    auto lambda = [=] accelerator					\
+      (Iterator iter1,Iterator iter2,Iterator lane) mutable {		\
+      __VA_ARGS__;							\
+    };									\
+    dim3 cu_threads(nsimd,acceleratorThreads(),1);			\
+    dim3 cu_blocks ((num1+nt-1)/nt,num2,1);				\
+    ProfileLambdaApply<<<cu_blocks,cu_threads,0,computeStream>>>(num1,num2,nsimd,lambda); \
   }
 
 #define accelerator_for6dNB(iter1, num1,				\
@@ -157,8 +174,33 @@ inline void cuda_mem(void)
     Lambda6Apply<<<cu_blocks,cu_threads,0,computeStream>>>(num1,num2,num3,num4,num5,num6,lambda); \
   }
 
+
+#define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
+  {									\
+    int nt=acceleratorThreads();					\
+    typedef uint64_t Iterator;						\
+    auto lambda = [=] accelerator					\
+      (Iterator iter1,Iterator iter2,Iterator lane) mutable {		\
+      __VA_ARGS__;							\
+    };									\
+    dim3 cu_threads(nsimd,acceleratorThreads(),1);			\
+    dim3 cu_blocks ((num1+nt-1)/nt,num2,1);				\
+    LambdaApply<<<cu_blocks,cu_threads,0,computeStream>>>(num1,num2,nsimd,lambda);	\
+  }
+
 template<typename lambda>  __global__
 void LambdaApply(uint64_t num1, uint64_t num2, uint64_t num3, lambda Lambda)
+{
+  // Weird permute is to make lane coalesce for large blocks
+  uint64_t x = threadIdx.y + blockDim.y*blockIdx.x;
+  uint64_t y = threadIdx.z + blockDim.z*blockIdx.y;
+  uint64_t z = threadIdx.x;
+  if ( (x < num1) && (y<num2) && (z<num3) ) {
+    Lambda(x,y,z);
+  }
+}
+template<typename lambda>  __global__
+void ProfileLambdaApply(uint64_t num1, uint64_t num2, uint64_t num3, lambda Lambda)
 {
   // Weird permute is to make lane coalesce for large blocks
   uint64_t x = threadIdx.y + blockDim.y*blockIdx.x;
@@ -208,6 +250,7 @@ inline void *acceleratorAllocShared(size_t bytes)
   if( err != cudaSuccess ) {
     ptr = (void *) NULL;
     printf(" cudaMallocManaged failed for %d %s \n",bytes,cudaGetErrorString(err));
+    assert(0);
   }
   return ptr;
 };
@@ -225,12 +268,15 @@ inline void acceleratorFreeShared(void *ptr){ cudaFree(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ cudaFree(ptr);};
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { cudaMemcpy(to,from,bytes, cudaMemcpyHostToDevice);}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToHost);}
+inline void acceleratorCopyToDeviceAsync(void *from, void *to, size_t bytes, cudaStream_t stream = copyStream) { cudaMemcpyAsync(to,from,bytes, cudaMemcpyHostToDevice, stream);}
+inline void acceleratorCopyFromDeviceAsync(void *from, void *to, size_t bytes, cudaStream_t stream = copyStream) { cudaMemcpyAsync(to,from,bytes, cudaMemcpyDeviceToHost, stream);}
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { cudaMemset(base,value,bytes);}
 inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) // Asynch
 {
   cudaMemcpyAsync(to,from,bytes, cudaMemcpyDeviceToDevice,copyStream);
 }
 inline void acceleratorCopySynchronise(void) { cudaStreamSynchronize(copyStream); };
+
 
 inline int  acceleratorIsCommunicable(void *ptr)
 {
@@ -253,19 +299,20 @@ inline int  acceleratorIsCommunicable(void *ptr)
 #define GRID_SYCL_LEVEL_ZERO_IPC
 
 NAMESPACE_END(Grid);
-#if 0
-#include <CL/sycl.hpp>
-#include <CL/sycl/usm.hpp>
-#include <level_zero/ze_api.h>
-#include <CL/sycl/backend/level_zero.hpp>
-#else
+
+// Force deterministic reductions
+#define SYCL_REDUCTION_DETERMINISTIC
 #include <sycl/CL/sycl.hpp>
 #include <sycl/usm.hpp>
 #include <level_zero/ze_api.h>
 #include <sycl/ext/oneapi/backend/level_zero.hpp>
-#endif
 
 NAMESPACE_BEGIN(Grid);
+
+inline void acceleratorMem(void)
+{
+  std::cout <<" SYCL acceleratorMem not implemented"<<std::endl;
+}
 
 extern cl::sycl::queue *theGridAccelerator;
 extern cl::sycl::queue *theCopyAccelerator;
@@ -346,6 +393,15 @@ NAMESPACE_BEGIN(Grid);
 #define accelerator        __host__ __device__
 #define accelerator_inline __host__ __device__ inline
 
+inline void acceleratorMem(void)
+{
+  size_t free_t,total_t,used_t;
+  auto discard = hipMemGetInfo(&free_t,&total_t);
+  used_t=total_t-free_t;
+  std::cout << " MemoryManager : GPU used "<<used_t<<" free "<<free_t<< " total "<<total_t<<std::endl;
+}
+
+
 extern hipStream_t copyStream;
 extern hipStream_t computeStream;
 /*These routines define mapping from thread grid to loop & vector lane indexing */
@@ -406,7 +462,7 @@ void LambdaApply(uint64_t numx, uint64_t numy, uint64_t numz, lambda Lambda)
 
 #define accelerator_barrier(dummy)				\
   {								\
-    auto r=hipStreamSynchronize(computeStream);			\
+    auto tmp=hipStreamSynchronize(computeStream);		\
     auto err = hipGetLastError();				\
     if ( err != hipSuccess ) {					\
       printf("After hipDeviceSynchronize() : HIP error %s \n", hipGetErrorString( err )); \
@@ -422,7 +478,7 @@ inline void *acceleratorAllocShared(size_t bytes)
   auto err = hipMallocManaged((void **)&ptr,bytes);
   if( err != hipSuccess ) {
     ptr = (void *) NULL;
-    printf(" hipMallocManaged failed for %ld %s \n",bytes,hipGetErrorString(err));
+    fprintf(stderr," hipMallocManaged failed for %ld %s \n",bytes,hipGetErrorString(err)); fflush(stderr);
   }
   return ptr;
 };
@@ -434,24 +490,30 @@ inline void *acceleratorAllocDevice(size_t bytes)
   auto err = hipMalloc((void **)&ptr,bytes);
   if( err != hipSuccess ) {
     ptr = (void *) NULL;
-    printf(" hipMalloc failed for %ld %s \n",bytes,hipGetErrorString(err));
+    fprintf(stderr," hipMalloc failed for %ld %s \n",bytes,hipGetErrorString(err)); fflush(stderr);
   }
   return ptr;
 };
 
-inline void acceleratorFreeShared(void *ptr){ auto r=hipFree(ptr);};
-inline void acceleratorFreeDevice(void *ptr){ auto r=hipFree(ptr);};
-inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { auto r=hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
-inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ auto r=hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
+inline void acceleratorFreeShared(void *ptr){ auto discard=hipFree(ptr);};
+inline void acceleratorFreeDevice(void *ptr){ auto discard=hipFree(ptr);};
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { auto discard=hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ auto discard=hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
 //inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyDeviceToDevice);}
 //inline void acceleratorCopySynchronise(void) {  }
-inline void acceleratorMemSet(void *base,int value,size_t bytes) { auto r=hipMemset(base,value,bytes);}
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { auto discard=hipMemset(base,value,bytes);}
 
 inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) // Asynch
 {
-  auto r=hipMemcpyDtoDAsync(to,from,bytes, copyStream);
+  auto discard=hipMemcpyDtoDAsync(to,from,bytes, copyStream);
 }
-inline void acceleratorCopySynchronise(void) { auto r=hipStreamSynchronize(copyStream); };
+inline void acceleratorCopyToDeviceAsync(void *from, void *to, size_t bytes, hipStream_t stream = copyStream) {
+  auto r = hipMemcpyAsync(to,from,bytes, hipMemcpyHostToDevice, stream);
+}
+inline void acceleratorCopyFromDeviceAsync(void *from, void *to, size_t bytes, hipStream_t stream = copyStream) {
+  auto r = hipMemcpyAsync(to,from,bytes, hipMemcpyDeviceToHost, stream);
+}
+inline void acceleratorCopySynchronise(void) { auto discard=hipStreamSynchronize(copyStream); };
 
 #endif
 
@@ -461,6 +523,9 @@ inline void acceleratorCopySynchronise(void) { auto r=hipStreamSynchronize(copyS
 #if defined(GRID_SYCL) || defined(GRID_CUDA) || defined(GRID_HIP)
 // FIXME -- the non-blocking nature got broken March 30 2023 by PAB
 #define accelerator_forNB( iter1, num1, nsimd, ... ) accelerator_for2dNB( iter1, num1, iter2, 1, nsimd, {__VA_ARGS__} );  
+#define prof_accelerator_for( iter1, num1, nsimd, ... ) \
+  prof_accelerator_for2dNB( iter1, num1, iter2, 1, nsimd, {__VA_ARGS__} );\
+  accelerator_barrier(dummy);
 
 #define accelerator_for( iter, num, nsimd, ... )		\
   accelerator_forNB(iter, num, nsimd, { __VA_ARGS__ } );	\
@@ -482,7 +547,15 @@ inline void acceleratorCopySynchronise(void) { auto r=hipStreamSynchronize(copyS
 
 #undef GRID_SIMT
 
-
+inline void acceleratorMem(void)
+{
+  /*
+    struct rusage rusage;
+    getrusage( RUSAGE_SELF, &rusage );
+    return (size_t)rusage.ru_maxrss;
+  */
+  std::cout <<" system acceleratorMem not implemented"<<std::endl;
+}
 
 #define accelerator 
 #define accelerator_inline strong_inline
@@ -581,6 +654,19 @@ inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)
   acceleratorCopyDeviceToDeviceAsynch(from,to,bytes);
   acceleratorCopySynchronise();
 }
+
+template<class T> void acceleratorPut(T& dev,T&host)
+{
+  acceleratorCopyToDevice(&host,&dev,sizeof(T));
+}
+template<class T> T acceleratorGet(T& dev)
+{
+  T host;
+  acceleratorCopyFromDevice(&dev,&host,sizeof(T));
+  return host;
+}
+
+
 
 
 NAMESPACE_END(Grid);

@@ -306,6 +306,44 @@ void CartesianCommunicator::GlobalSumVector(double *d,int N)
   int ierr = MPI_Allreduce(MPI_IN_PLACE,d,N,MPI_DOUBLE,MPI_SUM,communicator);
   assert(ierr==0);
 }
+
+void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+						void *xmit,
+						int dest,
+						void *recv,
+						int from,
+						int bytes,int dir)
+{
+  MPI_Request xrq;
+  MPI_Request rrq;
+
+  assert(dest != _processor);
+  assert(from != _processor);
+
+  int tag;
+
+  tag= dir+from*32;
+  int ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,tag,communicator,&rrq);
+  assert(ierr==0);
+  list.push_back(rrq);
+  
+  tag= dir+_processor*32;
+  ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,tag,communicator,&xrq);
+  assert(ierr==0);
+  list.push_back(xrq);
+}
+void CartesianCommunicator::CommsComplete(std::vector<CommsRequest_t> &list)
+{
+  int nreq=list.size();
+
+  if (nreq==0) return;
+
+  std::vector<MPI_Status> status(nreq);
+  int ierr = MPI_Waitall(nreq,&list[0],&status[0]);
+  assert(ierr==0);
+  list.resize(0);
+}
+
 // Basic Halo comms primitive
 void CartesianCommunicator::SendToRecvFrom(void *xmit,
 					   int dest,
@@ -348,6 +386,7 @@ double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
   return offbytes;
 }
 
+#undef NVLINK_GET // Define to use get instead of put DMA
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 							 void *xmit,
 							 int dest,int dox,
@@ -413,9 +452,15 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
       list.push_back({rrq, recv, rbytes});
       off_node_bytes+=rbytes;
     }
+#ifdef NVLINK_GET
+      void *shm = (void *) this->ShmBufferTranslate(from,xmit);
+      assert(shm!=NULL);
+      acceleratorCopyDeviceToDeviceAsynch(shm,recv,rbytes);
+#endif
   }
   
   if (dox) {
+    //  rcrc = crc32(rcrc,(unsigned char *)recv,bytes);
     if ( (gdest == MPI_UNDEFINED) || Stencil_force_mpi ) {
       tag= dir+_processor*32;
       ierr =MPI_Isend(xmit, xbytes, MPI_CHAR,dest,tag,communicator_halo[commdir],&xrq);
@@ -423,9 +468,12 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
       list.push_back({xrq,0,0});
       off_node_bytes+=xbytes;
     } else {
+#ifndef NVLINK_GET
       void *shm = (void *) this->ShmBufferTranslate(dest,recv);
       assert(shm!=NULL);
       acceleratorCopyDeviceToDeviceAsynch(xmit,shm,xbytes);
+#endif
+      
     }
   }
 
@@ -434,6 +482,8 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &list,int dir,size_t word_size)
 {
   int nreq=list.size();
+
+  acceleratorCopySynchronise();
 
   if (nreq==0) return;
 

@@ -5,10 +5,12 @@ LIME=/p/home/jusers/boyle2/juwels/gm2dwf/boyle/
     --enable-gen-simd-width=64 \
     --enable-shm=nvlink \
     --enable-accelerator=cuda \
+    --disable-gparity \
+    --disable-fermion-reps \
     --with-lime=$LIME \
-    --disable-accelerator-cshift \
+    --enable-accelerator-cshift \
     --disable-unified \
     CXX=nvcc \
     LDFLAGS="-cudart shared " \
-    CXXFLAGS="-ccbin mpicxx -gencode arch=compute_80,code=sm_80 -std=c++14 -cudart shared"
+    CXXFLAGS="-ccbin mpicxx -gencode arch=compute_80,code=sm_80 -std=c++17 -cudart shared -lcublas"
 

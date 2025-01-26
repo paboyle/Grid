@@ -34,6 +34,8 @@ NAMESPACE_BEGIN(Grid);
 void Grid_init(int *argc,char ***argv);
 void Grid_finalize(void);
 
+char * GridHostname(void);
+
 // internal, controled with --handle
 void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr);
 void Grid_debug_handler_init(void);
@@ -66,6 +68,7 @@ void GridParseLayout(char **argv,int argc,
 		     std::vector<int> &mpi);
 
 void printHash(void);
+
 
 
 NAMESPACE_END(Grid);

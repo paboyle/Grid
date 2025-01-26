@@ -40,7 +40,7 @@ public:
   RealD norm;
   RealD lo,hi;
 
-  MultiShiftFunction(int n,RealD _lo,RealD _hi): poles(n), residues(n), lo(_lo), hi(_hi) {;};
+  MultiShiftFunction(int n,RealD _lo,RealD _hi): poles(n), residues(n), tolerances(n), lo(_lo), hi(_hi) {;};
   RealD approx(RealD x);
   void csv(std::ostream &out);
   void gnuplot(std::ostream &out);

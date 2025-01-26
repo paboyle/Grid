@@ -34,7 +34,7 @@
 #pragma push_macro("__SYCL_DEVICE_ONLY__")
 #undef __SYCL_DEVICE_ONLY__
 #define EIGEN_DONT_VECTORIZE
-//#undef EIGEN_USE_SYCL
+#undef EIGEN_USE_SYCL
 #define __SYCL__REDEFINE__
 #endif
 
