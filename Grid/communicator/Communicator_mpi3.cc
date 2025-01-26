@@ -325,12 +325,12 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
   tag= dir+from*32;
   int ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,tag,communicator,&rrq);
   assert(ierr==0);
-  list.push_back(rrq);
+  list.push_back({rrq, recv, bytes});
   
   tag= dir+_processor*32;
   ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,tag,communicator,&xrq);
   assert(ierr==0);
-  list.push_back(xrq);
+  list.push_back({xrq, xmit, bytes});
 }
 void CartesianCommunicator::CommsComplete(std::vector<CommsRequest_t> &list)
 {
@@ -339,7 +339,11 @@ void CartesianCommunicator::CommsComplete(std::vector<CommsRequest_t> &list)
   if (nreq==0) return;
 
   std::vector<MPI_Status> status(nreq);
-  int ierr = MPI_Waitall(nreq,&list[0],&status[0]);
+  std::vector<MPI_Request> requests(nreq);
+  for (int i=0;i<nreq;i++)
+    requests[i] = list[i].request;
+
+  int ierr = MPI_Waitall(nreq,&requests[0],&status[0]);
   assert(ierr==0);
   list.resize(0);
 }
