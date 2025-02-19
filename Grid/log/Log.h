@@ -179,17 +179,52 @@ extern GridLogger GridLogSolver;
 extern GridLogger GridLogError;
 extern GridLogger GridLogWarning;
 extern GridLogger GridLogMessage;
-extern GridLogger GridLogDebug  ;
+extern GridLogger GridLogDebug;
 extern GridLogger GridLogPerformance;
 extern GridLogger GridLogDslash;
-extern GridLogger GridLogIterative  ;
-extern GridLogger GridLogIntegrator  ;
+extern GridLogger GridLogIterative;
+extern GridLogger GridLogIntegrator;
 extern GridLogger GridLogHMC;
 extern GridLogger GridLogMemory;
 extern GridLogger GridLogTracing;
 extern Colours    GridLogColours;
 
 std::string demangle(const char* name) ;
+
+template<typename... Args>
+inline std::string sjoin(Args&&... args) noexcept {
+    std::ostringstream msg;
+    (msg << ... << args);
+    return msg.str();
+}
+
+/*!  @brief make log messages work like python print */
+template <typename... Args>
+inline void Grid_log(Args&&... args) {
+    std::string msg = sjoin(std::forward<Args>(args)...);
+    std::cout << GridLogMessage << msg << std::endl;
+}
+
+/*!  @brief make warning messages work like python print */
+template <typename... Args>
+inline void Grid_warn(Args&&... args) {
+    std::string msg = sjoin(std::forward<Args>(args)...);
+    std::cout << "\033[33m" << GridLogWarning << msg << "\033[0m" << std::endl;
+}
+
+/*!  @brief make error messages work like python print */
+template <typename... Args>
+inline void Grid_error(Args&&... args) {
+    std::string msg = sjoin(std::forward<Args>(args)...);
+    std::cout << "\033[31m" << GridLogError << msg << "\033[0m" << std::endl;
+}
+
+/*!  @brief make pass messages work like python print */
+template <typename... Args>
+inline void Grid_pass(Args&&... args) {
+    std::string msg = sjoin(std::forward<Args>(args)...);
+    std::cout << "\033[32m" << GridLogMessage << msg << "\033[0m" << std::endl;
+}
 
 #define _NBACKTRACE (256)
 extern void * Grid_backtrace_buffer[_NBACKTRACE];

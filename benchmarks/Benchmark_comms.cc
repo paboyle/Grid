@@ -220,7 +220,7 @@ int main (int argc, char ** argv)
 					      xmit_to_rank,1,
 					      (void *)&rbuf[mu][0],
 					      recv_from_rank,1,
-					      bytes,bytes,mu);
+					      bytes,bytes,mu,sizeof(double));
 	
 	    comm_proc = mpi_layout[mu]-1;
 	  
@@ -231,11 +231,11 @@ int main (int argc, char ** argv)
 					      xmit_to_rank,1,
 					      (void *)&rbuf[mu+4][0],
 					      recv_from_rank,1,
-					      bytes,bytes,mu+4);
+					      bytes,bytes,mu+4,sizeof(double));
 	  
 	  }
 	}
-	Grid.StencilSendToRecvFromComplete(requests,0);
+	Grid.StencilSendToRecvFromComplete(requests,0,sizeof(double));
 	Grid.Barrier();
 	double stop=usecond();
 	t_time[i] = stop-start; // microseconds
@@ -312,8 +312,8 @@ int main (int argc, char ** argv)
 					      xmit_to_rank,1,
 					      (void *)&rbuf[mu][0],
 					      recv_from_rank,1,
-					      bytes,bytes,mu);
-	    Grid.StencilSendToRecvFromComplete(requests,mu);
+					      bytes,bytes,mu,sizeof(double));
+	    Grid.StencilSendToRecvFromComplete(requests,mu,sizeof(double));
 	    requests.resize(0);
 
 	    comm_proc = mpi_layout[mu]-1;
@@ -325,8 +325,8 @@ int main (int argc, char ** argv)
 					      xmit_to_rank,1,
 					      (void *)&rbuf[mu+4][0],
 					      recv_from_rank,1,
-					      bytes,bytes,mu+4);
-	    Grid.StencilSendToRecvFromComplete(requests,mu+4);
+					      bytes,bytes,mu+4,sizeof(double));
+	    Grid.StencilSendToRecvFromComplete(requests,mu+4,sizeof(double));
 	    requests.resize(0);
 	  
 	  }
@@ -412,7 +412,7 @@ int main (int argc, char ** argv)
 	    }
             int tid = omp_get_thread_num();
 	    tbytes= Grid.StencilSendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,1,
-					       (void *)&rbuf[dir][0], recv_from_rank,1, bytes,tid);
+					       (void *)&rbuf[dir][0], recv_from_rank,1, bytes,tid,sizeof(double));
 
 	    thread_critical { dbytes+=tbytes; }
 	  }

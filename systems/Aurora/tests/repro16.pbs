@@ -1,0 +1,61 @@
+#!/bin/bash
+
+## qsub -q EarlyAppAccess -A Aurora_Deployment -I -l select=1 -l walltime=60:00
+
+#PBS -l select=16:system=sunspot,place=scatter
+#PBS -A LatticeQCD_aesp_CNDA
+#PBS -l walltime=01:00:00
+#PBS -N dwf
+#PBS -k doe
+
+#export OMP_PROC_BIND=spread
+#unset OMP_PLACES
+
+cd $PBS_O_WORKDIR
+
+#source ../sourceme.sh
+
+cat $PBS_NODEFILE
+
+#export MPICH_COLL_SYNC=1
+#export MPICH_ENV_DISPLAY=1
+export MPICH_
+export OMP_NUM_THREADS=3
+export MPIR_CVAR_CH4_OFI_ENABLE_GPU_PIPELINE=1
+module load oneapi/eng-compiler/2023.05.15.003
+module load mpich/51.2/icc-all-deterministic-pmix-gpu
+#export LD_LIBRARY_PATH=/soft/restricted/CNDA/updates/2023.05.15.001/oneapi/compiler/eng-20230512/compiler/linux/lib/:$LD_LIBRARY_PATH
+
+#unset MPIR_CVAR_CH4_OFI_GPU_PIPELINE_D2H_ENGINE_TYPE
+#unset MPIR_CVAR_CH4_OFI_GPU_PIPELINE_H2D_ENGINE_TYPE
+#unset MPIR_CVAR_GPU_USE_IMMEDIATE_COMMAND_LIST
+export MPIR_CVAR_ALLREDUCE_DEVICE_COLLECTIVE=0
+export MPIR_CVAR_REDUCE_DEVICE_COLLECTIVE=0
+export MPIR_CVAR_ALLREDUCE_INTRA_ALGORITHM=recursive_doubling
+unset MPIR_CVAR_CH4_COLL_SELECTION_TUNING_JSON_FILE
+unset MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE
+unset MPIR_CVAR_CH4_POSIX_COLL_SELECTION_TUNING_JSON_FILE
+
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_D2H_ENGINE_TYPE=0
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_H2D_ENGINE_TYPE=0
+export MPIR_CVAR_GPU_USE_IMMEDIATE_COMMAND_LIST=1
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_BUFFER_SZ=1048576
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_THRESHOLD=131072
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_NUM_BUFFERS_PER_CHUNK=16
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_MAX_NUM_BUFFERS=16
+export MPICH_OFI_NIC_POLICY=GPU
+
+DIR=repro.$PBS_JOBID
+mkdir $DIR
+cd $DIR
+
+CMD="mpiexec -np 192 -ppn 12  -envall \
+	     ../gpu_tile_compact.sh \
+	     ../Test_dwf_mixedcg_prec --mpi 2.4.4.6 --grid 64.128.128.192 \
+		--shm-mpi 1 --shm 4096 --device-mem 32000 --accelerator-threads 32 --seconds 3000 --debug-stdout --log Message,Iterative"
+#--comms-overlap
+$CMD 
+
+grep Oops Grid.stderr.* > failures.$PBS_JOBID
+rm core.*
+

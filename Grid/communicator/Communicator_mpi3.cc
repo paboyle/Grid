@@ -306,6 +306,48 @@ void CartesianCommunicator::GlobalSumVector(double *d,int N)
   int ierr = MPI_Allreduce(MPI_IN_PLACE,d,N,MPI_DOUBLE,MPI_SUM,communicator);
   assert(ierr==0);
 }
+
+void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+						void *xmit,
+						int dest,
+						void *recv,
+						int from,
+						int bytes,int dir)
+{
+  MPI_Request xrq;
+  MPI_Request rrq;
+
+  assert(dest != _processor);
+  assert(from != _processor);
+
+  int tag;
+
+  tag= dir+from*32;
+  int ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,tag,communicator,&rrq);
+  assert(ierr==0);
+  list.push_back({rrq, recv, bytes});
+  
+  tag= dir+_processor*32;
+  ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,tag,communicator,&xrq);
+  assert(ierr==0);
+  list.push_back({xrq, xmit, bytes});
+}
+void CartesianCommunicator::CommsComplete(std::vector<CommsRequest_t> &list)
+{
+  int nreq=list.size();
+
+  if (nreq==0) return;
+
+  std::vector<MPI_Status> status(nreq);
+  std::vector<MPI_Request> requests(nreq);
+  for (int i=0;i<nreq;i++)
+    requests[i] = list[i].request;
+
+  int ierr = MPI_Waitall(nreq,&requests[0],&status[0]);
+  assert(ierr==0);
+  list.resize(0);
+}
+
 // Basic Halo comms primitive
 void CartesianCommunicator::SendToRecvFrom(void *xmit,
 					   int dest,
@@ -340,20 +382,21 @@ double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
 						     int dest, int dox,
 						     void *recv,
 						     int from, int dor,
-						     int bytes,int dir)
+						     int bytes,int dir,size_t word_size)
 {
   std::vector<CommsRequest_t> list;
-  double offbytes = StencilSendToRecvFromBegin(list,xmit,dest,dox,recv,from,dor,bytes,bytes,dir);
-  StencilSendToRecvFromComplete(list,dir);
+  double offbytes = StencilSendToRecvFromBegin(list,xmit,dest,dox,recv,from,dor,bytes,bytes,dir,word_size);
+  StencilSendToRecvFromComplete(list,dir,word_size);
   return offbytes;
 }
 
+#undef NVLINK_GET // Define to use get instead of put DMA
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 							 void *xmit,
 							 int dest,int dox,
 							 void *recv,
 							 int from,int dor,
-							 int xbytes,int rbytes,int dir)
+							 int xbytes,int rbytes,int dir,size_t word_size)
 {
   int ncomm  =communicator_halo.size();
   int commdir=dir%ncomm;
@@ -372,41 +415,134 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
   double off_node_bytes=0.0;
   int tag;
 
+  if (word_size == sizeof(float) &&
+      CartesianCommunicator::StencilCompressionPolicy
+      == CartesianCommunicator::StencilCompressionPolicyBfloat16) {
+    
+    assert(rbytes % 2 == 0 && xbytes % 2 == 0);
+    rbytes /= 2;
+    xbytes /= 2;
+
+    if (dox) {
+      assert(xbytes % sizeof(uint16_t) == 0);
+      // in-place compression
+      uint16_t* words = (uint16_t*)xmit;
+      size_t nwords = xbytes / sizeof(uint16_t);
+      assert(nwords % 2 == 0); // currently only works for even number of floats
+      size_t nwords_half = nwords / 2;
+
+      double t0 = usecond() / 1e6;
+
+      size_t width = 256;
+      assert(nwords_half % width == 0);
+      accelerator_for(i, nwords_half / width, width, {
+	  int lane = acceleratorSIMTlane(width);
+	  size_t j = i*width + lane;
+	  words[2*j + 0] = words[2*nwords_half + 2*j + 1];
+	});
+      double t1 = usecond() / 1e6;
+      double GBps = (2.*xbytes/1e9)/(t1-t0);
+      //std::cout << GridLogMessage << "Compress at " << GBps << " GB/s for nwords = " << nwords << std::endl;
+
+      // bfloat[0]  bfloat[nwords_half]  bfloat[1]  bfloat[nwords_half + 1]  ...
+    }
+  }
+
   if ( dor ) {
     if ( (gfrom ==MPI_UNDEFINED) || Stencil_force_mpi ) {
       tag= dir+from*32;
       ierr=MPI_Irecv(recv, rbytes, MPI_CHAR,from,tag,communicator_halo[commdir],&rrq);
       assert(ierr==0);
-      list.push_back(rrq);
+      list.push_back({rrq, recv, rbytes});
       off_node_bytes+=rbytes;
     }
+#ifdef NVLINK_GET
+      void *shm = (void *) this->ShmBufferTranslate(from,xmit);
+      assert(shm!=NULL);
+      acceleratorCopyDeviceToDeviceAsynch(shm,recv,rbytes);
+#endif
   }
   
   if (dox) {
+    //  rcrc = crc32(rcrc,(unsigned char *)recv,bytes);
     if ( (gdest == MPI_UNDEFINED) || Stencil_force_mpi ) {
       tag= dir+_processor*32;
       ierr =MPI_Isend(xmit, xbytes, MPI_CHAR,dest,tag,communicator_halo[commdir],&xrq);
       assert(ierr==0);
-      list.push_back(xrq);
+      list.push_back({xrq,0,0});
       off_node_bytes+=xbytes;
     } else {
+#ifndef NVLINK_GET
       void *shm = (void *) this->ShmBufferTranslate(dest,recv);
       assert(shm!=NULL);
       acceleratorCopyDeviceToDeviceAsynch(xmit,shm,xbytes);
+#endif
+      
     }
   }
 
   return off_node_bytes;
 }
-void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &list,int dir)
+void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &list,int dir,size_t word_size)
 {
   int nreq=list.size();
+
+  acceleratorCopySynchronise();
 
   if (nreq==0) return;
 
   std::vector<MPI_Status> status(nreq);
-  int ierr = MPI_Waitall(nreq,&list[0],&status[0]);
+  std::vector<MPI_Request> requests(nreq);
+  for (int i=0;i<nreq;i++)
+    requests[i] = list[i].request;
+  int ierr = MPI_Waitall(nreq,&requests[0],&status[0]);
   assert(ierr==0);
+
+  if (word_size == sizeof(float) &&
+      CartesianCommunicator::StencilCompressionPolicy
+      == CartesianCommunicator::StencilCompressionPolicyBfloat16) {
+
+    double t0 = usecond() / 1e6;
+    double Gb = 0.0;
+    
+    for (auto & l : list) {
+
+      if (l.recv) {
+
+	int rbytes = l.rbytes;
+
+	assert(rbytes % sizeof(uint16_t) == 0);
+	// in-place de-compression
+	uint16_t* words = (uint16_t*)l.recv;
+	size_t nwords = rbytes / sizeof(uint16_t);
+	assert(nwords % 2 == 0);
+	size_t nwords_half = nwords / 2;
+
+	size_t width = 256;
+	assert(nwords_half % width == 0);
+	accelerator_forNB(i, nwords_half / width, width, {
+	    int lane = acceleratorSIMTlane(width);
+	    size_t j = i*width + lane;
+	    words[2*nwords_half + 2*j + 1] = words[2*j + 0];
+	  });
+	accelerator_forNB(i, nwords_half / width, width, {
+	    int lane = acceleratorSIMTlane(width);
+	    size_t j = i*width + lane;
+	    words[2*j + 0] = 0;
+	});
+
+	Gb += 2.*rbytes/1e9;
+      }
+    }
+    
+    accelerator_barrier();
+    
+    double t1 = usecond() / 1e6;
+    double GBps = Gb/(t1-t0);
+    //std::cout << GridLogMessage << "Decompress at " << GBps << " GB/s for GB =" << Gb << std::endl;
+
+  }
+
   list.resize(0);
 }
 void CartesianCommunicator::StencilBarrier(void)

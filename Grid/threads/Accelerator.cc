@@ -122,7 +122,7 @@ hipStream_t computeStream;
 void acceleratorInit(void)
 {
   int nDevices = 1;
-  hipGetDeviceCount(&nDevices);
+  auto discard = hipGetDeviceCount(&nDevices);
   gpu_props = new hipDeviceProp_t[nDevices];
 
   char * localRankStr = NULL;
@@ -149,7 +149,7 @@ void acceleratorInit(void)
 #define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("AcceleratorHipInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
 #define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
     
-    auto r=hipGetDeviceProperties(&gpu_props[i], i);
+    discard = hipGetDeviceProperties(&gpu_props[i], i);
     hipDeviceProp_t prop; 
     prop = gpu_props[i];
     totalDeviceMem = prop.totalGlobalMem;
@@ -186,13 +186,13 @@ void acceleratorInit(void)
   }
   int device = rank;
 #endif
-  hipSetDevice(device);
-  hipStreamCreate(&copyStream);
-  hipStreamCreate(&computeStream);
+  discard = hipSetDevice(device);
+  discard = hipStreamCreate(&copyStream);
+  discard = hipStreamCreate(&computeStream);
   const int len=64;
   char busid[len];
   if( rank == world_rank ) { 
-    hipDeviceGetPCIBusId(busid, len, device);
+    discard = hipDeviceGetPCIBusId(busid, len, device);
     printf("local rank %d device %d bus id: %s\n", rank, device, busid);
   }
   if ( world_rank == 0 )  printf("AcceleratorHipInit: ================================================\n");
@@ -210,8 +210,8 @@ void acceleratorInit(void)
   cl::sycl::gpu_selector selector;
   cl::sycl::device selectedDevice { selector };
   theGridAccelerator = new sycl::queue (selectedDevice);
-  //  theCopyAccelerator = new sycl::queue (selectedDevice);
-  theCopyAccelerator = theGridAccelerator; // Should proceed concurrenlty anyway.
+  theCopyAccelerator = new sycl::queue (selectedDevice);
+  //  theCopyAccelerator = theGridAccelerator; // Should proceed concurrenlty anyway.
 
 #ifdef GRID_SYCL_LEVEL_ZERO_IPC
   zeInit(0);

@@ -234,10 +234,20 @@ public:
   }
 
   template<class sobj> inline Lattice<vobj> & operator = (const sobj & r){
+    vobj vtmp;
+    vtmp = r;
+#if 0
+    auto me  = View(AcceleratorWrite);
+    accelerator_for(ss,me.size(),vobj::Nsimd(),{
+	auto stmp=coalescedRead(vtmp);
+	coalescedWrite(me[ss],stmp);
+    });
+#else    
     auto me  = View(CpuWrite);
     thread_for(ss,me.size(),{
-	me[ss]= r;
-    });
+       me[ss]= r;
+      });
+#endif    
     me.ViewClose();
     return *this;
   }
@@ -360,7 +370,7 @@ public:
 
 template<class vobj> std::ostream& operator<< (std::ostream& stream, const Lattice<vobj> &o){
   typedef typename vobj::scalar_object sobj;
-  for(int g=0;g<o.Grid()->_gsites;g++){
+  for(int64_t g=0;g<o.Grid()->_gsites;g++){
 
     Coordinate gcoor;
     o.Grid()->GlobalIndexToGlobalCoor(g,gcoor);

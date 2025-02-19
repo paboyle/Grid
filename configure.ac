@@ -226,23 +226,14 @@ case ${ac_SFW_FP16} in
 esac
 
 ############### Default to accelerator cshift, but revert to host if UCX is buggy or other reasons
-AC_ARG_ENABLE([accelerator-cshift],
-    [AS_HELP_STRING([--enable-accelerator-cshift=yes|no],[run cshift on the device])],
-    [ac_ACC_CSHIFT=${enable_accelerator_cshift}], [ac_ACC_CSHIFT=yes])
+AC_ARG_ENABLE([accelerator-aware-mpi],
+    [AS_HELP_STRING([--enable-accelerator-aware-mpi=yes|no],[run mpi transfers from device])],
+    [ac_ACCELERATOR_AWARE_MPI=${enable_accelerator_aware_mpi}], [ac_ACCELERATOR_AWARE_MPI=yes])
 
-AC_ARG_ENABLE([ucx-buggy],
-    [AS_HELP_STRING([--enable-ucx-buggy=yes|no],[enable workaround for UCX device buffer bugs])],
-    [ac_UCXBUGGY=${enable_ucx_buggy}], [ac_UCXBUGGY=no])
-
-case ${ac_UCXBUGGY} in
+case ${ac_ACCELERATOR_AWARE_MPI} in
     yes)
-    ac_ACC_CSHIFT=no;;
-    *);;
-esac
-
-case ${ac_ACC_CSHIFT} in
-    yes)
-      AC_DEFINE([ACCELERATOR_CSHIFT],[1],[ UCX device buffer bugs are not present]);;
+      AC_DEFINE([ACCELERATOR_CSHIFT],[1],[ Cshift runs on host])
+      AC_DEFINE([ACCELERATOR_AWARE_MPI],[1],[ Stencil can use device pointers]);;
     *);;
 esac
 

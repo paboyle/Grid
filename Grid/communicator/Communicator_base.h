@@ -49,6 +49,10 @@ public:
   static void SetCommunicatorPolicy(CommunicatorPolicy_t policy ) { CommunicatorPolicy = policy; }
   static int       nCommThreads;
 
+  enum StencilCompressionPolicy_t { StencilCompressionPolicyNone, StencilCompressionPolicyBfloat16 };
+  static StencilCompressionPolicy_t StencilCompressionPolicy;
+  static void SetStencilCompressionPolicy(StencilCompressionPolicy_t policy ) { StencilCompressionPolicy = policy; }
+
   ////////////////////////////////////////////
   // Communicator should know nothing of the physics grid, only processor grid.
   ////////////////////////////////////////////
@@ -127,7 +131,35 @@ public:
   void GlobalSumVector(ComplexD *c,int N);
   void GlobalXOR(uint32_t &);
   void GlobalXOR(uint64_t &);
-  
+
+  template<class obj> void GlobalSumP2P(obj &o)
+  {
+    std::vector<obj> column;
+    obj accum = o;
+    int source,dest;
+    for(int d=0;d<_ndimension;d++){
+      column.resize(_processors[d]);
+      column[0] = accum;
+      std::vector<CommsRequest_t> list;
+      for(int p=1;p<_processors[d];p++){
+	ShiftedRanks(d,p,source,dest);
+	SendToRecvFromBegin(list,
+			    &column[0],
+			    dest,
+			    &column[p],
+			    source,
+			    sizeof(obj),d*100+p);
+
+      }
+      CommsComplete(list);
+      for(int p=1;p<_processors[d];p++){
+	accum = accum + column[p];
+      }
+    }
+    Broadcast(0,accum);
+    o=accum;
+  }
+
   template<class obj> void GlobalSum(obj &o){
     typedef typename obj::scalar_type scalar_type;
     int words = sizeof(obj)/sizeof(scalar_type);
@@ -138,6 +170,14 @@ public:
   ////////////////////////////////////////////////////////////
   // Face exchange, buffer swap in translational invariant way
   ////////////////////////////////////////////////////////////
+  void CommsComplete(std::vector<CommsRequest_t> &list);
+  void SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+			   void *xmit,
+			   int dest,
+			   void *recv,
+			   int from,
+			   int bytes,int dir);
+  
   void SendToRecvFrom(void *xmit,
 		      int xmit_to_rank,
 		      void *recv,
@@ -148,17 +188,17 @@ public:
 			       int xmit_to_rank,int do_xmit,
 			       void *recv,
 			       int recv_from_rank,int do_recv,
-			       int bytes,int dir);
+			       int bytes,int dir,size_t word_size);
 
   double StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 				    void *xmit,
 				    int xmit_to_rank,int do_xmit,
 				    void *recv,
 				    int recv_from_rank,int do_recv,
-				    int xbytes,int rbytes,int dir);
+				    int xbytes,int rbytes,int dir,size_t word_size);
   
   
-  void StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int i);
+  void StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int i,size_t word_size);
   void StencilBarrier(void);
 
   ////////////////////////////////////////////////////////////

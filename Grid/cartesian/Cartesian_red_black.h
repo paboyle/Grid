@@ -57,9 +57,10 @@ class GridRedBlackCartesian : public GridBase
 {
 public:
   //  Coordinate _checker_dim_mask;
-  int              _checker_dim;
+  //  int              _checker_dim;
   std::vector<int> _checker_board;
 
+  virtual int isCheckerBoarded(void) const { return 1; };
   virtual int CheckerBoarded(int dim){
     if( dim==_checker_dim) return 1;
     else return 0;
@@ -147,7 +148,7 @@ public:
   {
     Init(base->_fdimensions,base->_simd_layout,base->_processors,checker_dim_mask,checker_dim)  ;
   }
-
+  
   virtual ~GridRedBlackCartesian() = default;
 
   void Init(const Coordinate &dimensions,

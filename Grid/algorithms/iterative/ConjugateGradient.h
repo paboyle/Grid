@@ -38,12 +38,13 @@ NAMESPACE_BEGIN(Grid);
 // single input vec, single output vec.
 /////////////////////////////////////////////////////////////
 
+
 template <class Field>
 class ConjugateGradient : public OperatorFunction<Field> {
 public:
 
   using OperatorFunction<Field>::operator();
-
+  
   bool ErrorOnNoConverge;  // throw an assert when the CG fails to converge.
                            // Defaults true.
   RealD Tolerance;
@@ -54,11 +55,26 @@ public:
   ConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true)
     : Tolerance(tol),
       MaxIterations(maxit),
-      ErrorOnNoConverge(err_on_no_conv){};
+      ErrorOnNoConverge(err_on_no_conv)
+  {};
 
-  void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) {
+  virtual void LogIteration(int k,RealD a,RealD b){
+    //    std::cout << "ConjugageGradient::LogIteration() "<<std::endl;
+  };
+  virtual void LogBegin(void){
+    std::cout << "ConjugageGradient::LogBegin() "<<std::endl;
+  };
 
-    GRID_TRACE("ConjugateGradient");
+    void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) {
+
+      this->LogBegin();
+
+      GRID_TRACE("ConjugateGradient");
+    GridStopWatch PreambleTimer;
+    GridStopWatch ConstructTimer;
+    GridStopWatch NormTimer;
+    GridStopWatch AssignTimer;
+    PreambleTimer.Start();
     psi.Checkerboard() = src.Checkerboard();
 
     conformable(psi, src);
@@ -66,22 +82,32 @@ public:
     RealD cp, c, a, d, b, ssq, qq;
     //RealD b_pred;
 
-    Field p(src);
-    Field mmp(src);
-    Field r(src);
+    // Was doing copies
+    ConstructTimer.Start();
+    Field p  (src.Grid());
+    Field mmp(src.Grid());
+    Field r  (src.Grid());
+    ConstructTimer.Stop();
 
     // Initial residual computation & set up
-    RealD guess = norm2(psi);
-    assert(std::isnan(guess) == 0);
-    
-    Linop.HermOpAndNorm(psi, mmp, d, b);
-    
-    r = src - mmp;
-    p = r;
-
-    a = norm2(p);
-    cp = a;
+    NormTimer.Start();
     ssq = norm2(src);
+    RealD guess = norm2(psi);
+    NormTimer.Stop();
+    assert(std::isnan(guess) == 0);
+    AssignTimer.Start();
+    if ( guess == 0.0 ) {
+      r = src;
+      p = r;
+      a = ssq;
+    } else { 
+      Linop.HermOpAndNorm(psi, mmp, d, b);
+      r = src - mmp;
+      p = r;
+      a = norm2(p);
+    }
+    cp = a;
+    AssignTimer.Stop();
 
     // Handle trivial case of zero src
     if (ssq == 0.){
@@ -111,6 +137,7 @@ public:
     std::cout << GridLogIterative << std::setprecision(8)
               << "ConjugateGradient: k=0 residual " << cp << " target " << rsq << std::endl;
 
+    PreambleTimer.Stop();
     GridStopWatch LinalgTimer;
     GridStopWatch InnerTimer;
     GridStopWatch AxpyNormTimer;
@@ -156,6 +183,7 @@ public:
       }
       LinearCombTimer.Stop();
       LinalgTimer.Stop();
+      LogIteration(k,a,b);
 
       IterationTimer.Stop();
       if ( (k % 500) == 0 ) {
@@ -183,13 +211,14 @@ public:
 		  << "\tTrue residual " << true_residual
 		  << "\tTarget " << Tolerance << std::endl;
 
-        std::cout << GridLogMessage << "Time breakdown "<<std::endl;
-	std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tInner      " << InnerTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
+	//	std::cout << GridLogMessage << "\tPreamble   " << PreambleTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tSolver Elapsed    " << SolverTimer.Elapsed() <<std::endl;
+        std::cout << GridLogPerformance << "Time breakdown "<<std::endl;
+	std::cout << GridLogPerformance << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
+	std::cout << GridLogPerformance << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
+	std::cout << GridLogPerformance << "\t\tInner      " << InnerTimer.Elapsed() <<std::endl;
+	std::cout << GridLogPerformance << "\t\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
+	std::cout << GridLogPerformance << "\t\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
 
 	std::cout << GridLogDebug << "\tMobius flop rate " << DwfFlops/ usecs<< " Gflops " <<std::endl;
 
@@ -202,17 +231,143 @@ public:
       }
     }
     // Failed. Calculate true residual before giving up                                                         
-    Linop.HermOpAndNorm(psi, mmp, d, qq);
-    p = mmp - src;
+    // Linop.HermOpAndNorm(psi, mmp, d, qq);
+    //    p = mmp - src;
+    //TrueResidual = sqrt(norm2(p)/ssq);
+    //    TrueResidual = 1;
 
-    TrueResidual = sqrt(norm2(p)/ssq);
-
-    std::cout << GridLogMessage << "ConjugateGradient did NOT converge "<<k<<" / "<< MaxIterations<< std::endl;
+    std::cout << GridLogMessage << "ConjugateGradient did NOT converge "<<k<<" / "<< MaxIterations
+    	      <<" residual "<< std::sqrt(cp / ssq)<< std::endl;
+    SolverTimer.Stop();
+    std::cout << GridLogMessage << "\tPreamble   " << PreambleTimer.Elapsed() <<std::endl;
+    std::cout << GridLogMessage << "\tConstruct  " << ConstructTimer.Elapsed() <<std::endl;
+    std::cout << GridLogMessage << "\tNorm       " << NormTimer.Elapsed() <<std::endl;
+    std::cout << GridLogMessage << "\tAssign     " << AssignTimer.Elapsed() <<std::endl;
+    std::cout << GridLogMessage << "\tSolver     " << SolverTimer.Elapsed() <<std::endl;
+    std::cout << GridLogMessage << "Solver breakdown "<<std::endl;
+    std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
+    std::cout << GridLogMessage<< "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
+    std::cout << GridLogPerformance << "\t\tInner      " << InnerTimer.Elapsed() <<std::endl;
+    std::cout << GridLogPerformance << "\t\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
+    std::cout << GridLogPerformance << "\t\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
 
     if (ErrorOnNoConverge) assert(0);
     IterationsToComplete = k;
 
   }
 };
+
+
+template <class Field>
+class ConjugateGradientPolynomial : public ConjugateGradient<Field> {
+public:
+  // Optionally record the CG polynomial
+  std::vector<double> ak;
+  std::vector<double> bk;
+  std::vector<double> poly_p;
+  std::vector<double> poly_r;
+  std::vector<double> poly_Ap;
+  std::vector<double> polynomial;
+
+public:
+  ConjugateGradientPolynomial(RealD tol, Integer maxit, bool err_on_no_conv = true)
+    : ConjugateGradient<Field>(tol,maxit,err_on_no_conv)
+  { };
+  void PolyHermOp(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi)
+  {
+    Field tmp(src.Grid());
+    Field AtoN(src.Grid());
+    AtoN = src;
+    psi=AtoN*polynomial[0];
+    for(int n=1;n<polynomial.size();n++){
+      tmp = AtoN;
+      Linop.HermOp(tmp,AtoN);
+      psi = psi + polynomial[n]*AtoN;
+    }
+  }
+  void CGsequenceHermOp(LinearOperatorBase<Field> &Linop, const Field &src, Field &x)
+  {
+    Field Ap(src.Grid());
+    Field r(src.Grid());
+    Field p(src.Grid());
+    p=src;
+    r=src;
+    x=Zero();
+    x.Checkerboard()=src.Checkerboard();
+    for(int k=0;k<ak.size();k++){
+      x = x + ak[k]*p;
+      Linop.HermOp(p,Ap);
+      r = r - ak[k] * Ap;
+      p = r + bk[k] * p;
+    }
+  }
+  void Solve(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi)
+  {
+    psi=Zero();
+    this->operator ()(Linop,src,psi);
+  }
+  virtual void LogBegin(void)
+  {
+    std::cout << "ConjugageGradientPolynomial::LogBegin() "<<std::endl;
+    ak.resize(0);
+    bk.resize(0);
+    polynomial.resize(0);
+    poly_Ap.resize(0);
+    poly_Ap.resize(0);
+    poly_p.resize(1);
+    poly_r.resize(1);
+    poly_p[0]=1.0;
+    poly_r[0]=1.0;
+  };
+  virtual void LogIteration(int k,RealD a,RealD b)
+  {
+    // With zero guess,
+    // p = r = src
+    //
+    // iterate:
+    //   x =  x + a p
+    //   r =  r - a A p
+    //   p =  r + b p
+    //
+    // [0]
+    // r = x
+    // p = x
+    // Ap=0
+    //
+    // [1]
+    // Ap = A x + 0  ==> shift poly P right by 1 and add 0.
+    // x  = x + a p  ==> add polynomials term by term 
+    // r  = r - a A p  ==> add polynomials term by term
+    // p  = r + b p  ==> add polynomials term by term
+    //
+    std::cout << "ConjugageGradientPolynomial::LogIteration() "<<k<<std::endl;
+    ak.push_back(a);
+    bk.push_back(b);
+    //  Ap= right_shift(p)
+    poly_Ap.resize(k+1);
+    poly_Ap[0]=0.0;
+    for(int i=0;i<k;i++){
+      poly_Ap[i+1]=poly_p[i];
+    }
+
+    //  x = x + a p
+    polynomial.resize(k);
+    polynomial[k-1]=0.0;
+    for(int i=0;i<k;i++){
+      polynomial[i] = polynomial[i] + a * poly_p[i];
+    }
+    
+    //  r = r - a Ap
+    //  p = r + b p
+    poly_r.resize(k+1);
+    poly_p.resize(k+1);
+    poly_r[k] = poly_p[k] = 0.0;
+    for(int i=0;i<k+1;i++){
+      poly_r[i] = poly_r[i] - a * poly_Ap[i];
+      poly_p[i] = poly_r[i] + b * poly_p[i];
+    }
+  }
+};
+
 NAMESPACE_END(Grid);
 #endif

@@ -137,9 +137,11 @@ public:
 
       double start_force = usecond();
 
+      MemoryManager::Print();
       as[level].actions.at(a)->deriv_timer_start();
       as[level].actions.at(a)->deriv(Smearer, force);  // deriv should NOT include Ta
       as[level].actions.at(a)->deriv_timer_stop();
+      MemoryManager::Print();
 
       auto name = as[level].actions.at(a)->action_name();
 
@@ -237,7 +239,7 @@ public:
 
     for (int level = 0; level < as.size(); ++level) {
       int multiplier = as.at(level).multiplier;
-      ActionLevel<Field> * Level = new ActionLevel<Field>(multiplier);
+      ActionLevel<Field, RepresentationPolicy> * Level = new ActionLevel<Field, RepresentationPolicy>(multiplier);
       Level->push_back(new EmptyAction<Field>); 
       LevelForces.push_back(*Level);
       // does it copy by value or reference??
@@ -246,7 +248,11 @@ public:
     }
   };
 
-  virtual ~Integrator() {}
+  virtual ~Integrator()
+  {
+    // Pain in the ass to clean up the Level pointers
+    // Guido's design is at fault as per comment above in constructor
+  }
 
   virtual std::string integrator_name() = 0;
   
@@ -460,6 +466,7 @@ public:
     for (int level = 0; level < as.size(); ++level) {
       for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
 
+	MemoryManager::Print();
         // get gauge field from the SmearingPolicy and
         // based on the boolean is_smeared in actionID
         std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] action eval " << std::endl;
@@ -468,6 +475,7 @@ public:
    	        as[level].actions.at(actionID)->S_timer_stop();
         std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] H = " << Hterm << std::endl;
         H += Hterm;
+	MemoryManager::Print();
 
       }
       as[level].apply(S_hireps, Representations, level, H);

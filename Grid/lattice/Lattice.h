@@ -35,6 +35,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/lattice/Lattice_transpose.h>
 #include <Grid/lattice/Lattice_local.h>
 #include <Grid/lattice/Lattice_reduction.h>
+#include <Grid/lattice/Lattice_crc.h>
 #include <Grid/lattice/Lattice_peekpoke.h>
 #include <Grid/lattice/Lattice_reality.h>
 #include <Grid/lattice/Lattice_real_imag.h>
@@ -46,5 +47,4 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/lattice/Lattice_unary.h>
 #include <Grid/lattice/Lattice_transfer.h>
 #include <Grid/lattice/Lattice_basis.h>
-#include <Grid/lattice/Lattice_crc.h>
 #include <Grid/lattice/PaddedCell.h>

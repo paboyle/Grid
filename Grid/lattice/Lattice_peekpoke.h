@@ -165,7 +165,7 @@ inline void peekLocalSite(sobj &s,const LatticeView<vobj> &l,Coordinate &site)
 
   int Nsimd = grid->Nsimd();
 
-  assert( l.Checkerboard()== grid->CheckerBoard(site));
+  //  assert( l.Checkerboard()== grid->CheckerBoard(site));
   assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
   static const int words=sizeof(vobj)/sizeof(vector_type);
@@ -179,7 +179,7 @@ inline void peekLocalSite(sobj &s,const LatticeView<vobj> &l,Coordinate &site)
   for(int w=0;w<words;w++){
     pt[w] = getlane(vp[w],idx);
   }
-      
+  //  std::cout << "peekLocalSite "<<site<<" "<<odx<<","<<idx<<" "<<s<<std::endl;
   return;
 };
 template<class vobj,class sobj>
@@ -202,7 +202,7 @@ inline void pokeLocalSite(const sobj &s,LatticeView<vobj> &l,Coordinate &site)
 
   int Nsimd = grid->Nsimd();
 
-  assert( l.Checkerboard()== grid->CheckerBoard(site));
+  //  assert( l.Checkerboard()== grid->CheckerBoard(site));
   assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
   static const int words=sizeof(vobj)/sizeof(vector_type);
