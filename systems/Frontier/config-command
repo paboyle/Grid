@@ -4,7 +4,7 @@ GMP=`spack find --paths gmp | grep gmp| cut -c 12-`
 --with-lime=$CLIME \
 --enable-unified=no \
 --enable-shm=nvlink \
---enable-tracing=roctx \
+--enable-tracing=timer \
 --enable-accelerator=hip \
 --enable-gen-simd-width=64 \
 --disable-gparity \

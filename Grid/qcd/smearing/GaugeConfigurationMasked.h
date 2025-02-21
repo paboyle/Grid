@@ -155,6 +155,7 @@ private:
   }
   
   void BaseSmear(GaugeLinkField& Cup, const GaugeField& U,int mu,RealD rho) {
+    GRID_TRACE("BaseSmear");
     GridBase *grid = U.Grid();
     GaugeLinkField tmp_stpl(grid);
     WilsonLoops<Gimpl> WL;
@@ -1572,10 +1573,12 @@ public:
     // Assemble Luscher exp diff map J matrix 
     //////////////////////////////////////////////////////////////////
     // Ta so Z lives in Lie algabra
+    {GRID_TRACE("Zx");
     Zx  = Ta(Cmu * adj(Umu[mu]));
     time+=usecond();
+    }
     std::cout << GridLogMessage << "Full: Z took "<<time<< " us"<<std::endl;
-
+    {GRID_TRACE("ZxAd");
     time=-usecond();
     // Move Z to the Adjoint Rep == make_adjoint_representation
     ZxAd = Zero();
@@ -1588,11 +1591,13 @@ public:
       ZxAd = ZxAd + cplx * TRb; // is this right? YES - Guido used Anti herm Ta's and with bloody wrong sign.
     }
     time+=usecond();
+    }
     std::cout << GridLogMessage << "Full: ZxAd took "<<time<< " us"<<std::endl;
 
     //////////////////////////////////////
     // J(x) = 1 + Sum_k=1..N (-Zac)^k/(k+1)!
     //////////////////////////////////////
+    {GRID_TRACE("Jx");
     time=-usecond();
     X=1.0; 
     JxAd = X;
@@ -1604,6 +1609,7 @@ public:
       JxAd = JxAd + X * kpfac;
     }
     time+=usecond();
+    }
     std::cout << GridLogMessage << "Full: Jx took "<<time<< " us"<<std::endl;
 
     //////////////////////////////////////
@@ -1620,7 +1626,8 @@ public:
     AdjMatrixField t3(grid);
     AdjMatrixField dt3(grid);
     AdjMatrixField aunit(grid);
-
+    
+    {GRID_TRACE("dJdX");
     for(int b=0;b<8;b++){
       SU3Adjoint::generator(b, TRb_s[b]);
       dJdX[b] = TRb_s[b];
@@ -1638,6 +1645,7 @@ public:
     }
     for(int b=0;b<8;b++){
       dJdX[b] = -dJdX[b];
+    }
     }
 #else
     std::vector<AdjMatrixField>  dJdX;    dJdX.resize(8,grid);
