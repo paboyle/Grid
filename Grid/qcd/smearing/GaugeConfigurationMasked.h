@@ -2251,7 +2251,7 @@ public:
 
       force=Ta(force); // Ta
       
-#if 0 // debug
+#if 1 // debug
       GaugeField force_debug(force.Grid()); 
       logDetJacobianForce(1,force_debug);
       std::cout << GridLogMessage << " DEBUG: logDetJacobianForce_diff " << norm2(force-force_debug) << std::endl;

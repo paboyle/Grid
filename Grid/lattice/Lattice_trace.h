@@ -181,6 +181,74 @@ Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > Inverse(const Lattice<iScala
   return ret;
 }
 
+#if 1
+/* Helper functions for inversion of real matrix on GPU based on Nobu's code*/
+template<class type1,class type2,int N>
+accelerator_inline void LUdcmp( iMatrix<type1,N> &LU, iVector<type2,N> &P)
+{
+
+  const RealD TINY=1.0e-40;
+  
+  type1 vv[N], tmp, _max;
+  for(int i=0; i<N; i++) vv[i]=0.0;
+  
+  for(int i=0; i<N; i++){
+    _max=0.0;
+    for(int j=0; j<N; j++) if( (tmp=abs(LU(i,j))) > _max ) _max = tmp;
+    assert( abs(_max) > TINY );
+    vv[i] = abs(1.0/_max);
+  }
+
+  int imax;
+  for(int k=0; k<N; k++){
+    _max=0.0;
+    for(int i=k; i<N; i++){
+      tmp = vv[i] * abs( LU(i,k) );
+      if(tmp>_max) {
+	_max = tmp;
+	imax = i;
+      }
+    }
+    if(k!=imax){
+      for(int j=0; j<N; j++){
+	tmp = LU(imax,j);
+        LU(imax,j) = LU(k,j);
+	LU(k,j) = tmp;
+      }
+      vv[imax] = vv[k];
+    }
+    P(k)=imax;
+    
+    for(int i=k+1; i<N; i++){
+      LU(i,k) = LU(i,k) / LU(k,k);
+      tmp = LU(i,k);
+      for(int j=k+1; j<N; j++) LU(i,j) = LU(i,j) - tmp * LU(k,j);
+    } // end i
+  } // end k
+};
+  
+template<class type1,class type2,int N>
+accelerator_inline void solve( iVector<type1,N> &x, const iMatrix<type1,N> LU, const iVector<type2,N> P){
+  
+  type1 sum = 0.0;
+
+  int ii=0;
+  for(int i=0; i<N; i++){
+    int ip = P(i);
+    sum = x(ip);
+    x(ip) = x(i);
+    if(ii!=0)for(int j=ii-1;j<i;j++) sum = sum - LU(i,j)*x(j);
+    else if (abs(sum)>0.0) ii=i+1;
+    x(i) = sum;
+  }
+  for(int i=N-1; i>=0; i--){
+    sum = x(i);
+    for(int j=i+1; j<N; j++) sum = sum - LU(i,j)*x(j);
+    x(i) = sum/LU(i,i);
+  }
+};
+#endif
+
 template<int N>
 Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > Inverse_RealPart(const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu)
 {
@@ -188,7 +256,7 @@ Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > Inverse_RealPart(const Latti
   auto osites = grid->oSites();
   const int Nsimd=grid->Nsimd();
   Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > ret(grid);
-#if 1
+#if 0 // CPU version
   autoView(Umu_v,Umu,CpuRead);
   autoView(ret_v,ret,CpuWrite);
   thread_for(site,osites,{
@@ -211,10 +279,36 @@ Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > Inverse_RealPart(const Latti
       insertLane(lane,ret_v[site],Ui);
     }
   });
-#else // Eigen supports inversion on GPU's only for matrices of size < 5
-  iScalar<iScalar<iMatrix<ComplexD, N> > > Ui;
+#else //GPU version
   autoView(Umu_v,Umu,AcceleratorRead);
   autoView(ret_v,ret,AcceleratorWrite);
+#if 1   // For small enough matrices
+  accelerator_for(ss,grid->oSites(),Nsimd,{
+      iMatrix<RealD, N>  LU;
+      iVector<Integer, N> P;
+      iVector<RealD, N> e;
+      // scalar layout won't coalesce
+#ifdef GRID_SIMT
+      {
+	int blane=acceleratorSIMTlane(Nsimd); // buffer lane
+#else
+      for(int blane=0;blane<Nsimd;blane++) {
+#endif
+	
+	for(int i=0;i<N;i++){
+	  for(int j=0;j<N;j++){
+	    LU(i,j) = getlane(toReal(TensorRemove(Umu_v(ss)()()(i,j))),blane);
+	  }}
+	LUdcmp(LU,P);
+	for(int j=0; j<N; j++){
+	  for(int i=0; i<N; i++) e(i) = (i==j);
+	  solve(e,LU,P);
+	  for(int i=0; i<N; i++) putlane(ret_v[ss]()()(i,j),(ComplexD) e(i),blane);
+	}
+      }
+    });
+#else   // Eigen supports inversion on GPU's only for matrices of size < 5
+  iScalar<iScalar<iMatrix<ComplexD, N> > > Ui;
   accelerator_for(ss,grid->oSites(),Nsimd,{
       Eigen::MatrixXd EigenU = Eigen::MatrixXd::Zero(N,N);
       for(int i=0;i<N;i++){
@@ -230,6 +324,7 @@ Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > Inverse_RealPart(const Latti
         }}
       coalescedWrite(ret_v[ss],Ui);
     });
+#endif
 #endif
  return ret;
 }
