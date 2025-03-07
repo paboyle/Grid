@@ -181,7 +181,6 @@ Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > Inverse(const Lattice<iScala
   return ret;
 }
 
-#if 1
 /* Helper functions for inversion of real matrix on GPU based on Nobu's code*/
 template<class type1,class type2,int N>
 accelerator_inline void LUdcmp( iMatrix<type1,N> &LU, iVector<type2,N> &P)
@@ -247,7 +246,6 @@ accelerator_inline void solve( iVector<type1,N> &x, const iMatrix<type1,N> LU, c
     x(i) = sum/LU(i,i);
   }
 };
-#endif
 
 template<int N>
 Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > Inverse_RealPart(const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu)
@@ -282,7 +280,6 @@ Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > Inverse_RealPart(const Latti
 #else //GPU version
   autoView(Umu_v,Umu,AcceleratorRead);
   autoView(ret_v,ret,AcceleratorWrite);
-#if 1   // For small enough matrices
   accelerator_for(ss,grid->oSites(),Nsimd,{
       iMatrix<RealD, N>  LU;
       iVector<Integer, N> P;
@@ -307,24 +304,6 @@ Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > Inverse_RealPart(const Latti
 	}
       }
     });
-#else   // Eigen supports inversion on GPU's only for matrices of size < 5
-  iScalar<iScalar<iMatrix<ComplexD, N> > > Ui;
-  accelerator_for(ss,grid->oSites(),Nsimd,{
-      Eigen::MatrixXd EigenU = Eigen::MatrixXd::Zero(N,N);
-      for(int i=0;i<N;i++){
-        for(int j=0;j<N;j++){
-          EigenU(i,j) = real(Umu_v(ss)()()(i,j));
-        }}
-      //Linker error occurs w/r/t Eigen when combining the below two lines into a one liner
-      Eigen::MatrixXd EigenUinv; 
-      EigenUinv= EigenU.inverse();
-      for(int i=0;i<N;i++){
-        for(int j=0;j<N;j++){
-          Ui()()(i,j) = EigenUinv(i,j);
-        }}
-      coalescedWrite(ret_v[ss],Ui);
-    });
-#endif
 #endif
  return ret;
 }

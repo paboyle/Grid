@@ -739,35 +739,6 @@ class GaugeGroup {
       }
     }
   }
-
-  // out[a] = trace(in1*in2)
-  template<class T_out, class T_in>
-  static accelerator_inline void trace_product(T_out &out_v, const T_in &in1_v, const T_in &in2_v, int a){
-    out_v()()(a) = 0;
-    for(int i=0;i<AlgebraDimension;i++)
-      for(int j=0;j<AlgebraDimension;j++)
-	out_v()()(a) = out_v()()(a) + in1_v()()(i,j)*in2_v()()(j,i);  //is this slower than dealing with a POD scalar or simple obj like thrust::complex?
-  }
-
-  static void trace_product(LatticeComplex &out, const LatticeAlgebraMatrix &in1, const LatticeAlgebraMatrix &in2){
-    conformable(in1, in2);
-    GridBase *grid = out.Grid();
-    autoView(out_v,out,AcceleratorWrite);
-    autoView(in1_v,in1,AcceleratorRead);
-    autoView(in2_v,in2,AcceleratorRead);
-
-    const int nsimd=  vMatrix::Nsimd();
-    accelerator_for(ss,grid->oSites(),nsimd,{
-	typedef decltype(coalescedRead(out_v[0])) scal;
-	scal tmp;
-	tmp = Zero();
-	for(int i=0;i<AlgebraDimension;i++)
-	  for(int j=0;j<AlgebraDimension;j++)
-	    tmp()()() = tmp()()() + in1_v(ss)()()(i,j)*in2_v(ss)()()(j,i);
-	coalescedWrite(out_v[ss],tmp);
-      });
-  }
-
 };
     
 template <int ncolour>
