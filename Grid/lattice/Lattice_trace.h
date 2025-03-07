@@ -94,34 +94,6 @@ Lattice<iScalar<iScalar<iScalar<Vec> > > > Determinant(const Lattice<iScalar<iSc
   return ret;
 }
 
-template<int N, class Vec>
-Lattice<iScalar<iScalar<iScalar<Vec> > > > Determinant_real(const Lattice<iScalar<iScalar<iMatrix<Vec, N> > > > &Umu)
-{
-  GridBase *grid=Umu.Grid();
-  auto osites = grid->oSites();
-  const int Nsimd=grid->Nsimd();
-  Lattice<iScalar<iScalar<iScalar<Vec> > > > ret(grid);
-  ret.Checkerboard() = Umu.Checkerboard();
-  autoView(Umu_v,Umu,CpuRead);
-  autoView(ret_v,ret,CpuWrite);
-  thread_for(site,osites,{
-      Eigen::MatrixXd EigenU = Eigen::MatrixXd::Zero(N,N);
-      
-      iScalar<iScalar<iMatrix<ComplexD, N> > > Us;
-      iScalar<iScalar<iScalar<ComplexD> > > Ud;
-      for(int lane=0;lane<Nsimd;lane++){
-	Us = extractLane(lane,Umu_v[site]);
-	for(int i=0;i<N;i++){
-	  for(int j=0;j<N;j++){
-	    EigenU(i,j)=real(Us()()(i,j));
-	  }}
-	Ud()()() = EigenU.determinant();
-	insertLane(lane,ret_v[site],Ud);
-      }
-    });
-  return ret;
-}
-
 template<int N>
 Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > Inverse(const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu)
 {
