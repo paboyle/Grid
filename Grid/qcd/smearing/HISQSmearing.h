@@ -66,20 +66,10 @@ template<class floatT>
 struct HISQParameters{
     // Structure from QOP/QDP 
     int n_naiks;
-    std::array<floatT,GRID_MAX_NAIK> eps_naiks; // TODO: Change to std::vector
-    floatT fat7_c1;
-    floatT fat7_c3;
-    floatT fat7_c5;
-    floatT fat7_c7;
-    floatT fat7_clp;
-    floatT asqtad_c1;
-    floatT asqtad_c3;
-    floatT asqtad_c5;
-    floatT asqtad_c7;
-    floatT asqtad_clp;
-    floatT asqtad_cnaik;
-    floatT diff_c1;
-    floatT diff_cnaik;
+    std::array<floatT,GRID_MAX_NAIK> eps_naiks;
+    floatT fat7_c1  ; floatT fat7_c3  ; floatT fat7_c5  ; floatT fat7_c7  ; floatT fat7_clp;
+    floatT asqtad_c1; floatT asqtad_c3; floatT asqtad_c5; floatT asqtad_c7; floatT asqtad_clp; floatT asqtad_cnaik;
+    floatT diff_c1  ; floatT diff_cnaik;
     HISQParameters(int n_naiks_in, std::array<floatT,GRID_MAX_NAIK> eps_naiks_in, 
                    floatT fat7_one_link  , floatT fat7_three_staple  , floatT fat7_five_staple  , floatT fat7_seven_staple  , floatT fat7_lepage, 
                    floatT asqtad_one_link, floatT asqtad_three_staple, floatT asqtad_five_staple, floatT asqtad_seven_staple, floatT asqtad_lepage,
@@ -136,6 +126,21 @@ accelerator_inline int stencilIndex(int mu, int nu) {
     return Nshifts*nu + Nd*Nshifts*mu;
 }
 
+
+/*!  @brief mu-nu plane stencil. We allow mu==nu to make indexing the stencil easier,
+            but these entries will not be used. */
+std::vector<Coordinate> getHISQSupport() {
+    std::vector<Coordinate> shifts;
+    for(int mu=0;mu<Nd;mu++)
+    for(int nu=0;nu<Nd;nu++) {
+        appendShift<Nd>(shifts,mu);
+        appendShift<Nd>(shifts,nu);
+        appendShift<Nd>(shifts,shiftSignal::NO_SHIFT);
+        appendShift<Nd>(shifts,mu,Back(nu));
+        appendShift<Nd>(shifts,Back(nu));
+    }
+    return shifts;
+}
 
 
 /*!  @brief create fat links from link variables */
@@ -209,17 +214,8 @@ public:
         GF Ughost_5linkA(Ughost.Grid());
         GF Ughost_5linkB(Ughost.Grid());
 
-        // mu-nu plane stencil. We allow mu==nu to make indexing the stencil easier,
-        // but these entries will not be used. 
-        std::vector<Coordinate> shifts;
-        for(int mu=0;mu<Nd;mu++)
-        for(int nu=0;nu<Nd;nu++) {
-            appendShift<Nd>(shifts,mu);
-            appendShift<Nd>(shifts,nu);
-            appendShift<Nd>(shifts,shiftSignal::NO_SHIFT);
-            appendShift<Nd>(shifts,mu,Back(nu));
-            appendShift<Nd>(shifts,Back(nu));
-        }
+        // mu-nu plane stencil.
+        std::vector<Coordinate> shifts = getHISQSupport();
 
         // A GeneralLocalStencil has two indices: a site and stencil index 
         GeneralLocalStencil gStencil(Ughost.Grid(),shifts);
@@ -681,8 +677,7 @@ public:
     //                    All the |X_l> for i=0 come first in memory, followed by all the |X_l> with
     //                    i=1 in memory, and so on.
     //              n_orders_naik: Indexed by unique naik epsilon.
-    void force(GF& momentum, std::vector<Real> vecdt, std::vector<FF*> vecx, std::vector<int> n_orders_naik) {
-//    void force(GF& momentum, std::vector<Real> vecdt, std::vector<FF> vecx, std::vector<int> n_orders_naik) {
+    void force(GF& momentum, std::vector<Real> vecdt, std::vector<FF>& vecx, std::vector<int> n_orders_naik) {
 
         HISQParameters<Real> hp = this->_linkParams;
         auto grid   = this->_grid;
@@ -691,17 +686,18 @@ public:
         GF XY(grid), tmp(grid); // outer product field
         GF u_force(grid);       // accumulates the force
 
-        XY = Zero();
+        FF X(gridRB), Y(gridRB), Xnu(gridRB), Ynu(gridRB), FFdag(gridRB);
+
+        momentum = Zero();
 
         int l = 0;
         for (int inaik = 0; inaik < hp.n_naiks; inaik++) {
             
             int rat_order = n_orders_naik[inaik];
-            FF X(gridRB), Y(gridRB), Xnu(gridRB), Ynu(gridRB), FFdag(gridRB);
 
             for (int i=0; i<rat_order; i++) {
 
-                X = Zero(); Y = Zero();
+                XY = Zero(); X = Zero(); Y = Zero();
                 pickCheckerboard(Even,X,vecx[l]);
                 pickCheckerboard(Odd ,Y,vecx[l]);
 
@@ -722,87 +718,80 @@ public:
                 }
                 XY -= vecdt[l]*tmp; // capture (-1)^y in eq (2.6)
 
+                momentum += hp.fat7_c1*XY;
+
+
+
+                //
+                // 3-link 
+                //
+        
+                PaddedCell Ghost(_HaloDepth,grid);
+                GF Ughost  = Ghost.Exchange(_Umu);
+                GF XYghost = Ghost.Exchange(XY);
+                GF Fghost  = Ghost.Exchange(u_force);
+        
+                Fghost = Zero(); 
+        
+                std::vector<Coordinate> shifts = getHISQSupport();
+        
+                GeneralLocalStencil gStencil(Ughost.Grid(),shifts);
+                typedef decltype(gStencil.GetEntry(0,0)) stencilElement;
+        
+                for(int mu=0;mu<Nd;mu++) {
+        
+                    autoView(U_v , Ughost , AcceleratorRead);
+                    autoView(XY_v, XYghost, AcceleratorRead);
+                    autoView(F_v , Fghost , AcceleratorWrite);
+        
+                    typedef decltype(getLink(U_v[0](0),gStencil.GetEntry(0,0))) U3matrix;
+        
+                    int Nsites = U_v.size();
+                    auto gStencil_v = gStencil.View(AcceleratorRead);
+        
+                    accelerator_for(site,Nsites,Simd::Nsimd(),{ 
+                        stencilElement SE0, SE1, SE2, SE3, SE4;
+                        U3matrix U0, U1, U2, U3, U4, U5, XY0, XY1, XY2, XY3, XY4, XY5, W;
+                        for(int nu=0;nu<Nd;nu++) {
+                            if(nu==mu) continue;
+                            int s = stencilIndex(mu,nu);
+        
+                            SE0 = gStencil_v.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
+                            SE1 = gStencil_v.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
+                            SE2 = gStencil_v.GetEntry(s+2,site); int x           = SE2->_offset;
+                            SE3 = gStencil_v.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
+                            SE4 = gStencil_v.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
+        
+                            U0 = getLink(U_v[x_p_mu     ](nu),SE0);
+                            U1 = getLink(U_v[x_p_nu     ](mu),SE1);
+                            U2 = getLink(U_v[x          ](nu),SE2);
+                            U3 = getLink(U_v[x_p_mu_m_nu](nu),SE3);
+                            U4 = getLink(U_v[x_m_nu     ](mu),SE4);
+                            U5 = getLink(U_v[x_m_nu     ](nu),SE4);
+        
+                            XY0 = getLink(XY_v[x_p_mu     ](nu),SE0);
+                            XY1 = getLink(XY_v[x_p_nu     ](mu),SE1);
+                            XY2 = getLink(XY_v[x          ](nu),SE2);
+                            XY3 = getLink(XY_v[x_p_mu_m_nu](nu),SE3);
+                            XY4 = getLink(XY_v[x_m_nu     ](mu),SE4);
+                            XY5 = getLink(XY_v[x_m_nu     ](nu),SE4);
+        
+                            W  =   adj(XY2)*U1*adj(U0) +     U2 *adj(XY1)*adj(U0) +     U2 *U1*    XY0 
+                                 +     XY5 *U4*    U3  + adj(U5)*adj(XY4)*    U3  + adj(U5)*U4*adj(XY3);                    
+        
+                            setLink(F_v[x](mu), F_v(x)(mu) + hp.fat7_c3*W*vecdt[l]);
+                        }              
+                    })
+                } // end mu loop
+        
+                u_force = Ghost.Extract(Fghost);
+                momentum += u_force;
+
                 l++;
             }
         }
-        momentum=XY;
-
-//        for (int mu = 0; mu < Nd; mu++) {
-//            U[mu] = PeekIndex<LorentzIndex>(u_thin, mu);
-//            V[mu] = PeekIndex<LorentzIndex>(u_smr, mu);
-//          for (int mu = 0; mu < Nd; mu++) {
-//            PokeIndex<LorentzIndex>(u_smr , V[mu]    , mu);
-//            PokeIndex<LorentzIndex>(u_naik, Vnaik[mu], mu);
-//        }      }
-
-//        PaddedCell Ghost(_HaloDepth,grid);
-//        GF Ughost  = Ghost.Exchange(_Umu);
-//        GF XYghost = Ghost.Exchange(XY);
-//        GF Fghost  = Ghost.Exchange(u_force);
-//
-//        Fghost = Zero(); 
-//
-//        std::vector<Coordinate> shifts;
-//        for(int mu=0;mu<Nd;mu++)
-//        for(int nu=0;nu<Nd;nu++) {
-//            appendShift<Nd>(shifts,mu);
-//            appendShift<Nd>(shifts,nu);
-//            appendShift<Nd>(shifts,shiftSignal::NO_SHIFT);
-//            appendShift<Nd>(shifts,mu,Back(nu));
-//            appendShift<Nd>(shifts,Back(nu));
-//        }
-
-//        GeneralLocalStencil gStencil(Ughost.Grid(),shifts);
-//        typedef decltype(gStencil.GetEntry(0,0)) stencilElement;
-//
-//        for(int mu=0;mu<Nd;mu++) {
-//
-//            autoView(U_v , Ughost , AcceleratorRead);
-//            autoView(XY_v, XYghost, AcceleratorRead);
-//            autoView(F_v , Fghost , AcceleratorWrite);
-//
-//            typedef decltype(getLink(U_v[0](0),gStencil.GetEntry(0,0))) U3matrix;
-//
-//            int Nsites = U_v.size();
-//            auto gStencil_v = gStencil.View(AcceleratorRead);
-//
-//            accelerator_for(site,Nsites,Simd::Nsimd(),{ 
-//                stencilElement SE0, SE1, SE2, SE3, SE4;
-//                U3matrix U0, U1, U2, U3, U4, U5, XY0, XY1, XY2, XY3, XY4, XY5, W;
-//                for(int nu=0;nu<Nd;nu++) {
-//                    if(nu==mu) continue;
-//                    int s = stencilIndex(mu,nu);
-//
-//                    SE0 = gStencil_v.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
-//                    SE1 = gStencil_v.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
-//                    SE2 = gStencil_v.GetEntry(s+2,site); int x           = SE2->_offset;
-//                    SE3 = gStencil_v.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
-//                    SE4 = gStencil_v.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
-//
-//                    U0 = getLink(U_v[x_p_mu     ](nu),SE0);
-//                    U1 = getLink(U_v[x_p_nu     ](mu),SE1);
-//                    U2 = getLink(U_v[x          ](nu),SE2);
-//                    U3 = getLink(U_v[x_p_mu_m_nu](nu),SE3);
-//                    U4 = getLink(U_v[x_m_nu     ](mu),SE4);
-//                    U5 = getLink(U_v[x_m_nu     ](nu),SE4);
-//
-//                    XY0 = getLink(XY_v[x_p_mu     ](nu),SE0);
-//                    XY1 = getLink(XY_v[x_p_nu     ](mu),SE1);
-//                    XY2 = getLink(XY_v[x          ](nu),SE2);
-//                    XY3 = getLink(XY_v[x_p_mu_m_nu](nu),SE3);
-//                    XY4 = getLink(XY_v[x_m_nu     ](mu),SE4);
-//                    XY5 = getLink(XY_v[x_m_nu     ](nu),SE4);
-//
-//                    W  =   adj(XY2)*U1*adj(U0) +     U2 *adj(XY1)*adj(U0) +     U2 *U1*    XY0 
-//                         +     XY5 *U4*    U3  + adj(U5)*adj(XY4)*    U3  + adj(U5)*U4*adj(XY3);                    
-//
-//                    setLink(F_v[x](mu), F_v(x)(mu) + hp.c_3*W);
-//                }              
-//            })
-//        } // end mu loop
-//
-//        u_force = Ghost.Extract(Fghost);
     }
+
 
     void ddV_naik(GF& u_deriv, GF& u_mu, GF& u_force) {
 

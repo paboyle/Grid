@@ -39,7 +39,7 @@ using namespace Grid;
 
 
 //#define USE_DOUBLE true 
-#define USE_DOUBLE false 
+#define USE_DOUBLE true 
 
 #if USE_DOUBLE 
     #define PREC double
@@ -107,11 +107,6 @@ bool testForce(GridCartesian& GRID, LGF Umu, LGF Ucontrol,
             vecx.push_back(PHI); 
         }
     }
-
-    // NEXT STEPS: Make sure fat7/asqtad parameters match the interface.md. Open up Carleton's MILC
-    // test code, which you are going to have to understand at some point anyway, and make sure
-    // your parameters agree with that. Run the test and write as control. Copy control over to
-    // local Grid folder where it is protected. Rewrite test as genuine check. Push it.
 
     hisq_force.force(Umom,vecdt,vecx,n_orders_naik);
     LGF diff(&GRID);
