@@ -92,7 +92,7 @@ struct HISQParameters{
 };
 
 
-/*!  @brief somtimes in the U(3) projection we use SVD cuts; here we collect related parameters */
+/*!  @brief Sometimes in the U(3) projection we use SVD cuts; here we collect related parameters */
 template<class floatT>
 struct HISQReunitSVDParameters{
     // Structure from QOP/QDP 
@@ -110,26 +110,26 @@ struct HISQReunitSVDParameters{
 };
 
 
-// I think that "coalesced..." functions are extremely general, which is nice,
-// but in the HISQ context it boils down to link reading and writing.
-template<class vobj> accelerator_inline
-vobj getLink(const vobj & __restrict__ vec,GeneralStencilEntry* SE) {
-    return coalescedReadGeneralPermute(vec, SE->_permute, Nd); 
+/*!  @brief Get the link U_mu(x).  */
+template<class link> accelerator_inline
+auto getLink(const link& __restrict__ U, GeneralStencilEntry* x, int mu) {
+    return coalescedReadGeneralPermute(U[x->_offset](mu), x->_permute, Nd); 
 }
 #define setLink coalescedWrite 
 
 
-// figure out the stencil index from mu and nu
-accelerator_inline int stencilIndex(int mu, int nu) {
+/*! @brief Figure out the stencil index from mu and nu. */
+accelerator_inline 
+int HISQStencilIndex(int mu, int nu) {
     // Nshifts depends on how you built the stencil
     int Nshifts = 5;
     return Nshifts*nu + Nd*Nshifts*mu;
 }
 
 
-/*!  @brief mu-nu plane stencil. We allow mu==nu to make indexing the stencil easier,
-            but these entries will not be used. */
-std::vector<Coordinate> getHISQSupport() {
+/*! @brief Create the mu-nu plane stencil. We allow mu==nu to make indexing the 
+    stencil easier, but these entries will not be used. */
+std::vector<Coordinate> createHISQStencil() {
     std::vector<Coordinate> shifts;
     for(int mu=0;mu<Nd;mu++)
     for(int nu=0;nu<Nd;nu++) {
@@ -142,8 +142,20 @@ std::vector<Coordinate> getHISQSupport() {
     return shifts;
 }
 
+/*! @brief Retreieve the stencil entries. */
+template<class acc> accelerator_inline
+std::tuple<GeneralStencilEntry*,GeneralStencilEntry*,GeneralStencilEntry*,GeneralStencilEntry*,GeneralStencilEntry*> 
+getHISQStencilEntries(acc sView, int sIndex, int site) {
+    GeneralStencilEntry* x_p_mu      = sView.GetEntry(sIndex+0,site);
+    GeneralStencilEntry* x_p_nu      = sView.GetEntry(sIndex+1,site);
+    GeneralStencilEntry* x           = sView.GetEntry(sIndex+2,site);
+    GeneralStencilEntry* x_p_mu_m_nu = sView.GetEntry(sIndex+3,site);
+    GeneralStencilEntry* x_m_nu      = sView.GetEntry(sIndex+4,site);
+    return { x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu };
+}
 
-/*!  @brief create fat links from link variables */
+
+/*!  @brief Allows for ASQTAD-like smearings. */
 template<class Gimpl> 
 class Smear_HISQ : public Gimpl {
 public:
@@ -208,18 +220,18 @@ public:
         PaddedCell Ghost(_HaloDepth,grid);
         GF Ughost = Ghost.Exchange(u_thin);
 
-        // This is where auxiliary N-link fields and the final smear will be stored. 
+        // This is where auxiliary N-link fields and the final smear will be stored. As
+        // implemented, this uses about 25% more memory than necessary. 
         GF Ughost_fat(Ughost.Grid());
         GF Ughost_3link(Ughost.Grid());
         GF Ughost_5linkA(Ughost.Grid());
         GF Ughost_5linkB(Ughost.Grid());
 
         // mu-nu plane stencil.
-        std::vector<Coordinate> shifts = getHISQSupport();
+        std::vector<Coordinate> shifts = createHISQStencil();
 
         // A GeneralLocalStencil has two indices: a site and stencil index 
         GeneralLocalStencil gStencil(Ughost.Grid(),shifts);
-        typedef decltype(gStencil.GetEntry(0,0)) stencilElement;
 
         // This is where contributions from the smearing get added together
         Ughost_fat=Zero();
@@ -227,7 +239,6 @@ public:
         // This loop handles 3-, 5-, and 7-link constructs, minus Lepage and Naik.
         for(int mu=0;mu<Nd;mu++) {
 
-            // TODO: This approach is slightly memory inefficient. It uses 25% extra memory 
             Ughost_3link =Zero();
             Ughost_5linkA=Zero();
             Ughost_5linkB=Zero();
@@ -240,121 +251,107 @@ public:
             autoView(U_5linkB_v, Ughost_5linkB, AcceleratorWrite);
 
             // We infer a type that will be needed in the calculation.
-            typedef decltype(getLink(U_v[0](0),gStencil.GetEntry(0,0))) U3matrix;
+            typedef decltype(getLink(U_v,gStencil.GetEntry(0,0),0)) U3matrix;
 
             int Nsites = U_v.size();
             auto gStencil_v = gStencil.View(AcceleratorRead); 
 
             accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 3-link constructs
-                stencilElement SE0, SE1, SE2, SE3, SE4;
+//                stencilElement x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu;
                 U3matrix U0, U1, U2, U3, U4, U5, W;
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
-                    int s = stencilIndex(mu,nu);
+                    int s = HISQStencilIndex(mu,nu);
 
                     // The stencil gives us support points in the mu-nu plane that we will use to
                     // grab the links we need.
-                    SE0 = gStencil_v.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
-                    SE1 = gStencil_v.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
-                    SE2 = gStencil_v.GetEntry(s+2,site); int x           = SE2->_offset;
-                    SE3 = gStencil_v.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
-                    SE4 = gStencil_v.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
+                    auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
 
                     // When you're deciding whether to take an adjoint, the question is: how is the
                     // stored link oriented compared to the one you want? If I imagine myself travelling
                     // with the to-be-updated link, I have two possible, alternative 3-link paths I can
                     // take, one starting by going to the left, the other starting by going to the right.
-                    U0 = getLink(U_v[x_p_mu     ](nu),SE0);
-                    U1 = getLink(U_v[x_p_nu     ](mu),SE1);
-                    U2 = getLink(U_v[x          ](nu),SE2);
-                    U3 = getLink(U_v[x_p_mu_m_nu](nu),SE3);
-                    U4 = getLink(U_v[x_m_nu     ](mu),SE4);
-                    U5 = getLink(U_v[x_m_nu     ](nu),SE4);
+                    U0 = getLink(U_v,x_p_mu     ,nu);
+                    U1 = getLink(U_v,x_p_nu     ,mu);
+                    U2 = getLink(U_v,x          ,nu);
+                    U3 = getLink(U_v,x_p_mu_m_nu,nu);
+                    U4 = getLink(U_v,x_m_nu     ,mu);
+                    U5 = getLink(U_v,x_m_nu     ,nu);
 
                     //  "left"          "right"
                     W = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
                     // Save 3-link construct for later and add to smeared field.
-                    setLink(U_3link_v[x](nu), W);
+                    setLink(U_3link_v[x->_offset](nu), W);
 
                     // The index operator (x) returns the coalesced read on GPU. The view [] index returns 
                     // a reference to the vector object. The [x](mu) returns a reference to the densely 
                     // packed (contiguous in memory) mu-th element of the vector object. 
-                    setLink(U_fat_v[x](mu), U_fat_v(x)(mu) + lt.c_3*W);
+                    setLink(U_fat_v[x->_offset](mu), U_fat_v(x->_offset)(mu) + lt.c_3*W);
                 }
             })
 
             accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 5-link 
-                stencilElement SE0, SE1, SE2, SE3, SE4;
                 U3matrix U0, U1, U2, U3, U4, U5, W;
                 int sigmaIndex = 0;
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
-                    int s = stencilIndex(mu,nu);
+                    int s = HISQStencilIndex(mu,nu);
                     for(int rho=0;rho<Nd;rho++) {
                         if (rho == mu || rho == nu) continue;
 
-                        SE0 = gStencil_v.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
-                        SE1 = gStencil_v.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
-                        SE2 = gStencil_v.GetEntry(s+2,site); int x           = SE2->_offset;
-                        SE3 = gStencil_v.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
-                        SE4 = gStencil_v.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
+                        auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
 
-                        U0 = getLink(      U_v[x_p_mu     ](nu ),SE0);
-                        U1 = getLink(U_3link_v[x_p_nu     ](rho),SE1);
-                        U2 = getLink(      U_v[x          ](nu ),SE2);
-                        U3 = getLink(      U_v[x_p_mu_m_nu](nu ),SE3);
-                        U4 = getLink(U_3link_v[x_m_nu     ](rho),SE4);
-                        U5 = getLink(      U_v[x_m_nu     ](nu ),SE4);
+                        U0 = getLink(      U_v,x_p_mu     ,nu );
+                        U1 = getLink(U_3link_v,x_p_nu     ,rho);
+                        U2 = getLink(      U_v,x          ,nu );
+                        U3 = getLink(      U_v,x_p_mu_m_nu,nu );
+                        U4 = getLink(U_3link_v,x_m_nu     ,rho);
+                        U5 = getLink(      U_v,x_m_nu     ,nu );
 
                         W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
                         if(sigmaIndex<3) {
-                            setLink(U_5linkA_v[x](rho), W);
+                            setLink(U_5linkA_v[x->_offset](rho), W);
                         } else {
-                            setLink(U_5linkB_v[x](rho), W);
+                            setLink(U_5linkB_v[x->_offset](rho), W);
                         }    
 
-                        setLink(U_fat_v[x](mu), U_fat_v(x)(mu) + lt.c_5*W);
+                        setLink(U_fat_v[x->_offset](mu), U_fat_v(x->_offset)(mu) + lt.c_5*W);
                         sigmaIndex++;
                     }
                 }
             })
 
             accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 7-link
-                stencilElement SE0, SE1, SE2, SE3, SE4;
                 U3matrix U0, U1, U2, U3, U4, U5, W;
                 int sigmaIndex = 0;
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
-                    int s = stencilIndex(mu,nu);
+                    int s = HISQStencilIndex(mu,nu);
                     for(int rho=0;rho<Nd;rho++) {
                         if (rho == mu || rho == nu) continue;
 
-                        SE0 = gStencil_v.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
-                        SE1 = gStencil_v.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
-                        SE2 = gStencil_v.GetEntry(s+2,site); int x           = SE2->_offset;
-                        SE3 = gStencil_v.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
-                        SE4 = gStencil_v.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
+                        auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
 
-                        U0 = getLink(U_v[x_p_mu](nu),SE0);
+                        U0 = getLink(U_v,x_p_mu,nu);
                         if(sigmaIndex<3) {
-                            U1 = getLink(U_5linkB_v[x_p_nu](rho),SE1);
+                            U1 = getLink(U_5linkB_v,x_p_nu,rho);
                         } else {
-                            U1 = getLink(U_5linkA_v[x_p_nu](rho),SE1);
+                            U1 = getLink(U_5linkA_v,x_p_nu,rho);
                         }  
-                        U2 = getLink(U_v[x](nu),SE2);
-                        U3 = getLink(U_v[x_p_mu_m_nu](nu),SE3);
+                        U2 = getLink(U_v,x,nu);
+                        U3 = getLink(U_v,x_p_mu_m_nu,nu);
                         if(sigmaIndex<3) {
-                            U4 = getLink(U_5linkB_v[x_m_nu](rho),SE4);
+                            U4 = getLink(U_5linkB_v,x_m_nu,rho);
                         } else {
-                            U4 = getLink(U_5linkA_v[x_m_nu](rho),SE4);
+                            U4 = getLink(U_5linkA_v,x_m_nu,rho);
                         }  
-                        U5 = getLink(U_v[x_m_nu](nu),SE4);
+                        U5 = getLink(U_v,x_m_nu,nu);
 
                         W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
-                        setLink(U_fat_v[x](mu), U_fat_v(x)(mu) + lt.c_7*W);
+                        setLink(U_fat_v[x->_offset](mu), U_fat_v(x->_offset)(mu) + lt.c_7*W);
                         sigmaIndex++;
                     }
                 }
@@ -584,36 +581,25 @@ public:
                     force() = forcemu(mu);
                     auto forcedag = adj(force);
 
-                    RealScalar u2 = u  * u;
-                    RealScalar u3 = u2 * u;
-                    RealScalar u4 = u3 * u;
-                    RealScalar u5 = u4 * u;
-                    RealScalar u6 = u5 * u;
-                    RealScalar u7 = u6 * u;
-                    RealScalar u8 = u7 * u;
-                    RealScalar v2 = v  * v;
-                    RealScalar v3 = v2 * v;
-                    RealScalar v4 = v3 * v;
-                    RealScalar v5 = v4 * v;
-                    RealScalar v6 = v5 * v;
-                    RealScalar w2 = w  * w;
-                    RealScalar w3 = w2 * w;
-                    RealScalar w4 = w3 * w;
-                    RealScalar w5 = w4 * w;
+                    RealScalar u2, u3, u4, u5, u6, u7, u8, v2 ,v3, v4, v5, v6, w2, w3, w4, w5;
+
+                    u2 = u *u; u3 = u2*u; u4 = u3*u; u5 = u4*u; u6 = u5*u; u7 = u6*u; u8 = u7*u;
+                    v2 = v *v; v3 = v2*v; v4 = v3*v; v5 = v4*v; v6 = v5*v;
+                    w2 = w *w; w3 = w2*w; w4 = w3*w; w5 = w4*w;
         
                     // eq (C10)
                     auto d = 2*w3*(u*v-w)*(u*v-w)*(u*v-w);
         
                     // eq (C11)
-                    auto C00  = ( -w3*u6 + 3*v*w3*u4 + 3*v4*w*u4 - v6*u3 - 4*w4*u3 - 12*v3*w2*u3 + 16*v2*w3*u2 
-                                  + 3*v5*w*u2 - 8*v*w4*u - 3*v4*w2*u + w5 + v3*w3 )/d;
-                    auto C01  = ( -w2*u7 - v2*w*u6 + v4*u5 + 6*v*w2*u5 - 5*w3*u4 - v3*w*u4 - 2*v5*u3 - 6*v2*w2*u3 
-                                  + 10*v*w3*u2 + 6*v4*w*u2 - 3*w4*u - 6*v3*w2*u + 2*v2*w3 )/d;
-                    auto C02  = ( w2*u5 + v2*w*u4 - v4*u3 - 4*v*w2*u3 + 4*w3*u2 +3*v3*w*u2 - 3*v2*w2*u + v*w3 )/d;
-                    auto C11  = ( -w*u8 - v2*u7 + 7*v*w*u6 + 4*v3*u5 - 5*w2*u5 - 16*v2*w*u4 - 4*v4*u3 + 16*v*w2*u3 
-                                  - 3*w3*u2 + 12*v3*w*u2 - 12*v2*w2*u + 3*v*w3 )/d;
-                    auto C12  = ( w*u6 + v2*u5 - 5*v*w*u4 - 2*v3*u3 + 4*w2*u3 + 6*v2*w*u2 - 6*v*w2*u + w3 )/d;
-                    auto C22  = ( -w*u4 - v2*u3 + 3*v*w*u2 - 3*w2*u )/d;
+                    auto C00 = ( -w3*u6 + 3*v*w3*u4 + 3*v4*w*u4 - v6*u3 - 4*w4*u3 - 12*v3*w2*u3 + 16*v2*w3*u2 
+                                 + 3*v5*w*u2 - 8*v*w4*u - 3*v4*w2*u + w5 + v3*w3 )/d;
+                    auto C01 = ( -w2*u7 - v2*w*u6 + v4*u5 + 6*v*w2*u5 - 5*w3*u4 - v3*w*u4 - 2*v5*u3 - 6*v2*w2*u3 
+                                 + 10*v*w3*u2 + 6*v4*w*u2 - 3*w4*u - 6*v3*w2*u + 2*v2*w3 )/d;
+                    auto C02 = ( w2*u5 + v2*w*u4 - v4*u3 - 4*v*w2*u3 + 4*w3*u2 +3*v3*w*u2 - 3*v2*w2*u + v*w3 )/d;
+                    auto C11 = ( -w*u8 - v2*u7 + 7*v*w*u6 + 4*v3*u5 - 5*w2*u5 - 16*v2*w*u4 - 4*v4*u3 + 16*v*w2*u3 
+                                 - 3*w3*u2 + 12*v3*w*u2 - 12*v2*w2*u + 3*v*w3 )/d;
+                    auto C12 = ( w*u6 + v2*u5 - 5*v*w*u4 - 2*v3*u3 + 4*w2*u3 + 6*v2*w*u2 - 6*v*w2*u + w3 )/d;
+                    auto C22 = ( -w*u4 - v2*u3 + 3*v*w*u2 - 3*w2*u )/d;
         
                     // These are all used in the loop over color entries, and we want to avoid recomputing
                     // these products, which should be broadcast to all sites, 3*3*3*3=81 times. 
@@ -733,53 +719,46 @@ public:
         
                 Fghost = Zero(); 
         
-                std::vector<Coordinate> shifts = getHISQSupport();
-        
+                std::vector<Coordinate> shifts = createHISQStencil();
                 GeneralLocalStencil gStencil(Ughost.Grid(),shifts);
-                typedef decltype(gStencil.GetEntry(0,0)) stencilElement;
         
                 for(int mu=0;mu<Nd;mu++) {
         
                     autoView(U_v , Ughost , AcceleratorRead);
                     autoView(XY_v, XYghost, AcceleratorRead);
                     autoView(F_v , Fghost , AcceleratorWrite);
-        
-                    typedef decltype(getLink(U_v[0](0),gStencil.GetEntry(0,0))) U3matrix;
+            
+                    typedef decltype(getLink(U_v,gStencil.GetEntry(0,0),0)) U3matrix;
         
                     int Nsites = U_v.size();
                     auto gStencil_v = gStencil.View(AcceleratorRead);
         
                     accelerator_for(site,Nsites,Simd::Nsimd(),{ 
-                        stencilElement SE0, SE1, SE2, SE3, SE4;
                         U3matrix U0, U1, U2, U3, U4, U5, XY0, XY1, XY2, XY3, XY4, XY5, W;
                         for(int nu=0;nu<Nd;nu++) {
                             if(nu==mu) continue;
-                            int s = stencilIndex(mu,nu);
+                            int s = HISQStencilIndex(mu,nu);
         
-                            SE0 = gStencil_v.GetEntry(s+0,site); int x_p_mu      = SE0->_offset;
-                            SE1 = gStencil_v.GetEntry(s+1,site); int x_p_nu      = SE1->_offset;
-                            SE2 = gStencil_v.GetEntry(s+2,site); int x           = SE2->_offset;
-                            SE3 = gStencil_v.GetEntry(s+3,site); int x_p_mu_m_nu = SE3->_offset;
-                            SE4 = gStencil_v.GetEntry(s+4,site); int x_m_nu      = SE4->_offset;
+                            auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
         
-                            U0 = getLink(U_v[x_p_mu     ](nu),SE0);
-                            U1 = getLink(U_v[x_p_nu     ](mu),SE1);
-                            U2 = getLink(U_v[x          ](nu),SE2);
-                            U3 = getLink(U_v[x_p_mu_m_nu](nu),SE3);
-                            U4 = getLink(U_v[x_m_nu     ](mu),SE4);
-                            U5 = getLink(U_v[x_m_nu     ](nu),SE4);
+                            U0  = getLink(U_v ,x_p_mu     ,nu);
+                            U1  = getLink(U_v ,x_p_nu     ,mu);
+                            U2  = getLink(U_v ,x          ,nu);
+                            U3  = getLink(U_v ,x_p_mu_m_nu,nu);
+                            U4  = getLink(U_v ,x_m_nu     ,mu);
+                            U5  = getLink(U_v ,x_m_nu     ,nu);
         
-                            XY0 = getLink(XY_v[x_p_mu     ](nu),SE0);
-                            XY1 = getLink(XY_v[x_p_nu     ](mu),SE1);
-                            XY2 = getLink(XY_v[x          ](nu),SE2);
-                            XY3 = getLink(XY_v[x_p_mu_m_nu](nu),SE3);
-                            XY4 = getLink(XY_v[x_m_nu     ](mu),SE4);
-                            XY5 = getLink(XY_v[x_m_nu     ](nu),SE4);
+                            XY0 = getLink(XY_v,x_p_mu     ,nu);
+                            XY1 = getLink(XY_v,x_p_nu     ,mu);
+                            XY2 = getLink(XY_v,x          ,nu);
+                            XY3 = getLink(XY_v,x_p_mu_m_nu,nu);
+                            XY4 = getLink(XY_v,x_m_nu     ,mu);
+                            XY5 = getLink(XY_v,x_m_nu     ,nu);
         
                             W  =   adj(XY2)*U1*adj(U0) +     U2 *adj(XY1)*adj(U0) +     U2 *U1*    XY0 
                                  +     XY5 *U4*    U3  + adj(U5)*adj(XY4)*    U3  + adj(U5)*U4*adj(XY3);                    
         
-                            setLink(F_v[x](mu), F_v(x)(mu) + hp.fat7_c3*W*vecdt[l]);
+                            setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.fat7_c3*W*vecdt[l]);
                         }              
                     })
                 } // end mu loop
