@@ -120,6 +120,8 @@ bool testForce(GridCartesian& GRID, LGF Umu, LGF Ucontrol,
         return false;
     }
 //    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.XY.control");
+//    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.3link.control");
+//    return true;
 }
 
 
@@ -201,11 +203,17 @@ int main (int argc, char** argv) {
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.ddVU3.control");
     pass *= testddUProj(GRID,Umu,Ucontrol);
 
-    // Check the inner product (1-link)
+    // Check the 1-link (inner product) 
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.XY.control");
     pass *= testForce(GRID, Umu, Ucontrol,
-                      1, 0   , 0, 0, 0,
-                      0, 1/16, 0, 0, 0 );
+                      1, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0 );
+
+    // Check the 3-link
+    NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.3link.control");
+    pass *= testForce(GRID, Umu, Ucontrol,
+                      0, 1, 0, 0, 0,
+                      0, 0, 0, 0, 0 );
 
     if(pass){
         Grid_pass("All tests passed.");

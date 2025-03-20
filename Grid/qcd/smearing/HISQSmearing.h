@@ -129,6 +129,7 @@ int HISQStencilIndex(int mu, int nu) {
 
 /*! @brief Create the mu-nu plane stencil. We allow mu==nu to make indexing the 
     stencil easier, but these entries will not be used. */
+inline
 std::vector<Coordinate> createHISQStencil() {
     std::vector<Coordinate> shifts;
     for(int mu=0;mu<Nd;mu++)
@@ -257,7 +258,6 @@ public:
             auto gStencil_v = gStencil.View(AcceleratorRead); 
 
             accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 3-link constructs
-//                stencilElement x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu;
                 U3matrix U0, U1, U2, U3, U4, U5, W;
                 for(int nu=0;nu<Nd;nu++) {
                     if(nu==mu) continue;
@@ -676,13 +676,15 @@ public:
 
         momentum = Zero();
 
+        // These four lines control the loop over rational approximation contributions. As explained above,
+        // l indexes over both Naik epsilon and rational approximation order.
         int l = 0;
         for (int inaik = 0; inaik < hp.n_naiks; inaik++) {
-            
             int rat_order = n_orders_naik[inaik];
-
             for (int i=0; i<rat_order; i++) {
 
+
+                // ------------------------------------------- OUTER PRODUCT |X><Y|
                 XY = Zero(); X = Zero(); Y = Zero();
                 pickCheckerboard(Even,X,vecx[l]);
                 pickCheckerboard(Odd ,Y,vecx[l]);
@@ -704,24 +706,20 @@ public:
                 }
                 XY -= vecdt[l]*tmp; // capture (-1)^y in eq (2.6)
 
+
                 momentum += hp.fat7_c1*XY;
 
 
 
-                //
-                // 3-link 
-                //
-        
+                // ------------------------------------------- SMEARING DERIVATIVES 
                 PaddedCell Ghost(_HaloDepth,grid);
                 GF Ughost  = Ghost.Exchange(_Umu);
                 GF XYghost = Ghost.Exchange(XY);
                 GF Fghost  = Ghost.Exchange(u_force);
-        
-                Fghost = Zero(); 
-        
+                Fghost     = Zero(); 
                 std::vector<Coordinate> shifts = createHISQStencil();
                 GeneralLocalStencil gStencil(Ughost.Grid(),shifts);
-        
+
                 for(int mu=0;mu<Nd;mu++) {
         
                     autoView(U_v , Ughost , AcceleratorRead);
@@ -733,7 +731,7 @@ public:
                     int Nsites = U_v.size();
                     auto gStencil_v = gStencil.View(AcceleratorRead);
         
-                    accelerator_for(site,Nsites,Simd::Nsimd(),{ 
+                    accelerator_for(site,Nsites,Simd::Nsimd(),{ // 3-LINK DERIVATIVE 
                         U3matrix U0, U1, U2, U3, U4, U5, XY0, XY1, XY2, XY3, XY4, XY5, W;
                         for(int nu=0;nu<Nd;nu++) {
                             if(nu==mu) continue;
@@ -761,6 +759,8 @@ public:
                             setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.fat7_c3*W*vecdt[l]);
                         }              
                     })
+
+
                 } // end mu loop
         
                 u_force = Ghost.Extract(Fghost);
