@@ -1,3 +1,4 @@
+#if 0
 /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -241,3 +242,4 @@ void LebesgueOrder::ZGraph(void)
 }
 NAMESPACE_END(Grid);
 
+#endif

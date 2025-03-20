@@ -375,23 +375,6 @@ void StaggeredKernels<Impl>::DhopSiteHandExt(StencilView &st,
   }
 }
 
-/*
-#define DHOP_SITE_HAND_INSTANTIATE(IMPL)				\
-  template void StaggeredKernels<IMPL>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, \
-						     DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, \
-						     SiteSpinor *buf, int LLs, int sU, \
-						     const FermionFieldView &in, FermionFieldView &out, int dag); \
-									\
-  template void StaggeredKernels<IMPL>::DhopSiteHandInt(StencilImpl &st, LebesgueOrder &lo, \
-						     DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, \
-						     SiteSpinor *buf, int LLs, int sU, \
-						     const FermionFieldView &in, FermionFieldView &out, int dag); \
-									\
-  template void StaggeredKernels<IMPL>::DhopSiteHandExt(StencilImpl &st, LebesgueOrder &lo, \
-						     DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, \
-						     SiteSpinor *buf, int LLs, int sU, \
-						     const FermionFieldView &in, FermionFieldView &out, int dag); \
-*/
 #undef LOAD_CHI
 #undef HAND_DECLARATIONS
 

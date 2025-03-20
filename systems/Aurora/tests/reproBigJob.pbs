@@ -1,0 +1,74 @@
+#!/bin/bash
+
+#PBS -l select=32
+#PBS -q EarlyAppAccess
+#PBS -A LatticeQCD_aesp_CNDA
+#PBS -l walltime=02:00:00
+#PBS -N reproBigJob
+#PBS -k doe
+
+#export OMP_PROC_BIND=spread
+#unset OMP_PLACES
+
+#module load oneapi/eng-compiler/2023.05.15.003
+#module load mpich/51.2/icc-all-deterministic-pmix-gpu
+
+# 56 cores / 6 threads ~9
+export OMP_NUM_THREADS=6
+export MPIR_CVAR_CH4_OFI_ENABLE_GPU_PIPELINE=1
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_D2H_ENGINE_TYPE=0
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_H2D_ENGINE_TYPE=0
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_BUFFER_SZ=10485760
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_THRESHOLD=131072
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_NUM_BUFFERS_PER_CHUNK=16
+export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_MAX_NUM_BUFFERS=16
+#export MPIR_CVAR_GPU_USE_IMMEDIATE_COMMAND_LIST=1
+
+#export SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1
+export SYCL_PI_LEVEL_ZERO_USE_COPY_ENGINE=1
+export SYCL_PI_LEVEL_ZERO_USE_COPY_ENGINE_FOR_D2D_COPY=1
+export SYCL_PROGRAM_COMPILE_OPTIONS="-ze-opt-large-register-file"
+
+export GRID_PRINT_ENTIRE_LOG=0
+export GRID_CHECKSUM_RECV_BUF=0
+export GRID_CHECKSUM_SEND_BUF=0
+
+export MPICH_OFI_NIC_POLICY=GPU
+
+#export MPIR_CVAR_ALLREDUCE_DEVICE_COLLECTIVE=0
+#export MPIR_CVAR_REDUCE_DEVICE_COLLECTIVE=0
+#export MPIR_CVAR_ALLREDUCE_INTRA_ALGORITHM=recursive_doubling
+#unset MPIR_CVAR_CH4_COLL_SELECTION_TUNING_JSON_FILE
+#unset MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE
+#unset MPIR_CVAR_CH4_POSIX_COLL_SELECTION_TUNING_JSON_FILE
+
+cd $PBS_O_WORKDIR
+
+cp $PBS_NODEFILE nodefile
+
+DIR=reproBigJob.$PBS_JOBID
+
+mkdir -p $DIR
+cd $DIR
+
+cp $PBS_NODEFILE nodefile
+
+BINARY=../Test_dwf_mixedcg_prec
+
+echo > pingjob <<EOF
+while read node ; 
+do
+	echo ssh $node killall -s USR1 -- ../Test_dwf_mixedcg_prec
+done < nodefile
+EOF
+
+CMD="mpiexec -np 384 -ppn 12  -envall --hostfile nodefile \
+	     ../gpu_tile_compact.sh \
+	     $BINARY --mpi 4.4.4.6 --grid 128.128.128.96  \
+		--shm-mpi 1 --shm 4096 --device-mem 32000 --accelerator-threads 32 --seconds 6000 --debug-stdout --log Message --debug-signals"
+
+echo $CMD > command-line
+env > environment
+$CMD
+grep Oops Grid.stderr.* > failures.$PBS_JOBID
+rm core.*

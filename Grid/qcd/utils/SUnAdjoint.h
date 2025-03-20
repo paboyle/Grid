@@ -62,7 +62,7 @@ public:
     // returns i(T_Adj)^index necessary for the projectors
     // see definitions above
     iAdjTa = Zero();
-    Vector<iSUnMatrix<cplx> > ta(ncolour * ncolour - 1);
+    iSUnMatrix<cplx> ta[ncolour * ncolour - 1];
     iSUnMatrix<cplx> tmp;
 
     // FIXME not very efficient to get all the generators everytime

@@ -1,0 +1,206 @@
+The purpose of this file is to collate all non-obvious known magic shell variables
+and compiler flags required for either correctness or performance on various systems.
+
+A repository of work-arounds.
+
+Contents:
+1. Interconnect + MPI
+2. Compilation
+3. Profiling
+
+************************
+* 1. INTERCONNECT + MPI
+************************
+
+--------------------------------------------------------------------
+MPI2-IO correctness: force OpenMPI to use the MPICH romio implementation for parallel I/O 
+--------------------------------------------------------------------
+export OMPI_MCA_io=romio321
+
+--------------------------------------
+ROMIO fail with > 2GB per node read (32 bit issue)
+--------------------------------------
+
+Use later MPICH
+
+https://github.com/paboyle/Grid/issues/381
+
+https://github.com/pmodels/mpich/commit/3a479ab0
+
+--------------------------------------------------------------------
+Slingshot: Frontier and Perlmutter libfabric slow down 
+and physical memory fragmentation 
+--------------------------------------------------------------------
+export FI_MR_CACHE_MONITOR=disabled
+or
+export FI_MR_CACHE_MONITOR=kdreg2
+
+--------------------------------------------------------------------
+Perlmutter
+--------------------------------------------------------------------
+
+export MPICH_RDMA_ENABLED_CUDA=1
+export MPICH_GPU_IPC_ENABLED=1
+export MPICH_GPU_EAGER_REGISTER_HOST_MEM=0
+export MPICH_GPU_NO_ASYNC_MEMCPY=0
+
+--------------------------------------------------------------------
+Frontier/LumiG
+--------------------------------------------------------------------
+
+Hiding ROCR_VISIBLE_DEVICES triggers SDMA engines to be used for GPU-GPU
+
+cat << EOF > select_gpu
+#!/bin/bash
+export MPICH_GPU_SUPPORT_ENABLED=1
+export MPICH_SMP_SINGLE_COPY_MODE=XPMEM
+export GPU_MAP=(0 1 2 3 7 6 5 4)
+export NUMA_MAP=(3 3 1 1 2 2 0 0)
+export GPU=\${GPU_MAP[\$SLURM_LOCALID]}
+export NUMA=\${NUMA_MAP[\$SLURM_LOCALID]}
+export HIP_VISIBLE_DEVICES=\$GPU
+unset ROCR_VISIBLE_DEVICES
+echo RANK \$SLURM_LOCALID using GPU \$GPU    
+exec numactl -m \$NUMA -N \$NUMA \$*
+EOF
+chmod +x ./select_gpu
+
+srun ./select_gpu BINARY
+
+
+--------------------------------------------------------------------
+Mellanox performance with A100 GPU (Tursa, Booster, Leonardo)
+--------------------------------------------------------------------
+export OMPI_MCA_btl=^uct,openib
+export UCX_TLS=gdr_copy,rc,rc_x,sm,cuda_copy,cuda_ipc
+export UCX_RNDV_SCHEME=put_zcopy
+export UCX_RNDV_THRESH=16384
+export UCX_IB_GPU_DIRECT_RDMA=yes
+
+--------------------------------------------------------------------
+Mellanox + A100 correctness (Tursa, Booster, Leonardo)
+--------------------------------------------------------------------
+export UCX_MEMTYPE_CACHE=n
+
+--------------------------------------------------------------------
+MPICH/Aurora/PVC correctness and performance 
+--------------------------------------------------------------------
+
+https://github.com/pmodels/mpich/issues/7302
+
+--enable-cuda-aware-mpi=no  
+--enable-unified=no
+
+Grid's internal D-H-H-D pipeline mode, avoid device memory in MPI
+Do not use SVM
+
+Ideally use MPICH with fix to issue 7302:
+
+https://github.com/pmodels/mpich/pull/7312
+
+Ideally:
+MPIR_CVAR_CH4_IPC_GPU_HANDLE_CACHE=generic
+
+Alternatives:
+export MPIR_CVAR_NOLOCAL=1
+export MPIR_CVAR_CH4_IPC_GPU_P2P_THRESHOLD=1000000000
+
+--------------------------------------------------------------------
+MPICH/Aurora/PVC correctness and performance 
+--------------------------------------------------------------------
+
+Broken:
+export MPIR_CVAR_CH4_OFI_ENABLE_GPU_PIPELINE=1
+
+This gives good peformance without requiring 
+--enable-cuda-aware-mpi=no  
+
+But is an open issue reported by James Osborn
+https://github.com/pmodels/mpich/issues/7139
+
+Possibly resolved but unclear if in the installed software yet.
+
+************************
+* 2. COMPILATION
+************************
+
+--------------------------------------------------------------------
+G++ compiler breakage / graveyard
+--------------------------------------------------------------------
+
+9.3.0, 10.3.1, 
+https://github.com/paboyle/Grid/issues/290
+https://github.com/paboyle/Grid/issues/264
+
+Working (-) Broken (X):
+
+4.9.0 -
+4.9.1 -
+5.1.0 X
+5.2.0 X
+5.3.0 X
+5.4.0 X
+6.1.0 X
+6.2.0 X
+6.3.0 -
+7.1.0 -
+8.0.0 (HEAD) -
+
+https://github.com/paboyle/Grid/issues/100
+
+--------------------------------------------------------------------
+AMD GPU nodes :
+--------------------------------------------------------------------
+
+multiple ROCM versions broken; use 5.3.0
+manifests itself as wrong results in fp32 
+
+https://github.com/paboyle/Grid/issues/464
+
+--------------------------------------------------------------------
+Aurora/PVC
+--------------------------------------------------------------------
+
+SYCL ahead of time compilation (fixes rare runtime JIT errors and faster runtime, PB)
+SYCL slow link and relocatable code issues (Christoph Lehner)
+Opt large register file required for good performance in fp64
+
+
+export SYCL_PROGRAM_COMPILE_OPTIONS="-ze-opt-large-register-file"
+export LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel -fsycl-targets=spir64_gen -Xs -device -Xs pvc -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel  -fsycl  -lsycl -fPIC -fsycl-max-parallel-link-jobs=16 -fno-sycl-rdc" 
+export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-tautological-compare -qmkl=parallel  -fsycl -fno-exceptions -fPIC"
+
+--------------------------------------------------------------------
+Aurora/PVC useful extra options
+--------------------------------------------------------------------
+
+Host only sanitizer:
+-Xarch_host -fsanitize=leak
+-Xarch_host -fsanitize=address
+
+Deterministic MPI reduction:
+export MPIR_CVAR_ALLREDUCE_DEVICE_COLLECTIVE=0
+export MPIR_CVAR_REDUCE_DEVICE_COLLECTIVE=0
+export MPIR_CVAR_ALLREDUCE_INTRA_ALGORITHM=recursive_doubling
+unset MPIR_CVAR_CH4_COLL_SELECTION_TUNING_JSON_FILE
+unset MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE
+unset MPIR_CVAR_CH4_POSIX_COLL_SELECTION_TUNING_JSON_FILE
+
+
+
+************************
+* 3. Visual profile tools
+************************
+
+--------------------------------------------------------------------
+Frontier/rocprof
+--------------------------------------------------------------------
+
+--------------------------------------------------------------------
+Aurora/unitrace
+--------------------------------------------------------------------
+
+
+--------------------------------------------------------------------
+Tursa/nsight-sys
+--------------------------------------------------------------------

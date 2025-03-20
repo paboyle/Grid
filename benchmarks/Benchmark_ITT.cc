@@ -644,11 +644,6 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicySequential);
-#ifdef KNL
-  LebesgueOrder::Block = std::vector<int>({8,2,2,2});
-#else
-  LebesgueOrder::Block = std::vector<int>({2,2,2,2});
-#endif
   Benchmark::Decomposition();
 
   int do_su4=1;

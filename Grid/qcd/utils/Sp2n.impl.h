@@ -207,7 +207,7 @@ static void generatorZtype(int zIndex, iGroupMatrix<cplx> &ta) {
 // Map a su2 subgroup number to the pair of rows that are non zero
 ////////////////////////////////////////////////////////////////////////
 template <ONLY_IF_Sp>
-static void su2SubGroupIndex(int &i1, int &i2, int su2_index, GroupName::Sp) {
+static accelerator_inline void su2SubGroupIndex(int &i1, int &i2, int su2_index, GroupName::Sp) {
   const int nsp=ncolour/2;
   assert((su2_index >= 0) && (su2_index < (nsp * (nsp - 1)) / 2));
 

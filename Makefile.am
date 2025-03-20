@@ -1,7 +1,7 @@
 # part of the GNU Automake system, which simplifies the generation of `Makefile.in` files.
 
 # additional include paths necessary to compile the C++ library
-SUBDIRS = Grid HMC benchmarks tests examples
+SUBDIRS = Grid  benchmarks tests examples HMC
 
 include $(top_srcdir)/doxygen.inc
 

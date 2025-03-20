@@ -2,7 +2,8 @@
 
 ## qsub -q EarlyAppAccess -A Aurora_Deployment -I -l select=1 -l walltime=60:00
 
-#PBS -l select=16:system=sunspot,place=scatter
+#PBS -l select=16
+#PBS -q EarlyAppAccess
 #PBS -A LatticeQCD_aesp_CNDA
 #PBS -l walltime=01:00:00
 #PBS -N dwf
@@ -13,19 +14,14 @@
 
 cd $PBS_O_WORKDIR
 
-#source ../sourceme.sh
+source ../sourceme.sh
 
 cat $PBS_NODEFILE
 
-#export MPICH_COLL_SYNC=1
-#export MPICH_ENV_DISPLAY=1
-export MPICH_
 export OMP_NUM_THREADS=3
 export MPIR_CVAR_CH4_OFI_ENABLE_GPU_PIPELINE=1
-module load oneapi/eng-compiler/2023.05.15.003
-module load mpich/51.2/icc-all-deterministic-pmix-gpu
-#export LD_LIBRARY_PATH=/soft/restricted/CNDA/updates/2023.05.15.001/oneapi/compiler/eng-20230512/compiler/linux/lib/:$LD_LIBRARY_PATH
 
+#module load mpich/51.2/icc-all-deterministic-pmix-gpu
 #unset MPIR_CVAR_CH4_OFI_GPU_PIPELINE_D2H_ENGINE_TYPE
 #unset MPIR_CVAR_CH4_OFI_GPU_PIPELINE_H2D_ENGINE_TYPE
 #unset MPIR_CVAR_GPU_USE_IMMEDIATE_COMMAND_LIST

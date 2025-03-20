@@ -154,6 +154,8 @@ public:
     //    std::cout<<GridLogMessage << "Calling PreSmoother input residual "<<norm2(in) <<std::endl;
     double t;
     // Fine Smoother
+    //    out = in;
+    out = Zero();
     t=-usecond();
     _PreSmoother(in,out);
     t+=usecond();
@@ -172,6 +174,7 @@ public:
 
     // Coarse correction
     t=-usecond();
+    Csol = Zero();
     _CoarseSolve(Csrc,Csol);
     //Csol=Zero();
     t+=usecond();
@@ -191,6 +194,8 @@ public:
 
     // Fine Smoother
     t=-usecond();
+    //    vec2=vec1;
+    vec2=Zero();
     _PostSmoother(vec1,vec2);
     t+=usecond();
     std::cout<<GridLogMessage << "PostSmoother took "<< t/1000.0<< "ms" <<std::endl;
@@ -215,7 +220,8 @@ int main (int argc, char ** argv)
   // Construct a coarsened grid
   Coordinate clatt = GridDefaultLatt();
   for(int d=0;d<clatt.size();d++){
-    clatt[d] = clatt[d]/4;
+    clatt[d] = clatt[d]/2;
+    //    clatt[d] = clatt[d]/4;
   }
   GridCartesian *Coarse4d =  SpaceTimeGrid::makeFourDimGrid(clatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());;
   GridCartesian *Coarse5d =  SpaceTimeGrid::makeFiveDimGrid(1,Coarse4d);
@@ -244,7 +250,7 @@ int main (int argc, char ** argv)
   DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   DomainWallFermionD Dpv(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,M5);
 
-  const int nbasis = 8;
+  const int nbasis = 20;
   const int cb = 0 ;
   LatticeFermion prom(FGrid);
 
@@ -260,7 +266,25 @@ int main (int argc, char ** argv)
   typedef PVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> PVdagM_t;
   typedef ShiftedPVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> ShiftedPVdagM_t;
   PVdagM_t PVdagM(Ddwf,Dpv);
-  ShiftedPVdagM_t ShiftedPVdagM(2.0,Ddwf,Dpv);
+  //  ShiftedPVdagM_t ShiftedPVdagM(2.0,Ddwf,Dpv); // 355
+  //  ShiftedPVdagM_t ShiftedPVdagM(1.0,Ddwf,Dpv); // 246
+  //  ShiftedPVdagM_t ShiftedPVdagM(0.5,Ddwf,Dpv); // 183
+  //  ShiftedPVdagM_t ShiftedPVdagM(0.25,Ddwf,Dpv); // 145
+  //  ShiftedPVdagM_t ShiftedPVdagM(0.1,Ddwf,Dpv); // 134
+  //  ShiftedPVdagM_t ShiftedPVdagM(0.1,Ddwf,Dpv); // 127 -- NULL space via inverse iteration
+  //  ShiftedPVdagM_t ShiftedPVdagM(0.1,Ddwf,Dpv); // 57 -- NULL space via inverse iteration; 3 iterations
+  //  ShiftedPVdagM_t ShiftedPVdagM(0.25,Ddwf,Dpv); // 57 , tighter inversion
+  //  ShiftedPVdagM_t ShiftedPVdagM(0.25,Ddwf,Dpv); // nbasis 20 -- 49 iters
+  //  ShiftedPVdagM_t ShiftedPVdagM(0.25,Ddwf,Dpv); // nbasis 20 -- 70 iters; asymmetric 
+  //  ShiftedPVdagM_t ShiftedPVdagM(0.25,Ddwf,Dpv); // 58; Loosen coarse, tighten fine
+  //  ShiftedPVdagM_t ShiftedPVdagM(0.1,Ddwf,Dpv); // 56 ... 
+  //  ShiftedPVdagM_t ShiftedPVdagM(0.1,Ddwf,Dpv); // 51 ...  with 24 vecs
+  //  ShiftedPVdagM_t ShiftedPVdagM(0.1,Ddwf,Dpv); // 31 ...  with 24 vecs and 2^4 blocking
+  //  ShiftedPVdagM_t ShiftedPVdagM(0.1,Ddwf,Dpv); // 43 ...  with 16 vecs and 2^4 blocking, sloppier
+  //  ShiftedPVdagM_t ShiftedPVdagM(0.1,Ddwf,Dpv); // 35  ...  with 20 vecs and 2^4 blocking
+  //  ShiftedPVdagM_t ShiftedPVdagM(0.1,Ddwf,Dpv); // 35  ...  with 20 vecs and 2^4 blocking, looser coarse
+  //  ShiftedPVdagM_t ShiftedPVdagM(0.1,Ddwf,Dpv); // 64  ...  with 20 vecs, Christoph setup, and 2^4 blocking, looser coarse
+  ShiftedPVdagM_t ShiftedPVdagM(0.01,Ddwf,Dpv); // 
 
 
   // Run power method on HOA??
@@ -269,6 +293,7 @@ int main (int argc, char ** argv)
   // Warning: This routine calls PVdagM.Op, not PVdagM.HermOp
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis> Subspace;
   Subspace AggregatesPD(Coarse5d,FGrid,cb);
+  /*
   AggregatesPD.CreateSubspaceChebyshev(RNG5,
 				       PVdagM,
 				       nbasis,
@@ -278,6 +303,10 @@ int main (int argc, char ** argv)
 				       200,
 				       200,
 				       0.0);
+  */
+  AggregatesPD.CreateSubspaceGCR(RNG5,
+				 PVdagM,
+				 nbasis);
   
   LittleDiracOperator LittleDiracOpPV(geom,FGrid,Coarse5d);
   LittleDiracOpPV.CoarsenOperator(PVdagM,AggregatesPD);
@@ -334,12 +363,13 @@ int main (int argc, char ** argv)
   ///////////////////////////////////////
 
   std::cout<<GridLogMessage<<"******************* "<<std::endl;
-  std::cout<<GridLogMessage<<" Coarse Grid Solve "<<std::endl;
+  std::cout<<GridLogMessage<<" Coarse Grid Solve -- Level 3 "<<std::endl;
   std::cout<<GridLogMessage<<"******************* "<<std::endl;
   TrivialPrecon<CoarseVector> simple;
   NonHermitianLinearOperator<LittleDiracOperator,CoarseVector> LinOpCoarse(LittleDiracOpPV);
-  PrecGeneralisedConjugateResidualNonHermitian<CoarseVector>  L2PGCR(1.0e-8, 100, LinOpCoarse,simple,10,10); 
-  L2PGCR.Level(2);
+  //  PrecGeneralisedConjugateResidualNonHermitian<CoarseVector>  L2PGCR(1.0e-4, 100, LinOpCoarse,simple,10,10); 
+  PrecGeneralisedConjugateResidualNonHermitian<CoarseVector>  L2PGCR(3.0e-2, 100, LinOpCoarse,simple,10,10); 
+  L2PGCR.Level(3);
   c_res=Zero();
   L2PGCR(c_src,c_res);
 
@@ -347,11 +377,12 @@ int main (int argc, char ** argv)
   // Fine grid smoother
   ////////////////////////////////////////
   std::cout<<GridLogMessage<<"******************* "<<std::endl;
-  std::cout<<GridLogMessage<<" Fine Grid Smoother "<<std::endl;
+  std::cout<<GridLogMessage<<" Fine Grid Smoother -- Level 2 "<<std::endl;
   std::cout<<GridLogMessage<<"******************* "<<std::endl;
   TrivialPrecon<LatticeFermionD> simple_fine;
   //  NonHermitianLinearOperator<PVdagM_t,LatticeFermionD> LinOpSmooth(PVdagM);
-  PrecGeneralisedConjugateResidualNonHermitian<LatticeFermionD> SmootherGCR(0.01,10,ShiftedPVdagM,simple_fine,4,4);
+  PrecGeneralisedConjugateResidualNonHermitian<LatticeFermionD> SmootherGCR(0.01,1,ShiftedPVdagM,simple_fine,16,16);
+  SmootherGCR.Level(2);
   
   LatticeFermionD f_src(FGrid);
   LatticeFermionD f_res(FGrid);
@@ -364,12 +395,12 @@ int main (int argc, char ** argv)
 
   TwoLevelMG TwoLevelPrecon(AggregatesPD,
 			    PVdagM,
-			    SmootherGCR,
+			    simple_fine,
 			    SmootherGCR,
 			    LinOpCoarse,
 			    L2PGCR);
   
-  PrecGeneralisedConjugateResidualNonHermitian<LatticeFermion> L1PGCR(1.0e-8,1000,PVdagM,TwoLevelPrecon,8,8);
+  PrecGeneralisedConjugateResidualNonHermitian<LatticeFermion> L1PGCR(1.0e-8,1000,PVdagM,TwoLevelPrecon,16,16);
   L1PGCR.Level(1);
 
   f_res=Zero();

@@ -48,8 +48,6 @@ NaiveStaggeredFermion<Impl>::NaiveStaggeredFermion(GridCartesian &Fgrid, GridRed
     StencilEven(&Hgrid, npoint, Even, directions, displacements,p),  // source is Even
     StencilOdd(&Hgrid, npoint, Odd, directions, displacements,p),  // source is Odd
     mass(_mass),
-    Lebesgue(_grid),
-    LebesgueEvenOdd(_cbgrid),
     Umu(&Fgrid),
     UmuEven(&Hgrid),
     UmuOdd(&Hgrid),
@@ -268,7 +266,7 @@ void NaiveStaggeredFermion<Impl>::Dhop(const FermionField &in, FermionField &out
 
   out.Checkerboard() = in.Checkerboard();
 
-  DhopInternal(Stencil, Lebesgue, Umu, in, out, dag);
+  DhopInternal(Stencil, Umu, in, out, dag);
 }
 
 template <class Impl>
@@ -280,7 +278,7 @@ void NaiveStaggeredFermion<Impl>::DhopOE(const FermionField &in, FermionField &o
   assert(in.Checkerboard() == Even);
   out.Checkerboard() = Odd;
 
-  DhopInternal(StencilEven, LebesgueEvenOdd, UmuOdd, in, out, dag);
+  DhopInternal(StencilEven, UmuOdd, in, out, dag);
 }
 
 template <class Impl>
@@ -292,7 +290,7 @@ void NaiveStaggeredFermion<Impl>::DhopEO(const FermionField &in, FermionField &o
   assert(in.Checkerboard() == Odd);
   out.Checkerboard() = Even;
 
-  DhopInternal(StencilOdd, LebesgueEvenOdd, UmuEven, in, out, dag);
+  DhopInternal(StencilOdd, UmuEven, in, out, dag);
 }
 
 template <class Impl>
@@ -323,18 +321,18 @@ void NaiveStaggeredFermion<Impl>::DhopDir(const FermionField &in, FermionField &
 
 
 template <class Impl>
-void NaiveStaggeredFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
+void NaiveStaggeredFermion<Impl>::DhopInternal(StencilImpl &st,
 					       DoubledGaugeField &U,
 					       const FermionField &in,
 					       FermionField &out, int dag) 
 {
   if ( StaggeredKernelsStatic::Comms == StaggeredKernelsStatic::CommsAndCompute )
-    DhopInternalOverlappedComms(st,lo,U,in,out,dag);
+    DhopInternalOverlappedComms(st,U,in,out,dag);
   else
-    DhopInternalSerialComms(st,lo,U,in,out,dag);
+    DhopInternalSerialComms(st,U,in,out,dag);
 }
 template <class Impl>
-void NaiveStaggeredFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, LebesgueOrder &lo,
+void NaiveStaggeredFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st,
 							      DoubledGaugeField &U,
 							      const FermionField &in,
 							      FermionField &out, int dag) 
@@ -356,7 +354,7 @@ void NaiveStaggeredFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, L
   {
     int interior=1;
     int exterior=0;
-    Kernels::DhopNaive(st,lo,U,in,out,dag,interior,exterior);
+    Kernels::DhopNaive(st,U,in,out,dag,interior,exterior);
   }
 
   st.CommunicateComplete(requests);
@@ -367,12 +365,12 @@ void NaiveStaggeredFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, L
   {
     int interior=0;
     int exterior=1;
-    Kernels::DhopNaive(st,lo,U,in,out,dag,interior,exterior);
+    Kernels::DhopNaive(st,U,in,out,dag,interior,exterior);
   }
 }
 
 template <class Impl>
-void NaiveStaggeredFermion<Impl>::DhopInternalSerialComms(StencilImpl &st, LebesgueOrder &lo,
+void NaiveStaggeredFermion<Impl>::DhopInternalSerialComms(StencilImpl &st,
 							  DoubledGaugeField &U,
 							  const FermionField &in,
 							  FermionField &out, int dag) 
@@ -385,7 +383,7 @@ void NaiveStaggeredFermion<Impl>::DhopInternalSerialComms(StencilImpl &st, Lebes
   {
     int interior=1;
     int exterior=1;
-    Kernels::DhopNaive(st,lo,U,in,out,dag,interior,exterior);
+    Kernels::DhopNaive(st,U,in,out,dag,interior,exterior);
   }
 };
 

@@ -202,15 +202,15 @@ void acceleratorInit(void)
 
 #ifdef GRID_SYCL
 
-cl::sycl::queue *theGridAccelerator;
-cl::sycl::queue *theCopyAccelerator;
+sycl::queue *theGridAccelerator;
+sycl::queue *theCopyAccelerator;
 void acceleratorInit(void)
 {
   int nDevices = 1;
-  cl::sycl::gpu_selector selector;
-  cl::sycl::device selectedDevice { selector };
-  theGridAccelerator = new sycl::queue (selectedDevice);
-  theCopyAccelerator = new sycl::queue (selectedDevice);
+  //  sycl::gpu_selector selector;
+  //  sycl::device selectedDevice { selector };
+  theGridAccelerator = new sycl::queue (sycl::gpu_selector_v);
+  theCopyAccelerator = new sycl::queue (sycl::gpu_selector_v);
   //  theCopyAccelerator = theGridAccelerator; // Should proceed concurrenlty anyway.
 
 #ifdef GRID_SYCL_LEVEL_ZERO_IPC
@@ -242,14 +242,14 @@ void acceleratorInit(void)
   gethostname(hostname, HOST_NAME_MAX+1);
   if ( rank==0 ) printf(" acceleratorInit world_rank %d is host %s \n",world_rank,hostname);
 
-  auto devices = cl::sycl::device::get_devices();
+  auto devices = sycl::device::get_devices();
   for(int d = 0;d<devices.size();d++){
 
 #define GPU_PROP_STR(prop) \
-    printf("AcceleratorSyclInit:   " #prop ": %s \n",devices[d].get_info<cl::sycl::info::device::prop>().c_str());
+    printf("AcceleratorSyclInit:   " #prop ": %s \n",devices[d].get_info<sycl::info::device::prop>().c_str());
 
 #define GPU_PROP_FMT(prop,FMT) \
-    printf("AcceleratorSyclInit:   " #prop ": " FMT" \n",devices[d].get_info<cl::sycl::info::device::prop>());
+    printf("AcceleratorSyclInit:   " #prop ": " FMT" \n",devices[d].get_info<sycl::info::device::prop>());
 
 #define GPU_PROP(prop)             GPU_PROP_FMT(prop,"%ld");
     if ( world_rank == 0) {

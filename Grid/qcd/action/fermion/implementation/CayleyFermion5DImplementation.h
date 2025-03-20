@@ -48,7 +48,8 @@ CayleyFermion5D<Impl>::CayleyFermion5D(GaugeField &_Umu,
 			FourDimGrid,
 			FourDimRedBlackGrid,_M5,p),
   mass_plus(_mass), mass_minus(_mass)
-{ 
+{
+  // qmu defaults to zero size;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -156,18 +157,18 @@ template<class Impl>
 void CayleyFermion5D<Impl>::M5D   (const FermionField &psi, FermionField &chi)
 {
   int Ls=this->Ls;
-  Vector<Coeff_t> diag (Ls,1.0);
-  Vector<Coeff_t> upper(Ls,-1.0); upper[Ls-1]=mass_minus;
-  Vector<Coeff_t> lower(Ls,-1.0); lower[0]   =mass_plus;
+  std::vector<Coeff_t> diag (Ls,1.0);
+  std::vector<Coeff_t> upper(Ls,-1.0); upper[Ls-1]=mass_minus;
+  std::vector<Coeff_t> lower(Ls,-1.0); lower[0]   =mass_plus;
   M5D(psi,chi,chi,lower,diag,upper);
 }
 template<class Impl>
 void CayleyFermion5D<Impl>::Meooe5D    (const FermionField &psi, FermionField &Din)
 {
   int Ls=this->Ls;
-  Vector<Coeff_t> diag = bs;
-  Vector<Coeff_t> upper= cs;
-  Vector<Coeff_t> lower= cs; 
+  std::vector<Coeff_t> diag = bs;
+  std::vector<Coeff_t> upper= cs;
+  std::vector<Coeff_t> lower= cs; 
   upper[Ls-1]=-mass_minus*upper[Ls-1];
   lower[0]   =-mass_plus*lower[0];
   M5D(psi,psi,Din,lower,diag,upper);
@@ -176,9 +177,9 @@ void CayleyFermion5D<Impl>::Meooe5D    (const FermionField &psi, FermionField &D
 template<class Impl> void CayleyFermion5D<Impl>::Meo5D     (const FermionField &psi, FermionField &chi)
 {
   int Ls=this->Ls;
-  Vector<Coeff_t> diag = beo;
-  Vector<Coeff_t> upper(Ls);
-  Vector<Coeff_t> lower(Ls);
+  std::vector<Coeff_t> diag = beo;
+  std::vector<Coeff_t> upper(Ls);
+  std::vector<Coeff_t> lower(Ls);
   for(int i=0;i<Ls;i++) {
     upper[i]=-ceo[i];
     lower[i]=-ceo[i];
@@ -191,9 +192,9 @@ template<class Impl>
 void CayleyFermion5D<Impl>::Mooee       (const FermionField &psi, FermionField &chi)
 {
   int Ls=this->Ls;
-  Vector<Coeff_t> diag = bee;
-  Vector<Coeff_t> upper(Ls);
-  Vector<Coeff_t> lower(Ls);
+  std::vector<Coeff_t> diag = bee;
+  std::vector<Coeff_t> upper(Ls);
+  std::vector<Coeff_t> lower(Ls);
   for(int i=0;i<Ls;i++) {
     upper[i]=-cee[i];
     lower[i]=-cee[i];
@@ -206,9 +207,9 @@ template<class Impl>
 void CayleyFermion5D<Impl>::MooeeDag    (const FermionField &psi, FermionField &chi)
 {
   int Ls=this->Ls;
-  Vector<Coeff_t> diag = bee;
-  Vector<Coeff_t> upper(Ls);
-  Vector<Coeff_t> lower(Ls);
+  std::vector<Coeff_t> diag = bee;
+  std::vector<Coeff_t> upper(Ls);
+  std::vector<Coeff_t> lower(Ls);
 
   for (int s=0;s<Ls;s++){
     // Assemble the 5d matrix
@@ -236,9 +237,9 @@ template<class Impl>
 void CayleyFermion5D<Impl>::M5Ddag (const FermionField &psi, FermionField &chi)
 {
   int Ls=this->Ls;
-  Vector<Coeff_t> diag(Ls,1.0);
-  Vector<Coeff_t> upper(Ls,-1.0);
-  Vector<Coeff_t> lower(Ls,-1.0);
+  std::vector<Coeff_t> diag(Ls,1.0);
+  std::vector<Coeff_t> upper(Ls,-1.0);
+  std::vector<Coeff_t> lower(Ls,-1.0);
   upper[Ls-1]=-mass_plus*upper[Ls-1];
   lower[0]   =-mass_minus*lower[0];
   M5Ddag(psi,chi,chi,lower,diag,upper);
@@ -248,9 +249,9 @@ template<class Impl>
 void CayleyFermion5D<Impl>::MeooeDag5D    (const FermionField &psi, FermionField &Din)
 {
   int Ls=this->Ls;
-  Vector<Coeff_t> diag =bs;
-  Vector<Coeff_t> upper=cs;
-  Vector<Coeff_t> lower=cs; 
+  std::vector<Coeff_t> diag =bs;
+  std::vector<Coeff_t> upper=cs;
+  std::vector<Coeff_t> lower=cs; 
 
   for (int s=0;s<Ls;s++){
     if ( s== 0 ) {
@@ -271,14 +272,46 @@ void CayleyFermion5D<Impl>::MeooeDag5D    (const FermionField &psi, FermionField
 }
 
 template<class Impl>
+void CayleyFermion5D<Impl>::addQmu(const FermionField &psi,FermionField &chi, int dag)
+{
+  if ( qmu.size() ) {
+
+    Gamma::Algebra Gmu [] = {
+      Gamma::Algebra::GammaX,
+      Gamma::Algebra::GammaY,
+      Gamma::Algebra::GammaZ,
+      Gamma::Algebra::GammaT
+    };
+    std::vector<ComplexD> coeff(Nd);
+    ComplexD ci(0,1);
+
+    assert(qmu.size()==Nd);
+
+    for(int mu=0;mu<Nd;mu++){
+       coeff[mu] = ci*qmu[mu];
+       if ( dag ) coeff[mu] = conjugate(coeff[mu]);
+    }
+
+    chi = chi + Gamma(Gmu[0])*psi*coeff[0];
+    for(int mu=1;mu<Nd;mu++){
+      chi = chi + Gamma(Gmu[mu])*psi*coeff[mu];
+    }
+  }
+}
+
+template<class Impl>
 void CayleyFermion5D<Impl>::M    (const FermionField &psi, FermionField &chi)
 {
   FermionField Din(psi.Grid());
   
   // Assemble Din
   Meooe5D(psi,Din);
-  
+
   this->DW(Din,chi,DaggerNo);
+
+  // add i q_mu gamma_mu here
+  addQmu(Din,chi,DaggerNo);
+  
   // ((b D_W + D_w hop terms +1) on s-diag
   axpby(chi,1.0,1.0,chi,psi); 
   
@@ -295,6 +328,9 @@ void CayleyFermion5D<Impl>::Mdag (const FermionField &psi, FermionField &chi)
   FermionField Din(psi.Grid());
   // Apply Dw
   this->DW(psi,Din,DaggerYes); 
+
+  // add -i conj(q_mu) gamma_mu here ... if qmu is real, gammm_5 hermitian, otherwise not.
+  addQmu(psi,Din,DaggerYes);
   
   MeooeDag5D(Din,chi);
   
@@ -394,7 +430,7 @@ void CayleyFermion5D<Impl>::MeoDeriv(GaugeField &mat,const FermionField &U,const
 template<class Impl>
 void CayleyFermion5D<Impl>::SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c)
 {
-  Vector<Coeff_t> gamma(this->Ls);
+  std::vector<Coeff_t> gamma(this->Ls);
   for(int s=0;s<this->Ls;s++) gamma[s] = zdata->gamma[s];
   SetCoefficientsInternal(1.0,gamma,b,c);
 }
@@ -402,13 +438,13 @@ void CayleyFermion5D<Impl>::SetCoefficientsTanh(Approx::zolotarev_data *zdata,Re
 template<class Impl>
 void CayleyFermion5D<Impl>::SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata,RealD b,RealD c)
 {
-  Vector<Coeff_t> gamma(this->Ls);
+  std::vector<Coeff_t> gamma(this->Ls);
   for(int s=0;s<this->Ls;s++) gamma[s] = zdata->gamma[s];
   SetCoefficientsInternal(zolo_hi,gamma,b,c);
 }
 //Zolo
 template<class Impl>
-void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,Vector<Coeff_t> & gamma,RealD b,RealD c)
+void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Coeff_t> & gamma,RealD b,RealD c)
 {
   int Ls=this->Ls;
 
@@ -488,7 +524,7 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,Vector<Coeff_t
   leem.resize(Ls);
   uee.resize(Ls);
   ueem.resize(Ls);
-  
+
   for(int i=0;i<Ls;i++){
     
     dee[i] = bee[i];
@@ -529,6 +565,18 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,Vector<Coeff_t
     dee[Ls-1] += delta_d;
   }  
 
+  //////////////////////////////////////////
+  // Device buffers
+  //////////////////////////////////////////
+  d_diag.resize(Ls);
+  d_upper.resize(Ls);
+  d_lower.resize(Ls);
+
+  d_dee.resize(Ls);
+  d_lee.resize(Ls);
+  d_uee.resize(Ls);
+  d_leem.resize(Ls);
+  d_ueem.resize(Ls);
   //  int inv=1;
   //  this->MooeeInternalCompute(0,inv,MatpInv,MatmInv);
   //  this->MooeeInternalCompute(1,inv,MatpInvDag,MatmInvDag);

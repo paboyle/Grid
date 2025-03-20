@@ -23,8 +23,8 @@ template<class vobj> inline void sliceSumCPU(const Grid::Lattice<vobj> &Data,std
   int ld=grid->_ldimensions[orthogdim];
   int rd=grid->_rdimensions[orthogdim];
 
-  Vector<vobj> lvSum(rd); // will locally sum vectors first
-  Vector<sobj> lsSum(ld,Zero());                    // sum across these down to scalars
+  std::vector<vobj> lvSum(rd); // will locally sum vectors first
+  std::vector<sobj> lsSum(ld,Zero());                    // sum across these down to scalars
   ExtractBuffer<sobj> extracted(Nsimd);                  // splitting the SIMD
 
   result.resize(fd); // And then global sum to return the same vector to every node 

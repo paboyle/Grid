@@ -46,8 +46,40 @@ NAMESPACE_BEGIN(Grid);
 
 #if defined (GRID_COMMS_MPI3) 
 typedef MPI_Comm    Grid_MPI_Comm;
+typedef MPI_Request MpiCommsRequest_t;
+#ifdef ACCELERATOR_AWARE_MPI
 typedef MPI_Request CommsRequest_t;
+#else
+/*
+ * Enable state transitions as each packet flows.
+ */
+enum PacketType_t {
+  FaceGather,
+  InterNodeXmit,
+  InterNodeRecv,
+  IntraNodeXmit,
+  IntraNodeRecv,
+  InterNodeXmitISend,
+  InterNodeReceiveHtoD
+};
+/*
+ *Package arguments needed for various actions along packet flow
+ */
+typedef struct {
+  PacketType_t PacketType;
+  void *host_buf;
+  void *device_buf;
+  int dest;
+  int tag;
+  int commdir;
+  unsigned long bytes;
+  acceleratorEvent_t ev;
+  MpiCommsRequest_t req;
+} CommsRequest_t;
+#endif
+
 #else 
+typedef int MpiCommsRequest_t;
 typedef int CommsRequest_t;
 typedef int Grid_MPI_Comm;
 #endif

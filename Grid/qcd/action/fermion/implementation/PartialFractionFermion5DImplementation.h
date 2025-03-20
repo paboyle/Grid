@@ -237,7 +237,32 @@ void   PartialFractionFermion5D<Impl>::M_internal(const FermionField &psi, Fermi
   //           ( 0     -sqrt(p_i)*amax   |  2 R gamma_5 + p0/amax 2H
   //
 
-  this->DW(psi,D,DaggerNo); 
+  this->DW(psi,D,DaggerNo);
+
+  // DW - DW+iqslash
+  //  (g5 Dw)^dag = g5 Dw
+  //  (iqmu g5 gmu)^dag = (-i qmu gmu^dag g5^dag) = i qmu g5 gmu
+  if ( qmu.size() ) {
+
+    std::cout<< "Mat" << "qmu ("<<qmu[0]<<","<<qmu[1]<<","<<qmu[2]<<","<<qmu[3]<<")"<<std::endl;
+    assert(qmu.size()==Nd);
+
+    FermionField qslash_psi(psi.Grid());
+
+    Gamma::Algebra Gmu [] = {
+			     Gamma::Algebra::GammaX,
+			     Gamma::Algebra::GammaY,
+			     Gamma::Algebra::GammaZ,
+			     Gamma::Algebra::GammaT
+    };
+    qslash_psi = qmu[0]*(Gamma(Gmu[0])*psi);
+    for(int mu=1;mu<Nd;mu++){
+      qslash_psi = qslash_psi + qmu[mu]*(Gamma(Gmu[mu])*psi);
+    }
+    ComplexD ci(0.0,1.0);
+    qslash_psi = ci*qslash_psi ; // i qslash
+    D = D + qslash_psi;
+  }
 
   int nblock=(Ls-1)/2;
   for(int b=0;b<nblock;b++){
@@ -255,15 +280,55 @@ void   PartialFractionFermion5D<Impl>::M_internal(const FermionField &psi, Fermi
   }
 	
   {
+    // The 'conventional' Cayley overlap operator is
+    //
+    // Dov = (1+m)/2 + (1-m)/2 g5 sgn Hw
+    //
+    //
+    // With massless limit 1/2(1+g5 sgnHw)
+    //
+    // Luscher shows quite neatly that 1+g5 sgn Hw has tree level propagator i qslash +O(a^2)
+    //
+    // However, the conventional normalisation has both a leading order factor of 2 in Zq
+    // at tree level AND a mass dependent (1-m) that are convenient to absorb.
+    //
+    // In WilsonFermion5DImplementation.h, the tree level propagator for Hw is
+    //
+    // num = -i sin kmu gmu
+    //
+    // denom ( sqrt(sk^2 + (2shk^2 - 1)^2
+    //    b_k = sk2 - M5;
+    //     
+    //    w_k = sqrt(sk + b_k*b_k);
+    //
+    //    denom= ( w_k + b_k + mass*mass) ;
+    //
+    //    denom= one/denom;
+    //    out = num*denom;
+    //
+    // Chroma, and Grid define partial fraction via 4d operator
+    //
+    //   Dpf = 2/(1-m) x Dov = (1+m)/(1-m) + g5 sgn Hw
+    //
+    // Now since:
+    //
+    //      (1+m)/(1-m) = (1-m)/(1-m) + 2m/(1-m) = 1 + 2m/(1-m)
+    //
+    // This corresponds to a modified mass parameter
+    //
+    // It has an annoying 
+    //
+    // 
     double R=(1+this->mass)/(1-this->mass);
-    //R g5 psi[Ls] + p[0] H
+    //R g5 psi[Ls] + p[0] Hw
     ag5xpbg5y_ssp(chi,R*scale,psi,p[nblock]*scale/amax,D,Ls-1,Ls-1);
-	
+    
     for(int b=0;b<nblock;b++){
       int s = 2*b+1;
       double pp = p[nblock-1-b];
       axpby_ssp(chi,1.0,chi,-sqrt(amax*pp)*scale*sign,psi,Ls-1,s);
     }
+   
   }
 
 }
@@ -411,17 +476,18 @@ void  PartialFractionFermion5D<Impl>::SetCoefficientsZolotarev(RealD zolo_hi,App
       int Ls = this->Ls;
       conformable(solution5d.Grid(),this->FermionGrid());
       conformable(exported4d.Grid(),this->GaugeGrid());
-      ExtractSlice(exported4d, solution5d, Ls-1, Ls-1);
+      ExtractSlice(exported4d, solution5d, Ls-1, 0);
     }
     template<class Impl>
     void PartialFractionFermion5D<Impl>::ImportPhysicalFermionSource(const FermionField &input4d,FermionField &imported5d)
     {
+      //void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int orthog)
       int Ls = this->Ls;
       conformable(imported5d.Grid(),this->FermionGrid());
       conformable(input4d.Grid()   ,this->GaugeGrid());
       FermionField tmp(this->FermionGrid());
       tmp=Zero();
-      InsertSlice(input4d, tmp, Ls-1, Ls-1);
+      InsertSlice(input4d, tmp, Ls-1, 0);
       tmp=Gamma(Gamma::Algebra::Gamma5)*tmp;
       this->Dminus(tmp,imported5d);
     }
@@ -442,7 +508,7 @@ PartialFractionFermion5D<Impl>::PartialFractionFermion5D(GaugeField &_Umu,
 
 {
   int Ls = this->Ls;
-
+  qmu.resize(0);
   assert((Ls&0x1)==1); // Odd Ls required
   int nrational=Ls-1;
 
@@ -459,6 +525,22 @@ PartialFractionFermion5D<Impl>::PartialFractionFermion5D(GaugeField &_Umu,
 
   Approx::zolotarev_free(zdata);
 
+}
+template<class Impl>
+PartialFractionFermion5D<Impl>::PartialFractionFermion5D(GaugeField &_Umu,
+							 GridCartesian         &FiveDimGrid,
+							 GridRedBlackCartesian &FiveDimRedBlackGrid,
+							 GridCartesian         &FourDimGrid,
+							 GridRedBlackCartesian &FourDimRedBlackGrid,
+							 RealD _mass,RealD M5,
+							 std::vector<RealD> &_qmu,
+							 const ImplParams &p)
+  : PartialFractionFermion5D<Impl>(_Umu,
+			     FiveDimGrid,FiveDimRedBlackGrid,
+			     FourDimGrid,FourDimRedBlackGrid,
+			     _mass,M5,p)
+{
+  qmu=_qmu;
 }
 
 NAMESPACE_END(Grid);

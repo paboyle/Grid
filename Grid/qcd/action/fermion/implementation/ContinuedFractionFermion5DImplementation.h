@@ -42,13 +42,13 @@ template<class Impl>
 void ContinuedFractionFermion5D<Impl>::SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata)
 {
   // How to check Ls matches??
-  //      std::cout<<GridLogMessage << Ls << " Ls"<<std::endl;
-  //      std::cout<<GridLogMessage << zdata->n  << " - n"<<std::endl;
-  //      std::cout<<GridLogMessage << zdata->da << " -da "<<std::endl;
-  //      std::cout<<GridLogMessage << zdata->db << " -db"<<std::endl;
-  //      std::cout<<GridLogMessage << zdata->dn << " -dn"<<std::endl;
-  //      std::cout<<GridLogMessage << zdata->dd << " -dd"<<std::endl;
+  std::cout<<GridLogMessage << zdata->n  << " - n"<<std::endl;
+  std::cout<<GridLogMessage << zdata->da << " -da "<<std::endl;
+  std::cout<<GridLogMessage << zdata->db << " -db"<<std::endl;
+  std::cout<<GridLogMessage << zdata->dn << " -dn"<<std::endl;
+  std::cout<<GridLogMessage << zdata->dd << " -dd"<<std::endl;
   int Ls = this->Ls;
+  std::cout<<GridLogMessage << Ls << " Ls"<<std::endl;
   assert(zdata->db==Ls);// Beta has Ls coeffs
 
   R=(1+this->mass)/(1-this->mass);
@@ -320,7 +320,7 @@ ContinuedFractionFermion5D<Impl>::ContinuedFractionFermion5D(
       int Ls = this->Ls;
       conformable(solution5d.Grid(),this->FermionGrid());
       conformable(exported4d.Grid(),this->GaugeGrid());
-      ExtractSlice(exported4d, solution5d, Ls-1, Ls-1);
+      ExtractSlice(exported4d, solution5d, Ls-1, 0);
     }
     template<class Impl>
     void ContinuedFractionFermion5D<Impl>::ImportPhysicalFermionSource(const FermionField &input4d,FermionField &imported5d)
@@ -330,7 +330,7 @@ ContinuedFractionFermion5D<Impl>::ContinuedFractionFermion5D(
       conformable(input4d.Grid()   ,this->GaugeGrid());
       FermionField tmp(this->FermionGrid());
       tmp=Zero();
-      InsertSlice(input4d, tmp, Ls-1, Ls-1);
+      InsertSlice(input4d, tmp, Ls-1, 0);
       tmp=Gamma(Gamma::Algebra::Gamma5)*tmp;
       this->Dminus(tmp,imported5d);
     }

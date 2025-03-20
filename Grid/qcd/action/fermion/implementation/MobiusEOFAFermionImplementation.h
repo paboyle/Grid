@@ -196,9 +196,9 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField& psi, FermionField& chi)
 {
   int Ls = this->Ls;
 
-  Vector<Coeff_t> diag(Ls,1.0);
-  Vector<Coeff_t> upper(Ls,-1.0);  upper[Ls-1] = this->mq1;
-  Vector<Coeff_t> lower(Ls,-1.0);  lower[0]    = this->mq1;
+  std::vector<Coeff_t> diag(Ls,1.0);
+  std::vector<Coeff_t> upper(Ls,-1.0);  upper[Ls-1] = this->mq1;
+  std::vector<Coeff_t> lower(Ls,-1.0);  lower[0]    = this->mq1;
 
   // no shift term
   if(this->shift == 0.0){ this->M5D(psi, chi, chi, lower, diag, upper); }
@@ -212,9 +212,9 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField& psi, FermionField& chi)
 {
   int Ls = this->Ls;
 
-  Vector<Coeff_t> diag(Ls,1.0);
-  Vector<Coeff_t> upper(Ls,-1.0);  upper[Ls-1] = this->mq1;
-  Vector<Coeff_t> lower(Ls,-1.0);  lower[0]    = this->mq1;
+  std::vector<Coeff_t> diag(Ls,1.0);
+  std::vector<Coeff_t> upper(Ls,-1.0);  upper[Ls-1] = this->mq1;
+  std::vector<Coeff_t> lower(Ls,-1.0);  lower[0]    = this->mq1;
 
   // no shift term
   if(this->shift == 0.0){ this->M5Ddag(psi, chi, chi, lower, diag, upper); }
@@ -230,9 +230,9 @@ void MobiusEOFAFermion<Impl>::Mooee(const FermionField& psi, FermionField& chi)
   int Ls = this->Ls;
 
   // coefficients of Mooee
-  Vector<Coeff_t> diag = this->bee;
-  Vector<Coeff_t> upper(Ls);
-  Vector<Coeff_t> lower(Ls);
+  std::vector<Coeff_t> diag = this->bee;
+  std::vector<Coeff_t> upper(Ls);
+  std::vector<Coeff_t> lower(Ls);
   for(int s=0; s<Ls; s++){
     upper[s] = -this->cee[s];
     lower[s] = -this->cee[s];
@@ -253,9 +253,9 @@ void MobiusEOFAFermion<Impl>::MooeeDag(const FermionField& psi, FermionField& ch
   int Ls = this->Ls;
 
   // coefficients of MooeeDag
-  Vector<Coeff_t> diag = this->bee;
-  Vector<Coeff_t> upper(Ls);
-  Vector<Coeff_t> lower(Ls);
+  std::vector<Coeff_t> diag = this->bee;
+  std::vector<Coeff_t> upper(Ls);
+  std::vector<Coeff_t> lower(Ls);
   for(int s=0; s<Ls; s++){
     if(s==0) {
       upper[s] = -this->cee[s+1];
@@ -314,10 +314,10 @@ void MobiusEOFAFermion<Impl>::SetCoefficientsPrecondShiftOps()
   // Tridiagonal solve for MooeeInvDag_shift_lc
   {
     Coeff_t m(0.0);
-    Vector<Coeff_t> d = Mooee_shift;
-    Vector<Coeff_t> u(Ls,0.0);
-    Vector<Coeff_t> y(Ls,0.0);
-    Vector<Coeff_t> q(Ls,0.0);
+    std::vector<Coeff_t> d = Mooee_shift;
+    std::vector<Coeff_t> u(Ls,0.0);
+    std::vector<Coeff_t> y(Ls,0.0);
+    std::vector<Coeff_t> q(Ls,0.0);
     if(pm == 1){ u[0] = 1.0; }
     else{ u[Ls-1] = 1.0; }
 

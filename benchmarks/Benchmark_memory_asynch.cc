@@ -70,7 +70,7 @@ int main (int argc, char ** argv)
     pRNG.SeedFixedIntegers(std::vector<int>({56,17,89,101}));
 
     std::vector<double> stop(threads);
-    Vector<Vec> sum(threads);
+    std::vector<Vec> sum(threads);
 
     std::vector<LatticeVec> x(threads,&Grid);
     for(int t=0;t<threads;t++){

@@ -39,7 +39,7 @@ NAMESPACE_BEGIN(Grid);
  
 template<class Impl>
 void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi_i, const FermionField &phi_i, FermionField &chi_i,
-				  Vector<Coeff_t> &lower, Vector<Coeff_t> &diag, Vector<Coeff_t> &upper)
+				  std::vector<Coeff_t> &lower, std::vector<Coeff_t> &diag, std::vector<Coeff_t> &upper)
 {
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase *grid = psi_i.Grid();
@@ -50,10 +50,14 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi_i, const FermionField 
 
   assert(phi.Checkerboard() == psi.Checkerboard());
 
-  auto pdiag = &diag[0];
-  auto pupper = &upper[0];
-  auto plower = &lower[0];
+  auto pdiag  = &this->d_diag[0];
+  auto pupper = &this->d_upper[0];
+  auto plower = &this->d_lower[0];
 
+  acceleratorCopyToDevice(&diag[0],&pdiag[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&upper[0],&pupper[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&lower[0],&plower[0],Ls*sizeof(Coeff_t));
+  
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   int nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
@@ -74,8 +78,8 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi_i, const FermionField 
 
 template<class Impl>
 void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi_i, const FermionField &phi_i, FermionField &chi_i,
-					Vector<Coeff_t> &lower, Vector<Coeff_t> &diag, Vector<Coeff_t> &upper,
-					Vector<Coeff_t> &shift_coeffs)
+					std::vector<Coeff_t> &lower, std::vector<Coeff_t> &diag, std::vector<Coeff_t> &upper,
+					std::vector<Coeff_t> &shift_coeffs)
 {
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase *grid = psi_i.Grid();
@@ -86,13 +90,18 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi_i, const Fermion
 
   auto pm  = this->pm;
   int shift_s = (pm == 1) ? (Ls-1) : 0; // s-component modified by shift operator
-
+  
   assert(phi.Checkerboard() == psi.Checkerboard());
 
-  auto pdiag = &diag[0];
-  auto pupper = &upper[0];
-  auto plower = &lower[0];
-  auto pshift_coeffs = &shift_coeffs[0];
+  auto pdiag  = &this->d_diag[0];
+  auto pupper = &this->d_upper[0];
+  auto plower = &this->d_lower[0];
+  auto pshift_coeffs = &this->d_shift_coefficients[0];
+
+  acceleratorCopyToDevice(&diag[0],&pdiag[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&upper[0],&pupper[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&lower[0],&plower[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&shift_coeffs[0],&pshift_coeffs[0],Ls*sizeof(Coeff_t));
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   int nloop = grid->oSites()/Ls;
@@ -119,7 +128,7 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi_i, const Fermion
 
 template<class Impl>
 void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField &psi_i, const FermionField &phi_i, FermionField &chi_i,
-				     Vector<Coeff_t> &lower, Vector<Coeff_t> &diag, Vector<Coeff_t> &upper)
+				     std::vector<Coeff_t> &lower, std::vector<Coeff_t> &diag, std::vector<Coeff_t> &upper)
 {
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase *grid = psi_i.Grid();
@@ -129,10 +138,14 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField &psi_i, const FermionFie
   autoView(chi , chi_i, AcceleratorWrite);
 
   assert(phi.Checkerboard() == psi.Checkerboard());
+  
+  auto pdiag  = &this->d_diag[0];
+  auto pupper = &this->d_upper[0];
+  auto plower = &this->d_lower[0];
 
-  auto pdiag = &diag[0];
-  auto pupper = &upper[0];
-  auto plower = &lower[0];
+  acceleratorCopyToDevice(&diag[0],&pdiag[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&upper[0],&pupper[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&lower[0],&plower[0],Ls*sizeof(Coeff_t));
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   int nloop = grid->oSites()/Ls;
@@ -154,8 +167,8 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField &psi_i, const FermionFie
 
 template<class Impl>
 void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField &psi_i, const FermionField &phi_i, FermionField &chi_i,
-					   Vector<Coeff_t> &lower, Vector<Coeff_t> &diag, Vector<Coeff_t> &upper,
-					   Vector<Coeff_t> &shift_coeffs)
+					   std::vector<Coeff_t> &lower, std::vector<Coeff_t> &diag, std::vector<Coeff_t> &upper,
+					   std::vector<Coeff_t> &shift_coeffs)
 {
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase *grid = psi_i.Grid();
@@ -167,11 +180,16 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField &psi_i, const Ferm
 
   assert(phi.Checkerboard() == psi.Checkerboard());
 
-  auto pdiag = &diag[0];
-  auto pupper = &upper[0];
-  auto plower = &lower[0];
-  auto pshift_coeffs = &shift_coeffs[0];
+  auto pdiag  = &this->d_diag[0];
+  auto pupper = &this->d_upper[0];
+  auto plower = &this->d_lower[0];
+  auto pshift_coeffs = &this->d_shift_coefficients[0];
 
+  acceleratorCopyToDevice(&diag[0],&pdiag[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&upper[0],&pupper[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&lower[0],&plower[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&shift_coeffs[0],&pshift_coeffs[0],Ls*sizeof(Coeff_t));
+  
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   auto pm = this->pm;
 
@@ -212,11 +230,17 @@ void MobiusEOFAFermion<Impl>::MooeeInv(const FermionField &psi_i, FermionField &
   autoView(psi , psi_i, AcceleratorRead);
   autoView(chi , chi_i, AcceleratorWrite);
 
-  auto plee = & this->lee [0];
-  auto pdee = & this->dee [0];
-  auto puee = & this->uee [0];
-  auto pleem= & this->leem[0];
-  auto pueem= & this->ueem[0];
+  auto plee  = & this->d_lee [0];
+  auto pdee  = & this->d_dee [0];
+  auto puee  = & this->d_uee [0];
+  auto pleem = & this->d_leem[0];
+  auto pueem = & this->d_ueem[0];
+
+  acceleratorCopyToDevice(&this->lee[0],&plee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->dee[0],&pdee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->uee[0],&puee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->leem[0],&pleem[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->ueem[0],&pueem[0],Ls*sizeof(Coeff_t));
 
   if(this->shift != 0.0){ MooeeInv_shift(psi_i,chi_i); return; }
 
@@ -268,14 +292,23 @@ void MobiusEOFAFermion<Impl>::MooeeInv_shift(const FermionField &psi_i, FermionF
   autoView(psi , psi_i, AcceleratorRead);
   autoView(chi , chi_i, AcceleratorWrite);
 
+  // Move into object and constructor
   auto pm = this->pm;
-  auto plee = & this->lee [0];
-  auto pdee = & this->dee [0];
-  auto puee = & this->uee [0];
-  auto pleem= & this->leem[0];
-  auto pueem= & this->ueem[0];
-  auto pMooeeInv_shift_lc   = &MooeeInv_shift_lc[0];
-  auto pMooeeInv_shift_norm = &MooeeInv_shift_norm[0];
+  auto plee  = & this->d_lee [0];
+  auto pdee  = & this->d_dee [0];
+  auto puee  = & this->d_uee [0];
+  auto pleem = & this->d_leem[0];
+  auto pueem = & this->d_ueem[0];
+  auto pMooeeInv_shift_lc   = &this->d_MooeeInv_shift_lc[0];
+  auto pMooeeInv_shift_norm = &this->d_MooeeInv_shift_norm[0];
+
+  acceleratorCopyToDevice(&this->lee[0],&plee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->dee[0],&pdee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->uee[0],&puee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->leem[0],&pleem[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->ueem[0],&pueem[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&MooeeInv_shift_lc[0],&pMooeeInv_shift_lc[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&MooeeInv_shift_norm[0],&pMooeeInv_shift_norm[0],Ls*sizeof(Coeff_t));
 
   int nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
@@ -333,11 +366,17 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag(const FermionField &psi_i, FermionFiel
   autoView(psi , psi_i, AcceleratorRead);
   autoView(chi , chi_i, AcceleratorWrite);
 
-  auto plee = & this->lee [0];
-  auto pdee = & this->dee [0];
-  auto puee = & this->uee [0];
-  auto pleem= & this->leem[0];
-  auto pueem= & this->ueem[0];
+  auto plee  = &this->d_lee [0];
+  auto pdee  = &this->d_dee [0];
+  auto puee  = &this->d_uee [0];
+  auto pleem = &this->d_leem[0];
+  auto pueem = &this->d_ueem[0];
+
+  acceleratorCopyToDevice(&this->lee[0],&plee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->dee[0],&pdee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->uee[0],&puee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->leem[0],&pleem[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->ueem[0],&pueem[0],Ls*sizeof(Coeff_t));
 
   int nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
@@ -387,13 +426,25 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag_shift(const FermionField &psi_i, Fermi
   int Ls = this->Ls;
 
   auto pm = this->pm;
-  auto plee = & this->lee [0];
-  auto pdee = & this->dee [0];
-  auto puee = & this->uee [0];
-  auto pleem= & this->leem[0];
-  auto pueem= & this->ueem[0];
-  auto pMooeeInvDag_shift_lc   = &MooeeInvDag_shift_lc[0];
-  auto pMooeeInvDag_shift_norm = &MooeeInvDag_shift_norm[0];
+  auto plee  = & this->d_lee [0];
+  auto pdee  = & this->d_dee [0];
+  auto puee  = & this->d_uee [0];
+  auto pleem = & this->d_leem[0];
+  auto pueem = & this->d_ueem[0];
+
+  auto pMooeeInvDag_shift_lc   = &this->d_MooeeInv_shift_lc[0];
+  auto pMooeeInvDag_shift_norm = &this->d_MooeeInv_shift_norm[0];
+
+  acceleratorCopyToDevice(&this->lee[0],&plee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->dee[0],&pdee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->uee[0],&puee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->leem[0],&pleem[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&this->ueem[0],&pueem[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&MooeeInvDag_shift_lc[0],&pMooeeInvDag_shift_lc[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&MooeeInvDag_shift_norm[0],&pMooeeInvDag_shift_norm[0],Ls*sizeof(Coeff_t));
+
+  //  auto pMooeeInvDag_shift_lc   = &MooeeInvDag_shift_lc[0];
+  //  auto pMooeeInvDag_shift_norm = &MooeeInvDag_shift_norm[0];
 
   int nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{

@@ -43,7 +43,7 @@ public:
     U = Zero();
     LatticeColourMatrix tmp(Uin.Grid());
 
-    Vector<typename GaugeGroup<ncolour,group_name>::Matrix> eij(Dimension);
+    std::vector<typename GaugeGroup<ncolour,group_name>::Matrix> eij(Dimension);
 
     for (int a = 0; a < Dimension; a++)
       GaugeGroupTwoIndex<ncolour, S, group_name>::base(a, eij[a]);
