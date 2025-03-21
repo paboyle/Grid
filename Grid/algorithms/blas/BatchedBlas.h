@@ -1029,12 +1029,55 @@ public:
     assert(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
-    auto err = cudablasZgetrfBatched(gridblasHandle, (int)n,
-				     (cublasDoubleComplex **)&Ann[0], (int)n,
-				     (int*) &ipiv[0],
-				     (int*) &info[0],
-				     (int)batchCount);
+    auto err = cublasZgetrfBatched(gridblasHandle, (int)n,
+				   (cuDoubleComplex **)&Ann[0], (int)n,
+				   (int*) &ipiv[0],
+				   (int*) &info[0],
+				   (int)batchCount);
+    assert(err==CUBLAS_STATUS_SUCCESS);
+#endif
+#ifdef GRID_SYCL
+    assert(0);
+    /*
+      TODO: cache scratchpad
+
+    oneapi::mkl::lapack::gerf_batch(*gridblasHandle,
+				    &n, &n,
+				    (ComplexD **)&Ann[0],
+				    &n,
+				    (int64_t)&ipiv[0],
+				    (int64_t)1, &batchCount,
+				    scratchpad, scratchpad_size,
+				    std::vector<sycl::event>());
+    */
+    synchronise();
+#endif
+  }
+
+void getrfBatched(int64_t n,
+		    deviceVector<ComplexF*> &Ann,
+		    deviceVector<int64_t> &ipiv,
+		    deviceVector<int64_t> &info)
+  {
+    int64_t batchCount = Ann.size();
+    assert(ipiv.size()==batchCount);
+    assert(info.size()==batchCount);
+
+#ifdef GRID_HIP
+    auto err = hipblasCgetrfBatched(gridblasHandle,(int)n,
+				    (hipblasComplex **)&Ann[0], (int)n,
+				    (int*) &ipiv[0],
+				    (int*) &info[0],
+				    (int)batchCount);
     assert(err==HIPBLAS_STATUS_SUCCESS);
+#endif
+#ifdef GRID_CUDA
+    auto err = cublasCgetrfBatched(gridblasHandle, (int)n,
+				   (cuComplex **)&Ann[0], (int)n,
+				   (int*) &ipiv[0],
+				   (int*) &info[0],
+				   (int)batchCount);
+    assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
     assert(0);
@@ -1066,7 +1109,7 @@ public:
     assert(Cnn.size()==batchCount);
 
 #ifdef GRID_HIP
-    auto err = hipblasZgetrfBatched(gridblasHandle,(int)n,
+    auto err = hipblasZgetriBatched(gridblasHandle,(int)n,
 				    (hipblasDoubleComplex **)&Ann[0], (int)n,
 				    (int*) &ipiv[0],
 				    (hipblasDoubleComplex **)&Cnn[0], (int)n,
@@ -1075,13 +1118,59 @@ public:
     assert(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
-    auto err = cudablasZgetrfBatched(gridblasHandle, (int)n,
-				     (cublasDoubleComplex **)&Ann[0], (int)n,
-				     (int*) &ipiv[0],
-				     (cublasDoubleComplex **)&Cnn[0], (int)n,
-				     (int*) &info[0],
-				     (int)batchCount);
+    auto err = cublasZgetriBatched(gridblasHandle, (int)n,
+				   (cuDoubleComplex **)&Ann[0], (int)n,
+				   (int*) &ipiv[0],
+				   (cuDoubleComplex **)&Cnn[0], (int)n,
+				   (int*) &info[0],
+				   (int)batchCount);
+    assert(err==CUBLAS_STATUS_SUCCESS);
+#endif
+#ifdef GRID_SYCL
+    assert(0);
+    /*
+      TODO: cache scratchpad
+    oneapi::mkl::lapack::geri_batch(*gridblasHandle,
+				    &n, &n,
+				    (ComplexD **)&Ann[0],
+				    &n,
+				    (int64_t)&ipiv[0],
+				    (int64_t)1, &batchCount,
+				    scratchpad, scratchpad_size,
+				    std::vector<sycl::event>());
+    */
+    synchronise();
+#endif
+  }
+
+  void getriBatched(int64_t n,
+		    deviceVector<ComplexF*> &Ann,
+		    deviceVector<int64_t> &ipiv,
+		    deviceVector<int64_t> &info,
+		    deviceVector<ComplexF*> &Cnn)
+  {
+    int64_t batchCount = Ann.size();
+    assert(ipiv.size()==batchCount);
+    assert(info.size()==batchCount);
+    assert(Cnn.size()==batchCount);
+
+#ifdef GRID_HIP
+    auto err = hipblasCgetriBatched(gridblasHandle,(int)n,
+				    (hipblasComplex **)&Ann[0], (int)n,
+				    (int*) &ipiv[0],
+				    (hipblasComplex **)&Cnn[0], (int)n,
+				    (int*) &info[0],
+				    (int)batchCount);
     assert(err==HIPBLAS_STATUS_SUCCESS);
+#endif
+#ifdef GRID_CUDA
+    auto err = cublasCgetriBatched(gridblasHandle, (int)n,
+				   (cuComplex **)&Ann[0], (int)n,
+				   (int*) &ipiv[0],
+				   (cuComplex **)&Cnn[0], (int)n,
+				   (int*) &info[0],
+				   (int)batchCount);
+    assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
     assert(0);
@@ -1126,6 +1215,49 @@ public:
     // test info for non-invertibility?  set to nan if yes?
     RealD t2 = usecond();
     getriBatched(n, Bnn, ipiv, info, Cnn);
+    RealD t3 = usecond();
+    std::cout << GridLogMessage << "Temp " << t1-t0 << " rf " << t2-t1 << " ri " << t3-t2 << std::endl;
+  }
+
+  template<typename dtype>
+  void determinantBatched(int64_t n,
+			  deviceVector<dtype*> &Ann,
+			  deviceVector<dtype*> &C) {
+
+    int64_t batchCount = Ann.size();
+    RealD t0 = usecond();
+    deviceVector<int64_t> ipiv(batchCount*n);
+    deviceVector<int64_t> info(batchCount);
+    deviceVector<dtype> _Bnn(batchCount*n*n);
+    deviceVector<dtype*> Bnn(batchCount);
+
+    dtype** pAnn = (dtype**)&Ann[0];
+    dtype** pBnn = (dtype**)&Bnn[0];
+    dtype* p_Bnn = (dtype*)&_Bnn[0];
+    dtype* pC = (dtype*)&C[0];
+    int64_t* pipiv = (int64_t*)&ipiv[0];
+    accelerator_for(i,batchCount,1,{
+	pBnn[i] = &p_Bnn[n*n*i];
+      });
+    accelerator_for(i,batchCount*n*n,1,{
+	int64_t a = i / (n*n);
+	int64_t b = i % (n*n);
+	p_Bnn[i] = pAnn[i][b];
+      });
+
+    RealD t1 = usecond();
+    getrfBatched(n, Bnn, ipiv, info);
+    RealD t2 = usecond();
+    accelerator_for(i,batchCount,1,{
+	dtype det = 1.0;
+	for (int64_t j=0;j<n;j++) {
+	  det *= pBnn[i][n*j + j];
+	  // branchless signs
+	  det *= (pipiv[i*n + j] == j) ? (1.0) : (-1.0);
+	}
+	pC[i] = det;
+      });
+    
     RealD t3 = usecond();
     std::cout << GridLogMessage << "Temp " << t1-t0 << " rf " << t2-t1 << " ri " << t3-t2 << std::endl;
   }
