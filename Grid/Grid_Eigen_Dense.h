@@ -48,9 +48,6 @@
 
 #include <Grid/Eigen/Dense>
 #include <Grid/Eigen/unsupported/CXX11/Tensor>
-#else
-#include <Grid/eigen/Eigen/Dense>
-#include <Grid/eigen/Eigen/unsupported/CXX11/Tensor>
 
 /* NVCC restore */
 #ifdef __NVCC__REDEFINE__
