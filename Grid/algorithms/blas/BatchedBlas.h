@@ -1017,7 +1017,7 @@ public:
 		    deviceVector<int64_t> &info)
   {
     int64_t batchCount = Ann.size();
-    assert(ipiv.size()==batchCount);
+    assert(ipiv.size()==batchCount*n);
     assert(info.size()==batchCount);
 
 #ifdef GRID_HIP
@@ -1060,7 +1060,7 @@ void getrfBatched(int64_t n,
 		    deviceVector<int64_t> &info)
   {
     int64_t batchCount = Ann.size();
-    assert(ipiv.size()==batchCount);
+    assert(ipiv.size()==batchCount*n);
     assert(info.size()==batchCount);
 
 #ifdef GRID_HIP
@@ -1104,7 +1104,7 @@ void getrfBatched(int64_t n,
 		    deviceVector<ComplexD*> &Cnn)
   {
     int64_t batchCount = Ann.size();
-    assert(ipiv.size()==batchCount);
+    assert(ipiv.size()==batchCount*n);
     assert(info.size()==batchCount);
     assert(Cnn.size()==batchCount);
 
@@ -1150,7 +1150,7 @@ void getrfBatched(int64_t n,
 		    deviceVector<ComplexF*> &Cnn)
   {
     int64_t batchCount = Ann.size();
-    assert(ipiv.size()==batchCount);
+    assert(ipiv.size()==batchCount*n);
     assert(info.size()==batchCount);
     assert(Cnn.size()==batchCount);
 
@@ -1191,75 +1191,58 @@ void getrfBatched(int64_t n,
 
   template<typename dtype>
   void inverseBatched(int64_t n,
-		      deviceVector<dtype*> &Ann,
-		      deviceVector<dtype*> &Cnn) {
+		      deviceVector<dtype*> &Ann, // this will be overwritten with LU decomposition
+		      deviceVector<dtype*> &Cnn  // this will be overwritten with the inverse
+		      ) {
 
     int64_t batchCount = Ann.size();
     RealD t0 = usecond();
     deviceVector<int64_t> ipiv(batchCount*n);
     deviceVector<int64_t> info(batchCount);
-    deviceVector<dtype> _Bnn(batchCount*n*n);
-    deviceVector<dtype*> Bnn(batchCount);
 
-    accelerator_for(i,batchCount,1,{
-	Bnn[i] = &_Bnn[n*n*i];
-      });
-    accelerator_for(i,batchCount*n*n,1,{
-	int64_t a = i / (n*n);
-	int64_t b = i % (n*n);
-	_Bnn[i] = Ann[i][b];
-      });
-
-    RealD t1 = usecond();
-    getrfBatched(n, Bnn, ipiv, info);
+    //RealD t1 = usecond();
+    getrfBatched(n, Ann, ipiv, info);
     // test info for non-invertibility?  set to nan if yes?
-    RealD t2 = usecond();
-    getriBatched(n, Bnn, ipiv, info, Cnn);
-    RealD t3 = usecond();
-    std::cout << GridLogMessage << "Temp " << t1-t0 << " rf " << t2-t1 << " ri " << t3-t2 << std::endl;
+    getriBatched(n, Ann, ipiv, info, Cnn);
+    //synchronise();
+    //RealD t2 = usecond();
+    //std::cout << GridLogMessage << "Temp " << t1-t0 << " rf/ri " << t2-t1  << std::endl;
   }
 
   template<typename dtype>
   void determinantBatched(int64_t n,
-			  deviceVector<dtype*> &Ann,
-			  deviceVector<dtype*> &C) {
+			  deviceVector<dtype*> &Ann, // this will be overwritten with LU decomposition
+			  deviceVector<dtype*> &C    // this will be overwritten with determinant
+			  ) {
 
     int64_t batchCount = Ann.size();
-    RealD t0 = usecond();
+    //RealD t0 = usecond();
     deviceVector<int64_t> ipiv(batchCount*n);
     deviceVector<int64_t> info(batchCount);
-    deviceVector<dtype> _Bnn(batchCount*n*n);
-    deviceVector<dtype*> Bnn(batchCount);
-
+    
     dtype** pAnn = (dtype**)&Ann[0];
-    dtype** pBnn = (dtype**)&Bnn[0];
-    dtype* p_Bnn = (dtype*)&_Bnn[0];
-    dtype* pC = (dtype*)&C[0];
+    dtype** pC = (dtype**)&C[0];
+#if defined(GRID_CUDA) || defined(GRID_HIP)
+    int* pipiv = (int*)&ipiv[0];
+#else
     int64_t* pipiv = (int64_t*)&ipiv[0];
-    accelerator_for(i,batchCount,1,{
-	pBnn[i] = &p_Bnn[n*n*i];
-      });
-    accelerator_for(i,batchCount*n*n,1,{
-	int64_t a = i / (n*n);
-	int64_t b = i % (n*n);
-	p_Bnn[i] = pAnn[i][b];
-      });
+#endif
 
-    RealD t1 = usecond();
-    getrfBatched(n, Bnn, ipiv, info);
-    RealD t2 = usecond();
+    //RealD t1 = usecond();
+    getrfBatched(n, Ann, ipiv, info);
+    //RealD t2 = usecond();
     accelerator_for(i,batchCount,1,{
 	dtype det = 1.0;
 	for (int64_t j=0;j<n;j++) {
-	  det *= pBnn[i][n*j + j];
+	  det *= pAnn[i][n*j + j];
 	  // branchless signs
-	  det *= (pipiv[i*n + j] == j) ? (1.0) : (-1.0);
+	  det *= (pipiv[i*n + j] == j+1) ? (1.0) : (-1.0);
 	}
-	pC[i] = det;
+	*pC[i] = det;
       });
     
-    RealD t3 = usecond();
-    std::cout << GridLogMessage << "Temp " << t1-t0 << " rf " << t2-t1 << " ri " << t3-t2 << std::endl;
+    //RealD t3 = usecond();
+    //std::cout << GridLogMessage << "Temp " << t1 - t0 << " rf/ri " << t2-t1  << "final" << t3 - t2 << std::endl;
   }
 #endif
   
