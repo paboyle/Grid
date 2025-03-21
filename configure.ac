@@ -136,7 +136,7 @@ AC_ARG_ENABLE([tracing],
 case ${ac_TRACING} in
     nvtx)
         AC_DEFINE([GRID_TRACING_NVTX],[1],[use NVTX])
-	LIBS="${LIBS} -lnvToolsExt64_1"
+	LIBS="${LIBS} -lnvToolsExt"
 	;;
     roctx)
         AC_DEFINE([GRID_TRACING_ROCTX],[1],[use ROCTX])
