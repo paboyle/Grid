@@ -78,9 +78,9 @@ int main (int argc, char ** argv)
     double t0,t1;
     
     typedef typename DomainWallFermionD::Coeff_t Coeff_t;
-    Vector<Coeff_t> diag = Dw.bs;
-    Vector<Coeff_t> upper= Dw.cs;
-    Vector<Coeff_t> lower= Dw.cs;
+    std::vector<Coeff_t> diag = Dw.bs;
+    std::vector<Coeff_t> upper= Dw.cs;
+    std::vector<Coeff_t> lower= Dw.cs;
     upper[Ls-1]=-Dw.mass_minus*upper[Ls-1];
     lower[0]   =-Dw.mass_plus*lower[0];
     

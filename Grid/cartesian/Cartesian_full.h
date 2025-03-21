@@ -38,7 +38,7 @@ class GridCartesian: public GridBase {
 
 public:
   int dummy;
-  Coordinate _checker_dim_mask;
+  //  Coordinate _checker_dim_mask;
   virtual int  CheckerBoardFromOindexTable (int Oindex) {
     return 0;
   }
@@ -46,7 +46,7 @@ public:
   {
     return 0;
   }
-  virtual int CheckerBoarded(int dim){
+  virtual int CheckerBoarded(int dim) {
     return 0;
   }
   virtual int CheckerBoard(const Coordinate &site){
@@ -106,6 +106,7 @@ public:
     _rdimensions.resize(_ndimension);
     _simd_layout.resize(_ndimension);
     _checker_dim_mask.resize(_ndimension);;
+    _checker_dim = -1;
     _lstart.resize(_ndimension);
     _lend.resize(_ndimension);
 

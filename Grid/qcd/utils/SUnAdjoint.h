@@ -62,6 +62,7 @@ public:
     // returns i(T_Adj)^index necessary for the projectors
     // see definitions above
     iAdjTa = Zero();
+
     iVector<iSUnMatrix<cplx>,Dimension> ta;
     iSUnMatrix<cplx> tmp;
 

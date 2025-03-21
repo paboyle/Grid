@@ -39,7 +39,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   Coordinate latt_size   = GridDefaultLatt();
-  Coordinate simd_layout( { vComplexD::Nsimd(),1,1,1});
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();
 
   int vol = 1;
@@ -88,6 +88,7 @@ int main (int argc, char ** argv)
   Ctilde=C;
   std::cout<<" Benchmarking FFT of LatticeComplex  "<<std::endl;
   theFFT.FFT_dim(Ctilde,Ctilde,0,FFT::forward); std::cout << theFFT.MFlops()<<" Mflops "<<std::endl;
+  std::cout<<" FFT done "<<std::endl;
   theFFT.FFT_dim(Ctilde,Ctilde,1,FFT::forward); std::cout << theFFT.MFlops()<<" Mflops "<<std::endl;
   theFFT.FFT_dim(Ctilde,Ctilde,2,FFT::forward); std::cout << theFFT.MFlops()<<" Mflops "<<std::endl;
   theFFT.FFT_dim(Ctilde,Ctilde,3,FFT::forward); std::cout << theFFT.MFlops()<<" Mflops "<<std::endl;
@@ -278,6 +279,7 @@ int main (int argc, char ** argv)
     
     result5 = result5 - Kinetic;
     std::cout<<"diff "<< norm2(result5)<<std::endl;
+    assert(norm2(result5)<1.0e-4);
     
   }
 
@@ -356,6 +358,7 @@ int main (int argc, char ** argv)
     
     diff = ref - result4;
     std::cout << "result - ref     "<<norm2(diff)<<std::endl;
+    assert(norm2(diff)<1.0e-4);
 
   }
 
@@ -439,6 +442,7 @@ int main (int argc, char ** argv)
     
     diff = ref - result4;
     std::cout << "result - ref     "<<norm2(diff)<<std::endl;
+    assert(norm2(diff)<1.0e-4);
 
   }
 

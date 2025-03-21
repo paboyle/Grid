@@ -971,7 +971,9 @@ void BaryonUtils<FImpl>::BaryonGamma3pt(
   autoView( vq_ti , q_ti     , AcceleratorRead);
   autoView( vq_tf , q_tf     , AcceleratorRead);
 
-  Vector<mobj> my_Dq_spec{Dq_spec1,Dq_spec2};
+  deviceVector<mobj> my_Dq_spec(2);
+  acceleratorPut(my_Dq_spec[0],Dq_spec1);
+  acceleratorPut(my_Dq_spec[1],Dq_spec2);
   mobj * Dq_spec_p = &my_Dq_spec[0];
 
   if (group == 1) {
@@ -1300,7 +1302,8 @@ void BaryonUtils<FImpl>::SigmaToNucleonEye(const PropagatorField &qq_loop,
   autoView( vd_tf   , qd_tf    , AcceleratorRead);
   autoView( vs_ti   , qs_ti    , AcceleratorRead);
 
-  Vector<mobj> my_Dq_spec{Du_spec};
+  deviceVector<mobj> my_Dq_spec(1);
+  acceleratorPut(my_Dq_spec[0],Du_spec);
   mobj * Dq_spec_p = &my_Dq_spec[0];
 
   if(op == "Q1"){
@@ -1353,7 +1356,8 @@ void BaryonUtils<FImpl>::SigmaToNucleonNonEye(const PropagatorField &qq_ti,
   autoView( vd_tf , qd_tf    , AcceleratorRead  );
   autoView( vs_ti , qs_ti    , AcceleratorRead  );
   
-  Vector<mobj> my_Dq_spec{Du_spec};
+  deviceVector<mobj> my_Dq_spec(1);
+  acceleratorPut(my_Dq_spec[0],Du_spec);
   mobj * Dq_spec_p = &my_Dq_spec[0];
 
   if(op == "Q1"){
@@ -1544,7 +1548,9 @@ void BaryonUtils<FImpl>::XiToSigmaEye(const PropagatorField &qq_loop,
   autoView( vd_tf   , qd_tf    , AcceleratorRead);
   autoView( vs_ti   , qs_ti    , AcceleratorRead);
 
-  Vector<mobj> my_Dq_spec{Dd_spec,Ds_spec};
+  deviceVector<mobj> my_Dq_spec(2);
+  acceleratorPut(my_Dq_spec[0],Dd_spec);
+  acceleratorPut(my_Dq_spec[0],Ds_spec);
   mobj * Dq_spec_p = &my_Dq_spec[0];
 
   if(op == "Q1"){

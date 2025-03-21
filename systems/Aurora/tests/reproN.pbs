@@ -1,6 +1,7 @@
 #!/bin/bash
 
-#PBS -l select=32:system=sunspot,place=scatter
+#PBS -l select=16
+#PBS -q EarlyAppAccess
 #PBS -A LatticeQCD_aesp_CNDA
 #PBS -l walltime=02:00:00
 #PBS -N reproN
@@ -9,8 +10,8 @@
 #export OMP_PROC_BIND=spread
 #unset OMP_PLACES
 
-module load oneapi/eng-compiler/2023.05.15.003
-module load mpich/51.2/icc-all-deterministic-pmix-gpu
+#module load oneapi/eng-compiler/2023.05.15.003
+#module load mpich/51.2/icc-all-deterministic-pmix-gpu
 
 # 56 cores / 6 threads ~9
 export OMP_NUM_THREADS=6

@@ -236,17 +236,20 @@ public:
   template<class sobj> inline Lattice<vobj> & operator = (const sobj & r){
     vobj vtmp;
     vtmp = r;
-#if 1
+#if 0
+    deviceVector<vobj> vvtmp(1);
+    acceleratorPut(vvtmp[0],vtmp);
+    vobj *vvtmp_p = & vvtmp[0];
+    auto me  = View(AcceleratorWrite);
+    accelerator_for(ss,me.size(),vobj::Nsimd(),{
+	auto stmp=coalescedRead(*vvtmp_p);
+	coalescedWrite(me[ss],stmp);
+    });
+#else    
     auto me  = View(CpuWrite);
     thread_for(ss,me.size(),{
        me[ss]= r;
       });
-#else    
-    auto me  = View(AcceleratorWrite);
-    accelerator_for(ss,me.size(),vobj::Nsimd(),{
-	auto stmp=coalescedRead(vtmp);
-	coalescedWrite(me[ss],stmp);
-    });
 #endif    
     me.ViewClose();
     return *this;

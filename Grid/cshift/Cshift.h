@@ -51,7 +51,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #endif 
 
 NAMESPACE_BEGIN(Grid);
-
 template<class Expression,typename std::enable_if<is_lattice_expr<Expression>::value,void>::type * = nullptr> 
 auto Cshift(const Expression &expr,int dim,int shift)  -> decltype(closure(expr)) 
 {

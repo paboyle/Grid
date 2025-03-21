@@ -47,7 +47,7 @@ public:
   static int PartialCompressionFactor(GridBase *grid) { return 1;}
 #endif
   template<class vobj,class cobj,class compressor>
-  static void Gather_plane_simple (commVector<std::pair<int,int> >& table,
+  static void Gather_plane_simple (deviceVector<std::pair<int,int> >& table,
 				   const Lattice<vobj> &rhs,
 				   cobj *buffer,
 				   compressor &compress,
@@ -109,7 +109,7 @@ public:
   // Reorder the fifth dim to be s=Ls-1 , s=0, s=1,...,Ls-2.
   ////////////////////////////////////////////////////////////////////////////////////////////
   template<class vobj,class cobj,class compressor>
-  static void Gather_plane_exchange(commVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
+  static void Gather_plane_exchange(deviceVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
 				    std::vector<cobj *> pointers,int dimension,int plane,int cbmask,
 				    compressor &compress,int type,int partial)
   {
@@ -197,7 +197,7 @@ public:
 #endif
   
   template<class vobj,class cobj,class compressor>
-  static void Gather_plane_simple (commVector<std::pair<int,int> >& table,
+  static void Gather_plane_simple (deviceVector<std::pair<int,int> >& table,
 					 const Lattice<vobj> &rhs,
 					 cobj *buffer,
 					 compressor &compress,
@@ -208,7 +208,7 @@ public:
     else        FaceGatherSimple::Gather_plane_simple(table,rhs,buffer,compress,off,so,partial);
   }
   template<class vobj,class cobj,class compressor>
-  static void Gather_plane_exchange(commVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
+  static void Gather_plane_exchange(deviceVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
 				    std::vector<cobj *> pointers,int dimension,int plane,int cbmask,
 				    compressor &compress,int type,int partial)
   {
@@ -402,7 +402,6 @@ public:
 
   typedef CartesianStencil<vobj,cobj,Parameters> Base;
   typedef typename Base::View_type View_type;
-  typedef typename Base::StencilVector StencilVector;
 
   //  Vector<int> surface_list;
   WilsonStencil(GridBase *grid,
@@ -415,29 +414,6 @@ public:
     //    surface_list.resize(0);
     this->same_node.resize(npoints);
   };
-
-  /*
-  void BuildSurfaceList(int Ls,int vol4){
-
-    // find same node for SHM
-    // Here we know the distance is 1 for WilsonStencil
-    for(int point=0;point<this->_npoints;point++){
-      this->same_node[point] = this->SameNode(point);
-    }
-    
-    for(int site = 0 ;site< vol4;site++){
-      int local = 1;
-      for(int point=0;point<this->_npoints;point++){
-	if( (!this->GetNodeLocal(site*Ls,point)) && (!this->same_node[point]) ){ 
-	  local = 0;
-	}
-      }
-      if(local == 0) { 
-	surface_list.push_back(site);
-      }
-    }
-  }
-  */
   
   template < class compressor>
   void HaloExchangeOpt(const Lattice<vobj> &source,compressor &compress) 
@@ -508,6 +484,11 @@ public:
     this->face_table_computed=1;
     assert(this->u_comm_offset==this->_unified_buffer_size);
     accelerator_barrier();
+#ifdef NVLINK_GET
+    this->_grid->StencilBarrier(); // He can now get mu local gather, I can get his
+    // Synch shared memory on a single nodes; could use an asynchronous barrier here and defer check
+    // Or issue barrier AFTER the DMA is running
+#endif    
   }
 
 };

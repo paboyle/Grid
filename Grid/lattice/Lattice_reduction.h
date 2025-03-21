@@ -46,7 +46,7 @@ inline typename vobj::scalar_object sum_cpu(const vobj *arg, Integer osites)
   //  const int Nsimd = vobj::Nsimd();
   const int nthread = GridThread::GetThreads();
 
-  Vector<sobj> sumarray(nthread);
+  std::vector<sobj> sumarray(nthread);
   for(int i=0;i<nthread;i++){
     sumarray[i]=Zero();
   }
@@ -75,7 +75,7 @@ inline typename vobj::scalar_objectD sumD_cpu(const vobj *arg, Integer osites)
 
   const int nthread = GridThread::GetThreads();
 
-  Vector<sobj> sumarray(nthread);
+  std::vector<sobj> sumarray(nthread);
   for(int i=0;i<nthread;i++){
     sumarray[i]=Zero();
   }
@@ -290,8 +290,10 @@ template<class vobj>
 inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right) {
   GridBase *grid = left.Grid();
 
+  bool ok;
 #ifdef GRID_SYCL
   uint64_t csum=0;
+  uint64_t csum2=0;
   if ( FlightRecorder::LoggingMode != FlightRecorder::LoggingModeNone)
   {
     // Hack
@@ -300,13 +302,33 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
     Integer words = left.Grid()->oSites()*sizeof(vobj)/sizeof(uint64_t);
     uint64_t *base= (uint64_t *)&l_v[0];
     csum=svm_xor(base,words);
+    ok = FlightRecorder::CsumLog(csum);
+    if ( !ok ) {
+      csum2=svm_xor(base,words);
+      std::cerr<< " Bad CSUM " << std::hex<< csum << " recomputed as "<<csum2<<std::dec<<std::endl;
+    } else {
+      //      csum2=svm_xor(base,words);
+      //      std::cerr<< " ok CSUM " << std::hex<< csum << " recomputed as "<<csum2<<std::dec<<std::endl;
+    }
+    assert(ok);
   }
-  FlightRecorder::CsumLog(csum);
 #endif
+  FlightRecorder::StepLog("rank inner product");
   ComplexD nrm = rankInnerProduct(left,right);
+  //  ComplexD nrmck=nrm;
   RealD local = real(nrm);
-  FlightRecorder::NormLog(real(nrm)); 
+  ok = FlightRecorder::NormLog(real(nrm));
+  if ( !ok ) {
+    ComplexD nrm2 = rankInnerProduct(left,right);
+    RealD local2 = real(nrm2);
+    std::cerr<< " Bad NORM " << local << " recomputed as "<<local2<<std::endl;
+    assert(ok);
+  }
+  FlightRecorder::StepLog("Start global sum");
+  //  grid->GlobalSumP2P(nrm);
   grid->GlobalSum(nrm);
+  FlightRecorder::StepLog("Finished global sum");
+  //  std::cout << " norm "<< nrm << " p2p norm "<<nrmck<<std::endl;
   FlightRecorder::ReductionLog(local,real(nrm)); 
   return nrm;
 }
@@ -343,18 +365,6 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   autoView( x_v, x, AcceleratorRead);
   autoView( y_v, y, AcceleratorRead);
   autoView( z_v, z, AcceleratorWrite);
-#if 0
-  typedef decltype(innerProductD(x_v[0],y_v[0])) inner_t;
-  Vector<inner_t> inner_tmp(sites);
-  auto inner_tmp_v = &inner_tmp[0];
-
-  accelerator_for( ss, sites, nsimd,{
-      auto tmp = a*x_v(ss)+b*y_v(ss);
-      coalescedWrite(inner_tmp_v[ss],innerProductD(tmp,tmp));
-      coalescedWrite(z_v[ss],tmp);
-  });
-  nrm = real(TensorRemove(sum(inner_tmp_v,sites)));
-#else
   typedef decltype(innerProduct(x_v[0],y_v[0])) inner_t;
   deviceVector<inner_t> inner_tmp;
   inner_tmp.resize(sites);
@@ -365,9 +375,44 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
       coalescedWrite(inner_tmp_v[ss],innerProduct(tmp,tmp));
       coalescedWrite(z_v[ss],tmp);
   });
-  nrm = real(TensorRemove(sumD(inner_tmp_v,sites)));
+  bool ok;
+#ifdef GRID_SYCL
+  uint64_t csum=0;
+  uint64_t csum2=0;
+  if ( FlightRecorder::LoggingMode != FlightRecorder::LoggingModeNone)
+  {
+    // z_v
+    {
+      Integer words = sites*sizeof(vobj)/sizeof(uint64_t);
+      uint64_t *base= (uint64_t *)&z_v[0];
+      csum=svm_xor(base,words);
+      ok = FlightRecorder::CsumLog(csum);
+      if ( !ok ) {
+	csum2=svm_xor(base,words);
+	std::cerr<< " Bad z_v CSUM " << std::hex<< csum << " recomputed as "<<csum2<<std::dec<<std::endl;
+      }
+      assert(ok);
+    }
+    // inner_v
+    {
+      Integer words = sites*sizeof(inner_t)/sizeof(uint64_t);
+      uint64_t *base= (uint64_t *)&inner_tmp_v[0];
+      csum=svm_xor(base,words);
+      ok = FlightRecorder::CsumLog(csum);
+      if ( !ok ) {
+	csum2=svm_xor(base,words);
+	std::cerr<< " Bad inner_tmp_v CSUM " << std::hex<< csum << " recomputed as "<<csum2<<std::dec<<std::endl;
+      }
+      assert(ok);
+    }
+  }
 #endif
+  nrm = real(TensorRemove(sumD(inner_tmp_v,sites)));
+  ok = FlightRecorder::NormLog(real(nrm));
+  assert(ok);
+  RealD local = real(nrm);
   grid->GlobalSum(nrm);
+  FlightRecorder::ReductionLog(local,real(nrm));
   return nrm; 
 }
  
@@ -377,7 +422,7 @@ innerProductNorm(ComplexD& ip, RealD &nrm, const Lattice<vobj> &left,const Latti
   conformable(left,right);
 
   typedef typename vobj::vector_typeD vector_type;
-  Vector<ComplexD> tmp(2);
+  std::vector<ComplexD> tmp(2);
 
   GridBase *grid = left.Grid();
 
@@ -387,8 +432,8 @@ innerProductNorm(ComplexD& ip, RealD &nrm, const Lattice<vobj> &left,const Latti
   // GPU
   typedef decltype(innerProductD(vobj(),vobj())) inner_t;
   typedef decltype(innerProductD(vobj(),vobj())) norm_t;
-  Vector<inner_t> inner_tmp(sites);
-  Vector<norm_t>  norm_tmp(sites);
+  deviceVector<inner_t> inner_tmp(sites);
+  deviceVector<norm_t>  norm_tmp(sites);
   auto inner_tmp_v = &inner_tmp[0];
   auto norm_tmp_v = &norm_tmp[0];
   {
@@ -438,7 +483,9 @@ inline auto sum(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr)
 // sliceSum, sliceInnerProduct, sliceAxpy, sliceNorm etc...
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<typename vobj::scalar_object> &result,int orthogdim)
+template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,
+					  std::vector<typename vobj::scalar_object> &result,
+					  int orthogdim)
 {
   ///////////////////////////////////////////////////////
   // FIXME precision promoted summation
@@ -460,8 +507,8 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   int ld=grid->_ldimensions[orthogdim];
   int rd=grid->_rdimensions[orthogdim];
 
-  Vector<vobj> lvSum(rd); // will locally sum vectors first
-  Vector<sobj> lsSum(ld,Zero());                    // sum across these down to scalars
+  std::vector<vobj> lvSum(rd); // will locally sum vectors first
+  std::vector<sobj> lsSum(ld,Zero());                    // sum across these down to scalars
   ExtractBuffer<sobj> extracted(Nsimd);                  // splitting the SIMD
 
   result.resize(fd); // And then global sum to return the same vector to every node 
@@ -509,6 +556,8 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   scalar_type * ptr = (scalar_type *) &result[0];
   int words = fd*sizeof(sobj)/sizeof(scalar_type);
   grid->GlobalSumVector(ptr, words);
+  //  std::cout << GridLogMessage << " sliceSum local"<<t_sum<<" us, host+mpi "<<t_rest<<std::endl;
+  
 }
 template<class vobj> inline
 std::vector<typename vobj::scalar_object> 
@@ -519,7 +568,20 @@ sliceSum(const Lattice<vobj> &Data,int orthogdim)
   return result;
 }
 
+/*
+Reimplement
 
+1)
+template<class vobj>
+static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<vobj> &X,const Lattice<vobj> &Y,int Orthog,RealD scale=1.0) 
+
+2)
+template<class vobj>
+static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int Orthog) 
+
+3)
+-- Make Slice Mul Matrix call sliceMaddMatrix
+ */
 template<class vobj>
 static void sliceInnerProductVector( std::vector<ComplexD> & result, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int orthogdim) 
 {
@@ -539,8 +601,8 @@ static void sliceInnerProductVector( std::vector<ComplexD> & result, const Latti
   int ld=grid->_ldimensions[orthogdim];
   int rd=grid->_rdimensions[orthogdim];
 
-  Vector<vector_type> lvSum(rd); // will locally sum vectors first
-  Vector<scalar_type > lsSum(ld,scalar_type(0.0));                    // sum across these down to scalars
+  std::vector<vector_type> lvSum(rd); // will locally sum vectors first
+  std::vector<scalar_type > lsSum(ld,scalar_type(0.0));                    // sum across these down to scalars
   ExtractBuffer<iScalar<scalar_type> > extracted(Nsimd);   // splitting the SIMD  
 
   result.resize(fd); // And then global sum to return the same vector to every node for IO to file
@@ -670,203 +732,96 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
   }
 };
 
-/*
 inline GridBase         *makeSubSliceGrid(const GridBase *BlockSolverGrid,int Orthog)
 {
   int NN    = BlockSolverGrid->_ndimension;
   int nsimd = BlockSolverGrid->Nsimd();
   
-  std::vector<int> latt_phys(0);
-  std::vector<int> simd_phys(0);
-  std::vector<int>  mpi_phys(0);
-  
+  std::vector<int> latt_phys(NN-1);
+  Coordinate simd_phys;
+  std::vector<int>  mpi_phys(NN-1);
+  Coordinate checker_dim_mask(NN-1);
+  int checker_dim=-1;
+
+  int dd;
   for(int d=0;d<NN;d++){
     if( d!=Orthog ) { 
-      latt_phys.push_back(BlockSolverGrid->_fdimensions[d]);
-      simd_phys.push_back(BlockSolverGrid->_simd_layout[d]);
-      mpi_phys.push_back(BlockSolverGrid->_processors[d]);
+      latt_phys[dd]=BlockSolverGrid->_fdimensions[d];
+      mpi_phys[dd] =BlockSolverGrid->_processors[d];
+      checker_dim_mask[dd] = BlockSolverGrid->_checker_dim_mask[d];
+      if ( d == BlockSolverGrid->_checker_dim ) checker_dim = dd;
+      dd++;
     }
   }
-  return (GridBase *)new GridCartesian(latt_phys,simd_phys,mpi_phys); 
+  simd_phys=GridDefaultSimd(latt_phys.size(),nsimd);
+  GridCartesian *tmp         = new GridCartesian(latt_phys,simd_phys,mpi_phys);
+  if(BlockSolverGrid->_isCheckerBoarded) {
+    GridRedBlackCartesian *ret = new GridRedBlackCartesian(tmp,checker_dim_mask,checker_dim);
+    delete tmp;
+    return (GridBase *) ret;
+  } else { 
+    return (GridBase *) tmp;
+  }
 }
-*/
 
 template<class vobj>
 static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<vobj> &X,const Lattice<vobj> &Y,int Orthog,RealD scale=1.0) 
 {    
+  GridBase *FullGrid = X.Grid();
+  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
+
+  Lattice<vobj> Ys(SliceGrid);
+  Lattice<vobj> Rs(SliceGrid);
+  Lattice<vobj> Xs(SliceGrid);
+  Lattice<vobj> RR(FullGrid);
+
+  RR = R; // Copies checkerboard for insert
+  
   typedef typename vobj::scalar_object sobj;
   typedef typename vobj::vector_type vector_type;
-
-  int Nblock = X.Grid()->GlobalDimensions()[Orthog];
-
-  GridBase *FullGrid  = X.Grid();
-  //  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
-
-  //  Lattice<vobj> Xslice(SliceGrid);
-  //  Lattice<vobj> Rslice(SliceGrid);
-
-  assert( FullGrid->_simd_layout[Orthog]==1);
-  //  int nh =  FullGrid->_ndimension;
-  //  int nl = SliceGrid->_ndimension;
-  //  int nl = nh-1;
-
-  //FIXME package in a convenient iterator
-  //Should loop over a plane orthogonal to direction "Orthog"
-  int stride=FullGrid->_slice_stride[Orthog];
-  int block =FullGrid->_slice_block [Orthog];
-  int nblock=FullGrid->_slice_nblock[Orthog];
-  int ostride=FullGrid->_ostride[Orthog];
-
-  autoView( X_v, X, CpuRead);
-  autoView( Y_v, Y, CpuRead);
-  autoView( R_v, R, CpuWrite);
-  thread_region
-  {
-    Vector<vobj> s_x(Nblock);
-
-    thread_for_collapse_in_region(2, n,nblock, {
-     for(int b=0;b<block;b++){
-      int o  = n*stride + b;
-
-      for(int i=0;i<Nblock;i++){
-	s_x[i] = X_v[o+i*ostride];
-      }
-
-      vobj dot;
-      for(int i=0;i<Nblock;i++){
-	dot = Y_v[o+i*ostride];
-	for(int j=0;j<Nblock;j++){
-	  dot = dot + s_x[j]*(scale*aa(j,i));
-	}
-	R_v[o+i*ostride]=dot;
-      }
-    }});
+  int Nslice = X.Grid()->GlobalDimensions()[Orthog];
+  for(int i=0;i<Nslice;i++){
+    ExtractSlice(Ys,Y,i,Orthog);
+    ExtractSlice(Rs,R,i,Orthog);
+    Rs=Ys;
+    for(int j=0;j<Nslice;j++){
+      ExtractSlice(Xs,X,j,Orthog);
+      Rs = Rs + Xs*(scale*aa(j,i));
+    }
+    InsertSlice(Rs,RR,i,Orthog);
   }
+  R=RR; // Copy back handles arguments aliasing case
+  delete SliceGrid;
 };
 
 template<class vobj>
-static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<vobj> &X,int Orthog,RealD scale=1.0) 
-{    
-  typedef typename vobj::scalar_object sobj;
-  typedef typename vobj::vector_type vector_type;
-
-  int Nblock = X.Grid()->GlobalDimensions()[Orthog];
-
-  GridBase *FullGrid  = X.Grid();
-  //  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
-  //  Lattice<vobj> Xslice(SliceGrid);
-  //  Lattice<vobj> Rslice(SliceGrid);
-
-  assert( FullGrid->_simd_layout[Orthog]==1);
-  //  int nh =  FullGrid->_ndimension;
-  //  int nl = SliceGrid->_ndimension;
-  //  int nl=1;
-
-  //FIXME package in a convenient iterator
-  // thread_for2d_in_region
-  //Should loop over a plane orthogonal to direction "Orthog"
-  int stride=FullGrid->_slice_stride[Orthog];
-  int block =FullGrid->_slice_block [Orthog];
-  int nblock=FullGrid->_slice_nblock[Orthog];
-  int ostride=FullGrid->_ostride[Orthog];
-  autoView( R_v, R, CpuWrite);
-  autoView( X_v, X, CpuRead);
-  thread_region
-  {
-    std::vector<vobj> s_x(Nblock);
-
-
-    thread_for_collapse_in_region( 2 ,n,nblock,{
-    for(int b=0;b<block;b++){
-      int o  = n*stride + b;
-
-      for(int i=0;i<Nblock;i++){
-	s_x[i] = X_v[o+i*ostride];
-      }
-
-      vobj dot;
-      for(int i=0;i<Nblock;i++){
-	dot = s_x[0]*(scale*aa(0,i));
-	for(int j=1;j<Nblock;j++){
-	  dot = dot + s_x[j]*(scale*aa(j,i));
-	}
-	R_v[o+i*ostride]=dot;
-      }
-    }});
-  }
+static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<vobj> &X,int Orthog,RealD scale=1.0)
+{
+  R=Zero();
+  sliceMaddMatrix(R,aa,X,R,Orthog,scale);
 };
 
 
 template<class vobj>
 static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int Orthog) 
 {
+  GridBase *SliceGrid = makeSubSliceGrid(lhs.Grid(),Orthog);
+
+  Lattice<vobj> ls(SliceGrid);
+  Lattice<vobj> rs(SliceGrid);
+  
   typedef typename vobj::scalar_object sobj;
   typedef typename vobj::vector_type vector_type;
-  
-  GridBase *FullGrid  = lhs.Grid();
-  //  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
-  
-  int Nblock = FullGrid->GlobalDimensions()[Orthog];
-  
-  //  Lattice<vobj> Lslice(SliceGrid);
-  //  Lattice<vobj> Rslice(SliceGrid);
-  
-  mat = Eigen::MatrixXcd::Zero(Nblock,Nblock);
-
-  assert( FullGrid->_simd_layout[Orthog]==1);
-  //  int nh =  FullGrid->_ndimension;
-  //  int nl = SliceGrid->_ndimension;
-  //  int nl = nh-1;
-
-  //FIXME package in a convenient iterator
-  //Should loop over a plane orthogonal to direction "Orthog"
-  int stride=FullGrid->_slice_stride[Orthog];
-  int block =FullGrid->_slice_block [Orthog];
-  int nblock=FullGrid->_slice_nblock[Orthog];
-  int ostride=FullGrid->_ostride[Orthog];
-
-  typedef typename vobj::vector_typeD vector_typeD;
-
-  autoView( lhs_v, lhs, CpuRead);
-  autoView( rhs_v, rhs, CpuRead);
-  thread_region
-  {
-    std::vector<vobj> Left(Nblock);
-    std::vector<vobj> Right(Nblock);
-    Eigen::MatrixXcd  mat_thread = Eigen::MatrixXcd::Zero(Nblock,Nblock);
-
-    thread_for_collapse_in_region( 2, n,nblock,{
-    for(int b=0;b<block;b++){
-
-      int o  = n*stride + b;
-
-      for(int i=0;i<Nblock;i++){
-	Left [i] = lhs_v[o+i*ostride];
-	Right[i] = rhs_v[o+i*ostride];
-      }
-
-      for(int i=0;i<Nblock;i++){
-      for(int j=0;j<Nblock;j++){
-	auto tmp = innerProduct(Left[i],Right[j]);
-	auto rtmp = TensorRemove(tmp);
-	auto red  =  Reduce(rtmp);
-	mat_thread(i,j) += std::complex<double>(real(red),imag(red));
-      }}
-    }});
-    thread_critical
-    {
-      mat += mat_thread;
-    }  
+  int Nslice = lhs.Grid()->GlobalDimensions()[Orthog];
+  mat = Eigen::MatrixXcd::Zero(Nslice,Nslice);
+  for(int s=0;s<Nslice;s++){
+    ExtractSlice(ls,lhs,s,Orthog);
+    for(int ss=0;ss<Nslice;ss++){
+      ExtractSlice(rs,rhs,ss,Orthog);
+      mat(s,ss) = innerProduct(ls,rs);
+    }
   }
-
-  for(int i=0;i<Nblock;i++){
-  for(int j=0;j<Nblock;j++){
-    ComplexD sum = mat(i,j);
-    FullGrid->GlobalSum(sum);
-    mat(i,j)=sum;
-  }}
-
-  return;
+  delete SliceGrid;
 }
 
 NAMESPACE_END(Grid);

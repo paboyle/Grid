@@ -54,7 +54,7 @@ struct CshiftImplGauge: public CshiftImplBase<typename Gimpl::GaugeLinkField::ve
  *
  */
 
-template<class vobj> inline void ScatterSlice(const cshiftVector<vobj> &buf,
+template<class vobj> inline void ScatterSlice(const deviceVector<vobj> &buf,
 					      Lattice<vobj> &lat,
 					      int x,
 					      int dim,
@@ -140,7 +140,7 @@ template<class vobj> inline void ScatterSlice(const cshiftVector<vobj> &buf,
   });
 }
 
-template<class vobj> inline void GatherSlice(cshiftVector<vobj> &buf,
+template<class vobj> inline void GatherSlice(deviceVector<vobj> &buf,
 					     const Lattice<vobj> &lat,
 					     int x,
 					     int dim,
@@ -462,13 +462,19 @@ public:
     int rNsimd = Nsimd / simd[dimension];
     assert( buffer_size == from.Grid()->_slice_nblock[dimension]*from.Grid()->_slice_block[dimension] / simd[dimension]);
 
-    static cshiftVector<vobj> send_buf; 
-    static cshiftVector<vobj> recv_buf;
+    static deviceVector<vobj> send_buf; 
+    static deviceVector<vobj> recv_buf;
     send_buf.resize(buffer_size*2*depth);    
     recv_buf.resize(buffer_size*2*depth);
+#ifndef ACCELERATOR_AWARE_MPI
+    static hostVector<vobj> hsend_buf; 
+    static hostVector<vobj> hrecv_buf;
+    hsend_buf.resize(buffer_size*2*depth);    
+    hrecv_buf.resize(buffer_size*2*depth);
+#endif    
 
-    std::vector<CommsRequest_t> fwd_req;   
-    std::vector<CommsRequest_t> bwd_req;   
+    std::vector<MpiCommsRequest_t> fwd_req;   
+    std::vector<MpiCommsRequest_t> bwd_req;   
 
     int words = buffer_size;
     int bytes = words * sizeof(vobj);
@@ -495,9 +501,17 @@ public:
       t_gather+=usecond()-t;
 
       t=usecond();
+#ifdef ACCELERATOR_AWARE_MPI
       grid->SendToRecvFromBegin(fwd_req,
 				(void *)&send_buf[d*buffer_size], xmit_to_rank,
 				(void *)&recv_buf[d*buffer_size], recv_from_rank, bytes, tag);
+#else
+      acceleratorCopyFromDevice(&send_buf[d*buffer_size],&hsend_buf[d*buffer_size],bytes);
+      grid->SendToRecvFromBegin(fwd_req,
+				(void *)&hsend_buf[d*buffer_size], xmit_to_rank,
+				(void *)&hrecv_buf[d*buffer_size], recv_from_rank, bytes, tag);
+      acceleratorCopyToDevice(&hrecv_buf[d*buffer_size],&recv_buf[d*buffer_size],bytes);
+#endif
       t_comms+=usecond()-t;
      }
     for ( int d=0;d < depth ; d ++ ) {
@@ -508,9 +522,17 @@ public:
       t_gather+= usecond() - t;
 
       t=usecond();
+#ifdef ACCELERATOR_AWARE_MPI
       grid->SendToRecvFromBegin(bwd_req,
 				(void *)&send_buf[(d+depth)*buffer_size], recv_from_rank,
 				(void *)&recv_buf[(d+depth)*buffer_size], xmit_to_rank, bytes,tag);
+#else
+      acceleratorCopyFromDevice(&send_buf[(d+depth)*buffer_size],&hsend_buf[(d+depth)*buffer_size],bytes);
+      grid->SendToRecvFromBegin(bwd_req,
+				(void *)&hsend_buf[(d+depth)*buffer_size], recv_from_rank,
+				(void *)&hrecv_buf[(d+depth)*buffer_size], xmit_to_rank, bytes,tag);
+      acceleratorCopyToDevice(&hrecv_buf[(d+depth)*buffer_size],&recv_buf[(d+depth)*buffer_size],bytes);
+#endif      
       t_comms+=usecond()-t;
     }
 

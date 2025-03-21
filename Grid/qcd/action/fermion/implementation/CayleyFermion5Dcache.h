@@ -43,9 +43,9 @@ void
 CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
 			       const FermionField &phi_i, 
 			       FermionField &chi_i,
-			       Vector<Coeff_t> &lower,
-			       Vector<Coeff_t> &diag,
-			       Vector<Coeff_t> &upper)
+			       std::vector<Coeff_t> &lower,
+			       std::vector<Coeff_t> &diag,
+			       std::vector<Coeff_t> &upper)
 {
   
   chi_i.Checkerboard()=psi_i.Checkerboard();
@@ -55,11 +55,15 @@ CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
   autoView(chi , chi_i,AcceleratorWrite);
   assert(phi.Checkerboard() == psi.Checkerboard());
 
-  auto pdiag = &diag[0];
-  auto pupper = &upper[0];
-  auto plower = &lower[0];
-
   int Ls =this->Ls;
+
+  acceleratorCopyToDevice(&diag[0] ,&this->d_diag[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&upper[0],&this->d_upper[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&lower[0],&this->d_lower[0],Ls*sizeof(Coeff_t));
+  
+  auto pdiag = &d_diag[0];
+  auto pupper = &d_upper[0];
+  auto plower = &d_lower[0];
 
   // 10 = 3 complex mult + 2 complex add
   // Flops = 10.0*(Nc*Ns) *Ls*vol (/2 for red black counting)
@@ -82,9 +86,9 @@ void
 CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
 			      const FermionField &phi_i, 
 			      FermionField &chi_i,
-			      Vector<Coeff_t> &lower,
-			      Vector<Coeff_t> &diag,
-			      Vector<Coeff_t> &upper)
+			      std::vector<Coeff_t> &lower,
+			      std::vector<Coeff_t> &diag,
+			      std::vector<Coeff_t> &upper)
 {
   chi_i.Checkerboard()=psi_i.Checkerboard();
   GridBase *grid=psi_i.Grid();
@@ -93,11 +97,15 @@ CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
   autoView(chi , chi_i,AcceleratorWrite);
   assert(phi.Checkerboard() == psi.Checkerboard());
 
-  auto pdiag = &diag[0];
-  auto pupper = &upper[0];
-  auto plower = &lower[0];
-
   int Ls=this->Ls;
+
+  acceleratorCopyToDevice(&diag[0] ,&this->d_diag[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&upper[0],&this->d_upper[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&lower[0],&this->d_lower[0],Ls*sizeof(Coeff_t));
+  
+  auto pdiag = &d_diag[0];
+  auto pupper = &d_upper[0];
+  auto plower = &d_lower[0];
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   uint64_t nloop = grid->oSites();
@@ -126,11 +134,17 @@ CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi_i, FermionField &chi
 
   int Ls=this->Ls;
 
-  auto plee  = & lee [0];
-  auto pdee  = & dee [0];
-  auto puee  = & uee [0];
-  auto pleem = & leem[0];
-  auto pueem = & ueem[0];
+  acceleratorCopyToDevice(&lee[0],&d_lee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&dee[0],&d_dee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&uee[0],&d_uee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&leem[0],&d_leem[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&ueem[0],&d_ueem[0],Ls*sizeof(Coeff_t));
+
+  auto plee  = & d_lee [0];
+  auto pdee  = & d_dee [0];
+  auto puee  = & d_uee [0];
+  auto pleem = & d_leem[0];
+  auto pueem = & d_ueem[0];
 
   uint64_t nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
@@ -182,11 +196,17 @@ CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi_i, FermionField &chi
   autoView(psi , psi_i,AcceleratorRead);
   autoView(chi , chi_i,AcceleratorWrite);
 
-  auto plee  = & lee [0];
-  auto pdee  = & dee [0];
-  auto puee  = & uee [0];
-  auto pleem = & leem[0];
-  auto pueem = & ueem[0];
+  acceleratorCopyToDevice(&lee[0],&d_lee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&dee[0],&d_dee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&uee[0],&d_uee[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&leem[0],&d_leem[0],Ls*sizeof(Coeff_t));
+  acceleratorCopyToDevice(&ueem[0],&d_ueem[0],Ls*sizeof(Coeff_t));
+
+  auto plee  = & d_lee [0];
+  auto pdee  = & d_dee [0];
+  auto puee  = & d_uee [0];
+  auto pleem = & d_leem[0];
+  auto pueem = & d_ueem[0];
 
   assert(psi.Checkerboard() == psi.Checkerboard());
 

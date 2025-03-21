@@ -102,11 +102,11 @@ public:
 		     GaugeField &mat, 
 		     const FermionField &A, const FermionField &B, int dag);
 
-  void DhopInternal(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU,
+  void DhopInternal(StencilImpl &st, DoubledGaugeField &U,DoubledGaugeField &UUU,
                     const FermionField &in, FermionField &out, int dag);
-  void DhopInternalSerialComms(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU,
+  void DhopInternalSerialComms(StencilImpl &st, DoubledGaugeField &U,DoubledGaugeField &UUU,
                     const FermionField &in, FermionField &out, int dag);
-  void DhopInternalOverlappedComms(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU,
+  void DhopInternalOverlappedComms(StencilImpl &st, DoubledGaugeField &U,DoubledGaugeField &UUU,
                     const FermionField &in, FermionField &out, int dag);
 
   //////////////////////////////////////////////////////////////////////////
@@ -164,8 +164,6 @@ public:
   DoubledGaugeField UUUmuEven;
   DoubledGaugeField UUUmuOdd;
 
-  LebesgueOrder Lebesgue;
-  LebesgueOrder LebesgueEvenOdd;
   
   ///////////////////////////////////////////////////////////////
   // Conserved current utilities

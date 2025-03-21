@@ -1,0 +1,16 @@
+../../configure \
+--enable-comms=mpi-auto \
+--enable-unified=yes \
+--enable-shm=shmopen \
+--enable-shm-fast-path=shmopen \
+--enable-accelerator=none \
+--enable-simd=AVX512 \
+--disable-accelerator-cshift \
+--disable-fermion-reps \
+--disable-gparity \
+CXX=clang++ \
+MPICXX=mpicxx \
+CXXFLAGS="-std=c++17"
+
+
+

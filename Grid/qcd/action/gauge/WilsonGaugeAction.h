@@ -43,6 +43,11 @@ class WilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
 public:  
   INHERIT_GIMPL_TYPES(Gimpl);
 
+  using Action<GaugeField>::S;
+  using Action<GaugeField>::Sinitial;
+  using Action<GaugeField>::deriv;
+  using Action<GaugeField>::refresh;
+  
   /////////////////////////// constructors
   explicit WilsonGaugeAction(RealD beta_):beta(beta_){};
 

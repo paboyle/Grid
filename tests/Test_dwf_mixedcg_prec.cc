@@ -124,6 +124,8 @@ int main (int argc, char ** argv)
 
   SchurDiagMooeeOperatorParanoid<DomainWallFermionD,LatticeFermionD> HermOpEO(Ddwf);
   SchurDiagMooeeOperatorParanoid<DomainWallFermionF,LatticeFermionF> HermOpEO_f(Ddwf_f);
+  //  SchurDiagMooeeOperator<DomainWallFermionD,LatticeFermionD> HermOpEO(Ddwf);
+  //  SchurDiagMooeeOperator<DomainWallFermionF,LatticeFermionF> HermOpEO_f(Ddwf_f);
 
   int nsecs=600;
   if( GridCmdOptionExists(argv,argv+argc,"--seconds") ){
@@ -131,6 +133,10 @@ int main (int argc, char ** argv)
     GridCmdOptionInt(arg,nsecs);
   }
   
+  std::cout << GridLogMessage << "::::::::::::: Job startup Barrier " << std::endl;
+  UGrid->Barrier();
+  std::cout << GridLogMessage << "::::::::::::: Job startup Barrier complete" << std::endl;
+
   std::cout << GridLogMessage << "::::::::::::: Starting mixed CG for "<<nsecs <<" seconds" << std::endl;
 
   MixedPrecisionConjugateGradient<LatticeFermionD,LatticeFermionF> mCG(1.0e-8, 10000, 50, FrbGrid_f, HermOpEO_f, HermOpEO);
@@ -148,7 +154,7 @@ int main (int argc, char ** argv)
 
   FlightRecorder::ContinueOnFail = 0;
   FlightRecorder::PrintEntireLog = 0;
-  FlightRecorder::ChecksumComms  = 1;
+  FlightRecorder::ChecksumComms  = 0;
   FlightRecorder::ChecksumCommsSend=0;
 
   if(char *s=getenv("GRID_PRINT_ENTIRE_LOG"))  FlightRecorder::PrintEntireLog     = atoi(s);
@@ -180,7 +186,7 @@ int main (int argc, char ** argv)
     iter ++;
     now = time(NULL); UGrid->Broadcast(0,(void *)&now,sizeof(now));
   } while (now < (start + nsecs/10) );
-    
+
   std::cout << GridLogMessage << "::::::::::::: Starting double precision CG" << std::endl;
   ConjugateGradient<LatticeFermionD> CG(1.0e-8,10000);
   int i=0;

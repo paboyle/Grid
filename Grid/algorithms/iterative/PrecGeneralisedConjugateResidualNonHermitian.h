@@ -74,7 +74,7 @@ public:
 
   void operator() (const Field &src, Field &psi){
 
-    psi=Zero();
+    //    psi=Zero();
     RealD cp, ssq,rsq;
     ssq=norm2(src);
     rsq=Tolerance*Tolerance*ssq;

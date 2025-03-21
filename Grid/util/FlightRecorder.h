@@ -12,6 +12,8 @@ class FlightRecorder {
   
   static int                   LoggingMode;
   static uint64_t              ErrorCounter;
+  static const char *                StepName;
+  static int32_t               StepLoggingCounter;
   static int32_t               XmitLoggingCounter;
   static int32_t               RecvLoggingCounter;
   static int32_t               CsumLoggingCounter;
@@ -30,8 +32,9 @@ class FlightRecorder {
   static void SetLoggingModeRecord(void);
   static void SetLoggingModeVerify(void);
   static void SetLoggingMode(LoggingMode_t mode);
-  static void NormLog(double value);
-  static void CsumLog(uint64_t csum);
+  static bool StepLog(const char *name);
+  static bool NormLog(double value);
+  static bool CsumLog(uint64_t csum);
   static void ReductionLog(double lcl, double glbl);
   static void Truncate(void);
   static void ResetCounters(void);

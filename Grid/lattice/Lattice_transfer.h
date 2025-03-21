@@ -954,8 +954,14 @@ void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice
     hcoor[orthog] = slice;
     for(int d=0;d<nh;d++){
       if ( d!=orthog ) { 
-	hcoor[d]=lcoor[ddl++];
+	hcoor[d]=lcoor[ddl];
+	if ( hg->_checker_dim == d ) {
+	  hcoor[d]=hcoor[d]*2; // factor in the full coor for peekLocalSite
+	  lcoor[ddl]=lcoor[ddl]*2; // factor in the full coor for peekLocalSite
+	}
+	ddl++;
       }
+      
     }
     peekLocalSite(s,lowDimv,lcoor);
     pokeLocalSite(s,higherDimv,hcoor);
@@ -976,6 +982,7 @@ void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slic
   assert(orthog<nh);
   assert(orthog>=0);
   assert(hg->_processors[orthog]==1);
+  lowDim.Checkerboard() = higherDim.Checkerboard();
 
   int dl; dl = 0;
   for(int d=0;d<nh;d++){
@@ -993,11 +1000,16 @@ void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slic
     Coordinate lcoor(nl);
     Coordinate hcoor(nh);
     lg->LocalIndexToLocalCoor(idx,lcoor);
-    int ddl=0;
     hcoor[orthog] = slice;
+    int ddl=0;
     for(int d=0;d<nh;d++){
       if ( d!=orthog ) { 
-	hcoor[d]=lcoor[ddl++];
+	hcoor[d]=lcoor[ddl];
+	if ( hg->_checker_dim == d ) {
+	  hcoor[d]=hcoor[d]*2;     // factor in the full gridd coor for peekLocalSite
+	  lcoor[ddl]=lcoor[ddl]*2; // factor in the full coor for peekLocalSite
+	}
+	ddl++;
       }
     }
     peekLocalSite(s,higherDimv,hcoor);

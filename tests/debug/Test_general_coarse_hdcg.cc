@@ -77,13 +77,13 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  const int Ls=24;
-  const int nbasis = 60;
+  const int Ls=16;
+  const int nbasis = 40;
   const int cb = 0 ;
-  RealD mass=0.00078;
+  RealD mass=0.01;
   RealD M5=1.8;
-  RealD b=1.5;
-  RealD c=0.5;
+  RealD b=1.0;
+  RealD c=0.0;
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(),
 								   GridDefaultSimd(Nd,vComplex::Nsimd()),
@@ -117,7 +117,7 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu(UGrid);
 
   FieldMetaData header;
-  std::string file("ckpoint_EODWF_lat.125");
+  std::string file("ckpoint_lat.4000");
   NerscIO::readConfiguration(Umu,header,file);
 
   //////////////////////// Fermion action //////////////////////////////////
@@ -155,7 +155,7 @@ int main (int argc, char ** argv)
   std::cout << "**************************************"<<std::endl;
   std::cout << "Refine Subspace"<<std::endl;
   std::cout << "**************************************"<<std::endl;
-  Aggregates.RefineSubspace(HermOpEO,0.001,1.0e-3,3000); // 172 iters
+  //  Aggregates.RefineSubspace(HermOpEO,0.01,1.0e-3,1000); 
   
   std::cout << "**************************************"<<std::endl;
   std::cout << "Coarsen after refine"<<std::endl;
@@ -167,7 +167,7 @@ int main (int argc, char ** argv)
   std::cout << "**************************************"<<std::endl;
   ConjugateGradient<CoarseVector>  coarseCG(4.0e-2,20000,true);
     
-  const int nrhs=12;
+  const int nrhs=8;
     
   Coordinate mpi=GridDefaultMpi();
   Coordinate rhMpi ({1,1,mpi[0],mpi[1],mpi[2],mpi[3]});
@@ -185,7 +185,7 @@ int main (int argc, char ** argv)
   std::cout << "**************************************"<<std::endl;
 
   typedef HermitianLinearOperator<MultiGeneralCoarsenedMatrix_t,CoarseVector> MrhsHermMatrix;
-  Chebyshev<CoarseVector>      IRLCheby(0.01,42.0,301);  // 1 iter
+  Chebyshev<CoarseVector>      IRLCheby(0.05,40.0,101);  // 1 iter
   MrhsHermMatrix MrhsCoarseOp     (mrhs);
 
   CoarseVector pm_src(CoarseMrhs);
@@ -193,8 +193,10 @@ int main (int argc, char ** argv)
   PowerMethod<CoarseVector>       cPM;
   cPM(MrhsCoarseOp,pm_src);
 
-  int Nk=192;
-  int Nm=384;
+  int Nk=nrhs;
+  int Nm=Nk*3;
+  int Nk=36;
+  int Nm=144;
   int Nstop=Nk;
   int Nconv_test_interval=1;
   
@@ -208,7 +210,7 @@ int main (int argc, char ** argv)
 							  nrhs,
 							  Nk,
 							  Nm,
-							  1e-5,10);
+							  1e-4,10);
 
   int Nconv;
   std::vector<RealD>            eval(Nm);
@@ -250,9 +252,9 @@ int main (int argc, char ** argv)
   // Extra HDCG parameters
   //////////////////////////
   int maxit=3000;
-  ConjugateGradient<CoarseVector>  CG(5.0e-2,maxit,false);
+  ConjugateGradient<CoarseVector>  CG(2.0e-1,maxit,false);
   RealD lo=2.0;
-  int ord = 7;
+  int ord = 9;
 
   DoNothingGuesser<CoarseVector> DoNothing;
   HPDSolver<CoarseVector> HPDSolveMrhs(MrhsCoarseOp,CG,DoNothing);

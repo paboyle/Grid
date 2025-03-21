@@ -45,6 +45,11 @@ public:
     M(in,tmp);
     Mdag(tmp,out);
   }
+  virtual void  MMdag(const Field &in, Field &out) {
+    Field tmp (in.Grid());
+    Mdag(in,tmp);
+    M(tmp,out);
+  }
   virtual  void Mdiag    (const Field &in, Field &out)=0;
   virtual  void Mdir     (const Field &in, Field &out,int dir, int disp)=0;
   virtual  void MdirAll  (const Field &in, std::vector<Field> &out)=0;

@@ -30,12 +30,11 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 extern std::vector<std::pair<int,int> > Cshift_table; 
-extern commVector<std::pair<int,int> > Cshift_table_device; 
+extern deviceVector<std::pair<int,int> > Cshift_table_device; 
 
 inline std::pair<int,int> *MapCshiftTable(void)
 {
   // GPU version
-#ifdef ACCELERATOR_CSHIFT    
   uint64_t sz=Cshift_table.size();
   if (Cshift_table_device.size()!=sz )    {
     Cshift_table_device.resize(sz);
@@ -45,16 +44,13 @@ inline std::pair<int,int> *MapCshiftTable(void)
 			  sizeof(Cshift_table[0])*sz);
 
   return &Cshift_table_device[0];
-#else 
-  return &Cshift_table[0];
-#endif
   // CPU version use identify map
 }
 ///////////////////////////////////////////////////////////////////
 // Gather for when there is no need to SIMD split 
 ///////////////////////////////////////////////////////////////////
 template<class vobj> void 
-Gather_plane_simple (const Lattice<vobj> &rhs,cshiftVector<vobj> &buffer,int dimension,int plane,int cbmask, int off=0)
+Gather_plane_simple (const Lattice<vobj> &rhs,deviceVector<vobj> &buffer,int dimension,int plane,int cbmask, int off=0)
 {
   GRID_TRACE("Gather_plane_simple");
   int rd = rhs.Grid()->_rdimensions[dimension];
@@ -95,17 +91,10 @@ Gather_plane_simple (const Lattice<vobj> &rhs,cshiftVector<vobj> &buffer,int dim
   {
     auto buffer_p = & buffer[0];
     auto table = MapCshiftTable();
-#ifdef ACCELERATOR_CSHIFT
     autoView(rhs_v , rhs, AcceleratorRead);
     accelerator_for(i,ent,vobj::Nsimd(),{
 	coalescedWrite(buffer_p[table[i].first],coalescedRead(rhs_v[table[i].second]));
     });
-#else
-    autoView(rhs_v , rhs, CpuRead);
-    thread_for(i,ent,{
-      buffer_p[table[i].first]=rhs_v[table[i].second];
-    });
-#endif
   }
 }
 
@@ -131,7 +120,6 @@ Gather_plane_extract(const Lattice<vobj> &rhs,
   int n1=rhs.Grid()->_slice_stride[dimension];
 
   if ( cbmask ==0x3){
-#ifdef ACCELERATOR_CSHIFT
     autoView(rhs_v , rhs, AcceleratorRead);
     accelerator_for(nn,e1*e2,1,{
 	int n = nn%e1;
@@ -142,21 +130,10 @@ Gather_plane_extract(const Lattice<vobj> &rhs,
 	vobj temp =rhs_v[so+o+b];
 	extract<vobj>(temp,pointers,offset);
       });
-#else
-    autoView(rhs_v , rhs, CpuRead);
-    thread_for2d(n,e1,b,e2,{
-	int o      =   n*n1;
-	int offset = b+n*e2;
-	
-	vobj temp =rhs_v[so+o+b];
-	extract<vobj>(temp,pointers,offset);
-      });
-#endif
   } else { 
     Coordinate rdim=rhs.Grid()->_rdimensions;
     Coordinate cdm =rhs.Grid()->_checker_dim_mask;
     std::cout << " Dense packed buffer WARNING " <<std::endl; // Does this get called twice once for each cb?
-#ifdef ACCELERATOR_CSHIFT    
     autoView(rhs_v , rhs, AcceleratorRead);
     accelerator_for(nn,e1*e2,1,{
 	int n = nn%e1;
@@ -177,33 +154,13 @@ Gather_plane_extract(const Lattice<vobj> &rhs,
 	  extract<vobj>(temp,pointers,offset);
 	}
       });
-#else
-    autoView(rhs_v , rhs, CpuRead);
-    thread_for2d(n,e1,b,e2,{
-
-	Coordinate coor;
-
-	int o=n*n1;
-	int oindex = o+b;
-
-       	int cb = RedBlackCheckerBoardFromOindex(oindex, rdim, cdm);
-
-	int ocb=1<<cb;
-	int offset = b+n*e2;
-
-	if ( ocb & cbmask ) {
-	  vobj temp =rhs_v[so+o+b];
-	  extract<vobj>(temp,pointers,offset);
-	}
-      });
-#endif
   }
 }
 
 //////////////////////////////////////////////////////
 // Scatter for when there is no need to SIMD split
 //////////////////////////////////////////////////////
-template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,cshiftVector<vobj> &buffer, int dimension,int plane,int cbmask)
+template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,deviceVector<vobj> &buffer, int dimension,int plane,int cbmask)
 {
   GRID_TRACE("Scatter_plane_simple");
   int rd = rhs.Grid()->_rdimensions[dimension];
@@ -248,17 +205,10 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,cshiftVector<
   {
     auto buffer_p = & buffer[0];
     auto table = MapCshiftTable();
-#ifdef ACCELERATOR_CSHIFT    
     autoView( rhs_v, rhs, AcceleratorWrite);
     accelerator_for(i,ent,vobj::Nsimd(),{
 	coalescedWrite(rhs_v[table[i].first],coalescedRead(buffer_p[table[i].second]));
     });
-#else
-    autoView( rhs_v, rhs, CpuWrite);
-    thread_for(i,ent,{
-      rhs_v[table[i].first]=buffer_p[table[i].second];
-    });
-#endif
   }
 }
 
@@ -282,7 +232,6 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
   if(cbmask ==0x3 ) {
     int _slice_stride = rhs.Grid()->_slice_stride[dimension];
     int _slice_block = rhs.Grid()->_slice_block[dimension];
-#ifdef ACCELERATOR_CSHIFT    
     autoView( rhs_v , rhs, AcceleratorWrite);
     accelerator_for(nn,e1*e2,1,{
 	int n = nn%e1;
@@ -291,14 +240,6 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
 	int offset = b+n*_slice_block;
 	merge(rhs_v[so+o+b],pointers,offset);
       });
-#else
-    autoView( rhs_v , rhs, CpuWrite);
-    thread_for2d(n,e1,b,e2,{
-	int o      = n*_slice_stride;
-	int offset = b+n*_slice_block;
-	merge(rhs_v[so+o+b],pointers,offset);
-    });
-#endif
   } else { 
 
     // Case of SIMD split AND checker dim cannot currently be hit, except in 
@@ -365,19 +306,11 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
 
   {
     auto table = MapCshiftTable();
-#ifdef ACCELERATOR_CSHIFT    
     autoView(rhs_v , rhs, AcceleratorRead);
     autoView(lhs_v , lhs, AcceleratorWrite);
     accelerator_for(i,ent,vobj::Nsimd(),{
       coalescedWrite(lhs_v[table[i].first],coalescedRead(rhs_v[table[i].second]));
     });
-#else
-    autoView(rhs_v , rhs, CpuRead);
-    autoView(lhs_v , lhs, CpuWrite);
-    thread_for(i,ent,{
-      lhs_v[table[i].first]=rhs_v[table[i].second];
-    });
-#endif
   }
 }
 
@@ -418,19 +351,11 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
 
   {
     auto table = MapCshiftTable();
-#ifdef ACCELERATOR_CSHIFT    
     autoView( rhs_v, rhs, AcceleratorRead);
     autoView( lhs_v, lhs, AcceleratorWrite);
     accelerator_for(i,ent,1,{
       permute(lhs_v[table[i].first],rhs_v[table[i].second],permute_type);
     });
-#else
-    autoView( rhs_v, rhs, CpuRead);
-    autoView( lhs_v, lhs, CpuWrite);
-    thread_for(i,ent,{
-      permute(lhs_v[table[i].first],rhs_v[table[i].second],permute_type);
-    });
-#endif
   }
 }
 

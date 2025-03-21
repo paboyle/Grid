@@ -1,0 +1,18 @@
+../../configure \
+    --enable-comms=mpi \
+    --enable-simd=GPU \
+    --enable-gen-simd-width=64 \
+    --enable-shm=nvlink \
+    --with-lime=$CLIME \
+    --with-hdf5=$HDF5 \
+    --with-fftw=$FFTW \
+    --with-gmp=$GMP \
+    --with-mpfr=$MPFR \
+    --enable-accelerator=cuda \
+    --disable-gparity \
+    --disable-fermion-reps \
+    --disable-unified \
+    CXX=nvcc \
+    LDFLAGS="-cudart shared -L$NVIDIALIB -lcublas" \
+    CXXFLAGS="-ccbin mpicxx -gencode arch=compute_80,code=sm_80 -std=c++17 -cudart shared"
+
