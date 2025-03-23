@@ -209,6 +209,105 @@ public:
 
     ~Smear_HISQ() {}
 
+
+    // Intent: OUT--U_3link (sum of left and right staples attached to U)
+    //              U_fat (accmulates the fat smearing)
+    //          IN--U_v (thin links)
+    //              gStencil (HISQ stencil)
+    //              Nsites
+    //              mu
+    //              updateFatLinks (in the force, you only want U_3link_v)
+    template<class linkRead, class linkWrite, class stencilRead>
+    void threeLinkStaple(linkWrite U_fat_v, linkWrite U_3link_v, linkRead U_v, stencilRead gStencil_v, 
+                         int Nsites, int mu, bool updateFatLinks=true) const {
+
+        SmearingParameters<RealScalar> lt = this->_linkTreatment;
+        typedef decltype(getLink(U_v,gStencil_v.GetEntry(0,0),0)) U3matrix;
+
+        accelerator_for(site,Nsites,Simd::Nsimd(),{
+            U3matrix U0, U1, U2, U3, U4, U5, W;
+            for(int nu=0;nu<Nd;nu++) {
+                if(nu==mu) continue;
+                int s = HISQStencilIndex(mu,nu);
+
+                auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
+
+                // When you're deciding whether to take an adjoint, the question is: how is the
+                // stored link oriented compared to the one you want? If I imagine myself traveling
+                // with the to-be-updated link, I have two possible, alternative 3-link paths I can
+                // take, one starting by going to the left, the other starting by going to the right.
+                U0 = getLink(U_v,x_p_mu     ,nu);
+                U1 = getLink(U_v,x_p_nu     ,mu);
+                U2 = getLink(U_v,x          ,nu);
+                U3 = getLink(U_v,x_p_mu_m_nu,nu);
+                U4 = getLink(U_v,x_m_nu     ,mu);
+                U5 = getLink(U_v,x_m_nu     ,nu);
+
+                //  "left"          "right"
+                W = U2*U1*adj(U0) + adj(U5)*U4*U3;
+
+                // Save 3-link construct for later 
+                setLink(U_3link_v[x->_offset](nu), W);
+
+                // The index operator (x) returns the coalesced read on GPU. The view [] index returns 
+                // a reference to the vector object. The [x](mu) returns a reference to the densely 
+                // packed (contiguous in memory) mu-th element of the vector object. 
+                if(updateFatLinks) setLink(U_fat_v[x->_offset](mu), U_fat_v(x->_offset)(mu) + lt.c_3*W);
+            }
+        })
+        return;
+    }
+
+
+    // Intent: OUT--U_5link (sum of left and right staples attached to U) 
+    //              U_fat (accmulates the fat smearing)
+    //          IN--U_v (thin links)
+    //              gStencil (HISQ stencil)
+    //              Nsites
+    //              mu
+    //              updateFatLinks (in the force, you only want U_5link_v)
+    template<class linkRead, class linkWrite, class stencilRead>
+    void fiveLinkStaple(linkWrite U_fat_v, linkWrite U_5linkA_v, linkWrite U_5linkB_v, linkWrite U_3link_v, 
+                        linkRead U_v, stencilRead gStencil_v, int Nsites, int mu, bool updateFatLinks=true) const {
+
+        SmearingParameters<RealScalar> lt = this->_linkTreatment;
+        typedef decltype(getLink(U_v,gStencil_v.GetEntry(0,0),0)) U3matrix;
+
+        accelerator_for(site,Nsites,Simd::Nsimd(),{
+            U3matrix U0, U1, U2, U3, U4, U5, W;
+            int sigmaIndex = 0;
+            for(int nu=0;nu<Nd;nu++) {
+                if(nu==mu) continue;
+                int s = HISQStencilIndex(mu,nu);
+                for(int rho=0;rho<Nd;rho++) {
+                    if (rho == mu || rho == nu) continue;
+
+                    auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
+
+                    U0 = getLink(      U_v,x_p_mu     ,nu );
+                    U1 = getLink(U_3link_v,x_p_nu     ,rho);
+                    U2 = getLink(      U_v,x          ,nu );
+                    U3 = getLink(      U_v,x_p_mu_m_nu,nu );
+                    U4 = getLink(U_3link_v,x_m_nu     ,rho);
+                    U5 = getLink(      U_v,x_m_nu     ,nu );
+
+                    W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
+
+                    if(sigmaIndex<3) {
+                        setLink(U_5linkA_v[x->_offset](rho), W);
+                    } else {
+                        setLink(U_5linkB_v[x->_offset](rho), W);
+                    }    
+
+                    if(updateFatLinks) setLink(U_fat_v[x->_offset](mu), U_fat_v(x->_offset)(mu) + lt.c_5*W);
+                    sigmaIndex++;
+                }
+            }
+        })
+        return;
+    }
+
+
     // Intent: OUT--u_smr (smeared links), 
     //              u_naik (Naik links),
     //          IN--u_thin (thin links)
@@ -240,9 +339,7 @@ public:
         // This loop handles 3-, 5-, and 7-link constructs, minus Lepage and Naik.
         for(int mu=0;mu<Nd;mu++) {
 
-            Ughost_3link =Zero();
-            Ughost_5linkA=Zero();
-            Ughost_5linkB=Zero();
+            Ughost_3link =Zero(); Ughost_5linkA=Zero(); Ughost_5linkB=Zero();
 
             // Create the accessors
             autoView(U_v       , Ughost       , AcceleratorRead);
@@ -251,77 +348,17 @@ public:
             autoView(U_5linkA_v, Ughost_5linkA, AcceleratorWrite);
             autoView(U_5linkB_v, Ughost_5linkB, AcceleratorWrite);
 
-            // We infer a type that will be needed in the calculation.
-            typedef decltype(getLink(U_v,gStencil.GetEntry(0,0),0)) U3matrix;
-
             int Nsites = U_v.size();
             auto gStencil_v = gStencil.View(AcceleratorRead); 
 
-            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 3-link constructs
-                U3matrix U0, U1, U2, U3, U4, U5, W;
-                for(int nu=0;nu<Nd;nu++) {
-                    if(nu==mu) continue;
-                    int s = HISQStencilIndex(mu,nu);
+            typedef decltype(getLink(U_v,gStencil.GetEntry(0,0),0)) U3matrix;
+            typedef decltype(U_v)                                   linkRead;
+            typedef decltype(U_fat_v)                               linkWrite;
+            typedef decltype(gStencil_v)                            stencilRead;
 
-                    // The stencil gives us support points in the mu-nu plane that we will use to
-                    // grab the links we need.
-                    auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
+            threeLinkStaple<linkRead,linkWrite,stencilRead>(U_fat_v, U_3link_v, U_v, gStencil_v, Nsites, mu);
 
-                    // When you're deciding whether to take an adjoint, the question is: how is the
-                    // stored link oriented compared to the one you want? If I imagine myself travelling
-                    // with the to-be-updated link, I have two possible, alternative 3-link paths I can
-                    // take, one starting by going to the left, the other starting by going to the right.
-                    U0 = getLink(U_v,x_p_mu     ,nu);
-                    U1 = getLink(U_v,x_p_nu     ,mu);
-                    U2 = getLink(U_v,x          ,nu);
-                    U3 = getLink(U_v,x_p_mu_m_nu,nu);
-                    U4 = getLink(U_v,x_m_nu     ,mu);
-                    U5 = getLink(U_v,x_m_nu     ,nu);
-
-                    //  "left"          "right"
-                    W = U2*U1*adj(U0) + adj(U5)*U4*U3;
-
-                    // Save 3-link construct for later and add to smeared field.
-                    setLink(U_3link_v[x->_offset](nu), W);
-
-                    // The index operator (x) returns the coalesced read on GPU. The view [] index returns 
-                    // a reference to the vector object. The [x](mu) returns a reference to the densely 
-                    // packed (contiguous in memory) mu-th element of the vector object. 
-                    setLink(U_fat_v[x->_offset](mu), U_fat_v(x->_offset)(mu) + lt.c_3*W);
-                }
-            })
-
-            accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 5-link 
-                U3matrix U0, U1, U2, U3, U4, U5, W;
-                int sigmaIndex = 0;
-                for(int nu=0;nu<Nd;nu++) {
-                    if(nu==mu) continue;
-                    int s = HISQStencilIndex(mu,nu);
-                    for(int rho=0;rho<Nd;rho++) {
-                        if (rho == mu || rho == nu) continue;
-
-                        auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
-
-                        U0 = getLink(      U_v,x_p_mu     ,nu );
-                        U1 = getLink(U_3link_v,x_p_nu     ,rho);
-                        U2 = getLink(      U_v,x          ,nu );
-                        U3 = getLink(      U_v,x_p_mu_m_nu,nu );
-                        U4 = getLink(U_3link_v,x_m_nu     ,rho);
-                        U5 = getLink(      U_v,x_m_nu     ,nu );
-
-                        W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
-
-                        if(sigmaIndex<3) {
-                            setLink(U_5linkA_v[x->_offset](rho), W);
-                        } else {
-                            setLink(U_5linkB_v[x->_offset](rho), W);
-                        }    
-
-                        setLink(U_fat_v[x->_offset](mu), U_fat_v(x->_offset)(mu) + lt.c_5*W);
-                        sigmaIndex++;
-                    }
-                }
-            })
+            fiveLinkStaple< linkRead,linkWrite,stencilRead>(U_fat_v, U_5linkA_v, U_5linkB_v, U_3link_v, U_v, gStencil_v, Nsites, mu);
 
             accelerator_for(site,Nsites,Simd::Nsimd(),{ // ----------- 7-link
                 U3matrix U0, U1, U2, U3, U4, U5, W;
@@ -720,16 +757,37 @@ public:
                 std::vector<Coordinate> shifts = createHISQStencil();
                 GeneralLocalStencil gStencil(Ughost.Grid(),shifts);
 
+                GF Ughost_3link(Ughost.Grid());
+                GF Ughost_5linkA(Ughost.Grid());
+                GF Ughost_5linkB(Ughost.Grid());
+                GF dUghost_3link(Ughost.Grid());
+                GF dUghost_5linkA(Ughost.Grid());
+                GF dUghost_5linkB(Ughost.Grid());
+
+                Smear_HISQ<Gimpl> fat7(grid,hp.fat7_c1,0.,hp.fat7_c3,hp.fat7_c5,hp.fat7_c7,0.);
+
                 for(int mu=0;mu<Nd;mu++) {
-        
-                    autoView(U_v , Ughost , AcceleratorRead);
-                    autoView(XY_v, XYghost, AcceleratorRead);
-                    autoView(F_v , Fghost , AcceleratorWrite);
-            
-                    typedef decltype(getLink(U_v,gStencil.GetEntry(0,0),0)) U3matrix;
+
+                    Ughost_3link  =Zero(); Ughost_5linkA =Zero(); Ughost_5linkB =Zero();
+                    dUghost_3link =Zero(); dUghost_5linkA=Zero(); dUghost_5linkB=Zero();
+
+                    autoView(U_v        , Ughost        , AcceleratorRead);
+                    autoView(XY_v       , XYghost       , AcceleratorRead);
+                    autoView(F_v        , Fghost        , AcceleratorWrite);
+                    autoView(U_3link_v  , Ughost_3link  , AcceleratorWrite);
+                    autoView(U_5linkA_v , Ughost_5linkA , AcceleratorWrite);
+                    autoView(U_5linkB_v , Ughost_5linkB , AcceleratorWrite);
+                    autoView(dU_3link_v , dUghost_3link , AcceleratorWrite);
+                    autoView(dU_5linkA_v, dUghost_5linkA, AcceleratorWrite);
+                    autoView(dU_5linkB_v, dUghost_5linkB, AcceleratorWrite);
         
                     int Nsites = U_v.size();
                     auto gStencil_v = gStencil.View(AcceleratorRead);
+            
+                    typedef decltype(getLink(U_v,gStencil.GetEntry(0,0),0)) U3matrix;
+                    typedef decltype(U_v)                                   linkRead;
+                    typedef decltype(F_v)                                   linkWrite;
+                    typedef decltype(gStencil_v)                            stencilRead;
         
                     accelerator_for(site,Nsites,Simd::Nsimd(),{ // 3-LINK DERIVATIVE 
                         U3matrix U0, U1, U2, U3, U4, U5, XY0, XY1, XY2, XY3, XY4, XY5, W;
@@ -752,15 +810,66 @@ public:
                             XY3 = getLink(XY_v,x_p_mu_m_nu,nu);
                             XY4 = getLink(XY_v,x_m_nu     ,mu);
                             XY5 = getLink(XY_v,x_m_nu     ,nu);
-        
+
                             W  =   adj(XY2)*U1*adj(U0) +     U2 *adj(XY1)*adj(U0) +     U2 *U1*    XY0 
                                  +     XY5 *U4*    U3  + adj(U5)*adj(XY4)*    U3  + adj(U5)*U4*adj(XY3);                    
+                
+                            setLink(dU_3link_v[x->_offset](nu), W);
         
                             setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.fat7_c3*W*vecdt[l]);
                         }              
                     })
 
+                    // U_3link_v is being used as a dummy in the first argument. That the last argument
+                    // is false guarantees threeLinkStaple does not interact with its first argument.
+                    fat7.template threeLinkStaple<linkRead,linkWrite,stencilRead>(U_3link_v, U_3link_v, 
+                                                                                  U_v, gStencil_v, Nsites, mu, false);
+ 
+                    accelerator_for(site,Nsites,Simd::Nsimd(),{ // 5-LINK DERIVATIVE
+                        U3matrix U0, U1, U2, U3, U4, U5, XY0, V1, XY2, XY3, V4, XY5, W;
+                        int sigmaIndex = 0;
+                        for(int nu=0;nu<Nd;nu++) {
+                            if(nu==mu) continue;
+                            int s = HISQStencilIndex(mu,nu);
+                            for(int rho=0;rho<Nd;rho++) {
+                                if (rho == mu || rho == nu) continue;
+            
+                                auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
+            
+                                U0  = getLink(U_v       ,x_p_mu     ,nu );
+                                U1  = getLink(U_3link_v ,x_p_nu     ,rho);
+                                U2  = getLink(U_v       ,x          ,nu );
+                                U3  = getLink(U_v       ,x_p_mu_m_nu,nu );
+                                U4  = getLink(U_3link_v ,x_m_nu     ,rho);
+                                U5  = getLink(U_v       ,x_m_nu     ,nu );
+                  
+                                XY0 = getLink(XY_v      ,x_p_mu     ,nu );
+                                V1  = getLink(dU_3link_v,x_p_nu     ,rho);
+                                XY2 = getLink(XY_v      ,x          ,nu );
+                                XY3 = getLink(XY_v      ,x_p_mu_m_nu,nu );
+                                V4  = getLink(dU_3link_v,x_m_nu     ,rho);
+                                XY5 = getLink(XY_v      ,x_m_nu     ,nu );
 
+                                W  =   adj(XY2)*U1*adj(U0) +     U2 *     V1*adj(U0) +     U2 *U1*    XY0 
+                                     +     XY5 *U4*    U3  + adj(U5)*     V4*    U3  + adj(U5)*U4*adj(XY3);                    
+            
+                                if(sigmaIndex<3) {
+                                    setLink(dU_5linkA_v[x->_offset](rho), W);
+                                } else {
+                                    setLink(dU_5linkB_v[x->_offset](rho), W);
+                                }    
+            
+                                setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.fat7_c5*W*vecdt[l]);
+                                sigmaIndex++;
+                            }
+                        }
+                    })
+            
+                    fat7.template fiveLinkStaple< linkRead,linkWrite,stencilRead>(U_5linkA_v, U_5linkA_v, U_5linkB_v, 
+                                                                                  U_3link_v, U_v, gStencil_v, Nsites, mu, false);
+
+                                                                                  
+                                                                                  
                 } // end mu loop
         
                 u_force = Ghost.Extract(Fghost);
