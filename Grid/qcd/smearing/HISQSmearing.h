@@ -359,8 +359,8 @@ public:
     }
 
 
-    // Intent: OUT--u_smr (smeared links), 
-    //              u_naik (Naik links),
+    // Intent: OUT--u_smr (smeared links) 
+    //              u_naik (Naik links)
     //          IN--u_thin (thin links)
     void smear(GF& u_smr, GF& u_naik, GF& u_thin) const {
 
@@ -699,6 +699,44 @@ public:
         });
     };
 
+
+    // Intent: OUT--XY (|X><Y|) 
+    //          IN--vecdt (MCMC time separations) 
+    //              vecx (contains |X> and |Y>)
+    //              l (rat approx and Naik index)
+    //              sep (separation between |X> and |Y>)
+    void outerProductHISQ(GF& XY, std::vector<Real> vecdt, std::vector<FF>& vecx, int l, int sep) {
+        
+        auto grid   = this->_grid;
+        auto gridRB = this->_gridRB;
+
+        GF tmp(grid);
+        FF X(gridRB), Y(gridRB), Xnu(gridRB), Ynu(gridRB), FFdag(gridRB);
+
+        XY = Zero(); X = Zero(); Y = Zero();
+
+        pickCheckerboard(Even,X,vecx[l]);
+        pickCheckerboard(Odd ,Y,vecx[l]);
+
+        for (int nu = 0; nu < Nd; nu++) {
+            // InsertForce4D is the thing that computes the outer product. Generically,
+            // it does this site-wise, i.e. A_i[s] B_j[s]. Hence to construct an outer
+            // product on different sites, we have to shift one of the guys first. Then
+            // we place into the outer product |X><Y|_nu.
+            Ynu = Cshift(Y,nu,sep);
+            FFdag = adj(X); 
+            Gimpl::InsertForce4D(tmp,Ynu,FFdag,nu);
+        }
+        XY += vecdt[l]*tmp; 
+        for (int nu = 0; nu < Nd; nu++) {
+            Xnu = Cshift(X,nu,sep);
+            FFdag = adj(Y); 
+            Gimpl::InsertForce4D(tmp,Xnu,FFdag,nu);
+        }
+        XY -= vecdt[l]*tmp; // capture (-1)^y in eq (2.6)
+    }
+
+
     // We are calculating the force using the rational approximation. The goal is that we can approximate
     // (Mdag M)^(-nf/4) = alpha_0 + sum_l alpha_l/(M^dag M + beta_l). Hence the index l runs over the
     // order of the rational approximation. The additional complication is that each M depends on the
@@ -718,13 +756,10 @@ public:
     void force(GF& momentum, std::vector<Real> vecdt, std::vector<FF>& vecx, std::vector<int> n_orders_naik) {
 
         HISQParameters<Real> hp = this->_linkParams;
-        auto grid   = this->_grid;
-        auto gridRB = this->_gridRB;
+        auto grid = this->_grid;
 
-        GF XY(grid), tmp(grid); // outer product field
-        GF u_force(grid);       // accumulates the force
-
-        FF X(gridRB), Y(gridRB), Xnu(gridRB), Ynu(gridRB), FFdag(gridRB);
+        GF XY(grid);       // outer product field
+        GF u_force(grid);  // accumulates the force
 
         momentum = Zero();
 
@@ -736,39 +771,42 @@ public:
             for (int i=0; i<rat_order; i++) {
 
 
-                // ------------------------------------------- OUTER PRODUCT |X><Y|
-                XY = Zero(); X = Zero(); Y = Zero();
-                pickCheckerboard(Even,X,vecx[l]);
-                pickCheckerboard(Odd ,Y,vecx[l]);
-
-                for (int nu = 0; nu < Nd; nu++) {
-                    // InsertForce4D is the thing that computes the outer product. Generically,
-                    // it does this site-wise, i.e. A_i[s] B_j[s]. Hence to construct an outer
-                    // product on different sites, we have to shift one of the guys first. Then
-                    // we place into the outer product |X><Y|_nu.
-                    Ynu = Cshift(Y,nu,1);
-                    FFdag = adj(X); 
-                    Gimpl::InsertForce4D(tmp,Ynu,FFdag,nu);
-                }
-                XY += vecdt[l]*tmp; 
-                for (int nu = 0; nu < Nd; nu++) {
-                    Xnu = Cshift(X,nu,1);
-                    FFdag = adj(Y); 
-                    Gimpl::InsertForce4D(tmp,Xnu,FFdag,nu);
-                }
-                XY -= vecdt[l]*tmp; // capture (-1)^y in eq (2.6)
-
+//                // The Naik derivative needs an outer product with a separation of 3. Every other derivative
+//                // contribution has a separation of 1. To reuse the XY field, we start the calculation by
+//                // adding the Naik contribution to the momentum.
+//                outerProductHISQ(XY, vecdt, vecx, l, 3); 
+//
+//                std::vector<LF> Uv(Nd, grid);
+//                std::vector<LF> XYv(Nd, grid);
+//                std::vector<LF> dVnaik(Nd, grid);
+//                for (int mu = 0; mu < Nd; mu++) {
+//                    Uv[mu]  = PeekIndex<LorentzIndex>(_Umu, mu);
+//                    XYv[mu] = PeekIndex<LorentzIndex>(XY, mu);
+//                }
+//     
+////    temp  = gAcc.getLink(GInd::getSiteMu(up_mu , mu)) * gAcc.getLink(GInd::getSiteMu(up_2mu, mu)) * fAcc.getLink(GInd::getSiteMu(origin, mu));
+////    temp += gAcc.getLink(GInd::getSiteMu(up_mu , mu)) * fAcc.getLink(GInd::getSiteMu(dn_mu , mu)) * gAcc.getLink(GInd::getSiteMu(dn_mu , mu));
+////    temp += fAcc.getLink(GInd::getSiteMu(dn_2mu, mu)) * gAcc.getLink(GInd::getSiteMu(dn_2mu, mu)) * gAcc.getLink(GInd::getSiteMu(dn_mu , mu));   
+//                for (int mu = 0; mu < Nd; mu++) {
+//                    Vnaik[mu] = lt.c_naik*Gimpl::CovShiftForward(U[mu],mu,
+//                                            Gimpl::CovShiftForward(U[mu],mu,
+//                                              Gimpl::CovShiftIdentityForward(XYv[mu],mu)));
+////                    Vnaik[mu] = lt.c_naik*Gimpl::CovShiftForward(U[mu],mu,
+////                                            Gimpl::CovShiftForward(U[mu],mu,
+////                                              Gimpl::CovShiftIdentityForward(U[mu],mu)));
+//                }
+                
+                outerProductHISQ(XY, vecdt, vecx, l, 1); 
 
                 momentum += hp.fat7_c1*XY;
 
 
 
-                // ------------------------------------------- SMEARING DERIVATIVES 
+                // ------------------------------------------- N-LINK DERIVATIVES 
                 PaddedCell Ghost(_HaloDepth,grid);
                 GF Ughost  = Ghost.Exchange(_Umu);
                 GF XYghost = Ghost.Exchange(XY);
                 GF Fghost  = Ghost.Exchange(u_force);
-                Fghost     = Zero(); 
                 std::vector<Coordinate> shifts = createHISQStencil();
                 GeneralLocalStencil gStencil(Ughost.Grid(),shifts);
 
@@ -780,6 +818,8 @@ public:
                 GF dUghost_5linkB(Ughost.Grid());
 
                 Smear_HISQ<Gimpl> fat7(grid,hp.fat7_c1,0.,hp.fat7_c3,hp.fat7_c5,hp.fat7_c7,0.);
+
+                Fghost = Zero(); 
 
                 for(int mu=0;mu<Nd;mu++) {
 
@@ -920,7 +960,7 @@ public:
                                 W  =   adj(XY2)*U1*adj(U0) +     U2 *     V1*adj(U0) +     U2 *U1*    XY0 
                                      +     XY5 *U4*    U3  + adj(U5)*     V4*    U3  + adj(U5)*U4*adj(XY3);                    
                     
-                                setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.fat7_c7*W);
+                                setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.fat7_c7*W*vecdt[l]);
                                 sigmaIndex++;
                             }
                         }
