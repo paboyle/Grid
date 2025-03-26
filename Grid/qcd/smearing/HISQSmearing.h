@@ -295,6 +295,12 @@ public:
 
                     W  = U2*U1*adj(U0) + adj(U5)*U4*U3;
 
+                    // Counting 3-link staples: there are three planes attached to the to-be-updated link,
+                    // which corresponds to three (forward+backward) staples. For the 5-link staples, for
+                    // each plane, there are two remaining directions, so that there are six 5-link staples
+                    // altogether. That will not fit in a single GaugeField object, so we use two. You can
+                    // think of sigmaIndex and rho together as being the labels that pick out a particular
+                    // 5-link staple. They therefore should not be interpreted as directions.
                     if(sigmaIndex<3) {
                         setLink(U_5linkA_v[x->_offset](rho), W);
                     } else {
@@ -711,12 +717,16 @@ public:
         auto gridRB = this->_gridRB;
 
         GF tmp(grid);
-        FF X(gridRB), Y(gridRB), Xnu(gridRB), Ynu(gridRB), FFdag(gridRB);
+        FF XRB(gridRB), YRB(gridRB);
+        FF X(grid), Y(grid), Xnu(grid), Ynu(grid), FFdag(grid);
 
         XY = Zero(); X = Zero(); Y = Zero();
 
-        pickCheckerboard(Even,X,vecx[l]);
-        pickCheckerboard(Odd ,Y,vecx[l]);
+        // WRAP THIS TO SAVE MEMORY AND ENHANCE READABILITY
+        pickCheckerboard(Even,XRB,vecx[l]);
+        pickCheckerboard(Odd ,YRB,vecx[l]);
+        setCheckerboard(X,XRB);
+        setCheckerboard(Y,YRB);
 
         for (int nu = 0; nu < Nd; nu++) {
             // InsertForce4D is the thing that computes the outer product. Generically,
