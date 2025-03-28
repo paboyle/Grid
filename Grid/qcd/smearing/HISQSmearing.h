@@ -735,6 +735,7 @@ public:
         setCheckerboard(X,XRB);
         setCheckerboard(Y,YRB);
 
+        tmp = Zero();
         for (int nu = 0; nu < Nd; nu++) {
             // InsertForce4D is the thing that computes the outer product. Generically,
             // it does this site-wise, i.e. A_i[s] B_j[s]. Hence to construct an outer
@@ -744,6 +745,7 @@ public:
             Gimpl::InsertForce4D(tmp,Ynu,X,nu);
         }
         XY += vecdt[l]*tmp; 
+        tmp = Zero();
         for (int nu = 0; nu < Nd; nu++) {
             Xnu = Cshift(X,nu,sep);
             Gimpl::InsertForce4D(tmp,Xnu,Y,nu);
@@ -984,7 +986,7 @@ public:
                 } // end mu loop
         
                 u_force = Ghost.Extract(Fghost);
-                momentum += u_force;
+//                momentum += u_force;
 
                 l++;
             }
