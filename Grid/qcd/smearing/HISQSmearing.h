@@ -718,8 +718,15 @@ public:
 
         GF tmp(grid);
         FF XRB(gridRB), YRB(gridRB);
-        FF X(grid), Y(grid), Xnu(grid), Ynu(grid), FFdag(grid);
+        FF X(grid), Y(grid), Xnu(grid), Ynu(grid);
 
+        // In ks_imp_rhmc/update_h_rhmc.c around line 84, it multiplies the even-site result X of ratinv by Dslash, 
+        // which puts UX on the adjacent odd sites. 
+        //   TRANSLATION: Y=DX on odd, X on even
+        // Then in generic_ks/fermion_force_hisq_multi_cpu.c, lines 171-193 it shifts the odd site UX over to the 
+        // even site and calculates the outer product.  So the shift is needed here to assemble the two terms in 
+        // the outer product on one site, but no multiplication by U is needed, since that was already done.
+        //   TRANSLATION: shift to even, carry out outer product. 
         XY = Zero(); X = Zero(); Y = Zero();
 
         // WRAP THIS TO SAVE MEMORY AND ENHANCE READABILITY
@@ -734,14 +741,12 @@ public:
             // product on different sites, we have to shift one of the guys first. Then
             // we place into the outer product |X><Y|_nu.
             Ynu = Cshift(Y,nu,sep);
-            FFdag = adj(X); 
-            Gimpl::InsertForce4D(tmp,Ynu,FFdag,nu);
+            Gimpl::InsertForce4D(tmp,Ynu,X,nu);
         }
         XY += vecdt[l]*tmp; 
         for (int nu = 0; nu < Nd; nu++) {
             Xnu = Cshift(X,nu,sep);
-            FFdag = adj(Y); 
-            Gimpl::InsertForce4D(tmp,Xnu,FFdag,nu);
+            Gimpl::InsertForce4D(tmp,Xnu,Y,nu);
         }
         XY -= vecdt[l]*tmp; // capture (-1)^y in eq (2.6)
     }
