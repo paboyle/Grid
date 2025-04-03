@@ -711,53 +711,30 @@ public:
     //              vecx (contains |X> and |Y>)
     //              l (rat approx and Naik index)
     //              sep (separation between |X> and |Y>)
-    void outerProductHISQ(GF& XY, std::vector<Real> vecdt, std::vector<FF>& vecx, int l, int sep) {
+    void outerProductHISQ(GF& XY, std::vector<FF>& vecx, int l, int sep) {
         
         auto grid   = this->_grid;
         auto gridRB = this->_gridRB;
 
-        GF tmp(grid);
-        FF XRB(gridRB), YRB(gridRB);
-        FF X(grid), Y(grid), Xnu(grid), Ynu(grid);
-
-        // In ks_imp_rhmc/update_h_rhmc.c around line 84, it multiplies the even-site result X of ratinv by Dslash, 
-        // which puts UX on the adjacent odd sites. 
-        //   TRANSLATION: Y=DX on odd, X on even
-        // Then in generic_ks/fermion_force_hisq_multi_cpu.c, lines 171-193 it shifts the odd site UX over to the 
-        // even site and calculates the outer product.  So the shift is needed here to assemble the two terms in 
-        // the outer product on one site, but no multiplication by U is needed, since that was already done.
-        //   TRANSLATION: shift to even, carry out outer product. 
-        XY = Zero(); X = Zero(); Y = Zero();
-
-        // WRAP THIS TO SAVE MEMORY AND ENHANCE READABILITY
+        FF X(grid), Y(grid), XRB(gridRB), YRB(gridRB);
         pickCheckerboard(Even,XRB,vecx[l]);
-        pickCheckerboard(Odd ,YRB,vecx[l]);
         setCheckerboard(X,XRB);
+        pickCheckerboard(Odd ,YRB,vecx[l]);
         setCheckerboard(Y,YRB);
 
-        tmp = Zero();
+        LF XYnu(grid), YXnu(grid);
+        XY = Zero(); XYnu = Zero(); YXnu=Zero(); 
         for (int nu = 0; nu < Nd; nu++) {
-            // InsertForce4D is the thing that computes the outer product. Generically,
-            // it does this site-wise, i.e. A_i[s] B_j[s]. Hence to construct an outer
-            // product on different sites, we have to shift one of the guys first. Then
-            // we place into the outer product |X><Y|_nu.
-            Ynu = Cshift(Y,nu,sep);
-            Gimpl::InsertForce4D(tmp,Ynu,X,nu);
+            YXnu = outerProduct( Cshift(Y,nu,sep) ,X);
+            XYnu = outerProduct( Cshift(X,nu,sep) ,Y);
+            PokeIndex<LorentzIndex>(XY,(YXnu-XYnu),nu);
         }
-        XY += vecdt[l]*tmp; 
-        tmp = Zero();
-        for (int nu = 0; nu < Nd; nu++) {
-            Xnu = Cshift(X,nu,sep);
-            Gimpl::InsertForce4D(tmp,Xnu,Y,nu);
-        }
-        XY -= vecdt[l]*tmp; // capture (-1)^y in eq (2.6)
+        return;   
     }
 
 
     // We are calculating the force using the rational approximation. The goal is that we can approximate
     // (Mdag M)^(-nf/4) = alpha_0 + sum_l alpha_l/(M^dag M + beta_l). Hence the index l runs over the
-    // order of the rational approximation. The additional complication is that each M depends on the
-    // fermion mass, and for higher masses, in particular when there are charm quarks, we need to
     // introduce a different "Naik epsilon" for each M. Hence, we can think of the total application
     // of this operator as having an index inaik, running over the different Naik epsilons; for each inaik
     // there is a possibly different order_inaik, then the operator has an index l running up to order_inaik.
@@ -813,184 +790,197 @@ public:
 ////                                              Gimpl::CovShiftIdentityForward(U[mu],mu)));
 //                }
                 
-                outerProductHISQ(XY, vecdt, vecx, l, 1); 
+                outerProductHISQ(XY, vecx, l, 1); 
 
-                momentum += hp.fat7_c1*XY;
+                momentum += hp.fat7_c1*vecdt[l]*XY;
 
 
 
-                // ------------------------------------------- N-LINK DERIVATIVES 
-                PaddedCell Ghost(_HaloDepth,grid);
-                GF Ughost  = Ghost.Exchange(_Umu);
-                GF XYghost = Ghost.Exchange(XY);
-                GF Fghost  = Ghost.Exchange(u_force);
-                std::vector<Coordinate> shifts = createHISQStencil();
-                GeneralLocalStencil gStencil(Ughost.Grid(),shifts);
-
-                GF Ughost_3link(Ughost.Grid());
-                GF Ughost_5linkA(Ughost.Grid());
-                GF Ughost_5linkB(Ughost.Grid());
-                GF dUghost_3link(Ughost.Grid());
-                GF dUghost_5linkA(Ughost.Grid());
-                GF dUghost_5linkB(Ughost.Grid());
-
-                Smear_HISQ<Gimpl> fat7(grid,hp.fat7_c1,0.,hp.fat7_c3,hp.fat7_c5,hp.fat7_c7,0.);
-
-                Fghost = Zero(); 
-
-                for(int mu=0;mu<Nd;mu++) {
-
-                    Ughost_3link  =Zero(); Ughost_5linkA =Zero(); Ughost_5linkB =Zero();
-                    dUghost_3link =Zero(); dUghost_5linkA=Zero(); dUghost_5linkB=Zero();
-
-                    autoView(U_v        , Ughost        , AcceleratorRead);
-                    autoView(XY_v       , XYghost       , AcceleratorRead);
-                    autoView(F_v        , Fghost        , AcceleratorWrite);
-                    autoView(U_3link_v  , Ughost_3link  , AcceleratorWrite);
-                    autoView(U_5linkA_v , Ughost_5linkA , AcceleratorWrite);
-                    autoView(U_5linkB_v , Ughost_5linkB , AcceleratorWrite);
-                    autoView(dU_3link_v , dUghost_3link , AcceleratorWrite);
-                    autoView(dU_5linkA_v, dUghost_5linkA, AcceleratorWrite);
-                    autoView(dU_5linkB_v, dUghost_5linkB, AcceleratorWrite);
-        
-                    int Nsites = U_v.size();
-                    auto gStencil_v = gStencil.View(AcceleratorRead);
-            
-                    typedef decltype(getLink(U_v,gStencil.GetEntry(0,0),0)) U3matrix;
-                    typedef decltype(U_v)                                   linkRead;
-                    typedef decltype(F_v)                                   linkWrite;
-                    typedef decltype(gStencil_v)                            stencilRead;
-        
-                    accelerator_for(site,Nsites,Simd::Nsimd(),{ // 3-LINK DERIVATIVE 
-                        U3matrix U0, U1, U2, U3, U4, U5, XY0, XY1, XY2, XY3, XY4, XY5, W;
-                        for(int nu=0;nu<Nd;nu++) {
-                            if(nu==mu) continue;
-                            int s = HISQStencilIndex(mu,nu);
-        
-                            auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
-        
-                            U0  = getLink(U_v ,x_p_mu     ,nu);
-                            U1  = getLink(U_v ,x_p_nu     ,mu);
-                            U2  = getLink(U_v ,x          ,nu);
-                            U3  = getLink(U_v ,x_p_mu_m_nu,nu);
-                            U4  = getLink(U_v ,x_m_nu     ,mu);
-                            U5  = getLink(U_v ,x_m_nu     ,nu);
-        
-                            XY0 = getLink(XY_v,x_p_mu     ,nu);
-                            XY1 = getLink(XY_v,x_p_nu     ,mu);
-                            XY2 = getLink(XY_v,x          ,nu);
-                            XY3 = getLink(XY_v,x_p_mu_m_nu,nu);
-                            XY4 = getLink(XY_v,x_m_nu     ,mu);
-                            XY5 = getLink(XY_v,x_m_nu     ,nu);
-
-                            W  =   adj(XY2)*U1*adj(U0) +     U2 *adj(XY1)*adj(U0) +     U2 *U1*    XY0 
-                                 +     XY5 *U4*    U3  + adj(U5)*adj(XY4)*    U3  + adj(U5)*U4*adj(XY3);                    
-                
-                            setLink(dU_3link_v[x->_offset](nu), W);
-        
-                            setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.fat7_c3*W*vecdt[l]);
-                        }              
-                    })
-
-                    // U_3link_v is being used as a dummy in the first argument. That the last argument
-                    // is false guarantees threeLinkStaple does not interact with its first argument.
-                    fat7.template threeLinkStaple<linkRead,linkWrite,stencilRead>(U_3link_v, U_3link_v, 
-                                                                                  U_v, gStencil_v, mu, false);
- 
-                    accelerator_for(site,Nsites,Simd::Nsimd(),{ // 5-LINK DERIVATIVE
-                        U3matrix U0, U1, U2, U3, U4, U5, XY0, V1, XY2, XY3, V4, XY5, W;
-                        int sigmaIndex = 0;
-                        for(int nu=0;nu<Nd;nu++) {
-                            if(nu==mu) continue;
-                            int s = HISQStencilIndex(mu,nu);
-                            for(int rho=0;rho<Nd;rho++) {
-                                if (rho == mu || rho == nu) continue;
-            
-                                auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
-            
-                                U0  = getLink(U_v       ,x_p_mu     ,nu );
-                                U1  = getLink(U_3link_v ,x_p_nu     ,rho);
-                                U2  = getLink(U_v       ,x          ,nu );
-                                U3  = getLink(U_v       ,x_p_mu_m_nu,nu );
-                                U4  = getLink(U_3link_v ,x_m_nu     ,rho);
-                                U5  = getLink(U_v       ,x_m_nu     ,nu );
-                  
-                                XY0 = getLink(XY_v      ,x_p_mu     ,nu );
-                                V1  = getLink(dU_3link_v,x_p_nu     ,rho);
-                                XY2 = getLink(XY_v      ,x          ,nu );
-                                XY3 = getLink(XY_v      ,x_p_mu_m_nu,nu );
-                                V4  = getLink(dU_3link_v,x_m_nu     ,rho);
-                                XY5 = getLink(XY_v      ,x_m_nu     ,nu );
-
-                                W  =   adj(XY2)*U1*adj(U0) +     U2 *     V1*adj(U0) +     U2 *U1*    XY0 
-                                     +     XY5 *U4*    U3  + adj(U5)*     V4*    U3  + adj(U5)*U4*adj(XY3);                    
-            
-                                if(sigmaIndex<3) {
-                                    setLink(dU_5linkA_v[x->_offset](rho), W);
-                                } else {
-                                    setLink(dU_5linkB_v[x->_offset](rho), W);
-                                }    
-            
-                                setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.fat7_c5*W*vecdt[l]);
-                                sigmaIndex++;
-                            }
-                        }
-                    })
-            
-                    fat7.template fiveLinkStaple< linkRead,linkWrite,stencilRead>(U_5linkA_v, U_5linkA_v, U_5linkB_v, 
-                                                                                  U_3link_v, U_v, gStencil_v, mu, false);
-
-                    accelerator_for(site,Nsites,Simd::Nsimd(),{ // 7-LINK DERIVATIVE 
-                        U3matrix U0, U1, U2, U3, U4, U5, XY0, V1, XY2, XY3, V4, XY5, W;
-                        int sigmaIndex = 0;
-                        for(int nu=0;nu<Nd;nu++) {
-                            if(nu==mu) continue;
-                            int s = HISQStencilIndex(mu,nu);
-                            for(int rho=0;rho<Nd;rho++) {
-                                if (rho == mu || rho == nu) continue;
-                    
-                                auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
-                    
-                                U0  = getLink(U_v ,x_p_mu,nu);
-                                XY0 = getLink(XY_v,x_p_mu,nu );
-                                if(sigmaIndex<3) {
-                                    U1 = getLink( U_5linkB_v,x_p_nu,rho);
-                                    V1 = getLink(dU_5linkB_v,x_p_nu,rho);
-                                } else {
-                                    U1 = getLink( U_5linkA_v,x_p_nu,rho);
-                                    V1 = getLink(dU_5linkA_v,x_p_nu,rho);
-                                }  
-                                U2  = getLink(U_v ,x          ,nu);
-                                XY2 = getLink(XY_v,x          ,nu);
-                                U3  = getLink(U_v ,x_p_mu_m_nu,nu);
-                                XY3 = getLink(XY_v,x_p_mu_m_nu,nu);
-                                if(sigmaIndex<3) {
-                                    U4 = getLink( U_5linkB_v,x_m_nu,rho);
-                                    V4 = getLink(dU_5linkB_v,x_m_nu,rho);
-                                } else {
-                                    U4 = getLink( U_5linkA_v,x_m_nu,rho);
-                                    V4 = getLink(dU_5linkA_v,x_m_nu,rho);
-                                }  
-                                U5  = getLink(U_v ,x_m_nu,nu);
-                                XY5 = getLink(XY_v,x_m_nu,nu);
-                  
-                                W  =   adj(XY2)*U1*adj(U0) +     U2 *     V1*adj(U0) +     U2 *U1*    XY0 
-                                     +     XY5 *U4*    U3  + adj(U5)*     V4*    U3  + adj(U5)*U4*adj(XY3);                    
-                    
-                                setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.fat7_c7*W*vecdt[l]);
-                                sigmaIndex++;
-                            }
-                        }
-                    })                                                                             
-                                                                                  
-                } // end mu loop
-        
-                u_force = Ghost.Extract(Fghost);
+//                // ------------------------------------------- N-LINK DERIVATIVES 
+//                PaddedCell Ghost(_HaloDepth,grid);
+//                GF Ughost  = Ghost.Exchange(_Umu);
+//                GF XYghost = Ghost.Exchange(XY);
+//                GF Fghost  = Ghost.Exchange(u_force);
+//                std::vector<Coordinate> shifts = createHISQStencil();
+//                GeneralLocalStencil gStencil(Ughost.Grid(),shifts);
+//
+//                GF Ughost_3link(Ughost.Grid());
+//                GF Ughost_5linkA(Ughost.Grid());
+//                GF Ughost_5linkB(Ughost.Grid());
+//                GF dUghost_3link(Ughost.Grid());
+//                GF dUghost_5linkA(Ughost.Grid());
+//                GF dUghost_5linkB(Ughost.Grid());
+//
+//                Smear_HISQ<Gimpl> fat7(grid,hp.fat7_c1,0.,hp.fat7_c3,hp.fat7_c5,hp.fat7_c7,0.);
+//
+//                Fghost = Zero(); 
+//
+//                for(int mu=0;mu<Nd;mu++) {
+//
+//                    Ughost_3link  =Zero(); Ughost_5linkA =Zero(); Ughost_5linkB =Zero();
+//                    dUghost_3link =Zero(); dUghost_5linkA=Zero(); dUghost_5linkB=Zero();
+//
+//                    autoView(U_v        , Ughost        , AcceleratorRead);
+//                    autoView(XY_v       , XYghost       , AcceleratorRead);
+//                    autoView(F_v        , Fghost        , AcceleratorWrite);
+//                    autoView(U_3link_v  , Ughost_3link  , AcceleratorWrite);
+//                    autoView(U_5linkA_v , Ughost_5linkA , AcceleratorWrite);
+//                    autoView(U_5linkB_v , Ughost_5linkB , AcceleratorWrite);
+//                    autoView(dU_3link_v , dUghost_3link , AcceleratorWrite);
+//                    autoView(dU_5linkA_v, dUghost_5linkA, AcceleratorWrite);
+//                    autoView(dU_5linkB_v, dUghost_5linkB, AcceleratorWrite);
+//        
+//                    int Nsites = U_v.size();
+//                    auto gStencil_v = gStencil.View(AcceleratorRead);
+//            
+//                    typedef decltype(getLink(U_v,gStencil.GetEntry(0,0),0)) U3matrix;
+//                    typedef decltype(U_v)                                   linkRead;
+//                    typedef decltype(F_v)                                   linkWrite;
+//                    typedef decltype(gStencil_v)                            stencilRead;
+//        
+//                    accelerator_for(site,Nsites,Simd::Nsimd(),{ // 3-LINK DERIVATIVE 
+//                        U3matrix U0, U1, U2, U3, U4, U5, XY0, XY1, XY2, XY3, XY4, XY5, W;
+//                        for(int nu=0;nu<Nd;nu++) {
+//                            if(nu==mu) continue;
+//                            int s = HISQStencilIndex(mu,nu);
+//        
+//                            auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
+//        
+//                            U0  = getLink(U_v ,x_p_mu     ,nu);
+//                            U1  = getLink(U_v ,x_p_nu     ,mu);
+//                            U2  = getLink(U_v ,x          ,nu);
+//                            U3  = getLink(U_v ,x_p_mu_m_nu,nu);
+//                            U4  = getLink(U_v ,x_m_nu     ,mu);
+//                            U5  = getLink(U_v ,x_m_nu     ,nu);
+//        
+//                            XY0 = getLink(XY_v,x_p_mu     ,nu);
+//                            XY1 = getLink(XY_v,x_p_nu     ,mu);
+//                            XY2 = getLink(XY_v,x          ,nu);
+//                            XY3 = getLink(XY_v,x_p_mu_m_nu,nu);
+//                            XY4 = getLink(XY_v,x_m_nu     ,mu);
+//                            XY5 = getLink(XY_v,x_m_nu     ,nu);
+//
+//                            W  =   adj(XY2)*U1*adj(U0) +     U2 *adj(XY1)*adj(U0) +     U2 *U1*    XY0 
+//                                 +     XY5 *U4*    U3  + adj(U5)*adj(XY4)*    U3  + adj(U5)*U4*adj(XY3);                    
+//                
+//                            setLink(dU_3link_v[x->_offset](nu), W);
+//        
+//                            setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.fat7_c3*W*vecdt[l]);
+//                        }              
+//                    })
+//
+//                    // U_3link_v is being used as a dummy in the first argument. That the last argument
+//                    // is false guarantees threeLinkStaple does not interact with its first argument.
+//                    fat7.template threeLinkStaple<linkRead,linkWrite,stencilRead>(U_3link_v, U_3link_v, 
+//                                                                                  U_v, gStencil_v, mu, false);
+// 
+//                    accelerator_for(site,Nsites,Simd::Nsimd(),{ // 5-LINK DERIVATIVE
+//                        U3matrix U0, U1, U2, U3, U4, U5, XY0, V1, XY2, XY3, V4, XY5, W;
+//                        int sigmaIndex = 0;
+//                        for(int nu=0;nu<Nd;nu++) {
+//                            if(nu==mu) continue;
+//                            int s = HISQStencilIndex(mu,nu);
+//                            for(int rho=0;rho<Nd;rho++) {
+//                                if (rho == mu || rho == nu) continue;
+//            
+//                                auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
+//            
+//                                U0  = getLink(U_v       ,x_p_mu     ,nu );
+//                                U1  = getLink(U_3link_v ,x_p_nu     ,rho);
+//                                U2  = getLink(U_v       ,x          ,nu );
+//                                U3  = getLink(U_v       ,x_p_mu_m_nu,nu );
+//                                U4  = getLink(U_3link_v ,x_m_nu     ,rho);
+//                                U5  = getLink(U_v       ,x_m_nu     ,nu );
+//                  
+//                                XY0 = getLink(XY_v      ,x_p_mu     ,nu );
+//                                V1  = getLink(dU_3link_v,x_p_nu     ,rho);
+//                                XY2 = getLink(XY_v      ,x          ,nu );
+//                                XY3 = getLink(XY_v      ,x_p_mu_m_nu,nu );
+//                                V4  = getLink(dU_3link_v,x_m_nu     ,rho);
+//                                XY5 = getLink(XY_v      ,x_m_nu     ,nu );
+//
+//                                W  =   adj(XY2)*U1*adj(U0) +     U2 *     V1*adj(U0) +     U2 *U1*    XY0 
+//                                     +     XY5 *U4*    U3  + adj(U5)*     V4*    U3  + adj(U5)*U4*adj(XY3);                    
+//            
+//                                if(sigmaIndex<3) {
+//                                    setLink(dU_5linkA_v[x->_offset](rho), W);
+//                                } else {
+//                                    setLink(dU_5linkB_v[x->_offset](rho), W);
+//                                }    
+//            
+//                                setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.fat7_c5*W*vecdt[l]);
+//                                sigmaIndex++;
+//                            }
+//                        }
+//                    })
+//            
+//                    fat7.template fiveLinkStaple< linkRead,linkWrite,stencilRead>(U_5linkA_v, U_5linkA_v, U_5linkB_v, 
+//                                                                                  U_3link_v, U_v, gStencil_v, mu, false);
+//
+//                    accelerator_for(site,Nsites,Simd::Nsimd(),{ // 7-LINK DERIVATIVE 
+//                        U3matrix U0, U1, U2, U3, U4, U5, XY0, V1, XY2, XY3, V4, XY5, W;
+//                        int sigmaIndex = 0;
+//                        for(int nu=0;nu<Nd;nu++) {
+//                            if(nu==mu) continue;
+//                            int s = HISQStencilIndex(mu,nu);
+//                            for(int rho=0;rho<Nd;rho++) {
+//                                if (rho == mu || rho == nu) continue;
+//                    
+//                                auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
+//                    
+//                                U0  = getLink(U_v ,x_p_mu,nu);
+//                                XY0 = getLink(XY_v,x_p_mu,nu );
+//                                if(sigmaIndex<3) {
+//                                    U1 = getLink( U_5linkB_v,x_p_nu,rho);
+//                                    V1 = getLink(dU_5linkB_v,x_p_nu,rho);
+//                                } else {
+//                                    U1 = getLink( U_5linkA_v,x_p_nu,rho);
+//                                    V1 = getLink(dU_5linkA_v,x_p_nu,rho);
+//                                }  
+//                                U2  = getLink(U_v ,x          ,nu);
+//                                XY2 = getLink(XY_v,x          ,nu);
+//                                U3  = getLink(U_v ,x_p_mu_m_nu,nu);
+//                                XY3 = getLink(XY_v,x_p_mu_m_nu,nu);
+//                                if(sigmaIndex<3) {
+//                                    U4 = getLink( U_5linkB_v,x_m_nu,rho);
+//                                    V4 = getLink(dU_5linkB_v,x_m_nu,rho);
+//                                } else {
+//                                    U4 = getLink( U_5linkA_v,x_m_nu,rho);
+//                                    V4 = getLink(dU_5linkA_v,x_m_nu,rho);
+//                                }  
+//                                U5  = getLink(U_v ,x_m_nu,nu);
+//                                XY5 = getLink(XY_v,x_m_nu,nu);
+//                  
+//                                W  =   adj(XY2)*U1*adj(U0) +     U2 *     V1*adj(U0) +     U2 *U1*    XY0 
+//                                     +     XY5 *U4*    U3  + adj(U5)*     V4*    U3  + adj(U5)*U4*adj(XY3);                    
+//                    
+//                                setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.fat7_c7*W*vecdt[l]);
+//                                sigmaIndex++;
+//                            }
+//                        }
+//                    })                                                                             
+//                                                                                  
+//                } // end mu loop
+//        
+//                u_force = Ghost.Extract(Fghost);
 //                momentum += u_force;
 
                 l++;
             }
         }
+
+        std::vector<LF> Uv(Nd,grid);
+        std::vector<LF> mom(Nd, grid);
+        std::vector<LF> Umom(Nd, grid);
+        for (int mu = 0; mu < Nd; mu++) {
+            mom[mu]  = PeekIndex<LorentzIndex>(momentum, mu);
+            Uv[mu]   = PeekIndex<LorentzIndex>(_Umu, mu);
+            Umom[mu] = Uv[mu]*mom[mu];
+        }    
+        for (int mu = 0; mu < Nd; mu++) {
+            PokeIndex<LorentzIndex>(momentum, Umom[mu], mu);
+        }
+
     }
 
 
