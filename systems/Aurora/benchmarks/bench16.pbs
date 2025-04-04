@@ -1,0 +1,74 @@
+#!/bin/bash
+
+##PBS -q LatticeQCD_aesp_CNDA
+#PBS -q debug-scaling
+##PBS -q prod
+#PBS -l select=16
+#PBS -l walltime=00:20:00
+#PBS -A LatticeQCD_aesp_CNDA
+
+cd $PBS_O_WORKDIR
+
+source ../sourceme.sh
+
+cp $PBS_NODEFILE nodefile
+
+export OMP_NUM_THREADS=4
+export MPICH_OFI_NIC_POLICY=GPU
+
+#export MPIR_CVAR_CH4_OFI_ENABLE_GPU_PIPELINE=1
+#unset MPIR_CVAR_CH4_OFI_GPU_PIPELINE_D2H_ENGINE_TYPE
+#unset MPIR_CVAR_CH4_OFI_GPU_PIPELINE_H2D_ENGINE_TYPE
+#unset MPIR_CVAR_GPU_USE_IMMEDIATE_COMMAND_LIST
+#export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_D2H_ENGINE_TYPE=0
+#export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_H2D_ENGINE_TYPE=0
+#export MPIR_CVAR_GPU_USE_IMMEDIATE_COMMAND_LIST=1
+#export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_BUFFER_SZ=1048576
+#export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_THRESHOLD=131072
+#export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_NUM_BUFFERS_PER_CHUNK=16
+#export MPIR_CVAR_CH4_OFI_GPU_PIPELINE_MAX_NUM_BUFFERS=16
+
+#
+# Local vol 16.16.16.32
+#
+
+LX=16
+LY=16
+LZ=16
+LT=32
+
+NX=2
+NY=2
+NZ=4
+NT=1
+
+GX=2
+GY=2
+GZ=1
+GT=3
+
+PX=$((NX * GX ))
+PY=$((NY * GY ))
+PZ=$((NZ * GZ ))
+PT=$((NT * GT ))
+
+VX=$((PX * LX ))
+VY=$((PY * LY ))
+VZ=$((PZ * LZ ))
+VT=$((PT * LT ))
+
+NP=$((PX*PY*PZ*PT))
+VOL=${VX}.${VY}.${VZ}.${VT}
+AT=8
+MPI=${PX}.${PY}.${PZ}.${PT}
+
+CMD="mpiexec -np $NP -ppn 12  -envall \
+	     ./gpu_tile.sh ./Benchmark_dwf_fp32 --mpi $MPI --grid $VOL \
+		--shm-mpi 0 --shm 2048 --device-mem 32000 --accelerator-threads $AT --comms-overlap "
+
+echo VOL $VOL
+echo MPI $MPI
+echo NPROC $NP
+echo $CMD
+$CMD
+

@@ -73,9 +73,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define thread_critical                                     DO_PRAGMA(omp critical)
 
 #ifdef GRID_OMP
-inline void thread_bcopy(void *from, void *to,size_t bytes)
+inline void thread_bcopy(const void *from, void *to,size_t bytes)
 {
-  uint64_t *ufrom = (uint64_t *)from;
+  const uint64_t *ufrom = (const uint64_t *)from;
   uint64_t *uto   = (uint64_t *)to;
   assert(bytes%8==0);
   uint64_t words=bytes/8;
@@ -84,7 +84,7 @@ inline void thread_bcopy(void *from, void *to,size_t bytes)
   });
 }
 #else
-inline void thread_bcopy(void *from, void *to,size_t bytes)
+inline void thread_bcopy(const void *from, void *to,size_t bytes)
 {
   bcopy(from,to,bytes);
 }

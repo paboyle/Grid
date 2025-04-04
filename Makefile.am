@@ -1,5 +1,5 @@
 # additional include paths necessary to compile the C++ library
-SUBDIRS = Grid HMC benchmarks tests examples
+SUBDIRS = Grid  benchmarks tests examples HMC
 
 include $(top_srcdir)/doxygen.inc
 

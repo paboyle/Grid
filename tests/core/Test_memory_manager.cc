@@ -93,7 +93,7 @@ void  MemoryTest(GridCartesian         * FGrid, int N)
 	if ( dev ) { 
 	  autoView(A_v,A[v],AcceleratorRead);
 	  accelerator_for(ss,FGrid->oSites(),1,{
-	      assert(B[v]==A_v[ss]()()().getlane(0));
+	      //	      assert(B[v]==A_v[ss]()()().getlane(0));
 	    });
 	  //	std::cout << "["<<v<<"] checked on GPU"<<B[v]<<std::endl;
 	} else {

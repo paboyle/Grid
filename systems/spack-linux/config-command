@@ -1,0 +1,17 @@
+../../src/Grid/configure \
+    --prefix /home/pab/NPR/install \
+    --enable-comms=mpi-auto \
+    --enable-simd=AVX2 \
+    --enable-shm=none \
+    --enable-debug \
+    --with-lime=$CLIME \
+    --with-hdf5=$HDF5 \
+    --with-fftw=$FFTW \
+    --with-gmp=$GMP \
+    --with-mpfr=$MPFR \
+    --disable-gparity \
+    --disable-fermion-reps \
+    CXX=clang++ \
+    MPICXX=mpicxx \
+    CXXFLAGS="-std=c++17 "
+

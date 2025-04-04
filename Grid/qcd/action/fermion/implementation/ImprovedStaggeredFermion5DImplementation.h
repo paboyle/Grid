@@ -61,8 +61,6 @@ ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GridCartesian      
   UUUmu(&FourDimGrid),
   UUUmuEven(&FourDimRedBlackGrid),
   UUUmuOdd(&FourDimRedBlackGrid),
-  Lebesgue(&FourDimGrid),
-  LebesgueEvenOdd(&FourDimRedBlackGrid),
   _tmp(&FiveDimRedBlackGrid)
 {
 
@@ -277,18 +275,18 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
 
 /*CHANGE */
 template<class Impl>
-void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
+void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, 
 						    DoubledGaugeField & U,DoubledGaugeField & UUU,
 						    const FermionField &in, FermionField &out,int dag)
 {
   if ( StaggeredKernelsStatic::Comms == StaggeredKernelsStatic::CommsAndCompute )
-    DhopInternalOverlappedComms(st,lo,U,UUU,in,out,dag);
+    DhopInternalOverlappedComms(st,U,UUU,in,out,dag);
   else
-    DhopInternalSerialComms(st,lo,U,UUU,in,out,dag);
+    DhopInternalSerialComms(st,U,UUU,in,out,dag);
 }
 
 template<class Impl>
-void ImprovedStaggeredFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, LebesgueOrder &lo,
+void ImprovedStaggeredFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, 
 								   DoubledGaugeField & U,DoubledGaugeField & UUU,
 								   const FermionField &in, FermionField &out,int dag)
 {
@@ -313,7 +311,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl &
   {
     int interior=1;
     int exterior=0;
-    Kernels::DhopImproved(st,lo,U,UUU,in,out,dag,interior,exterior);
+    Kernels::DhopImproved(st,U,UUU,in,out,dag,interior,exterior);
   }
 
   st.CommsMerge(compressor);
@@ -323,12 +321,12 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl &
   {
     int interior=0;
     int exterior=1;
-    Kernels::DhopImproved(st,lo,U,UUU,in,out,dag,interior,exterior);
+    Kernels::DhopImproved(st,U,UUU,in,out,dag,interior,exterior);
   }
 }
 
 template<class Impl>
-void ImprovedStaggeredFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOrder &lo,
+void ImprovedStaggeredFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, 
 						    DoubledGaugeField & U,DoubledGaugeField & UUU,
 						    const FermionField &in, FermionField &out,int dag)
 {
@@ -341,7 +339,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st,
   {
     int interior=1;
     int exterior=1;
-    Kernels::DhopImproved(st,lo,U,UUU,in,out,dag,interior,exterior);
+    Kernels::DhopImproved(st,U,UUU,in,out,dag,interior,exterior);
   }
 }
 /*CHANGE END*/
@@ -357,7 +355,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopOE(const FermionField &in, FermionFie
   assert(in.Checkerboard()==Even);
   out.Checkerboard() = Odd;
 
-  DhopInternal(StencilEven,LebesgueEvenOdd,UmuOdd,UUUmuOdd,in,out,dag);
+  DhopInternal(StencilEven,UmuOdd,UUUmuOdd,in,out,dag);
 }
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
@@ -368,7 +366,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopEO(const FermionField &in, FermionFie
   assert(in.Checkerboard()==Odd);
   out.Checkerboard() = Even;
 
-  DhopInternal(StencilOdd,LebesgueEvenOdd,UmuEven,UUUmuEven,in,out,dag);
+  DhopInternal(StencilOdd,UmuEven,UUUmuEven,in,out,dag);
 }
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int dag)
@@ -378,7 +376,7 @@ void ImprovedStaggeredFermion5D<Impl>::Dhop(const FermionField &in, FermionField
 
   out.Checkerboard() = in.Checkerboard();
 
-  DhopInternal(Stencil,Lebesgue,Umu,UUUmu,in,out,dag);
+  DhopInternal(Stencil,Umu,UUUmu,in,out,dag);
 }
 
 /////////////////////////////////////////////////////////////////////////

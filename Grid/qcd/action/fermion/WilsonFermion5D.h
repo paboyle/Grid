@@ -109,6 +109,8 @@ public:
   void MomentumSpacePropagatorHt_5d(FermionField &out,const FermionField &in,RealD mass,std::vector<double> twist) ;
   void MomentumSpacePropagatorHt(FermionField &out,const FermionField &in,RealD mass,std::vector<double> twist) ;
   void MomentumSpacePropagatorHw(FermionField &out,const FermionField &in,RealD mass,std::vector<double> twist) ;
+  void MomentumSpacePropagatorHwQ(FermionField &out,const FermionField &in,RealD mass,std::vector<double> twist,
+				  std::vector<double> qmu) ;
 
   // Implement hopping term non-hermitian hopping term; half cb or both
   // Implement s-diagonal DW
@@ -117,6 +119,9 @@ public:
   void DhopOE(const FermionField &in, FermionField &out,int dag);
   void DhopEO(const FermionField &in, FermionField &out,int dag);
 
+  void DhopComms  (const FermionField &in, FermionField &out);
+  void DhopCalc   (const FermionField &in, FermionField &out,uint64_t *ids);
+  
   // add a DhopComm
   // -- suboptimal interface will presently trigger multiple comms.
   void DhopDir(const FermionField &in, FermionField &out,int dir,int disp);
@@ -135,21 +140,18 @@ public:
 		     int dag);
     
   void DhopInternal(StencilImpl & st,
-		    LebesgueOrder &lo,
 		    DoubledGaugeField &U,
 		    const FermionField &in, 
 		    FermionField &out,
 		    int dag);
 
   void DhopInternalOverlappedComms(StencilImpl & st,
-				   LebesgueOrder &lo,
 				   DoubledGaugeField &U,
 				   const FermionField &in, 
 				   FermionField &out,
 				   int dag);
 
   void DhopInternalSerialComms(StencilImpl & st,
-			       LebesgueOrder &lo,
 			       DoubledGaugeField &U,
 			       const FermionField &in, 
 			       FermionField &out,
@@ -202,9 +204,6 @@ public:
   DoubledGaugeField Umu;
   DoubledGaugeField UmuEven;
   DoubledGaugeField UmuOdd;
-    
-  LebesgueOrder Lebesgue;
-  LebesgueOrder LebesgueEvenOdd;
     
   // Comms buffer
   //  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;

@@ -54,15 +54,30 @@ int main (int argc, char ** argv)
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
+  std::vector<ComplexD> qmu;
+  qmu.push_back(ComplexD(0.1,0.0));
+  qmu.push_back(ComplexD(0.0,0.0));
+  qmu.push_back(ComplexD(0.0,0.0));
+  qmu.push_back(ComplexD(0.0,0.01));
+  
+
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
 
+  LatticeFermion    tmp(FGrid);
   LatticeFermion    src(FGrid); random(RNG5,src);
   LatticeFermion result(FGrid); result=Zero();
-  LatticeGaugeField Umu(UGrid); SU<Nc>::HotConfiguration(RNG4,Umu);
-
+  LatticeGaugeField Umu(UGrid); 
+#if 0
+  FieldMetaData header;
+  std::string file("ckpoint_lat.4000");
+  NerscIO::readConfiguration(Umu,header,file);
+#else  
+  SU<Nc>::HotConfiguration(RNG4,Umu);
+#endif
+  
   std::vector<LatticeColourMatrix> U(4,UGrid);
   for(int mu=0;mu<Nd;mu++){
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
@@ -71,8 +86,15 @@ int main (int argc, char ** argv)
   RealD mass=0.1;
   RealD M5=1.8;
   DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  Ddwf.qmu = qmu;
 
+  Ddwf.M(src,tmp);
+  std::cout << " |M src|^2 "<<norm2(tmp)<<std::endl;
   MdagMLinearOperator<DomainWallFermionD,LatticeFermion> HermOp(Ddwf);
+  HermOp.HermOp(src,tmp);
+
+  std::cout << " <src|MdagM| src> "<<innerProduct(src,tmp)<<std::endl;
+  
   ConjugateGradient<LatticeFermion> CG(1.0e-6,10000);
   CG(HermOp,src,result);
 

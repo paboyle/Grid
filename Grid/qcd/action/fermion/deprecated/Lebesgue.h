@@ -72,7 +72,7 @@ public:
   void ThreadInterleave(void);
 
 private:
-  Vector<IndexInteger> _LebesgueReorder;
+  deviceVector<IndexInteger> _LebesgueReorder;
 
 };    
 

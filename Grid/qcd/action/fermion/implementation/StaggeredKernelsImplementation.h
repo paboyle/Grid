@@ -256,7 +256,7 @@ void StaggeredKernels<Impl>::DhopDirKernel(StencilImpl &st, DoubledGaugeFieldVie
   });
 
 template <class Impl> 
-void StaggeredKernels<Impl>::DhopImproved(StencilImpl &st, LebesgueOrder &lo, 
+void StaggeredKernels<Impl>::DhopImproved(StencilImpl &st, 
 					  DoubledGaugeField &U, DoubledGaugeField &UUU, 
 					  const FermionField &in, FermionField &out, int dag, int interior,int exterior)
 {
@@ -294,7 +294,7 @@ void StaggeredKernels<Impl>::DhopImproved(StencilImpl &st, LebesgueOrder &lo,
   assert(0 && " Kernel optimisation case not covered ");
 }
 template <class Impl> 
-void StaggeredKernels<Impl>::DhopNaive(StencilImpl &st, LebesgueOrder &lo, 
+void StaggeredKernels<Impl>::DhopNaive(StencilImpl &st, 
 				       DoubledGaugeField &U,
 				       const FermionField &in, FermionField &out, int dag, int interior,int exterior)
 {

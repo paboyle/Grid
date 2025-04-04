@@ -57,6 +57,10 @@ public:
 			 int Ls, int Nsite, const FermionField &in, FermionField &out,
 			 int interior=1,int exterior=1) ;
 
+  static void DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
+			 int Ls, int Nsite, const FermionField &in, FermionField &out,
+			 uint64_t *ids);
+  
   static void DhopDagKernel(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
 			    int Ls, int Nsite, const FermionField &in, FermionField &out,
 			    int interior=1,int exterior=1) ;

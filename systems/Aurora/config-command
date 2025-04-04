@@ -17,6 +17,7 @@ export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-narrowing -Wno-
 	--enable-gen-simd-width=64 \
 	--enable-comms=mpi-auto \
 	--enable-debug \
+	--prefix $HOME/gpt-install \
 	--disable-gparity \
 	--disable-fermion-reps \
 	--enable-shm=nvlink \

@@ -12,15 +12,13 @@
 #include <iostream>
 #include <sys/time.h>
 
-#define GRID_SYCL
-#undef  GRID_HIP
-#undef  GRID_CUDA
 
 #ifdef GRID_HIP
 #include <hipblas/hipblas.h>
 #endif
 #ifdef GRID_CUDA
 #include <cublas_v2.h>
+
 #endif
 #ifdef GRID_SYCL
 #include <oneapi/mkl.hpp>
@@ -45,6 +43,90 @@ inline void acceleratorFreeDevice(void *ptr,size_t bytes){free(ptr,*theAccelerat
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { theAccelerator->memset(base,value,bytes); theAccelerator->wait();}
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { theAccelerator->memcpy(to,from,bytes); theAccelerator->wait();}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ theAccelerator->memcpy(to,from,bytes); theAccelerator->wait();}
+#define accelerator_barrier(dummy) { theAccelerator->wait(); }
+#endif
+
+#ifdef GRID_HIP
+hipStream_t copyStream;
+hipStream_t computeStream;
+void acceleratorInit(void)
+{
+  int device = 0;
+  auto discard = hipSetDevice(device);
+  discard = hipStreamCreate(&copyStream);
+  discard = hipStreamCreate(&computeStream);
+  printf("AcceleratorHIPInit\n");
+}
+inline void *acceleratorAllocDevice(size_t bytes)
+{
+  void *ptr=NULL;
+  auto err = hipMalloc((void **)&ptr,bytes);
+  if( err != hipSuccess ) {
+    ptr = (void *) NULL;
+    fprintf(stderr," hipMalloc failed for %ld %s \n",bytes,hipGetErrorString(err)); fflush(stderr);
+  }
+  return ptr;
+};
+inline void acceleratorFreeDevice(void *ptr,size_t bytes){ auto discard=hipFree(ptr);};
+inline void acceleratorFreeDevice(void *ptr){ auto discard=hipFree(ptr);};
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { auto discard=hipMemset(base,value,bytes);}
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { auto discard=hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ auto discard=hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
+#define accelerator_barrier(dummy)				\
+  {								\
+    auto tmp=hipStreamSynchronize(computeStream);		\
+    auto err = hipGetLastError();				\
+    if ( err != hipSuccess ) {					\
+      printf("After hipDeviceSynchronize() : HIP error %s \n", hipGetErrorString( err )); \
+      puts(__FILE__);							\
+      printf("Line %d\n",__LINE__);				\
+      exit(0);							\
+    }								\
+  }
+
+#endif
+
+#ifdef GRID_CUDA
+cudaStream_t copyStream;
+cudaStream_t computeStream;
+void acceleratorInit(void)
+{
+  int device = 0;
+  cudaSetDevice(device);
+  cudaStreamCreate(&copyStream);
+  cudaStreamCreate(&computeStream);
+}
+inline void *acceleratorAllocDevice(size_t bytes)
+{
+  void *ptr=NULL;
+  auto err = cudaMalloc((void **)&ptr,bytes);
+  if( err != cudaSuccess ) {
+    ptr = (void *) NULL;
+    printf(" cudaMalloc failed for %d %s \n",bytes,cudaGetErrorString(err));
+  }
+  return ptr;
+};
+inline void acceleratorFreeShared(void *ptr){ cudaFree(ptr);};
+inline void acceleratorFreeDevice(void *ptr){ cudaFree(ptr);};
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { cudaMemcpy(to,from,bytes, cudaMemcpyHostToDevice);}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToHost);}
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { cudaMemset(base,value,bytes);}
+#define accelerator_barrier(dummy)					\
+  {									\
+    cudaStreamSynchronize(computeStream);				\
+    cudaError err = cudaGetLastError();					\
+    if ( cudaSuccess != err ) {						\
+      printf("accelerator_barrier(): Cuda error %s \n",			\
+	     cudaGetErrorString( err ));				\
+      printf("File %s Line %d\n",__FILE__,__LINE__);			\
+      fflush(stdout);							\
+      if (acceleratorAbortOnGpuError) assert(err==cudaSuccess);		\
+    }									\
+  }
+
+#endif
+
+
 template<class T> void acceleratorPut(T& dev,T&host)
 {
   acceleratorCopyToDevice(&host,&dev,sizeof(T));
@@ -55,9 +137,6 @@ template<class T> T acceleratorGet(T& dev)
   acceleratorCopyFromDevice(&dev,&host,sizeof(T));
   return host;
 }
-#define accelerator_barrier(dummy) { theAccelerator->wait(); }
-#endif
-
 
 /**************************************************************
  * Allocator
@@ -210,7 +289,270 @@ public:
     gridblasHandle->wait();
 #endif
   }
+
+
+  /////////////////////////////////////////////////////////////
+  // Single matrix GEMM -- fp64 and fp32
+  /////////////////////////////////////////////////////////////
+  void gemm(GridBLASOperation_t OpA,
+	    GridBLASOperation_t OpB,
+	    int m,int n, int k,
+	    ComplexD alpha,
+	    ComplexD* Amk,  // Device pointer
+	    ComplexD* Bkn,
+	    ComplexD beta,
+	    ComplexD* Cmn)
+  {
+    RealD t2=usecond();
+
+    assert(OpA!=GridBLAS_OP_T); // Complex case expect no transpose
+    assert(OpB!=GridBLAS_OP_T);
+
+    int lda = m; // m x k column major
+    int ldb = k; // k x n column major
+    int ldc = m; // m x b column major
+    if(OpA!=GridBLAS_OP_N)
+      lda = k;
+    if(OpB!=GridBLAS_OP_N)
+      ldb = n;
+    
+    static deviceVector<ComplexD> alpha_p(1);
+    static deviceVector<ComplexD> beta_p(1);
+    // can prestore the 1 and the zero on device
+    acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(ComplexD));
+    acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(ComplexD));
+    RealD t0=usecond();
+
+#ifdef GRID_HIP
+    hipblasOperation_t hOpA;
+    hipblasOperation_t hOpB;
+    if ( OpA == GridBLAS_OP_N ) hOpA = HIPBLAS_OP_N;
+    if ( OpA == GridBLAS_OP_T ) hOpA = HIPBLAS_OP_T;
+    if ( OpA == GridBLAS_OP_C ) hOpA = HIPBLAS_OP_C;
+    if ( OpB == GridBLAS_OP_N ) hOpB = HIPBLAS_OP_N;
+    if ( OpB == GridBLAS_OP_T ) hOpB = HIPBLAS_OP_T;
+    if ( OpB == GridBLAS_OP_C ) hOpB = HIPBLAS_OP_C;
+    auto err = hipblasZgemm(gridblasHandle,
+			    hOpA,
+			    hOpB,
+			    m,n,k,
+			    (hipblasDoubleComplex *) &alpha_p[0],
+			    (hipblasDoubleComplex *) Amk, lda,
+			    (hipblasDoubleComplex *) Bkn, ldb,
+			    (hipblasDoubleComplex *) &beta_p[0],
+			    (hipblasDoubleComplex *) Cmn, ldc);
+    assert(err==HIPBLAS_STATUS_SUCCESS);
+#endif
+#ifdef GRID_CUDA
+    cublasOperation_t hOpA;
+    cublasOperation_t hOpB;
+    if ( OpA == GridBLAS_OP_N ) hOpA = CUBLAS_OP_N;
+    if ( OpA == GridBLAS_OP_T ) hOpA = CUBLAS_OP_T;
+    if ( OpA == GridBLAS_OP_C ) hOpA = CUBLAS_OP_C;
+    if ( OpB == GridBLAS_OP_N ) hOpB = CUBLAS_OP_N;
+    if ( OpB == GridBLAS_OP_T ) hOpB = CUBLAS_OP_T;
+    if ( OpB == GridBLAS_OP_C ) hOpB = CUBLAS_OP_C;
+    auto err = cublasZgemm(gridblasHandle,
+			   hOpA,
+			   hOpB,
+			   m,n,k,
+			   (cuDoubleComplex *) &alpha_p[0],
+			   (cuDoubleComplex *) Amk, lda,
+			   (cuDoubleComplex *) Bkn, ldb,
+			   (cuDoubleComplex *) &beta_p[0],
+			   (cuDoubleComplex *) Cmn, ldc);
+    assert(err==CUBLAS_STATUS_SUCCESS);
+#endif
+#ifdef GRID_SYCL
+      int64_t m64=m;
+      int64_t n64=n;
+      int64_t k64=k;
+      int64_t lda64=lda;
+      int64_t ldb64=ldb;
+      int64_t ldc64=ldc;
+
+      oneapi::mkl::transpose iOpA;
+      oneapi::mkl::transpose iOpB;
+      
+      if ( OpA == GridBLAS_OP_N ) iOpA = oneapi::mkl::transpose::N;
+      if ( OpA == GridBLAS_OP_T ) iOpA = oneapi::mkl::transpose::T;
+      if ( OpA == GridBLAS_OP_C ) iOpA = oneapi::mkl::transpose::C;
+      if ( OpB == GridBLAS_OP_N ) iOpB = oneapi::mkl::transpose::N;
+      if ( OpB == GridBLAS_OP_T ) iOpB = oneapi::mkl::transpose::T;
+      if ( OpB == GridBLAS_OP_C ) iOpB = oneapi::mkl::transpose::C;
+
+      oneapi::mkl::blas::column_major::gemm(*gridblasHandle,
+					    iOpA,
+					    iOpB,
+					    m64,n64,k64,
+					    (ComplexD *) &alpha_p[0],
+					    (const ComplexD *)Amk, (int64_t )lda64,
+					    (const ComplexD *)Bkn, (int64_t )ldb64,
+					    (ComplexD *) &beta_p[0],
+					    (ComplexD *)Cmn, (int64_t)ldc64);
+      synchronise();
+#endif
+#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
+    // Need a default/reference implementation; use Eigen
+      if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_N) ) {
+	Eigen::Map<Eigen::MatrixXcd> eAmk(Amk,m,k);
+	Eigen::Map<Eigen::MatrixXcd> eBkn(Bkn,k,n);
+	Eigen::Map<Eigen::MatrixXcd> eCmn(Cmn,m,n);
+	eCmn = beta * eCmn + alpha * eAmk * eBkn ;
+      } else if ( (OpA == GridBLAS_OP_C ) && (OpB == GridBLAS_OP_N) ) {
+	Eigen::Map<Eigen::MatrixXcd> eAmk(Amk,k,m);
+	Eigen::Map<Eigen::MatrixXcd> eBkn(Bkn,k,n);
+	Eigen::Map<Eigen::MatrixXcd> eCmn(Cmn,m,n);
+	eCmn = beta * eCmn + alpha * eAmk.adjoint() * eBkn ;
+      } else if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_C) ) {
+	Eigen::Map<Eigen::MatrixXcd> eAmk(Amk,m,k);
+	Eigen::Map<Eigen::MatrixXcd> eBkn(Bkn,n,k);
+	Eigen::Map<Eigen::MatrixXcd> eCmn(Cmn,m,n);
+	eCmn = beta * eCmn + alpha * eAmk * eBkn.adjoint() ;
+      } else if ( (OpA == GridBLAS_OP_C ) && (OpB == GridBLAS_OP_C) ) {
+	Eigen::Map<Eigen::MatrixXcd> eAmk(Amk,k,m);
+	Eigen::Map<Eigen::MatrixXcd> eBkn(Bkn,n,k);
+	Eigen::Map<Eigen::MatrixXcd> eCmn(Cmn,m,n);
+	eCmn = beta * eCmn + alpha * eAmk.adjoint() * eBkn.adjoint() ;
+      } else { 
+	assert(0);
+      }
+#endif
+     RealD t1=usecond();
+     RealD flops = 8.0*m*n*k;
+     RealD bytes = 1.0*sizeof(ComplexD)*(m*k+k*n+m*n);
+  }
+  void gemm(GridBLASOperation_t OpA,
+	    GridBLASOperation_t OpB,
+	    int m,int n, int k,
+	    ComplexF alpha,
+	    ComplexF* Amk,  // Device pointer
+	    ComplexF* Bkn,
+	    ComplexF beta,
+	    ComplexF* Cmn)
+  {
+    RealD t2=usecond();
+
+    assert(OpA!=GridBLAS_OP_T); // Complex case expect no transpose
+    assert(OpB!=GridBLAS_OP_T);
+
+    int lda = m; // m x k column major
+    int ldb = k; // k x n column major
+    int ldc = m; // m x b column major
+    if(OpA!=GridBLAS_OP_N)
+      lda = k;
+    if(OpB!=GridBLAS_OP_N)
+      ldb = n;
+    
+    static deviceVector<ComplexF> alpha_p(1);
+    static deviceVector<ComplexF> beta_p(1);
+    // can prestore the 1 and the zero on device
+    acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(ComplexF));
+    acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(ComplexF));
+    RealD t0=usecond();
+
+#ifdef GRID_HIP
+    hipblasOperation_t hOpA;
+    hipblasOperation_t hOpB;
+    if ( OpA == GridBLAS_OP_N ) hOpA = HIPBLAS_OP_N;
+    if ( OpA == GridBLAS_OP_T ) hOpA = HIPBLAS_OP_T;
+    if ( OpA == GridBLAS_OP_C ) hOpA = HIPBLAS_OP_C;
+    if ( OpB == GridBLAS_OP_N ) hOpB = HIPBLAS_OP_N;
+    if ( OpB == GridBLAS_OP_T ) hOpB = HIPBLAS_OP_T;
+    if ( OpB == GridBLAS_OP_C ) hOpB = HIPBLAS_OP_C;
+    auto err = hipblasCgemm(gridblasHandle,
+			    hOpA,
+			    hOpB,
+			    m,n,k,
+			    (hipblasComplex *) &alpha_p[0],
+			    (hipblasComplex *) Amk, lda,
+			    (hipblasComplex *) Bkn, ldb,
+			    (hipblasComplex *) &beta_p[0],
+			    (hipblasComplex *) Cmn, ldc);
+    assert(err==HIPBLAS_STATUS_SUCCESS);
+#endif
+#ifdef GRID_CUDA
+    cublasOperation_t hOpA;
+    cublasOperation_t hOpB;
+    if ( OpA == GridBLAS_OP_N ) hOpA = CUBLAS_OP_N;
+    if ( OpA == GridBLAS_OP_T ) hOpA = CUBLAS_OP_T;
+    if ( OpA == GridBLAS_OP_C ) hOpA = CUBLAS_OP_C;
+    if ( OpB == GridBLAS_OP_N ) hOpB = CUBLAS_OP_N;
+    if ( OpB == GridBLAS_OP_T ) hOpB = CUBLAS_OP_T;
+    if ( OpB == GridBLAS_OP_C ) hOpB = CUBLAS_OP_C;
+    auto err = cublasCgemm(gridblasHandle,
+			   hOpA,
+			   hOpB,
+			   m,n,k,
+			   (cuComplex *) &alpha_p[0],
+			   (cuComplex *) Amk, lda,
+			   (cuComplex *) Bkn, ldb,
+			   (cuComplex *) &beta_p[0],
+			   (cuComplex *) Cmn, ldc);
+    assert(err==CUBLAS_STATUS_SUCCESS);
+#endif
+#ifdef GRID_SYCL
+      int64_t m64=m;
+      int64_t n64=n;
+      int64_t k64=k;
+      int64_t lda64=lda;
+      int64_t ldb64=ldb;
+      int64_t ldc64=ldc;
+
+      oneapi::mkl::transpose iOpA;
+      oneapi::mkl::transpose iOpB;
+      
+      if ( OpA == GridBLAS_OP_N ) iOpA = oneapi::mkl::transpose::N;
+      if ( OpA == GridBLAS_OP_T ) iOpA = oneapi::mkl::transpose::T;
+      if ( OpA == GridBLAS_OP_C ) iOpA = oneapi::mkl::transpose::C;
+      if ( OpB == GridBLAS_OP_N ) iOpB = oneapi::mkl::transpose::N;
+      if ( OpB == GridBLAS_OP_T ) iOpB = oneapi::mkl::transpose::T;
+      if ( OpB == GridBLAS_OP_C ) iOpB = oneapi::mkl::transpose::C;
+
+      oneapi::mkl::blas::column_major::gemm(*gridblasHandle,
+					    iOpA,
+					    iOpB,
+					    m64,n64,k64,
+					    (ComplexF *) &alpha_p[0],
+					    (const ComplexF *)Amk, (int64_t )lda64,
+					    (const ComplexF *)Bkn, (int64_t )ldb64,
+					    (ComplexF *) &beta_p[0],
+					    (ComplexF *)Cmn, (int64_t )ldc64);
+      synchronise();
+#endif
+#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
+    // Need a default/reference implementation; use Eigen
+      if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_N) ) {
+	Eigen::Map<Eigen::MatrixXcf> eAmk(Amk,m,k);
+	Eigen::Map<Eigen::MatrixXcf> eBkn(Bkn,k,n);
+	Eigen::Map<Eigen::MatrixXcf> eCmn(Cmn,m,n);
+	eCmn = beta * eCmn + alpha * eAmk * eBkn ;
+      } else if ( (OpA == GridBLAS_OP_C ) && (OpB == GridBLAS_OP_N) ) {
+	Eigen::Map<Eigen::MatrixXcf> eAmk(Amk,k,m);
+	Eigen::Map<Eigen::MatrixXcf> eBkn(Bkn,k,n);
+	Eigen::Map<Eigen::MatrixXcf> eCmn(Cmn,m,n);
+	eCmn = beta * eCmn + alpha * eAmk.adjoint() * eBkn ;
+      } else if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_C) ) {
+	Eigen::Map<Eigen::MatrixXcf> eAmk(Amk,m,k);
+	Eigen::Map<Eigen::MatrixXcf> eBkn(Bkn,n,k);
+	Eigen::Map<Eigen::MatrixXcf> eCmn(Cmn,m,n);
+	eCmn = beta * eCmn + alpha * eAmk * eBkn.adjoint() ;
+      } else if ( (OpA == GridBLAS_OP_C ) && (OpB == GridBLAS_OP_C) ) {
+	Eigen::Map<Eigen::MatrixXcf> eAmk(Amk,k,m);
+	Eigen::Map<Eigen::MatrixXcf> eBkn(Bkn,n,k);
+	Eigen::Map<Eigen::MatrixXcf> eCmn(Cmn,m,n);
+	eCmn = beta * eCmn + alpha * eAmk.adjoint() * eBkn.adjoint() ;
+      } else { 
+	assert(0);
+      }
+#endif
+     RealD t1=usecond();
+     RealD flops = 8.0*m*n*k;
+     RealD bytes = 1.0*sizeof(ComplexF)*(m*k+k*n+m*n);
+  }
+
   
+  /////////////////////////////////////////////////////////////
   void gemmBatched(int m,int n, int k,
 		   ComplexD alpha,
 		   deviceVector<ComplexD*> &Amk,  // pointer list to matrices
@@ -232,36 +574,6 @@ public:
 		   deviceVector<ComplexF*> &Bkn,
 		   ComplexF beta,
 		   deviceVector<ComplexF*> &Cmn)
-  {
-    gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N,
-		m,n,k,
-		alpha,
-		Amk,
-		Bkn,
-		beta,
-		Cmn);
-  }
-  void gemmBatched(int m,int n, int k,
-		   RealD alpha,
-		   deviceVector<RealD*> &Amk,  // pointer list to matrices
-		   deviceVector<RealD*> &Bkn,
-		   RealD beta,
-		   deviceVector<RealD*> &Cmn)
-  {
-    gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N,
-		m,n,k,
-		alpha,
-		Amk,
-		Bkn,
-		beta,
-		Cmn);
-  }
-  void gemmBatched(int m,int n, int k,
-		   RealF alpha,
-		   deviceVector<RealF*> &Amk,  // pointer list to matrices
-		   deviceVector<RealF*> &Bkn,
-		   RealF beta,
-		   deviceVector<RealF*> &Cmn)
   {
     gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N,
 		m,n,k,
@@ -623,301 +935,6 @@ public:
      RealD flops = 8.0*m*n*k*batchCount;
      RealD bytes = 1.0*sizeof(ComplexF)*(m*k+k*n+m*n)*batchCount;
   }
-  
-  ///////////////////////////////////////////////////////////////////////////
-  // Single precision real GEMM
-  ///////////////////////////////////////////////////////////////////////////
-
-  void gemmBatched(GridBLASOperation_t OpA,
-		   GridBLASOperation_t OpB,
-		   int m,int n, int k,
-		   RealF alpha,
-		   deviceVector<RealF*> &Amk,  // pointer list to matrices
-		   deviceVector<RealF*> &Bkn,
-		   RealF beta,
-		   deviceVector<RealF*> &Cmn)
-  {
-    RealD t2=usecond();
-    int32_t batchCount = Amk.size();
-
-    assert(OpA!=GridBLAS_OP_C); // Real case no conjugate
-    assert(OpB!=GridBLAS_OP_C);
-
-    int lda = m; // m x k column major
-    int ldb = k; // k x n column major
-    int ldc = m; // m x b column major
-    if(OpA!=GridBLAS_OP_N)
-      lda = k;
-    if(OpB!=GridBLAS_OP_N)
-      ldb = n;
-    static deviceVector<RealF> alpha_p(1);
-    static deviceVector<RealF> beta_p(1);
-    // can prestore the 1 and the zero on device
-    acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(RealF));
-    acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(RealF));
-    RealD t0=usecond();
-
-    assert(Bkn.size()==batchCount);
-    assert(Cmn.size()==batchCount);
-#ifdef GRID_HIP
-    hipblasOperation_t hOpA;
-    hipblasOperation_t hOpB;
-    if ( OpA == GridBLAS_OP_N ) hOpA = HIPBLAS_OP_N;
-    if ( OpA == GridBLAS_OP_T ) hOpA = HIPBLAS_OP_T;
-    if ( OpA == GridBLAS_OP_C ) hOpA = HIPBLAS_OP_C;
-    if ( OpB == GridBLAS_OP_N ) hOpB = HIPBLAS_OP_N;
-    if ( OpB == GridBLAS_OP_T ) hOpB = HIPBLAS_OP_T;
-    if ( OpB == GridBLAS_OP_C ) hOpB = HIPBLAS_OP_C;
-    auto err = hipblasSgemmBatched(gridblasHandle,
-				   hOpA,
-				   hOpB,
-				   m,n,k,
-				   (float *) &alpha_p[0],
-				   (float **)&Amk[0], lda,
-				   (float **)&Bkn[0], ldb,
-				   (float *) &beta_p[0],
-				   (float **)&Cmn[0], ldc,
-				   batchCount);
-    assert(err==HIPBLAS_STATUS_SUCCESS);
-#endif
-#ifdef GRID_CUDA
-    cublasOperation_t hOpA;
-    cublasOperation_t hOpB;
-    if ( OpA == GridBLAS_OP_N ) hOpA = CUBLAS_OP_N;
-    if ( OpA == GridBLAS_OP_T ) hOpA = CUBLAS_OP_T;
-    if ( OpA == GridBLAS_OP_C ) hOpA = CUBLAS_OP_C;
-    if ( OpB == GridBLAS_OP_N ) hOpB = CUBLAS_OP_N;
-    if ( OpB == GridBLAS_OP_T ) hOpB = CUBLAS_OP_T;
-    if ( OpB == GridBLAS_OP_C ) hOpB = CUBLAS_OP_C;
-    auto err = cublasSgemmBatched(gridblasHandle,
-				  hOpA,
-				  hOpB,
-				  m,n,k,
-				  (float *) &alpha_p[0],
-				  (float **)&Amk[0], lda,
-				  (float **)&Bkn[0], ldb,
-				  (float *) &beta_p[0],
-				  (float **)&Cmn[0], ldc,
-				  batchCount);
-    assert(err==CUBLAS_STATUS_SUCCESS);
-#endif
-#ifdef GRID_SYCL
-      int64_t m64=m;
-      int64_t n64=n;
-      int64_t k64=k;
-      int64_t lda64=lda;
-      int64_t ldb64=ldb;
-      int64_t ldc64=ldc;
-      int64_t batchCount64=batchCount;
-
-      oneapi::mkl::transpose iOpA;
-      oneapi::mkl::transpose iOpB;
-      
-      if ( OpA == GridBLAS_OP_N ) iOpA = oneapi::mkl::transpose::N;
-      if ( OpA == GridBLAS_OP_T ) iOpA = oneapi::mkl::transpose::T;
-      if ( OpA == GridBLAS_OP_C ) iOpA = oneapi::mkl::transpose::C;
-      if ( OpB == GridBLAS_OP_N ) iOpB = oneapi::mkl::transpose::N;
-      if ( OpB == GridBLAS_OP_T ) iOpB = oneapi::mkl::transpose::T;
-      if ( OpB == GridBLAS_OP_C ) iOpB = oneapi::mkl::transpose::C;
-
-      oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
-						  &iOpA,
-						  &iOpB,
-						  &m64,&n64,&k64,
-						  (float *) &alpha_p[0],
-						  (const float **)&Amk[0], (const int64_t *)&lda64,
-						  (const float **)&Bkn[0], (const int64_t *)&ldb64,
-						  (float *) &beta_p[0],
-						  (float **)&Cmn[0], (const int64_t *)&ldc64,
-						  (int64_t)1,&batchCount64,std::vector<sycl::event>());
-      synchronise();
-#endif
-#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
-    // Need a default/reference implementation; use Eigen
-      if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_N) ) {
-	thread_for (p, batchCount, {
-	  Eigen::Map<Eigen::MatrixXf> eAmk(Amk[p],m,k);
-	  Eigen::Map<Eigen::MatrixXf> eBkn(Bkn[p],k,n);
-	  Eigen::Map<Eigen::MatrixXf> eCmn(Cmn[p],m,n);
-	  eCmn = beta * eCmn + alpha * eAmk * eBkn ;
-	  });
-      } else if ( (OpA == GridBLAS_OP_T ) && (OpB == GridBLAS_OP_N) ) {
-	thread_for (p, batchCount, {
-	  Eigen::Map<Eigen::MatrixXf> eAmk(Amk[p],k,m);
-	  Eigen::Map<Eigen::MatrixXf> eBkn(Bkn[p],k,n);
-	  Eigen::Map<Eigen::MatrixXf> eCmn(Cmn[p],m,n);
-	  eCmn = beta * eCmn + alpha * eAmk.transpose() * eBkn ;
-	  });
-      } else if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_T) ) {
-	thread_for (p, batchCount, {
-	  Eigen::Map<Eigen::MatrixXf> eAmk(Amk[p],m,k);
-	  Eigen::Map<Eigen::MatrixXf> eBkn(Bkn[p],n,k);
-	  Eigen::Map<Eigen::MatrixXf> eCmn(Cmn[p],m,n);
-	  eCmn = beta * eCmn + alpha * eAmk * eBkn.transpose() ;
-	  });
-      } else if ( (OpA == GridBLAS_OP_T ) && (OpB == GridBLAS_OP_T) ) {
-	thread_for (p, batchCount, {
-	  Eigen::Map<Eigen::MatrixXf> eAmk(Amk[p],k,m);
-	  Eigen::Map<Eigen::MatrixXf> eBkn(Bkn[p],n,k);
-	  Eigen::Map<Eigen::MatrixXf> eCmn(Cmn[p],m,n);
-	  eCmn = beta * eCmn + alpha * eAmk.transpose() * eBkn.transpose() ;
-	  } );
-      } else { 
-	assert(0);
-      }
-#endif
-     RealD t1=usecond();
-     RealD flops = 2.0*m*n*k*batchCount;
-     RealD bytes = 1.0*sizeof(RealF)*(m*k+k*n+m*n)*batchCount;
-  }
-  
-  
-  ///////////////////////////////////////////////////////////////////////////
-  // Double precision real GEMM
-  ///////////////////////////////////////////////////////////////////////////
-  void gemmBatched(GridBLASOperation_t OpA,
-		   GridBLASOperation_t OpB,
-		   int m,int n, int k,
-		   RealD alpha,
-		   deviceVector<RealD*> &Amk,  // pointer list to matrices
-		   deviceVector<RealD*> &Bkn,
-		   RealD beta,
-		   deviceVector<RealD*> &Cmn)
-  {
-    RealD t2=usecond();
-    int32_t batchCount = Amk.size();
-
-    assert(OpA!=GridBLAS_OP_C); // Real case no conjugate
-    assert(OpB!=GridBLAS_OP_C);
-
-    int lda = m; // m x k column major
-    int ldb = k; // k x n column major
-    int ldc = m; // m x b column major
-    if(OpA!=GridBLAS_OP_N)
-      lda = k;
-    if(OpB!=GridBLAS_OP_N)
-      ldb = n;
-    
-    static deviceVector<RealD> alpha_p(1);
-    static deviceVector<RealD> beta_p(1);
-    // can prestore the 1 and the zero on device
-    acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(RealD));
-    acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(RealD));
-    RealD t0=usecond();
-
-    assert(Bkn.size()==batchCount);
-    assert(Cmn.size()==batchCount);
-#ifdef GRID_HIP
-    hipblasOperation_t hOpA;
-    hipblasOperation_t hOpB;
-    if ( OpA == GridBLAS_OP_N ) hOpA = HIPBLAS_OP_N;
-    if ( OpA == GridBLAS_OP_T ) hOpA = HIPBLAS_OP_T;
-    if ( OpA == GridBLAS_OP_C ) hOpA = HIPBLAS_OP_C;
-    if ( OpB == GridBLAS_OP_N ) hOpB = HIPBLAS_OP_N;
-    if ( OpB == GridBLAS_OP_T ) hOpB = HIPBLAS_OP_T;
-    if ( OpB == GridBLAS_OP_C ) hOpB = HIPBLAS_OP_C;
-    auto err = hipblasDgemmBatched(gridblasHandle,
-				   HIPBLAS_OP_N,
-				   HIPBLAS_OP_N,
-				   m,n,k,
-				   (double *) &alpha_p[0],
-				   (double **)&Amk[0], lda,
-				   (double **)&Bkn[0], ldb,
-				   (double *) &beta_p[0],
-				   (double **)&Cmn[0], ldc,
-				   batchCount);
-    assert(err==HIPBLAS_STATUS_SUCCESS);
-#endif
-#ifdef GRID_CUDA
-    cublasOperation_t hOpA;
-    cublasOperation_t hOpB;
-    if ( OpA == GridBLAS_OP_N ) hOpA = CUBLAS_OP_N;
-    if ( OpA == GridBLAS_OP_T ) hOpA = CUBLAS_OP_T;
-    if ( OpA == GridBLAS_OP_C ) hOpA = CUBLAS_OP_C;
-    if ( OpB == GridBLAS_OP_N ) hOpB = CUBLAS_OP_N;
-    if ( OpB == GridBLAS_OP_T ) hOpB = CUBLAS_OP_T;
-    if ( OpB == GridBLAS_OP_C ) hOpB = CUBLAS_OP_C;
-    auto err = cublasDgemmBatched(gridblasHandle,
-				  hOpA,
-				  hOpB,
-				  m,n,k,
-				  (double *) &alpha_p[0],
-				  (double **)&Amk[0], lda,
-				  (double **)&Bkn[0], ldb,
-				  (double *) &beta_p[0],
-				  (double **)&Cmn[0], ldc,
-				  batchCount);
-    assert(err==CUBLAS_STATUS_SUCCESS);
-#endif
-#ifdef GRID_SYCL
-      int64_t m64=m;
-      int64_t n64=n;
-      int64_t k64=k;
-      int64_t lda64=lda;
-      int64_t ldb64=ldb;
-      int64_t ldc64=ldc;
-      int64_t batchCount64=batchCount;
-
-      oneapi::mkl::transpose iOpA;
-      oneapi::mkl::transpose iOpB;
-      
-      if ( OpA == GridBLAS_OP_N ) iOpA = oneapi::mkl::transpose::N;
-      if ( OpA == GridBLAS_OP_T ) iOpA = oneapi::mkl::transpose::T;
-      if ( OpA == GridBLAS_OP_C ) iOpA = oneapi::mkl::transpose::C;
-      if ( OpB == GridBLAS_OP_N ) iOpB = oneapi::mkl::transpose::N;
-      if ( OpB == GridBLAS_OP_T ) iOpB = oneapi::mkl::transpose::T;
-      if ( OpB == GridBLAS_OP_C ) iOpB = oneapi::mkl::transpose::C;
-
-      oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
-						  &iOpA,
-						  &iOpB,
-						  &m64,&n64,&k64,
-						  (double *) &alpha_p[0],
-						  (const double **)&Amk[0], (const int64_t *)&lda64,
-						  (const double **)&Bkn[0], (const int64_t *)&ldb64,
-						  (double *) &beta_p[0],
-						  (double **)&Cmn[0], (const int64_t *)&ldc64,
-						  (int64_t)1,&batchCount64,std::vector<sycl::event>());
-      synchronise();
-#endif
-#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
-    // Need a default/reference implementation; use Eigen
-      if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_N) ) {
-	thread_for (p, batchCount, {
-	  Eigen::Map<Eigen::MatrixXd> eAmk(Amk[p],m,k);
-	  Eigen::Map<Eigen::MatrixXd> eBkn(Bkn[p],k,n);
-	  Eigen::Map<Eigen::MatrixXd> eCmn(Cmn[p],m,n);
-	  eCmn = beta * eCmn + alpha * eAmk * eBkn ;
-	  });
-      } else if ( (OpA == GridBLAS_OP_T ) && (OpB == GridBLAS_OP_N) ) {
-	thread_for (p, batchCount, {
-	  Eigen::Map<Eigen::MatrixXd> eAmk(Amk[p],k,m);
-	  Eigen::Map<Eigen::MatrixXd> eBkn(Bkn[p],k,n);
-	  Eigen::Map<Eigen::MatrixXd> eCmn(Cmn[p],m,n);
-	  eCmn = beta * eCmn + alpha * eAmk.transpose() * eBkn ;
-	  });
-      } else if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_T) ) {
-	thread_for (p, batchCount, {
-	  Eigen::Map<Eigen::MatrixXd> eAmk(Amk[p],m,k);
-	  Eigen::Map<Eigen::MatrixXd> eBkn(Bkn[p],n,k);
-	  Eigen::Map<Eigen::MatrixXd> eCmn(Cmn[p],m,n);
-	  eCmn = beta * eCmn + alpha * eAmk * eBkn.transpose() ;
-	  });
-      } else if ( (OpA == GridBLAS_OP_T ) && (OpB == GridBLAS_OP_T) ) {
-	thread_for (p, batchCount, {
-	  Eigen::Map<Eigen::MatrixXd> eAmk(Amk[p],k,m);
-	  Eigen::Map<Eigen::MatrixXd> eBkn(Bkn[p],n,k);
-	  Eigen::Map<Eigen::MatrixXd> eCmn(Cmn[p],m,n);
-	  eCmn = beta * eCmn + alpha * eAmk.transpose() * eBkn.transpose() ;
-	  });
-      } else { 
-	assert(0);
-      }
-#endif
-     RealD t1=usecond();
-     RealD flops = 2.0*m*n*k*batchCount;
-     RealD bytes = 1.0*sizeof(RealD)*(m*k+k*n+m*n)*batchCount;
-  }
 
   template<class CComplex>
   double benchmark(int M, int N, int K, int BATCH)
@@ -963,6 +980,47 @@ public:
     RealD t1 = usecond();
     RealD bytes = 1.0*sizeof(CComplex)*(M*N*2+N*K+M*K)*BATCH;
     flops = 8.0*M*N*K*BATCH*ncall;
+    flops = flops/(t1-t0)/1.e3;
+    return flops; // Returns gigaflops
+  }
+
+  template<class CComplex>
+  double benchmark(int M, int N, int K)
+  {
+    int32_t N_A = M*K;
+    int32_t N_B = K*N;
+    int32_t N_C = M*N;
+    deviceVector<CComplex> A(N_A); acceleratorMemSet(&A[0],0,N_A*sizeof(CComplex));
+    deviceVector<CComplex> B(N_B); acceleratorMemSet(&B[0],0,N_B*sizeof(CComplex));
+    deviceVector<CComplex> C(N_C); acceleratorMemSet(&C[0],0,N_C*sizeof(CComplex));
+    CComplex alpha(1.0);
+    CComplex beta (1.0);
+    RealD flops = 8.0*M*N*K;
+    int ncall=10;
+
+    gemm(GridBLAS_OP_C,GridBLAS_OP_N,
+	 M,N,K,
+	 alpha,
+	 &A[0], // m x k 
+	 &B[0], // k x n
+	 beta, 
+	 &C[0]);
+    synchronise();
+
+    RealD t0 = usecond();
+    for(int i=0;i<ncall;i++){
+      gemm(GridBLAS_OP_N,GridBLAS_OP_N,
+	   M,N,K,
+	   alpha,
+	   &A[0], // m x k 
+	   &B[0], // k x n
+	   beta, 
+	   &C[0]);
+      synchronise();
+    }
+    RealD t1 = usecond();
+    RealD bytes = 1.0*sizeof(CComplex)*(M*N*2+N*K+M*K);
+    flops = 8.0*M*N*K*ncall;
     flops = flops/(t1-t0)/1.e3;
     return flops; // Returns gigaflops
   }
@@ -1035,6 +1093,21 @@ static void BLAS(void)
       std::cout<< M<<"\t\t"<<N<<"\t\t"<<K<<"\t\t"<<BATCH<<"\t\t"<<p<<std::endl;
     }}
   fprintf(FP,"\n\n\n");
+
+  std::cout << "----------------------------------------------------------"<<std::endl;
+  std::cout << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"Gflop/s / rank (inner product matrix)"<<std::endl;
+  std::cout << "----------------------------------------------------------"<<std::endl;
+  {
+    int M=12;
+    int N=12;
+    std::vector<int> ks({4*1024*1024, 2*1024*1024, 1024*1024, 256*1024, 1024 });
+    for( int kk=0;kk<ks.size();kk++ ) {
+      int K = ks[kk];
+      double p=blas.benchmark<CComplex>(M,N,K);
+      fprintf(FP,"%d, %d, %d, %d, %f\n", M, N, K, 1, p);
+      std::cout<< M<<"\t\t"<<N<<"\t\t"<<K<<"\t\t"<<1<<"\t\t"<<p<<std::endl;
+    }
+  }
   std::cout << "=================================================================================="<<std::endl;
 };
 

@@ -1,4 +1,4 @@
-/*************************************************************************************
+*************************************************************************************
 
 Grid physics library, www.github.com/paboyle/Grid
 
@@ -67,7 +67,13 @@ int main(int argc, char** argv) {
   result = Zero();
   LatticeGaugeField Umu(UGrid);
 
+#if 0
+  FieldMetaData header;
+  std::string file("ckpoint_lat.4000");
+  NerscIO::readConfiguration(Umu,header,file);
+#else  
   SU<Nc>::HotConfiguration(RNG4, Umu);
+#endif
 
   std::cout << GridLogMessage << "Lattice dimensions: " << GridDefaultLatt()
             << "   Ls: " << Ls << std::endl;

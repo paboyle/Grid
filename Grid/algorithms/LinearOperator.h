@@ -103,6 +103,38 @@ public:
     _Mat.MdagM(in,out);
   }
 };
+template<class Matrix,class Field>
+class MMdagLinearOperator : public LinearOperatorBase<Field> {
+  Matrix &_Mat;
+public:
+  MMdagLinearOperator(Matrix &Mat): _Mat(Mat){};
+
+  // Support for coarsening to a multigrid
+  void OpDiag (const Field &in, Field &out) {
+    _Mat.Mdiag(in,out);
+  }
+  void OpDir  (const Field &in, Field &out,int dir,int disp) {
+    _Mat.Mdir(in,out,dir,disp);
+  }
+  void OpDirAll  (const Field &in, std::vector<Field> &out){
+    _Mat.MdirAll(in,out);
+  };
+  void Op     (const Field &in, Field &out){
+    _Mat.M(in,out);
+  }
+  void AdjOp     (const Field &in, Field &out){
+    _Mat.Mdag(in,out);
+  }
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
+    _Mat.MMdag(in,out);
+    ComplexD dot = innerProduct(in,out);
+    n1=real(dot);
+    n2=norm2(out);
+  }
+  void HermOp(const Field &in, Field &out){
+    _Mat.MMdag(in,out);
+  }
+};
 
 ////////////////////////////////////////////////////////////////////
 // Construct herm op and shift it for mgrid smoother
