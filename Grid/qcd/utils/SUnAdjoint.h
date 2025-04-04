@@ -22,6 +22,7 @@
 //
 ////////////////////////////////////////////////////////////////////////
 
+
 NAMESPACE_BEGIN(Grid);
 
 template <int ncolour>
@@ -72,10 +73,7 @@ public:
       tmp = ta(a) * ta(Index) - ta(Index) * ta(a);
       for (int b = 0; b < Dimension; b++) {
         iSUnMatrix<cplx> tmp1 = 2.0 * tmp * ta(b);  // 2.0 from the normalization
-        Complex iTr = TensorRemove(timesI(trace(tmp1)));
-	//cplx iTr = TensorRemove(timesI(trace(tmp1)));// does not work if cplx is Grid_simd type, as no constructor for cplx i(0.0, 1.0); in generatorSigmaX is available
-        //iAdjTa()()(b, a) = iTr;
-        iAdjTa()()(a, b) = iTr;
+        iAdjTa()()(a, b) =  TensorRemove(timesI(trace(tmp1)));
       }
     }
   }
@@ -161,7 +159,7 @@ public:
       pokeColour(h_out, tmp, a);
     }
   }
-#if 1
+
   // Turn complex 3x3 Lie algebra elem into its real 8x8 adj rep
   static void make_adjoint_rep(LatticeAdjMatrix &out, const typename SU<ncolour>::LatticeMatrix &in) {
     // Use real and totally anti-symmetric matrices as adjoint rep
@@ -174,7 +172,6 @@ public:
     // in: traceless-anti-hermitian
 
     GridBase *grid = out.Grid();
-    AMatrix iTa;
       
     autoView(out_v,out,AcceleratorWrite);
     autoView(in_v,in,AcceleratorRead);
@@ -186,7 +183,7 @@ public:
 	typedef decltype(coalescedRead(out_v[0])) adj_mat;
 	typedef decltype(coalescedRead(vTComplex())) computeComplex;
 	
-	adj_mat Tadj=Zero();
+	adj_mat iTa, Tadj=Zero();
 	computeComplex c;
 	
         for(int su2Index=0;su2Index<hNNm1;su2Index++){
@@ -215,14 +212,13 @@ public:
           for(int i=1;i<k;i++){
             tmp=tmp+in_v(ss)()()(i,i);
           }
-          tmp = tmp - in_v(ss)()()(k,k)*k;
+          tmp = tmp - in_v(ss)()()(k,k)*((RealD) k);
 	  c()()() = 2.0 * scale * imag(tmp);
           Tadj = Tadj + c*iTa;
         }
 	coalescedWrite(out_v[ss],Tadj);
       });
   }
-#endif
 };
 
 

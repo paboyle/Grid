@@ -38,7 +38,6 @@ private:
 
   GridCartesian         * UGrid; // keep a copy of the grid 
   GridRedBlackCartesian * UrbGrid; // keep a copy of the redblack grid for life of object
-  GridBase              * g1Grid;
   PaddedCell              Ghost;
 
   std::vector<LatticeLorentzComplex> masks;
@@ -236,7 +235,6 @@ private:
     GridBase *grid = PlaqL.Grid();
     const int Ngen = SU3Adjoint::Dimension;
     Complex ci(0,1);
-    ColourMatrix ta;
     RealD t;
 
     t=-usecond();
@@ -248,8 +246,11 @@ private:
     accelerator_for(ss,grid->oSites(),nsimd,{
 	typedef decltype(coalescedRead(MpInvJx_v[0])) adj_mat;
 	typedef decltype(coalescedRead(Fdet2_v[0]))   adj_vec;
+	
 	adj_mat Dbc;
 	adj_vec Fdet;
+	ColourMatrix ta;
+	
 	for(int a=0;a<Ngen;a++) {
 	  // Qlat Tb = 2i Tb^Grid
 	  SU3::generator(a, ta);
@@ -351,7 +352,6 @@ public:
 	gUmu[d] = peekLorentz(gU, d);
     }
     GridBase       *ggrid = gUmu[0].Grid();
-    assert(ggrid == g1Grid);
     
     Cmu.Checkerboard() = cb;
     Zx.Checkerboard() = cb;
@@ -475,7 +475,6 @@ public:
     /////////////////////////////////////////////////////////////////
     time=-usecond();
     {GRID_TRACE("dJdX_nMpinv_combined");
-    iVector<AdjMatrix,Ngen> iTas;
 
     autoView(dJdXe_nMpInv_v,dJdXe_nMpInv,AcceleratorWrite);
     autoView(ZxAd_v,ZxAd,AcceleratorRead);
@@ -487,6 +486,7 @@ public:
 	typedef decltype(coalescedRead(dJdXe_nMpInv_v[0])) adj_vec;
       	adj_mat X, t2, dt2, t3, dt3, aunit, nMpInv_site;
 	adj_vec dJdXe_nMpInv_site;
+	iVector<adj_mat,Ngen> iTas;
 	iVector<adj_mat,Ngen> dJdX_b;
 
 	for(int b=0;b<Ngen;b++){
@@ -2002,11 +2002,11 @@ public:
 
     // was resized in base class
     assert(this->SmearedSet.size()==Nsmear);
-    
+    std::cout << GridLogMessage <<"beging SGM const"<<std::endl;
     UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(_UGrid);
     LatticeComplex one(_UGrid); one = ComplexD(1.0,0.0);
     LatticeComplex tmp(_UGrid);
-
+    std::cout << GridLogMessage <<"creatd tmp in  SGM const"<<std::endl;
     for (unsigned int i = 0; i < this->smearingLevels; ++i) {
 
       masks.push_back(*(new LatticeLorentzComplex(_UGrid)));
@@ -2026,7 +2026,7 @@ public:
       setCheckerboard(tmp,tmpcb);
       PokeIndex<LorentzIndex>(masks[i],tmp, mu);
 	
-    }
+    }std::cout << GridLogMessage <<"before stencil in  SGM const"<<std::endl;
     ///////////////////////////////
     // Setup stencils for staples
     ///////////////////////////////
@@ -2037,34 +2037,10 @@ public:
     Coordinate plocal    =UGrid->LocalDimensions();
     Coordinate global(Nd);
 
-    /*
-    std::vector<GridCartesian *> grids;
-    GridCartesian *old_grid = UGrid;
-    for(int d=0;d<Nd;d++){
-      if ( processors[d] > 1 ) {
-        plocal[d] += 2*depth;
-        for(int d=0;d<Nd;d++){
-          global[d] = plocal[d]*processors[d];
-        }
-	old_grid = new GridCartesian(global,simd,processors);
-      }
-      grids.push_back(old_grid);
-    }
-    */
-    LatticeComplex gOne = Ghost.ExchangePeriodic(one);
-    g1Grid = gOne.Grid();
-    /*
-    assert(g1Grid == grids[Nd-1]);//<- failed
-    for(int d=0;d<grids.size();d++){
-      if ( processors[d] > 1 ) {
-        delete grids[d];
-      }
-    }
-    */
     // pre-stencil calculation for force calculation
-    GridBase *ggrid = g1Grid;
+    GridBase *ggrid = Ghost.grids[Nd-1];
     std::vector<Coordinate> shifts;
-    
+    std::cout << GridLogMessage <<"stencil setup done in  SGM const"<<std::endl;
     gStencils.clear();
     Coordinate shift_0(Nd,0);
     for(int mu=0;mu<Nd;mu++){
@@ -2103,6 +2079,7 @@ public:
 	}
       }
     }
+    std::cout << GridLogMessage <<"1st stencil comp done in  SGM const"<<std::endl;
     // pre-stencil calculation for BaseSmear
     gStencils_smear.clear();
     for(int mu=0;mu<Nd;mu++){
@@ -2122,6 +2099,7 @@ public:
       }
       gStencils_smear.push_back(GeneralLocalStencil(ggrid,shifts));
     }
+    std::cout << GridLogMessage <<"exitd SGM const"<<std::endl;
   }
   
   virtual void smeared_force(GaugeField &SigmaTilde) 

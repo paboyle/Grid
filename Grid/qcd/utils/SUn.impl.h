@@ -94,7 +94,7 @@ static accelerator_inline void generatorSigmaY(int su2Index, iGroupMatrix<cplx> 
 template <class cplx, ONLY_IF_SU>
 static accelerator_inline void generatorSigmaX(int su2Index, iGroupMatrix<cplx> &ta) {
   ta = Zero();
-  cplx i(0.0, 1.0);
+  cplx i(Complex(0.0, 1.0));
   int i1, i2;
   su2SubGroupIndex(i1, i2, su2Index);
   ta()()(i1, i2) = i;

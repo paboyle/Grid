@@ -47,6 +47,15 @@ directory
                       is_sp<dummy_name>::value >
 
 NAMESPACE_BEGIN(Grid);
+
+template< typename T, typename SCALAR > inline
+typename std::enable_if< std::is_integral<SCALAR>::value, std::complex<T> >::type
+operator* ( const std::complex<T>& c, SCALAR n ) { return c * T(n) ; }
+
+template< typename T, typename SCALAR > inline
+typename std::enable_if< std::is_integral<SCALAR>::value, std::complex<T> >::type
+operator* ( SCALAR n, const std::complex<T>& c ) { return T(n) * c ; }
+
 namespace GroupName {
 class SU {};
 class Sp {};
@@ -712,8 +721,8 @@ class GaugeGroup {
 	  tmpx = tmpx + adj(inL_v()()(i,i2))*inR_v()()(i,i1) + adj(inR_v()()(i,i2))*inL_v()()(i,i1);
 	  tmpy = tmpy + adj(inL_v()()(i,i1))*inR_v()()(i,i2) + adj(inR_v()()(i,i1))*inL_v()()(i,i2);
 	}
-	tmpx = tmpx - k_b*(adj(inL_v()()(k_b,i2))*inR_v()()(k_b,i1) + adj(inR_v()()(k_b,i2))*inL_v()()(k_b,i1));
-	tmpy = tmpy - k_b*(adj(inL_v()()(k_b,i1))*inR_v()()(k_b,i2) + adj(inR_v()()(k_b,i1))*inL_v()()(k_b,i2));
+	tmpx = tmpx - ((RealD) k_b)*(adj(inL_v()()(k_b,i2))*inR_v()()(k_b,i1) + adj(inR_v()()(k_b,i2))*inL_v()()(k_b,i1));
+	tmpy = tmpy - ((RealD) k_b)*(adj(inL_v()()(k_b,i1))*inR_v()()(k_b,i2) + adj(inR_v()()(k_b,i1))*inL_v()()(k_b,i2));
 	
 	out_v()()(ax,b)=-scale_b*imag(tmpx);
 	out_v()()(ay,b)= scale_b*real(tmpy);

@@ -240,6 +240,7 @@ public:
   }
   PaddedCell(int _depth,GridCartesian *_grid)
   {
+    std::cout << GridLogMessage <<"beging PC const"<<std::endl;
     unpadded_grid = _grid;
     depth=_depth;
     dims=_grid->Nd();
@@ -249,6 +250,7 @@ public:
     for(int d=0;d<dims;d++){
       if ( procs[d] > 1 ) assert(local[d]>=depth);
     }
+    std::cout << GridLogMessage <<"finish SGM const"<<std::endl;
   }
   void DeleteGrids(void)
   {
@@ -262,6 +264,7 @@ public:
   };
   void AllocateGrids(void)
   {
+    std::cout << GridLogMessage <<"beging alloc grid"<<std::endl;
     Coordinate local     =unpadded_grid->LocalDimensions();
     Coordinate simd      =unpadded_grid->_simd_layout;
     Coordinate processors=unpadded_grid->_processors;

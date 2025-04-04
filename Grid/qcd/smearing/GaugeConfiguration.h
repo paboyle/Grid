@@ -226,8 +226,10 @@ public:
                        Smear_Stout<Gimpl>& Stout)
       : smearingLevels(Nsmear), StoutSmearing(&Stout), ThinLinks(NULL)
   {
+    std::cout << GridLogMessage <<"beging SG const"<<std::endl;
     for (unsigned int i = 0; i < smearingLevels; ++i)
       SmearedSet.push_back(*(new GaugeField(UGrid)));
+    std::cout << GridLogMessage <<"finish SG const"<<std::endl;
   }
 
   /*! For just thin links */

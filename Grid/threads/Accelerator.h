@@ -331,8 +331,12 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
  return 0;
 #endif
 } // SYCL specific
+//  printf("accelerator_for\n");					\
+  BACKTRACEFP(stdout); fflush(stdout);					\
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
+  printf("accelerator_for\n");                                        \
+  BACKTRACEFP(stdout); fflush(stdout);                                  \
   theGridAccelerator->submit([&](cl::sycl::handler &cgh) {		\
     unsigned long nt=acceleratorThreads();				\
     if(nt < 8)nt=8;							\

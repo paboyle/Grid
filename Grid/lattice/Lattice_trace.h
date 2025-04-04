@@ -252,7 +252,7 @@ Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > Inverse_RealPart(const Latti
 #else //GPU version
   autoView(Umu_v,Umu,AcceleratorRead);
   autoView(ret_v,ret,AcceleratorWrite);
-  accelerator_for(ss,grid->oSites(),Nsimd,{
+  accelerator_for(ss,grid->oSites(),vComplex::Nsimd(),{
       iMatrix<RealD, N>  LU;
       iVector<Integer, N> P;
       iVector<RealD, N> e;
