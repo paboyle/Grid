@@ -146,11 +146,13 @@ int main(int argc, char *argv[])
   using Default_Writer = Grid::BinaryWriter;
   FileName.append(".bin");
 #endif
+
   {
     Default_Writer w(FileName);
     write(w,"MesonField",Mpp);
     write(w,"AslashField",App);
   }
+
   // epilogue
   std::cout << GridLogMessage << "Grid is finalizing now" << std::endl;
   Grid_finalize();

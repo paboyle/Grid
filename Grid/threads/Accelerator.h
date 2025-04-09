@@ -517,9 +517,7 @@ inline void acceleratorFreeDevice(void *ptr){ auto discard=hipFree(ptr);};
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { GRID_TRACE("acceleratorMemset");auto discard=hipMemset(base,value,bytes);}
 inline void acceleratorCopyToDevice(const void *from,void *to,size_t bytes)  { GRID_TRACE("acceleratorCopyToDevice"); auto discard=hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
 inline void acceleratorCopyFromDevice(const void *from,void *to,size_t bytes){ GRID_TRACE("acceleratorCopyFromDevice"); auto discard=hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
-
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { GRID_TRACE("acceleratorMemset"); auto discard=hipMemset(base,value,bytes);}
-
 inline void acceleratorCopyDeviceToDeviceAsynch(const void *from,void *to,size_t bytes) // Asynch
 {
   auto discard=hipMemcpyDtoDAsync(to,from,bytes, copyStream);
