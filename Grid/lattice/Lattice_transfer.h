@@ -57,7 +57,7 @@ template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Latti
 }
 
 template<class vobj> inline void acceleratorPickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full, int dummy=0)
-{std::cout << GridLogMessage <<" acceleratorPickCheckerboard"<<std::endl;
+{
   half.Checkerboard() = cb;
   autoView(half_v, half, AcceleratorWrite);
   autoView(full_v, full, AcceleratorRead);

@@ -1788,7 +1788,7 @@ public:
       double end = usecond();
       double time = (end - start)/ 1e3;
       std::cout << GridLogMessage << "GaugeConfigurationMasked: logDetJacobian took " << time << " ms" << std::endl;
-#if 0 //DEBUG
+#if 1 //DEBUG
       RealD ln_det2 = logDetJacobian(1);
       std::cout << GridLogMessage << " DEBUG: logDetJacobian_diff " << abs(ln_det2-ln_det) << std::endl;
 #endif
@@ -2002,11 +2002,11 @@ public:
 
     // was resized in base class
     assert(this->SmearedSet.size()==Nsmear);
-    std::cout << GridLogMessage <<"beging SGM const"<<std::endl;
+    
     UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(_UGrid);
+    
     LatticeComplex one(_UGrid); one = ComplexD(1.0,0.0);
     LatticeComplex tmp(_UGrid);
-    std::cout << GridLogMessage <<"creatd tmp in  SGM const"<<std::endl;
     for (unsigned int i = 0; i < this->smearingLevels; ++i) {
 
       masks.push_back(*(new LatticeLorentzComplex(_UGrid)));
@@ -2026,7 +2026,7 @@ public:
       setCheckerboard(tmp,tmpcb);
       PokeIndex<LorentzIndex>(masks[i],tmp, mu);
 	
-    }std::cout << GridLogMessage <<"before stencil in  SGM const"<<std::endl;
+    }
     ///////////////////////////////
     // Setup stencils for staples
     ///////////////////////////////
@@ -2040,7 +2040,7 @@ public:
     // pre-stencil calculation for force calculation
     GridBase *ggrid = Ghost.grids[Nd-1];
     std::vector<Coordinate> shifts;
-    std::cout << GridLogMessage <<"stencil setup done in  SGM const"<<std::endl;
+
     gStencils.clear();
     Coordinate shift_0(Nd,0);
     for(int mu=0;mu<Nd;mu++){
@@ -2079,7 +2079,6 @@ public:
 	}
       }
     }
-    std::cout << GridLogMessage <<"1st stencil comp done in  SGM const"<<std::endl;
     // pre-stencil calculation for BaseSmear
     gStencils_smear.clear();
     for(int mu=0;mu<Nd;mu++){
@@ -2099,7 +2098,6 @@ public:
       }
       gStencils_smear.push_back(GeneralLocalStencil(ggrid,shifts));
     }
-    std::cout << GridLogMessage <<"exitd SGM const"<<std::endl;
   }
   
   virtual void smeared_force(GaugeField &SigmaTilde) 
