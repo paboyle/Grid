@@ -177,9 +177,11 @@ public:
   }
 
   //////////////////////////////////////////////////
-  // average over all x,y,z the temporal loop
+  // average Polyakov loop in any direction (spatial or temporal)
   //////////////////////////////////////////////////
-  static ComplexD avgPolyakovLoop(const GaugeField &Umu) {  //assume Nd=4
+  static ComplexD avgPolyakovLoop(const GaugeField &Umu, const int mu) {  //assume Nd=4
+    
+    // TODO: Protect against mu<0 || mu>=4
     GaugeMat Ut(Umu.Grid()), P(Umu.Grid());
     ComplexD out;
     int T = Umu.Grid()->GlobalDimensions()[3];
@@ -187,15 +189,25 @@ public:
     int Y = Umu.Grid()->GlobalDimensions()[1];
     int Z = Umu.Grid()->GlobalDimensions()[2];
 
-    Ut = peekLorentz(Umu,3); //Select temporal direction
+    // Number of sites in mu direction
+    int L = Umu.Grid()->GlobalDimensions()[mu];
+
+    Ut = peekLorentz(Umu, mu); //Select direction
     P = Ut;
-    for (int t=1;t<T;t++){ 
-      P = Gimpl::CovShiftForward(Ut,3,P);
+    for (int t=1;t<L;t++){ 
+      P = Gimpl::CovShiftForward(Ut,mu,P);
     }
    RealD norm = 1.0/(Nc*X*Y*Z*T);
    out = sum(trace(P))*norm;
    return out;   
-}
+  }  
+
+  /////////////////////////////////////////////////
+  // overload for temporal loop
+  /////////////////////////////////////////////////
+  static ComplexD avgPolyakovLoop(const GaugeField &Umu) { 
+    return avgPolyakovLoop(Umu, 3);
+  }
 
   //////////////////////////////////////////////////
   // average over traced single links
