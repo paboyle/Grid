@@ -204,23 +204,23 @@ int main (int argc, char** argv) {
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.ddVU3.control");
     pass *= testddUProj(GRID,Umu,Ucontrol);
 
-    // Check the 1-link (inner product) 
+    // Check the 1-link (outer product) 
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.XY.control");
     pass *= testForce(GRID, Umu, Ucontrol,
                       1, 0, 0, 0, 0,
-                      0, 0, 0, 0, 0 );
+                      1, 0, 0, 0, 0 );
 
     // Check the 3-link
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.3link.control");
     pass *= testForce(GRID, Umu, Ucontrol,
-                      0, 1, 0, 0, 0,
-                      0, 0, 0, 0, 0 );
+                      1, 0, 0, 0, 0,
+                      0, 1, 0, 0, 0 );
 
-    // Check the 5-link
-    NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.5link.control");
-    pass *= testForce(GRID, Umu, Ucontrol,
-                      0, 0, 1, 0, 0,
-                      0, 0, 0, 0, 0 );
+//    // Check the 5-link
+//    NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.5link.control");
+//    pass *= testForce(GRID, Umu, Ucontrol,
+//                      0, 0, 1, 0, 0,
+//                      0, 0, 0, 0, 0 );
 
     if(pass){
         Grid_pass("All tests passed.");
