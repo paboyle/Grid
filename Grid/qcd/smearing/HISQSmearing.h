@@ -157,6 +157,8 @@ getHISQStencilEntries(acc sView, int sIndex, int site) {
 }
 
 
+
+
 /*!  @brief Allows for ASQTAD-like smearings. */
 template<class Gimpl> 
 class Smear_HISQ : public Gimpl {
@@ -412,9 +414,13 @@ public:
             typedef decltype(U_fat_v)                               linkWrite;
             typedef decltype(gStencil_v)                            stencilRead;
 
-            threeLinkStaple<linkRead,linkWrite,stencilRead>(U_fat_v,                         U_3link_v, U_v, gStencil_v, mu);
-            fiveLinkStaple< linkRead,linkWrite,stencilRead>(U_fat_v, U_5linkA_v, U_5linkB_v, U_3link_v, U_v, gStencil_v, mu);
-            sevenLinkStaple<linkRead,linkWrite,stencilRead>(U_fat_v, U_5linkA_v, U_5linkB_v, U_3link_v, U_v, gStencil_v, mu);
+            // CODE IN A MORE CAREFUL TEST FOR THIS
+            if((lt.c_7!=0) || (lt.c_5!=0) || (lt.c_3!=0))
+                threeLinkStaple<linkRead,linkWrite,stencilRead>(U_fat_v,                         U_3link_v, U_v, gStencil_v, mu);
+            if((lt.c_7!=0) || (lt.c_5!=0)) 
+                fiveLinkStaple< linkRead,linkWrite,stencilRead>(U_fat_v, U_5linkA_v, U_5linkB_v, U_3link_v, U_v, gStencil_v, mu);
+            if( lt.c_7!=0 ) 
+                sevenLinkStaple<linkRead,linkWrite,stencilRead>(U_fat_v, U_5linkA_v, U_5linkB_v, U_3link_v, U_v, gStencil_v, mu);
         }
 
         // c1, c3, c5, c7 construct contributions
@@ -425,32 +431,38 @@ public:
         std::vector<LF> V(Nd, grid);
         std::vector<LF> Vnaik(Nd, grid);
         for (int mu = 0; mu < Nd; mu++) {
-            U[mu] = PeekIndex<LorentzIndex>(u_thin, mu);
-            V[mu] = PeekIndex<LorentzIndex>(u_smr, mu);
+            U[mu]     = PeekIndex<LorentzIndex>(u_thin, mu);
+            V[mu]     = PeekIndex<LorentzIndex>(u_smr, mu);
+            Vnaik[mu] = Zero();
         }
 
         for(int mu=0;mu<Nd;mu++) {
 
             // Naik
-            Vnaik[mu] = lt.c_naik*Gimpl::CovShiftForward(U[mu],mu,
-                                    Gimpl::CovShiftForward(U[mu],mu,
-                                      Gimpl::CovShiftIdentityForward(U[mu],mu)));
+            if(lt.c_naik!=0) {
+                Vnaik[mu] = lt.c_naik*Gimpl::CovShiftForward(U[mu],mu,
+                                        Gimpl::CovShiftForward(U[mu],mu,
+                                          Gimpl::CovShiftIdentityForward(U[mu],mu)));
+            }
 
             // LePage
-            for (int nu_h=1;nu_h<Nd;nu_h++) {
-                int nu=(mu+nu_h)%Nd;
-                                // nu, nu, mu, Back(nu), Back(nu)
-                V[mu] = V[mu] + lt.c_lp*Gimpl::CovShiftForward(U[nu],nu,
-                                          Gimpl::CovShiftForward(U[nu],nu,
-                                            Gimpl::CovShiftForward(U[mu],mu,
-                                              Gimpl::CovShiftBackward(U[nu],nu,
-                                                Gimpl::CovShiftIdentityBackward(U[nu],nu)))))
-                                // Back(nu), Back(nu), mu, nu, nu
-                              + lt.c_lp*Gimpl::CovShiftBackward(U[nu],nu,
-                                          Gimpl::CovShiftBackward(U[nu],nu,
-                                            Gimpl::CovShiftForward(U[mu],mu,
+            if(lt.c_lp!=0) {
+                for (int nu=0;nu<Nd;nu++) {
+                    if(mu==nu) continue; 
+
+                    // nu, nu, mu, Back(nu), Back(nu)
+                    V[mu] = V[mu] + lt.c_lp*Gimpl::CovShiftForward(U[nu],nu,
                                               Gimpl::CovShiftForward(U[nu],nu,
-                                                Gimpl::CovShiftIdentityForward(U[nu],nu)))));
+                                                Gimpl::CovShiftForward(U[mu],mu,
+                                                  Gimpl::CovShiftBackward(U[nu],nu,
+                                                    Gimpl::CovShiftIdentityBackward(U[nu],nu)))))
+                                    // Back(nu), Back(nu), mu, nu, nu
+                                  + lt.c_lp*Gimpl::CovShiftBackward(U[nu],nu,
+                                              Gimpl::CovShiftBackward(U[nu],nu,
+                                                Gimpl::CovShiftForward(U[mu],mu,
+                                                  Gimpl::CovShiftForward(U[nu],nu,
+                                                    Gimpl::CovShiftIdentityForward(U[nu],nu)))));
+                }
             }
         }
 
@@ -706,32 +718,33 @@ public:
     };
 
 
-    // Intent: OUT--XY (|X><Y|) 
-    //          IN--vecdt (MCMC time separations) 
-    //              vecx (contains |X> and |Y>)
-    //              l (rat approx and Naik index)
-    //              sep (separation between |X> and |Y>)
-    void outerProductHISQ(GF& XY, std::vector<FF>& vecx, int l, int sep) {
+    // vecx (contains |X> and |Y>)
+    // l (rat approx and Naik index)
+    // sep (separation between |X> and |Y>)
+    GF outerProductHISQ(std::vector<FF>& vecx, int l, int sep) {
         
         auto grid   = this->_grid;
         auto gridRB = this->_gridRB;
 
-        FF X(grid), Y(grid), XRB(gridRB), YRB(gridRB);
-        X = Zero(); Y=Zero(); XRB=Zero(); YRB=Zero();
-
-        pickCheckerboard(Even,XRB,vecx[l]);
-        setCheckerboard(X,XRB);
-        pickCheckerboard(Odd ,YRB,vecx[l]);
-        setCheckerboard(Y,YRB);
-
+        GF XY(grid);
+        FF X(grid), Y(grid), RB(gridRB);
         LF XYnu(grid), YXnu(grid);
+        X = Zero(); Y=Zero(); 
+        
+        RB=Zero(); 
+        pickCheckerboard(Even,RB,vecx[l]);
+        setCheckerboard(X,RB);
+        RB=Zero();
+        pickCheckerboard(Odd ,RB,vecx[l]);
+        setCheckerboard(Y,RB);
+
         XY = Zero(); XYnu = Zero(); YXnu=Zero(); 
         for (int nu = 0; nu < Nd; nu++) {
             YXnu = outerProduct( Cshift(Y,nu,sep) ,X);
             XYnu = outerProduct( Cshift(X,nu,sep) ,Y);
             PokeIndex<LorentzIndex>(XY,(YXnu-XYnu),nu);
         }
-        return;   
+        return XY;   
     }
 
 
@@ -766,36 +779,94 @@ public:
             int rat_order = n_orders_naik[inaik];
             for (int i=0; i<rat_order; i++) {
 
-
-//                // The Naik derivative needs an outer product with a separation of 3. Every other derivative
-//                // contribution has a separation of 1. To reuse the XY field, we start the calculation by
-//                // adding the Naik contribution to the momentum.
-//                outerProductHISQ(XY, vecdt, vecx, l, 3); 
-//
-//                std::vector<LF> Uv(Nd, grid);
-//                std::vector<LF> XYv(Nd, grid);
-//                std::vector<LF> dVnaik(Nd, grid);
-//                for (int mu = 0; mu < Nd; mu++) {
-//                    Uv[mu]  = PeekIndex<LorentzIndex>(_Umu, mu);
-//                    XYv[mu] = PeekIndex<LorentzIndex>(XY, mu);
-//                }
-//     
-////    temp  = gAcc.getLink(GInd::getSiteMu(up_mu , mu)) * gAcc.getLink(GInd::getSiteMu(up_2mu, mu)) * fAcc.getLink(GInd::getSiteMu(origin, mu));
-////    temp += gAcc.getLink(GInd::getSiteMu(up_mu , mu)) * fAcc.getLink(GInd::getSiteMu(dn_mu , mu)) * gAcc.getLink(GInd::getSiteMu(dn_mu , mu));
-////    temp += fAcc.getLink(GInd::getSiteMu(dn_2mu, mu)) * gAcc.getLink(GInd::getSiteMu(dn_2mu, mu)) * gAcc.getLink(GInd::getSiteMu(dn_mu , mu));   
-//                for (int mu = 0; mu < Nd; mu++) {
-//                    Vnaik[mu] = lt.c_naik*Gimpl::CovShiftForward(U[mu],mu,
-//                                            Gimpl::CovShiftForward(U[mu],mu,
-//                                             Gimpl::CovShiftIdentityForward(XYv[mu],mu)));
-////                    Vnaik[mu] = lt.c_naik*Gimpl::CovShiftForward(U[mu],mu,
-////                                            Gimpl::CovShiftForward(U[mu],mu,
-////                                              Gimpl::CovShiftIdentityForward(U[mu],mu)));
-//                }
-                
-                outerProductHISQ(XY, vecx, l, 1); 
+                XY = outerProductHISQ(vecx, l, 1); 
 
                 // It's not clear to me whether this should be fat7 or asqtad.
                 momentum += hp.asqtad_c1*vecdt[l]*XY;
+
+
+                // -------------------------------------------- LEPAGE DERIVATIVE 
+                std::vector<LF> Wv(Nd, grid);
+                std::vector<LF> XYdag(Nd, grid);
+                std::vector<LF> dLPdWv(Nd, grid);
+                for (int mu = 0; mu < Nd; mu++) {
+                    Wv[mu]     = PeekIndex<LorentzIndex>(_Wmu, mu);
+                    XYdag[mu]  = adj(PeekIndex<LorentzIndex>(XY, mu));
+                    dLPdWv[mu] = Zero();
+                }
+                for(int mu=0;mu<Nd;mu++) {
+                    for(int nu=0;nu<Nd;nu++) {
+                    if(mu==nu) continue;
+
+                    // (forward)
+                    dLPdWv[mu] = dLPdWv[mu] + adj(Gimpl::CovShiftBackward(Wv[mu],mu,
+                                                    Gimpl::CovShiftForward(Wv[nu],nu,
+                                                      Gimpl::CovShiftForward(Wv[mu],mu,
+                                                        Gimpl::CovShiftForward(Wv[mu],mu,
+                                                          Gimpl::CovShiftIdentityBackward(XYdag[nu],nu))))));
+                    // (backward)
+                    dLPdWv[mu] = dLPdWv[mu] + adj(Gimpl::CovShiftBackward(Wv[mu],mu,
+                                                    Gimpl::CovShiftBackward(Wv[nu],nu,
+                                                      Gimpl::CovShiftForward(Wv[mu],mu,
+                                                        Gimpl::CovShiftForward(Wv[mu],mu,
+                                                          Gimpl::CovShiftIdentityForward(XYdag[nu],nu))))));
+                    // (forward)
+                    dLPdWv[mu] = dLPdWv[mu] + adj(Gimpl::CovShiftForward(Wv[nu],nu,
+                                                    Gimpl::CovShiftForward(Wv[mu],mu,
+                                                      Gimpl::CovShiftForward(Wv[mu],mu,
+                                                        Gimpl::CovShiftBackward(XYdag[nu],nu,
+                                                          Gimpl::CovShiftIdentityBackward(Wv[mu],mu))))));
+                    // (backward)
+                    dLPdWv[mu] = dLPdWv[mu] + adj(Gimpl::CovShiftBackward(Wv[nu],nu,
+                                                    Gimpl::CovShiftForward(Wv[mu],mu,
+                                                      Gimpl::CovShiftForward(Wv[mu],mu,
+                                                        Gimpl::CovShiftForward(XYdag[nu],nu,
+                                                          Gimpl::CovShiftIdentityBackward(Wv[mu],mu))))));
+                    // (forward)
+                    dLPdWv[mu] = dLPdWv[mu] + adj(Gimpl::CovShiftForward(Wv[nu],nu,
+                                                    Gimpl::CovShiftForward(Wv[nu],nu,
+                                                      Gimpl::CovShiftForward(XYdag[mu],mu,
+                                                        Gimpl::CovShiftBackward(Wv[nu],nu,
+                                                          Gimpl::CovShiftIdentityBackward(Wv[nu],nu))))));
+                    // (backward)
+                    dLPdWv[mu] = dLPdWv[mu] + adj(Gimpl::CovShiftBackward(Wv[nu],nu,
+                                                    Gimpl::CovShiftBackward(Wv[nu],nu,
+                                                      Gimpl::CovShiftForward(XYdag[mu],mu,
+                                                        Gimpl::CovShiftForward(Wv[nu],nu,
+                                                          Gimpl::CovShiftIdentityForward(Wv[nu],nu))))));
+                    // (forward)
+                    dLPdWv[mu] = dLPdWv[mu] + adj(Gimpl::CovShiftBackward(Wv[mu],mu,
+                                                    Gimpl::CovShiftForward(XYdag[nu],nu,
+                                                      Gimpl::CovShiftForward(Wv[mu],mu,
+                                                        Gimpl::CovShiftForward(Wv[mu],mu,
+                                                          Gimpl::CovShiftIdentityBackward(Wv[nu],nu))))));
+                    // (backward)
+                    dLPdWv[mu] = dLPdWv[mu] + adj(Gimpl::CovShiftBackward(Wv[mu],mu,
+                                                    Gimpl::CovShiftBackward(XYdag[nu],nu,
+                                                      Gimpl::CovShiftForward(Wv[mu],mu,
+                                                        Gimpl::CovShiftForward(Wv[mu],mu,
+                                                          Gimpl::CovShiftIdentityForward(Wv[nu],nu))))));
+                    // (forward)
+                    dLPdWv[mu] = dLPdWv[mu] + adj(Gimpl::CovShiftForward(XYdag[nu],nu,
+                                                    Gimpl::CovShiftForward(Wv[mu],mu,
+                                                      Gimpl::CovShiftForward(Wv[mu],mu,
+                                                        Gimpl::CovShiftBackward(Wv[nu],nu,
+                                                          Gimpl::CovShiftIdentityBackward(Wv[mu],mu))))));
+                    // (backward)
+                    dLPdWv[mu] = dLPdWv[mu] + adj(Gimpl::CovShiftBackward(XYdag[nu],nu,
+                                                    Gimpl::CovShiftForward(Wv[mu],mu,
+                                                      Gimpl::CovShiftForward(Wv[mu],mu,
+                                                        Gimpl::CovShiftForward(Wv[nu],nu,
+                                                          Gimpl::CovShiftIdentityBackward(Wv[mu],mu))))));
+                    }
+                }
+
+                GF dLPdW(grid);
+                for (int mu = 0; mu < Nd; mu++) {
+                    PokeIndex<LorentzIndex>(dLPdW, dLPdWv[mu], mu);
+                }
+
+                momentum += hp.asqtad_clp*vecdt[l]*dLPdW;
 
 
                 // ------------------------------------------- N-LINK DERIVATIVES 
@@ -870,51 +941,53 @@ public:
                         }              
                     })
 
-                    // U_3link_v is being used as a dummy in the first argument. That the last argument
-                    // is false guarantees threeLinkStaple does not interact with its first argument.
-                    asqtad.template threeLinkStaple<linkRead,linkWrite,stencilRead>(U_3link_v, U_3link_v, 
-                                                                                  U_v, gStencil_v, mu, false);
- 
-                    accelerator_for(site,Nsites,Simd::Nsimd(),{ // 5-LINK DERIVATIVE
-                        U3matrix U0, U1, U2, U3, U4, U5, XY0, V1, XY2, XY3, V4, XY5, W;
-                        int sigmaIndex = 0;
-                        for(int nu=0;nu<Nd;nu++) {
-                            if(nu==mu) continue;
-                            int s = HISQStencilIndex(mu,nu);
-                            for(int rho=0;rho<Nd;rho++) {
-                                if (rho == mu || rho == nu) continue;
-            
-                                auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
-            
-                                U0  = getLink(U_v       ,x_p_mu     ,nu );
-                                U1  = getLink(U_3link_v ,x_p_nu     ,rho);
-                                U2  = getLink(U_v       ,x          ,nu );
-                                U3  = getLink(U_v       ,x_p_mu_m_nu,nu );
-                                U4  = getLink(U_3link_v ,x_m_nu     ,rho);
-                                U5  = getLink(U_v       ,x_m_nu     ,nu );
-                  
-                                XY0 = getLink(XY_v      ,x_p_mu     ,nu );
-                                V1  = getLink(dU_3link_v,x_p_nu     ,rho);
-                                XY2 = getLink(XY_v      ,x          ,nu );
-                                XY3 = getLink(XY_v      ,x_p_mu_m_nu,nu );
-                                V4  = getLink(dU_3link_v,x_m_nu     ,rho);
-                                XY5 = getLink(XY_v      ,x_m_nu     ,nu );
-
-                                W  =    adj(XY2)*U1*adj(U0) +     U2 *     V1*adj(U0) +     U2 *U1*    XY0 
-                                     +     XY5 *U4*    U3  + adj(U5)*     V4*    U3  + adj(U5)*U4*adj(XY3);
-            
-                                if(sigmaIndex<3) {
-                                    setLink(dU_5linkA_v[x->_offset](rho), W);
-                                } else {
-                                    setLink(dU_5linkB_v[x->_offset](rho), W);
-                                }    
-            
-                                setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.fat7_c5*vecdt[l]*adj(W));
-                                sigmaIndex++;
-                            }
-                        }
-                    })
-            
+//                    // U_3link_v is being used as a dummy in the first argument. That the last argument
+//                    // is false guarantees threeLinkStaple does not interact with its first argument.
+//                    asqtad.template threeLinkStaple<linkRead,linkWrite,stencilRead>(U_3link_v, U_3link_v, 
+//                                                                                    U_v, gStencil_v, mu, false);
+// 
+//                    accelerator_for(site,Nsites,Simd::Nsimd(),{ // 5-LINK DERIVATIVE
+//                        U3matrix U0, U1, U2, U3, U4, U5, XY0, V1, XY2, XY3, V4, XY5, W;
+//                        int sigmaIndex = 0;
+//                        for(int nu=0;nu<Nd;nu++) {
+//                            if(nu==mu) continue;
+//                            int s = HISQStencilIndex(mu,nu);
+//                            for(int rho=0;rho<Nd;rho++) {
+//                                if (rho == mu || rho == nu) continue;
+//            
+//                                auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = getHISQStencilEntries(gStencil_v,s,site);      
+//            
+//                                U0  = getLink(U_v       ,x_p_mu     ,nu );
+//                                U1  = getLink(U_3link_v ,x_p_nu     ,rho);
+//                                U2  = getLink(U_v       ,x          ,nu );
+//                                U3  = getLink(U_v       ,x_p_mu_m_nu,nu );
+//                                U4  = getLink(U_3link_v ,x_m_nu     ,rho);
+//                                U5  = getLink(U_v       ,x_m_nu     ,nu );
+//                  
+//                                XY0 = getLink(XY_v      ,x_p_mu     ,nu );
+//                                V1  = getLink(dU_3link_v,x_p_nu     ,rho);
+//                                XY2 = getLink(XY_v      ,x          ,nu );
+//                                XY3 = getLink(XY_v      ,x_p_mu_m_nu,nu );
+//                                V4  = getLink(dU_3link_v,x_m_nu     ,rho);
+//                                XY5 = getLink(XY_v      ,x_m_nu     ,nu );
+//
+////                              W  =    adj(XY2)*U1*adj(U0) +     U2 *adj(XY1)*adj(U0) +     U2 *U1*    XY0   
+////                                    +     XY5 *U4*    U3  + adj(U5)*adj(XY4)*    U3  + adj(U5)*U4*adj(XY3);
+//                                W  =    adj(XY2)*U1*adj(U0) +     U2 *     V1 *adj(U0) +     U2 *U1*    XY0 
+//                                     +      XY5 *U4*    U3  + adj(U5)*     V4 *    U3  + adj(U5)*U4*adj(XY3);
+//            
+//                                if(sigmaIndex<3) {
+//                                    setLink(dU_5linkA_v[x->_offset](rho), W);
+//                                } else {
+//                                    setLink(dU_5linkB_v[x->_offset](rho), W);
+//                                }    
+//            
+//                                setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.asqtad_c5*vecdt[l]*adj(W));
+//                                sigmaIndex++;
+//                            }
+//                        }
+//                    })
+//            
 //                    fat7.template fiveLinkStaple< linkRead,linkWrite,stencilRead>(U_5linkA_v, U_5linkA_v, U_5linkB_v, 
 //                                                                                  U_3link_v, U_v, gStencil_v, mu, false);
 //
@@ -971,18 +1044,14 @@ public:
             }
         }
 
-        std::vector<LF> Uv(Nd,grid);
-        std::vector<LF> mom(Nd, grid);
-        std::vector<LF> Umom(Nd, grid);
-        for (int mu = 0; mu < Nd; mu++) {
-            mom[mu]  = PeekIndex<LorentzIndex>(momentum, mu);
-            Uv[mu]   = PeekIndex<LorentzIndex>(_Umu, mu);
-            Umom[mu] = Uv[mu]*mom[mu];
-        }    
-        for (int mu = 0; mu < Nd; mu++) {
-            PokeIndex<LorentzIndex>(momentum, Umom[mu], mu);
-        }
 
+
+        // Close the loop: Multiply on the left by U_mu(x)
+        LF mom(grid);
+        for (int mu = 0; mu < Nd; mu++) {
+            mom = PeekIndex<LorentzIndex>(_Umu, mu) * PeekIndex<LorentzIndex>(momentum, mu);
+            PokeIndex<LorentzIndex>(momentum, mom, mu);
+        }
     }
 
 
