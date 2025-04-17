@@ -100,7 +100,7 @@ public:
   }
 
 #ifdef GRID_CUDA
-  cudaDataType toDataType(GridBLASPrecision_t p) {
+  cublasComputeType_t toDataType(GridBLASPrecision_t p) {
     switch (p) {
     case GridBLAS_PRECISION_16F:
       return CUBLAS_COMPUTE_32F_FAST_16F;
@@ -537,16 +537,16 @@ public:
 			       (cuComplex **)&Cmn[0], ldc,
 			       batchCount);
     } else {
-      cudaDataType compute_precision = toDataType(precision);
+      cublasComputeType_t compute_precision = toDataType(precision);
       err = cublasGemmBatchedEx(gridblasHandle,
 				hOpA,
 				hOpB,
 				m,n,k,
-				(cuComplex *) &alpha_p[0],
-				(cuComplex **)&Amk[0], CUDA_C_32F, lda,
-				(cuComplex **)&Bkn[0], CUDA_C_32F, ldb,
-				(cuComplex *) &beta_p[0],
-				(cuComplex **)&Cmn[0], CUDA_C_32F, ldc,
+				(void *) &alpha_p[0],
+				(void **)&Amk[0], CUDA_C_32F, lda,
+				(void **)&Bkn[0], CUDA_C_32F, ldb,
+				(void *) &beta_p[0],
+				(void **)&Cmn[0], CUDA_C_32F, ldc,
 				batchCount, compute_precision, CUBLAS_GEMM_DEFAULT);
     }
     assert(err==CUBLAS_STATUS_SUCCESS);
