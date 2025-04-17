@@ -121,6 +121,7 @@ bool testForce(GridCartesian& GRID, LGF Umu, LGF Ucontrol,
     }
 //    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.XY.control");
 //    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.3link.control");
+//    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.lp.control");
 //    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.5link.control");
 //    return true;
 }
@@ -215,6 +216,12 @@ int main (int argc, char** argv) {
     pass *= testForce(GRID, Umu, Ucontrol,
                       1, 0, 0, 0, 0,
                       0, 1, 0, 0, 0 );
+
+    // Check the LePage-link 
+    NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.lp.control");
+    pass *= testForce(GRID, Umu, Ucontrol,
+                      1, 0, 0, 0, 0,
+                      0, 0, 0, 0, 1 );
 
 //    // Check the 5-link
 //    NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.5link.control");
