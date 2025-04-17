@@ -65,6 +65,7 @@ NAMESPACE_BEGIN(Grid);
 #endif
 
 enum GridBLASOperation_t { GridBLAS_OP_N, GridBLAS_OP_T, GridBLAS_OP_C } ;
+enum GridBLASPrecision_t { GridBLAS_PRECISION_DEFAULT, GridBLAS_PRECISION_16F, GridBLAS_PRECISION_16BF, GridBLAS_PRECISION_TF32 };
 
 class GridBLAS {
 public:
@@ -97,7 +98,21 @@ public:
       gridblasInit=1;
     }
   }
-  
+
+#ifdef GRID_CUDA
+  cudaDataType toDataType(GridBLASPrecision_t p) {
+    switch (p) {
+    case GridBLAS_PRECISION_16F:
+      return CUBLAS_COMPUTE_32F_FAST_16F;
+    case GridBLAS_PRECISION_16BF:
+      return CUBLAS_COMPUTE_32F_FAST_16BF;
+    case GridBLAS_PRECISION_TF32:
+      return CUBLAS_COMPUTE_32F_FAST_TF32;
+    default:
+      assert(0);
+    }
+  }
+#endif
   // Force construct once
   GridBLAS() { Init(); };
   ~GridBLAS() { };
@@ -138,8 +153,10 @@ public:
 		   deviceVector<ComplexD*> &Amk,  // pointer list to matrices
 		   deviceVector<ComplexD*> &Bkn,
 		   ComplexD beta,
-		   deviceVector<ComplexD*> &Cmn)
+		   deviceVector<ComplexD*> &Cmn,
+		   GridBLASPrecision_t precision = GridBLAS_PRECISION_DEFAULT)
   {
+    assert(precision == GridBLAS_PRECISION_DEFAULT);
     gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N,
 		m,n,k,
 		alpha,
@@ -201,8 +218,10 @@ public:
 		   deviceVector<ComplexD*> &Amk,  // pointer list to matrices
 		   deviceVector<ComplexD*> &Bkn,
 		   ComplexD beta,
-		   deviceVector<ComplexD*> &Cmn)
+		   deviceVector<ComplexD*> &Cmn,
+		   GridBLASPrecision_t precision = GridBLAS_PRECISION_DEFAULT)
   {
+    assert(precision == GridBLAS_PRECISION_DEFAULT);
     RealD t2=usecond();
     int32_t batchCount = Amk.size();
     assert(Bkn.size()==batchCount);
@@ -448,7 +467,8 @@ public:
 		   deviceVector<ComplexF*> &Amk,  // pointer list to matrices
 		   deviceVector<ComplexF*> &Bkn,
 		   ComplexF beta,
-		   deviceVector<ComplexF*> &Cmn)
+		   deviceVector<ComplexF*> &Cmn,
+		   GridBLASPrecision_t precision = GridBLAS_PRECISION_DEFAULT)
   {
     RealD t2=usecond();
     int32_t batchCount = Amk.size();
@@ -473,6 +493,7 @@ public:
     assert(Bkn.size()==batchCount);
     assert(Cmn.size()==batchCount);
 #ifdef GRID_HIP
+    assert(precision == GridBLAS_PRECISION_DEFAULT);
     hipblasOperation_t hOpA;
     hipblasOperation_t hOpB;
     if ( OpA == GridBLAS_OP_N ) hOpA = HIPBLAS_OP_N;
@@ -503,50 +524,67 @@ public:
     if ( OpB == GridBLAS_OP_N ) hOpB = CUBLAS_OP_N;
     if ( OpB == GridBLAS_OP_T ) hOpB = CUBLAS_OP_T;
     if ( OpB == GridBLAS_OP_C ) hOpB = CUBLAS_OP_C;
-    auto err = cublasCgemmBatched(gridblasHandle,
-				  hOpA,
-				  hOpB,
-				  m,n,k,
-				  (cuComplex *) &alpha_p[0],
-				  (cuComplex **)&Amk[0], lda,
-				  (cuComplex **)&Bkn[0], ldb,
-				  (cuComplex *) &beta_p[0],
-				  (cuComplex **)&Cmn[0], ldc,
-				  batchCount);
+    cublasStatus_t err;
+    if (precision == GridBLAS_PRECISION_DEFAULT) {
+      err = cublasCgemmBatched(gridblasHandle,
+			       hOpA,
+			       hOpB,
+			       m,n,k,
+			       (cuComplex *) &alpha_p[0],
+			       (cuComplex **)&Amk[0], lda,
+			       (cuComplex **)&Bkn[0], ldb,
+			       (cuComplex *) &beta_p[0],
+			       (cuComplex **)&Cmn[0], ldc,
+			       batchCount);
+    } else {
+      cudaDataType compute_precision = toDataType(precision);
+      err = cublasGemmBatchedEx(gridblasHandle,
+				hOpA,
+				hOpB,
+				m,n,k,
+				(cuComplex *) &alpha_p[0],
+				(cuComplex **)&Amk[0], CUDA_C_32F, lda,
+				(cuComplex **)&Bkn[0], CUDA_C_32F, ldb,
+				(cuComplex *) &beta_p[0],
+				(cuComplex **)&Cmn[0], CUDA_C_32F, ldc,
+				batchCount, compute_precision, CUBLAS_GEMM_DEFAULT);
+    }
     assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
-      int64_t m64=m;
-      int64_t n64=n;
-      int64_t k64=k;
-      int64_t lda64=lda;
-      int64_t ldb64=ldb;
-      int64_t ldc64=ldc;
-      int64_t batchCount64=batchCount;
-
-      oneapi::mkl::transpose iOpA;
-      oneapi::mkl::transpose iOpB;
-      
-      if ( OpA == GridBLAS_OP_N ) iOpA = oneapi::mkl::transpose::N;
-      if ( OpA == GridBLAS_OP_T ) iOpA = oneapi::mkl::transpose::T;
-      if ( OpA == GridBLAS_OP_C ) iOpA = oneapi::mkl::transpose::C;
-      if ( OpB == GridBLAS_OP_N ) iOpB = oneapi::mkl::transpose::N;
-      if ( OpB == GridBLAS_OP_T ) iOpB = oneapi::mkl::transpose::T;
-      if ( OpB == GridBLAS_OP_C ) iOpB = oneapi::mkl::transpose::C;
-
-      oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
-						  &iOpA,
-						  &iOpB,
-						  &m64,&n64,&k64,
-						  (ComplexF *) &alpha_p[0],
-						  (const ComplexF **)&Amk[0], (const int64_t *)&lda64,
-						  (const ComplexF **)&Bkn[0], (const int64_t *)&ldb64,
-						  (ComplexF *) &beta_p[0],
-						  (ComplexF **)&Cmn[0], (const int64_t *)&ldc64,
-						  (int64_t)1,&batchCount64,std::vector<sycl::event>());
+    assert(precision == GridBLAS_PRECISION_DEFAULT);
+    int64_t m64=m;
+    int64_t n64=n;
+    int64_t k64=k;
+    int64_t lda64=lda;
+    int64_t ldb64=ldb;
+    int64_t ldc64=ldc;
+    int64_t batchCount64=batchCount;
+    
+    oneapi::mkl::transpose iOpA;
+    oneapi::mkl::transpose iOpB;
+    
+    if ( OpA == GridBLAS_OP_N ) iOpA = oneapi::mkl::transpose::N;
+    if ( OpA == GridBLAS_OP_T ) iOpA = oneapi::mkl::transpose::T;
+    if ( OpA == GridBLAS_OP_C ) iOpA = oneapi::mkl::transpose::C;
+    if ( OpB == GridBLAS_OP_N ) iOpB = oneapi::mkl::transpose::N;
+    if ( OpB == GridBLAS_OP_T ) iOpB = oneapi::mkl::transpose::T;
+    if ( OpB == GridBLAS_OP_C ) iOpB = oneapi::mkl::transpose::C;
+    
+    oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
+						&iOpA,
+						&iOpB,
+						&m64,&n64,&k64,
+						(ComplexF *) &alpha_p[0],
+						(const ComplexF **)&Amk[0], (const int64_t *)&lda64,
+						(const ComplexF **)&Bkn[0], (const int64_t *)&ldb64,
+						(ComplexF *) &beta_p[0],
+						(ComplexF **)&Cmn[0], (const int64_t *)&ldc64,
+						(int64_t)1,&batchCount64,std::vector<sycl::event>());
     synchronise();
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
+    assert(precision == GridBLAS_PRECISION_DEFAULT);
     // Need a default/reference implementation; use Eigen
       if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_N) ) {
 	thread_for (p, batchCount, {
