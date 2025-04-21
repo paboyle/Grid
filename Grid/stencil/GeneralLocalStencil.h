@@ -204,7 +204,7 @@ template<int d, typename... Args>
 void appendShift(std::vector<Coordinate>& shifts, int dir, Args... args) {
     Coordinate shift(d,0);
     generalShift(shift, dir, args...); 
-    // push_back creates an element at the end of shifts and
+    // push_back creates an element at the end of shift and
     // assigns the data in the argument to it.
     shifts.push_back(shift);
 }

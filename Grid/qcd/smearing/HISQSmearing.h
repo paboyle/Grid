@@ -120,31 +120,63 @@ auto getLink(const link& __restrict__ U, GeneralStencilEntry* x, int mu) {
 
 /*! @brief Figure out the stencil index from mu and nu. */
 accelerator_inline 
-int HISQStencilIndex(int mu, int nu) {
-    // Nshifts depends on how you built the stencil
-    int Nshifts = 5;
-    return Nshifts*nu + Nd*Nshifts*mu;
+int HISQStencilIndex(int mu, int nu, int rho=0, std::string kind="3STAPLE") {
+    int res;
+    if (kind=="3STAPLE") 
+        res = 5*(nu + Nd*mu);
+    else if (kind=="5STAPLE")
+        res = 17*(rho + Nd*nu + Nd*Nd*mu);
+    else 
+        Grid_error("Unknown staple kind",kind);
+    return res;
 }
 
 
-/*! @brief Create the mu-nu plane stencil. We allow mu==nu to make indexing the 
-    stencil easier, but these entries will not be used. */
+/*! @brief Create various stencils needed for HISQ calculations */ 
 inline
-std::vector<Coordinate> createHISQStencil() {
+std::vector<Coordinate> createHISQStencil(std::string kind="3STAPLE") {
     std::vector<Coordinate> shifts;
-    for(int mu=0;mu<Nd;mu++)
-    for(int nu=0;nu<Nd;nu++) {
-        appendShift<Nd>(shifts,mu);
-        appendShift<Nd>(shifts,nu);
-        appendShift<Nd>(shifts,shiftSignal::NO_SHIFT);
-        appendShift<Nd>(shifts,mu,Back(nu));
-        appendShift<Nd>(shifts,Back(nu));
+    // We allow nu=mu and rho=nu, rho=mu to make indexing easier, but these
+    // entries will not be used.
+    if (kind=="3STAPLE") {
+        for(int mu=0;mu<Nd;mu++)
+        for(int nu=0;nu<Nd;nu++) {
+            appendShift<Nd>(shifts,mu);
+            appendShift<Nd>(shifts,nu);
+            appendShift<Nd>(shifts,shiftSignal::NO_SHIFT);
+            appendShift<Nd>(shifts,mu,Back(nu));
+            appendShift<Nd>(shifts,Back(nu));
+        }
+    } else if (kind=="5STAPLE") {
+        for(int mu =0;mu <Nd;mu++)
+        for(int nu =0;nu <Nd;nu++) 
+        for(int rho=0;rho<Nd;rho++) {
+            appendShift<Nd>(shifts,nu,Back(rho));
+            appendShift<Nd>(shifts,nu);
+            appendShift<Nd>(shifts,Back(rho));
+            appendShift<Nd>(shifts,shiftSignal::NO_SHIFT);
+            appendShift<Nd>(shifts,rho);
+            appendShift<Nd>(shifts,Back(nu),Back(rho));
+            appendShift<Nd>(shifts,Back(nu));
+            appendShift<Nd>(shifts,Back(nu),rho);
+            appendShift<Nd>(shifts,mu,nu,Back(rho));
+            appendShift<Nd>(shifts,mu,nu);
+            appendShift<Nd>(shifts,mu,Back(rho));
+            appendShift<Nd>(shifts,mu);
+            appendShift<Nd>(shifts,mu,rho);
+            appendShift<Nd>(shifts,mu,Back(nu),Back(rho));
+            appendShift<Nd>(shifts,mu,Back(nu));
+            appendShift<Nd>(shifts,mu,Back(nu),rho);
+            appendShift<Nd>(shifts,nu,rho);
+        }
+    } else { 
+        Grid_error("Unknown staple kind",kind);
     }
     return shifts;
 }
 
 
-/*! @brief Retrieve the stencil entries. */
+/*! @brief Retrieve 3-link stencil entries. */
 template<class acc> accelerator_inline
 std::tuple<GeneralStencilEntry*,GeneralStencilEntry*,GeneralStencilEntry*,GeneralStencilEntry*,GeneralStencilEntry*> 
 get3StaplePoints(acc sView, int sIndex, int site) {
@@ -157,6 +189,39 @@ get3StaplePoints(acc sView, int sIndex, int site) {
 }
 
 
+/*! @brief Retrieve 5-link stencil entries. */
+template<class acc> accelerator_inline
+std::tuple<GeneralStencilEntry*,GeneralStencilEntry*,GeneralStencilEntry*,
+           GeneralStencilEntry*,GeneralStencilEntry*,GeneralStencilEntry*,
+           GeneralStencilEntry*,GeneralStencilEntry*,GeneralStencilEntry*,
+           GeneralStencilEntry*,GeneralStencilEntry*,GeneralStencilEntry*,
+           GeneralStencilEntry*,GeneralStencilEntry*,GeneralStencilEntry*,
+           GeneralStencilEntry*,GeneralStencilEntry*>
+get5StaplePoints(acc sView, int sIndex, int site) {
+    GeneralStencilEntry* x_p_nu_m_rho      = sView.GetEntry(sIndex+0 ,site);
+    GeneralStencilEntry* x_p_nu            = sView.GetEntry(sIndex+1 ,site);
+    GeneralStencilEntry* x_m_rho           = sView.GetEntry(sIndex+2 ,site);
+    GeneralStencilEntry* x                 = sView.GetEntry(sIndex+3 ,site);
+    GeneralStencilEntry* x_p_rho           = sView.GetEntry(sIndex+4 ,site);
+    GeneralStencilEntry* x_m_nu_m_rho      = sView.GetEntry(sIndex+5 ,site);
+    GeneralStencilEntry* x_m_nu            = sView.GetEntry(sIndex+6 ,site);
+    GeneralStencilEntry* x_m_nu_p_rho      = sView.GetEntry(sIndex+7 ,site);
+    GeneralStencilEntry* x_p_mu_p_nu_m_rho = sView.GetEntry(sIndex+8 ,site);
+    GeneralStencilEntry* x_p_mu_p_nu       = sView.GetEntry(sIndex+9 ,site);
+    GeneralStencilEntry* x_p_mu_m_rho      = sView.GetEntry(sIndex+10,site);
+    GeneralStencilEntry* x_p_mu            = sView.GetEntry(sIndex+11,site);
+    GeneralStencilEntry* x_p_mu_p_rho      = sView.GetEntry(sIndex+12,site);
+    GeneralStencilEntry* x_p_mu_m_nu_m_rho = sView.GetEntry(sIndex+13,site);
+    GeneralStencilEntry* x_p_mu_m_nu       = sView.GetEntry(sIndex+14,site);
+    GeneralStencilEntry* x_p_mu_m_nu_p_rho = sView.GetEntry(sIndex+15,site);
+    GeneralStencilEntry* x_p_nu_p_rho      = sView.GetEntry(sIndex+16,site);
+    return {x_p_nu_m_rho     , x_p_nu           , x_m_rho          , 
+            x                , x_p_rho          , x_m_nu_m_rho     , 
+            x_m_nu           , x_m_nu_p_rho     , x_p_mu_p_nu_m_rho, 
+            x_p_mu_p_nu      , x_p_mu_m_rho     , x_p_mu           ,
+            x_p_mu_p_rho     , x_p_mu_m_nu_m_rho, x_p_mu_m_nu      , 
+            x_p_mu_m_nu_p_rho, x_p_nu_p_rho}; 
+}
 
 
 /*!  @brief Allows for ASQTAD-like smearings. */
@@ -215,18 +280,21 @@ public:
 
     // Intent: OUT--U_3link (sum of left and right 3-staples attached to U)
     //              U_fat (accmulates the fat smearing)
-    //          IN--U_v (thin links)
-    //              gStencil (HISQ stencil)
+    //          IN--U (thin links)
+    //              gStencil (3-link stencil)
     //              mu
-    template<class linkRead, class linkWrite, class stencilRead>
-    void threeLinkStaple(linkWrite U_fat_v, linkWrite U_3link_v, linkRead U_v, stencilRead gStencil_v, int mu) const {
+    void threeLinkStaple(GF& U_fat, GF& U_3link, GF& U, GeneralLocalStencil gStencil, int mu) const {
 
         SmearingParameters<RealScalar> lt = this->_linkTreatment;
+        autoView(U_v       , U       , AcceleratorRead);
+        autoView(U_fat_v   , U_fat   , AcceleratorWrite);
+        autoView(U_3link_v , U_3link , AcceleratorWrite);
+        auto gStencil_v = gStencil.View(AcceleratorRead); 
         typedef decltype(getLink(U_v,gStencil_v.GetEntry(0,0),0)) U3matrix;
         int Nsites = U_v.size();
 
         accelerator_for(site,Nsites,Simd::Nsimd(),{
-            U3matrix U0, U1, U2, U3, U4, U5, res;
+            U3matrix res;
             for(int nu=0;nu<Nd;nu++) {
                 if(nu==mu) continue;
                 int s = HISQStencilIndex(mu,nu);
@@ -237,15 +305,10 @@ public:
                 // stored link oriented compared to the one you want? If I imagine myself traveling
                 // with the to-be-updated link, I have two possible, alternative 3-link paths I can
                 // take, one starting by going to the left, the other starting by going to the right.
-                U0 = getLink(U_v,x_p_mu     ,nu);
-                U1 = getLink(U_v,x_p_nu     ,mu);
-                U2 = getLink(U_v,x          ,nu);
-                U3 = getLink(U_v,x_p_mu_m_nu,nu);
-                U4 = getLink(U_v,x_m_nu     ,mu);
-                U5 = getLink(U_v,x_m_nu     ,nu);
 
-                //  "left"          "right"
-                res = U2*U1*adj(U0) + adj(U5)*U4*U3;
+                //  "left" + "right"
+                res =       getLink(U_v,x,nu)       * getLink(U_v,x_p_nu,mu) * adj(getLink(U_v,x_p_mu,nu))
+                      + adj(getLink(U_v,x_m_nu,nu)) * getLink(U_v,x_m_nu,mu) *     getLink(U_v,x_p_mu_m_nu,nu);
 
                 // Save 3-link construct for later 
                 setLink(U_3link_v[x->_offset](nu), res);
@@ -260,23 +323,28 @@ public:
     }
 
 
-    // Intent: OUT--U_5link (sum of left and right 5-staples attached to U) 
+    // Intent: OUT--U_5link (sum of 5-staples attached to U) 
     //              U_fat (accmulates the fat smearing)
-    //          IN--U_v (thin links)
+    //          IN--U (thin links)
     //              U_3link (sum of left and right 3-staples attached to U)
-    //              gStencil (HISQ stencil)
+    //              gStencil (3-link stencil)
     //              mu
     //              updateFatLinks (in the force, you only want U_5link_v)
-    template<class linkRead, class linkWrite, class stencilRead>
-    void fiveLinkStaple(linkWrite U_fat_v, linkWrite U_5linkA_v, linkWrite U_5linkB_v, linkWrite U_3link_v, 
-                        linkRead U_v, stencilRead gStencil_v, int mu) const {
+    void fiveLinkStaple(GF& U_fat, GF& U_5linkA, GF& U_5linkB, GF& U_3link, 
+                        GF& U, GeneralLocalStencil gStencil, int mu) const {
 
         SmearingParameters<RealScalar> lt = this->_linkTreatment;
+        autoView(U_v       , U       , AcceleratorRead);
+        autoView(U_fat_v   , U_fat   , AcceleratorWrite);
+        autoView(U_3link_v , U_3link , AcceleratorWrite);
+        autoView(U_5linkA_v, U_5linkA, AcceleratorWrite);
+        autoView(U_5linkB_v, U_5linkB, AcceleratorWrite);
+        auto gStencil_v = gStencil.View(AcceleratorRead); 
         typedef decltype(getLink(U_v,gStencil_v.GetEntry(0,0),0)) U3matrix;
         int Nsites = U_v.size();
 
         accelerator_for(site,Nsites,Simd::Nsimd(),{
-            U3matrix U0, U1, U2, U3, U4, U5, res;
+            U3matrix res;
             int sigmaIndex = 0;
             for(int nu=0;nu<Nd;nu++) {
                 if(nu==mu) continue;
@@ -286,14 +354,8 @@ public:
 
                     auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = get3StaplePoints(gStencil_v,s,site);      
 
-                    U0 = getLink(      U_v,x_p_mu     ,nu );
-                    U1 = getLink(U_3link_v,x_p_nu     ,rho);
-                    U2 = getLink(      U_v,x          ,nu );
-                    U3 = getLink(      U_v,x_p_mu_m_nu,nu );
-                    U4 = getLink(U_3link_v,x_m_nu     ,rho);
-                    U5 = getLink(      U_v,x_m_nu     ,nu );
-
-                    res  = U2*U1*adj(U0) + adj(U5)*U4*U3;
+                    res =       getLink(U_v,x,nu )      * getLink(U_3link_v,x_p_nu,rho) * adj(getLink(U_v,x_p_mu,nu))
+                          + adj(getLink(U_v,x_m_nu,nu)) * getLink(U_3link_v,x_m_nu,rho) *     getLink(U_v,x_p_mu_m_nu,nu);
 
                     // Counting 3-link staples: there are three planes attached to the to-be-updated link,
                     // which corresponds to three (forward+backward) staples. For the 5-link staples, for
@@ -301,11 +363,10 @@ public:
                     // altogether. That will not fit in a single GaugeField object, so we use two. You can
                     // think of sigmaIndex and rho together as being the labels that pick out a particular
                     // 5-link staple. They therefore should not be interpreted as directions.
-                    if(sigmaIndex<3) {
+                    if(sigmaIndex<3)
                         setLink(U_5linkA_v[x->_offset](rho), res);
-                    } else {
+                    else
                         setLink(U_5linkB_v[x->_offset](rho), res);
-                    }    
 
                     setLink(U_fat_v[x->_offset](mu), U_fat_v(x->_offset)(mu) + lt.c_5*res);
                     sigmaIndex++;
@@ -317,19 +378,23 @@ public:
 
 
     // Intent: OUT--U_fat (accmulates the fat smearing)
-    //          IN--U_v (thin links)
-    //              gStencil (HISQ stencil)
+    //          IN--U (thin links)
+    //              U_5link (sum of 5-staples attached to U)
+    //              gStencil (3-link stencil)
     //              mu
-    template<class linkRead, class linkWrite, class stencilRead>
-    void sevenLinkStaple(linkWrite U_fat_v, linkWrite U_5linkA_v, linkWrite U_5linkB_v, 
-                         linkRead U_v, stencilRead gStencil_v, int mu) const {
+    void sevenLinkStaple(GF& U_fat, GF& U_5linkA, GF& U_5linkB, GF& U, GeneralLocalStencil gStencil, int mu) const {
 
         SmearingParameters<RealScalar> lt = this->_linkTreatment;
+        autoView(U_v       , U       , AcceleratorRead);
+        autoView(U_fat_v   , U_fat   , AcceleratorWrite);
+        autoView(U_5linkA_v, U_5linkA, AcceleratorWrite);
+        autoView(U_5linkB_v, U_5linkB, AcceleratorWrite);
+        auto gStencil_v = gStencil.View(AcceleratorRead); 
         typedef decltype(getLink(U_v,gStencil_v.GetEntry(0,0),0)) U3matrix;
         int Nsites = U_v.size();
 
         accelerator_for(site,Nsites,Simd::Nsimd(),{ 
-            U3matrix U0, U1, U2, U3, U4, U5, res;
+            U3matrix res;
             int sigmaIndex = 0;
             for(int nu=0;nu<Nd;nu++) {
                 if(nu==mu) continue;
@@ -339,23 +404,13 @@ public:
     
                     auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = get3StaplePoints(gStencil_v,s,site);      
     
-                    U0 = getLink(U_v,x_p_mu,nu);
-                    if(sigmaIndex<3) {
-                        U1 = getLink(U_5linkB_v,x_p_nu,rho);
-                    } else {
-                        U1 = getLink(U_5linkA_v,x_p_nu,rho);
-                    }  
-                    U2 = getLink(U_v,x,nu);
-                    U3 = getLink(U_v,x_p_mu_m_nu,nu);
-                    if(sigmaIndex<3) {
-                        U4 = getLink(U_5linkB_v,x_m_nu,rho);
-                    } else {
-                        U4 = getLink(U_5linkA_v,x_m_nu,rho);
-                    }  
-                    U5 = getLink(U_v,x_m_nu,nu);
-    
-                    res  = U2*U1*adj(U0) + adj(U5)*U4*U3;
-    
+                    if(sigmaIndex<3)
+                        res =       getLink(U_v,x,nu)       * getLink(U_5linkB_v,x_p_nu,rho) * adj(getLink(U_v,x_p_mu,nu))
+                              + adj(getLink(U_v,x_m_nu,nu)) * getLink(U_5linkB_v,x_m_nu,rho) *     getLink(U_v,x_p_mu_m_nu,nu);
+                    else
+                        res =       getLink(U_v,x,nu)       * getLink(U_5linkA_v,x_p_nu,rho) * adj(getLink(U_v,x_p_mu,nu))
+                              + adj(getLink(U_v,x_m_nu,nu)) * getLink(U_5linkA_v,x_m_nu,rho) *     getLink(U_v,x_p_mu_m_nu,nu);
+                    
                     setLink(U_fat_v[x->_offset](mu), U_fat_v(x->_offset)(mu) + lt.c_7*res);
                     sigmaIndex++;
                 }
@@ -379,50 +434,31 @@ public:
 
         // This is where auxiliary N-link fields and the final smear will be stored. As
         // implemented, this uses about 25% more memory than necessary. 
-        GF Ughost_fat(Ughost.Grid());
-        GF Ughost_3link(Ughost.Grid());
-        GF Ughost_5linkA(Ughost.Grid());
-        GF Ughost_5linkB(Ughost.Grid());
+        GF U_fat(Ughost.Grid());
+        GF U_3link(Ughost.Grid());
+        GF U_5linkA(Ughost.Grid());
+        GF U_5linkB(Ughost.Grid());
 
         // mu-nu plane stencil.
-        std::vector<Coordinate> shifts = createHISQStencil();
+        std::vector<Coordinate> shifts = createHISQStencil("3STAPLE");
 
         // A GeneralLocalStencil has two indices: a site and stencil index 
         GeneralLocalStencil gStencil(Ughost.Grid(),shifts);
 
-        // This is where contributions from the smearing get added together
-        Ughost_fat=Zero();
-
-        // This loop handles 3-, 5-, and 7-link constructs, minus Lepage and Naik.
+        // Store sum of 3-, 5-, 7-link contributions in U_fat 
+        U_fat=Zero();
         for(int mu=0;mu<Nd;mu++) {
-
-            Ughost_3link =Zero(); Ughost_5linkA=Zero(); Ughost_5linkB=Zero();
-
-            // Create the accessors
-            autoView(U_v       , Ughost       , AcceleratorRead);
-            autoView(U_fat_v   , Ughost_fat   , AcceleratorWrite);
-            autoView(U_3link_v , Ughost_3link , AcceleratorWrite);
-            autoView(U_5linkA_v, Ughost_5linkA, AcceleratorWrite);
-            autoView(U_5linkB_v, Ughost_5linkB, AcceleratorWrite);
-
-            auto gStencil_v = gStencil.View(AcceleratorRead); 
-
-            typedef decltype(getLink(U_v,gStencil.GetEntry(0,0),0)) U3matrix;
-            typedef decltype(U_v)                                   linkRead;
-            typedef decltype(U_fat_v)                               linkWrite;
-            typedef decltype(gStencil_v)                            stencilRead;
-
-            // CODE IN A MORE CAREFUL TEST FOR THIS
+            U_3link=Zero(); U_5linkA=Zero(); U_5linkB=Zero();
             if((lt.c_7!=0) || (lt.c_5!=0) || (lt.c_3!=0))
-                threeLinkStaple<linkRead,linkWrite,stencilRead>(U_fat_v,                         U_3link_v, U_v, gStencil_v, mu);
+                threeLinkStaple(U_fat,                     U_3link, Ughost, gStencil, mu);
             if((lt.c_7!=0) || (lt.c_5!=0)) 
-                fiveLinkStaple< linkRead,linkWrite,stencilRead>(U_fat_v, U_5linkA_v, U_5linkB_v, U_3link_v, U_v, gStencil_v, mu);
+                fiveLinkStaple( U_fat, U_5linkA, U_5linkB, U_3link, Ughost, gStencil, mu);
             if( lt.c_7!=0 ) 
-                sevenLinkStaple<linkRead,linkWrite,stencilRead>(U_fat_v, U_5linkA_v, U_5linkB_v,            U_v, gStencil_v, mu);
+                sevenLinkStaple(U_fat, U_5linkA, U_5linkB,          Ughost, gStencil, mu);
         }
 
-        // c1, c3, c5, c7 construct contributions
-        u_smr = Ghost.Extract(Ughost_fat) + lt.c_1*u_thin;
+        // Add 1-link contribution 
+        u_smr = Ghost.Extract(U_fat) + lt.c_1*u_thin;
 
         // Load up U and V std::vectors to access thin and smeared links.
         std::vector<LF> U(Nd, grid);
@@ -436,25 +472,20 @@ public:
 
         for(int mu=0;mu<Nd;mu++) {
 
-            // Naik
-            if(lt.c_naik!=0) {
+            if(lt.c_naik!=0) { // Naik
                 Vnaik[mu] = lt.c_naik*Gimpl::CovShiftForward(U[mu],mu,
                                         Gimpl::CovShiftForward(U[mu],mu,
                                           Gimpl::CovShiftIdentityForward(U[mu],mu)));
             }
 
-            // LePage
-            if(lt.c_lp!=0) {
+            if(lt.c_lp!=0) { // LePage
                 for (int nu=0;nu<Nd;nu++) {
                     if(mu==nu) continue; 
-
-                    // nu, nu, mu, Back(nu), Back(nu)
                     V[mu] = V[mu] + lt.c_lp*Gimpl::CovShiftForward(U[nu],nu,
                                               Gimpl::CovShiftForward(U[nu],nu,
                                                 Gimpl::CovShiftForward(U[mu],mu,
                                                   Gimpl::CovShiftBackward(U[nu],nu,
                                                     Gimpl::CovShiftIdentityBackward(U[nu],nu)))))
-                                    // Back(nu), Back(nu), mu, nu, nu
                                   + lt.c_lp*Gimpl::CovShiftBackward(U[nu],nu,
                                               Gimpl::CovShiftBackward(U[nu],nu,
                                                 Gimpl::CovShiftForward(U[mu],mu,
@@ -892,8 +923,10 @@ public:
                 GF Ughost  = Ghost.Exchange(_Wmu); 
                 GF XYghost = Ghost.Exchange(XY);
                 GF Fghost  = Ghost.Exchange(u_force);
-                std::vector<Coordinate> shifts = createHISQStencil();
-                GeneralLocalStencil gStencil(Ughost.Grid(),shifts);
+                std::vector<Coordinate> shifts3 = createHISQStencil();
+                std::vector<Coordinate> shifts5 = createHISQStencil("5STAPLE");
+                GeneralLocalStencil gStencil3(Ughost.Grid(),shifts3);
+                GeneralLocalStencil gStencil5(Ughost.Grid(),shifts5);
 
                 Fghost = Zero(); 
 
@@ -904,109 +937,147 @@ public:
                     autoView(F_v , Fghost , AcceleratorWrite);
         
                     int Nsites = U_v.size();
-                    auto gStencil_v = gStencil.View(AcceleratorRead);
+                    auto gStencil3_v = gStencil3.View(AcceleratorRead);
+                    auto gStencil5_v = gStencil5.View(AcceleratorRead);
             
-                    typedef decltype(getLink(U_v,gStencil.GetEntry(0,0),0)) U3matrix;
-                    typedef decltype(U_v)                                   linkRead;
-                    typedef decltype(F_v)                                   linkWrite;
-                    typedef decltype(gStencil_v)                            stencilRead;
+                    typedef decltype(getLink(U_v,gStencil3.GetEntry(0,0),0)) U3matrix;
         
                     accelerator_for(site,Nsites,Simd::Nsimd(),{ // 3-LINK DERIVATIVE 
-                        U3matrix U0, U1, U2, U3, U4, U5, XY0, XY1, XY2, XY3, XY4, XY5, res;
+                        U3matrix res;
                         for(int nu=0;nu<Nd;nu++) {
                             if(nu==mu) continue;
                             int s = HISQStencilIndex(mu,nu);
         
-                            auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = get3StaplePoints(gStencil_v,s,site);      
+                            auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = get3StaplePoints(gStencil3_v,s,site);      
         
-                            U0  = getLink(U_v ,x_p_mu     ,nu);
-                            U1  = getLink(U_v ,x_p_nu     ,mu);
-                            U2  = getLink(U_v ,x          ,nu);
-                            U3  = getLink(U_v ,x_p_mu_m_nu,nu);
-                            U4  = getLink(U_v ,x_m_nu     ,mu);
-                            U5  = getLink(U_v ,x_m_nu     ,nu);
-        
-                            XY0 = getLink(XY_v,x_p_mu     ,nu);
-                            XY1 = getLink(XY_v,x_p_nu     ,mu);
-                            XY2 = getLink(XY_v,x          ,nu);
-                            XY3 = getLink(XY_v,x_p_mu_m_nu,nu);
-                            XY4 = getLink(XY_v,x_m_nu     ,mu);
-                            XY5 = getLink(XY_v,x_m_nu     ,nu);
+                            res =   adj(getLink(XY_v,x,nu))*    getLink(U_v ,x_p_nu,mu) *adj(getLink(U_v ,x_p_mu,nu))
+                                  +     getLink(U_v ,x,nu) *adj(getLink(XY_v,x_p_nu,mu))*adj(getLink(U_v ,x_p_mu,nu))
+                                  +     getLink(U_v ,x,nu) *    getLink(U_v ,x_p_nu,mu) *    getLink(XY_v,x_p_mu,nu)
 
-                            res =   adj(XY2)*U1*adj(U0) +     U2* adj(XY1)*adj(U0) +     U2 *U1*    XY0   
-                                  +     XY5 *U4*    U3  + adj(U5)*adj(XY4)*    U3  + adj(U5)*U4*adj(XY3);
-        
-                            setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.asqtad_c3*vecdt[l]*adj(res));
+                                  +     getLink(XY_v,x_m_nu,nu) *    getLink(U_v ,x_m_nu,mu) *    getLink(U_v ,x_p_mu_m_nu,nu)
+                                  + adj(getLink(U_v ,x_m_nu,nu))*adj(getLink(XY_v,x_m_nu,mu))*    getLink(U_v ,x_p_mu_m_nu,nu)
+                                  + adj(getLink(U_v ,x_m_nu,nu))*    getLink(U_v ,x_m_nu,mu) *adj(getLink(XY_v,x_p_mu_m_nu,nu));
+
+                            setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.asqtad_c3*adj(res));
                         }              
                     })
 
+                    accelerator_for(site,Nsites,Simd::Nsimd(),{ // 5-LINK DERIVATIVE
+                        U3matrix res, U0, U1, U2, U3, U4, XY0; 
+                        for(int nu=0;nu<Nd;nu++) {
+                            if(nu==mu) continue;
+                            for(int rho=0;rho<Nd;rho++) {
+                                if (rho == mu || rho == nu) continue;
+                                int s = HISQStencilIndex(mu,nu,rho,"5STAPLE");
+            
+                                auto [x_p_nu_m_rho     , x_p_nu           , x_m_rho          , 
+                                      x                , x_p_rho          , x_m_nu_m_rho     , 
+                                      x_m_nu           , x_m_nu_p_rho     , x_p_mu_p_nu_m_rho, 
+                                      x_p_mu_p_nu      , x_p_mu_m_rho     , x_p_mu           ,
+                                      x_p_mu_p_rho     , x_p_mu_m_nu_m_rho, x_p_mu_m_nu      , 
+                                      x_p_mu_m_nu_p_rho, x_p_nu_p_rho     ] = get5StaplePoints(gStencil5_v,s,site);
 
-//                    accelerator_for(site,Nsites,Simd::Nsimd(),{ // 5-LINK DERIVATIVE
-//                        U3matrix U0, U1, U2, U3, U4, U5, XY0, XY1, XY2, XY3, XY4, XY5, V0, V1, V2, V3, V4, V5, S0, S1, S2, S3, S4, S5, res;
-//                        int sigmaIndex = 0;
-//                        for(int nu=0;nu<Nd;nu++) {
-//                            if(nu==mu) continue;
-//                            int s = HISQStencilIndex(mu,nu);
-//                            for(int rho=0;rho<Nd;rho++) {
-//                                if (rho == mu || rho == nu) continue;
-//            
-//                                auto [x_p_mu, x_p_nu, x, x_p_mu_m_nu, x_m_nu] = get3StaplePoints(gStencil_v,s,site);      
-//        
-//                                U0  = getLink(U_v       ,x_p_mu     ,nu );
-//                                U1  = getLink(U_v       ,x_p_nu     ,mu );
-//                                U2  = getLink(U_v       ,x          ,nu );
-//                                U3  = getLink(U_v       ,x_p_mu_m_nu,nu );
-//                                U4  = getLink(U_v       ,x_m_nu     ,mu );
-//                                U5  = getLink(U_v       ,x_m_nu     ,nu );
-//            
-//                                XY0 = getLink(XY_v      ,x_p_mu     ,nu );
-//                                XY2 = getLink(XY_v      ,x          ,nu );
-//                                XY3 = getLink(XY_v      ,x_p_mu_m_nu,nu );
-//                                XY5 = getLink(XY_v      ,x_m_nu     ,nu );
-//
-//                                V0  = getLink(dU_3link_v,x_p_mu     ,rho);
-//                                V1  = getLink(dU_3link_v,x_p_nu     ,rho);
-//                                V2  = getLink(dU_3link_v,x          ,rho);
-//                                V3  = getLink(dU_3link_v,x_p_mu_m_nu,rho);
-//                                V4  = getLink(dU_3link_v,x_m_nu     ,rho);
-//                                V5  = getLink(dU_3link_v,x_m_nu     ,rho);
-//
-//                                S0  = getLink( U_3link_v,x_p_mu     ,rho);
-//                                S2  = getLink( U_3link_v,x          ,rho);
-//                                S3  = getLink( U_3link_v,x_p_mu_m_nu,rho);
-//                                S5  = getLink( U_3link_v,x_m_nu     ,rho);
-//
-//                                res =       V2 *U1*adj(U0) +     U2 *V1*adj(U0) +     U2 *U1*adj(V0) +     S2 *U1*    XY0  + adj(XY2)*U1*adj(S0)
-//                                      + adj(V5)*U4*    U3  + adj(U5)*V4*    U3  + adj(U5)*U4*    V3  + adj(S5)*U4*adj(XY3) +     XY5 *U4*    S3 ; 
-////                                U0  = getLink(U_v       ,x_p_mu     ,nu );
-////                                U1  = getLink(U_3link_v ,x_p_nu     ,rho);
-////                                U2  = getLink(U_v       ,x          ,nu );
-////                                U3  = getLink(U_v       ,x_p_mu_m_nu,nu );
-////                                U4  = getLink(U_3link_v ,x_m_nu     ,rho);
-////                                U5  = getLink(U_v       ,x_m_nu     ,nu );
-////                  
-////                                XY0 = getLink(XY_v      ,x_p_mu     ,nu );
-////                                V1  = getLink(dU_3link_v,x_p_nu     ,rho);
-////                                XY2 = getLink(XY_v      ,x          ,nu );
-////                                XY3 = getLink(XY_v      ,x_p_mu_m_nu,nu );
-////                                V4  = getLink(dU_3link_v,x_m_nu     ,rho);
-////                                XY5 = getLink(XY_v      ,x_m_nu     ,nu );
-////
-////                                res  =  adj(XY2)*U1*adj(U0) +     U2 *     V1 *adj(U0) +     U2 *U1*    XY0 
-////                                     +      XY5 *U4*    U3  + adj(U5)*     V4 *    U3  + adj(U5)*U4*adj(XY3);
-//            
-//                                if(sigmaIndex<3) {
-//                                    setLink(dU_5linkA_v[x->_offset](rho), res);
-//                                } else {
-//                                    setLink(dU_5linkB_v[x->_offset](rho), res);
-//                                }    
-//            
-//                                setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.asqtad_c5*vecdt[l]*adj(res));
-//                                sigmaIndex++;
-//                            }
-//                        }
-//                    })
-//            
+                                res = Zero();
+
+                                // fiveLinkContribution_11
+                                res += (      getLink(U_v ,x_p_mu           ,rho) 
+                                        *     getLink(U_v ,x_p_mu_p_rho     ,nu ) 
+                                        * adj(getLink(U_v ,x_p_mu_p_nu      ,rho))
+                                        + adj(getLink(U_v ,x_p_mu_m_rho     ,rho))
+                                        *     getLink(U_v ,x_p_mu_m_rho     ,nu )
+                                        *     getLink(U_v ,x_p_mu_p_nu_m_rho,rho)
+                                )*adj(getLink(U_v,x_p_nu,mu))*getLink(XY_v,x,nu);
+
+                                // fiveLinkContribution_12
+                                res += (      getLink(U_v ,x_p_mu           ,rho) 
+                                        * adj(getLink(U_v ,x_p_rho          ,mu )) 
+                                        * adj(getLink(U_v ,x_m_nu_p_rho     ,nu ))
+                                        *     getLink(XY_v,x_m_nu           ,rho)
+                                        + adj(getLink(U_v ,x_p_mu_m_rho     ,rho))
+                                        * adj(getLink(U_v ,x_m_rho          ,mu ))
+                                        * adj(getLink(U_v ,x_m_nu_m_rho     ,nu ))
+                                        * adj(getLink(XY_v,x_m_nu_m_rho     ,rho))
+                                )*getLink(U_v,x_m_nu,nu);
+
+                                // fiveLinkContribution_13
+                                res += (      getLink(U_v ,x_p_mu           ,rho) 
+                                        * adj(getLink(U_v ,x_p_mu_m_nu_p_rho,nu ))
+                                        * adj(getLink(U_v ,x_p_mu_m_nu      ,rho))
+                                        + adj(getLink(U_v ,x_p_mu_m_rho     ,rho))
+                                        * adj(getLink(U_v ,x_p_mu_m_nu_m_rho,nu ))
+                                        *     getLink(U_v ,x_p_mu_m_nu_m_rho,rho)
+                                )*adj(getLink(U_v,x_m_nu,mu))*adj(getLink(XY_v,x_m_nu,nu));
+
+                                // fiveLinkContribution_14
+                                res += (      getLink(U_v ,x_p_mu           ,rho) 
+                                        * adj(getLink(U_v ,x_p_rho          ,mu ))
+                                        *     getLink(U_v ,x_p_rho          ,nu )
+                                        *     getLink(XY_v,x_p_nu           ,rho) 
+                                        + adj(getLink(U_v ,x_p_mu_m_rho     ,rho))
+                                        * adj(getLink(U_v ,x_m_rho          ,mu ))
+                                        *     getLink(U_v ,x_m_rho          ,nu )
+                                        * adj(getLink(XY_v,x_p_nu_m_rho     ,rho))
+                                )*adj(getLink(U_v,x,nu));
+
+                                // fiveLinkContribution_20-0
+                                res += (      getLink(XY_v,x_p_mu_m_nu      ,nu ) 
+                                        * adj(getLink(U_v ,x_m_nu           ,mu ))
+                                        *     getLink(U_v ,x_m_nu           ,rho)
+                                        +     getLink(U_v ,x_p_mu           ,rho)
+                                        * adj(getLink(U_v ,x_p_mu_m_nu_p_rho,nu ))
+                                        *     getLink(XY_v,x_m_nu_p_rho     ,mu )
+                                )*getLink(U_v,x_m_nu_p_rho,nu)*adj(getLink(U_v,x,rho));
+
+                                // fiveLinkContribution_20-1
+                                res += (      getLink(U_v ,x_p_mu           ,nu ) 
+                                        * adj(getLink(XY_v,x_p_mu_p_nu      ,rho))
+                                        * adj(getLink(U_v ,x_p_mu_p_rho     ,nu ))
+                                        + adj(getLink(U_v ,x_p_mu_m_nu      ,nu ))
+                                        * adj(getLink(XY_v,x_p_mu_m_nu      ,rho))
+                                        *     getLink(U_v ,x_p_mu_m_nu_p_rho,nu )
+                                )*adj(getLink(U_v,x_p_rho,mu))*adj(getLink(U_v,x,rho));
+
+                                // fiveLinkContribution_20-2
+                                res += (      getLink(U_v ,x_p_mu           ,rho) 
+                                        *     getLink(U_v ,x_p_mu_p_rho     ,nu )
+                                        *     getLink(XY_v,x_p_nu_p_rho     ,mu )
+                                        + adj(getLink(XY_v,x_p_mu           ,nu ))
+                                        * adj(getLink(U_v ,x_p_nu           ,mu ))
+                                        *     getLink(U_v ,x_p_nu           ,rho)
+                                )*adj(getLink(U_v,x_p_rho,nu))*adj(getLink(U_v,x,rho));
+
+                                // fiveLinkContribution_30-0
+                                res += (  adj(getLink(XY_v,x_p_mu           ,nu ))
+                                        * adj(getLink(U_v ,x_p_nu           ,mu ))
+                                        * adj(getLink(U_v ,x_p_nu_m_rho     ,rho))
+                                        + adj(getLink(U_v ,x_p_mu_m_rho     ,rho))
+                                        *     getLink(U_v ,x_p_mu_m_rho     ,nu )
+                                        *     getLink(XY_v,x_p_nu_m_rho     ,mu )
+                                )*adj(getLink(U_v,x_m_rho,nu))*getLink(U_v,x_m_rho,rho);
+
+                                // fiveLinkContribution_30-1
+                                res += (      getLink(U_v ,x_p_mu           ,nu )
+                                        *     getLink(XY_v,x_p_mu_p_nu_m_rho,rho) 
+                                        * adj(getLink(U_v ,x_p_mu_m_rho     ,nu ))
+                                        + adj(getLink(U_v ,x_p_mu_m_nu      ,nu ))
+                                        *     getLink(XY_v,x_p_mu_m_nu_m_rho,rho)
+                                        *     getLink(U_v ,x_p_mu_m_nu_m_rho,nu )
+                                )*adj(getLink(U_v,x_m_rho,mu))*getLink(U_v,x_m_rho,rho);
+
+                                // fiveLinkContribution_30-2
+                                res += (      getLink(XY_v,x_p_mu_m_nu      ,nu )
+                                        * adj(getLink(U_v ,x_m_nu           ,mu )) 
+                                        * adj(getLink(U_v ,x_m_nu_m_rho     ,rho))
+                                        + adj(getLink(U_v ,x_p_mu_m_rho     ,rho))
+                                        * adj(getLink(U_v ,x_p_mu_m_nu_m_rho,nu ))
+                                        *     getLink(XY_v,x_m_nu_m_rho     ,mu )
+                                )*getLink(U_v,x_m_nu_m_rho,nu)*getLink(U_v,x_m_rho,rho);
+
+                                setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + hp.asqtad_c5*res);
+                            }
+                        }
+                    })
+            
 //
 //                    accelerator_for(site,Nsites,Simd::Nsimd(),{ // 7-LINK DERIVATIVE 
 //                        U3matrix U0, U1, U2, U3, U4, U5, XY0, V1, XY2, XY3, V4, XY5, W;
@@ -1054,7 +1125,7 @@ public:
                 } // end mu loop
         
                 u_force = Ghost.Extract(Fghost);
-                momentum += u_force;
+                momentum += vecdt[l]*u_force;
 
                 l++;
 
