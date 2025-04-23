@@ -139,7 +139,30 @@ private:
     std::cout << GridLogMessage << " BaseSmearDerivative " << t/1e3 << " ms " << std::endl;
     
   }
-  
+  //for debugging
+  void BaseSmear_cb(GaugeLinkField& Cup, const GaugeField& U,int mu,RealD rho) {
+    GRID_TRACE("BaseSmear_cb");
+    GridBase *grid = U.Grid();
+    GridBase *hgrid = Cup.Grid();
+    GaugeLinkField tmp_stpl(grid);
+    GaugeLinkField tmp_stpl_eo(hgrid);
+    WilsonLoops<Gimpl> WL;
+    int cb = Cup.Checkerboard();
+    RealD t = 0;
+
+    t-=usecond();
+    Cup = Zero();
+    for(int nu=0; nu<Nd; ++nu){
+      if (nu != mu) {
+        // get the staple in direction mu, nu
+        WL.Staple(tmp_stpl, U, mu, nu);  //nb staple conventions of IroIro and Grid differ by a dagger
+        pickCheckerboard(cb,tmp_stpl_eo,tmp_stpl); // ideally, compute tmp_stpl only on the current checkerboard
+        Cup += adj(tmp_stpl_eo*rho);
+      }
+    }
+    t+=usecond();
+    std::cout << GridLogMessage << " BaseSmear " << t/1e3 << " ms " << std::endl;
+  }
   void BaseSmear(GaugeLinkField& Cup, const GaugeField& U,int mu,RealD rho) {
     GRID_TRACE("BaseSmear");
     GridBase *grid = U.Grid();
@@ -160,7 +183,7 @@ private:
     std::cout << GridLogMessage << " BaseSmear " << t/1e3 << " ms " << std::endl;
   }
   
-  // Assume: gU is extended gauge field by 1
+  // Assume: gU is extended gauge field with its boundary of size 1
   void BaseSmear_ghost(GaugeLinkField& Cup, const GaugeField& gU,int mu,RealD rho) {
     GRID_TRACE("BaseSmear_ghost");
     GridBase *ggrid = gU.Grid();
@@ -348,6 +371,7 @@ public:
     {
       GRID_TRACE("ExchangePeriodic");
       gU = Ghost.ExchangePeriodic(U);
+      DumpSliceNorm("JacobianForceLevel ExchangePeriodic",gU);
       for(int d=0; d<Nd;d++)
 	gUmu[d] = peekLorentz(gU, d);
     }
@@ -385,6 +409,12 @@ public:
     RealD time;
     time=-usecond();
     BaseSmear_ghost(Cmu, gU, mu, rho);
+#if 1 // DEBUG
+    GaugeLinkField Cmu2(hgrid);
+    Cmu2.Checkerboard() = cb;
+    BaseSmear_cb(Cmu2, U, mu, rho);
+    std::cout << GridLogMessage << " DEBUG: BaseSmear " <<smr<<" "<<mu<<" "<<cb<<" "<<" simd "<<AdjMatrix::Nsimd()<<" "<<norm2(Cmu-Cmu2)<<std::endl;
+#endif
     
     //////////////////////////////////////////////////////////////////
     // Assemble Luscher exp diff map J matrix 
@@ -403,6 +433,25 @@ public:
     }
     time+=usecond();
     std::cout << GridLogPerformance << "ZxAd took "<<time<< " us"<<std::endl;
+#if 1 //DEBUG
+    AdjMatrixField  ZxAd2(hgrid); ZxAd2.Checkerboard() = cb;
+    LatticeComplex  cplx(hgrid);  cplx.Checkerboard() = cb;
+    AdjMatrix TRb;
+    Complex ci(0,1);
+    ColourMatrix   tb;
+
+    ZxAd2 = Zero();
+    for(int b=0;b<8;b++) {
+      // Adj group sets traceless antihermitian T's -- Guido, really????
+      SU3::generator(b, tb);         // Fund group sets traceless hermitian T's
+      SU3Adjoint::generator(b,TRb);
+      TRb=-TRb;
+      cplx = 2.0*trace(ci*tb*Zx); // my convention 1/2 delta ba
+      ZxAd2 = ZxAd2 + cplx * TRb; // is this right? YES - Guido used Anti herm Ta's and with bloody wrong sign.
+      
+    }
+    std::cout << GridLogMessage << " DEBUG: ZxAd " <<smr<<" "<<mu<<" "<<cb<<" "<<" simd "<<AdjMatrix::Nsimd()<<" "<<norm2(ZxAd-ZxAd2)<<" "<<norm2(ZxAd)<<" "<<norm2(ZxAd2)<<std::endl;
+#endif
     
     //////////////////////////////////////
     // J(x) = 1 + Sum_k=1..N (-Zac)^k/(k+1)!
@@ -442,7 +491,11 @@ public:
     ComputeNxy(PlaqL,PlaqR,NxxAd);
     time+=usecond();
     std::cout << GridLogMessage << "ComputeNxy took "<<time<< " us"<<std::endl;
-
+#if 1 // DEBUG
+    AdjMatrixField  NxxAd2(hgrid); NxxAd2.Checkerboard() = cb;
+    ComputeNxy(0,PlaqL,PlaqR,NxxAd2);
+    std::cout << GridLogMessage << " DEBUG: NxxAd " <<smr<<" "<<mu<<" "<<cb<<" "<<" simd "<<AdjMatrix::Nsimd()<<" "<<norm2(NxxAd-NxxAd2)<<std::endl;
+#endif
     ////////////////////////////
     // Mab
     ////////////////////////////
@@ -868,6 +921,7 @@ public:
     std::cout << GridLogMessage << " logDetJacobianForce level took "<<t1-t0<<" us "<<std::endl;
   }
 
+  //Assume: masking is based on red-black checkerboarding
   RealD logDetJacobianLevel(const GaugeField &U,int smr)
   {
     GRID_TRACE("logDetJacobianLevel");
@@ -891,8 +945,7 @@ public:
     time -= usecond();
     Ident = ComplexD(1.0);
 
-    int cb = cbs[smr];
-    auto mask=PeekIndex<LorentzIndex>(masks[smr],mu); // the cb mask
+    int cb = cbs[smr]; //Assume: the applied mask is the cb mask
 
     Z.Checkerboard() = cb;
     Cmu.Checkerboard() = cb;
@@ -909,6 +962,8 @@ public:
     tN -= usecond();
     {GRID_TRACE("ExchangePeriodic");
     gU = Ghost.ExchangePeriodic(U);
+    //dumpSliceno
+    DumpSliceNorm("JacobianLevel ExchangePeriodic",gU);
     }
     double rho=this->StoutSmearing->SmearRho[1];
     PlaqL = Ident;
@@ -947,7 +1002,7 @@ public:
 	Jac = X;
 	for(int k=1;k<12;k++){
 	  X=(-1.0)*X*Zac_v(ss);
-	  kpfac = kpfac /(k+1);
+	  kpfac = kpfac /((RealD) (k+1));
 	  Jac = Jac + X * kpfac;
 	}
 	
@@ -1781,7 +1836,7 @@ public:
     {
       double start = usecond();
       for (int ismr = this->smearingLevels - 1; ismr > 0; --ismr) {
-	ln_det+= logDetJacobianLevel(this->get_smeared_conf(ismr-1),ismr);
+	ln_det+= logDetJacobianLevel(this->get_smeared_conf(ismr-1),ismr);std::cout << GridLogMessage << "DEBUG: logDetJacobian: " <<ln_det<<" "<<ismr<<std::endl;
       }
       ln_det +=logDetJacobianLevel(*(this->ThinLinks),0);
 
@@ -1790,7 +1845,7 @@ public:
       std::cout << GridLogMessage << "GaugeConfigurationMasked: logDetJacobian took " << time << " ms" << std::endl;
 #if 1 //DEBUG
       RealD ln_det2 = logDetJacobian(1);
-      std::cout << GridLogMessage << " DEBUG: logDetJacobian_diff " << abs(ln_det2-ln_det) << std::endl;
+      std::cout << GridLogMessage << " DEBUG: logDetJacobian_diff " << abs(ln_det2-ln_det) <<":"<<ln_det<<" "<<ln_det2<<std::endl;
 #endif
     }
     return ln_det;
@@ -1860,7 +1915,7 @@ public:
 #if 1 // debug
       GaugeField force_debug(force.Grid()); 
       logDetJacobianForce(1,force_debug);
-      std::cout << GridLogMessage << " DEBUG: logDetJacobianForce_diff " << norm2(force-force_debug) << std::endl;
+      std::cout << GridLogMessage << " DEBUG: logDetJacobianForce_diff " << norm2(force-force_debug) <<":"<<norm2(force)<<" "<<norm2(force_debug)<< std::endl;
 #endif
       double end = usecond();
       double time = (end - start)/ 1e3;

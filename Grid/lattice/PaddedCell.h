@@ -298,6 +298,7 @@ public:
       if( processors[d]==1 ) fll[d]=0;
     }
     localCopyRegion(in,out,fll,tll,local);
+    DumpSliceNorm("PaddedCell Extract ",out);
     return out;
   }
   template<class vobj>
@@ -309,6 +310,7 @@ public:
     for(int d=0;d<dims;d++){
       tmp = Expand(d,tmp,cshift); // rvalue && assignment
     }
+    DumpSliceNorm("PaddedCell Exchange",tmp);
     return tmp;
   }
   template<class vobj>
@@ -320,6 +322,8 @@ public:
     for(int d=0;d<dims;d++){
       tmp = ExpandPeriodic(d,tmp); // rvalue && assignment
     }
+    std::cout << GridLogMessage << "PCE dimensions " <<dims<<std::endl;
+    DumpSliceNorm("PaddedCell ExchangePeriodic",tmp);
     return tmp;
   }
   // expand up one dim at a time
@@ -391,6 +395,7 @@ public:
 
     }
     std::cout << GridLogPerformance << "PaddedCell::Expand timings: cshift:" << tshift/1000 << "ms, insert-slice:" << tins/1000 << "ms" << std::endl;
+    DumpSliceNorm("PaddedCell Expand",padded);
     
     return padded;
   }
@@ -418,8 +423,10 @@ public:
       padded=in; // slightly different interface could avoid a copy operation
     } else {
       Face_exchange(in,padded,dim,depth);
+      DumpSliceNorm("PaddedCell ExpandPeriodic",padded);
       return padded;
     }
+    DumpSliceNorm("PaddedCell ExpandPeriodic",padded);
     return padded;
   }
   template<class vobj>
@@ -436,8 +443,8 @@ public:
     RealD t_comms=0.0;
     RealD t_copy=0.0;
     
-    //    std::cout << GridLogMessage << "dimension " <<dimension<<std::endl;
-    //    DumpSliceNorm(std::string("Face_exchange from"),from,dimension);
+    std::cout << GridLogMessage << "PDCF dimension " <<dimension<<std::endl;
+    DumpSliceNorm(std::string("PaddedCell::Face_exchange from "),from,dimension);
     GridBase *grid=from.Grid();
     GridBase *new_grid=to.Grid();
 
@@ -573,6 +580,8 @@ public:
     }
     t_scatter+= usecond() - t;
     t_tot+=usecond();
+
+    DumpSliceNorm("PaddedCell::FaceExchange to ",to,dimension);
 
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: gather :" << t_gather/1000  << "ms"<<std::endl;
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: scatter:" << t_scatter/1000   << "ms"<<std::endl;

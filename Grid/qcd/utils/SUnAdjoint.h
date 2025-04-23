@@ -73,7 +73,7 @@ public:
       tmp = ta(a) * ta(Index) - ta(Index) * ta(a);
       for (int b = 0; b < Dimension; b++) {
         iSUnMatrix<cplx> tmp1 = 2.0 * tmp * ta(b);  // 2.0 from the normalization
-        iAdjTa()()(a, b) =  TensorRemove(timesI(trace(tmp1)));
+        iAdjTa()()(a, b) = TensorRemove(timesI(trace(tmp1)));
       }
     }
   }

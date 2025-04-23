@@ -369,6 +369,15 @@ inline void acceleratorCopyToDevice(const void *from,void *to,size_t bytes)  { t
 inline void acceleratorCopyFromDevice(const void *from,void *to,size_t bytes){ theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait();}
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { theCopyAccelerator->memset(base,value,bytes); theCopyAccelerator->wait();}
 
+// debug function; to be removed
+inline void  acceleratorIsAllocated(void *ptr){
+  assert( ptr != (void *) NULL );
+  sycl::device d;
+  d = get_pointer_device(ptr, theCopyAccelerator->get_context());
+  //  assert(  get_pointer_device(ptr, theCopyAccelerator->get_context()) == theGridAccelerator->get_context() );
+  //  std::cout<< "All dev "<< d.get_info<sycl::info::device::name>() <<std::endl;
+}
+
 inline int  acceleratorIsCommunicable(void *ptr)
 {
 #if 0
@@ -514,7 +523,6 @@ inline void acceleratorFreeHost(void *ptr){ auto discard=hipFree(ptr);};
 inline void acceleratorFreeShared(void *ptr){ auto discard=hipFree(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ auto discard=hipFree(ptr);};
 
-inline void acceleratorMemSet(void *base,int value,size_t bytes) { GRID_TRACE("acceleratorMemset");auto discard=hipMemset(base,value,bytes);}
 inline void acceleratorCopyToDevice(const void *from,void *to,size_t bytes)  { GRID_TRACE("acceleratorCopyToDevice"); auto discard=hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
 inline void acceleratorCopyFromDevice(const void *from,void *to,size_t bytes){ GRID_TRACE("acceleratorCopyFromDevice"); auto discard=hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { GRID_TRACE("acceleratorMemset"); auto discard=hipMemset(base,value,bytes);}

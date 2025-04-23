@@ -17,7 +17,6 @@ export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-narrowing -Wno-
 	--enable-gen-simd-width=64 \
 	--enable-comms=mpi-auto \
 	--enable-debug \
-	--prefix $HOME/gpt-install \
 	--disable-gparity \
 	--disable-fermion-reps \
 	--enable-shm=nvlink \
@@ -29,4 +28,3 @@ export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-narrowing -Wno-
 	CXX=icpx 
 
 #	--prefix $HOME/gpt-install \
-# What does --enable-reduction=grid do?  It is not recognized

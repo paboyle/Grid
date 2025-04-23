@@ -46,15 +46,18 @@ directory
                           std::is_same<dummy_name, group_name>::value && \
                       is_sp<dummy_name>::value >
 
+
 NAMESPACE_BEGIN(Grid);
 
-template< typename T, typename SCALAR > inline
-typename std::enable_if< std::is_integral<SCALAR>::value, std::complex<T> >::type
-operator* ( const std::complex<T>& c, SCALAR n ) { return c * T(n) ; }
+namespace CPLX_MULT {
+  template< typename T, typename SCALAR > inline
+  typename std::enable_if< std::is_integral<SCALAR>::value, std::complex<T> >::type
+  operator* ( const std::complex<T>& c, SCALAR n ) { return c * static_cast<T>(n) ; }
 
-template< typename T, typename SCALAR > inline
-typename std::enable_if< std::is_integral<SCALAR>::value, std::complex<T> >::type
-operator* ( SCALAR n, const std::complex<T>& c ) { return T(n) * c ; }
+  template< typename T, typename SCALAR > inline
+  typename std::enable_if< std::is_integral<SCALAR>::value, std::complex<T> >::type
+  operator* ( SCALAR n, const std::complex<T>& c ) { return static_cast<T>(n) * c ; }
+}
 
 namespace GroupName {
 class SU {};
@@ -418,6 +421,7 @@ class GaugeGroup {
   // Work with traceless anti-hermitian matrices for Lie algebra elements with Luscher's normalization convention
   // Explicitly, T^a = -i t^a where t^a is hermitian generators in Grid convention, c.f., Compute_MpInvJx_dNxxdSy
   //  in GaugeConfigurationMasked.h
+  // Used only in old implementation left for debugging purposes; to be deleted
   template<typename T_out, typename T_in>
   static accelerator_inline void LieAlgebraProject(T_out &out_v,const T_in &in_v, int b)
   {
@@ -442,12 +446,13 @@ class GaugeGroup {
       for(int i=1;i<k;i++){
 	tmp=tmp+in_v()()(i,i);
       }
-      tmp = tmp - in_v()()(k,k)*k;
+      tmp = tmp - in_v()()(k,k)*((RealD) k);
       out_v()()(a,b)=imag(tmp) * scale;
     }
   }
   
   // Lattice-wide operator
+  // Used only in old implementation left for debugging purposes; to be deleted
   static void LieAlgebraProject(LatticeAlgebraMatrix &out,const LatticeMatrix &in, int b)
   {
     conformable(in, out);
@@ -483,7 +488,7 @@ class GaugeGroup {
 	  for(int i=1;i<k;i++){
 	    tmp=tmp+in_v(ss)()()(i,i);
 	  }
-	  tmp = tmp - in_v(ss)()()(k,k)*k;
+	  tmp = tmp - in_v(ss)()()(k,k)*((RealD) k);
 	  coalescedWrite(out_v[ss]()()(a,b),imag(tmp) * scale);
 	}
       });
@@ -516,26 +521,26 @@ class GaugeGroup {
 	
 	// real( 0.5*[M - M^\dag]_(i2, i1) )=real( 0.5*[T^b*in + in^\dag*T^b]_(i2, i1) ) <- M = T^b*in <- T^b: suN matrix in Luchang's convention; in: input matrix
 	//    sign flip of the complex part of the 2nd term is neglected, as real is taken
-	out_v()()(ax,bx) = 0.5*real( !(ib2^i2)*in_v()()(ib1,i1)-!(ib1^i2)*in_v()()(ib2,i1)
-				    +!(ib1^i1)*in_v()()(ib2,i2)-!(ib2^i1)*in_v()()(ib1,i2) );
+	out_v()()(ax,bx) = 0.5*( !(ib2^i2)*real(in_v()()(ib1,i1))-!(ib1^i2)*real(in_v()()(ib2,i1))
+				 +!(ib1^i1)*real(in_v()()(ib2,i2))-!(ib2^i1)*real(in_v()()(ib1,i2)) );
 	// imag( 0.5*[M - M^\dag]_(i1, i2) )
 	//    sign flip of the complex part of the 2nd term due to dagger
-	out_v()()(ay,bx) = 0.5*imag( !(ib2^i1)*in_v()()(ib1,i2)-!(ib1^i1)*in_v()()(ib2,i2)
-				    -!(ib1^i2)*in_v()()(ib2,i1)+!(ib2^i2)*in_v()()(ib1,i1) );
+	out_v()()(ay,bx) = 0.5*( !(ib2^i1)*imag(in_v()()(ib1,i2))-!(ib1^i1)*imag(in_v()()(ib2,i2))
+				 -!(ib1^i2)*imag(in_v()()(ib2,i1))+!(ib2^i2)*imag(in_v()()(ib1,i1)) );
 	
 	//    sign flip of the complex part of the 2nd term due to dagger <- imag turns into real due to i from T^b
-	out_v()()(ax,by) = -0.5*imag(  !(ib2^i2)*in_v()()(ib1,i1)+!(ib1^i2)*in_v()()(ib2,i1)
-				      -!(ib1^i1)*in_v()()(ib2,i2)-!(ib2^i1)*in_v()()(ib1,i2) );
+	out_v()()(ax,by) = -0.5*(  !(ib2^i2)*imag(in_v()()(ib1,i1))+!(ib1^i2)*imag(in_v()()(ib2,i1))
+				   -!(ib1^i1)*imag(in_v()()(ib2,i2))-!(ib2^i1)*imag(in_v()()(ib1,i2)) );
 	
-	out_v()()(ay,by) = 0.5*real(  !(ib2^i1)*in_v()()(ib1,i2)+!(ib1^i1)*in_v()()(ib2,i2)
-				     +!(ib1^i2)*in_v()()(ib2,i1)+!(ib2^i2)*in_v()()(ib1,i1) );  
+	out_v()()(ay,by) = 0.5*(  !(ib2^i1)*real(in_v()()(ib1,i2))+!(ib1^i1)*real(in_v()()(ib2,i2))
+				  +!(ib1^i2)*real(in_v()()(ib2,i1))+!(ib2^i2)*real(in_v()()(ib1,i1)) );  
       }
       for(int diagIndex=0;diagIndex<N-1;diagIndex++){
 	int k = diagIndex + 1; // diagIndex starts from 0
 	int a = NNm1+diagIndex;
 	RealD scale = 1.0/sqrt(2.0*k*(k+1));
-	out_v()()(a,bx) = scale*imag(-((ib1<k)-k*(ib1==k))*in_v()()(ib2,ib1) + ((ib2<k)-k*(ib2==k))*in_v()()(ib1,ib2) );
-	out_v()()(a,by) = scale*real( ((ib1<k)-k*(ib1==k))*in_v()()(ib2,ib1) + ((ib2<k)-k*(ib2==k))*in_v()()(ib1,ib2) );
+	out_v()()(a,bx) = scale*(-((ib1<k)-k*(ib1==k))*imag(in_v()()(ib2,ib1)) + ((ib2<k)-k*(ib2==k))*imag(in_v()()(ib1,ib2)) );
+	out_v()()(a,by) = scale*( ((ib1<k)-k*(ib1==k))*real(in_v()()(ib2,ib1)) + ((ib2<k)-k*(ib2==k))*real(in_v()()(ib1,ib2)) );
       }
     }
     for(int diagIndex_b=0;diagIndex_b<N-1;diagIndex_b++){
@@ -547,8 +552,8 @@ class GaugeGroup {
 	su2SubGroupIndex(i1, i2, su2Index);
 	int ax = su2Index*2;
 	int ay = su2Index*2+1;
-	out_v()()(ax,b)=-0.5*scale_b*imag( ((i2<k_b)-k_b*(i2==k_b))*in_v()()(i2,i1) - ((i1<k_b)-k_b*(i1==k_b))*in_v()()(i1,i2) );
-	out_v()()(ay,b)= 0.5*scale_b*real( ((i1<k_b)-k_b*(i1==k_b))*in_v()()(i1,i2) + ((i2<k_b)-k_b*(i2==k_b))*in_v()()(i2,i1) );
+	out_v()()(ax,b)=-0.5*scale_b*( ((i2<k_b)-k_b*(i2==k_b))*imag(in_v()()(i2,i1)) - ((i1<k_b)-k_b*(i1==k_b))*imag(in_v()()(i1,i2)) );
+	out_v()()(ay,b)= 0.5*scale_b*( ((i1<k_b)-k_b*(i1==k_b))*real(in_v()()(i1,i2)) + ((i2<k_b)-k_b*(i2==k_b))*real(in_v()()(i2,i1)) );
       }
       for(int diagIndex=0;diagIndex<N-1;diagIndex++){
 	int k = diagIndex + 1; // diagIndex starts from 0
@@ -560,7 +565,7 @@ class GaugeGroup {
 	  tmp=tmp+in_v()()(i,i);
 	}
 	int c = (k==k_b)? -k:1;
-	tmp = tmp - in_v()()(k_min,k_min)*k_min*c;
+	tmp = tmp - in_v()()(k_min,k_min)*((RealD) k_min*c);
 	out_v()()(a,b)=real(tmp) * scale * scale_b;
       }
     }
@@ -598,26 +603,26 @@ class GaugeGroup {
 	    
 	    // real( 0.5*[M - M^\dag]_(i2, i1) )=real( 0.5*[T^b*in + in^\dag*T^b]_(i2, i1) ) <- M = T^b*in <- T^b: suN matrix in Luchang's convention; in: input matrix
 	    //    sign flip of the complex part of the 2nd term is neglected, as real is taken
-	    coalescedWrite(out_v[ss]()()(ax,bx),0.5*real( !(ib2^i2)*in_v(ss)()()(ib1,i1)-!(ib1^i2)*in_v(ss)()()(ib2,i1)
-							  +!(ib1^i1)*in_v(ss)()()(ib2,i2)-!(ib2^i1)*in_v(ss)()()(ib1,i2) ));
+	    coalescedWrite(out_v[ss]()()(ax,bx),0.5*( !(ib2^i2)*real(in_v(ss)()()(ib1,i1))-!(ib1^i2)*real(in_v(ss)()()(ib2,i1))
+						      +!(ib1^i1)*real(in_v(ss)()()(ib2,i2))-!(ib2^i1)*real(in_v(ss)()()(ib1,i2)) ));
 	    // imag( 0.5*[M - M^\dag]_(i1, i2) )
 	    //    sign flip of the complex part of the 2nd term due to dagger
-	    coalescedWrite(out_v[ss]()()(ay,bx),0.5*imag(  !(ib2^i1)*in_v(ss)()()(ib1,i2)-!(ib1^i1)*in_v(ss)()()(ib2,i2)
-							   -!(ib1^i2)*in_v(ss)()()(ib2,i1)+!(ib2^i2)*in_v(ss)()()(ib1,i1) ));
+	    coalescedWrite(out_v[ss]()()(ay,bx),0.5*(  !(ib2^i1)*imag(in_v(ss)()()(ib1,i2))-!(ib1^i1)*imag(in_v(ss)()()(ib2,i2))
+						       -!(ib1^i2)*imag(in_v(ss)()()(ib2,i1))+!(ib2^i2)*imag(in_v(ss)()()(ib1,i1)) ));
 
 	    //    sign flip of the complex part of the 2nd term due to dagger <- imag turns into real due to i from T^b
-	    coalescedWrite(out_v[ss]()()(ax,by),-0.5*imag(  !(ib2^i2)*in_v(ss)()()(ib1,i1)+!(ib1^i2)*in_v(ss)()()(ib2,i1)
-							 -!(ib1^i1)*in_v(ss)()()(ib2,i2)-!(ib2^i1)*in_v(ss)()()(ib1,i2) ));
+	    coalescedWrite(out_v[ss]()()(ax,by),-0.5*(  !(ib2^i2)*imag(in_v(ss)()()(ib1,i1))+!(ib1^i2)*imag(in_v(ss)()()(ib2,i1))
+							-!(ib1^i1)*imag(in_v(ss)()()(ib2,i2))-!(ib2^i1)*imag(in_v(ss)()()(ib1,i2)) ));
 	    
-	    coalescedWrite(out_v[ss]()()(ay,by), 0.5*real(  !(ib2^i1)*in_v(ss)()()(ib1,i2)+!(ib1^i1)*in_v(ss)()()(ib2,i2)
-							    +!(ib1^i2)*in_v(ss)()()(ib2,i1)+!(ib2^i2)*in_v(ss)()()(ib1,i1) ));  
+	    coalescedWrite(out_v[ss]()()(ay,by), 0.5*(  !(ib2^i1)*real(in_v(ss)()()(ib1,i2))+!(ib1^i1)*real(in_v(ss)()()(ib2,i2))
+							+!(ib1^i2)*real(in_v(ss)()()(ib2,i1))+!(ib2^i2)*real(in_v(ss)()()(ib1,i1)) ));  
 	  }
 	  for(int diagIndex=0;diagIndex<N-1;diagIndex++){
 	    int k = diagIndex + 1; // diagIndex starts from 0
 	    int a = NNm1+diagIndex;
 	    RealD scale = 1.0/sqrt(2.0*k*(k+1));
-	    coalescedWrite(out_v[ss]()()(a,bx), scale*imag(-((ib1<k)-k*(ib1==k))*in_v(ss)()()(ib2,ib1) + ((ib2<k)-k*(ib2==k))*in_v(ss)()()(ib1,ib2) ));
-	    coalescedWrite(out_v[ss]()()(a,by), scale*real( ((ib1<k)-k*(ib1==k))*in_v(ss)()()(ib2,ib1) + ((ib2<k)-k*(ib2==k))*in_v(ss)()()(ib1,ib2) ));
+	    coalescedWrite(out_v[ss]()()(a,bx), scale*(-((ib1<k)-k*(ib1==k))*imag(in_v(ss)()()(ib2,ib1)) + ((ib2<k)-k*(ib2==k))*imag(in_v(ss)()()(ib1,ib2)) ));
+	    coalescedWrite(out_v[ss]()()(a,by), scale*( ((ib1<k)-k*(ib1==k))*real(in_v(ss)()()(ib2,ib1)) + ((ib2<k)-k*(ib2==k))*real(in_v(ss)()()(ib1,ib2)) ));
 	  }
 	}
 	for(int diagIndex_b=0;diagIndex_b<N-1;diagIndex_b++){
@@ -629,8 +634,8 @@ class GaugeGroup {
 	    su2SubGroupIndex(i1, i2, su2Index);
 	    int ax = su2Index*2;
 	    int ay = su2Index*2+1;
-	    coalescedWrite(out_v[ss]()()(ax,b),-0.5*scale_b*imag( ((i2<k_b)-k_b*(i2==k_b))*in_v(ss)()()(i2,i1) - ((i1<k_b)-k_b*(i1==k_b))*in_v(ss)()()(i1,i2) ));
-	    coalescedWrite(out_v[ss]()()(ay,b), 0.5*scale_b*real( ((i1<k_b)-k_b*(i1==k_b))*in_v(ss)()()(i1,i2) + ((i2<k_b)-k_b*(i2==k_b))*in_v(ss)()()(i2,i1) ));
+	    coalescedWrite(out_v[ss]()()(ax,b),-0.5*scale_b*( ((i2<k_b)-k_b*(i2==k_b))*imag(in_v(ss)()()(i2,i1)) - ((i1<k_b)-k_b*(i1==k_b))*imag(in_v(ss)()()(i1,i2)) ));
+	    coalescedWrite(out_v[ss]()()(ay,b), 0.5*scale_b*( ((i1<k_b)-k_b*(i1==k_b))*real(in_v(ss)()()(i1,i2)) + ((i2<k_b)-k_b*(i2==k_b))*real(in_v(ss)()()(i2,i1)) ));
 	  }
 	  for(int diagIndex=0;diagIndex<N-1;diagIndex++){
 	    int k = diagIndex + 1; // diagIndex starts from 0
@@ -642,7 +647,7 @@ class GaugeGroup {
 	      tmp=tmp+in_v(ss)()()(i,i);
 	    }
 	    int c = (k==k_b)? -k:1;
-	    tmp = tmp - in_v(ss)()()(k_min,k_min)*k_min*c;
+	    tmp = tmp - in_v(ss)()()(k_min,k_min)*((RealD) k_min*c);
 	    coalescedWrite(out_v[ss]()()(a,b),real(tmp) * scale * scale_b);
 	  }
 	}
