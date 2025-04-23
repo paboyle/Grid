@@ -446,6 +446,7 @@ public:
     Communicate();
     CommsMergeSHM(compress);
     CommsMerge(compress);
+    accelerator_barrier();
   }
 
   template<class compressor> int HaloGatherDir(const Lattice<vobj> &source,compressor &compress,int point,int & face_idx)
@@ -689,6 +690,7 @@ public:
 	}
       }
     }
+    //    std::cout << "BuildSurfaceList size is "<<surface_list_size<<std::endl;
     surface_list.resize(surface_list_size);
     std::vector<int> surface_list_host(surface_list_size);
     int32_t ss=0;
@@ -708,7 +710,7 @@ public:
       }
     }
     acceleratorCopyToDevice(&surface_list_host[0],&surface_list[0],surface_list_size*sizeof(int));
-    std::cout << GridLogMessage<<"BuildSurfaceList size is "<<surface_list_size<<std::endl;
+    //    std::cout << GridLogMessage<<"BuildSurfaceList size is "<<surface_list_size<<std::endl;
   }
   /// Introduce a block structure and switch off comms on boundaries
   void DirichletBlock(const Coordinate &dirichlet_block)
@@ -800,8 +802,8 @@ public:
     this->_entries_host_p = &_entries[0];
     this->_entries_p = &_entries_device[0];
 
-    std::cout << GridLogMessage << " Stencil object allocated for "<<std::dec<<this->_osites
-	      <<" sites table "<<std::hex<<this->_entries_p<< " GridPtr "<<_grid<<std::dec<<std::endl;
+    //    std::cout << GridLogMessage << " Stencil object allocated for "<<std::dec<<this->_osites
+    //	      <<" sites table "<<std::hex<<this->_entries_p<< " GridPtr "<<_grid<<std::dec<<std::endl;
     
     for(int ii=0;ii<npoints;ii++){
 

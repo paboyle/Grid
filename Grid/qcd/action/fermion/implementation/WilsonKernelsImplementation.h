@@ -63,7 +63,7 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
   } else {							\
     chi = coalescedRead(buf[SE->_offset],lane);			\
   }								\
-  acceleratorSynchronise();						\
+  acceleratorSynchronise();					\
   Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);		\
   Recon(result, Uchi);
 
@@ -504,7 +504,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
     autoView(st_v , st,AcceleratorRead);
 
    if( interior && exterior ) {
-     //     acceleratorFenceComputeStream();
+     acceleratorFenceComputeStream();
      if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSite); return;}
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSite);    return;}
 #ifndef GRID_CUDA
