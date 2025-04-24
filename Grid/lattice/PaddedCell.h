@@ -443,8 +443,8 @@ public:
     RealD t_comms=0.0;
     RealD t_copy=0.0;
     
-    std::cout << GridLogMessage << "PDCF dimension " <<dimension<<" "<<depth<<std::endl;
-    DumpSliceNorm(std::string("PaddedCell::Face_exchange from "),from,dimension);
+    //    std::cout << GridLogMessage << "PDCF dimension " <<dimension<<" "<<depth<<std::endl;
+    //    DumpSliceNorm(std::string("PaddedCell::Face_exchange from "),from,dimension);
     GridBase *grid=from.Grid();
     GridBase *new_grid=to.Grid();
 
@@ -517,8 +517,6 @@ public:
       grid->SendToRecvFromBegin(fwd_req,
 				(void *)&hsend_buf[d*buffer_size], xmit_to_rank,
 				(void *)&hrecv_buf[d*buffer_size], recv_from_rank, bytes, tag);
-      grid->CommsComplete(fwd_req);//DEBUG!!!!!!!!!!
-      acceleratorCopyToDevice(&hrecv_buf[d*buffer_size],&recv_buf[d*buffer_size],bytes);
 #endif
       t_comms+=usecond()-t;
      }
@@ -539,8 +537,6 @@ public:
       grid->SendToRecvFromBegin(bwd_req,
 				(void *)&hsend_buf[(d+depth)*buffer_size], recv_from_rank,
 				(void *)&hrecv_buf[(d+depth)*buffer_size], xmit_to_rank, bytes,tag);
-      grid->CommsComplete(bwd_req);//DEBUG!!!!!!!!!!
-      acceleratorCopyToDevice(&hrecv_buf[(d+depth)*buffer_size],&recv_buf[(d+depth)*buffer_size],bytes);
 #endif      
       t_comms+=usecond()-t;
     }
@@ -564,8 +560,13 @@ public:
 
     t=usecond();
     grid->CommsComplete(fwd_req);
+#ifndef ACCELERATOR_AWARE_MPI
+    for ( int d=0;d < depth ; d ++ ) {
+      acceleratorCopyToDevice(&hrecv_buf[d*buffer_size],&recv_buf[d*buffer_size],bytes);
+    }
+#endif
     t_comms+= usecond() - t;
-
+    
     t=usecond();
     for ( int d=0;d < depth ; d ++ ) {
       ScatterSlice(recv_buf,to,nld-depth+d,dimension,plane*buffer_size); plane++;
@@ -574,6 +575,11 @@ public:
 
     t=usecond();
     grid->CommsComplete(bwd_req);
+#ifndef ACCELERATOR_AWARE_MPI
+    for ( int d=0;d < depth ; d ++ ) {
+      acceleratorCopyToDevice(&hrecv_buf[(d+depth)*buffer_size],&recv_buf[(d+depth)*buffer_size],bytes);
+    }
+#endif
     t_comms+= usecond() - t;
     
     t=usecond();
@@ -583,7 +589,7 @@ public:
     t_scatter+= usecond() - t;
     t_tot+=usecond();
 
-    DumpSliceNorm("PaddedCell::FaceExchange to ",to,dimension);
+    //    DumpSliceNorm("PaddedCell::FaceExchange to ",to,dimension);
 
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: gather :" << t_gather/1000  << "ms"<<std::endl;
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: scatter:" << t_scatter/1000   << "ms"<<std::endl;
