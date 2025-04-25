@@ -191,7 +191,7 @@ public:
       
     Lattice<sobj> pgbuf(&pencil_g);
     autoView(pgbuf_v , pgbuf, CpuWrite);
-    std::cout << "CPU view" << std::endl;
+    //std::cout << "CPU view" << std::endl;
     
     typedef typename FFTW<scalar>::FFTW_scalar FFTW_scalar;
     typedef typename FFTW<scalar>::FFTW_plan   FFTW_plan;
@@ -215,7 +215,7 @@ public:
     else if ( sign == forward ) div = 1.0;
     else assert(0);
       
-    std::cout << GridLogPerformance<<"Making FFTW plan" << std::endl;
+    //std::cout << GridLogPerformance<<"Making FFTW plan" << std::endl;
     FFTW_plan p;
     {
       FFTW_scalar *in = (FFTW_scalar *)&pgbuf_v[0];
@@ -229,7 +229,7 @@ public:
     }
       
     // Barrel shift and collect global pencil
-    std::cout << GridLogPerformance<<"Making pencil" << std::endl;
+    //std::cout << GridLogPerformance<<"Making pencil" << std::endl;
     Coordinate lcoor(Nd), gcoor(Nd);
     result = source;
     int pc = processor_coor[dim];
@@ -251,7 +251,7 @@ public:
       }
     }
       
-    std::cout <<GridLogPerformance<< "Looping orthog" << std::endl;
+    //std::cout <<GridLogPerformance<< "Looping orthog" << std::endl;
     // Loop over orthog coords
     int NN=pencil_g.lSites();
     GridStopWatch timer;
@@ -274,7 +274,7 @@ public:
     usec += timer.useconds();
     flops+= flops_call*NN;
       
-    std::cout <<GridLogPerformance<< "Writing back results " << std::endl;
+    //std::cout <<GridLogPerformance<< "Writing back results " << std::endl;
     // writing out result
     {
       autoView(pgbuf_v,pgbuf,CpuRead);
@@ -291,7 +291,7 @@ public:
     }
     result = result*div;
       
-    std::cout <<GridLogPerformance<< "Destroying plan " << std::endl;
+    //std::cout <<GridLogPerformance<< "Destroying plan " << std::endl;
     // destroying plan
     FFTW<scalar>::fftw_destroy_plan(p);
 #endif

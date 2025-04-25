@@ -149,7 +149,8 @@ public:
 			    sizeof(obj),d*100+p);
 
       }
-      CommsComplete(list);
+      if (!list.empty()) // avoid triggering assert in comms == none
+	CommsComplete(list);
       for(int p=1;p<_processors[d];p++){
 	accum = accum + column[p];
       }

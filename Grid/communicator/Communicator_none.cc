@@ -91,7 +91,7 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
 {
   assert(0);
 }
-void CartesianCommunicator::CommsComplete(std::vector<CommsRequest_t> &list){ assert(0);}
+void CartesianCommunicator::CommsComplete(std::vector<CommsRequest_t> &list){ assert(list.size()==0);}
 void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 						void *xmit,
 						int dest,

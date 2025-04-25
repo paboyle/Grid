@@ -234,6 +234,9 @@ void *MemoryManager::ViewOpen(void* _CpuPtr,size_t bytes,ViewMode mode,ViewAdvis
 }
 void  MemoryManager::EvictVictims(uint64_t bytes)
 {
+  if(bytes>=DeviceMaxBytes) {
+    printf("EvictVictims bytes %ld DeviceMaxBytes %ld\n",bytes,DeviceMaxBytes);
+  }
   assert(bytes<DeviceMaxBytes);
   while(bytes+DeviceLRUBytes > DeviceMaxBytes){
     if ( DeviceLRUBytes > 0){

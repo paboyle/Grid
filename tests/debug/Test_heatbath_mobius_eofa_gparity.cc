@@ -56,6 +56,7 @@ const RealD            M5       = 1.8;
 
 int main(int argc, char** argv)
 {
+#ifdef ENABLE_GPARITY  
   Grid_init(&argc, &argv);
 
   int threads = GridThread::GetThreads();
@@ -106,6 +107,6 @@ int main(int argc, char** argv)
     Meofa.refresh(Umu, sRNG, RNG5);
     printf("<Phi|Meofa|Phi> = %1.15e\n", Meofa.S(Umu));
   }
-
+#endif
   return 0;
 }

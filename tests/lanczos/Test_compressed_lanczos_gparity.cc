@@ -35,6 +35,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
 #include <Grid/algorithms/iterative/LocalCoherenceLanczos.h>
 
+#ifdef ENABLE_GPARITY
+
 using namespace std;
 using namespace Grid;
 
@@ -378,7 +380,8 @@ void runTest(const Options &opt){
 
 
 //Note:  because we rely upon physical properties we must use a "real" gauge configuration
-int main (int argc, char ** argv) {
+int main (int argc, char ** argv)
+{
   Grid_init(&argc,&argv);
   GridLogIRL.TimingMode(1);
 
@@ -482,4 +485,8 @@ int main (int argc, char ** argv) {
   
   Grid_finalize();
 }
+#else
+int main(int argc, char **argv){};
+
+#endif
 

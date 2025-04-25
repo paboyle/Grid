@@ -492,17 +492,18 @@ public:
 	}
 	FGrid->Barrier();
 	double t1=usecond();
-	uint64_t ncall = 500;
-
-	FGrid->Broadcast(0,&ncall,sizeof(ncall));
+	uint64_t no    = 50;
+	uint64_t ni    = 100;
 
 	//	std::cout << GridLogMessage << " Estimate " << ncall << " calls per second"<<std::endl;
 
 	time_statistics timestat;
-	std::vector<double> t_time(ncall);
-	for(uint64_t i=0;i<ncall;i++){
+	std::vector<double> t_time(no);
+	for(uint64_t i=0;i<no;i++){
 	  t0=usecond();
-	  Dw.DhopEO(src_o,r_e,DaggerNo);
+	  for(uint64_t j=0;j<ni;j++){
+	    Dw.DhopEO(src_o,r_e,DaggerNo);
+	  }
 	  t1=usecond();
 	  t_time[i] = t1-t0;
 	}
@@ -520,11 +521,11 @@ public:
 	double mf_hi, mf_lo, mf_err;
 
 	timestat.statistics(t_time);
-	mf_hi = flops/timestat.min;
-	mf_lo = flops/timestat.max;
+	mf_hi = flops/timestat.min*ni;
+	mf_lo = flops/timestat.max*ni;
 	mf_err= flops/timestat.min * timestat.err/timestat.mean;
 
-	mflops = flops/timestat.mean;
+	mflops = flops/timestat.mean*ni;
 	mflops_all.push_back(mflops);
 	if ( mflops_best == 0   ) mflops_best = mflops;
 	if ( mflops_worst== 0   ) mflops_worst= mflops;
@@ -535,6 +536,7 @@ public:
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s =   "<< mflops << " ("<<mf_err<<") " << mf_lo<<"-"<<mf_hi <<std::endl;
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s per rank   "<< mflops/NP<<std::endl;
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s per node   "<< mflops/NN<<std::endl;
+	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo us per call   "<< timestat.mean/ni<<std::endl;
 
       }
 
@@ -654,17 +656,19 @@ public:
 	}
 	FGrid->Barrier();
 	double t1=usecond();
-	uint64_t ncall = 500;
 
-	FGrid->Broadcast(0,&ncall,sizeof(ncall));
+	uint64_t no    = 50;
+	uint64_t ni    = 100;
 
 	//	std::cout << GridLogMessage << " Estimate " << ncall << " calls per second"<<std::endl;
 
 	time_statistics timestat;
-	std::vector<double> t_time(ncall);
-	for(uint64_t i=0;i<ncall;i++){
+	std::vector<double> t_time(no);
+	for(uint64_t i=0;i<no;i++){
 	  t0=usecond();
-	  Ds.DhopEO(src_o,r_e,DaggerNo);
+	  for(uint64_t j=0;j<ni;j++){
+	    Ds.DhopEO(src_o,r_e,DaggerNo);
+	  }
 	  t1=usecond();
 	  t_time[i] = t1-t0;
 	}
@@ -675,11 +679,11 @@ public:
 	double mf_hi, mf_lo, mf_err;
 	
 	timestat.statistics(t_time);
-	mf_hi = flops/timestat.min;
-	mf_lo = flops/timestat.max;
+	mf_hi = flops/timestat.min*ni;
+	mf_lo = flops/timestat.max*ni;
 	mf_err= flops/timestat.min * timestat.err/timestat.mean;
 
-	mflops = flops/timestat.mean;
+	mflops = flops/timestat.mean*ni;
 	mflops_all.push_back(mflops);
 	if ( mflops_best == 0   ) mflops_best = mflops;
 	if ( mflops_worst== 0   ) mflops_worst= mflops;
@@ -689,6 +693,7 @@ public:
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s =   "<< mflops << " ("<<mf_err<<") " << mf_lo<<"-"<<mf_hi <<std::endl;
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s per rank   "<< mflops/NP<<std::endl;
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s per node   "<< mflops/NN<<std::endl;
+	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo us per call   "<< timestat.mean/ni<<std::endl;
       
       }
 
@@ -792,19 +797,18 @@ public:
 	  Dc.M(src,r);
 	}
 	FGrid->Barrier();
-	double t1=usecond();
-	uint64_t ncall = 500;
-
-	FGrid->Broadcast(0,&ncall,sizeof(ncall));
+	uint64_t ni = 100;
+	uint64_t no = 50;
 
 	//	std::cout << GridLogMessage << " Estimate " << ncall << " calls per second"<<std::endl;
-
 	time_statistics timestat;
-	std::vector<double> t_time(ncall);
-	for(uint64_t i=0;i<ncall;i++){
-	  t0=usecond();
-	  Dc.M(src,r);
-	  t1=usecond();
+	std::vector<double> t_time(no);
+	for(uint64_t i=0;i<no;i++){
+	  double t0=usecond();
+	  for(uint64_t j=0;j<ni;j++){
+	    Dc.M(src,r);
+	  }
+	  double t1=usecond();
 	  t_time[i] = t1-t0;
 	}
 	FGrid->Barrier();
@@ -814,20 +818,21 @@ public:
 	double mf_hi, mf_lo, mf_err;
 	
 	timestat.statistics(t_time);
-	mf_hi = flops/timestat.min;
-	mf_lo = flops/timestat.max;
+	mf_hi = flops/timestat.min*ni;
+	mf_lo = flops/timestat.max*ni;
 	mf_err= flops/timestat.min * timestat.err/timestat.mean;
 
-	mflops = flops/timestat.mean;
+	mflops = flops/timestat.mean*ni;
 	mflops_all.push_back(mflops);
 	if ( mflops_best == 0   ) mflops_best = mflops;
 	if ( mflops_worst== 0   ) mflops_worst= mflops;
 	if ( mflops>mflops_best ) mflops_best = mflops;
 	if ( mflops<mflops_worst) mflops_worst= mflops;
 	
-	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Dclov mflop/s =   "<< mflops << " ("<<mf_err<<") " << mf_lo<<"-"<<mf_hi <<std::endl;
+	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Dclov mflop/s =   "<< mflops << " ("<<mf_err<<") " << mf_lo<<"-"<<mf_hi <<" "<<timestat.mean<<" us"<<std::endl;
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Dclov mflop/s per rank   "<< mflops/NP<<std::endl;
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Dclov mflop/s per node   "<< mflops/NN<<std::endl;
+	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Dclov us per call   "<< timestat.mean/ni<<std::endl;
       
       }
 
@@ -872,7 +877,7 @@ int main (int argc, char ** argv)
   int do_dslash=1;
 
   int sel=4;
-  std::vector<int> L_list({8,12,16,24});
+  std::vector<int> L_list({8,12,16,24,32});
   int selm1=sel-1;
 
   std::vector<double> clover;

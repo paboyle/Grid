@@ -62,7 +62,7 @@ do
 done
 done
 
-CC_LIST="CompactWilsonCloverFermionInstantiation"
+CC_LIST="CompactWilsonCloverFermionInstantiation CompactWilsonCloverFermion5DInstantiation"
 
 for impl in $COMPACT_WILSON_IMPL_LIST
 do

@@ -69,7 +69,7 @@ public:
   }
 
   // FIXME: hack for the copy constructor: it must be avoided to avoid single thread loop
-  void construct(pointer __p, const _Tp& __val) { assert(0);};
+  void construct(pointer __p, const _Tp& __val) { };
   void construct(pointer __p) { };
   void destroy(pointer __p) { };
 };

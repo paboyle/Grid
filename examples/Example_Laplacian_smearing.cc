@@ -93,10 +93,13 @@ int main(int argc, char ** argv)
   Real coeff = (width*width) / Real(4*Iterations);
 
   chi=kronecker;
+
   //  chi = (1-p^2/2N)^N kronecker
   for(int n = 0; n < Iterations; ++n) {
     Laplacian.M(chi,psi);
     chi = chi - coeff*psi;
+    RealD n2 = norm2(chi);
+    chi = chi * (1.0/std::sqrt(n2));
   }
 
   std::cout << " Wuppertal smeared operator is chi = \n" << chi <<std::endl;

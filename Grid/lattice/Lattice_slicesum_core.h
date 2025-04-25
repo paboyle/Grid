@@ -55,7 +55,7 @@ inline void sliceSumReduction_cub_small(const vobj *Data,
   d_offsets = static_cast<int*>(acceleratorAllocDevice((rd+1)*sizeof(int)));
   
   //copy offsets to device
-  acceleratorCopyToDeviceAsync(&offsets[0],d_offsets,sizeof(int)*(rd+1),computeStream);
+  acceleratorCopyToDeviceAsynch(&offsets[0],d_offsets,sizeof(int)*(rd+1),computeStream);
   
   
   gpuError_t gpuErr = gpucub::DeviceSegmentedReduce::Reduce(temp_storage_array, temp_storage_bytes, rb_p,d_out, rd, d_offsets, d_offsets+1, ::gpucub::Sum(), zero_init, computeStream);
@@ -88,7 +88,7 @@ inline void sliceSumReduction_cub_small(const vobj *Data,
     exit(EXIT_FAILURE);
   }
   
-  acceleratorCopyFromDeviceAsync(d_out,&lvSum[0],rd*sizeof(vobj),computeStream);
+  acceleratorCopyFromDeviceAsynch(d_out,&lvSum[0],rd*sizeof(vobj),computeStream);
   
   //sync after copy
   accelerator_barrier();

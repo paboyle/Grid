@@ -1,0 +1,19 @@
+cd
+git clone https://github.com/spack/spack.git
+source $HOME/spack/share/spack/setup-env.sh
+
+spack install llvm@12
+
+spack install autoconf%clang@12.0.1
+spack install automake%clang@12.0.1
+spack install c-lime%clang@12.0.1
+spack install fftw%clang@12.0.1
+spack install gmp%clang@12.0.1
+spack install mpfr%clang@12.0.1
+spack install openmpi%clang@12.0.1
+spack install openssl%clang@12.0.1
+spack install hdf5+cxx%clang@12.0.1
+spack install cmake%clang@12.0.1
+spack install tclap%clang@12.0.1
+spack install emacs%clang@12.0.1
+

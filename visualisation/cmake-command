@@ -1,0 +1,9 @@
+libs=`grid-config --libs`
+ldflags=`grid-config --ldflags`
+cxxflags=`grid-config --cxxflags`
+cxx=`grid-config --cxx`
+
+mkdir build
+cd build
+
+LDFLAGS="$ldflags $libs " cmake .. -DCMAKE_CXX_COMPILER=$cxx -DCMAKE_CXX_FLAGS=$cxxflags 

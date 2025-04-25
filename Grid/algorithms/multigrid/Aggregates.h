@@ -97,7 +97,7 @@ public:
 
     RealD scale;
 
-    ConjugateGradient<FineField> CG(1.0e-2,100,false);
+    ConjugateGradient<FineField> CG(1.0e-3,400,false);
     FineField noise(FineGrid);
     FineField Mn(FineGrid);
 
@@ -110,7 +110,7 @@ public:
       
       hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<b<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
 
-      for(int i=0;i<1;i++){
+      for(int i=0;i<4;i++){
 
 	CG(hermop,noise,subspace[b]);
 
@@ -146,7 +146,7 @@ public:
       
       DiracOp.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<b<<"] <n|Op|n> "<<innerProduct(noise,Mn)<<std::endl;
 
-      for(int i=0;i<3;i++){
+      for(int i=0;i<2;i++){
 	//  void operator() (const Field &src, Field &psi){
 #if 1
 	std::cout << GridLogMessage << " inverting on noise "<<std::endl;

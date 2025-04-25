@@ -33,6 +33,7 @@ using namespace std;
 using namespace Grid;
 
 // This is to optimize the SIMD
+/*
 template<class vobj> void gpermute(vobj & inout,int perm){
   vobj tmp=inout;
   if (perm & 0x1 ) { permute(inout,tmp,0); tmp=inout;}
@@ -40,7 +41,7 @@ template<class vobj> void gpermute(vobj & inout,int perm){
   if (perm & 0x4 ) { permute(inout,tmp,2); tmp=inout;}
   if (perm & 0x8 ) { permute(inout,tmp,3); tmp=inout;}
 }
-
+*/
 
 int main (int argc, char ** argv)
 {
