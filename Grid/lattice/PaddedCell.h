@@ -298,7 +298,7 @@ public:
       if( processors[d]==1 ) fll[d]=0;
     }
     localCopyRegion(in,out,fll,tll,local);
-    DumpSliceNorm("PaddedCell Extract ",out);
+    //DumpSliceNorm("PaddedCell Extract ",out);
     return out;
   }
   template<class vobj>
@@ -310,7 +310,7 @@ public:
     for(int d=0;d<dims;d++){
       tmp = Expand(d,tmp,cshift); // rvalue && assignment
     }
-    DumpSliceNorm("PaddedCell Exchange",tmp);
+    //    DumpSliceNorm("PaddedCell Exchange",tmp);
     return tmp;
   }
   template<class vobj>
@@ -322,8 +322,7 @@ public:
     for(int d=0;d<dims;d++){
       tmp = ExpandPeriodic(d,tmp); // rvalue && assignment
     }
-    std::cout << GridLogMessage << "PCE dimensions " <<dims<<std::endl;
-    DumpSliceNorm("PaddedCell ExchangePeriodic",tmp);
+    //    DumpSliceNorm("PaddedCell ExchangePeriodic",tmp);
     return tmp;
   }
   // expand up one dim at a time
@@ -395,7 +394,7 @@ public:
 
     }
     std::cout << GridLogPerformance << "PaddedCell::Expand timings: cshift:" << tshift/1000 << "ms, insert-slice:" << tins/1000 << "ms" << std::endl;
-    DumpSliceNorm("PaddedCell Expand",padded);
+    //    DumpSliceNorm("PaddedCell Expand",padded);
     
     return padded;
   }
@@ -423,10 +422,10 @@ public:
       padded=in; // slightly different interface could avoid a copy operation
     } else {
       Face_exchange(in,padded,dim,depth);
-      DumpSliceNorm("PaddedCell ExpandPeriodic",padded);
+      //      DumpSliceNorm("PaddedCell ExpandPeriodic",padded);
       return padded;
     }
-    DumpSliceNorm("PaddedCell ExpandPeriodic",padded);
+    //    DumpSliceNorm("PaddedCell ExpandPeriodic",padded);
     return padded;
   }
   template<class vobj>

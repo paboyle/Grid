@@ -31,6 +31,7 @@ directory
 #define QCD_ACTION_CORE
 
 #include <Grid/qcd/action/gauge/GaugeImplementations.h>
+#include <Grid/parallelIO/MetaData.h>
 
 #include <Grid/qcd/action/ActionBase.h>
 NAMESPACE_CHECK(ActionBase);

@@ -27,6 +27,8 @@
 *************************************************************************************/
 /*  END LEGAL */
 
+#pragma once
+
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
@@ -35,6 +37,8 @@
 #include <unistd.h>
 #include <sys/utsname.h>
 #include <pwd.h>
+
+#include <Grid/qcd/utils/WilsonLoops.h> //added to allow IO op's in actions
 
 NAMESPACE_BEGIN(Grid);
 

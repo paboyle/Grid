@@ -371,7 +371,6 @@ public:
     {
       GRID_TRACE("ExchangePeriodic");
       gU = Ghost.ExchangePeriodic(U);
-      DumpSliceNorm("JacobianForceLevel ExchangePeriodic",gU);
       for(int d=0; d<Nd;d++)
 	gUmu[d] = peekLorentz(gU, d);
     }
@@ -409,7 +408,7 @@ public:
     RealD time;
     time=-usecond();
     BaseSmear_ghost(Cmu, gU, mu, rho);
-#if 1 // DEBUG
+#if 0 // DEBUG
     GaugeLinkField Cmu2(hgrid);
     Cmu2.Checkerboard() = cb;
     BaseSmear_cb(Cmu2, U, mu, rho);
@@ -433,7 +432,7 @@ public:
     }
     time+=usecond();
     std::cout << GridLogPerformance << "ZxAd took "<<time<< " us"<<std::endl;
-#if 1 //DEBUG
+#if 0 //DEBUG
     AdjMatrixField  ZxAd2(hgrid); ZxAd2.Checkerboard() = cb;
     LatticeComplex  cplx(hgrid);  cplx.Checkerboard() = cb;
     AdjMatrix TRb;
@@ -491,7 +490,7 @@ public:
     ComputeNxy(PlaqL,PlaqR,NxxAd);
     time+=usecond();
     std::cout << GridLogMessage << "ComputeNxy took "<<time<< " us"<<std::endl;
-#if 1 // DEBUG
+#if 0 // DEBUG
     AdjMatrixField  NxxAd2(hgrid); NxxAd2.Checkerboard() = cb;
     ComputeNxy(0,PlaqL,PlaqR,NxxAd2);
     std::cout << GridLogMessage << " DEBUG: NxxAd " <<smr<<" "<<mu<<" "<<cb<<" "<<" simd "<<AdjMatrix::Nsimd()<<" "<<norm2(NxxAd-NxxAd2)<<std::endl;
@@ -962,8 +961,6 @@ public:
     tN -= usecond();
     {GRID_TRACE("ExchangePeriodic");
     gU = Ghost.ExchangePeriodic(U);
-    //dumpSliceno
-    DumpSliceNorm("JacobianLevel ExchangePeriodic",gU);
     }
     double rho=this->StoutSmearing->SmearRho[1];
     PlaqL = Ident;
@@ -1836,14 +1833,14 @@ public:
     {
       double start = usecond();
       for (int ismr = this->smearingLevels - 1; ismr > 0; --ismr) {
-	ln_det+= logDetJacobianLevel(this->get_smeared_conf(ismr-1),ismr);std::cout << GridLogMessage << "DEBUG: logDetJacobian: " <<ln_det<<" "<<ismr<<std::endl;
+	ln_det+= logDetJacobianLevel(this->get_smeared_conf(ismr-1),ismr);
       }
       ln_det +=logDetJacobianLevel(*(this->ThinLinks),0);
 
       double end = usecond();
       double time = (end - start)/ 1e3;
       std::cout << GridLogMessage << "GaugeConfigurationMasked: logDetJacobian took " << time << " ms" << std::endl;
-#if 1 //DEBUG
+#if 0 //DEBUG
       RealD ln_det2 = logDetJacobian(1);
       std::cout << GridLogMessage << " DEBUG: logDetJacobian_diff " << abs(ln_det2-ln_det) <<":"<<ln_det<<" "<<ln_det2<<std::endl;
 #endif
@@ -1912,7 +1909,7 @@ public:
 
       force=Ta(force); // Ta
       
-#if 1 // debug
+#if 0 // debug
       GaugeField force_debug(force.Grid()); 
       logDetJacobianForce(1,force_debug);
       std::cout << GridLogMessage << " DEBUG: logDetJacobianForce_diff " << norm2(force-force_debug) <<":"<<norm2(force)<<" "<<norm2(force_debug)<< std::endl;

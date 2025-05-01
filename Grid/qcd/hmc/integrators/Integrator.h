@@ -27,8 +27,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-			   /*  END LEGAL */
-			   //--------------------------------------------------------------------
+                             /*  END LEGAL */
+//--------------------------------------------------------------------
+
 #ifndef INTEGRATOR_INCLUDED
 #define INTEGRATOR_INCLUDED
 
@@ -61,6 +62,7 @@ public:
     std::cout << GridLogMessage << "[Integrator] Step size          : " << trajL/MDsteps << std::endl;
   }
 };
+
 
 /*! @brief Class for Molecular Dynamics management */
 template <class FieldImplementation_, class SmearingPolicy, class RepresentationPolicy>
@@ -209,12 +211,15 @@ public:
 
     // exponential of Mom*U in the gauge fields case
     FieldImplementation::update_field(MomFiltered, U, ep);
-
+    writeFile(U,"U_lat"+std::to_string(t_U),false);
+    
     // Update the smeared fields, can be implemented as observer
     Smearer.set_Field(U);
 
     // Update the higher representations fields
     Representations.update(U);  // void functions if fundamental representation
+    
+    writeFile(U,"U_smr"+std::to_string(t_U),false);
   }
 
   virtual void step(Field& U, int level, int first, int last) = 0;

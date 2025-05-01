@@ -32,7 +32,22 @@ directory
 #ifndef ACTION_BASE_H
 #define ACTION_BASE_H
 
+#include <Grid/parallelIO/IldgIOtypes.h>
+#include <Grid/parallelIO/IldgIO.h>
+
 NAMESPACE_BEGIN(Grid);
+
+#if 1
+
+template <class Field> void writeFile(const Field F, std::string filename, bool reduce=true) {
+  auto F_out = reduce? localNorm2(F) : F;
+  emptyUserRecord record;
+  ScidacWriter WR(F.Grid()->IsBoss());
+  WR.open(filename);
+  WR.writeScidacFieldRecord(F_out,record,0);
+  WR.close();
+}
+#endif
 
 ///////////////////////////////////
 // Smart configuration base class
@@ -116,9 +131,12 @@ public:
   }
   virtual void deriv(ConfigurationBase<GaugeField>& U, GaugeField& dSdU)
   {
-    deriv(U.get_U(is_smeared),dSdU); 
+    deriv(U.get_U(is_smeared),dSdU);
+    writeFile(dSdU, "F_"+action_name()+"_lat."+std::to_string(deriv_num));
+
     if ( is_smeared ) {
       U.smeared_force(dSdU);
+      writeFile(dSdU, "F_"+action_name()+"_smr."+std::to_string(deriv_num));
     }
   }
   ///////////////////////////////
