@@ -127,6 +127,7 @@ int HISQStencilIndex(int mu, int nu, int rho=0, int sig=0, std::string kind="3ST
     else if (kind=="5STAPLE")
         res = 17*(rho + Nd*nu + Nd*Nd*mu);
     else if (kind=="7STAPLE")
+        // seems correct
         res = 46*(sig + Nd*rho + Nd*Nd*nu + Nd*Nd*Nd*mu);
     else 
         Grid_error("Unknown staple kind",kind);
@@ -176,52 +177,52 @@ std::vector<Coordinate> createHISQStencil(std::string kind="3STAPLE") {
         for(int nu =0;nu <Nd;nu++) 
         for(int rho=0;rho<Nd;rho++)
         for(int sig=0;sig<Nd;sig++) {
-            appendShift<Nd>(shifts,shiftSignal::NO_SHIFT);
-            appendShift<Nd>(shifts,mu);
-            appendShift<Nd>(shifts,mu,nu);
-            appendShift<Nd>(shifts,mu,nu,rho);
-            appendShift<Nd>(shifts,mu,nu,rho,Back(sig));
-            appendShift<Nd>(shifts,mu,nu,Back(rho));
-            appendShift<Nd>(shifts,mu,nu,Back(rho),Back(sig));
-            appendShift<Nd>(shifts,mu,nu,Back(sig));
-            appendShift<Nd>(shifts,mu,Back(nu));
-            appendShift<Nd>(shifts,mu,Back(nu),rho);
-            appendShift<Nd>(shifts,mu,Back(nu),rho,sig);
-            appendShift<Nd>(shifts,mu,Back(nu),rho,Back(sig));
-            appendShift<Nd>(shifts,mu,Back(nu),Back(rho));
-            appendShift<Nd>(shifts,mu,Back(nu),Back(rho),sig);
-            appendShift<Nd>(shifts,mu,Back(nu),Back(rho),Back(sig));
-            appendShift<Nd>(shifts,mu,Back(nu),sig);
-            appendShift<Nd>(shifts,mu,Back(nu),Back(sig));
-            appendShift<Nd>(shifts,mu,rho);
-            appendShift<Nd>(shifts,mu,rho,sig);
-            appendShift<Nd>(shifts,mu,rho,Back(sig));
-            appendShift<Nd>(shifts,mu,Back(rho));
-            appendShift<Nd>(shifts,mu,Back(rho),sig);
-            appendShift<Nd>(shifts,mu,Back(rho),Back(sig));
-            appendShift<Nd>(shifts,mu,sig);
-            appendShift<Nd>(shifts,mu,Back(sig));
-            appendShift<Nd>(shifts,nu);
-            appendShift<Nd>(shifts,nu,rho);
-            appendShift<Nd>(shifts,nu,rho,sig);
-            appendShift<Nd>(shifts,nu,rho,Back(sig));
-            appendShift<Nd>(shifts,nu,Back(rho));
-            appendShift<Nd>(shifts,nu,Back(rho),sig);
-            appendShift<Nd>(shifts,nu,Back(rho),Back(sig));
-            appendShift<Nd>(shifts,rho);
-            appendShift<Nd>(shifts,rho,Back(nu));
-            appendShift<Nd>(shifts,rho,sig);
-            appendShift<Nd>(shifts,rho,Back(sig));
-            appendShift<Nd>(shifts,Back(nu));
-            appendShift<Nd>(shifts,Back(nu),rho);
-            appendShift<Nd>(shifts,Back(nu),rho,sig);
-            appendShift<Nd>(shifts,Back(nu),rho,Back(sig));
-            appendShift<Nd>(shifts,Back(nu),Back(rho));
-            appendShift<Nd>(shifts,Back(nu),Back(rho),sig);
-            appendShift<Nd>(shifts,Back(nu),Back(rho),Back(sig));
-            appendShift<Nd>(shifts,Back(rho));
-            appendShift<Nd>(shifts,Back(rho),sig);
-            appendShift<Nd>(shifts,Back(rho),Back(sig));
+            appendShift<Nd>(shifts,shiftSignal::NO_SHIFT);//ok
+            appendShift<Nd>(shifts,mu);//ok
+            appendShift<Nd>(shifts,mu,nu);//ok
+            appendShift<Nd>(shifts,mu,nu,rho);//ok
+            appendShift<Nd>(shifts,mu,nu,rho,Back(sig));//ok
+            appendShift<Nd>(shifts,mu,nu,Back(rho));//ok
+            appendShift<Nd>(shifts,mu,nu,Back(rho),Back(sig));//ok
+            appendShift<Nd>(shifts,mu,nu,Back(sig));//ok
+            appendShift<Nd>(shifts,mu,Back(nu));//ok
+            appendShift<Nd>(shifts,mu,Back(nu),rho);//ok
+            appendShift<Nd>(shifts,mu,Back(nu),rho,sig);//ok
+            appendShift<Nd>(shifts,mu,Back(nu),rho,Back(sig));//ok
+            appendShift<Nd>(shifts,mu,Back(nu),Back(rho));//ok
+            appendShift<Nd>(shifts,mu,Back(nu),Back(rho),sig);//ok
+            appendShift<Nd>(shifts,mu,Back(nu),Back(rho),Back(sig));//ok
+            appendShift<Nd>(shifts,mu,Back(nu),sig);//ok
+            appendShift<Nd>(shifts,mu,Back(nu),Back(sig));//ok
+            appendShift<Nd>(shifts,mu,rho);//ok
+            appendShift<Nd>(shifts,mu,rho,sig);//ok
+            appendShift<Nd>(shifts,mu,rho,Back(sig));//ok
+            appendShift<Nd>(shifts,mu,Back(rho));//ok
+            appendShift<Nd>(shifts,mu,Back(rho),sig);//ok
+            appendShift<Nd>(shifts,mu,Back(rho),Back(sig));//ok
+            appendShift<Nd>(shifts,mu,sig);//ok
+            appendShift<Nd>(shifts,mu,Back(sig));//ok
+            appendShift<Nd>(shifts,nu);//ok
+            appendShift<Nd>(shifts,nu,rho);//ok
+            appendShift<Nd>(shifts,nu,rho,sig);//ok
+            appendShift<Nd>(shifts,nu,rho,Back(sig));//ok
+            appendShift<Nd>(shifts,nu,Back(rho));//ok
+            appendShift<Nd>(shifts,nu,Back(rho),sig);//ok
+            appendShift<Nd>(shifts,nu,Back(rho),Back(sig));//ok
+            appendShift<Nd>(shifts,rho);//ok
+            appendShift<Nd>(shifts,rho,Back(nu));//ok
+            appendShift<Nd>(shifts,rho,sig);//ok
+            appendShift<Nd>(shifts,rho,Back(sig));//ok
+            appendShift<Nd>(shifts,Back(nu));//ok
+            appendShift<Nd>(shifts,Back(nu),rho);//ok
+            appendShift<Nd>(shifts,Back(nu),rho,sig);//ok
+            appendShift<Nd>(shifts,Back(nu),rho,Back(sig));//ok
+            appendShift<Nd>(shifts,Back(nu),Back(rho));//ok
+            appendShift<Nd>(shifts,Back(nu),Back(rho),sig);//ok
+            appendShift<Nd>(shifts,Back(nu),Back(rho),Back(sig));//ok
+            appendShift<Nd>(shifts,Back(rho));//ok
+            appendShift<Nd>(shifts,Back(rho),sig);//ok
+            appendShift<Nd>(shifts,Back(rho),Back(sig));//ok
         }
     } else { 
         Grid_error("Unknown staple kind",kind);
@@ -952,6 +953,7 @@ public:
     }
 
 
+    template<int term>
     void fiveLinkDeriv(GF& Fghost, GF& Ughost, GF& XYghost, GeneralLocalStencil gStencil5, Real c5, int mu) const {
         
         autoView(U_v , Ughost , AcceleratorRead);
@@ -978,6 +980,7 @@ public:
 
                     res = Zero();
 
+if constexpr(term==0) {
                     res += (      getLink(U_v ,x_p_mu           ,rho)
                             *     getLink(U_v ,x_p_mu_p_rho     ,nu ) 
                             * adj(getLink(U_v ,x_p_mu_p_nu      ,rho))
@@ -1023,7 +1026,8 @@ public:
                             * adj(getLink(U_v ,x_p_mu_m_nu_p_rho,nu ))
                             *     getLink(XY_v,x_m_nu_p_rho     ,mu )
                     )*getLink(U_v,x_m_nu_p_rho,nu)*adj(getLink(U_v,x,rho));
-
+}
+if constexpr(term==1) {
                     res += (      getLink(U_v ,x_p_mu           ,nu ) 
                             * adj(getLink(XY_v,x_p_mu_p_nu      ,rho))
                             * adj(getLink(U_v ,x_p_mu_p_rho     ,nu ))
@@ -1063,7 +1067,7 @@ public:
                             * adj(getLink(U_v ,x_p_mu_m_nu_m_rho,nu ))
                             *     getLink(XY_v,x_m_nu_m_rho     ,mu )
                     )*getLink(U_v,x_m_nu_m_rho,nu)*getLink(U_v,x_m_rho,rho);
-
+}
                     setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + c5*res);
                 }
             }
@@ -1071,455 +1075,484 @@ public:
     }
 
 
-//    void sevenLinkDeriv(GF& Fghost, GF& Ughost, GF& XYghost, GeneralLocalStencil gStencil7, Real c7, int mu) const {
-//        
-//        autoView(U_v , Ughost , AcceleratorRead);
-//        autoView(XY_v, XYghost, AcceleratorRead);
-//        autoView(F_v , Fghost , AcceleratorWrite);
-//        int Nsites = U_v.size();
-//        auto gStencil7_v = gStencil7.View(AcceleratorRead);
-//        typedef decltype(getLink(U_v,gStencil7.GetEntry(0,0),0)) U3matrix;
-//
-//        // TODO: After this works, start consolidating some terms. This time
-//        // It should actually work. 
-//        accelerator_for(site,Nsites,Simd::Nsimd(),{
-//            U3matrix res, U1; 
-//            for(int nu=0;nu<Nd;nu++) {
-//                if(nu==mu) continue;
-//                for(int rho=0;rho<Nd;rho++) {
-//                    if (rho == mu || rho == nu) continue;
-//                    for(int sig=0;rho<Nd;rho++) {
-//                        if (sig == mu || sig == nu || sig == rho) continue;
-//                        int s = HISQStencilIndex(mu,nu,rho,sig,"7STAPLE");
-//
-//                        auto [x                      , x_p_mu                 , x_p_mu_p_nu            , x_p_mu_p_nu_p_rho      ,
-//                              x_p_mu_p_nu_p_rho_m_sig, x_p_mu_p_nu_m_rho      , x_p_mu_p_nu_m_rho_m_sig, x_p_mu_p_nu_m_sig      ,
-//                              x_p_mu_m_nu            , x_p_mu_m_nu_p_rho      , x_p_mu_m_nu_p_rho_p_sig, x_p_mu_m_nu_p_rho_m_sig,
-//                              x_p_mu_m_nu_m_rho      , x_p_mu_m_nu_m_rho_p_sig, x_p_mu_m_nu_m_rho_m_sig, x_p_mu_m_nu_p_sig      ,
-//                              x_p_mu_m_nu_m_sig      , x_p_mu_p_rho           , x_p_mu_p_rho_p_sig     , x_p_mu_p_rho_m_sig     , 
-//                              x_p_mu_m_rho           , x_p_mu_m_rho_p_sig     , x_p_mu_m_rho_m_sig     , x_p_mu_p_sig           , 
-//                              x_p_mu_m_sig           , x_p_nu                 , x_p_nu_p_rho           , x_p_nu_p_rho_p_sig     , 
-//                              x_p_nu_p_rho_m_sig     , x_p_nu_m_rho           , x_p_nu_m_rho_p_sig     , x_p_nu_m_rho_m_sig     , 
-//                              x_p_rho                , x_p_rho_m_nu           , x_p_rho_p_sig          , x_p_rho_m_sig          , 
-//                              x_m_nu                 , x_m_nu_p_rho           , x_m_nu_p_rho_p_sig     , x_m_nu_p_rho_m_sig     , 
-//                              x_m_nu_m_rho           , x_m_nu_m_rho_p_sig     , x_m_nu_m_rho_m_sig     , x_m_rho                , 
-//                              x_m_rho_p_sig          , x_m_rho_m_sig
-//                        ] = get7StaplePoints(gStencil7_v,s,site);
-//
-//                        res = Zero();
-//
-//                        res += getLink(XY_v,x_p_mu,nu)*adj(getLink(U_v,x_p_nu,mu))
-//                               *( // p1t0
-//                                      getLink(U_v,x_p_nu            ,rho)
-//                                 *    getLink(U_v,x_p_nu_p_rho      ,sig)
-//                                 *adj(getLink(U_v,x_p_rho_p_sig     ,nu ))
-//                                 *adj(getLink(U_v,x_p_rho           ,sig))
-//                                 *adj(getLink(U_v,x                 ,rho))
-//                                  // p1t3
-//                                 +    getLink(U_v,x_p_nu            ,rho)
-//                                 *adj(getLink(U_v,x_p_nu_p_rho_m_sig,sig))
-//                                 *adj(getLink(U_v,x_p_rho_m_sig     ,nu ))
-//                                 *    getLink(U_v,x_p_rho_m_sig     ,sig)
-//                                 *adj(getLink(U_v,x                 ,rho))
-//                                  // p1t4
-//                                 +adj(getLink(U_v,x_p_nu_m_rho      ,rho))
-//                                 *    getLink(U_v,x_p_nu_m_rho      ,sig)
-//                                 *adj(getLink(U_v,x_m_rho_p_sig     ,nu ))
-//                                 *adj(getLink(U_v,x_m_rho           ,sig))
-//                                 *    getLink(U_v,x_m_rho           ,rho)
-//                                  // p1t6
-//                                 +adj(getLink(U_v,x_p_nu_m_rho      ,rho))
-//                                 *adj(getLink(U_v,x_p_nu_m_rho_m_sig,sig))
-//                                 *adj(getLink(U_v,x_m_rho_m_sig     ,nu))
-//                                 *    getLink(U_v,x_m_rho_m_sig     ,sig)
-//                                 *    getLink(U_v,x_p_rho           ,rho)
-//                                ); 
-//
-//                        res += adj(getLink(XY_v,x_p_mu_m_nu,nu))*adj(getLink(U_v,x_m_nu,mu))
-//                               *( // p1t1
-//                                      getLink(U_v,x_m_nu            ,rho)
-//                                 *    getLink(U_v,x_m_nu_p_rho      ,sig)
-//                                 *    getLink(U_v,x_m_nu_p_rho_p_sig,nu )
-//                                 *adj(getLink(U_v,x_p_rho           ,sig))
-//                                 *adj(getLink(U_v,x                 ,rho))
-//                                  // p1t2
-//                                 +    getLink(U_v,x_m_nu            ,rho)
-//                                 *adj(getLink(U_v,x_m_nu_p_rho_m_sig,sig))
-//                                 *    getLink(U_v,x_m_nu_p_rho_m_sig,nu ) 
-//                                 *    getLink(U_v,x_p_rho_m_sig     ,sig)
-//                                 *adj(getLink(U_v,x                 ,rho))
-//                                  // p1t5
-//                                 +adj(getLink(U_v,x_m_nu_m_rho      ,rho))
-//                                 *    getLink(U_v,x_m_nu_m_rho      ,sig)
-//                                 *    getLink(U_v,x_m_nu_m_rho_p_sig,nu ) 
-//                                 *adj(getLink(U_v,x_m_rho           ,sig))
-//                                 *    getLink(U_v,x_m_rho           ,rho)
-//                                  // p1t7
-//                                 +adj(getLink(U_v,x_m_nu_m_rho      ,rho))
-//                                 *adj(getLink(U_v,x_m_nu_m_rho_m_sig,sig))
-//                                 *    getLink(U_v,x_m_nu_m_rho_m_sig,nu ) 
-//                                 *    getLink(U_v,x_m_rho_m_sig     ,sig)
-//                                 *    getLink(U_v,x_m_rho           ,rho)
-//                                );
-//                        
-//                        U1 = adj(getLink(U_v,x_p_nu,mu));
-//
-//                        res += // p2t0
-//                                    getLink(U_v ,x_p_mu            ,sig)
-//                               *    getLink(XY_v,x_p_mu_p_sig      ,nu )
-//                               *adj(getLink(U_v ,x_p_mu_p_nu       ,sig))
-//                               *U1
-//                               *    getLink(U_v ,x_p_nu            ,rho) 
-//                               *adj(getLink(U_v ,x_p_rho           ,nu ))
-//                               *adj(getLink(U_v ,x                 ,rho))
-//                               // p2t1
-//                               +adj(getLink(U_v ,x_p_mu_m_sig      ,sig))
-//                               *    getLink(XY_v,x_p_mu_m_sig      ,nu )
-//                               *    getLink(U_v ,x_p_mu_p_nu_m_sig ,sig)
-//                               *U1
-//                               *    getLink(U_v ,x_p_nu            ,rho) 
-//                               *adj(getLink(U_v ,x_p_rho           ,nu ))
-//                               *adj(getLink(U_v ,x                 ,rho))
-//                               // p2t4
-//                               +    getLink(U_v ,x_p_mu            ,sig) 
-//                               *    getLink(XY_v,x_p_mu_p_sig      ,nu )
-//                               *adj(getLink(U_v ,x_p_mu_p_nu       ,sig))
-//                               *U1
-//                               *adj(getLink(U_v ,x_p_nu_m_rho      ,rho)) 
-//                               *adj(getLink(U_v ,x_m_rho           ,nu ))
-//                               *    getLink(U_v ,x_m_rho           ,rho) 
-//                               // p2t5
-//                               +adj(getLink(U_v ,x_p_mu_m_sig      ,sig))
-//                               *    getLink(XY_v,x_p_mu_m_sig      ,nu )
-//                               *    getLink(U_v ,x_p_mu_p_nu_m_sig ,sig)
-//                               *U1
-//                               *adj(getLink(U_v ,x_p_nu_m_rho      ,rho)) 
-//                               *adj(getLink(U_v ,x_m_rho           ,nu ))
-//                               *    getLink(U_v ,x_m_rho           ,rho); 
-//                        
-//                        U1 = adj(getLink(U_v,x_m_nu,mu));
-//                        
-//                        res += // p2t2
-//                                    getLink(U_v ,x_p_mu            ,sig) 
-//                               *adj(getLink(XY_v,x_p_mu_m_nu_p_sig ,nu ))
-//                               *adj(getLink(U_v ,x_p_mu_m_nu       ,sig))
-//                               *U1
-//                               *    getLink(U_v ,x_m_nu            ,rho) 
-//                               *    getLink(U_v ,x_p_rho_m_nu      ,nu )
-//                               *adj(getLink(U_v ,x                 ,rho))
-//                               // p2t3
-//                               +adj(getLink(U_v ,x_p_mu_m_sig      ,sig))
-//                               *adj(getLink(XY_v,x_p_mu_m_nu_m_sig ,nu ))
-//                               *    getLink(U_v ,x_p_mu_m_nu_m_sig ,sig)
-//                               *U1
-//                               *    getLink(U_v ,x_m_nu            ,rho) 
-//                               *    getLink(U_v ,x_m_nu_p_rho      ,nu )
-//                               *adj(getLink(U_v ,x                 ,rho))
-//                               // p2t6
-//                               +    getLink(U_v ,x_p_mu            ,sig) 
-//                               *adj(getLink(XY_v,x_p_mu_m_nu_p_sig ,nu ))
-//                               *adj(getLink(U_v ,x_p_mu_m_nu       ,sig))
-//                               *U1
-//                               *adj(getLink(U_v ,x_m_nu_m_rho      ,rho)) 
-//                               *    getLink(U_v ,x_m_nu_m_rho      ,nu )
-//                               *    getLink(U_v ,x_m_rho           ,rho)
-//                               // p2t7
-//                               +adj(getLink(U_v ,x_p_mu_m_sig      ,sig))
-//                               *adj(getLink(XY_v,x_p_mu_m_nu_m_sig ,nu ))
-//                               *    getLink(U_v ,x_p_mu_m_nu_m_sig ,sig)
-//                               *U1
-//                               *adj(getLink(U_v ,x_m_nu_m_rho      ,rho)) 
-//                               *    getLink(U_v ,x_m_nu_m_rho      ,nu )
-//                               *    getLink(U_v ,x_m_rho           ,rho);
-//
-//                        res += ( // p3t0
-//                                      getLink(U_v ,x_p_mu                 ,rho)
-//                                 *    getLink(U_v ,x_p_mu_p_rho           ,sig)
-//                                 *    getLink(XY_v,x_p_mu_p_rho_p_sig     ,nu ) 
-//                                 *adj(getLink(U_v ,x_p_mu_p_nu_p_rho      ,sig))
-//                                 *adj(getLink(U_v ,x_p_mu_p_nu            ,rho))
-//                                 // p3t1
-//                                 +    getLink(U_v ,x_p_mu                 ,rho)
-//                                 *adj(getLink(U_v ,x_p_mu_p_rho_m_sig     ,sig))
-//                                 *    getLink(XY_v,x_p_mu_p_rho_m_sig     ,nu )
-//                                 *    getLink(U_v ,x_p_mu_p_nu_p_rho_m_sig,sig) 
-//                                 *adj(getLink(U_v ,x_p_mu_p_nu            ,rho))
-//                                 // p3t2
-//                                 +adj(getLink(U_v ,x_p_mu_m_rho           ,rho))
-//                                 *    getLink(U_v ,x_p_mu_m_rho           ,sig)
-//                                 *    getLink(XY_v,x_p_mu_m_rho_p_sig     ,nu )
-//                                 *adj(getLink(U_v ,x_p_mu_p_nu_m_rho      ,sig))
-//                                 *    getLink(U_v ,x_p_mu_p_nu_m_rho      ,rho)
-//                                 // p3t3
-//                                 +adj(getLink(U_v ,x_p_mu_m_rho           ,rho))
-//                                 *adj(getLink(U_v ,x_p_mu_m_rho_m_sig     ,sig))
-//                                 *    getLink(XY_v,x_p_mu_m_rho_m_sig     ,nu )
-//                                 *    getLink(U_v ,x_p_mu_p_nu_m_rho_m_sig,sig)
-//                                 *    getLink(U_v ,x_p_mu_p_nu_m_rho      ,rho)
-//                               )*adj(getLink(U_v,x_p_nu,mu))*adj(getLink(U_v,x,nu));
-//
-//                        res += ( // p3t4 (might have copy-paste error)
-//                                      getLink(U_v ,x_p_mu                 ,rho)
-//                                 *    getLink(U_v ,x_p_mu_p_rho           ,sig)
-//                                 *adj(getLink(XY_v,x_p_mu_m_nu_p_rho_p_sig,nu )) 
-//                                 *adj(getLink(U_v ,x_p_mu_m_nu_p_rho      ,sig))
-//                                 *adj(getLink(U_v ,x_p_mu_m_nu            ,rho))
-//                                 // p3t5 (might have copy-paste error)
-//                                 +    getLink(U_v ,x_p_mu                 ,rho)
-//                                 *adj(getLink(U_v ,x_p_mu_p_rho_m_sig     ,sig))
-//                                 *adj(getLink(XY_v,x_p_mu_m_nu_p_rho_m_sig,nu ))
-//                                 *    getLink(U_v ,x_p_mu_m_nu_p_rho_m_sig,sig) 
-//                                 *adj(getLink(U_v ,x_p_mu_m_nu            ,rho))
-//                                 // p3t6
-//                                 +adj(getLink(U_v ,x_p_mu_m_rho           ,rho))
-//                                 *    getLink(U_v ,x_p_mu_m_rho           ,sig)
-//                                 *adj(getLink(XY_v,x_p_mu_m_nu_m_rho_p_sig,nu ))
-//                                 *adj(getLink(U_v ,x_p_mu_m_nu_m_rho      ,sig))
-//                                 *    getLink(U_v ,x_p_mu_m_nu_m_rho      ,rho)
-//                                 // p3t7
-//                                 +adj(getLink(U_v ,x_p_mu_m_rho           ,rho))
-//                                 *adj(getLink(U_v ,x_p_mu_m_rho_m_sig     ,sig))
-//                                 *adj(getLink(XY_v,x_p_mu_m_nu_m_rho_m_sig,nu ))
-//                                 *    getLink(U_v ,x_p_mu_m_nu_m_rho_m_sig,sig)
-//                                 *    getLink(U_v ,x_p_mu_m_nu_m_rho      ,rho)
-//                               )*adj(getLink(U_v,x_m_nu,mu))*getLink(U_v,x_m_nu,nu);
-//
-//                        res += getLink(U_v,x_p_mu,nu)
-//                               *( // p4t0
-//                                      getLink(U_v ,x_p_mu_p_nu            ,rho)
-//                                 *    getLink(U_v ,x_p_mu_p_nu_p_rho      ,sig)
-//                                 *adj(getLink(XY_v,x_p_nu_p_rho_p_sig     ,mu ))
-//                                 *adj(getLink(U_v ,x_p_nu_p_rho           ,sig))
-//                                 *adj(getLink(U_v ,x_p_nu                 ,rho))
-//                                  // p4t1
-//                                 +    getLink(U_v ,x_p_mu_p_nu            ,rho)
-//                                 *adj(getLink(U_v ,x_p_mu_p_nu_p_rho_m_sig,sig))
-//                                 *adj(getLink(XY_v,x_p_nu_p_rho_m_sig     ,mu ))
-//                                 *    getLink(U_v ,x_p_nu_p_rho_m_sig     ,sig)
-//                                 *adj(getLink(U_v ,x_p_nu                 ,rho))
-//                                  // p4t2
-//                                 +adj(getLink(U_v ,x_p_mu_p_nu_m_rho      ,rho))
-//                                 *adj(getLink(U_v ,x_p_mu_p_nu_m_rho_m_sig,sig))
-//                                 *adj(getLink(XY_v,x_p_nu_m_rho_m_sig     ,mu ))
-//                                 *    getLink(U_v ,x_p_nu_m_rho_m_sig     ,sig)
-//                                 *    getLink(U_v ,x_p_nu_m_rho           ,rho)
-//                                  // p4t3
-//                                 +adj(getLink(U_v ,x_p_mu_p_nu_m_rho      ,rho))
-//                                 *    getLink(U_v ,x_p_mu_p_nu_m_rho      ,sig)
-//                                 *adj(getLink(XY_v,x_p_nu_m_rho_p_sig     ,mu ))
-//                                 *adj(getLink(U_v ,x_p_nu_m_rho           ,sig))
-//                                 *    getLink(U_v ,x_p_nu_m_rho           ,rho)
-//                               )*adj(getLink(U_v,x,nu));
-//
-//                        res += adj(getLink(U_v,x_p_mu_m_nu,nu))
-//                               *( // p4t4
-//                                      getLink(U_v ,x_p_mu_p_nu            ,rho)
-//                                 *    getLink(U_v ,x_p_mu_m_nu_p_rho      ,sig)
-//                                 *adj(getLink(XY_v,x_m_nu_p_rho_p_sig     ,mu ))
-//                                 *adj(getLink(U_v ,x_m_nu_p_rho           ,sig))
-//                                 *adj(getLink(U_v ,x_m_nu                 ,rho))
-//                                  // p4t5
-//                                 +    getLink(U_v ,x_p_mu_m_nu            ,rho)
-//                                 *adj(getLink(U_v ,x_p_mu_m_nu_p_rho_m_sig,sig))
-//                                 *adj(getLink(XY_v,x_m_nu_p_rho_m_sig     ,mu ))
-//                                 *    getLink(U_v ,x_m_nu_p_rho_m_sig     ,sig)
-//                                 *adj(getLink(U_v ,x_m_nu                 ,rho))
-//                                  // p4t6
-//                                 +adj(getLink(U_v ,x_p_mu_m_nu_m_rho      ,rho))
-//                                 *    getLink(U_v ,x_p_mu_m_nu_m_rho      ,sig)
-//                                 *adj(getLink(XY_v,x_m_nu_m_rho_p_sig     ,mu ))
-//                                 *adj(getLink(U_v ,x_m_nu_m_rho           ,sig))
-//                                 *    getLink(U_v ,x_m_nu_m_rho           ,rho)
-//                                  // p4t7
-//                                 +adj(getLink(U_v ,x_p_mu_m_nu_m_rho      ,rho))
-//                                 *adj(getLink(U_v ,x_p_mu_m_nu_m_rho_m_sig,sig))
-//                                 *adj(getLink(XY_v,x_m_nu_m_rho_m_sig     ,mu ))
-//                                 *    getLink(U_v ,x_m_nu_m_rho_m_sig     ,sig)
-//                                 *    getLink(U_v ,x_m_nu_m_rho           ,rho)
-//                               )*getLink(U_v,x_m_nu,nu);
-//                        
-//                        res += getLink(U_v,x_p_mu,nu)*adj(getLink(U_v,x_p_nu,mu))
-//                               *( // p5t0
-//                                      getLink(U_v ,x_p_nu                 ,rho)
-//                                 *    getLink(U_v ,x_p_nu_p_rho           ,sig)
-//                                 *adj(getLink(XY_v,x_p_rho_p_sig          ,nu ))
-//                                 *adj(getLink(U_v ,x_p_rho                ,sig))
-//                                 *adj(getLink(U_v ,x                      ,rho))
-//                                  // p5t1
-//                                 +    getLink(U_v ,x_p_nu                 ,rho)
-//                                 *adj(getLink(U_v ,x_p_nu_p_rho_m_sig     ,sig))
-//                                 *adj(getLink(XY_v,x_p_rho_p_sig          ,nu ))
-//                                 *    getLink(U_v ,x_p_rho_p_sig          ,sig)
-//                                 *adj(getLink(U_v ,x                      ,rho))
-//                                  // p5t4
-//                                 +adj(getLink(U_v ,x_p_nu_m_rho           ,rho))
-//                                 *    getLink(U_v ,x_p_nu_m_rho           ,sig)
-//                                 *adj(getLink(XY_v,x_m_rho_p_sig          ,nu ))
-//                                 *adj(getLink(U_v ,x_m_rho                ,sig))
-//                                 *    getLink(U_v ,x_m_rho                ,rho)
-//                                  // p5t5
-//                                 +adj(getLink(U_v ,x_p_nu_m_rho           ,rho))
-//                                 *adj(getLink(U_v ,x_p_nu_m_rho_m_sig     ,sig))
-//                                 *adj(getLink(XY_v,x_m_rho_m_sig          ,nu ))
-//                                 *    getLink(U_v ,x_m_rho_m_sig          ,sig)
-//                                 *    getLink(U_v ,x_m_rho                ,rho)
-//                               );
-//                        
-//                        res += adj(getLink(U_v,x_p_mu_m_nu,nu))*adj(getLink(U_v,x_m_nu,mu))
-//                               *( // p5t2
-//                                      getLink(U_v ,x_m_nu                 ,rho)
-//                                 *    getLink(U_v ,x_m_nu_p_rho           ,sig)
-//                                 *    getLink(XY_v,x_m_nu_p_rho_p_sig     ,nu )
-//                                 *adj(getLink(U_v ,x_p_rho                ,sig))
-//                                 *adj(getLink(U_v ,x                      ,rho))
-//                                  // p5t3
-//                                 +    getLink(U_v ,x_m_nu                 ,rho)
-//                                 *adj(getLink(U_v ,x_m_nu_p_rho_m_sig     ,sig))
-//                                 *    getLink(XY_v,x_m_nu_p_rho_m_sig     ,nu )
-//                                 *    getLink(U_v ,x_p_rho_m_sig          ,sig)
-//                                 *adj(getLink(U_v ,x                      ,rho))
-//                                  // p5t6
-//                                 +adj(getLink(U_v ,x_m_nu_m_rho           ,rho))
-//                                 *    getLink(U_v ,x_m_nu_m_rho           ,sig)
-//                                 *    getLink(XY_v,x_m_nu_m_rho_p_sig     ,nu )
-//                                 *adj(getLink(U_v ,x_m_rho                ,sig))
-//                                 *    getLink(U_v ,x_m_rho                ,rho)
-//                                  // p5t7
-//                                 +adj(getLink(U_v ,x_m_nu_m_rho           ,rho))
-//                                 *adj(getLink(U_v ,x_m_nu_m_rho_m_sig     ,sig))
-//                                 *    getLink(XY_v,x_m_nu_m_rho_m_sig     ,nu )
-//                                 *    getLink(U_v ,x_m_rho_m_sig          ,sig)
-//                                 *    getLink(U_v ,x_m_rho                ,rho)
-//                               );
-//
-//                        U1 = adj(getLink(U_v,x_p_nu,mu));
-//                        
-//                        res += // p6t0
-//                                    getLink(U_v ,x_p_mu            ,sig) 
-//                               *    getLink(U_v ,x_p_mu_p_sig      ,nu )
-//                               *adj(getLink(U_v ,x_p_mu_p_nu       ,sig))
-//                               *U1
-//                               *    getLink(U_v ,x_p_nu            ,rho) 
-//                               *adj(getLink(XY_v,x_p_rho           ,nu ))
-//                               *adj(getLink(U_v ,x                 ,rho))
-//                               // p6t1
-//                               +adj(getLink(U_v ,x_p_mu_m_sig      ,sig)) 
-//                               *    getLink(U_v ,x_p_mu_m_sig      ,nu )
-//                               *    getLink(U_v ,x_p_mu_p_nu_m_sig ,sig)
-//                               *U1
-//                               *    getLink(U_v ,x_p_nu            ,rho) 
-//                               *adj(getLink(XY_v,x_p_rho           ,nu ))
-//                               *adj(getLink(U_v ,x                 ,rho))
-//                               // p6t4
-//                               +adj(getLink(U_v ,x_p_mu_m_sig      ,sig)) 
-//                               *    getLink(U_v ,x_p_mu_m_sig      ,nu )
-//                               *    getLink(U_v ,x_p_mu_p_nu_m_sig ,sig)
-//                               *U1
-//                               *adj(getLink(U_v ,x_p_nu_m_rho      ,rho)) 
-//                               *adj(getLink(XY_v,x_m_rho           ,nu ))
-//                               *    getLink(U_v ,x_m_rho           ,rho)
-//                               // p6t5
-//                               +    getLink(U_v ,x_p_mu            ,sig)
-//                               *    getLink(U_v ,x_p_mu_p_sig      ,nu )
-//                               *adj(getLink(U_v ,x_p_mu_p_nu       ,sig))
-//                               *U1
-//                               *adj(getLink(U_v ,x_p_nu_m_rho      ,rho)) 
-//                               *adj(getLink(XY_v,x_m_rho           ,nu ))
-//                               *    getLink(U_v ,x_m_rho           ,rho);
-//
-//                        U1 = adj(getLink(U_v,x_m_nu,mu));
-//                        
-//                        res += // p6t2
-//                                    getLink(U_v ,x_p_mu            ,sig) 
-//                               *adj(getLink(U_v ,x_p_mu_m_nu_p_sig ,nu ))
-//                               *adj(getLink(U_v ,x_p_mu_m_nu       ,sig))
-//                               *U1
-//                               *    getLink(U_v ,x_m_nu            ,rho) 
-//                               *    getLink(XY_v,x_m_nu_p_rho      ,nu )
-//                               *adj(getLink(U_v ,x                 ,rho))
-//                               // p6t3
-//                               +adj(getLink(U_v ,x_p_mu_m_sig      ,sig))
-//                               *adj(getLink(U_v ,x_p_mu_m_nu_m_sig ,nu ))
-//                               *    getLink(U_v ,x_p_mu_m_nu_m_sig ,sig)
-//                               *U1
-//                               *    getLink(U_v ,x_m_nu            ,rho) 
-//                               *    getLink(XY_v,x_m_nu_p_rho      ,nu )
-//                               *adj(getLink(U_v ,x                 ,rho))
-//                               // p6t6
-//                               +    getLink(U_v ,x_p_mu            ,sig)
-//                               *adj(getLink(U_v ,x_p_mu_m_nu_p_sig ,nu ))
-//                               *adj(getLink(U_v ,x_p_mu_m_nu       ,sig))
-//                               *U1
-//                               *adj(getLink(U_v ,x_m_nu_m_rho      ,rho))
-//                               *    getLink(XY_v,x_m_nu_m_rho      ,nu )
-//                               *    getLink(U_v ,x_m_rho           ,rho)
-//                               // p6t7
-//                               +adj(getLink(U_v ,x_p_mu_m_sig      ,sig))
-//                               *adj(getLink(U_v ,x_p_mu_m_nu_m_sig ,nu ))
-//                               *    getLink(U_v ,x_p_mu_m_nu_m_sig ,sig)
-//                               *U1
-//                               *adj(getLink(U_v ,x_m_nu_m_rho      ,rho))
-//                               *    getLink(XY_v,x_m_nu_m_rho      ,nu )
-//                               *    getLink(U_v ,x_m_rho           ,rho);
-//
-//                        res += ( // p7t0
-//                                     getLink(U_v,x_p_mu                 ,rho)
-//                                *    getLink(U_v,x_p_mu_p_rho           ,sig)
-//                                *    getLink(U_v,x_p_mu_p_rho_p_sig     ,nu ) 
-//                                *adj(getLink(U_v,x_p_mu_p_nu_p_rho      ,sig))
-//                                *adj(getLink(U_v,x_p_mu_p_nu            ,rho))
-//                                 // p7t1
-//                                +    getLink(U_v,x_p_mu                 ,rho)
-//                                *adj(getLink(U_v,x_p_mu_p_rho_m_sig     ,sig))
-//                                *    getLink(U_v,x_p_mu_p_rho_m_sig     ,nu )
-//                                *    getLink(U_v,x_p_mu_p_nu_p_rho_m_sig,sig) 
-//                                *adj(getLink(U_v,x_p_mu_p_nu            ,rho))
-//                                 // p7t2
-//                                +adj(getLink(U_v,x_p_mu_m_rho           ,rho))
-//                                *    getLink(U_v,x_p_mu_m_rho           ,sig)
-//                                *    getLink(U_v,x_p_mu_m_rho_p_sig     ,nu )
-//                                *adj(getLink(U_v,x_p_mu_p_nu_m_rho      ,sig))
-//                                *    getLink(U_v,x_p_mu_p_nu_m_rho      ,rho)
-//                                 // p7t3
-//                                +adj(getLink(U_v,x_p_mu_m_rho           ,rho))
-//                                *adj(getLink(U_v,x_p_mu_m_rho_m_sig     ,sig))
-//                                *    getLink(U_v,x_p_mu_m_rho_m_sig     ,nu )
-//                                *    getLink(U_v,x_p_mu_p_nu_m_rho_m_sig,sig)
-//                                *    getLink(U_v,x_p_mu_p_nu_m_rho      ,rho)
-//                              )*adj(getLink(U_v,x_p_nu,mu))*adj(getLink(XY_v,x,nu));
-//                                   
-//                        res += ( // p7t4
-//                                 adj(getLink(U_v ,x_p_mu_m_rho           ,rho))
-//                                *    getLink(U_v ,x_p_mu_m_rho           ,sig)
-//                                *adj(getLink(XY_v,x_p_mu_m_nu_m_rho_p_sig,nu )) 
-//                                *adj(getLink(U_v ,x_p_mu_m_nu_m_rho      ,sig))
-//                                *    getLink(U_v ,x_p_mu_m_nu_m_rho      ,rho)
-//                                 // p7t5
-//                                +adj(getLink(U_v ,x_p_mu_m_rho           ,rho))
-//                                *adj(getLink(U_v ,x_p_mu_m_rho_m_sig     ,sig))
-//                                *adj(getLink(XY_v,x_p_mu_m_nu_m_rho_m_sig,nu ))
-//                                *    getLink(U_v ,x_p_mu_m_nu_m_rho_m_sig,sig) 
-//                                *    getLink(U_v ,x_p_mu_m_nu_m_rho      ,rho)
-//                                 // p7t6
-//                                +    getLink(U_v ,x_p_mu                 ,rho)
-//                                *adj(getLink(U_v ,x_p_mu_p_rho_m_sig     ,sig))
-//                                *adj(getLink(XY_v,x_p_mu_m_nu_p_rho_p_sig,nu ))
-//                                *    getLink(U_v ,x_p_mu_m_nu_p_rho_m_sig,sig)
-//                                *adj(getLink(U_v ,x_p_mu_m_nu            ,rho))
-//                                 // p7t7
-//                                +    getLink(U_v ,x_p_mu                 ,rho)
-//                                *    getLink(U_v ,x_p_mu_p_rho           ,sig)
-//                                *adj(getLink(XY_v,x_p_mu_m_nu_p_rho_p_sig,nu ))
-//                                *adj(getLink(U_v ,x_p_mu_m_nu_p_rho      ,sig))
-//                                *adj(getLink(U_v ,x_p_mu_m_nu            ,rho))
-//                              )*adj(getLink(U_v,x_m_nu,mu))*getLink(XY_v,x_m_nu,nu);
-//                    
-//                        setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) - c7*res);
-//                    }
-//                }
-//            }
-//        })
-//    }
+    // is the matching correct between sites and shifts?
+    // double-check xy adjoint thing
+    template<int term>
+    void sevenLinkDeriv(GF& Fghost, GF& Ughost, GF& XYghost, GeneralLocalStencil gStencil7, Real c7, int mu) const {
+        
+        autoView(U_v , Ughost , AcceleratorRead);
+        autoView(XY_v, XYghost, AcceleratorRead);
+        autoView(F_v , Fghost , AcceleratorWrite);
+        int Nsites = U_v.size();
+        auto gStencil7_v = gStencil7.View(AcceleratorRead);
+        typedef decltype(getLink(U_v,gStencil7.GetEntry(0,0),0)) U3matrix;
+
+        // TODO: After this works, start consolidating some terms. This time
+        // It should actually work. 
+        accelerator_for(site,Nsites,Simd::Nsimd(),{
+            U3matrix res, U1; 
+            for(int nu=0;nu<Nd;nu++) {
+                if(nu==mu) continue;
+                for(int rho=0;rho<Nd;rho++) {
+                    if (rho == mu || rho == nu) continue;
+                    for(int sig=0;sig<Nd;sig++) {
+                        if (sig == mu || sig == nu || sig == rho) continue;
+                        int s = HISQStencilIndex(mu,nu,rho,sig,"7STAPLE");
+
+                        auto [x                      , x_p_mu                 , x_p_mu_p_nu            , x_p_mu_p_nu_p_rho      ,
+                              x_p_mu_p_nu_p_rho_m_sig, x_p_mu_p_nu_m_rho      , x_p_mu_p_nu_m_rho_m_sig, x_p_mu_p_nu_m_sig      ,
+                              x_p_mu_m_nu            , x_p_mu_m_nu_p_rho      , x_p_mu_m_nu_p_rho_p_sig, x_p_mu_m_nu_p_rho_m_sig,
+                              x_p_mu_m_nu_m_rho      , x_p_mu_m_nu_m_rho_p_sig, x_p_mu_m_nu_m_rho_m_sig, x_p_mu_m_nu_p_sig      ,
+                              x_p_mu_m_nu_m_sig      , x_p_mu_p_rho           , x_p_mu_p_rho_p_sig     , x_p_mu_p_rho_m_sig     , 
+                              x_p_mu_m_rho           , x_p_mu_m_rho_p_sig     , x_p_mu_m_rho_m_sig     , x_p_mu_p_sig           , 
+                              x_p_mu_m_sig           , x_p_nu                 , x_p_nu_p_rho           , x_p_nu_p_rho_p_sig     , 
+                              x_p_nu_p_rho_m_sig     , x_p_nu_m_rho           , x_p_nu_m_rho_p_sig     , x_p_nu_m_rho_m_sig     , 
+                              x_p_rho                , x_p_rho_m_nu           , x_p_rho_p_sig          , x_p_rho_m_sig          , 
+                              x_m_nu                 , x_m_nu_p_rho           , x_m_nu_p_rho_p_sig     , x_m_nu_p_rho_m_sig     , 
+                              x_m_nu_m_rho           , x_m_nu_m_rho_p_sig     , x_m_nu_m_rho_m_sig     , x_m_rho                , 
+                              x_m_rho_p_sig          , x_m_rho_m_sig
+                        ] = get7StaplePoints(gStencil7_v,s,site);
+
+                        res = Zero();
+
+if constexpr(term==0) {
+                        res += adj(getLink(XY_v,x_p_mu,nu))*adj(getLink(U_v,x_p_nu,mu))
+                               *( // p1t0
+                                      getLink(U_v,x_p_nu            ,rho)
+                                 *    getLink(U_v,x_p_nu_p_rho      ,sig)
+                                 *adj(getLink(U_v,x_p_rho_p_sig     ,nu ))
+                                 *adj(getLink(U_v,x_p_rho           ,sig))
+                                 *adj(getLink(U_v,x                 ,rho))
+                                  // p1t3
+                                 +    getLink(U_v,x_p_nu            ,rho)
+                                 *adj(getLink(U_v,x_p_nu_p_rho_m_sig,sig))
+                                 *adj(getLink(U_v,x_p_rho_m_sig     ,nu ))
+                                 *    getLink(U_v,x_p_rho_m_sig     ,sig)
+                                 *adj(getLink(U_v,x                 ,rho))
+                                  // p1t4
+                                 +adj(getLink(U_v,x_p_nu_m_rho      ,rho))
+                                 *    getLink(U_v,x_p_nu_m_rho      ,sig)
+                                 *adj(getLink(U_v,x_m_rho_p_sig     ,nu ))
+                                 *adj(getLink(U_v,x_m_rho           ,sig))
+                                 *    getLink(U_v,x_m_rho           ,rho)
+                                  // p1t6
+                                 +adj(getLink(U_v,x_p_nu_m_rho      ,rho))
+                                 *adj(getLink(U_v,x_p_nu_m_rho_m_sig,sig))
+                                 *adj(getLink(U_v,x_m_rho_m_sig     ,nu))
+                                 *    getLink(U_v,x_m_rho_m_sig     ,sig)
+                                 *    getLink(U_v,x_m_rho           ,rho)
+                                ); 
+}
+if constexpr(term==1) {
+                        res += getLink(XY_v,x_p_mu_m_nu,nu)*adj(getLink(U_v,x_m_nu,mu))
+                               *( // p1t1
+                                      getLink(U_v,x_m_nu            ,rho)
+                                 *    getLink(U_v,x_m_nu_p_rho      ,sig)
+                                 *    getLink(U_v,x_m_nu_p_rho_p_sig,nu )
+                                 *adj(getLink(U_v,x_p_rho           ,sig))
+                                 *adj(getLink(U_v,x                 ,rho))
+                                  // p1t2
+                                 +    getLink(U_v,x_m_nu            ,rho)
+                                 *adj(getLink(U_v,x_m_nu_p_rho_m_sig,sig))
+                                 *    getLink(U_v,x_m_nu_p_rho_m_sig,nu ) 
+                                 *    getLink(U_v,x_p_rho_m_sig     ,sig)
+                                 *adj(getLink(U_v,x                 ,rho))
+                                  // p1t5
+                                 +adj(getLink(U_v,x_m_nu_m_rho      ,rho))
+                                 *    getLink(U_v,x_m_nu_m_rho      ,sig)
+                                 *    getLink(U_v,x_m_nu_m_rho_p_sig,nu ) 
+                                 *adj(getLink(U_v,x_m_rho           ,sig))
+                                 *    getLink(U_v,x_m_rho           ,rho)
+                                  // p1t7
+                                 +adj(getLink(U_v,x_m_nu_m_rho      ,rho))
+                                 *adj(getLink(U_v,x_m_nu_m_rho_m_sig,sig))
+                                 *    getLink(U_v,x_m_nu_m_rho_m_sig,nu ) 
+                                 *    getLink(U_v,x_m_rho_m_sig     ,sig)
+                                 *    getLink(U_v,x_m_rho           ,rho)
+                                );
+}
+if constexpr(term==2) {
+                        
+                        U1 = adj(getLink(U_v,x_p_nu,mu));
+
+                        res += // p2t0
+                                    getLink(U_v ,x_p_mu            ,sig)
+                               *adj(getLink(XY_v,x_p_mu_p_sig      ,nu ))
+                               *adj(getLink(U_v ,x_p_mu_p_nu       ,sig))
+                               *U1
+                               *    getLink(U_v ,x_p_nu            ,rho) 
+                               *adj(getLink(U_v ,x_p_rho           ,nu ))
+                               *adj(getLink(U_v ,x                 ,rho))
+                               // p2t1
+                               +adj(getLink(U_v ,x_p_mu_m_sig      ,sig))
+                               *adj(getLink(XY_v,x_p_mu_m_sig      ,nu ))
+                               *    getLink(U_v ,x_p_mu_p_nu_m_sig ,sig)
+                               *U1
+                               *    getLink(U_v ,x_p_nu            ,rho) 
+                               *adj(getLink(U_v ,x_p_rho           ,nu ))
+                               *adj(getLink(U_v ,x                 ,rho))
+                               // p2t4
+                               +    getLink(U_v ,x_p_mu            ,sig) 
+                               *adj(getLink(XY_v,x_p_mu_p_sig      ,nu ))
+                               *adj(getLink(U_v ,x_p_mu_p_nu       ,sig))
+                               *U1
+                               *adj(getLink(U_v ,x_p_nu_m_rho      ,rho)) 
+                               *adj(getLink(U_v ,x_m_rho           ,nu ))
+                               *    getLink(U_v ,x_m_rho           ,rho) 
+                               // p2t5
+                               +adj(getLink(U_v ,x_p_mu_m_sig      ,sig))
+                               *adj(getLink(XY_v,x_p_mu_m_sig      ,nu ))
+                               *    getLink(U_v ,x_p_mu_p_nu_m_sig ,sig)
+                               *U1
+                               *adj(getLink(U_v ,x_p_nu_m_rho      ,rho)) 
+                               *adj(getLink(U_v ,x_m_rho           ,nu ))
+                               *    getLink(U_v ,x_m_rho           ,rho); 
+}
+if constexpr(term==3) {
+                        
+                        U1 = adj(getLink(U_v,x_m_nu,mu));
+                        
+                        res += // p2t2
+                                    getLink(U_v ,x_p_mu            ,sig) 
+                               *    getLink(XY_v,x_p_mu_m_nu_p_sig ,nu )
+                               *adj(getLink(U_v ,x_p_mu_m_nu       ,sig))
+                               *U1
+                               *    getLink(U_v ,x_m_nu            ,rho) 
+                               *    getLink(U_v ,x_p_rho_m_nu      ,nu )
+                               *adj(getLink(U_v ,x                 ,rho))
+                               // p2t3
+                               +adj(getLink(U_v ,x_p_mu_m_sig      ,sig))
+                               *    getLink(XY_v,x_p_mu_m_nu_m_sig ,nu )
+                               *    getLink(U_v ,x_p_mu_m_nu_m_sig ,sig)
+                               *U1
+                               *    getLink(U_v ,x_m_nu            ,rho) 
+                               *    getLink(U_v ,x_m_nu_p_rho      ,nu )
+                               *adj(getLink(U_v ,x                 ,rho))
+                               // p2t6
+                               +    getLink(U_v ,x_p_mu            ,sig) 
+                               *    getLink(XY_v,x_p_mu_m_nu_p_sig ,nu )
+                               *adj(getLink(U_v ,x_p_mu_m_nu       ,sig))
+                               *U1
+                               *adj(getLink(U_v ,x_m_nu_m_rho      ,rho)) 
+                               *    getLink(U_v ,x_m_nu_m_rho      ,nu )
+                               *    getLink(U_v ,x_m_rho           ,rho)
+                               // p2t7
+                               +adj(getLink(U_v ,x_p_mu_m_sig      ,sig))
+                               *    getLink(XY_v,x_p_mu_m_nu_m_sig ,nu )
+                               *    getLink(U_v ,x_p_mu_m_nu_m_sig ,sig)
+                               *U1
+                               *adj(getLink(U_v ,x_m_nu_m_rho      ,rho)) 
+                               *    getLink(U_v ,x_m_nu_m_rho      ,nu )
+                               *    getLink(U_v ,x_m_rho           ,rho);
+}
+if constexpr(term==4) {
+
+                        res += ( // p3t0
+                                      getLink(U_v ,x_p_mu                 ,rho)
+                                 *    getLink(U_v ,x_p_mu_p_rho           ,sig)
+                                 *adj(getLink(XY_v,x_p_mu_p_rho_p_sig     ,nu ))
+                                 *adj(getLink(U_v ,x_p_mu_p_nu_p_rho      ,sig))
+                                 *adj(getLink(U_v ,x_p_mu_p_nu            ,rho))
+                                 // p3t1
+                                 +    getLink(U_v ,x_p_mu                 ,rho)
+                                 *adj(getLink(U_v ,x_p_mu_p_rho_m_sig     ,sig))
+                                 *adj(getLink(XY_v,x_p_mu_p_rho_m_sig     ,nu ))
+                                 *    getLink(U_v ,x_p_mu_p_nu_p_rho_m_sig,sig) 
+                                 *adj(getLink(U_v ,x_p_mu_p_nu            ,rho))
+                                 // p3t2
+                                 +adj(getLink(U_v ,x_p_mu_m_rho           ,rho))
+                                 *    getLink(U_v ,x_p_mu_m_rho           ,sig)
+                                 *adj(getLink(XY_v,x_p_mu_m_rho_p_sig     ,nu ))
+                                 *adj(getLink(U_v ,x_p_mu_p_nu_m_rho      ,sig))
+                                 *    getLink(U_v ,x_p_mu_p_nu_m_rho      ,rho)
+                                 // p3t3
+                                 +adj(getLink(U_v ,x_p_mu_m_rho           ,rho))
+                                 *adj(getLink(U_v ,x_p_mu_m_rho_m_sig     ,sig))
+                                 *adj(getLink(XY_v,x_p_mu_m_rho_m_sig     ,nu ))
+                                 *    getLink(U_v ,x_p_mu_p_nu_m_rho_m_sig,sig)
+                                 *    getLink(U_v ,x_p_mu_p_nu_m_rho      ,rho)
+                               )*adj(getLink(U_v,x_p_nu,mu))*adj(getLink(U_v,x,nu));
+}
+if constexpr(term==5) {
+
+                        res += ( // p3t4 (might have copy-paste error)
+                                      getLink(U_v ,x_p_mu                 ,rho)
+                                 *    getLink(U_v ,x_p_mu_p_rho           ,sig)
+                                 *    getLink(XY_v,x_p_mu_m_nu_p_rho_p_sig,nu )
+                                 *adj(getLink(U_v ,x_p_mu_m_nu_p_rho      ,sig))
+                                 *adj(getLink(U_v ,x_p_mu_m_nu            ,rho))
+                                 // p3t5 (might have copy-paste error)
+                                 +    getLink(U_v ,x_p_mu                 ,rho)
+                                 *adj(getLink(U_v ,x_p_mu_p_rho_m_sig     ,sig))
+                                 *    getLink(XY_v,x_p_mu_m_nu_p_rho_m_sig,nu )
+                                 *    getLink(U_v ,x_p_mu_m_nu_p_rho_m_sig,sig) 
+                                 *adj(getLink(U_v ,x_p_mu_m_nu            ,rho))
+                                 // p3t6
+                                 +adj(getLink(U_v ,x_p_mu_m_rho           ,rho))
+                                 *    getLink(U_v ,x_p_mu_m_rho           ,sig)
+                                 *    getLink(XY_v,x_p_mu_m_nu_m_rho_p_sig,nu )
+                                 *adj(getLink(U_v ,x_p_mu_m_nu_m_rho      ,sig))
+                                 *    getLink(U_v ,x_p_mu_m_nu_m_rho      ,rho)
+                                 // p3t7
+                                 +adj(getLink(U_v ,x_p_mu_m_rho           ,rho))
+                                 *adj(getLink(U_v ,x_p_mu_m_rho_m_sig     ,sig))
+                                 *    getLink(XY_v,x_p_mu_m_nu_m_rho_m_sig,nu )
+                                 *    getLink(U_v ,x_p_mu_m_nu_m_rho_m_sig,sig)
+                                 *    getLink(U_v ,x_p_mu_m_nu_m_rho      ,rho)
+                               )*adj(getLink(U_v,x_m_nu,mu))*getLink(U_v,x_m_nu,nu);
+}
+if constexpr(term==6) {
+
+                        res += getLink(U_v,x_p_mu,nu)
+                               *( // p4t0
+                                      getLink(U_v ,x_p_mu_p_nu            ,rho)
+                                 *    getLink(U_v ,x_p_mu_p_nu_p_rho      ,sig)
+                                 *    getLink(XY_v,x_p_nu_p_rho_p_sig     ,mu )
+                                 *adj(getLink(U_v ,x_p_nu_p_rho           ,sig))
+                                 *adj(getLink(U_v ,x_p_nu                 ,rho))
+                                  // p4t1
+                                 +    getLink(U_v ,x_p_mu_p_nu            ,rho)
+                                 *adj(getLink(U_v ,x_p_mu_p_nu_p_rho_m_sig,sig))
+                                 *    getLink(XY_v,x_p_nu_p_rho_m_sig     ,mu )
+                                 *    getLink(U_v ,x_p_nu_p_rho_m_sig     ,sig)
+                                 *adj(getLink(U_v ,x_p_nu                 ,rho))
+                                  // p4t2
+                                 +adj(getLink(U_v ,x_p_mu_p_nu_m_rho      ,rho))
+                                 *adj(getLink(U_v ,x_p_mu_p_nu_m_rho_m_sig,sig))
+                                 *    getLink(XY_v,x_p_nu_m_rho_m_sig     ,mu )
+                                 *    getLink(U_v ,x_p_nu_m_rho_m_sig     ,sig)
+                                 *    getLink(U_v ,x_p_nu_m_rho           ,rho)
+                                  // p4t3
+                                 +adj(getLink(U_v ,x_p_mu_p_nu_m_rho      ,rho))
+                                 *    getLink(U_v ,x_p_mu_p_nu_m_rho      ,sig)
+                                 *    getLink(XY_v,x_p_nu_m_rho_p_sig     ,mu )
+                                 *adj(getLink(U_v ,x_p_nu_m_rho           ,sig))
+                                 *    getLink(U_v ,x_p_nu_m_rho           ,rho)
+                               )*adj(getLink(U_v,x,nu));
+}
+if constexpr(term==7) {
+
+                        res += adj(getLink(U_v,x_p_mu_m_nu,nu))
+                               *( // p4t4
+                                      getLink(U_v ,x_p_mu_m_nu            ,rho)
+                                 *    getLink(U_v ,x_p_mu_m_nu_p_rho      ,sig)
+                                 *    getLink(XY_v,x_m_nu_p_rho_p_sig     ,mu )
+                                 *adj(getLink(U_v ,x_m_nu_p_rho           ,sig))
+                                 *adj(getLink(U_v ,x_m_nu                 ,rho))
+                                  // p4t5
+                                 +    getLink(U_v ,x_p_mu_m_nu            ,rho)
+                                 *adj(getLink(U_v ,x_p_mu_m_nu_p_rho_m_sig,sig))
+                                 *    getLink(XY_v,x_m_nu_p_rho_m_sig     ,mu )
+                                 *    getLink(U_v ,x_m_nu_p_rho_m_sig     ,sig)
+                                 *adj(getLink(U_v ,x_m_nu                 ,rho))
+                                  // p4t6
+                                 +adj(getLink(U_v ,x_p_mu_m_nu_m_rho      ,rho))
+                                 *    getLink(U_v ,x_p_mu_m_nu_m_rho      ,sig)
+                                 *    getLink(XY_v,x_m_nu_m_rho_p_sig     ,mu )
+                                 *adj(getLink(U_v ,x_m_nu_m_rho           ,sig))
+                                 *    getLink(U_v ,x_m_nu_m_rho           ,rho)
+                                  // p4t7
+                                 +adj(getLink(U_v ,x_p_mu_m_nu_m_rho      ,rho))
+                                 *adj(getLink(U_v ,x_p_mu_m_nu_m_rho_m_sig,sig))
+                                 *    getLink(XY_v,x_m_nu_m_rho_m_sig     ,mu )
+                                 *    getLink(U_v ,x_m_nu_m_rho_m_sig     ,sig)
+                                 *    getLink(U_v ,x_m_nu_m_rho           ,rho)
+                               )*getLink(U_v,x_m_nu,nu);
+}
+if constexpr(term==8) {
+                        
+                        res += getLink(U_v,x_p_mu,nu)*adj(getLink(U_v,x_p_nu,mu))
+                               *( // p5t0
+                                      getLink(U_v ,x_p_nu                 ,rho)
+                                 *    getLink(U_v ,x_p_nu_p_rho           ,sig)
+                                 *    getLink(XY_v,x_p_rho_p_sig          ,nu )
+                                 *adj(getLink(U_v ,x_p_rho                ,sig))
+                                 *adj(getLink(U_v ,x                      ,rho))
+                                  // p5t1
+                                 +    getLink(U_v ,x_p_nu                 ,rho)
+                                 *adj(getLink(U_v ,x_p_nu_p_rho_m_sig     ,sig))
+                                 *    getLink(XY_v,x_p_rho_m_sig          ,nu )
+                                 *    getLink(U_v ,x_p_rho_m_sig          ,sig)
+                                 *adj(getLink(U_v ,x                      ,rho))
+                                  // p5t4
+                                 +adj(getLink(U_v ,x_p_nu_m_rho           ,rho))
+                                 *    getLink(U_v ,x_p_nu_m_rho           ,sig)
+                                 *    getLink(XY_v,x_m_rho_p_sig          ,nu )
+                                 *adj(getLink(U_v ,x_m_rho                ,sig))
+                                 *    getLink(U_v ,x_m_rho                ,rho)
+                                  // p5t5
+                                 +adj(getLink(U_v ,x_p_nu_m_rho           ,rho))
+                                 *adj(getLink(U_v ,x_p_nu_m_rho_m_sig     ,sig))
+                                 *    getLink(XY_v,x_m_rho_m_sig          ,nu )
+                                 *    getLink(U_v ,x_m_rho_m_sig          ,sig)
+                                 *    getLink(U_v ,x_m_rho                ,rho)
+                               );
+}
+if constexpr(term==9) {
+                        
+                        res += adj(getLink(U_v,x_p_mu_m_nu,nu))*adj(getLink(U_v,x_m_nu,mu))
+                               *( // p5t2
+                                      getLink(U_v ,x_m_nu                 ,rho)
+                                 *    getLink(U_v ,x_m_nu_p_rho           ,sig)
+                                 *adj(getLink(XY_v,x_m_nu_p_rho_p_sig     ,nu ))
+                                 *adj(getLink(U_v ,x_p_rho                ,sig))
+                                 *adj(getLink(U_v ,x                      ,rho))
+                                  // p5t3
+                                 +    getLink(U_v ,x_m_nu                 ,rho)
+                                 *adj(getLink(U_v ,x_m_nu_p_rho_m_sig     ,sig))
+                                 *adj(getLink(XY_v,x_m_nu_p_rho_m_sig     ,nu ))
+                                 *    getLink(U_v ,x_p_rho_m_sig          ,sig)
+                                 *adj(getLink(U_v ,x                      ,rho))
+                                  // p5t6
+                                 +adj(getLink(U_v ,x_m_nu_m_rho           ,rho))
+                                 *    getLink(U_v ,x_m_nu_m_rho           ,sig)
+                                 *adj(getLink(XY_v,x_m_nu_m_rho_p_sig     ,nu ))
+                                 *adj(getLink(U_v ,x_m_rho                ,sig))
+                                 *    getLink(U_v ,x_m_rho                ,rho)
+                                  // p5t7
+                                 +adj(getLink(U_v ,x_m_nu_m_rho           ,rho))
+                                 *adj(getLink(U_v ,x_m_nu_m_rho_m_sig     ,sig))
+                                 *adj(getLink(XY_v,x_m_nu_m_rho_m_sig     ,nu ))
+                                 *    getLink(U_v ,x_m_rho_m_sig          ,sig)
+                                 *    getLink(U_v ,x_m_rho                ,rho)
+                               );
+}
+if constexpr(term==10) {
+
+                        U1 = adj(getLink(U_v,x_p_nu,mu));
+                        
+                        res += // p6t0
+                                    getLink(U_v ,x_p_mu            ,sig) 
+                               *    getLink(U_v ,x_p_mu_p_sig      ,nu )
+                               *adj(getLink(U_v ,x_p_mu_p_nu       ,sig))
+                               *U1
+                               *    getLink(U_v ,x_p_nu            ,rho) 
+                               *    getLink(XY_v,x_p_rho           ,nu )
+                               *adj(getLink(U_v ,x                 ,rho))
+                               // p6t1
+                               +adj(getLink(U_v ,x_p_mu_m_sig      ,sig)) 
+                               *    getLink(U_v ,x_p_mu_m_sig      ,nu )
+                               *    getLink(U_v ,x_p_mu_p_nu_m_sig ,sig)
+                               *U1
+                               *    getLink(U_v ,x_p_nu            ,rho) 
+                               *    getLink(XY_v,x_p_rho           ,nu )
+                               *adj(getLink(U_v ,x                 ,rho))
+                               // p6t4
+                               +adj(getLink(U_v ,x_p_mu_m_sig      ,sig)) 
+                               *    getLink(U_v ,x_p_mu_m_sig      ,nu )
+                               *    getLink(U_v ,x_p_mu_p_nu_m_sig ,sig)
+                               *U1
+                               *adj(getLink(U_v ,x_p_nu_m_rho      ,rho)) 
+                               *    getLink(XY_v,x_m_rho           ,nu )
+                               *    getLink(U_v ,x_m_rho           ,rho)
+                               // p6t5
+                               +    getLink(U_v ,x_p_mu            ,sig)
+                               *    getLink(U_v ,x_p_mu_p_sig      ,nu )
+                               *adj(getLink(U_v ,x_p_mu_p_nu       ,sig))
+                               *U1
+                               *adj(getLink(U_v ,x_p_nu_m_rho      ,rho)) 
+                               *    getLink(XY_v,x_m_rho           ,nu )
+                               *    getLink(U_v ,x_m_rho           ,rho);
+}
+if constexpr(term==11) {
+
+                        U1 = adj(getLink(U_v,x_m_nu,mu));
+                        
+                        res += // p6t2
+                                    getLink(U_v ,x_p_mu            ,sig) 
+                               *adj(getLink(U_v ,x_p_mu_m_nu_p_sig ,nu ))
+                               *adj(getLink(U_v ,x_p_mu_m_nu       ,sig))
+                               *U1
+                               *    getLink(U_v ,x_m_nu            ,rho) 
+                               *adj(getLink(XY_v,x_m_nu_p_rho      ,nu ))
+                               *adj(getLink(U_v ,x                 ,rho))
+                               // p6t3
+                               +adj(getLink(U_v ,x_p_mu_m_sig      ,sig))
+                               *adj(getLink(U_v ,x_p_mu_m_nu_m_sig ,nu ))
+                               *    getLink(U_v ,x_p_mu_m_nu_m_sig ,sig)
+                               *U1
+                               *    getLink(U_v ,x_m_nu            ,rho) 
+                               *adj(getLink(XY_v,x_m_nu_p_rho      ,nu ))
+                               *adj(getLink(U_v ,x                 ,rho))
+                               // p6t6
+                               +    getLink(U_v ,x_p_mu            ,sig)
+                               *adj(getLink(U_v ,x_p_mu_m_nu_p_sig ,nu ))
+                               *adj(getLink(U_v ,x_p_mu_m_nu       ,sig))
+                               *U1
+                               *adj(getLink(U_v ,x_m_nu_m_rho      ,rho))
+                               *adj(getLink(XY_v,x_m_nu_m_rho      ,nu ))
+                               *    getLink(U_v ,x_m_rho           ,rho)
+                               // p6t7
+                               +adj(getLink(U_v ,x_p_mu_m_sig      ,sig))
+                               *adj(getLink(U_v ,x_p_mu_m_nu_m_sig ,nu ))
+                               *    getLink(U_v ,x_p_mu_m_nu_m_sig ,sig)
+                               *U1
+                               *adj(getLink(U_v ,x_m_nu_m_rho      ,rho))
+                               *adj(getLink(XY_v,x_m_nu_m_rho      ,nu ))
+                               *    getLink(U_v ,x_m_rho           ,rho);
+}
+if constexpr(term==12) {
+
+                        res += ( // p7t0
+                                     getLink(U_v,x_p_mu                 ,rho)
+                                *    getLink(U_v,x_p_mu_p_rho           ,sig)
+                                *    getLink(U_v,x_p_mu_p_rho_p_sig     ,nu ) 
+                                *adj(getLink(U_v,x_p_mu_p_nu_p_rho      ,sig))
+                                *adj(getLink(U_v,x_p_mu_p_nu            ,rho))
+                                 // p7t1
+                                +    getLink(U_v,x_p_mu                 ,rho)
+                                *adj(getLink(U_v,x_p_mu_p_rho_m_sig     ,sig))
+                                *    getLink(U_v,x_p_mu_p_rho_m_sig     ,nu )
+                                *    getLink(U_v,x_p_mu_p_nu_p_rho_m_sig,sig) 
+                                *adj(getLink(U_v,x_p_mu_p_nu            ,rho))
+                                 // p7t2
+                                +adj(getLink(U_v,x_p_mu_m_rho           ,rho))
+                                *    getLink(U_v,x_p_mu_m_rho           ,sig)
+                                *    getLink(U_v,x_p_mu_m_rho_p_sig     ,nu )
+                                *adj(getLink(U_v,x_p_mu_p_nu_m_rho      ,sig))
+                                *    getLink(U_v,x_p_mu_p_nu_m_rho      ,rho)
+                                 // p7t3
+                                +adj(getLink(U_v,x_p_mu_m_rho           ,rho))
+                                *adj(getLink(U_v,x_p_mu_m_rho_m_sig     ,sig))
+                                *    getLink(U_v,x_p_mu_m_rho_m_sig     ,nu )
+                                *    getLink(U_v,x_p_mu_p_nu_m_rho_m_sig,sig)
+                                *    getLink(U_v,x_p_mu_p_nu_m_rho      ,rho)
+                              )*adj(getLink(U_v,x_p_nu,mu))*getLink(XY_v,x,nu);
+}
+if constexpr(term==13) {
+                                   
+                        res += ( // p7t4
+                                 adj(getLink(U_v,x_p_mu_m_rho           ,rho))
+                                *    getLink(U_v,x_p_mu_m_rho           ,sig)
+                                *adj(getLink(U_v,x_p_mu_m_nu_m_rho_p_sig,nu ))
+                                *adj(getLink(U_v,x_p_mu_m_nu_m_rho      ,sig))
+                                *    getLink(U_v,x_p_mu_m_nu_m_rho      ,rho)
+                                 // p7t5
+                                +adj(getLink(U_v,x_p_mu_m_rho           ,rho))
+                                *adj(getLink(U_v,x_p_mu_m_rho_m_sig     ,sig))
+                                *adj(getLink(U_v,x_p_mu_m_nu_m_rho_m_sig,nu ))
+                                *    getLink(U_v,x_p_mu_m_nu_m_rho_m_sig,sig) 
+                                *    getLink(U_v,x_p_mu_m_nu_m_rho      ,rho)
+                                 // p7t6
+                                +    getLink(U_v,x_p_mu                 ,rho)
+                                *adj(getLink(U_v,x_p_mu_p_rho_m_sig     ,sig))
+                                *adj(getLink(U_v,x_p_mu_m_nu_p_rho_m_sig,nu ))
+                                *    getLink(U_v,x_p_mu_m_nu_p_rho_m_sig,sig)
+                                *adj(getLink(U_v,x_p_mu_m_nu            ,rho))
+                                 // p7t7
+                                +    getLink(U_v,x_p_mu                 ,rho)
+                                *    getLink(U_v,x_p_mu_p_rho           ,sig)
+                                *adj(getLink(U_v,x_p_mu_m_nu_p_rho_p_sig,nu ))
+                                *adj(getLink(U_v,x_p_mu_m_nu_p_rho      ,sig))
+                                *adj(getLink(U_v,x_p_mu_m_nu            ,rho))
+                              )*adj(getLink(U_v,x_m_nu,mu))*adj(getLink(XY_v,x_m_nu,nu));
+} 
+                        setLink(F_v[x->_offset](mu), F_v(x->_offset)(mu) + c7*res);
+                    }
+                }
+            }
+        })
+    }
 
 
     // We are calculating the force using the rational approximation. The goal is that we can approximate
@@ -1675,9 +1708,23 @@ public:
 
         for(int mu=0;mu<Nd;mu++) {
 
-            if(hp.asqtad_c3!=0) threeLinkDeriv(Fghost, Wghost, XYghost, gStencil3, hp.asqtad_c3, mu); 
-            if(hp.asqtad_c5!=0) fiveLinkDeriv( Fghost, Wghost, XYghost, gStencil5, hp.asqtad_c5, mu); 
-//            if(hp.asqtad_c7!=0) sevenLinkDeriv(Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
+            if(hp.asqtad_c3!=0) threeLinkDeriv(    Fghost, Wghost, XYghost, gStencil3, hp.asqtad_c3, mu); 
+            if(hp.asqtad_c5!=0) fiveLinkDeriv<0>(  Fghost, Wghost, XYghost, gStencil5, hp.asqtad_c5, mu); 
+            if(hp.asqtad_c5!=0) fiveLinkDeriv<1>(  Fghost, Wghost, XYghost, gStencil5, hp.asqtad_c5, mu); 
+            if(hp.asqtad_c7!=0) sevenLinkDeriv<0>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
+            if(hp.asqtad_c7!=0) sevenLinkDeriv<1>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
+            if(hp.asqtad_c7!=0) sevenLinkDeriv<2>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
+            if(hp.asqtad_c7!=0) sevenLinkDeriv<3>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
+            if(hp.asqtad_c7!=0) sevenLinkDeriv<4>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
+            if(hp.asqtad_c7!=0) sevenLinkDeriv<5>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
+            if(hp.asqtad_c7!=0) sevenLinkDeriv<6>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
+            if(hp.asqtad_c7!=0) sevenLinkDeriv<7>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
+            if(hp.asqtad_c7!=0) sevenLinkDeriv<8>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
+            if(hp.asqtad_c7!=0) sevenLinkDeriv<9>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
+            if(hp.asqtad_c7!=0) sevenLinkDeriv<10>(Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
+            if(hp.asqtad_c7!=0) sevenLinkDeriv<11>(Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
+            if(hp.asqtad_c7!=0) sevenLinkDeriv<12>(Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
+            if(hp.asqtad_c7!=0) sevenLinkDeriv<13>(Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
 
         } // end mu loop
 
