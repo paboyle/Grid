@@ -124,6 +124,8 @@ bool testForce(GridCartesian& GRID, LGF Umu, LGF Ucontrol,
 //    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.lp.control");
 //    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.naik.control");
 //    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.5link.control");
+//    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.7link.control");
+//    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.level1.control");
 //    return true;
 }
 
@@ -235,6 +237,19 @@ int main (int argc, char** argv) {
     pass *= testForce(GRID, Umu, Ucontrol,
                       1, 0, 0, 0, 0,
                       1, 0, 1, 0, 0 );
+
+    // Check the 7-link
+    NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.7link.control");
+    pass *= testForce(GRID, Umu, Ucontrol,
+                      1, 0, 0, 0, 0,
+                      1, 0, 0, 1, 0 );
+
+    // Check level 1 smearing 
+    NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.level1.control");
+    pass *= testForce(GRID, Umu, Ucontrol,
+                      1, 0, 0, 0, -1/24.,
+                      1, -1/16., 1/64., -1/384., -1/8. );
+
 
     if(pass){
         Grid_pass("All tests passed.");
