@@ -75,7 +75,7 @@ public:
                           GridParallelRNG &pRNG) {
     if ((traj % Params.saveInterval) == 0) {
       std::string config, rng, smr;
-      this->build_filenames(traj, Params, config, rng);
+      this->build_filenames(traj, Params, config, smr, rng);
       GridBase *grid = SmartConfig.get_U(false).Grid();
       uint32_t nersc_csum,scidac_csuma,scidac_csumb;
       BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
@@ -102,7 +102,7 @@ public:
       if ( Params.saveSmeared ) { 
 	IldgWriter _IldgWriter(grid->IsBoss());
 	_IldgWriter.open(smr);
-	_IldgWriter.writeConfiguration<GaugeStats>(SmartConfig.get_U(true), traj, config, config);
+	_IldgWriter.writeConfiguration<GaugeStats>(SmartConfig.get_U(true), traj, smr, smr);
 	_IldgWriter.close();
 
 	std::cout << GridLogMessage << "Written ILDG Configuration on " << smr
@@ -118,8 +118,8 @@ public:
 
   void CheckpointRestore(int traj, GaugeField &U, GridSerialRNG &sRNG,
                          GridParallelRNG &pRNG) {
-    std::string config, rng;
-    this->build_filenames(traj, Params, config, rng);
+    std::string config, rng, smr;
+    this->build_filenames(traj, Params, config, smr, rng);
     this->check_filename(rng);
     this->check_filename(config);
 

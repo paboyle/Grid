@@ -236,7 +236,7 @@ public:
   template<class sobj> inline Lattice<vobj> & operator = (const sobj & r){
     vobj vtmp;
     vtmp = r;
-#if 0
+#if 1
     deviceVector<vobj> vvtmp(1);
     acceleratorPut(vvtmp[0],vtmp);
     vobj *vvtmp_p = & vvtmp[0];

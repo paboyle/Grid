@@ -91,13 +91,13 @@ public:
   virtual void   Mdag (const FermionField &in, FermionField &out){assert(0);};
 
   // half checkerboard operations; leave unimplemented as abstract for now
-  virtual void   Meooe       (const FermionField &in, FermionField &out){assert(0);};
-  virtual void   Mooee       (const FermionField &in, FermionField &out){assert(0);};
-  virtual void   MooeeInv    (const FermionField &in, FermionField &out){assert(0);};
+  virtual void   Meooe       (const FermionField &in, FermionField &out);
+  virtual void   Mooee       (const FermionField &in, FermionField &out);
+  virtual void   MooeeInv    (const FermionField &in, FermionField &out);
 
-  virtual void   MeooeDag    (const FermionField &in, FermionField &out){assert(0);};
-  virtual void   MooeeDag    (const FermionField &in, FermionField &out){assert(0);};
-  virtual void   MooeeInvDag (const FermionField &in, FermionField &out){assert(0);};
+  virtual void   MeooeDag    (const FermionField &in, FermionField &out);
+  virtual void   MooeeDag    (const FermionField &in, FermionField &out);
+  virtual void   MooeeInvDag (const FermionField &in, FermionField &out);
   virtual void   Mdir   (const FermionField &in, FermionField &out,int dir,int disp){assert(0);};   // case by case Wilson, Clover, Cayley, ContFrac, PartFrac
   virtual void   MdirAll(const FermionField &in, std::vector<FermionField> &out){assert(0);};   // case by case Wilson, Clover, Cayley, ContFrac, PartFrac
 

@@ -55,13 +55,13 @@ namespace Grid{
 
 };
 
-  struct SmearingParameters: Serializable {
-    GRID_SERIALIZABLE_CLASS_MEMBERS(SmearingParameters,
+  struct HmcSmearingParameters: Serializable {
+    GRID_SERIALIZABLE_CLASS_MEMBERS(HmcSmearingParameters,
 				    double, rho,
 				    Integer, Nsmear)
 
     template <class ReaderClass >
-    SmearingParameters(Reader<ReaderClass>& Reader){
+    HmcSmearingParameters(Reader<ReaderClass>& Reader){
       read(Reader, "StoutSmearing", *this);
     }
 
@@ -213,7 +213,7 @@ int main(int argc, char **argv) {
   // Reset performance counters 
 
   if (ApplySmearing){
-    SmearingParameters SmPar(Reader);
+    HmcSmearingParameters SmPar(Reader);
     //double rho = 0.1;  // smearing parameter
     //int Nsmear = 3;    // number of smearing levels
     Smear_Stout<HMCWrapper::ImplPolicy> Stout(SmPar.rho);

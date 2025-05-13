@@ -38,6 +38,7 @@ typedef typename FermionAction::FermionField FermionField;
 
 int main (int argc, char** argv)
 {
+#ifdef ENABLE_GPARITY  
   Grid_init(&argc, &argv);
 
   Coordinate latt_size   = GridDefaultLatt();
@@ -173,4 +174,5 @@ int main (int argc, char** argv)
 
   std::cout << GridLogMessage << "Done" << std::endl;
   Grid_finalize();
+#endif
 }

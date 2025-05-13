@@ -207,11 +207,14 @@ std::vector<RealD> WilsonFlowBase<Gimpl>::flowMeasureEnergyDensityCloverleaf(con
 }
 
 template <class Gimpl>
-void WilsonFlowBase<Gimpl>::setDefaultMeasurements(int topq_meas_interval){
-  addMeasurement(1, [](int step, RealD t, const typename Gimpl::GaugeField &U){
+void WilsonFlowBase<Gimpl>::setDefaultMeasurements(int meas_interval){
+  addMeasurement(meas_interval, [](int step, RealD t, const typename Gimpl::GaugeField &U){
       std::cout << GridLogMessage << "[WilsonFlow] Energy density (plaq) : "  << step << "  " << t << "  " << energyDensityPlaquette(t,U) << std::endl;
     });
-  addMeasurement(topq_meas_interval, [](int step, RealD t, const typename Gimpl::GaugeField &U){
+  addMeasurement(meas_interval, [](int step, RealD t, const typename Gimpl::GaugeField &U){
+      std::cout << GridLogMessage << "[WilsonFlow] Energy density (cloverleaf) : "  << step << "  " << t << "  " << energyDensityCloverleaf(t,U) << std::endl;
+    });
+  addMeasurement(meas_interval, [](int step, RealD t, const typename Gimpl::GaugeField &U){
       std::cout << GridLogMessage << "[WilsonFlow] Top. charge           : "  << step << "  " << WilsonLoops<Gimpl>::TopologicalCharge(U) << std::endl;
     });
 }

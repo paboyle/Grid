@@ -510,7 +510,6 @@ public:
       grid->SendToRecvFromBegin(fwd_req,
 				(void *)&hsend_buf[d*buffer_size], xmit_to_rank,
 				(void *)&hrecv_buf[d*buffer_size], recv_from_rank, bytes, tag);
-      acceleratorCopyToDevice(&hrecv_buf[d*buffer_size],&recv_buf[d*buffer_size],bytes);
 #endif
       t_comms+=usecond()-t;
      }
@@ -531,7 +530,6 @@ public:
       grid->SendToRecvFromBegin(bwd_req,
 				(void *)&hsend_buf[(d+depth)*buffer_size], recv_from_rank,
 				(void *)&hrecv_buf[(d+depth)*buffer_size], xmit_to_rank, bytes,tag);
-      acceleratorCopyToDevice(&hrecv_buf[(d+depth)*buffer_size],&recv_buf[(d+depth)*buffer_size],bytes);
 #endif      
       t_comms+=usecond()-t;
     }
@@ -555,8 +553,13 @@ public:
 
     t=usecond();
     grid->CommsComplete(fwd_req);
+#ifndef ACCELERATOR_AWARE_MPI
+    for ( int d=0;d < depth ; d ++ ) {
+      acceleratorCopyToDevice(&hrecv_buf[d*buffer_size],&recv_buf[d*buffer_size],bytes);
+    }
+#endif
     t_comms+= usecond() - t;
-
+    
     t=usecond();
     for ( int d=0;d < depth ; d ++ ) {
       ScatterSlice(recv_buf,to,nld-depth+d,dimension,plane*buffer_size); plane++;
@@ -565,6 +568,11 @@ public:
 
     t=usecond();
     grid->CommsComplete(bwd_req);
+#ifndef ACCELERATOR_AWARE_MPI
+    for ( int d=0;d < depth ; d ++ ) {
+      acceleratorCopyToDevice(&hrecv_buf[(d+depth)*buffer_size],&recv_buf[(d+depth)*buffer_size],bytes);
+    }
+#endif
     t_comms+= usecond() - t;
     
     t=usecond();
