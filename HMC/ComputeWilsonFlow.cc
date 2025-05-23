@@ -73,7 +73,7 @@ template <class T> void writeFile(T& in, std::string const fname){
   Grid::emptyUserRecord record;
   Grid::ScidacWriter WR(in.Grid()->IsBoss());
   WR.open(fname);
-  WR.writeScidacFieldRecord(in,record,0);
+  WR.writeScidacFieldRecord(in,record,0); // Lexico
   WR.close();
 #endif
   // What is the appropriate way to throw error?
@@ -171,6 +171,12 @@ int main(int argc, char **argv) {
     std::string tfile = file_pre + "Top_dnsty_" + std::to_string(tau) + "_" + file_post;
     writeFile(qfield,tfile);
 
+    std::string ufile = file_pre + "U_" + std::to_string(tau) + "_" + file_post;
+    {
+      //      PeriodicGimplR::GaugeField Ucopy = U;
+      //      NerscIO::writeConfiguration(Ucopy,ufile);
+    }
+    
     RealD E = real(sum(R))/ RealD(U.Grid()->gSites());
     RealD T = real( sum(qfield) );
     Coordinate scoor; for (int mu=0; mu < Nd; mu++) scoor[mu] = 0;
@@ -183,6 +189,7 @@ int main(int argc, char **argv) {
   
   int t=WFPar.maxTau;
   WF.smear(Uflow, Umu);
+  //  NerscIO::writeConfiguration(Uflow,filesmr);
 
   RealD WFlow_plaq = WilsonLoops<PeriodicGimplR>::avgPlaquette(Uflow);
   RealD WFlow_TC   = WilsonLoops<PeriodicGimplR>::TopologicalCharge(Uflow);

@@ -631,12 +631,11 @@ void Grid_debug_handler_init(void)
   sa.sa_flags    = SA_SIGINFO;
   //  sigaction(SIGSEGV,&sa,NULL);
   sigaction(SIGTRAP,&sa,NULL);
-  sigaction(SIGBUS,&sa,NULL);
+  //  sigaction(SIGBUS,&sa,NULL);
   //  sigaction(SIGUSR2,&sa,NULL);
 
-  feenableexcept( FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO);
-
-  sigaction(SIGFPE,&sa,NULL);
+  //  feenableexcept( FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO);
+  //  sigaction(SIGFPE,&sa,NULL);
   sigaction(SIGKILL,&sa,NULL);
   sigaction(SIGILL,&sa,NULL);
 

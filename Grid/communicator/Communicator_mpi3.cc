@@ -259,32 +259,39 @@ CartesianCommunicator::~CartesianCommunicator()
 }
 #ifdef USE_GRID_REDUCTION
 void CartesianCommunicator::GlobalSum(float &f){
+  FlightRecorder::StepLog("GlobalSumP2P");
   CartesianCommunicator::GlobalSumP2P(f);
 }
 void CartesianCommunicator::GlobalSum(double &d)
 {
+  FlightRecorder::StepLog("GlobalSumP2P");
   CartesianCommunicator::GlobalSumP2P(d);
 }
 #else
 void CartesianCommunicator::GlobalSum(float &f){
+  FlightRecorder::StepLog("AllReduce");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&f,1,MPI_FLOAT,MPI_SUM,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalSum(double &d)
 {
+  FlightRecorder::StepLog("AllReduce");
   int ierr = MPI_Allreduce(MPI_IN_PLACE,&d,1,MPI_DOUBLE,MPI_SUM,communicator);
   assert(ierr==0);
 }
 #endif
 void CartesianCommunicator::GlobalSum(uint32_t &u){
+  FlightRecorder::StepLog("AllReduce");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalSum(uint64_t &u){
+  FlightRecorder::StepLog("AllReduce");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT64_T,MPI_SUM,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalSumVector(uint64_t* u,int N){
+  FlightRecorder::StepLog("AllReduceVector");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,u,N,MPI_UINT64_T,MPI_SUM,communicator);
   assert(ierr==0);
 }
@@ -715,6 +722,7 @@ void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsReque
 
 void CartesianCommunicator::StencilBarrier(void)
 {
+  FlightRecorder::StepLog("NodeBarrier");
   MPI_Barrier  (ShmComm);
 }
 //void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
@@ -722,11 +730,13 @@ void CartesianCommunicator::StencilBarrier(void)
 //}
 void CartesianCommunicator::Barrier(void)
 {
+  FlightRecorder::StepLog("GridBarrier");
   int ierr = MPI_Barrier(communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
 {
+  FlightRecorder::StepLog("Broadcast");
   int ierr=MPI_Bcast(data,
 		     bytes,
 		     MPI_BYTE,
@@ -745,6 +755,7 @@ void CartesianCommunicator::BarrierWorld(void){
 }
 void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
 {
+  FlightRecorder::StepLog("BroadcastWorld");
   int ierr= MPI_Bcast(data,
 		      bytes,
 		      MPI_BYTE,
@@ -767,6 +778,7 @@ void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,uint64_t words,
 }
 void CartesianCommunicator::AllToAll(void  *in,void *out,uint64_t words,uint64_t bytes)
 {
+  FlightRecorder::StepLog("AllToAll");
   // MPI is a pain and uses "int" arguments
   // 64*64*64*128*16 == 500Million elements of data.
   // When 24*4 bytes multiples get 50x 10^9 >>> 2x10^9 Y2K bug.
