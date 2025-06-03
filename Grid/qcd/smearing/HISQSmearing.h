@@ -177,52 +177,52 @@ std::vector<Coordinate> createHISQStencil(std::string kind="3STAPLE") {
         for(int nu =0;nu <Nd;nu++) 
         for(int rho=0;rho<Nd;rho++)
         for(int sig=0;sig<Nd;sig++) {
-            appendShift<Nd>(shifts,shiftSignal::NO_SHIFT);//ok
-            appendShift<Nd>(shifts,mu);//ok
-            appendShift<Nd>(shifts,mu,nu);//ok
-            appendShift<Nd>(shifts,mu,nu,rho);//ok
-            appendShift<Nd>(shifts,mu,nu,rho,Back(sig));//ok
-            appendShift<Nd>(shifts,mu,nu,Back(rho));//ok
-            appendShift<Nd>(shifts,mu,nu,Back(rho),Back(sig));//ok
-            appendShift<Nd>(shifts,mu,nu,Back(sig));//ok
-            appendShift<Nd>(shifts,mu,Back(nu));//ok
-            appendShift<Nd>(shifts,mu,Back(nu),rho);//ok
-            appendShift<Nd>(shifts,mu,Back(nu),rho,sig);//ok
-            appendShift<Nd>(shifts,mu,Back(nu),rho,Back(sig));//ok
-            appendShift<Nd>(shifts,mu,Back(nu),Back(rho));//ok
-            appendShift<Nd>(shifts,mu,Back(nu),Back(rho),sig);//ok
-            appendShift<Nd>(shifts,mu,Back(nu),Back(rho),Back(sig));//ok
-            appendShift<Nd>(shifts,mu,Back(nu),sig);//ok
-            appendShift<Nd>(shifts,mu,Back(nu),Back(sig));//ok
-            appendShift<Nd>(shifts,mu,rho);//ok
-            appendShift<Nd>(shifts,mu,rho,sig);//ok
-            appendShift<Nd>(shifts,mu,rho,Back(sig));//ok
-            appendShift<Nd>(shifts,mu,Back(rho));//ok
-            appendShift<Nd>(shifts,mu,Back(rho),sig);//ok
-            appendShift<Nd>(shifts,mu,Back(rho),Back(sig));//ok
-            appendShift<Nd>(shifts,mu,sig);//ok
-            appendShift<Nd>(shifts,mu,Back(sig));//ok
-            appendShift<Nd>(shifts,nu);//ok
-            appendShift<Nd>(shifts,nu,rho);//ok
-            appendShift<Nd>(shifts,nu,rho,sig);//ok
-            appendShift<Nd>(shifts,nu,rho,Back(sig));//ok
-            appendShift<Nd>(shifts,nu,Back(rho));//ok
-            appendShift<Nd>(shifts,nu,Back(rho),sig);//ok
-            appendShift<Nd>(shifts,nu,Back(rho),Back(sig));//ok
-            appendShift<Nd>(shifts,rho);//ok
-            appendShift<Nd>(shifts,rho,Back(nu));//ok
-            appendShift<Nd>(shifts,rho,sig);//ok
-            appendShift<Nd>(shifts,rho,Back(sig));//ok
-            appendShift<Nd>(shifts,Back(nu));//ok
-            appendShift<Nd>(shifts,Back(nu),rho);//ok
-            appendShift<Nd>(shifts,Back(nu),rho,sig);//ok
-            appendShift<Nd>(shifts,Back(nu),rho,Back(sig));//ok
-            appendShift<Nd>(shifts,Back(nu),Back(rho));//ok
-            appendShift<Nd>(shifts,Back(nu),Back(rho),sig);//ok
-            appendShift<Nd>(shifts,Back(nu),Back(rho),Back(sig));//ok
-            appendShift<Nd>(shifts,Back(rho));//ok
-            appendShift<Nd>(shifts,Back(rho),sig);//ok
-            appendShift<Nd>(shifts,Back(rho),Back(sig));//ok
+            appendShift<Nd>(shifts,shiftSignal::NO_SHIFT);
+            appendShift<Nd>(shifts,mu);
+            appendShift<Nd>(shifts,mu,nu);
+            appendShift<Nd>(shifts,mu,nu,rho);
+            appendShift<Nd>(shifts,mu,nu,rho,Back(sig));
+            appendShift<Nd>(shifts,mu,nu,Back(rho));
+            appendShift<Nd>(shifts,mu,nu,Back(rho),Back(sig));
+            appendShift<Nd>(shifts,mu,nu,Back(sig));
+            appendShift<Nd>(shifts,mu,Back(nu));
+            appendShift<Nd>(shifts,mu,Back(nu),rho);
+            appendShift<Nd>(shifts,mu,Back(nu),rho,sig);
+            appendShift<Nd>(shifts,mu,Back(nu),rho,Back(sig));
+            appendShift<Nd>(shifts,mu,Back(nu),Back(rho));
+            appendShift<Nd>(shifts,mu,Back(nu),Back(rho),sig);
+            appendShift<Nd>(shifts,mu,Back(nu),Back(rho),Back(sig));
+            appendShift<Nd>(shifts,mu,Back(nu),sig);
+            appendShift<Nd>(shifts,mu,Back(nu),Back(sig));
+            appendShift<Nd>(shifts,mu,rho);
+            appendShift<Nd>(shifts,mu,rho,sig);
+            appendShift<Nd>(shifts,mu,rho,Back(sig));
+            appendShift<Nd>(shifts,mu,Back(rho));
+            appendShift<Nd>(shifts,mu,Back(rho),sig);
+            appendShift<Nd>(shifts,mu,Back(rho),Back(sig));
+            appendShift<Nd>(shifts,mu,sig);
+            appendShift<Nd>(shifts,mu,Back(sig));
+            appendShift<Nd>(shifts,nu);
+            appendShift<Nd>(shifts,nu,rho);
+            appendShift<Nd>(shifts,nu,rho,sig);
+            appendShift<Nd>(shifts,nu,rho,Back(sig));
+            appendShift<Nd>(shifts,nu,Back(rho));
+            appendShift<Nd>(shifts,nu,Back(rho),sig);
+            appendShift<Nd>(shifts,nu,Back(rho),Back(sig));
+            appendShift<Nd>(shifts,rho);
+            appendShift<Nd>(shifts,rho,Back(nu));
+            appendShift<Nd>(shifts,rho,sig);
+            appendShift<Nd>(shifts,rho,Back(sig));
+            appendShift<Nd>(shifts,Back(nu));
+            appendShift<Nd>(shifts,Back(nu),rho);
+            appendShift<Nd>(shifts,Back(nu),rho,sig);
+            appendShift<Nd>(shifts,Back(nu),rho,Back(sig));
+            appendShift<Nd>(shifts,Back(nu),Back(rho));
+            appendShift<Nd>(shifts,Back(nu),Back(rho),sig);
+            appendShift<Nd>(shifts,Back(nu),Back(rho),Back(sig));
+            appendShift<Nd>(shifts,Back(rho));
+            appendShift<Nd>(shifts,Back(rho),sig);
+            appendShift<Nd>(shifts,Back(rho),Back(sig));
         }
     } else { 
         Grid_error("Unknown staple kind",kind);
@@ -923,14 +923,14 @@ public:
 
     // Intent: OUT--Fghost (accumulates 3-link derivative contribution)
     //          IN--Ughost (thin links)
-    //              XYghost (outer product)
+    //              XYCghost (outer product)
     //              gStencil3 (3-link stencil)
     //              c3
     //              mu
-    void threeLinkDeriv(GF& Fghost, GF& Ughost, GF& XYghost, GeneralLocalStencil gStencil3, Real c3, int mu) const {
+    void threeLinkDeriv(GF& Fghost, GF& Ughost, GF& XYCghost, GeneralLocalStencil gStencil3, Real c3, int mu) const {
         
         autoView(U_v , Ughost , AcceleratorRead);
-        autoView(XY_v, XYghost, AcceleratorRead);
+        autoView(XY_v, XYCghost, AcceleratorRead);
         autoView(F_v , Fghost , AcceleratorWrite);
         int Nsites = U_v.size();
         auto gStencil3_v = gStencil3.View(AcceleratorRead);
@@ -960,15 +960,15 @@ public:
 
     // Intent: OUT--Fghost (accumulates 5-link derivative contribution)
     //          IN--Ughost (thin links)
-    //              XYghost (outer product)
+    //              XYCghost (outer product)
     //              gStencil5 (5-link stencil)
     //              c5
     //              mu
     template<int term>
-    void fiveLinkDeriv(GF& Fghost, GF& Ughost, GF& XYghost, GeneralLocalStencil gStencil5, Real c5, int mu) const {
+    void fiveLinkDeriv(GF& Fghost, GF& Ughost, GF& XYCghost, GeneralLocalStencil gStencil5, Real c5, int mu) const {
         
         autoView(U_v , Ughost , AcceleratorRead);
-        autoView(XY_v, XYghost, AcceleratorRead);
+        autoView(XY_v, XYCghost, AcceleratorRead);
         autoView(F_v , Fghost , AcceleratorWrite);
         int Nsites = U_v.size();
         auto gStencil5_v = gStencil5.View(AcceleratorRead);
@@ -1090,10 +1090,10 @@ if constexpr(term==1) {
 
 
     template<int term>
-    void sevenLinkDeriv(GF& Fghost, GF& Ughost, GF& XYghost, GeneralLocalStencil gStencil7, Real c7, int mu) const {
+    void sevenLinkDeriv(GF& Fghost, GF& Ughost, GF& XYCghost, GeneralLocalStencil gStencil7, Real c7, int mu) const {
         
         autoView(U_v , Ughost , AcceleratorRead);
-        autoView(XY_v, XYghost, AcceleratorRead);
+        autoView(XY_v, XYCghost, AcceleratorRead);
         autoView(F_v , Fghost , AcceleratorWrite);
         int Nsites = U_v.size();
         auto gStencil7_v = gStencil7.View(AcceleratorRead);
@@ -1443,6 +1443,7 @@ if constexpr(term==13) {
         std::vector<LF> ddW(Nd, grid);
 
         // ----------------------------------------- NAIK-LINK DERIVATIVE 
+
         if(hp.asqtad_cnaik!=0) {
             XY = outerProductHISQ(vecx, vecdt, n_orders_naik, hp.n_naiks, 3);
             for (int mu = 0; mu < Nd; mu++) {
@@ -1464,9 +1465,10 @@ if constexpr(term==13) {
 
 
         // -------------------------- ONE-LINK DERIVATIVE (OUTER PRODUCT)
+
         XY = outerProductHISQ(vecx, vecdt, n_orders_naik, hp.n_naiks, 1); 
 
-        momentum += hp.asqtad_c1*XY; // It's not clear to me whether this should be fat7 or asqtad.
+        momentum += hp.asqtad_c1*XY;
 
         // -------------------------------------------- LEPAGE DERIVATIVE 
         if(hp.asqtad_clp!=0) {
@@ -1550,45 +1552,93 @@ if constexpr(term==13) {
         }
 
 
-        // ------------------------------------------- N-LINK DERIVATIVES 
+        // ---------------------------------- N-LINK DERIVATIVES (ASQTAD)
+
         PaddedCell Ghost(_HaloDepth,grid);
-        GF Wghost  = Ghost.Exchange(_Wmu); 
-        GF XYghost = Ghost.Exchange(XY);
-        GF Fghost  = Ghost.Exchange(u_force);
+
+        u_force = Zero();
+
+        GF UWghost  = Ghost.Exchange(_Wmu);    // Plays role of U or W 
+        GF XYCghost = Ghost.Exchange(XY);      // Plays role of XY or chain rule = dW/dV*dX/dW
+        GF Fghost   = Ghost.Exchange(u_force);
+
         std::vector<Coordinate> shifts3 = createHISQStencil("3STAPLE");
         std::vector<Coordinate> shifts5 = createHISQStencil("5STAPLE");
         std::vector<Coordinate> shifts7 = createHISQStencil("7STAPLE");
-        GeneralLocalStencil gStencil3(Wghost.Grid(),shifts3);
-        GeneralLocalStencil gStencil5(Wghost.Grid(),shifts5);
-        GeneralLocalStencil gStencil7(Wghost.Grid(),shifts7);
-
-        Fghost = Zero(); 
+        GeneralLocalStencil gStencil3(UWghost.Grid(),shifts3);
+        GeneralLocalStencil gStencil5(UWghost.Grid(),shifts5);
+        GeneralLocalStencil gStencil7(UWghost.Grid(),shifts7);
 
         for(int mu=0;mu<Nd;mu++) {
-
-            if(hp.asqtad_c3!=0) threeLinkDeriv(    Fghost, Wghost, XYghost, gStencil3, hp.asqtad_c3, mu); 
-            if(hp.asqtad_c5!=0) fiveLinkDeriv<0>(  Fghost, Wghost, XYghost, gStencil5, hp.asqtad_c5, mu); 
-            if(hp.asqtad_c5!=0) fiveLinkDeriv<1>(  Fghost, Wghost, XYghost, gStencil5, hp.asqtad_c5, mu); 
-            if(hp.asqtad_c7!=0) sevenLinkDeriv<0>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
-            if(hp.asqtad_c7!=0) sevenLinkDeriv<1>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
-            if(hp.asqtad_c7!=0) sevenLinkDeriv<2>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
-            if(hp.asqtad_c7!=0) sevenLinkDeriv<3>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
-            if(hp.asqtad_c7!=0) sevenLinkDeriv<4>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
-            if(hp.asqtad_c7!=0) sevenLinkDeriv<5>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
-            if(hp.asqtad_c7!=0) sevenLinkDeriv<6>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
-            if(hp.asqtad_c7!=0) sevenLinkDeriv<7>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
-            if(hp.asqtad_c7!=0) sevenLinkDeriv<8>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
-            if(hp.asqtad_c7!=0) sevenLinkDeriv<9>( Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
-            if(hp.asqtad_c7!=0) sevenLinkDeriv<10>(Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
-            if(hp.asqtad_c7!=0) sevenLinkDeriv<11>(Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
-            if(hp.asqtad_c7!=0) sevenLinkDeriv<12>(Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
-            if(hp.asqtad_c7!=0) sevenLinkDeriv<13>(Fghost, Wghost, XYghost, gStencil7, hp.asqtad_c7, mu); 
-
-        } // end mu loop
+            if(hp.asqtad_c3!=0) { 
+                threeLinkDeriv(    Fghost, UWghost, XYCghost, gStencil3, hp.asqtad_c3, mu);
+            }
+            if(hp.asqtad_c5!=0) {
+                fiveLinkDeriv<0>(  Fghost, UWghost, XYCghost, gStencil5, hp.asqtad_c5, mu); 
+                fiveLinkDeriv<1>(  Fghost, UWghost, XYCghost, gStencil5, hp.asqtad_c5, mu);
+            }
+            if(hp.asqtad_c7!=0) {
+                sevenLinkDeriv<0>( Fghost, UWghost, XYCghost, gStencil7, hp.asqtad_c7, mu); 
+                sevenLinkDeriv<1>( Fghost, UWghost, XYCghost, gStencil7, hp.asqtad_c7, mu); 
+                sevenLinkDeriv<2>( Fghost, UWghost, XYCghost, gStencil7, hp.asqtad_c7, mu); 
+                sevenLinkDeriv<3>( Fghost, UWghost, XYCghost, gStencil7, hp.asqtad_c7, mu); 
+                sevenLinkDeriv<4>( Fghost, UWghost, XYCghost, gStencil7, hp.asqtad_c7, mu); 
+                sevenLinkDeriv<5>( Fghost, UWghost, XYCghost, gStencil7, hp.asqtad_c7, mu); 
+                sevenLinkDeriv<6>( Fghost, UWghost, XYCghost, gStencil7, hp.asqtad_c7, mu); 
+                sevenLinkDeriv<7>( Fghost, UWghost, XYCghost, gStencil7, hp.asqtad_c7, mu); 
+                sevenLinkDeriv<8>( Fghost, UWghost, XYCghost, gStencil7, hp.asqtad_c7, mu); 
+                sevenLinkDeriv<9>( Fghost, UWghost, XYCghost, gStencil7, hp.asqtad_c7, mu); 
+                sevenLinkDeriv<10>(Fghost, UWghost, XYCghost, gStencil7, hp.asqtad_c7, mu); 
+                sevenLinkDeriv<11>(Fghost, UWghost, XYCghost, gStencil7, hp.asqtad_c7, mu); 
+                sevenLinkDeriv<12>(Fghost, UWghost, XYCghost, gStencil7, hp.asqtad_c7, mu); 
+                sevenLinkDeriv<13>(Fghost, UWghost, XYCghost, gStencil7, hp.asqtad_c7, mu);
+            } 
+        }
 
         u_force = Ghost.Extract(Fghost);
         momentum += u_force;
 
+        // ------------------------------------------- U3 PROJ DERIVATIVE 
+
+        u_force = Zero();
+        ddVprojectU3(u_force, _Vmu, momentum, 5e-5);
+        momentum = hp.fat7_c1*u_force;
+
+        // ------------------------------------ N-LINK DERIVATIVES (FAT7) 
+
+        UWghost  = Ghost.Exchange(_Umu);
+        XYCghost = Ghost.Exchange(u_force); 
+        Fghost   = Zero(); 
+
+        for(int mu=0;mu<Nd;mu++) {
+            if(hp.fat7_c3!=0) { 
+                threeLinkDeriv(    Fghost, UWghost, XYCghost, gStencil3, hp.fat7_c3, mu);
+            }
+            if(hp.fat7_c5!=0) {
+                fiveLinkDeriv<0>(  Fghost, UWghost, XYCghost, gStencil5, hp.fat7_c5, mu); 
+                fiveLinkDeriv<1>(  Fghost, UWghost, XYCghost, gStencil5, hp.fat7_c5, mu);
+            }
+            if(hp.fat7_c7!=0) {
+                sevenLinkDeriv<0>( Fghost, UWghost, XYCghost, gStencil7, hp.fat7_c7, mu); 
+                sevenLinkDeriv<1>( Fghost, UWghost, XYCghost, gStencil7, hp.fat7_c7, mu); 
+                sevenLinkDeriv<2>( Fghost, UWghost, XYCghost, gStencil7, hp.fat7_c7, mu); 
+                sevenLinkDeriv<3>( Fghost, UWghost, XYCghost, gStencil7, hp.fat7_c7, mu); 
+                sevenLinkDeriv<4>( Fghost, UWghost, XYCghost, gStencil7, hp.fat7_c7, mu); 
+                sevenLinkDeriv<5>( Fghost, UWghost, XYCghost, gStencil7, hp.fat7_c7, mu); 
+                sevenLinkDeriv<6>( Fghost, UWghost, XYCghost, gStencil7, hp.fat7_c7, mu); 
+                sevenLinkDeriv<7>( Fghost, UWghost, XYCghost, gStencil7, hp.fat7_c7, mu); 
+                sevenLinkDeriv<8>( Fghost, UWghost, XYCghost, gStencil7, hp.fat7_c7, mu); 
+                sevenLinkDeriv<9>( Fghost, UWghost, XYCghost, gStencil7, hp.fat7_c7, mu); 
+                sevenLinkDeriv<10>(Fghost, UWghost, XYCghost, gStencil7, hp.fat7_c7, mu); 
+                sevenLinkDeriv<11>(Fghost, UWghost, XYCghost, gStencil7, hp.fat7_c7, mu); 
+                sevenLinkDeriv<12>(Fghost, UWghost, XYCghost, gStencil7, hp.fat7_c7, mu); 
+                sevenLinkDeriv<13>(Fghost, UWghost, XYCghost, gStencil7, hp.fat7_c7, mu);
+            } 
+        } // end mu loop
+
+        if(hp.fat7_c3!=0 || hp.fat7_c5!=0 || hp.fat7_c7!=0) {
+            momentum += Ghost.Extract(Fghost);
+        }
 
         // Close the loop: Multiply on the left by U_mu(x)
         LF mom(grid);
@@ -1597,7 +1647,6 @@ if constexpr(term==13) {
             PokeIndex<LorentzIndex>(momentum, mom, mu);
         }
     }
-
 
 };
 
