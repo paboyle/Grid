@@ -50,12 +50,30 @@ typedef MPI_Request MpiCommsRequest_t;
 #ifdef ACCELERATOR_AWARE_MPI
 typedef MPI_Request CommsRequest_t;
 #else
-enum PacketType_t { InterNodeXmit, InterNodeRecv, IntraNodeXmit, IntraNodeRecv };
+/*
+ * Enable state transitions as each packet flows.
+ */
+enum PacketType_t {
+  FaceGather,
+  InterNodeXmit,
+  InterNodeRecv,
+  IntraNodeXmit,
+  IntraNodeRecv,
+  InterNodeXmitISend,
+  InterNodeReceiveHtoD
+};
+/*
+ *Package arguments needed for various actions along packet flow
+ */
 typedef struct {
   PacketType_t PacketType;
   void *host_buf;
   void *device_buf;
+  int dest;
+  int tag;
+  int commdir;
   unsigned long bytes;
+  acceleratorEvent_t ev;
   MpiCommsRequest_t req;
 } CommsRequest_t;
 #endif
@@ -119,7 +137,7 @@ public:
   ///////////////////////////////////////////////////
   static void SharedMemoryAllocate(uint64_t bytes, int flags);
   static void SharedMemoryFree(void);
-  static void SharedMemoryCopy(void *dest,void *src,size_t bytes);
+  //  static void SharedMemoryCopy(void *dest,void *src,size_t bytes);
   static void SharedMemoryZero(void *dest,size_t bytes);
 
 };

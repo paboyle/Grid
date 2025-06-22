@@ -333,9 +333,9 @@ int main(int argc, char **argv) {
   ParamsF.dirichlet=NonDirichlet;
   ParamsDir.dirichlet=Dirichlet;
   ParamsDirF.dirichlet=Dirichlet;
-  ParamsDir.partialDirichlet=1;
-  ParamsDirF.partialDirichlet=1;
-  std::cout << GridLogMessage<< "Partial Dirichlet depth is "<<dwf_compressor_depth<<std::endl;
+  //  ParamsDir.partialDirichlet=1;
+  //  ParamsDirF.partialDirichlet=1;
+  //  std::cout << GridLogMessage<< "Partial Dirichlet depth is "<<dwf_compressor_depth<<std::endl;
 
   //  double StoppingCondition = 1e-14;
   //  double MDStoppingCondition = 1e-9;
@@ -481,21 +481,21 @@ int main(int argc, char **argv) {
     if ( dirichlet_den[h]==1) ParamsDen.dirichlet = Dirichlet;
     else                      ParamsDen.dirichlet = NonDirichlet;
 
-    if ( dirichlet_num[h]==1) ParamsNum.partialDirichlet = 1;
-    else                      ParamsNum.partialDirichlet = 0;
+    //    if ( dirichlet_num[h]==1) ParamsNum.partialDirichlet = 1;
+    //    else                      ParamsNum.partialDirichlet = 0;
 
-    if ( dirichlet_den[h]==1) ParamsDen.partialDirichlet = 1;
-    else                      ParamsDen.partialDirichlet = 0;
+    //    if ( dirichlet_den[h]==1) ParamsDen.partialDirichlet = 1;
+    //    else                      ParamsDen.partialDirichlet = 0;
     
     Numerators.push_back  (new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, ParamsNum));
     Denominators.push_back(new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, ParamsDen));
 
     ParamsDenF.dirichlet = ParamsDen.dirichlet;
-    ParamsDenF.partialDirichlet = ParamsDen.partialDirichlet;
+    //    ParamsDenF.partialDirichlet = ParamsDen.partialDirichlet;
     DenominatorsF.push_back(new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[h],M5,b,c, ParamsDenF));
 
     ParamsNumF.dirichlet = ParamsNum.dirichlet;
-    ParamsNumF.partialDirichlet = ParamsNum.partialDirichlet;
+    //    ParamsNumF.partialDirichlet = ParamsNum.partialDirichlet;
     NumeratorsF.push_back  (new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_num[h],M5,b,c, ParamsNumF));
 
     LinOpD.push_back(new LinearOperatorD(*Denominators[h]));

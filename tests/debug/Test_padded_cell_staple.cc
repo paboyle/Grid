@@ -153,7 +153,7 @@ public:
     t=usecond();
     {
       autoView( gStaple_v , gStaple, AcceleratorWrite);
-      auto gStencil_v = gStencil.View();
+      auto gStencil_v = gStencil.View(AcceleratorRead);
       autoView( Ug_mu_v , Ug_mu, AcceleratorRead);
       autoView( Ug_nu_v , Ug_nu, AcceleratorRead);
   
@@ -389,7 +389,7 @@ public:
     GeneralLocalStencil gStencil(ggrid,shifts);
     {
       autoView( gStaple_v , gStaple, AcceleratorWrite);
-      auto gStencil_v = gStencil.View();
+      auto gStencil_v = gStencil.View(AcceleratorRead);
 
       typedef LatticeView<typename GaugeMat::vector_object> GaugeViewType;
       size_t vsize = Nd*sizeof(GaugeViewType);

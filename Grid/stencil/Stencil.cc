@@ -30,25 +30,26 @@
 NAMESPACE_BEGIN(Grid);
 
 uint64_t DslashFullCount;
-uint64_t DslashPartialCount;
+//uint64_t DslashPartialCount;
 uint64_t DslashDirichletCount;
 
 void DslashResetCounts(void)
 {
   DslashFullCount=0;
-  DslashPartialCount=0;
+  //  DslashPartialCount=0;
   DslashDirichletCount=0;
 }
 void DslashGetCounts(uint64_t &dirichlet,uint64_t &partial,uint64_t &full)
 {
   dirichlet = DslashDirichletCount;
-  partial   = DslashPartialCount;
+  partial   = 0;
   full      = DslashFullCount;
 }
 void DslashLogFull(void)     { DslashFullCount++;}
-void DslashLogPartial(void)  { DslashPartialCount++;}
+//void DslashLogPartial(void)  { DslashPartialCount++;}
 void DslashLogDirichlet(void){ DslashDirichletCount++;}
 
+deviceVector<unsigned char> StencilBuffer::DeviceCommBuf; 
 
 void Gather_plane_table_compute (GridBase *grid,int dimension,int plane,int cbmask,
 				 int off,std::vector<std::pair<int,int> > & table)

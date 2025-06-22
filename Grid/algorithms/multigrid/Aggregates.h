@@ -30,6 +30,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 /*  END LEGAL */
 #pragma once
 
+#include <Grid/algorithms/iterative/PrecGeneralisedConjugateResidualNonHermitian.h>
+
 NAMESPACE_BEGIN(Grid);
 
 inline RealD AggregatePowerLaw(RealD x)
@@ -95,7 +97,7 @@ public:
 
     RealD scale;
 
-    ConjugateGradient<FineField> CG(1.0e-2,100,false);
+    ConjugateGradient<FineField> CG(1.0e-3,400,false);
     FineField noise(FineGrid);
     FineField Mn(FineGrid);
 
@@ -108,7 +110,7 @@ public:
       
       hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<b<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
 
-      for(int i=0;i<1;i++){
+      for(int i=0;i<4;i++){
 
 	CG(hermop,noise,subspace[b]);
 
@@ -119,6 +121,53 @@ public:
       }
 
       hermop.Op(noise,Mn); std::cout<<GridLogMessage << "filtered["<<b<<"] <f|MdagM|f> "<<norm2(Mn)<<std::endl;
+      subspace[b]   = noise;
+
+    }
+  }
+
+  virtual void CreateSubspaceGCR(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &DiracOp,int nn=nbasis)
+  {
+    RealD scale;
+
+    TrivialPrecon<FineField> simple_fine;
+    PrecGeneralisedConjugateResidualNonHermitian<FineField> GCR(0.001,30,DiracOp,simple_fine,12,12);
+    FineField noise(FineGrid);
+    FineField src(FineGrid);
+    FineField guess(FineGrid);
+    FineField Mn(FineGrid);
+
+    for(int b=0;b<nn;b++){
+      
+      subspace[b] = Zero();
+      gaussian(RNG,noise);
+      scale = std::pow(norm2(noise),-0.5); 
+      noise=noise*scale;
+      
+      DiracOp.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<b<<"] <n|Op|n> "<<innerProduct(noise,Mn)<<std::endl;
+
+      for(int i=0;i<2;i++){
+	//  void operator() (const Field &src, Field &psi){
+#if 1
+	std::cout << GridLogMessage << " inverting on noise "<<std::endl;
+	src = noise;
+	guess=Zero();
+	GCR(src,guess);
+	subspace[b] = guess;
+#else
+	std::cout << GridLogMessage << " inverting on zero "<<std::endl;
+	src=Zero();
+	guess = noise;
+	GCR(src,guess);
+	subspace[b] = guess;
+#endif
+	noise = subspace[b];
+	scale = std::pow(norm2(noise),-0.5); 
+	noise=noise*scale;
+
+      }
+
+      DiracOp.Op(noise,Mn); std::cout<<GridLogMessage << "filtered["<<b<<"] <f|Op|f> "<<innerProduct(noise,Mn)<<std::endl;
       subspace[b]   = noise;
 
     }
@@ -160,14 +209,21 @@ public:
 
     int b =0;
     {
+      ComplexD ip;
       // Filter
       Chebyshev<FineField> Cheb(lo,hi,orderfilter);
       Cheb(hermop,noise,Mn);
       // normalise
       scale = std::pow(norm2(Mn),-0.5); 	Mn=Mn*scale;
       subspace[b]   = Mn;
-      hermop.Op(Mn,tmp); 
-      std::cout<<GridLogMessage << "filt ["<<b<<"] <n|MdagM|n> "<<norm2(tmp)<<std::endl;
+
+      hermop.Op(Mn,tmp);
+      ip= innerProduct(Mn,tmp); 
+      std::cout<<GridLogMessage << "filt ["<<b<<"] <n|Op|n> "<<norm2(tmp)<<" "<<ip<<std::endl;
+
+      hermop.AdjOp(Mn,tmp); 
+      ip = innerProduct(Mn,tmp); 
+      std::cout<<GridLogMessage << "filt ["<<b<<"] <n|AdjOp|n> "<<norm2(tmp)<<" "<<ip<<std::endl;
       b++;
     }
 
@@ -213,8 +269,18 @@ public:
 	  Mn=*Tnp;
 	  scale = std::pow(norm2(Mn),-0.5);         Mn=Mn*scale;
 	  subspace[b] = Mn;
-	  hermop.Op(Mn,tmp); 
-	  std::cout<<GridLogMessage << n<<" filt ["<<b<<"] <n|MdagM|n> "<<norm2(tmp)<<std::endl;
+
+
+	  ComplexD ip;
+
+	  hermop.Op(Mn,tmp);
+	  ip= innerProduct(Mn,tmp); 
+	  std::cout<<GridLogMessage << "filt ["<<b<<"] <n|Op|n> "<<norm2(tmp)<<" "<<ip<<std::endl;
+
+	  hermop.AdjOp(Mn,tmp); 
+	  ip = innerProduct(Mn,tmp); 
+	  std::cout<<GridLogMessage << "filt ["<<b<<"] <n|AdjOp|n> "<<norm2(tmp)<<" "<<ip<<std::endl;
+	  
 	  b++;
 	}
 

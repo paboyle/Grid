@@ -1,18 +1,19 @@
 #Ahead of time compile for PVC
 
-export LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel -fsycl-targets=spir64_gen -Xs -device -Xs pvc -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel  -fsycl  -lsycl -lnuma -L/opt/aurora/24.180.3/spack/unified/0.8.0/install/linux-sles15-x86_64/oneapi-2024.07.30.002/numactl-2.0.14-7v6edad/lib" 
-export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-tautological-compare -qmkl=parallel  -fsycl -fno-exceptions -I/opt/aurora/24.180.3/spack/unified/0.8.0/install/linux-sles15-x86_64/oneapi-2024.07.30.002/numactl-2.0.14-7v6edad/include/"
+export LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel -fsycl-targets=spir64_gen -Xs -device -Xs pvc -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel  -fsycl  -lsycl -lnuma -L/opt/aurora/24.180.3/spack/unified/0.8.0/install/linux-sles15-x86_64/oneapi-2024.07.30.002/numactl-2.0.14-7v6edad/lib -fPIC -fsycl-max-parallel-link-jobs=16 -fno-sycl-rdc" 
+export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-tautological-compare -qmkl=parallel  -fsycl -fno-exceptions -I/opt/aurora/24.180.3/spack/unified/0.8.0/install/linux-sles15-x86_64/oneapi-2024.07.30.002/numactl-2.0.14-7v6edad/include/ -fPIC"
 
 #JIT compile 
 #export LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel  -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel  -fsycl  -lsycl " 
 #export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-tautological-compare -qmkl=parallel  -fsycl -fno-exceptions "
 
-../../configure \
+../configure \
 	--enable-simd=GPU \
 	--enable-reduction=grid \
 	--enable-gen-simd-width=64 \
 	--enable-comms=mpi-auto \
 	--enable-debug \
+	--prefix $HOME/gpt-install \
 	--disable-gparity \
 	--disable-fermion-reps \
 	--with-lime=$CLIME \

@@ -509,7 +509,14 @@ void Grid_init(int *argc,char ***argv)
 		  Grid_default_latt,
 		  Grid_default_mpi);
 
-
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--flightrecorder") ){
+    std::cout << GridLogMessage <<" Enabling flight recorder " <<std::endl;
+    FlightRecorder::SetLoggingMode(FlightRecorder::LoggingModeRecord);
+    FlightRecorder::PrintEntireLog = 1;
+    FlightRecorder::ChecksumComms  = 1;
+    FlightRecorder::ChecksumCommsSend=1;
+  }
+  
   if( GridCmdOptionExists(*argv,*argv+*argc,"--decomposition") ){
     std::cout<<GridLogMessage<<"Grid Default Decomposition patterns\n";
     std::cout<<GridLogMessage<<"\tOpenMP threads : "<<GridThread::GetThreads()<<std::endl;
@@ -631,12 +638,11 @@ void Grid_debug_handler_init(void)
   sa.sa_flags    = SA_SIGINFO;
   //  sigaction(SIGSEGV,&sa,NULL);
   sigaction(SIGTRAP,&sa,NULL);
-  sigaction(SIGBUS,&sa,NULL);
+  //  sigaction(SIGBUS,&sa,NULL);
   //  sigaction(SIGUSR2,&sa,NULL);
 
-  feenableexcept( FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO);
-
-  sigaction(SIGFPE,&sa,NULL);
+  //  feenableexcept( FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO);
+  //  sigaction(SIGFPE,&sa,NULL);
   sigaction(SIGKILL,&sa,NULL);
   sigaction(SIGILL,&sa,NULL);
 
@@ -651,3 +657,4 @@ void Grid_debug_handler_init(void)
 }
 
 NAMESPACE_END(Grid);
+

@@ -555,6 +555,7 @@ int main (int argc, char ** argv) {
   double c = (args.mobius_scale - bmc)/2.;  // c = 1/2 [ (b+c) - (b-c) ]
     
   if(is_gparity){
+#ifdef ENABLE_GPARITY    
     GparityWilsonImplD::ImplParams Params = setupGparityParams(args.GparityDirs);
     readConfiguration<ConjugateGimplD>(Umu, config, args.is_cps_cfg);   //Read the gauge field
     
@@ -564,7 +565,10 @@ int main (int argc, char ** argv) {
     }else if(action_s == "Mobius"){
       GparityMobiusFermionD action(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, args.mass, args.M5, b, c, Params);
       run(action, config, args);	    
-    }      
+    }
+#else
+    assert(0);
+#endif
   }else{
     WilsonImplD::ImplParams Params = setupParams();
     readConfiguration<PeriodicGimplD>(Umu, config, args.is_cps_cfg);   //Read the gauge field

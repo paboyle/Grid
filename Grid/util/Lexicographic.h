@@ -50,7 +50,7 @@ namespace Grid{
       int64_t index64;
       IndexFromCoorReversed(coor,index64,dims);
       if ( index64>=2*1024*1024*1024LL ){
-	//std::cout << " IndexFromCoorReversed " << coor<<" index " << index64<< " dims "<<dims<<std::endl;
+	//	std::cout << " IndexFromCoorReversed " << coor<<" index " << index64<< " dims "<<dims<<std::endl;
       }
       assert(index64<2*1024*1024*1024LL);
       index = (int) index64;

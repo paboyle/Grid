@@ -51,11 +51,13 @@ directory
 #pragma nv_diag_suppress cast_to_qualified_type
  //disables nvcc specific warning in many files
 #pragma nv_diag_suppress esa_on_defaulted_function_ignored
+#pragma nv_diag_suppress declared_but_not_referenced
 #pragma nv_diag_suppress extra_semicolon
 #else
  //disables nvcc specific warning in json.hpp
 #pragma diag_suppress unsigned_compare_with_zero
 #pragma diag_suppress cast_to_qualified_type
+#pragma diag_suppress declared_but_not_referenced
  //disables nvcc specific warning in many files
 #pragma diag_suppress esa_on_defaulted_function_ignored
 #pragma diag_suppress extra_semicolon

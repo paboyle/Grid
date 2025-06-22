@@ -30,7 +30,7 @@
 
 using namespace Grid;
 
-
+#ifdef ENABLE_GPARITY
 
 template<typename FermionField2f, typename FermionField1f>
 void copy2fTo1fFermionField(FermionField1f &out, const FermionField2f &in, int gpdir){
@@ -255,3 +255,6 @@ int main(int argc, char **argv) {
 } // main
 
 
+#else
+int main(int argc, char **argv){};
+#endif

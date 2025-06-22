@@ -14,6 +14,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 Author: Guido Cossu <guido.cossu@ed.ac.uk>
 Author: Andrew Lawson <andrew.lawson1991@gmail.com>
 Author: Vera Guelpers <V.M.Guelpers@soton.ac.uk>
+Author: Christoph Lehner <christoph@lhnr.de>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -483,6 +484,54 @@ void WilsonFermion5D<Impl>::DW(const FermionField &in, FermionField &out,int dag
   out.Checkerboard()=in.Checkerboard();
   Dhop(in,out,dag); // -0.5 is included
   axpy(out,4.0-M5,in,out);
+}
+template <class Impl>
+void WilsonFermion5D<Impl>::Meooe(const FermionField &in, FermionField &out)
+{
+  if (in.Checkerboard() == Odd) {
+    DhopEO(in, out, DaggerNo);
+  } else {
+    DhopOE(in, out, DaggerNo);
+  }
+}
+
+template <class Impl>
+void WilsonFermion5D<Impl>::MeooeDag(const FermionField &in, FermionField &out)
+{
+  if (in.Checkerboard() == Odd) {
+    DhopEO(in, out, DaggerYes);
+  } else {
+    DhopOE(in, out, DaggerYes);
+  }
+}
+
+template <class Impl>
+void WilsonFermion5D<Impl>::Mooee(const FermionField &in, FermionField &out)
+{
+  out.Checkerboard() = in.Checkerboard();
+  typename FermionField::scalar_type scal(4.0 + M5);
+  out = scal * in;
+}
+
+template <class Impl>
+void WilsonFermion5D<Impl>::MooeeDag(const FermionField &in, FermionField &out)
+{
+  out.Checkerboard() = in.Checkerboard();
+  Mooee(in, out);
+}
+
+template<class Impl>
+void WilsonFermion5D<Impl>::MooeeInv(const FermionField &in, FermionField &out)
+{
+  out.Checkerboard() = in.Checkerboard();
+  out = (1.0/(4.0 + M5))*in;
+}
+
+template<class Impl>
+void WilsonFermion5D<Impl>::MooeeInvDag(const FermionField &in, FermionField &out)
+{
+  out.Checkerboard() = in.Checkerboard();
+  MooeeInv(in,out);
 }
 
 template<class Impl>

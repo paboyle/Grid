@@ -245,9 +245,10 @@ until convergence
 	_HermOp(src_n,tmp);
 	//	std::cout << GridLogMessage<< tmp<<std::endl; exit(0);
 	//	std::cout << GridLogIRL << " _HermOp " << norm2(tmp) << std::endl;
-	RealD vnum = real(innerProduct(src_n,tmp)); // HermOp.
+//	RealD vnum = real(innerProduct(src_n,tmp)); // HermOp.
+	RealD vnum = real(innerProduct(tmp,tmp)); // HermOp^2.
 	RealD vden = norm2(src_n);
-	RealD na = vnum/vden;
+	RealD na = std::sqrt(vnum/vden);
 	if (fabs(evalMaxApprox/na - 1.0) < 0.0001)
 	  i=_MAX_ITER_IRL_MEVAPP_;
 	evalMaxApprox = na;
@@ -255,6 +256,7 @@ until convergence
 	src_n = tmp;
       }
     }
+    std::cout << GridLogIRL << " Final evalMaxApprox  " << evalMaxApprox << std::endl;
 	
     std::vector<RealD> lme(Nm);  
     std::vector<RealD> lme2(Nm);

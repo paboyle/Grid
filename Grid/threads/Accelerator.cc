@@ -67,7 +67,7 @@ void acceleratorInit(void)
 	printf("AcceleratorCudaInit[%d]: Device identifier: %s\n",rank, prop.name);
 
 
-	GPU_PROP_FMT(totalGlobalMem,"%lld");
+	GPU_PROP_FMT(totalGlobalMem,"%zu");
 	GPU_PROP(managedMemory);
 	GPU_PROP(isMultiGpuBoard);
 	GPU_PROP(warpSize);
