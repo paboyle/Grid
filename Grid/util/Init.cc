@@ -382,15 +382,20 @@ void Grid_init(int *argc,char ***argv)
   /////////////////////////////////////////////////////////////////
   if( !GridCmdOptionExists(*argv,*argv+*argc,"--debug-stdout") ){
     Grid_quiesce_nodes();
-  } else { 
+  } else {
+    char* root = getenv("GRID_STDOUT_ROOT");
     FILE *fp;
     std::ostringstream fname;
+    if (root)
+      fname << root << "/";
     fname<<"Grid.stdout.";
     fname<<CartesianCommunicator::RankWorld();
     fp=freopen(fname.str().c_str(),"w",stdout);
     assert(fp!=(FILE *)NULL);
 
     std::ostringstream ename;
+    if (root)
+      ename << root << "/";
     ename<<"Grid.stderr.";
     ename<<CartesianCommunicator::RankWorld();
     fp=freopen(ename.str().c_str(),"w",stderr);
