@@ -19,7 +19,7 @@ export ONEAPI_DEVICE_FILTER=gpu,level_zero
 
 export SYCL_PI_LEVEL_ZERO_DEVICE_SCOPE_EVENTS=0
 export SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1
-export SYCL_PI_LEVEL_ZERO_USE_COPY_ENGINE=0:3
+export SYCL_PI_LEVEL_ZERO_USE_COPY_ENGINE=0:4
 export SYCL_PI_LEVEL_ZERO_USE_COPY_ENGINE_FOR_D2D_COPY=1
 #export SYCL_PI_LEVEL_ZERO_USE_COPY_ENGINE=0:2
 #export SYCL_PI_LEVEL_ZERO_USM_RESIDENT=1
@@ -30,8 +30,8 @@ echo "rank $PALS_RANKID ; local rank $PALS_LOCAL_RANKID ; ZE_AFFINITY_MASK=$ZE_A
 
 if [ $PALS_RANKID = "0" ]
 then
-    numactl -p $NUMAP -N $NUMAP unitrace --chrome-kernel-logging --chrome-mpi-logging --chrome-sycl-logging --demangle "$@"
-#    numactl -p $NUMAP -N $NUMAP  "$@"
+#    numactl -p $NUMAP -N $NUMAP unitrace --chrome-kernel-logging --chrome-mpi-logging --chrome-sycl-logging --demangle "$@"
+    numactl -p $NUMAP -N $NUMAP  "$@"
 else 
     numactl -p $NUMAP -N $NUMAP  "$@"
 fi

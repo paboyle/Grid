@@ -33,8 +33,7 @@ namespace Grid{
     GRID_SERIALIZABLE_CLASS_MEMBERS(WFParameters,
             int, steps,
             double, step_size,
-            int, meas_interval,
-            double, maxTau); // for the adaptive algorithm
+            int, meas_interval);
        
 
     template <class ReaderClass >
@@ -86,7 +85,7 @@ int main(int argc, char **argv) {
   WFParameters WFPar(Reader);
   ConfParameters CPar(Reader);
   CheckpointerParameters CPPar(CPar.conf_prefix, CPar.rng_prefix);
-  BinaryHmcCheckpointer<PeriodicGimplR> CPBin(CPPar);
+  NerscHmcCheckpointer<PeriodicGimplR> CPBin(CPPar);
 
   for (int conf = CPar.StartConfiguration; conf <= CPar.EndConfiguration; conf+= CPar.Skip){
 
@@ -96,19 +95,13 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Initial plaquette: "
     << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu) << std::endl;
 
-  int t=WFPar.maxTau;
-  WilsonFlowAdaptive<PeriodicGimplR> WF(WFPar.step_size, WFPar.maxTau,
-					1.0e-4,
+  WilsonFlow<PeriodicGimplR> WF(WFPar.step_size, WFPar.steps,
 					WFPar.meas_interval);
 
   WF.smear(Uflow, Umu);
 
   RealD WFlow_plaq = WilsonLoops<PeriodicGimplR>::avgPlaquette(Uflow);
-  RealD WFlow_TC   = WilsonLoops<PeriodicGimplR>::TopologicalCharge(Uflow);
-  RealD WFlow_T0   = WF.energyDensityPlaquette(t,Uflow);
   std::cout << GridLogMessage << "Plaquette          "<< conf << "   " << WFlow_plaq << std::endl;
-  std::cout << GridLogMessage << "T0                 "<< conf << "   " << WFlow_T0 << std::endl;
-  std::cout << GridLogMessage << "TopologicalCharge  "<< conf << "   " << WFlow_TC   << std::endl;
 
   std::cout<< GridLogMessage << " Admissibility check:\n";
   const double sp_adm = 0.067;                // admissible threshold

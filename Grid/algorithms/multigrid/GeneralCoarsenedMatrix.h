@@ -441,8 +441,20 @@ public:
     std::cout << GridLogMessage<<"CoarsenOperator inv    "<<tinv<<" us"<<std::endl;
   }
 #else
+  //////////////////////////////////////////////////////////////////////
+  // Galerkin projection of matrix
+  //////////////////////////////////////////////////////////////////////
   void CoarsenOperator(LinearOperatorBase<Lattice<Fobj> > &linop,
 		       Aggregation<Fobj,CComplex,nbasis> & Subspace)
+  {
+    CoarsenOperator(linop,Subspace,Subspace);
+  }
+  //////////////////////////////////////////////////////////////////////
+  // Petrov - Galerkin projection of matrix
+  //////////////////////////////////////////////////////////////////////
+  void CoarsenOperator(LinearOperatorBase<Lattice<Fobj> > &linop,
+		       Aggregation<Fobj,CComplex,nbasis> & U,
+		       Aggregation<Fobj,CComplex,nbasis> & V)
   {
     std::cout << GridLogMessage<< "GeneralCoarsenMatrix "<< std::endl;
     GridBase *grid = FineGrid();
@@ -458,11 +470,9 @@ public:
     // Orthogonalise the subblocks over the basis
     /////////////////////////////////////////////////////////////
     CoarseScalar InnerProd(CoarseGrid()); 
-    blockOrthogonalise(InnerProd,Subspace.subspace);
+    blockOrthogonalise(InnerProd,V.subspace);
+    blockOrthogonalise(InnerProd,U.subspace);
 
-    //    for(int s=0;s<Subspace.subspace.size();s++){
-      //      std::cout << " subspace norm "<<norm2(Subspace.subspace[s])<<std::endl;
-    //    }
     const int npoint = geom.npoint;
       
     Coordinate clatt = CoarseGrid()->GlobalDimensions();
@@ -542,7 +552,7 @@ public:
       std::cout << GridLogMessage<< "CoarsenMatrixColoured vec "<<i<<"/"<<nbasis<< std::endl;
       for(int p=0;p<npoint;p++){ // Loop over momenta in npoint
 	tphaseBZ-=usecond();
-	phaV = phaF[p]*Subspace.subspace[i];
+	phaV = phaF[p]*V.subspace[i];
 	tphaseBZ+=usecond();
 
 	/////////////////////////////////////////////////////////////////////
@@ -555,7 +565,7 @@ public:
 	//	std::cout << i << " " <<p << " MphaV "<<norm2(MphaV)<<" "<<norm2(phaV)<<std::endl;
 
 	tproj-=usecond();
-	blockProject(coarseInner,MphaV,Subspace.subspace);
+	blockProject(coarseInner,MphaV,U.subspace);
 	coarseInner = conjugate(pha[p]) * coarseInner;
 
 	ComputeProj[p] = coarseInner;

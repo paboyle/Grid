@@ -277,6 +277,38 @@ public:
     assert(0);
   }
 };
+template<class Matrix,class Field>
+class ShiftedNonHermitianLinearOperator : public LinearOperatorBase<Field> {
+  Matrix &_Mat;
+  RealD shift;
+public:
+  ShiftedNonHermitianLinearOperator(Matrix &Mat,RealD shft): _Mat(Mat),shift(shft){};
+  // Support for coarsening to a multigrid
+  void OpDiag (const Field &in, Field &out) {
+    _Mat.Mdiag(in,out);
+    out = out + shift*in;
+  }
+  void OpDir  (const Field &in, Field &out,int dir,int disp) {
+    _Mat.Mdir(in,out,dir,disp);
+  }
+  void OpDirAll  (const Field &in, std::vector<Field> &out){
+    _Mat.MdirAll(in,out);
+  };
+  void Op     (const Field &in, Field &out){
+    _Mat.M(in,out);
+    out = out + shift * in;
+  }
+  void AdjOp     (const Field &in, Field &out){
+    _Mat.Mdag(in,out);
+    out = out + shift * in;
+  }
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
+    assert(0);
+  }
+  void HermOp(const Field &in, Field &out){
+    assert(0);
+  }
+};
 
 //////////////////////////////////////////////////////////
 // Even Odd Schur decomp operators; there are several

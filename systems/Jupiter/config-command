@@ -1,0 +1,16 @@
+export CXX=nvcc
+export OPENMPI=/p/software/default/stages/2025/software/OpenMPI/5.0.5-NVHPC-24.9-CUDA-12/
+export LDFLAGS="-cudart shared -L${OPENMPI}/lib" 
+export CXXFLAGS="-ccbin clang++ -gencode arch=compute_90,code=sm_90 -std=c++17 -cudart shared -lcublas -lmpi -I${OPENMPI}/include"
+
+../../configure \
+    --enable-comms=mpi \
+    --enable-simd=GPU \
+    --enable-gen-simd-width=64 \
+    --enable-shm=nvlink \
+    --enable-accelerator=cuda \
+    --with-lime=$CLIME \
+    --disable-gparity \
+    --disable-fermion-reps \
+    --disable-unified 
+

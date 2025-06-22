@@ -29,11 +29,11 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
 template<typename Action>
 struct Setup{};
 
+#ifdef ENABLE_GPARITY
 template<>
 struct Setup<GparityMobiusFermionF>{
   static GparityMobiusFermionF* getAction(LatticeGaugeFieldF &Umu,
@@ -47,16 +47,24 @@ struct Setup<GparityMobiusFermionF>{
     return new GparityMobiusFermionF(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,mob_b,mob_b-1.,params);
   }
 };
+#endif
 
 template<>
 struct Setup<DomainWallFermionF>{
   static DomainWallFermionF* getAction(LatticeGaugeFieldF &Umu,
+					  GridCartesian* FGrid, GridRedBlackCartesian* FrbGrid, GridCartesian* UGrid, GridRedBlackCartesian* UrbGrid){
+    RealD mass=0.00054;
+    RealD M5=1.8;
+    return new DomainWallFermionF(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  }
+};
+template<>
 struct Setup<DomainWallFermionD>{
   static DomainWallFermionD* getAction(LatticeGaugeField &Umu,
 					  GridCartesian* FGrid, GridRedBlackCartesian* FrbGrid, GridCartesian* UGrid, GridRedBlackCartesian* UrbGrid){
     RealD mass=0.00054;
     RealD M5=1.8;
-    return new DomainWallFermionF(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+    return new DomainWallFermionD(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   }
 };
 
@@ -168,7 +176,9 @@ int main (int argc, char ** argv)
   }
 
   if(action == "GparityMobius"){
+#ifdef ENABLE_GPARITY    
     run<GparityMobiusFermionF>();
+#endif    
   }else if(action == "DWF"){
     run<DomainWallFermionF>();
   }else if(action == "Mobius"){

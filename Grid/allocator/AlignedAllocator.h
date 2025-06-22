@@ -69,7 +69,7 @@ public:
   }
 
   // FIXME: hack for the copy constructor: it must be avoided to avoid single thread loop
-  void construct(pointer __p, const _Tp& __val) { assert(0);};
+  void construct(pointer __p, const _Tp& __val) { };
   void construct(pointer __p) { };
   void destroy(pointer __p) { };
 };
@@ -175,10 +175,11 @@ template<typename _Tp>  inline bool operator!=(const devAllocator<_Tp>&, const d
 // Template typedefs
 ////////////////////////////////////////////////////////////////////////////////
 template<class T> using hostVector          = std::vector<T,alignedAllocator<T> >;           // Needs autoview
-template<class T> using Vector              = std::vector<T,uvmAllocator<T> >;               // 
+template<class T> using Vector              = std::vector<T,uvmAllocator<T> >;               // Really want to deprecate
 template<class T> using uvmVector           = std::vector<T,uvmAllocator<T> >;               // auto migrating page
 template<class T> using deviceVector        = std::vector<T,devAllocator<T> >;               // device vector
 
+/*
 template<class T> class vecView
 {
  protected:
@@ -214,6 +215,7 @@ template<class T> vecView<T> VectorView(Vector<T> &vec,ViewMode _mode)
 #define autoVecView(v_v,v,mode)					\
   auto v_v = VectorView(v,mode);				\
   ViewCloser<decltype(v_v)> _autoView##v_v(v_v);
+*/
 
 NAMESPACE_END(Grid);
 

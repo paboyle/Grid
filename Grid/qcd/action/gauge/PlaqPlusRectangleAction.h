@@ -76,27 +76,27 @@ public:
     return action;
   };
 
-  virtual void deriv(const GaugeField &Umu,GaugeField & dSdU) {
+  virtual void deriv(const GaugeField &U, GaugeField &dSdU) {
     //extend Ta to include Lorentz indexes
     RealD factor_p = c_plaq/RealD(Nc)*0.5;
     RealD factor_r = c_rect/RealD(Nc)*0.5;
 
-    GridBase *grid = Umu.Grid();
+    GridBase *grid = U.Grid();
 
-    std::vector<GaugeLinkField> U (Nd,grid);
+    std::vector<GaugeLinkField> Umu (Nd,grid);
     for(int mu=0;mu<Nd;mu++){
-      U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
+      Umu[mu] = PeekIndex<LorentzIndex>(U,mu);
     }
     std::vector<GaugeLinkField> RectStaple(Nd,grid), Staple(Nd,grid);
-    WilsonLoops<Gimpl>::StapleAndRectStapleAll(Staple, RectStaple, U, workspace);
+    WilsonLoops<Gimpl>::StapleAndRectStapleAll(Staple, RectStaple, Umu, workspace);
 
     GaugeLinkField dSdU_mu(grid);
     GaugeLinkField staple(grid);
 
     for (int mu=0; mu < Nd; mu++){
-      dSdU_mu = Ta(U[mu]*Staple[mu])*factor_p;
-      dSdU_mu = dSdU_mu + Ta(U[mu]*RectStaple[mu])*factor_r;
-	  
+      dSdU_mu = Ta(Umu[mu]*Staple[mu])*factor_p;
+      dSdU_mu = dSdU_mu + Ta(Umu[mu]*RectStaple[mu])*factor_r;
+
       PokeIndex<LorentzIndex>(dSdU, dSdU_mu, mu);
     }
 

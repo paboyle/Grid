@@ -55,6 +55,7 @@ NAMESPACE_CHECK(Wilson);
 NAMESPACE_CHECK(WilsonTM);
 #include <Grid/qcd/action/fermion/WilsonCloverFermion.h> // 4d wilson clover fermions
 #include <Grid/qcd/action/fermion/CompactWilsonCloverFermion.h> // 4d compact wilson clover fermions
+#include <Grid/qcd/action/fermion/CompactWilsonCloverFermion5D.h> // 5d compact wilson clover fermions
 NAMESPACE_CHECK(WilsonClover);
 #include <Grid/qcd/action/fermion/WilsonFermion5D.h>     // 5d base used by all 5d overlap types
 NAMESPACE_CHECK(Wilson5D);
@@ -164,11 +165,16 @@ typedef WilsonClover<WilsonTwoIndexAntiSymmetricImplD> WilsonCloverTwoIndexAntiS
 
 // Compact Clover fermions
 template <typename WImpl> using CompactWilsonClover = CompactWilsonCloverFermion<WImpl, CompactCloverHelpers<WImpl>>;
+template <typename WImpl> using CompactWilsonClover5D = CompactWilsonCloverFermion5D<WImpl, CompactCloverHelpers<WImpl>>;
 template <typename WImpl> using CompactWilsonExpClover = CompactWilsonCloverFermion<WImpl, CompactExpCloverHelpers<WImpl>>;
 
 typedef CompactWilsonClover<WilsonImplD2> CompactWilsonCloverFermionD2;
 typedef CompactWilsonClover<WilsonImplF> CompactWilsonCloverFermionF;
 typedef CompactWilsonClover<WilsonImplD> CompactWilsonCloverFermionD;
+
+typedef CompactWilsonClover5D<WilsonImplD2> CompactWilsonCloverFermion5DD2;
+typedef CompactWilsonClover5D<WilsonImplF> CompactWilsonCloverFermion5DF;
+typedef CompactWilsonClover5D<WilsonImplD> CompactWilsonCloverFermion5DD;
 
 typedef CompactWilsonExpClover<WilsonImplD2> CompactWilsonExpCloverFermionD2;
 typedef CompactWilsonExpClover<WilsonImplF> CompactWilsonExpCloverFermionF;

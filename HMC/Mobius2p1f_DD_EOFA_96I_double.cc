@@ -201,8 +201,7 @@ int main(int argc, char **argv) {
 
   Params.dirichlet=NonDirichlet;
   ParamsDir.dirichlet=Dirichlet;
-  ParamsDir.partialDirichlet=0;
-  std::cout << GridLogMessage<< "Partial Dirichlet depth is "<<dwf_compressor_depth<<std::endl;
+  //  ParamsDir.partialDirichlet=0;
 
   //  double StoppingCondition = 1e-14;
   //  double MDStoppingCondition = 1e-9;
@@ -298,11 +297,11 @@ int main(int argc, char **argv) {
     if ( dirichlet_den[h]==1) ParamsDen.dirichlet = Dirichlet;
     else                      ParamsDen.dirichlet = NonDirichlet;
 
-    if ( dirichlet_num[h]==1) ParamsNum.partialDirichlet = 1;
-    else                      ParamsNum.partialDirichlet = 0;
+    //    if ( dirichlet_num[h]==1) ParamsNum.partialDirichlet = 1;
+    //    else                      ParamsNum.partialDirichlet = 0;
 
-    if ( dirichlet_den[h]==1) ParamsDen.partialDirichlet = 1;
-    else                      ParamsDen.partialDirichlet = 0;
+    //    if ( dirichlet_den[h]==1) ParamsDen.partialDirichlet = 1;
+    //    else                      ParamsDen.partialDirichlet = 0;
     
     Numerators.push_back  (new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, ParamsNum));
     Denominators.push_back(new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, ParamsDen));

@@ -30,14 +30,10 @@ source ${root}/sourceme.sh
 
 export OMP_NUM_THREADS=7
 export MPICH_GPU_SUPPORT_ENABLED=1
-export MPICH_SMP_SINGLE_COPY_MODE=XPMEM
-
-for vol in 32.32.32.64
+#export MPICH_SMP_SINGLE_COPY_MODE=XPMEM
+#64.64.32.96
+for vol in 64.64.32.64
 do
-srun ./select_gpu ./Benchmark_dwf_fp32 --mpi 2.2.2.2 --accelerator-threads 8 --comms-overlap --shm 2048 --shm-mpi 0 --grid $vol  > log.shm0.ov.$vol
-srun ./select_gpu ./Benchmark_dwf_fp32 --mpi 2.2.2.2 --accelerator-threads 8 --comms-overlap --shm 2048 --shm-mpi 1 --grid $vol  > log.shm1.ov.$vol
-
-srun ./select_gpu ./Benchmark_dwf_fp32 --mpi 2.2.2.2 --accelerator-threads 8 --comms-sequential --shm 2048 --shm-mpi 0 --grid $vol  > log.shm0.seq.$vol
-srun ./select_gpu ./Benchmark_dwf_fp32 --mpi 2.2.2.2 --accelerator-threads 8 --comms-sequential --shm 2048 --shm-mpi 1 --grid $vol > log.shm1.seq.$vol
+srun ./select_gpu ./Benchmark_dwf_fp32 --mpi 2.2.2.2 --accelerator-threads 8 --comms-overlap --shm 2048 --shm-mpi 0 --grid $vol -Ls 16
 done
 
