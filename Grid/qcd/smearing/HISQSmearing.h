@@ -749,7 +749,7 @@ public:
     //              u_force (slot derivative into this force), 
     //              delta (force cutoff)
     // Follow MILC 10.1103/PhysRevD.82.074501
-    void ddVprojectU3(GF& u_deriv, GF& u_mu, GF& u_force, RealScalar const delta=5e-5) {
+    void projU3Deriv(GF& u_deriv, GF& u_mu, GF& u_force, RealScalar const delta=5e-5) {
 
         conformable(u_force,u_mu);
         conformable(u_deriv,u_mu);
@@ -898,16 +898,16 @@ public:
             int rat_order = n_orders_naik[inaik];
             for (int i=0; i<rat_order; i++) {
 
-                X = Zero(); Y=Zero(); 
+                X = Zero(); Y = Zero(); 
                 
-                RB=Zero(); 
+                RB = Zero(); 
                 pickCheckerboard(Even,RB,vecx[l]);
                 setCheckerboard(X,RB);
-                RB=Zero();
+                RB = Zero();
                 pickCheckerboard(Odd ,RB,vecx[l]);
                 setCheckerboard(Y,RB);
         
-                XY_l = Zero(); XYnu = Zero(); YXnu=Zero(); 
+                XY_l = Zero(); XYnu = Zero(); YXnu = Zero(); 
                 for (int nu = 0; nu < Nd; nu++) {
                     YXnu = outerProduct( Cshift(Y,nu,sep) ,X);
                     XYnu = outerProduct( Cshift(X,nu,sep) ,Y);
@@ -1410,6 +1410,119 @@ if constexpr(term==13) {
                 }
             }
         })
+    
+    }
+
+
+    GF naikLinkDeriv(std::vector<Real> vecdt, std::vector<FF>& vecx, std::vector<int> n_orders_naik, int n_naiks, Real cnaik) {
+        auto grid = this->_grid;
+        GF temp(grid);
+        std::vector<LF> Wv(Nd, grid);
+        std::vector<LF> XYdag(Nd, grid);
+        std::vector<LF> ddW(Nd, grid);
+        temp = outerProductHISQ(vecx, vecdt, n_orders_naik, n_naiks, 3);
+        for (int mu = 0; mu < Nd; mu++) {
+            Wv[mu]    = PeekIndex<LorentzIndex>(_Wmu, mu);
+            XYdag[mu] = PeekIndex<LorentzIndex>(temp, mu);
+            ddW[mu]   = Zero();
+        }
+        for (int mu = 0; mu < Nd; mu++) {
+            ddW[mu] =    Cshift(   Wv[mu],mu, 1)*Cshift(   Wv[mu],mu, 2)*       XYdag[mu]
+                       + Cshift(   Wv[mu],mu, 1)*Cshift(XYdag[mu],mu,-1)*Cshift(   Wv[mu],mu,-1)
+                       + Cshift(XYdag[mu],mu,-2)*Cshift(   Wv[mu],mu,-2)*Cshift(   Wv[mu],mu,-1); 
+        }
+        for (int mu = 0; mu < Nd; mu++) {
+            PokeIndex<LorentzIndex>(temp, ddW[mu], mu);
+        }
+        return cnaik*temp;
+    } 
+
+    
+    GF lepageLinkDeriv(GF& XY, Real clp) {
+
+        auto grid = this->_grid;
+        GF temp(grid);
+        std::vector<LF> Wv(Nd, grid);
+        std::vector<LF> XYdag(Nd, grid);
+        std::vector<LF> ddW(Nd, grid);
+
+        for (int mu = 0; mu < Nd; mu++) {
+            Wv[mu]    = PeekIndex<LorentzIndex>(_Wmu, mu);
+            ddW[mu]   = Zero();
+            XYdag[mu] = adj(PeekIndex<LorentzIndex>(XY, mu));
+        }
+
+        for (int mu = 0; mu < Nd; mu++) 
+        for (int nu = 0; nu < Nd; nu++) {
+            if(mu==nu) continue;
+
+            // (forward)
+            ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftBackward(Wv[mu],mu,
+                                            Gimpl::CovShiftForward(Wv[nu],nu,
+                                              Gimpl::CovShiftForward(Wv[mu],mu,
+                                                Gimpl::CovShiftForward(Wv[mu],mu,
+                                                  Gimpl::CovShiftIdentityBackward(XYdag[nu],nu))))));
+            // (backward)
+            ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftBackward(Wv[mu],mu,
+                                            Gimpl::CovShiftBackward(Wv[nu],nu,
+                                              Gimpl::CovShiftForward(Wv[mu],mu,
+                                                Gimpl::CovShiftForward(Wv[mu],mu,
+                                                  Gimpl::CovShiftIdentityForward(XYdag[nu],nu))))));
+            // (forward)
+            ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftForward(Wv[nu],nu,
+                                            Gimpl::CovShiftForward(Wv[mu],mu,
+                                              Gimpl::CovShiftForward(Wv[mu],mu,
+                                                Gimpl::CovShiftBackward(XYdag[nu],nu,
+                                                  Gimpl::CovShiftIdentityBackward(Wv[mu],mu))))));
+            // (backward)
+            ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftBackward(Wv[nu],nu,
+                                            Gimpl::CovShiftForward(Wv[mu],mu,
+                                              Gimpl::CovShiftForward(Wv[mu],mu,
+                                                Gimpl::CovShiftForward(XYdag[nu],nu,
+                                                  Gimpl::CovShiftIdentityBackward(Wv[mu],mu))))));
+            // (forward)
+            ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftForward(Wv[nu],nu,
+                                            Gimpl::CovShiftForward(Wv[nu],nu,
+                                              Gimpl::CovShiftForward(XYdag[mu],mu,
+                                                Gimpl::CovShiftBackward(Wv[nu],nu,
+                                                  Gimpl::CovShiftIdentityBackward(Wv[nu],nu))))));
+            // (backward)
+            ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftBackward(Wv[nu],nu,
+                                            Gimpl::CovShiftBackward(Wv[nu],nu,
+                                              Gimpl::CovShiftForward(XYdag[mu],mu,
+                                                Gimpl::CovShiftForward(Wv[nu],nu,
+                                                  Gimpl::CovShiftIdentityForward(Wv[nu],nu))))));
+            // (forward)
+            ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftBackward(Wv[mu],mu,
+                                            Gimpl::CovShiftForward(XYdag[nu],nu,
+                                              Gimpl::CovShiftForward(Wv[mu],mu,
+                                                Gimpl::CovShiftForward(Wv[mu],mu,
+                                                  Gimpl::CovShiftIdentityBackward(Wv[nu],nu))))));
+            // (backward)
+            ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftBackward(Wv[mu],mu,
+                                            Gimpl::CovShiftBackward(XYdag[nu],nu,
+                                              Gimpl::CovShiftForward(Wv[mu],mu,
+                                                Gimpl::CovShiftForward(Wv[mu],mu,
+                                                  Gimpl::CovShiftIdentityForward(Wv[nu],nu))))));
+            // (forward)
+            ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftForward(XYdag[nu],nu,
+                                            Gimpl::CovShiftForward(Wv[mu],mu,
+                                              Gimpl::CovShiftForward(Wv[mu],mu,
+                                                Gimpl::CovShiftBackward(Wv[nu],nu,
+                                                  Gimpl::CovShiftIdentityBackward(Wv[mu],mu))))));
+            // (backward)
+            ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftBackward(XYdag[nu],nu,
+                                            Gimpl::CovShiftForward(Wv[mu],mu,
+                                              Gimpl::CovShiftForward(Wv[mu],mu,
+                                                Gimpl::CovShiftForward(Wv[nu],nu,
+                                                  Gimpl::CovShiftIdentityBackward(Wv[mu],mu))))));
+        }
+
+        for (int mu = 0; mu < Nd; mu++) {
+            PokeIndex<LorentzIndex>(temp, ddW[mu], mu);
+        }
+
+        return clp*temp;
     }
 
 
@@ -1420,147 +1533,40 @@ if constexpr(term==13) {
     // there is a possibly different order_inaik, then the operator has an index l running up to order_inaik.
     // All terms with inaik=0 correspond to epsilon_Naik = 0.
     //
-    // Intent: OUT--momentum
+    // Intent: OUT--u_force
     //          IN--vecdt: Monte Carlo separation vector times alpha_{inaik,0}. 
     //              vecx: A vector of fermion fields coming from the MILC code. It is organized so that 
     //                    |X_l> = (Mdag M + beta_l)^-1 |Phi> is on even sites, |Y_l>=D|X_l> is on odd sites.
     //                    All the |X_l> for i=0 come first in memory, followed by all the |X_l> with
     //                    i=1 in memory, and so on.
     //              n_orders_naik: Indexed by unique naik epsilon.
-    void force(GF& momentum, std::vector<Real> vecdt, std::vector<FF>& vecx, std::vector<int> n_orders_naik) {
+    void force(GF& u_force, std::vector<Real> vecdt, std::vector<FF>& vecx, std::vector<int> n_orders_naik) {
 
         HISQParameters<Real> hp = this->_linkParams;
         auto grid = this->_grid;
 
-        GF XY(grid);       // outer product field
-        GF u_force(grid);  // accumulates the force
-        GF temp(grid);
+        GF XY(grid);    // outer product field
+        GF temp(grid);  // used to accumulate N-link force contributions and projU3Deriv 
 
-        momentum = Zero();
+        u_force = Zero();
 
-        std::vector<LF> Wv(Nd, grid);
-        std::vector<LF> XYdag(Nd, grid);
-        std::vector<LF> ddW(Nd, grid);
+        if(hp.asqtad_cnaik!=0) u_force += naikLinkDeriv(vecdt, vecx, n_orders_naik, hp.n_naiks, hp.asqtad_cnaik); 
 
-        // ----------------------------------------- NAIK-LINK DERIVATIVE 
+        XY = outerProductHISQ(vecx, vecdt, n_orders_naik, hp.n_naiks, 1);   
+        u_force += hp.asqtad_c1*XY;
 
-        if(hp.asqtad_cnaik!=0) {
-            XY = outerProductHISQ(vecx, vecdt, n_orders_naik, hp.n_naiks, 3);
-            for (int mu = 0; mu < Nd; mu++) {
-                Wv[mu]    = PeekIndex<LorentzIndex>(_Wmu, mu);
-                XYdag[mu] = PeekIndex<LorentzIndex>(XY, mu);
-                ddW[mu]   = Zero();
-            }
-            for (int mu = 0; mu < Nd; mu++) {
-                ddW[mu] =    Cshift(   Wv[mu],mu, 1)*Cshift(   Wv[mu],mu, 2)*       XYdag[mu]
-                           + Cshift(   Wv[mu],mu, 1)*Cshift(XYdag[mu],mu,-1)*Cshift(   Wv[mu],mu,-1)
-                           + Cshift(XYdag[mu],mu,-2)*Cshift(   Wv[mu],mu,-2)*Cshift(   Wv[mu],mu,-1); 
-            }
-            for (int mu = 0; mu < Nd; mu++) {
-                PokeIndex<LorentzIndex>(temp, ddW[mu], mu);
-            }
-
-            momentum += hp.asqtad_cnaik*temp;
-        }
-
-
-        // -------------------------- ONE-LINK DERIVATIVE (OUTER PRODUCT)
-
-        XY = outerProductHISQ(vecx, vecdt, n_orders_naik, hp.n_naiks, 1); 
-
-        momentum += hp.asqtad_c1*XY;
-
-        // -------------------------------------------- LEPAGE DERIVATIVE 
-        if(hp.asqtad_clp!=0) {
-            for (int mu = 0; mu < Nd; mu++) {
-                Wv[mu]    = PeekIndex<LorentzIndex>(_Wmu, mu);
-                ddW[mu]   = Zero();
-                XYdag[mu] = adj(PeekIndex<LorentzIndex>(XY, mu));
-            }
-
-            for (int mu = 0; mu < Nd; mu++) 
-            for (int nu = 0; nu < Nd; nu++) {
-                if(mu==nu) continue;
-
-                // (forward)
-                ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftBackward(Wv[mu],mu,
-                                                Gimpl::CovShiftForward(Wv[nu],nu,
-                                                  Gimpl::CovShiftForward(Wv[mu],mu,
-                                                    Gimpl::CovShiftForward(Wv[mu],mu,
-                                                      Gimpl::CovShiftIdentityBackward(XYdag[nu],nu))))));
-                // (backward)
-                ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftBackward(Wv[mu],mu,
-                                                Gimpl::CovShiftBackward(Wv[nu],nu,
-                                                  Gimpl::CovShiftForward(Wv[mu],mu,
-                                                    Gimpl::CovShiftForward(Wv[mu],mu,
-                                                      Gimpl::CovShiftIdentityForward(XYdag[nu],nu))))));
-                // (forward)
-                ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftForward(Wv[nu],nu,
-                                                Gimpl::CovShiftForward(Wv[mu],mu,
-                                                  Gimpl::CovShiftForward(Wv[mu],mu,
-                                                    Gimpl::CovShiftBackward(XYdag[nu],nu,
-                                                      Gimpl::CovShiftIdentityBackward(Wv[mu],mu))))));
-                // (backward)
-                ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftBackward(Wv[nu],nu,
-                                                Gimpl::CovShiftForward(Wv[mu],mu,
-                                                  Gimpl::CovShiftForward(Wv[mu],mu,
-                                                    Gimpl::CovShiftForward(XYdag[nu],nu,
-                                                      Gimpl::CovShiftIdentityBackward(Wv[mu],mu))))));
-                // (forward)
-                ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftForward(Wv[nu],nu,
-                                                Gimpl::CovShiftForward(Wv[nu],nu,
-                                                  Gimpl::CovShiftForward(XYdag[mu],mu,
-                                                    Gimpl::CovShiftBackward(Wv[nu],nu,
-                                                      Gimpl::CovShiftIdentityBackward(Wv[nu],nu))))));
-                // (backward)
-                ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftBackward(Wv[nu],nu,
-                                                Gimpl::CovShiftBackward(Wv[nu],nu,
-                                                  Gimpl::CovShiftForward(XYdag[mu],mu,
-                                                    Gimpl::CovShiftForward(Wv[nu],nu,
-                                                      Gimpl::CovShiftIdentityForward(Wv[nu],nu))))));
-                // (forward)
-                ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftBackward(Wv[mu],mu,
-                                                Gimpl::CovShiftForward(XYdag[nu],nu,
-                                                  Gimpl::CovShiftForward(Wv[mu],mu,
-                                                    Gimpl::CovShiftForward(Wv[mu],mu,
-                                                      Gimpl::CovShiftIdentityBackward(Wv[nu],nu))))));
-                // (backward)
-                ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftBackward(Wv[mu],mu,
-                                                Gimpl::CovShiftBackward(XYdag[nu],nu,
-                                                  Gimpl::CovShiftForward(Wv[mu],mu,
-                                                    Gimpl::CovShiftForward(Wv[mu],mu,
-                                                      Gimpl::CovShiftIdentityForward(Wv[nu],nu))))));
-                // (forward)
-                ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftForward(XYdag[nu],nu,
-                                                Gimpl::CovShiftForward(Wv[mu],mu,
-                                                  Gimpl::CovShiftForward(Wv[mu],mu,
-                                                    Gimpl::CovShiftBackward(Wv[nu],nu,
-                                                      Gimpl::CovShiftIdentityBackward(Wv[mu],mu))))));
-                // (backward)
-                ddW[mu] = ddW[mu] + adj(Gimpl::CovShiftBackward(XYdag[nu],nu,
-                                                Gimpl::CovShiftForward(Wv[mu],mu,
-                                                  Gimpl::CovShiftForward(Wv[mu],mu,
-                                                    Gimpl::CovShiftForward(Wv[nu],nu,
-                                                      Gimpl::CovShiftIdentityBackward(Wv[mu],mu))))));
-            }
-
-            for (int mu = 0; mu < Nd; mu++) {
-                PokeIndex<LorentzIndex>(temp, ddW[mu], mu);
-            }
-
-            momentum += hp.asqtad_clp*temp;
-        }
+        if(hp.asqtad_clp!=0) u_force += lepageLinkDeriv(XY, hp.asqtad_clp); 
 
 
         // ---------------------------------- N-LINK DERIVATIVES (ASQTAD)
 
         PaddedCell Ghost(_HaloDepth,grid);
 
-        u_force = Zero();
+        temp = Zero();
 
         GF UWghost  = Ghost.Exchange(_Wmu);    // Plays role of U or W 
         GF XYCghost = Ghost.Exchange(XY);      // Plays role of XY or chain rule = dW/dV*dX/dW
-        GF Fghost   = Ghost.Exchange(u_force);
+        GF Fghost   = Ghost.Exchange(temp);
 
         std::vector<Coordinate> shifts3 = createHISQStencil("3STAPLE");
         std::vector<Coordinate> shifts5 = createHISQStencil("5STAPLE");
@@ -1595,19 +1601,17 @@ if constexpr(term==13) {
             } 
         }
 
-        u_force = Ghost.Extract(Fghost);
-        momentum += u_force;
+        u_force += Ghost.Extract(Fghost);
 
         // ------------------------------------------- U3 PROJ DERIVATIVE 
 
-        u_force = Zero();
-        ddVprojectU3(u_force, _Vmu, momentum, 5e-5);
-        momentum = hp.fat7_c1*u_force;
+        projU3Deriv(temp, _Vmu, u_force, 5e-5);
+        u_force = hp.fat7_c1*temp;
 
         // ------------------------------------ N-LINK DERIVATIVES (FAT7) 
 
         UWghost  = Ghost.Exchange(_Umu);
-        XYCghost = Ghost.Exchange(u_force); 
+        XYCghost = Ghost.Exchange(temp); 
         Fghost   = Zero(); 
 
         for(int mu=0;mu<Nd;mu++) {
@@ -1636,15 +1640,13 @@ if constexpr(term==13) {
             } 
         } // end mu loop
 
-        if(hp.fat7_c3!=0 || hp.fat7_c5!=0 || hp.fat7_c7!=0) {
-            momentum += Ghost.Extract(Fghost);
-        }
+        u_force += Ghost.Extract(Fghost);
 
         // Close the loop: Multiply on the left by U_mu(x)
-        LF mom(grid);
+        LF force_mu(grid);
         for (int mu = 0; mu < Nd; mu++) {
-            mom = PeekIndex<LorentzIndex>(_Umu, mu) * PeekIndex<LorentzIndex>(momentum, mu);
-            PokeIndex<LorentzIndex>(momentum, mom, mu);
+            force_mu = PeekIndex<LorentzIndex>(_Umu, mu) * PeekIndex<LorentzIndex>(u_force, mu);
+            PokeIndex<LorentzIndex>(u_force, force_mu, mu);
         }
     }
 

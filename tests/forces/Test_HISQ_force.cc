@@ -60,7 +60,7 @@ typedef typename GIMPL::FermionField FF;
 
 // This is a sort of contrived test situation. The goal is to make sure the fermion force
 // code is stable against future changes and get an idea how the HISQ force interface works.
-bool testForce(GridCartesian& GRID, LGF Umu, LGF Ucontrol,
+bool testForce(GridCartesian& GRID, LGF Umu, LGF Ucontrol, std::string testKind,
                Real fat7_c1  , Real fat7_c3  , Real fat7_c5  , Real fat7_c7  , Real cnaik,
                Real asqtad_c1, Real asqtad_c3, Real asqtad_c5, Real asqtad_c7, Real asqtad_clp) {
 
@@ -108,6 +108,10 @@ bool testForce(GridCartesian& GRID, LGF Umu, LGF Ucontrol,
         }
     }
 
+    Grid_log("");
+    Grid_log("    TEST "+testKind);
+    Grid_log("");
+
     hisq_force.force(Umom,vecdt,vecx,n_orders_naik);
     LGF diff(&GRID);
     diff = Ucontrol-Umom;
@@ -125,7 +129,8 @@ bool testForce(GridCartesian& GRID, LGF Umu, LGF Ucontrol,
 //    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.naik.control");
 //    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.5link.control");
 //    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.7link.control");
-//    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.level1.control");
+//    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.level2.control");
+//    NerscIO::writeConfiguration(Umom,"nersc.l8t4b3360.Umom.level12.control");
 //    return true;
 }
 
@@ -160,8 +165,12 @@ bool testddUProj(GridCartesian& GRID, LGF Umu, LGF Ucontrol) {
 
     Force_HISQ<GIMPL> hisq_force(&GRID, hisq_param, Wmu, Vmu, Umu, hisq_reunit_svd);
 
+    Grid_log("");
+    Grid_log("    TEST DERIVATIVE U3 PROJECTION");
+    Grid_log("");
+
     LGF diff(&GRID);
-    hisq_force.ddVprojectU3(Uforce, Umu, Umu, 5e-5);
+    hisq_force.projU3Deriv(Uforce, Umu, Umu, 5e-5);
     diff = Ucontrol-Uforce;
     auto absDiff = norm2(diff)/norm2(Ucontrol);
     if (absDiff < 1e-30) {
@@ -210,45 +219,51 @@ int main (int argc, char** argv) {
 
     // Check the 1-link (outer product) 
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.XY.control");
-    pass *= testForce(GRID, Umu, Ucontrol,
+    pass *= testForce(GRID, Umu, Ucontrol, "1-link",
                       1, 0, 0, 0, 0,
                       1, 0, 0, 0, 0 );
 
     // Check the 3-link
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.3link.control");
-    pass *= testForce(GRID, Umu, Ucontrol,
+    pass *= testForce(GRID, Umu, Ucontrol, "3-link",
                       1, 0, 0, 0, 0,
                       1, 1, 0, 0, 0 );
 
     // Check the LePage-link 
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.lp.control");
-    pass *= testForce(GRID, Umu, Ucontrol,
+    pass *= testForce(GRID, Umu, Ucontrol, "LePage",
                       1, 0, 0, 0, 0,
                       1, 0, 0, 0, 1 );
 
     // Check the Naik-link 
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.naik.control");
-    pass *= testForce(GRID, Umu, Ucontrol,
+    pass *= testForce(GRID, Umu, Ucontrol, "Naik",
                       1, 0, 0, 0, 1,
                       1, 0, 0, 0, 0 );
 
     // Check the 5-link
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.5link.control");
-    pass *= testForce(GRID, Umu, Ucontrol,
+    pass *= testForce(GRID, Umu, Ucontrol, "5-link",
                       1, 0, 0, 0, 0,
                       1, 0, 1, 0, 0 );
 
     // Check the 7-link
     NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.7link.control");
-    pass *= testForce(GRID, Umu, Ucontrol,
+    pass *= testForce(GRID, Umu, Ucontrol, "7-link",
                       1, 0, 0, 0, 0,
                       1, 0, 0, 1, 0 );
 
-    // Check level 1 smearing 
-    NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.level1.control");
-    pass *= testForce(GRID, Umu, Ucontrol,
+    // Check level 2 smearing 
+    NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.level2.control");
+    pass *= testForce(GRID, Umu, Ucontrol, "level 2",
                       1, 0, 0, 0, -1/24.,
                       1, -1/16., 1/64., -1/384., -1/8. );
+
+    // Check level 1+2 smearing 
+    NerscIO::readConfiguration(Ucontrol, header, "nersc.l8t4b3360.Umom.level12.control");
+    pass *= testForce(GRID, Umu, Ucontrol, "level 1+2",
+                      1/8., -1/16., 1/64., -1/384., -1/24.,
+                      1   , -1/16., 1/64., -1/384., -1/8. );
 
 
     if(pass){
