@@ -1,4 +1,4 @@
-AC_PREREQ([2.69])
+AC_PREREQ([2.72])
 AC_INIT([Grid],[0.7.0],[https://github.com/paboyle/Grid],[Grid])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
@@ -214,7 +214,7 @@ esac
 
 ############### Symplectic group
 AC_ARG_ENABLE([Sp],
-    [AC_HELP_STRING([--enable-Sp=yes|no], [enable gauge group Sp2n])],
+    [AS_HELP_STRING([--enable-Sp=yes|no],[enable gauge group Sp2n])],
     [ac_ENABLE_SP=${enable_Sp}], [ac_ENABLE_SP=no])
 
 AM_CONDITIONAL(BUILD_SP, [ test "${ac_ENABLE_SP}X" == "yesX" ])

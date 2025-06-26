@@ -130,7 +130,7 @@ double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
 						     int xmit_to_rank,int dox,
 						     void *recv,
 						     int recv_from_rank,int dor,
-						     int bytes, int dir,size_t word_size)
+						     int bytes, int dir)
 {
   return 2.0*bytes;
 }
@@ -146,15 +146,15 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
   return 0.0;
 }
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
-							 void *xmit,
-							 int xmit_to_rank,int dox,
-							 void *recv,
-							 int recv_from_rank,int dor,
-							 int xbytes,int rbytes, int dir,size_t word_size)
+							 void *xmit,void *xmit_comp,
+							 int dest,int dox,
+							 void *recv,void *recv_comp,
+							 int from,int dor,
+							 int xbytes,int rbytes,int dir)
 {
   return xbytes+rbytes;
 }
-void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int dir,size_t word_size)
+void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int dir)
 {
 }
 
