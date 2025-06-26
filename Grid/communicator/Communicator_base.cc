@@ -41,6 +41,8 @@ bool Stencil_force_mpi = true;
 CartesianCommunicator::CommunicatorPolicy_t  
 CartesianCommunicator::CommunicatorPolicy= CartesianCommunicator::CommunicatorPolicyConcurrent;
 int CartesianCommunicator::nCommThreads = -1;
+CartesianCommunicator::StencilCompressionPolicy_t  
+CartesianCommunicator::StencilCompressionPolicy= CartesianCommunicator::StencilCompressionPolicyNone;
 
 /////////////////////////////////
 // Grid information queries

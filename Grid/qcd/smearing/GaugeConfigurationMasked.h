@@ -820,6 +820,7 @@ public:
   }
 
 private:
+public:
   //====================================================================
   // Override base clas here to mask it
   virtual void fill_smearedSet(GaugeField &U)

@@ -51,6 +51,10 @@ public:
   static void SetCommunicatorPolicy(CommunicatorPolicy_t policy ) { CommunicatorPolicy = policy; }
   static int       nCommThreads;
 
+  enum StencilCompressionPolicy_t { StencilCompressionPolicyNone, StencilCompressionPolicyBfloat16 };
+  static StencilCompressionPolicy_t StencilCompressionPolicy;
+  static void SetStencilCompressionPolicy(StencilCompressionPolicy_t policy ) { StencilCompressionPolicy = policy; }
+
   ////////////////////////////////////////////
   // Communicator should know nothing of the physics grid, only processor grid.
   ////////////////////////////////////////////
@@ -188,7 +192,7 @@ public:
 			       int xmit_to_rank,int do_xmit,
 			       void *recv,
 			       int recv_from_rank,int do_recv,
-			       int bytes,int dir);
+			       int bytes,int dir,size_t word_size);
 
   double StencilSendToRecvFromPrepare(std::vector<CommsRequest_t> &list,
 				      void *xmit,
@@ -206,10 +210,10 @@ public:
 				    int xmit_to_rank,int do_xmit,
 				    void *recv,void *recv_comp,
 				    int recv_from_rank,int do_recv,
-				    int xbytes,int rbytes,int dir);
+				    int xbytes,int rbytes,int dir,size_t word_size);
   
   
-  void StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int i);
+  void StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int i,size_t word_size);
   void StencilBarrier(void);
 
   ////////////////////////////////////////////////////////////

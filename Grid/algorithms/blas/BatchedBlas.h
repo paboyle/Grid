@@ -65,6 +65,7 @@ NAMESPACE_BEGIN(Grid);
 #endif
 
 enum GridBLASOperation_t { GridBLAS_OP_N, GridBLAS_OP_T, GridBLAS_OP_C } ;
+enum GridBLASPrecision_t { GridBLAS_PRECISION_DEFAULT, GridBLAS_PRECISION_16F, GridBLAS_PRECISION_16BF, GridBLAS_PRECISION_TF32 };
 
 class GridBLAS {
 public:
@@ -97,7 +98,21 @@ public:
       gridblasInit=1;
     }
   }
-  
+
+#ifdef GRID_CUDA
+  cudaDataType toDataType(GridBLASPrecision_t p) {
+    switch (p) {
+    case GridBLAS_PRECISION_16F:
+      return CUBLAS_COMPUTE_32F_FAST_16F;
+    case GridBLAS_PRECISION_16BF:
+      return CUBLAS_COMPUTE_32F_FAST_16BF;
+    case GridBLAS_PRECISION_TF32:
+      return CUBLAS_COMPUTE_32F_FAST_TF32;
+    default:
+      assert(0);
+    }
+  }
+#endif
   // Force construct once
   GridBLAS() { Init(); };
   ~GridBLAS() { };
@@ -138,8 +153,10 @@ public:
 		   deviceVector<ComplexD*> &Amk,  // pointer list to matrices
 		   deviceVector<ComplexD*> &Bkn,
 		   ComplexD beta,
-		   deviceVector<ComplexD*> &Cmn)
+		   deviceVector<ComplexD*> &Cmn,
+		   GridBLASPrecision_t precision = GridBLAS_PRECISION_DEFAULT)
   {
+    assert(precision == GridBLAS_PRECISION_DEFAULT);
     gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N,
 		m,n,k,
 		alpha,
@@ -201,8 +218,10 @@ public:
 		   deviceVector<ComplexD*> &Amk,  // pointer list to matrices
 		   deviceVector<ComplexD*> &Bkn,
 		   ComplexD beta,
-		   deviceVector<ComplexD*> &Cmn)
+		   deviceVector<ComplexD*> &Cmn,
+		   GridBLASPrecision_t precision = GridBLAS_PRECISION_DEFAULT)
   {
+    assert(precision == GridBLAS_PRECISION_DEFAULT);
     RealD t2=usecond();
     int32_t batchCount = Amk.size();
     assert(Bkn.size()==batchCount);
@@ -448,7 +467,8 @@ public:
 		   deviceVector<ComplexF*> &Amk,  // pointer list to matrices
 		   deviceVector<ComplexF*> &Bkn,
 		   ComplexF beta,
-		   deviceVector<ComplexF*> &Cmn)
+		   deviceVector<ComplexF*> &Cmn,
+		   GridBLASPrecision_t precision = GridBLAS_PRECISION_DEFAULT)
   {
     RealD t2=usecond();
     int32_t batchCount = Amk.size();
@@ -473,6 +493,7 @@ public:
     assert(Bkn.size()==batchCount);
     assert(Cmn.size()==batchCount);
 #ifdef GRID_HIP
+    assert(precision == GridBLAS_PRECISION_DEFAULT);
     hipblasOperation_t hOpA;
     hipblasOperation_t hOpB;
     if ( OpA == GridBLAS_OP_N ) hOpA = HIPBLAS_OP_N;
@@ -503,50 +524,67 @@ public:
     if ( OpB == GridBLAS_OP_N ) hOpB = CUBLAS_OP_N;
     if ( OpB == GridBLAS_OP_T ) hOpB = CUBLAS_OP_T;
     if ( OpB == GridBLAS_OP_C ) hOpB = CUBLAS_OP_C;
-    auto err = cublasCgemmBatched(gridblasHandle,
-				  hOpA,
-				  hOpB,
-				  m,n,k,
-				  (cuComplex *) &alpha_p[0],
-				  (cuComplex **)&Amk[0], lda,
-				  (cuComplex **)&Bkn[0], ldb,
-				  (cuComplex *) &beta_p[0],
-				  (cuComplex **)&Cmn[0], ldc,
-				  batchCount);
+    cublasStatus_t err;
+    if (precision == GridBLAS_PRECISION_DEFAULT) {
+      err = cublasCgemmBatched(gridblasHandle,
+			       hOpA,
+			       hOpB,
+			       m,n,k,
+			       (cuComplex *) &alpha_p[0],
+			       (cuComplex **)&Amk[0], lda,
+			       (cuComplex **)&Bkn[0], ldb,
+			       (cuComplex *) &beta_p[0],
+			       (cuComplex **)&Cmn[0], ldc,
+			       batchCount);
+    } else {
+      cudaDataType compute_precision = toDataType(precision);
+      err = cublasGemmBatchedEx(gridblasHandle,
+				hOpA,
+				hOpB,
+				m,n,k,
+				(cuComplex *) &alpha_p[0],
+				(cuComplex **)&Amk[0], CUDA_C_32F, lda,
+				(cuComplex **)&Bkn[0], CUDA_C_32F, ldb,
+				(cuComplex *) &beta_p[0],
+				(cuComplex **)&Cmn[0], CUDA_C_32F, ldc,
+				batchCount, compute_precision, CUBLAS_GEMM_DEFAULT);
+    }
     assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
-      int64_t m64=m;
-      int64_t n64=n;
-      int64_t k64=k;
-      int64_t lda64=lda;
-      int64_t ldb64=ldb;
-      int64_t ldc64=ldc;
-      int64_t batchCount64=batchCount;
-
-      oneapi::mkl::transpose iOpA;
-      oneapi::mkl::transpose iOpB;
-      
-      if ( OpA == GridBLAS_OP_N ) iOpA = oneapi::mkl::transpose::N;
-      if ( OpA == GridBLAS_OP_T ) iOpA = oneapi::mkl::transpose::T;
-      if ( OpA == GridBLAS_OP_C ) iOpA = oneapi::mkl::transpose::C;
-      if ( OpB == GridBLAS_OP_N ) iOpB = oneapi::mkl::transpose::N;
-      if ( OpB == GridBLAS_OP_T ) iOpB = oneapi::mkl::transpose::T;
-      if ( OpB == GridBLAS_OP_C ) iOpB = oneapi::mkl::transpose::C;
-
-      oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
-						  &iOpA,
-						  &iOpB,
-						  &m64,&n64,&k64,
-						  (ComplexF *) &alpha_p[0],
-						  (const ComplexF **)&Amk[0], (const int64_t *)&lda64,
-						  (const ComplexF **)&Bkn[0], (const int64_t *)&ldb64,
-						  (ComplexF *) &beta_p[0],
-						  (ComplexF **)&Cmn[0], (const int64_t *)&ldc64,
-						  (int64_t)1,&batchCount64,std::vector<sycl::event>());
+    assert(precision == GridBLAS_PRECISION_DEFAULT);
+    int64_t m64=m;
+    int64_t n64=n;
+    int64_t k64=k;
+    int64_t lda64=lda;
+    int64_t ldb64=ldb;
+    int64_t ldc64=ldc;
+    int64_t batchCount64=batchCount;
+    
+    oneapi::mkl::transpose iOpA;
+    oneapi::mkl::transpose iOpB;
+    
+    if ( OpA == GridBLAS_OP_N ) iOpA = oneapi::mkl::transpose::N;
+    if ( OpA == GridBLAS_OP_T ) iOpA = oneapi::mkl::transpose::T;
+    if ( OpA == GridBLAS_OP_C ) iOpA = oneapi::mkl::transpose::C;
+    if ( OpB == GridBLAS_OP_N ) iOpB = oneapi::mkl::transpose::N;
+    if ( OpB == GridBLAS_OP_T ) iOpB = oneapi::mkl::transpose::T;
+    if ( OpB == GridBLAS_OP_C ) iOpB = oneapi::mkl::transpose::C;
+    
+    oneapi::mkl::blas::column_major::gemm_batch(*gridblasHandle,
+						&iOpA,
+						&iOpB,
+						&m64,&n64,&k64,
+						(ComplexF *) &alpha_p[0],
+						(const ComplexF **)&Amk[0], (const int64_t *)&lda64,
+						(const ComplexF **)&Bkn[0], (const int64_t *)&ldb64,
+						(ComplexF *) &beta_p[0],
+						(ComplexF **)&Cmn[0], (const int64_t *)&ldc64,
+						(int64_t)1,&batchCount64,std::vector<sycl::event>());
     synchronise();
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
+    assert(precision == GridBLAS_PRECISION_DEFAULT);
     // Need a default/reference implementation; use Eigen
       if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_N) ) {
 	thread_for (p, batchCount, {
@@ -946,6 +984,307 @@ public:
      RealD bytes = 1.0*sizeof(RealD)*(m*k+k*n+m*n)*batchCount;
   }
 
+  /*
+    Inverse and Determinant
+
+    - CPU version uses Eigen
+    - GPU version uses LAPACK-compatible getrf / getri
+
+    Design comment: Eigen does not expose getrf / getri in a LAPACK compatible manner.
+                    Overhead to go through getrf / getri for CPU version too large.
+		    Current interface therefore only guarantees the inverse and determinant
+		    functions on all platforms but not the getrf / getri ones.
+  */
+#if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
+
+  void inverseBatched(int64_t n,
+		      deviceVector<ComplexD*> &Ann,
+		      deviceVector<ComplexD*> &Cnn) {
+
+    int64_t batchCount = Ann.size();
+    assert(batchCount == Cnn.size());
+    thread_for(p,batchCount, {
+	Eigen::Map<Eigen::MatrixXcd> eAnn(Ann[p],n,n);
+	Eigen::Map<Eigen::MatrixXcd> eCnn(Cnn[p],n,n);
+	eCnn = eAnn.inverse();
+      });
+  }
+
+  void inverseBatched(int64_t n,
+		      deviceVector<ComplexF*> &Ann,
+		      deviceVector<ComplexF*> &Cnn) {
+
+    int64_t batchCount = Ann.size();
+    assert(batchCount == Cnn.size());
+    thread_for(p,batchCount, {
+	Eigen::Map<Eigen::MatrixXcf> eAnn(Ann[p],n,n);
+	Eigen::Map<Eigen::MatrixXcf> eCnn(Cnn[p],n,n);
+	eCnn = eAnn.inverse();
+      });
+  }
+
+  void determinantBatched(int64_t n,
+			  deviceVector<ComplexD*> &Ann,
+			  deviceVector<ComplexD*> &C) {
+
+    int64_t batchCount = Ann.size();
+    assert(batchCount == C.size());
+    thread_for(p,batchCount, {
+	Eigen::Map<Eigen::MatrixXcd> eAnn(Ann[p],n,n);
+	*C[p] = eAnn.determinant();
+      });
+  }
+
+  void determinantBatched(int64_t n,
+			  deviceVector<ComplexF*> &Ann,
+			  deviceVector<ComplexF*> &C) {
+
+    int64_t batchCount = Ann.size();
+    assert(batchCount == C.size());
+    thread_for(p,batchCount, {
+	Eigen::Map<Eigen::MatrixXcf> eAnn(Ann[p],n,n);
+	*C[p] = eAnn.determinant();
+      });
+  }
+  
+#else
+
+  void getrfBatched(int64_t n,
+		    deviceVector<ComplexD*> &Ann,
+		    deviceVector<int64_t> &ipiv,
+		    deviceVector<int64_t> &info)
+  {
+    int64_t batchCount = Ann.size();
+    assert(ipiv.size()==batchCount*n);
+    assert(info.size()==batchCount);
+
+#ifdef GRID_HIP
+    auto err = hipblasZgetrfBatched(gridblasHandle,(int)n,
+				    (hipblasDoubleComplex **)&Ann[0], (int)n,
+				    (int*) &ipiv[0],
+				    (int*) &info[0],
+				    (int)batchCount);
+    assert(err==HIPBLAS_STATUS_SUCCESS);
+#endif
+#ifdef GRID_CUDA
+    auto err = cublasZgetrfBatched(gridblasHandle, (int)n,
+				   (cuDoubleComplex **)&Ann[0], (int)n,
+				   (int*) &ipiv[0],
+				   (int*) &info[0],
+				   (int)batchCount);
+    assert(err==CUBLAS_STATUS_SUCCESS);
+#endif
+#ifdef GRID_SYCL
+    assert(0);
+    /*
+      TODO: cache scratchpad
+
+    oneapi::mkl::lapack::gerf_batch(*gridblasHandle,
+				    &n, &n,
+				    (ComplexD **)&Ann[0],
+				    &n,
+				    (int64_t)&ipiv[0],
+				    (int64_t)1, &batchCount,
+				    scratchpad, scratchpad_size,
+				    std::vector<sycl::event>());
+    */
+    synchronise();
+#endif
+  }
+
+void getrfBatched(int64_t n,
+		    deviceVector<ComplexF*> &Ann,
+		    deviceVector<int64_t> &ipiv,
+		    deviceVector<int64_t> &info)
+  {
+    int64_t batchCount = Ann.size();
+    assert(ipiv.size()==batchCount*n);
+    assert(info.size()==batchCount);
+
+#ifdef GRID_HIP
+    auto err = hipblasCgetrfBatched(gridblasHandle,(int)n,
+				    (hipblasComplex **)&Ann[0], (int)n,
+				    (int*) &ipiv[0],
+				    (int*) &info[0],
+				    (int)batchCount);
+    assert(err==HIPBLAS_STATUS_SUCCESS);
+#endif
+#ifdef GRID_CUDA
+    auto err = cublasCgetrfBatched(gridblasHandle, (int)n,
+				   (cuComplex **)&Ann[0], (int)n,
+				   (int*) &ipiv[0],
+				   (int*) &info[0],
+				   (int)batchCount);
+    assert(err==CUBLAS_STATUS_SUCCESS);
+#endif
+#ifdef GRID_SYCL
+    assert(0);
+    /*
+      TODO: cache scratchpad
+
+    oneapi::mkl::lapack::gerf_batch(*gridblasHandle,
+				    &n, &n,
+				    (ComplexD **)&Ann[0],
+				    &n,
+				    (int64_t)&ipiv[0],
+				    (int64_t)1, &batchCount,
+				    scratchpad, scratchpad_size,
+				    std::vector<sycl::event>());
+    */
+    synchronise();
+#endif
+  }
+
+  void getriBatched(int64_t n,
+		    deviceVector<ComplexD*> &Ann,
+		    deviceVector<int64_t> &ipiv,
+		    deviceVector<int64_t> &info,
+		    deviceVector<ComplexD*> &Cnn)
+  {
+    int64_t batchCount = Ann.size();
+    assert(ipiv.size()==batchCount*n);
+    assert(info.size()==batchCount);
+    assert(Cnn.size()==batchCount);
+
+#ifdef GRID_HIP
+    auto err = hipblasZgetriBatched(gridblasHandle,(int)n,
+				    (hipblasDoubleComplex **)&Ann[0], (int)n,
+				    (int*) &ipiv[0],
+				    (hipblasDoubleComplex **)&Cnn[0], (int)n,
+				    (int*) &info[0],
+				    (int)batchCount);
+    assert(err==HIPBLAS_STATUS_SUCCESS);
+#endif
+#ifdef GRID_CUDA
+    auto err = cublasZgetriBatched(gridblasHandle, (int)n,
+				   (cuDoubleComplex **)&Ann[0], (int)n,
+				   (int*) &ipiv[0],
+				   (cuDoubleComplex **)&Cnn[0], (int)n,
+				   (int*) &info[0],
+				   (int)batchCount);
+    assert(err==CUBLAS_STATUS_SUCCESS);
+#endif
+#ifdef GRID_SYCL
+    assert(0);
+    /*
+      TODO: cache scratchpad
+    oneapi::mkl::lapack::geri_batch(*gridblasHandle,
+				    &n, &n,
+				    (ComplexD **)&Ann[0],
+				    &n,
+				    (int64_t)&ipiv[0],
+				    (int64_t)1, &batchCount,
+				    scratchpad, scratchpad_size,
+				    std::vector<sycl::event>());
+    */
+    synchronise();
+#endif
+  }
+
+  void getriBatched(int64_t n,
+		    deviceVector<ComplexF*> &Ann,
+		    deviceVector<int64_t> &ipiv,
+		    deviceVector<int64_t> &info,
+		    deviceVector<ComplexF*> &Cnn)
+  {
+    int64_t batchCount = Ann.size();
+    assert(ipiv.size()==batchCount*n);
+    assert(info.size()==batchCount);
+    assert(Cnn.size()==batchCount);
+
+#ifdef GRID_HIP
+    auto err = hipblasCgetriBatched(gridblasHandle,(int)n,
+				    (hipblasComplex **)&Ann[0], (int)n,
+				    (int*) &ipiv[0],
+				    (hipblasComplex **)&Cnn[0], (int)n,
+				    (int*) &info[0],
+				    (int)batchCount);
+    assert(err==HIPBLAS_STATUS_SUCCESS);
+#endif
+#ifdef GRID_CUDA
+    auto err = cublasCgetriBatched(gridblasHandle, (int)n,
+				   (cuComplex **)&Ann[0], (int)n,
+				   (int*) &ipiv[0],
+				   (cuComplex **)&Cnn[0], (int)n,
+				   (int*) &info[0],
+				   (int)batchCount);
+    assert(err==CUBLAS_STATUS_SUCCESS);
+#endif
+#ifdef GRID_SYCL
+    assert(0);
+    /*
+      TODO: cache scratchpad
+    oneapi::mkl::lapack::geri_batch(*gridblasHandle,
+				    &n, &n,
+				    (ComplexD **)&Ann[0],
+				    &n,
+				    (int64_t)&ipiv[0],
+				    (int64_t)1, &batchCount,
+				    scratchpad, scratchpad_size,
+				    std::vector<sycl::event>());
+    */
+    synchronise();
+#endif
+  }
+
+  template<typename dtype>
+  void inverseBatched(int64_t n,
+		      deviceVector<dtype*> &Ann, // this will be overwritten with LU decomposition
+		      deviceVector<dtype*> &Cnn  // this will be overwritten with the inverse
+		      ) {
+
+    int64_t batchCount = Ann.size();
+    RealD t0 = usecond();
+    deviceVector<int64_t> ipiv(batchCount*n);
+    deviceVector<int64_t> info(batchCount);
+
+    //RealD t1 = usecond();
+    getrfBatched(n, Ann, ipiv, info);
+    // test info for non-invertibility?  set to nan if yes?
+    getriBatched(n, Ann, ipiv, info, Cnn);
+    //synchronise();
+    //RealD t2 = usecond();
+    //std::cout << GridLogMessage << "Temp " << t1-t0 << " rf/ri " << t2-t1  << std::endl;
+  }
+
+  template<typename dtype>
+  void determinantBatched(int64_t n,
+			  deviceVector<dtype*> &Ann, // this will be overwritten with LU decomposition
+			  deviceVector<dtype*> &C    // this will be overwritten with determinant
+			  ) {
+
+    int64_t batchCount = Ann.size();
+    //RealD t0 = usecond();
+    deviceVector<int64_t> ipiv(batchCount*n);
+    deviceVector<int64_t> info(batchCount);
+    
+    dtype** pAnn = (dtype**)&Ann[0];
+    dtype** pC = (dtype**)&C[0];
+#if defined(GRID_CUDA) || defined(GRID_HIP)
+    int* pipiv = (int*)&ipiv[0];
+#else
+    int64_t* pipiv = (int64_t*)&ipiv[0];
+#endif
+
+    //RealD t1 = usecond();
+    getrfBatched(n, Ann, ipiv, info);
+    //RealD t2 = usecond();
+    accelerator_for(i,batchCount,1,{
+	dtype det = 1.0;
+	for (int64_t j=0;j<n;j++) {
+	  det *= pAnn[i][n*j + j];
+	  // branchless signs
+	  det *= (pipiv[i*n + j] == j+1) ? (1.0) : (-1.0);
+	}
+	*pC[i] = det;
+      });
+    
+    //RealD t3 = usecond();
+    //std::cout << GridLogMessage << "Temp " << t1 - t0 << " rf/ri " << t2-t1  << "final" << t3 - t2 << std::endl;
+  }
+#endif
+  
+  
   template<class CComplex>
   double benchmark(int M, int N, int K, int BATCH)
   {
