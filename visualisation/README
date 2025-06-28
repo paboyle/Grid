@@ -125,4 +125,29 @@ Extensions
 
 8) Example python code: FieldDensity.py . This is not interfaced to Grid.
 
+================
+Windowless generation of AVI files: must enable offscreen rendering. From Shuhei Yamamoto:
+================
+Hi Peter,
+ 
+To make visualization work on Frontier, I did the following.
+ 
+For headless off-screen rendering, ccmake tabs in advanced mode shown below are set as indicated.
+VTK_OPENGL_HAS_* off  
+VTK_USE_X off  
+VTK_DEFAULT_RENDER_WINDOW_OFFSCREEN on
+VTK_DEFAULT_RENDER_WINDOW_HEADLESS on 
+The list can be greater than necessary.
+ 
+VTK can fall back to EGL or OSMesa at runtime. So I installed mesa via spack (as well as nasm and yasm).  Either mesa or meson package requires llvm-config, which is included after rocm6.1.  On Frontier, I used /opt/rocm-6.2.4.  The only problem is that llvm-config is located on /opt/rocm-6.2.4/llvm/bin, instead of /opt/rocm-6.2.4/bin.  So I edited packages.yaml for spack so that the prefix for rocm compiler is /opt/rocm-6.2.4/llvm.  Just in case, I also changed c and cxx to /opt/rocm-6.2.4/llvm/bin/amdclang, amdclang++, respectively, but this change might not be necessary. 
+After installation, I added a path to libOSMesa.so to LD_LIBRARY_PATH, for which there might be a better way such as specifying -rpath for OSMesa lib by editing cmake files.
+ 
+In addition, I have editied CMakeLists.txt for vtk to force vtk to find OSMesa package via find_package(OSMesa REQUIRED) after list(INSERT CMAKE_MODULE_PATH 0 "${vtk_cmake_dir}"), as there is Find package in vtk/CMake.  There will be more elegant method, but I was not able to find a tab to switch on OSMesa. 
+ 
+When I compiled vtk and linked to Grid visualization code, with ffmpeg option, it produces avi file.
+ 
+Best,
+Shuhei
+
+
 

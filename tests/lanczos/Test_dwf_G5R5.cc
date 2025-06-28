@@ -179,8 +179,8 @@ int main(int argc, char** argv) {
   Np=LanParams.Np;
 
   int Nm = Nk + Np;
-  int MaxIt = 10000;
-  RealD resid = 1.0e-5;
+  int MaxIt = 100;
+  RealD resid = 1.0e-4;
 
 
 //while ( mass > - 5.0){

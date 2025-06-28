@@ -270,24 +270,24 @@ void CartesianCommunicator::GlobalSum(double &d)
 }
 #else
 void CartesianCommunicator::GlobalSum(float &f){
-  FlightRecorder::StepLog("AllReduce");
+  FlightRecorder::StepLog("AllReduce float");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&f,1,MPI_FLOAT,MPI_SUM,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalSum(double &d)
 {
-  FlightRecorder::StepLog("AllReduce");
+  FlightRecorder::StepLog("AllReduce double");
   int ierr = MPI_Allreduce(MPI_IN_PLACE,&d,1,MPI_DOUBLE,MPI_SUM,communicator);
   assert(ierr==0);
 }
 #endif
 void CartesianCommunicator::GlobalSum(uint32_t &u){
-  FlightRecorder::StepLog("AllReduce");
+  FlightRecorder::StepLog("AllReduce uint32_t");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalSum(uint64_t &u){
-  FlightRecorder::StepLog("AllReduce");
+  FlightRecorder::StepLog("AllReduce uint64_t");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT64_T,MPI_SUM,communicator);
   assert(ierr==0);
 }
@@ -301,26 +301,31 @@ void CartesianCommunicator::GlobalXOR(uint32_t &u){
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalXOR(uint64_t &u){
+  FlightRecorder::StepLog("GlobalXOR");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT64_T,MPI_BXOR,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalMax(float &f)
 {
+  FlightRecorder::StepLog("GlobalMax");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&f,1,MPI_FLOAT,MPI_MAX,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalMax(double &d)
 {
+  FlightRecorder::StepLog("GlobalMax");
   int ierr = MPI_Allreduce(MPI_IN_PLACE,&d,1,MPI_DOUBLE,MPI_MAX,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalSumVector(float *f,int N)
 {
+  FlightRecorder::StepLog("GlobalSumVector(float *)");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,f,N,MPI_FLOAT,MPI_SUM,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalSumVector(double *d,int N)
 {
+  FlightRecorder::StepLog("GlobalSumVector(double *)");
   int ierr = MPI_Allreduce(MPI_IN_PLACE,d,N,MPI_DOUBLE,MPI_SUM,communicator);
   assert(ierr==0);
 }
@@ -836,6 +841,7 @@ int CartesianCommunicator::RankWorld(void){
   return r;
 }
 void CartesianCommunicator::BarrierWorld(void){
+  FlightRecorder::StepLog("BarrierWorld");
   int ierr = MPI_Barrier(communicator_world);
   assert(ierr==0);
 }
