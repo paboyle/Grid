@@ -1049,6 +1049,40 @@ public:
   
 #else
 
+#ifdef GRID_SYCL
+  template<typename T>
+  void getrfBatchedSYCL(int64_t n,
+			deviceVector<T*> &Ann,
+			deviceVector<int64_t> &ipiv,
+			deviceVector<int64_t> &info) {
+    
+    int64_t batchCount = Ann.size();
+
+    static deviceVector<T> scratchpad;
+    int64_t sp_size = oneapi::mkl::lapack::getrf_batch_scratchpad_size<T>(*gridblasHandle, &n, &n, &n, (int64_t)1, &batchCount);
+    if (sp_size > scratchpad.size())
+      scratchpad.resize(sp_size);
+
+    static deviceVector<int64_t*> _ipiv;
+    if (batchCount > _ipiv.size())
+      _ipiv.resize(batchCount);
+    int64_t** p_ipiv = &_ipiv[0];
+    int64_t* pipiv = &ipiv[0];
+
+    accelerator_for(i, batchCount, 1, { p_ipiv[i] = &pipiv[i*n]; });
+
+    oneapi::mkl::lapack::getrf_batch(*gridblasHandle,
+				    &n, &n,
+				    (T **)&Ann[0],
+				    &n,
+				    (int64_t**)&_ipiv[0],
+				    (int64_t)1, &batchCount,
+				    (T*)&scratchpad[0], (int64_t)scratchpad.size(),
+				    std::vector<sycl::event>());
+    synchronise();
+  }
+#endif
+
   void getrfBatched(int64_t n,
 		    deviceVector<ComplexD*> &Ann,
 		    deviceVector<int64_t> &ipiv,
@@ -1075,24 +1109,11 @@ public:
     assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
-    assert(0);
-    /*
-      TODO: cache scratchpad
-
-    oneapi::mkl::lapack::gerf_batch(*gridblasHandle,
-				    &n, &n,
-				    (ComplexD **)&Ann[0],
-				    &n,
-				    (int64_t)&ipiv[0],
-				    (int64_t)1, &batchCount,
-				    scratchpad, scratchpad_size,
-				    std::vector<sycl::event>());
-    */
-    synchronise();
+    getrfBatchedSYCL(n, Ann, ipiv, info);
 #endif
   }
 
-void getrfBatched(int64_t n,
+  void getrfBatched(int64_t n,
 		    deviceVector<ComplexF*> &Ann,
 		    deviceVector<int64_t> &ipiv,
 		    deviceVector<int64_t> &info)
@@ -1118,22 +1139,54 @@ void getrfBatched(int64_t n,
     assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
-    assert(0);
-    /*
-      TODO: cache scratchpad
-
-    oneapi::mkl::lapack::gerf_batch(*gridblasHandle,
-				    &n, &n,
-				    (ComplexD **)&Ann[0],
-				    &n,
-				    (int64_t)&ipiv[0],
-				    (int64_t)1, &batchCount,
-				    scratchpad, scratchpad_size,
-				    std::vector<sycl::event>());
-    */
-    synchronise();
+    getrfBatchedSYCL(n, Ann, ipiv, info);
 #endif
   }
+
+#ifdef GRID_SYCL
+  template<typename T>
+  void getriBatchedSYCL(int64_t n,
+			deviceVector<T*> &Ann,
+			deviceVector<int64_t> &ipiv,
+			deviceVector<int64_t> &info,
+			deviceVector<T*> &Cnn) {
+
+    int64_t batchCount = Ann.size();
+
+    static deviceVector<T> scratchpad;
+    int64_t sp_size = oneapi::mkl::lapack::getri_batch_scratchpad_size<T>(*gridblasHandle, &n, &n, (int64_t)1, &batchCount);
+    if (sp_size > scratchpad.size())
+      scratchpad.resize(sp_size);
+
+    static deviceVector<int64_t*> _ipiv;
+    if (batchCount > _ipiv.size())
+      _ipiv.resize(batchCount);
+    int64_t** p_ipiv = &_ipiv[0];
+    int64_t* pipiv = &ipiv[0];
+
+    accelerator_for(i, batchCount, 1, { p_ipiv[i] = &pipiv[i*n]; });
+
+    oneapi::mkl::lapack::getri_batch(*gridblasHandle,
+				     &n,
+				     (T **)&Ann[0],
+				     &n,
+				     (int64_t**)p_ipiv,
+				     (int64_t)1, &batchCount,
+				     (T *)&scratchpad[0], (int64_t)scratchpad.size(),
+				     std::vector<sycl::event>());
+
+    synchronise();
+
+    T** pA = &Ann[0];
+    T** pC = &Cnn[0];
+    accelerator_for(i, batchCount*n*n, 1, {
+	auto j = i / batchCount;
+	auto k = i % batchCount;
+	pC[k][j] = pA[k][j];
+      });
+  }
+
+#endif
 
   void getriBatched(int64_t n,
 		    deviceVector<ComplexD*> &Ann,
@@ -1165,19 +1218,7 @@ void getrfBatched(int64_t n,
     assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
-    assert(0);
-    /*
-      TODO: cache scratchpad
-    oneapi::mkl::lapack::geri_batch(*gridblasHandle,
-				    &n, &n,
-				    (ComplexD **)&Ann[0],
-				    &n,
-				    (int64_t)&ipiv[0],
-				    (int64_t)1, &batchCount,
-				    scratchpad, scratchpad_size,
-				    std::vector<sycl::event>());
-    */
-    synchronise();
+    getriBatchedSYCL(n, Ann, ipiv, info, Cnn);
 #endif
   }
 
@@ -1211,19 +1252,7 @@ void getrfBatched(int64_t n,
     assert(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
-    assert(0);
-    /*
-      TODO: cache scratchpad
-    oneapi::mkl::lapack::geri_batch(*gridblasHandle,
-				    &n, &n,
-				    (ComplexD **)&Ann[0],
-				    &n,
-				    (int64_t)&ipiv[0],
-				    (int64_t)1, &batchCount,
-				    scratchpad, scratchpad_size,
-				    std::vector<sycl::event>());
-    */
-    synchronise();
+    getriBatchedSYCL(n, Ann, ipiv, info, Cnn);
 #endif
   }
 
