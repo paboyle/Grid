@@ -270,24 +270,24 @@ void CartesianCommunicator::GlobalSum(double &d)
 }
 #else
 void CartesianCommunicator::GlobalSum(float &f){
-  FlightRecorder::StepLog("AllReduce float");
+  FlightRecorder::StepLog("AllReduce");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&f,1,MPI_FLOAT,MPI_SUM,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalSum(double &d)
 {
-  FlightRecorder::StepLog("AllReduce double");
+  FlightRecorder::StepLog("AllReduce");
   int ierr = MPI_Allreduce(MPI_IN_PLACE,&d,1,MPI_DOUBLE,MPI_SUM,communicator);
   assert(ierr==0);
 }
 #endif
 void CartesianCommunicator::GlobalSum(uint32_t &u){
-  FlightRecorder::StepLog("AllReduce uint32_t");
+  FlightRecorder::StepLog("AllReduce");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalSum(uint64_t &u){
-  FlightRecorder::StepLog("AllReduce uint64_t");
+  FlightRecorder::StepLog("AllReduce");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT64_T,MPI_SUM,communicator);
   assert(ierr==0);
 }
@@ -301,31 +301,26 @@ void CartesianCommunicator::GlobalXOR(uint32_t &u){
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalXOR(uint64_t &u){
-  FlightRecorder::StepLog("GlobalXOR");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT64_T,MPI_BXOR,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalMax(float &f)
 {
-  FlightRecorder::StepLog("GlobalMax");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&f,1,MPI_FLOAT,MPI_MAX,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalMax(double &d)
 {
-  FlightRecorder::StepLog("GlobalMax");
   int ierr = MPI_Allreduce(MPI_IN_PLACE,&d,1,MPI_DOUBLE,MPI_MAX,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalSumVector(float *f,int N)
 {
-  FlightRecorder::StepLog("GlobalSumVector(float *)");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,f,N,MPI_FLOAT,MPI_SUM,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalSumVector(double *d,int N)
 {
-  FlightRecorder::StepLog("GlobalSumVector(double *)");
   int ierr = MPI_Allreduce(MPI_IN_PLACE,d,N,MPI_DOUBLE,MPI_SUM,communicator);
   assert(ierr==0);
 }
@@ -400,16 +395,11 @@ double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
 {
   std::vector<CommsRequest_t> list;
   double offbytes = StencilSendToRecvFromPrepare(list,xmit,dest,dox,recv,from,dor,bytes,bytes,dir);
-  offbytes       += StencilSendToRecvFromBegin(list,xmit,xmit,dest,dox,recv,recv,from,dor,bytes,bytes,dir);
+  offbytes       += StencilSendToRecvFromBegin(list,xmit,dest,dox,recv,from,dor,bytes,bytes,dir);
   StencilSendToRecvFromComplete(list,dir);
   return offbytes;
 }
-int CartesianCommunicator::IsOffNode(int rank)
-{
-  int grank = ShmRanks[rank];
-  if ( grank == MPI_UNDEFINED ) return true;
-  else return false;
-}
+
 
 #ifdef ACCELERATOR_AWARE_MPI
 void CartesianCommunicator::StencilSendToRecvFromPollIRecv(std::vector<CommsRequest_t> &list) {};
@@ -424,9 +414,9 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
   return 0.0; // Do nothing -- no preparation required
 }
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
-							 void *xmit,void *xmit_comp,
+							 void *xmit,
 							 int dest,int dox,
-							 void *recv,void *recv_comp,
+							 void *recv,
 							 int from,int dor,
 							 int xbytes,int rbytes,int dir)
 {
@@ -450,8 +440,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
   if ( dor ) {
     if ( (gfrom ==MPI_UNDEFINED) || Stencil_force_mpi ) {
       tag= dir+from*32;
-      //      std::cout << " StencilSendToRecvFrom "<<dir<<" MPI_Irecv "<<std::hex<<recv<<std::dec<<std::endl;
-      ierr=MPI_Irecv(recv_comp, rbytes, MPI_CHAR,from,tag,communicator_halo[commdir],&rrq);
+      ierr=MPI_Irecv(recv, rbytes, MPI_CHAR,from,tag,communicator_halo[commdir],&rrq);
       assert(ierr==0);
       list.push_back(rrq);
       off_node_bytes+=rbytes;
@@ -460,7 +449,6 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
     else { 
       void *shm = (void *) this->ShmBufferTranslate(from,xmit);
       assert(shm!=NULL);
-      //      std::cout << " StencilSendToRecvFrom "<<dir<<" CopyDeviceToDevice recv "<<std::hex<<recv<<" remote "<<shm <<std::dec<<std::endl;
       acceleratorCopyDeviceToDeviceAsynch(shm,recv,rbytes);
     }
 #endif
@@ -469,7 +457,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
   if (dox) {
     if ( (gdest == MPI_UNDEFINED) || Stencil_force_mpi ) {
       tag= dir+_processor*32;
-      ierr =MPI_Isend(xmit_comp, xbytes, MPI_CHAR,dest,tag,communicator_halo[commdir],&xrq);
+      ierr =MPI_Isend(xmit, xbytes, MPI_CHAR,dest,tag,communicator_halo[commdir],&xrq);
       assert(ierr==0);
       list.push_back(xrq);
       off_node_bytes+=xbytes;
@@ -688,9 +676,9 @@ void CartesianCommunicator::StencilSendToRecvFromPollDtoH(std::vector<CommsReque
 }  
 
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
-							 void *xmit,void *xmit_comp,
+							 void *xmit,
 							 int dest,int dox,
-							 void *recv,void *recv_comp,
+							 void *recv,
 							 int from,int dor,
 							 int xbytes,int rbytes,int dir)
 {
@@ -841,7 +829,6 @@ int CartesianCommunicator::RankWorld(void){
   return r;
 }
 void CartesianCommunicator::BarrierWorld(void){
-  FlightRecorder::StepLog("BarrierWorld");
   int ierr = MPI_Barrier(communicator_world);
   assert(ierr==0);
 }
