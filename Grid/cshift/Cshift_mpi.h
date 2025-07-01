@@ -132,6 +132,12 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
   
   int cb= (cbmask==0x2)? Odd : Even;
   int sshift= rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,cb);
+
+  // Calculate Cshift_vector - it's the same for all slices
+  CalculateCshiftVector<vobj>(ret, rhs, dimension, cbmask);
+  // Copy it to the device
+  MapCshiftCopy<int>(Cshift_vector, Cshift_vector_device);
+  
   RealD tcopy=0.0;
   RealD tgather=0.0;
   RealD tscatter=0.0;
