@@ -325,8 +325,8 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
     assert(ok);
   }
   FlightRecorder::StepLog("Start global sum");
-  //  grid->GlobalSumP2P(nrm);
-  grid->GlobalSum(nrm);
+  grid->GlobalSumP2P(nrm);
+  //  grid->GlobalSum(nrm);
   FlightRecorder::StepLog("Finished global sum");
   //  std::cout << " norm "<< nrm << " p2p norm "<<nrmck<<std::endl;
   FlightRecorder::ReductionLog(local,real(nrm)); 

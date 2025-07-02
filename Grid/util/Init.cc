@@ -46,10 +46,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <cstdlib>
 #include <memory>
 
+
 #include <Grid/Grid.h>
 
 #include <Grid/util/CompilerCompatible.h>
 
+#ifdef HAVE_UNWIND
+#include <libunwind.h>
+#endif
 
 #include <fenv.h>
 #ifdef __APPLE__
@@ -295,6 +299,20 @@ void GridBanner(void)
     std::cout << std::setprecision(9);
 }
 
+//Some file local variables
+static int fileno_stdout;
+static int fileno_stderr;
+static int signal_delay;
+class dlRegion {
+public:
+  uint64_t start;
+  uint64_t end;
+  uint64_t size;
+  uint64_t offset;
+  std::string name;
+};
+std::vector<dlRegion> dlMap;
+
 void Grid_init(int *argc,char ***argv)
 {
 
@@ -347,6 +365,19 @@ void Grid_init(int *argc,char ***argv)
   if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-signals") ){
     Grid_debug_handler_init();
   }
+  // Sleep n-seconds at end of handler
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--signal-delay") ){
+    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--signal-delay");
+    GridCmdOptionInt(arg,signal_delay);
+  }
+  // periodic wakeup with stack trace printed
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-heartbeat") ){
+    Grid_debug_heartbeat();
+  }
+  // periodic wakeup with empty handler (interrupts some system calls)
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--heartbeat") ){
+    Grid_heartbeat();
+  }
 
 #if defined(A64FX)
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-overlap") ){
@@ -396,15 +427,25 @@ void Grid_init(int *argc,char ***argv)
     fp=freopen(ename.str().c_str(),"w",stderr);
     assert(fp!=(FILE *)NULL);
   }
+  fileno_stdout = fileno(stdout);
+  fileno_stderr = fileno(stderr) ;
+    
   ////////////////////////////////////////////////////
   // OK to use GridLogMessage etc from here on
   ////////////////////////////////////////////////////
   std::cout << GridLogMessage << "================================================ "<<std::endl;
   std::cout << GridLogMessage << "MPI is initialised and logging filters activated "<<std::endl;
   std::cout << GridLogMessage << "================================================ "<<std::endl;
-
-  gethostname(hostname, HOST_NAME_MAX+1);
-  std::cout << GridLogMessage << "This rank is running on host "<< hostname<<std::endl;
+  {
+    gethostname(hostname, HOST_NAME_MAX+1);
+    time_t mytime;
+    struct tm *info;
+    char buffer[80];
+    time(&mytime);
+    info = localtime(&mytime);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", info);
+    std::cout << GridLogMessage << "This rank is running on host "<< hostname<<" at local time "<<buffer<<std::endl;
+  }
 
   /////////////////////////////////////////////////////////
   // Reporting
@@ -421,6 +462,47 @@ void Grid_init(int *argc,char ***argv)
     MemoryProfiler::stats = &dbgMemStats;
   }
 
+  /////////////////////////////////////////////////////////
+  // LD.so space
+  /////////////////////////////////////////////////////////
+#ifndef __APPLE__
+  {
+    // Provides mapping of .so files 
+    FILE *f = fopen("/proc/self/maps", "r");
+    if (f) {
+      char line[256];
+      while (fgets(line, sizeof(line), f)) {
+	if (strstr(line, "r-xp")) {
+	  dlRegion region;
+	  uint32_t major, minor, inode;
+	  uint64_t start,end,offset;
+	  char path[PATH_MAX];
+	  sscanf(line,"%lx-%lx r-xp %lx %x:%x %d %s",
+		 &start,&end,&offset,
+		 &major,&minor,&inode,path);
+	  region.start=start;
+	  region.end  =end;
+	  region.offset=offset;
+	  region.name = std::string(path);
+	  region.size = region.end-region.start;
+	  dlMap.push_back(region);
+	  //	  std::cout << GridLogMessage<< line;
+	}
+      }
+      fclose(f);
+    }
+    if( GridCmdOptionExists(*argv,*argv+*argc,"--dylib-map") ){
+      std::cout << GridLogMessage << "================================================ "<<std::endl;
+      std::cout << GridLogMessage<< " Dynamic library map: " <<std::endl; 
+      std::cout << GridLogMessage << "================================================ "<<std::endl;
+      for(int r=0;r<dlMap.size();r++){
+	auto region = dlMap[r];
+	std::cout << GridLogMessage<<" "<<region.name<<std::hex<<region.start<<"-"<<region.end<<" sz "<<region.size<<std::dec<<std::endl;
+      }
+      std::cout << GridLogMessage << "================================================ "<<std::endl;
+    }
+  }
+#endif
   ////////////////////////////////////
   // Logging
   ////////////////////////////////////
@@ -453,14 +535,19 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"  --shm-hugepages : use explicit huge pages in mmap call "<<std::endl;
     std::cout<<GridLogMessage<<"  --device-mem M  : Size of device software cache for lattice fields (MB) "<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
-    std::cout<<GridLogMessage<<"Verbose and debug:"<<std::endl;
+    std::cout<<GridLogMessage<<"Verbose:"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"  --log list      : comma separated list from Error,Warning,Message,Performance,Iterative,Integrator,Debug,Colours"<<std::endl;
-    std::cout<<GridLogMessage<<"  --decomposition : report on default omp,mpi and simd decomposition"<<std::endl;    
-    std::cout<<GridLogMessage<<"  --debug-signals : catch sigsegv and print a blame report"<<std::endl;
-    std::cout<<GridLogMessage<<"  --debug-stdout  : print stdout from EVERY node"<<std::endl;
-    std::cout<<GridLogMessage<<"  --debug-mem     : print Grid allocator activity"<<std::endl;
     std::cout<<GridLogMessage<<"  --notimestamp   : suppress millisecond resolution stamps"<<std::endl;
+    std::cout<<GridLogMessage<<"  --decomposition : report on default omp,mpi and simd decomposition"<<std::endl;    
+    std::cout<<GridLogMessage<<"Debug:"<<std::endl;
+    std::cout<<GridLogMessage<<"  --dylib-map     : print dynamic library map, useful for interpreting signal backtraces "<<std::endl;
+    std::cout<<GridLogMessage<<"  --heartbeat     : periodic itimer wakeup (interrupts stuck system calls!) "<<std::endl;
+    std::cout<<GridLogMessage<<"  --signal-delay n : pause for n seconds after signal handling (useful to get ALL nodes in stuck state) "<<std::endl;
+    std::cout<<GridLogMessage<<"  --debug-stdout  : print stdout from EVERY node to file Grid.stdout/err.rank "<<std::endl;
+    std::cout<<GridLogMessage<<"  --debug-signals : catch sigsegv and print a blame report, handle SIGHUP with a backtrace to stderr"<<std::endl;
+    std::cout<<GridLogMessage<<"  --debug-heartbeat : periodically report backtrace "<<std::endl;
+    std::cout<<GridLogMessage<<"  --debug-mem     : print Grid allocator activity"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Performance:"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
@@ -555,17 +642,56 @@ void GridLogLayout() {
 }
 
 void * Grid_backtrace_buffer[_NBACKTRACE];
+#define SIGLOG(A) ::write(fileno_stderr,A,strlen(A));
 
-void Grid_usr_signal_handler(int sig,siginfo_t *si,void * ptr)
+void sig_print_dig(uint32_t dig)
 {
-  fprintf(stderr,"Signal handler on host %s\n",hostname);
-  fprintf(stderr,"FlightRecorder step %d stage %s \n",
-	  FlightRecorder::StepLoggingCounter,
-	  FlightRecorder::StepName);
-  fprintf(stderr,"Caught signal %d\n",si->si_signo);
-  fprintf(stderr,"  mem address %llx\n",(unsigned long long)si->si_addr);
-  fprintf(stderr,"         code %d\n",si->si_code);
-  // x86 64bit
+  const char *digits[] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" };
+  if ( dig>=0 && dig< 16){
+    SIGLOG(digits[dig]);
+  }
+}
+void sig_print_uint(uint32_t A)
+{
+  int dig;
+  int nz=0;
+#define DIGIT(DIV) dig = (A/DIV)%10 ; if(dig|nz) sig_print_dig(dig); nz = nz|dig;
+  DIGIT(1000000000); // Catches 4BN = 2^32
+  DIGIT(100000000);
+  DIGIT(10000000);
+  DIGIT(1000000);
+  DIGIT(100000);
+  DIGIT(10000);
+  DIGIT(1000);
+  DIGIT(100);
+  DIGIT(10);
+  DIGIT(1);
+  if (nz==0) SIGLOG("0");
+}
+void sig_print_hex(uint64_t A)
+{
+  int nz=0;
+  int dig;
+#define NIBBLE(A) dig = A ; if(dig|nz) sig_print_dig(dig); nz = nz|dig;  
+  SIGLOG("0x");
+  NIBBLE((A>>(15*4))&0xF);
+  NIBBLE((A>>(14*4))&0xF);
+  NIBBLE((A>>(13*4))&0xF);
+  NIBBLE((A>>(12*4))&0xF);
+  NIBBLE((A>>(11*4))&0xF);
+  NIBBLE((A>>(10*4))&0xF);
+  NIBBLE((A>>(9*4))&0xF);
+  NIBBLE((A>>(8*4))&0xF);
+  NIBBLE((A>>(7*4))&0xF);
+  NIBBLE((A>>(6*4))&0xF);
+  NIBBLE((A>>(5*4))&0xF);
+  NIBBLE((A>>(4*4))&0xF);
+  NIBBLE((A>>(3*4))&0xF);
+  NIBBLE((A>>(2*4))&0xF);
+  NIBBLE((A>>4)&0xF);
+  sig_print_dig(A&0xF);
+}
+/*
 #ifdef __linux__
 #ifdef __x86_64__
   ucontext_t * uc= (ucontext_t *)ptr;
@@ -573,81 +699,158 @@ void Grid_usr_signal_handler(int sig,siginfo_t *si,void * ptr)
   fprintf(stderr,"  instruction %llx\n",(unsigned long long)sc->rip);
 #endif
 #endif
-  fflush(stderr);
-  BACKTRACEFP(stderr);
-  fprintf(stderr,"Called backtrace\n");
-  fflush(stdout);
-  fflush(stderr);
+*/
+void Grid_generic_handler(int sig,siginfo_t *si,void * ptr)
+{
+  SIGLOG("Signal handler on host ");
+  SIGLOG(hostname);
+  SIGLOG(" process id ");
+  sig_print_uint((uint32_t)getpid());
+  SIGLOG("\n");
+  SIGLOG("FlightRecorder step ");
+  sig_print_uint(FlightRecorder::StepLoggingCounter);
+  SIGLOG(" stage ");
+  SIGLOG(FlightRecorder::StepName);
+  SIGLOG("\n");
+  SIGLOG("Caught signal ");
+  sig_print_uint(si->si_signo);
+  SIGLOG("\n");
+  SIGLOG("  mem address ");
+  sig_print_hex((uint64_t)si->si_addr);
+  SIGLOG("\n");
+  SIGLOG("  code ");
+  sig_print_uint(si->si_code);
+  SIGLOG("\n");
+
+  ucontext_t *uc= (ucontext_t *)ptr;
+  
+  SIGLOG("Backtrace:\n");
+#ifdef HAVE_UNWIND
+  // Debug cross check on offsets
+  //  int symbols = backtrace(Grid_backtrace_buffer,_NBACKTRACE);
+  //  backtrace_symbols_fd(Grid_backtrace_buffer,symbols,fileno_stderr);
+  unw_cursor_t cursor;
+  unw_word_t ip, off;
+  if (!unw_init_local(&cursor, uc) ) {
+
+    SIGLOG("   frame     IP       function\n");
+    int level = 0;
+    int ret = 0;
+    while(1) {
+      char name[128];
+      if (level >= _NBACKTRACE) return;
+	
+      unw_get_reg(&cursor, UNW_REG_IP, &ip);
+
+      sig_print_uint(level); SIGLOG(" ");
+      sig_print_hex(ip);     SIGLOG(" ");
+      for(int r=0;r<dlMap.size();r++){
+	if((ip>=dlMap[r].start) &&(ip<dlMap[r].end)){
+	  SIGLOG(dlMap[r].name.c_str());
+	  SIGLOG("+");
+	  sig_print_hex((ip-dlMap[r].start));
+	  break;
+	}
+      }
+      SIGLOG("\n");
+      Grid_backtrace_buffer[level]=(void *)ip;
+      level++;
+      ret = unw_step(&cursor);
+      if (ret <= 0) {
+	return;
+      }
+    }
+  }
+#else
+  // Known Asynch-Signal unsafe
+  int symbols = backtrace(Grid_backtrace_buffer,_NBACKTRACE);
+  backtrace_symbols_fd(Grid_backtrace_buffer,symbols,fileno_stderr);
+#endif
+}
+
+void Grid_heartbeat_signal_handler(int sig,siginfo_t *si,void * ptr)
+{
+  Grid_generic_handler(sig,si,ptr);
+  SIGLOG("\n");
+}
+void Grid_usr_signal_handler(int sig,siginfo_t *si,void * ptr)
+{
+  Grid_generic_handler(sig,si,ptr);
+  if (signal_delay) {
+    SIGLOG("Adding extra signal delay ");
+    sig_print_uint(signal_delay);
+    SIGLOG(" s\n");
+    usleep( (uint64_t) signal_delay*1000LL*1000LL);
+  }
+  SIGLOG("\n");
   return;
 }
 
-void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
+void Grid_fatal_signal_handler(int sig,siginfo_t *si,void * ptr)
 {
-  fprintf(stderr,"Signal handler on host %s\n",hostname);
-  fprintf(stderr,"Caught signal %d\n",si->si_signo);
-  fprintf(stderr,"  mem address %llx\n",(unsigned long long)si->si_addr);
-  fprintf(stderr,"         code %d\n",si->si_code);
-  // Linux/Posix
-#ifdef __linux__
-  // And x86 64bit
-#ifdef __x86_64__
-  ucontext_t * uc= (ucontext_t *)ptr;
-  struct sigcontext *sc = (struct sigcontext *)&uc->uc_mcontext;
-  fprintf(stderr,"  instruction %llx\n",(unsigned long long)sc->rip);
-#define REG(A)  fprintf(stderr,"  %s %lx\n",#A,sc-> A);
-  REG(rdi);
-  REG(rsi);
-  REG(rbp);
-  REG(rbx);
-  REG(rdx);
-  REG(rax);
-  REG(rcx);
-  REG(rsp);
-  REG(rip);
-
-
-  REG(r8);
-  REG(r9);
-  REG(r10);
-  REG(r11);
-  REG(r12);
-  REG(r13);
-  REG(r14);
-  REG(r15);
-#endif
-#endif
-  fflush(stderr);
-  BACKTRACEFP(stderr);
-  fprintf(stderr,"Called backtrace\n");
-  fflush(stdout);
-  fflush(stderr);
+  Grid_generic_handler(sig,si,ptr);
+  SIGLOG("\n");
   exit(0);
   return;
 };
+void Grid_empty_signal_handler(int sig,siginfo_t *si,void * ptr)
+{
+  //  SIGLOG("heartbeat signal handled\n");
+  return;
+}
+void Grid_debug_heartbeat(void)
+{
+  struct sigaction sa_ping;
 
+  sigemptyset (&sa_ping.sa_mask);
+  sa_ping.sa_sigaction= Grid_usr_signal_handler;
+  sa_ping.sa_flags    = SA_SIGINFO;
+  sigaction(SIGALRM,&sa_ping,NULL);
+
+  // repeating 10s heartbeat
+  struct itimerval it_val;
+  it_val.it_value.tv_sec = 10;
+  it_val.it_value.tv_usec = 0;
+  it_val.it_interval = it_val.it_value;
+  setitimer(ITIMER_REAL, &it_val, NULL);
+}
+void Grid_heartbeat(void)
+{
+  struct sigaction sa_ping;
+
+  sigemptyset (&sa_ping.sa_mask);
+  sa_ping.sa_sigaction= Grid_empty_signal_handler;
+  sa_ping.sa_flags    = SA_SIGINFO;
+  sigaction(SIGALRM,&sa_ping,NULL);
+
+  // repeating 10s heartbeat
+  struct itimerval it_val;
+  it_val.it_value.tv_sec = 10;
+  it_val.it_value.tv_usec = 1000;
+  it_val.it_interval = it_val.it_value;
+  setitimer(ITIMER_REAL, &it_val, NULL);
+}
 void Grid_exit_handler(void)
 {
-  //  BACKTRACEFP(stdout);
-  //  fflush(stdout);
+  BACKTRACEFP(stdout);
+  fflush(stdout);
 }
 void Grid_debug_handler_init(void)
 {
   struct sigaction sa;
   sigemptyset (&sa.sa_mask);
-  sa.sa_sigaction= Grid_sa_signal_handler;
+  sa.sa_sigaction= Grid_fatal_signal_handler;
   sa.sa_flags    = SA_SIGINFO;
-  //  sigaction(SIGSEGV,&sa,NULL);
   sigaction(SIGTRAP,&sa,NULL);
-  sigaction(SIGBUS,&sa,NULL);
-  //  sigaction(SIGUSR2,&sa,NULL);
-
-  feenableexcept( FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO);
-
-  sigaction(SIGFPE,&sa,NULL);
-  sigaction(SIGKILL,&sa,NULL);
   sigaction(SIGILL,&sa,NULL);
+#ifndef GRID_SYCL
+  sigaction(SIGSEGV,&sa,NULL); // SYCL is using SIGSEGV
+  sigaction(SIGBUS,&sa,NULL);
+  feenableexcept( FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO);
+  sigaction(SIGFPE,&sa,NULL);
+#endif
 
-  // Non terminating SIGUSR1/2 handler
+  // Non terminating SIGHUP handler
   struct sigaction sa_ping;
   sigemptyset (&sa_ping.sa_mask);
   sa_ping.sa_sigaction= Grid_usr_signal_handler;

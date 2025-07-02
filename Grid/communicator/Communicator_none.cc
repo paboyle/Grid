@@ -124,6 +124,8 @@ void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest
   dest=0;
 }
 
+int CartesianCommunicator::IsOffNode(int rank) { return false; }
+
 double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
 						     int xmit_to_rank,int dox,
 						     void *recv,

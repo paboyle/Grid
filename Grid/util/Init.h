@@ -38,7 +38,11 @@ char * GridHostname(void);
 
 // internal, controled with --handle
 void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr);
+void Grid_usr_signal_handler(int sig,siginfo_t *si,void * ptr);
+void Grid_empty_signal_handler(int sig,siginfo_t *si,void * ptr);
 void Grid_debug_handler_init(void);
+void Grid_debug_heartbeat(void);
+void Grid_heartbeat(void);
 void Grid_quiesce_nodes(void);
 void Grid_unquiesce_nodes(void);
 

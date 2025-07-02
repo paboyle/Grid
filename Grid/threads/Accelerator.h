@@ -215,7 +215,7 @@ inline void *acceleratorAllocHost(size_t bytes)
   auto err = cudaMallocHost((void **)&ptr,bytes);
   if( err != cudaSuccess ) {
     ptr = (void *) NULL;
-    printf(" cudaMallocHost failed for %d %s \n",bytes,cudaGetErrorString(err));
+    printf(" cudaMallocHost failed for %zu %s \n",bytes,cudaGetErrorString(err));
     assert(0);
   }
   return ptr;
@@ -226,7 +226,7 @@ inline void *acceleratorAllocShared(size_t bytes)
   auto err = cudaMallocManaged((void **)&ptr,bytes);
   if( err != cudaSuccess ) {
     ptr = (void *) NULL;
-    printf(" cudaMallocManaged failed for %d %s \n",bytes,cudaGetErrorString(err));
+    printf(" cudaMallocManaged failed for %zu %s \n",bytes,cudaGetErrorString(err));
     assert(0);
   }
   return ptr;
@@ -237,7 +237,7 @@ inline void *acceleratorAllocDevice(size_t bytes)
   auto err = cudaMalloc((void **)&ptr,bytes);
   if( err != cudaSuccess ) {
     ptr = (void *) NULL;
-    printf(" cudaMalloc failed for %d %s \n",bytes,cudaGetErrorString(err));
+    printf(" cudaMalloc failed for %zu %s \n",bytes,cudaGetErrorString(err));
   }
   return ptr;
 };

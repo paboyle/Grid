@@ -166,18 +166,18 @@ int main (int argc, char ** argv)
   }  
 
 
+
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "= Benchmarking concurrent STENCIL halo exchange in "<<nmu<<" dimensions"<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking sequential STENCIL halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   header();
-
   for(int lat=8;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=8;Ls*=2){
 
       Coordinate latt_size  ({lat*mpi_layout[0],
-	                      lat*mpi_layout[1],
-      			      lat*mpi_layout[2],
-      			      lat*mpi_layout[3]});
+    	                      lat*mpi_layout[1],
+                              lat*mpi_layout[2],
+	                      lat*mpi_layout[3]});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
       RealD Nrank = Grid._Nprocessors;
@@ -194,101 +194,6 @@ int main (int argc, char ** argv)
       }
 
       int ncomm;
-
-      double dbytes;
-      for(int i=0;i<Nloop;i++){
-	double start=usecond();
-
-	dbytes=0;
-	ncomm=0;
-
-	std::vector<CommsRequest_t> requests;
-
-	for(int mu=0;mu<4;mu++){
-	
-
-	  if (mpi_layout[mu]>1 ) {
-	  
-	    ncomm++;
-	    int comm_proc=1;
-	    int xmit_to_rank;
-	    int recv_from_rank;
-	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
-	    dbytes+=
-	      Grid.StencilSendToRecvFromBegin(requests,
-					      (void *)&xbuf[mu][0],
-					      xmit_to_rank,1,
-					      (void *)&rbuf[mu][0],
-					      recv_from_rank,1,
-					      bytes,bytes,mu);
-	
-	    comm_proc = mpi_layout[mu]-1;
-	  
-	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
-	    dbytes+=
-	      Grid.StencilSendToRecvFromBegin(requests,
-					      (void *)&xbuf[mu+4][0],
-					      xmit_to_rank,1,
-					      (void *)&rbuf[mu+4][0],
-					      recv_from_rank,1,
-					      bytes,bytes,mu+4);
-	  
-	  }
-	}
-	Grid.StencilSendToRecvFromComplete(requests,0);
-	Grid.Barrier();
-	double stop=usecond();
-	t_time[i] = stop-start; // microseconds
-	
-      }
-
-      timestat.statistics(t_time);
-
-      dbytes=dbytes*ppn;
-      double xbytes    = dbytes*0.5;
-      //      double rbytes    = dbytes*0.5;
-      double bidibytes = dbytes;
-
-      std::cout<<GridLogMessage << std::setw(4) << lat<<"\t"<<Ls<<"\t"
-               <<std::setw(11) << bytes<< std::fixed << std::setprecision(1) << std::setw(7)
-               <<std::right<< xbytes/timestat.mean<<"  "<< xbytes*timestat.err/(timestat.mean*timestat.mean)<< " "
-               <<xbytes/timestat.max <<" "<< xbytes/timestat.min  
-               << "\t\t"<<std::setw(7)<< bidibytes/timestat.mean<< "  " << bidibytes*timestat.err/(timestat.mean*timestat.mean) << " "
-               << bidibytes/timestat.max << " " << bidibytes/timestat.min << std::endl;
-
-
-    }
-  }    
-
-
-  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "= Benchmarking sequential STENCIL halo exchange in "<<nmu<<" dimensions"<<std::endl;
-  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
-  header();
-
-  for(int lat=8;lat<=maxlat;lat+=4){
-    for(int Ls=8;Ls<=8;Ls*=2){
-
-      Coordinate latt_size  ({lat*mpi_layout[0],
-      			      lat*mpi_layout[1],
-      			      lat*mpi_layout[2],
-      			      lat*mpi_layout[3]});
-
-      GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
-      RealD Nrank = Grid._Nprocessors;
-      RealD Nnode = Grid.NodeCount();
-      RealD ppn = Nrank/Nnode;
-
-      std::vector<HalfSpinColourVectorD *> xbuf(8);
-      std::vector<HalfSpinColourVectorD *> rbuf(8);
-      Grid.ShmBufferFreeAll();
-      uint64_t bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
-      for(int d=0;d<8;d++){
-	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
-	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
-      }
-
-      int ncomm;
       double dbytes;
       for(int i=0;i<Nloop;i++){
 	double start=usecond();
@@ -296,45 +201,34 @@ int main (int argc, char ** argv)
 	std::vector<CommsRequest_t> requests;
 	dbytes=0;
 	ncomm=0;
-	for(int mu=0;mu<4;mu++){
-	
+
+	for(int dir=0;dir<8;dir++) {
+
+	  double tbytes;
+	  int mu =dir % 4;
+
 	  if (mpi_layout[mu]>1 ) {
 	  
 	    ncomm++;
-	    int comm_proc=1;
 	    int xmit_to_rank;
 	    int recv_from_rank;
-	    
-	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
-	    dbytes+=
-	      Grid.StencilSendToRecvFromBegin(requests,
-					      (void *)&xbuf[mu][0],
-					      xmit_to_rank,1,
-					      (void *)&rbuf[mu][0],
-					      recv_from_rank,1,
-					      bytes,bytes,mu);
-	    Grid.StencilSendToRecvFromComplete(requests,mu);
-	    requests.resize(0);
+	    if ( dir == mu ) { 
+	      int comm_proc=1;
+	      Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
+	    } else { 
+	      int comm_proc = mpi_layout[mu]-1;
+	      Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
+	    }
+            int tid = omp_get_thread_num();
+	    tbytes= Grid.StencilSendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,1,
+					       (void *)&rbuf[dir][0], recv_from_rank,1, bytes,tid);
 
-	    comm_proc = mpi_layout[mu]-1;
-	  
-	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
-	    dbytes+=
-	      Grid.StencilSendToRecvFromBegin(requests,
-					      (void *)&xbuf[mu+4][0],
-					      xmit_to_rank,1,
-					      (void *)&rbuf[mu+4][0],
-					      recv_from_rank,1,
-					      bytes,bytes,mu+4);
-	    Grid.StencilSendToRecvFromComplete(requests,mu+4);
-	    requests.resize(0);
-	  
+	    dbytes+=tbytes;
 	  }
-	}
+        }
 	Grid.Barrier();
 	double stop=usecond();
 	t_time[i] = stop-start; // microseconds
-	
       }
 
       timestat.statistics(t_time);

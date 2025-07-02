@@ -31,12 +31,23 @@ directory
 
 using namespace std;
 using namespace Grid;
- ;
 
 //typedef WilsonFermionD FermionOp;
 typedef DomainWallFermionD FermionOp;
 typedef typename DomainWallFermionD::FermionField FermionField;
 
+template <class T> void writeFile(T& in, std::string const fname){  
+#ifdef HAVE_LIME
+  // Ref: https://github.com/paboyle/Grid/blob/feature/scidac-wp1/tests/debug/Test_general_coarse_hdcg_phys48.cc#L111
+  std::cout << Grid::GridLogMessage << "Writes to: " << fname << std::endl;
+  Grid::emptyUserRecord record;
+  Grid::ScidacWriter WR(in.Grid()->IsBoss());
+  WR.open(fname);
+  WR.writeScidacFieldRecord(in,record,0);
+  WR.close();
+#endif
+  // What is the appropriate way to throw error?
+}
 
 RealD AllZero(RealD x) { return 0.; }
 
@@ -121,7 +132,7 @@ int main(int argc, char** argv) {
 
   int Ls=16;
   RealD M5=1.8;
-  RealD mass = -1.0;
+  RealD mass = 0.01;
 
   mass=LanParams.mass;
   Ls=LanParams.Ls;
@@ -159,17 +170,17 @@ int main(int argc, char** argv) {
     U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
   }
 */
-
-  int Nstop = 10;
   int Nk = 20;
+  int Nstop = Nk;
   int Np = 80;
+
   Nstop=LanParams.Nstop;
   Nk=LanParams.Nk;
   Np=LanParams.Np;
 
   int Nm = Nk + Np;
-  int MaxIt = 10000;
-  RealD resid = 1.0e-5;
+  int MaxIt = 100;
+  RealD resid = 1.0e-4;
 
 
 //while ( mass > - 5.0){
@@ -201,8 +212,12 @@ int main(int argc, char** argv) {
   int Nconv;
   IRL.calc(eval, evec, src, Nconv);
 
-  std::cout << mass <<" : " << eval << std::endl;
-
+  std::cout << mass <<" : " << eval        << std::endl;
+  std::cout << " #evecs "   << evec.size() << std::endl;
+  std::cout << " Nconv  "   << Nconv       << std::endl;
+  std::cout << " Nm     "   << Nm          << std::endl;
+  if ( Nconv > evec.size() ) Nconv = evec.size();
+  
 #if 0
   Gamma g5(Gamma::Algebra::Gamma5) ;
   ComplexD dot;
@@ -232,6 +247,7 @@ int main(int argc, char** argv) {
   vector<LatticeFermion> finalevec(Nconv, FGrid);
   vector<RealD> eMe(Nconv), eMMe(Nconv);
   for(int i = 0; i < Nconv; i++){
+    cout << "calculate the matrix element["<<i<<"]" << endl;
     G5R5Herm.HermOpAndNorm(evec[i], G5R5Mevec[i], eMe[i], eMMe[i]);
   }
   cout << "Re<evec, G5R5M(evec)>: " << endl;
@@ -298,7 +314,7 @@ int main(int argc, char** argv) {
       }
     }
   }
-    for(int i = 0; i < Nconv; i++){
+  for(int i = 0; i < Nconv; i++){
     G5R5Herm.HermOpAndNorm(finalevec[i], G5R5Mevec[i], eMe[i], eMMe[i]);
   }
   cout << "Re<evec, G5R5M(evec)>: " << endl;
@@ -306,6 +322,7 @@ int main(int argc, char** argv) {
   cout << "<G5R5M(evec), G5R5M(evec)>" << endl;
   cout << eMMe << endl;
 
+  
 
 //  vector<LatticeFermion> finalevec(Nconv, FGrid);
 // temporary, until doing rotation
@@ -326,13 +343,41 @@ int main(int argc, char** argv) {
       axpby_ssp(G5evec[i], -1., finalevec[i], 0., G5evec[i], j, j);
     }
   }
+  
+  for(int i = 0; i < Nconv; i++){
+    Ddwf.M(finalevec[i], G5R5Mevec[i]);
+    for(int j = 0; j < Nconv; j++){
+      std::cout << "<"<<j<<"|Ddwf|"<<i<<"> = "<<innerProduct(finalevec[j],G5R5Mevec[i])<<std::endl;
+    }
+  }
+  for(int i = 0; i < Nconv; i++){
+    RealD t1,t2;
+    G5R5Herm.HermOpAndNorm(finalevec[i], G5R5Mevec[i], t1, t2);
+    for(int j = 0; j < Nconv; j++){
+      std::cout << "<"<<j<<"|G5R5 M|"<<i<<"> = "<<innerProduct(finalevec[j],G5R5Mevec[i])<<std::endl;
+    }
+  }
+  
   for(int i = 0; i < Nconv; i++){
     chiral_matrix_real[i].resize(Nconv);
     chiral_matrix[i].resize(Nconv);
+
+    std::string evfile("./evec_density");
+    evfile = evfile+"_"+std::to_string(i);
+    auto evdensity = localInnerProduct(finalevec[i],finalevec[i] );
+    writeFile(evdensity,evfile);
+
     for(int j = 0; j < Nconv; j++){
       chiral_matrix[i][j] = innerProduct(finalevec[i], G5evec[j]);
+      std::cout <<" chiral_matrix_real signed "<<i<<" "<<j<<" "<< chiral_matrix_real[i][j] << std::endl;
       chiral_matrix_real[i][j] = abs(chiral_matrix[i][j]);
       std::cout <<" chiral_matrix_real "<<i<<" "<<j<<" "<< chiral_matrix_real[i][j] << std::endl;
+      if ( chiral_matrix_real[i][j] > 0.8 ) {
+	auto g5density = localInnerProduct(finalevec[i], G5evec[j]);
+	std::string chfile("./chiral_density_");
+	chfile = chfile +std::to_string(i)+"_"+std::to_string(j);
+	writeFile(g5density,chfile);
+      }
     }
   }
   for(int i = 0; i < Nconv; i++){
@@ -341,6 +386,43 @@ int main(int argc, char** argv) {
     }
   }
 
-
+  FILE *fp = fopen("lego-plot.py","w"); assert(fp!=NULL);
+#define PYTHON_LINE(A)  fprintf(fp,A"\n");
+  PYTHON_LINE("import matplotlib.pyplot as plt");
+  PYTHON_LINE("import numpy as np");
+  PYTHON_LINE("");
+  PYTHON_LINE("fig = plt.figure()");
+  PYTHON_LINE("ax = fig.add_subplot(projection='3d')");
+  PYTHON_LINE("");
+  PYTHON_LINE("x, y = np.random.rand(2, 100) * 4");
+  fprintf(fp,"hist, xedges, yedges = np.histogram2d(x, y, bins=%d, range=[[0, %d], [0, %d]])\n",Nconv,Nconv-1,Nconv-1);
+  PYTHON_LINE("");
+  PYTHON_LINE("# Construct arrays for the anchor positions of the 16 bars");
+  PYTHON_LINE("xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25, indexing=\"ij\")");
+  PYTHON_LINE("xpos = xpos.ravel()");
+  PYTHON_LINE("ypos = ypos.ravel()");
+  PYTHON_LINE("zpos = 0");
+  PYTHON_LINE("");
+  PYTHON_LINE("# Construct arrays with the dimensions for the 16 bars.");
+  PYTHON_LINE("dx = dy = 0.5 * np.ones_like(zpos)");
+  PYTHON_LINE("dz = np.array([");
+  for(int i = 0; i < Nconv; i++){
+    fprintf(fp,"\t[ ");
+    for(int j = 0; j < Nconv; j++){
+      fprintf(fp,"%lf ",chiral_matrix_real[i][j]);
+      if(j<Nconv-1) fprintf(fp,",");
+      else          fprintf(fp," ");
+    }
+    fprintf(fp,"]");
+    if(i<Nconv-1) fprintf(fp,",\n");
+    else          fprintf(fp,"\n");
+  }
+	      
+  PYTHON_LINE("\t])");
+  PYTHON_LINE("dz = dz.ravel()");
+  PYTHON_LINE("ax.bar3d(xpos, ypos, zpos, dx, dy, dz, zsort='average')");
+  PYTHON_LINE("plt.show()");
+  fclose(fp);
+  
   Grid_finalize();
 }

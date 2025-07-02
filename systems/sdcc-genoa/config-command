@@ -1,3 +1,12 @@
+
+spack load c-lime
+spack load fftw
+spack load hdf5+cxx
+
+export FFTW=`spack find --paths fftw       | grep ^fftw   | awk '{print $2}' `
+export HDF5=`spack find --paths hdf5+cxx   | grep ^hdf5   | awk '{print $2}' `
+export CLIME=`spack find --paths c-lime    | grep ^c-lime | awk '{print $2}' `
+
 ../../configure \
 --enable-comms=mpi-auto \
 --enable-unified=yes \
@@ -5,12 +14,16 @@
 --enable-shm-fast-path=shmopen \
 --enable-accelerator=none \
 --enable-simd=AVX512 \
---disable-accelerator-cshift \
+--with-lime=$CLIME \
+--with-hdf5=$HDF5 \
+--with-fftw=$FFTW \
 --disable-fermion-reps \
 --disable-gparity \
 CXX=clang++ \
 MPICXX=mpicxx \
-CXXFLAGS="-std=c++17"
+LIBS=-llime \
+LDFLAGS=-L$CLIME/lib/ \
+CXXFLAGS="-std=c++17 -fPIE"
 
 
 

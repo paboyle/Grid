@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 project(GridViewer)
 
-list(APPEND CMAKE_PREFIX_PATH "/Users/peterboyle/QCD/vtk/VTK-9.4.2-install/")
+list(APPEND CMAKE_PREFIX_PATH "/home/paboyle/Visualisation/install/")
 
 find_package(VTK COMPONENTS 
   CommonColor

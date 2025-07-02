@@ -204,7 +204,14 @@ public:
   DoubledGaugeField Umu;
   DoubledGaugeField UmuEven;
   DoubledGaugeField UmuOdd;
-    
+
+
+  void SloppyComms(int sloppy)
+  {
+    Stencil.SetSloppyComms(sloppy);
+    StencilEven.SetSloppyComms(sloppy);
+    StencilOdd.SetSloppyComms(sloppy);
+  }
   // Comms buffer
   //  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;
 
