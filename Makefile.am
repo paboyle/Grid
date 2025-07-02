@@ -1,3 +1,5 @@
+# part of the GNU Automake system, which simplifies the generation of `Makefile.in` files.
+
 # additional include paths necessary to compile the C++ library
 SUBDIRS = Grid  benchmarks tests examples HMC
 

@@ -99,25 +99,25 @@ const int GparityFlavourTensorIndex = 3; //TensorLevel counts from the bottom!
 
 // s,sp,c,spc,lc
 
-template<typename vtype> using iSinglet                   = iScalar<iScalar<iScalar<vtype> > >;
-template<typename vtype> using iSpinMatrix                = iScalar<iMatrix<iScalar<vtype>, Ns> >;
-template<typename vtype> using iColourMatrix              = iScalar<iScalar<iMatrix<vtype, Nc> > > ;
-template<typename vtype> using iSpinColourMatrix          = iScalar<iMatrix<iMatrix<vtype, Nc>, Ns> >;
-template<typename vtype> using iLorentzColourMatrix       = iVector<iScalar<iMatrix<vtype, Nc> >, Nd > ;
-template<typename vtype> using iLorentzComplex            = iVector<iScalar<iScalar<vtype> >, Nd > ;
-template<typename vtype> using iDoubleStoredColourMatrix  = iVector<iScalar<iMatrix<vtype, Nc> >, Nds > ;
-template<typename vtype> using iSpinVector                = iScalar<iVector<iScalar<vtype>, Ns> >;
-template<typename vtype> using iColourVector              = iScalar<iScalar<iVector<vtype, Nc> > >;
-template<typename vtype> using iSpinColourVector          = iScalar<iVector<iVector<vtype, Nc>, Ns> >;
-template<typename vtype> using iHalfSpinVector            = iScalar<iVector<iScalar<vtype>, Nhs> >;
-template<typename vtype> using iHalfSpinColourVector      = iScalar<iVector<iVector<vtype, Nc>, Nhs> >;
-    template<typename vtype> using iSpinColourSpinColourMatrix  = iScalar<iMatrix<iMatrix<iMatrix<iMatrix<vtype, Nc>, Ns>, Nc>, Ns> >;
+template<typename vtype> using iSinglet                     = iScalar<iScalar<iScalar<vtype> > >;
+template<typename vtype> using iSpinMatrix                  = iScalar<iMatrix<iScalar<vtype>, Ns> >;
+template<typename vtype> using iColourMatrix                = iScalar<iScalar<iMatrix<vtype, Nc> > > ;
+template<typename vtype> using iSpinColourMatrix            = iScalar<iMatrix<iMatrix<vtype, Nc>, Ns> >;
+template<typename vtype> using iLorentzColourMatrix         = iVector<iScalar<iMatrix<vtype, Nc> >, Nd > ;
+template<typename vtype> using iLorentzComplex              = iVector<iScalar<iScalar<vtype> >, Nd > ;
+template<typename vtype> using iDoubleStoredColourMatrix    = iVector<iScalar<iMatrix<vtype, Nc> >, Nds > ;
+template<typename vtype> using iSpinVector                  = iScalar<iVector<iScalar<vtype>, Ns> >;
+template<typename vtype> using iColourVector                = iScalar<iScalar<iVector<vtype, Nc> > >;
+template<typename vtype> using iSpinColourVector            = iScalar<iVector<iVector<vtype, Nc>, Ns> >;
+template<typename vtype> using iHalfSpinVector              = iScalar<iVector<iScalar<vtype>, Nhs> >;
+template<typename vtype> using iHalfSpinColourVector        = iScalar<iVector<iVector<vtype, Nc>, Nhs> >;
+template<typename vtype> using iSpinColourSpinColourMatrix  = iScalar<iMatrix<iMatrix<iMatrix<iMatrix<vtype, Nc>, Ns>, Nc>, Ns> >;
 
 
-template<typename vtype> using iGparityFlavourVector                = iVector<iScalar<iScalar<vtype> >, Ngp>;
-template<typename vtype> using iGparitySpinColourVector       = iVector<iVector<iVector<vtype, Nc>, Ns>, Ngp >;
-template<typename vtype> using iGparityHalfSpinColourVector   = iVector<iVector<iVector<vtype, Nc>, Nhs>, Ngp >;
-template<typename vtype> using iGparityFlavourMatrix = iMatrix<iScalar<iScalar<vtype> >, Ngp>;
+template<typename vtype> using iGparityFlavourVector        = iVector<iScalar<iScalar<vtype> >, Ngp>;
+template<typename vtype> using iGparitySpinColourVector     = iVector<iVector<iVector<vtype, Nc>, Ns>, Ngp >;
+template<typename vtype> using iGparityHalfSpinColourVector = iVector<iVector<iVector<vtype, Nc>, Nhs>, Ngp >;
+template<typename vtype> using iGparityFlavourMatrix        = iMatrix<iScalar<iScalar<vtype> >, Ngp>;
 
 // Spin matrix
 typedef iSpinMatrix<Complex  >          SpinMatrix;

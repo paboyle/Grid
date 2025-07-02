@@ -38,24 +38,26 @@ directory
 using namespace Grid;
 
 
-/*!  @brief parameter file to easily adjust Nloop */
-struct ConfParameters: Serializable {
-    GRID_SERIALIZABLE_CLASS_MEMBERS(
-        ConfParameters,
-        int, benchmark, 
-        int, Nloop);
+//#define USE_DOUBLE true 
+#define USE_DOUBLE true 
 
-    template <class ReaderClass>
-    ConfParameters(Reader<ReaderClass>& Reader){
-        read(Reader, "parameters", *this);
-    }
-};
+#if USE_DOUBLE 
+    #define PREC double
+    typedef LatticeGaugeFieldD LGF;
+    typedef PeriodicGimplD GIMPL;
+    typedef vComplexD COMP;
+#else
+    #define PREC float
+    typedef LatticeGaugeFieldF LGF;
+    typedef PeriodicGimplF GIMPL;
+    typedef vComplexF COMP;
+#endif 
 
 
-bool testSmear(GridCartesian& GRID, LatticeGaugeFieldD Umu, LatticeGaugeFieldD Usmr, LatticeGaugeFieldD Unaik, 
-               LatticeGaugeFieldD Ucontrol, Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) {
-    Smear_HISQ<PeriodicGimplD> hisq_fat(&GRID,c1,cnaik,c3,c5,c7,clp);
-    LatticeGaugeFieldD diff(&GRID), Uproj(&GRID);
+bool testSmear(GridCartesian& GRID, LGF Umu, LGF Usmr, LGF Unaik, 
+               LGF Ucontrol, PREC c1, PREC cnaik, PREC c3, PREC c5, PREC c7, PREC clp) {
+    Smear_HISQ<GIMPL> hisq_fat(&GRID,c1,cnaik,c3,c5,c7,clp);
+    LGF diff(&GRID), Uproj(&GRID);
     hisq_fat.smear(Usmr, Unaik, Umu);
     bool result;
     if (cnaik < 1e-30) { // Testing anything but Naik term
@@ -85,6 +87,16 @@ bool testSmear(GridCartesian& GRID, LatticeGaugeFieldD Umu, LatticeGaugeFieldD U
 }
 
 
+void hotStartSmear(GridCartesian& GRID) {
+    LGF Uproj(&GRID), Uhot(&GRID);
+    GridParallelRNG pRNG(&GRID); pRNG.SeedFixedIntegers(std::vector<int>({111,222,333,444}));
+    SU<Nc>::HotConfiguration(pRNG,Uhot);
+    Smear_HISQ<GIMPL> hisq_fat(&GRID,1/8.,0.,1/16.,1/64.,1/384.,-1/8.);
+    hisq_fat.projectU3(Uproj,Uhot);
+    Grid_log("norm2(Uproj) = ",norm2(Uproj)/(Nc*Nd*GRID.gSites()));
+}
+
+
 int main (int argc, char** argv) {
 
     // Params for the test.
@@ -94,11 +106,15 @@ int main (int argc, char** argv) {
     std::string conf_in  = "nersc.l8t4b3360";
     int threads          = GridThread::GetThreads();
 
-    typedef LatticeGaugeFieldD LGF;
+    if (sizeof(PREC)==4) {
+        Grid_log("Run in single precision.");
+    } else { 
+        Grid_log("Run in double precision.");
+    }
 
     // Initialize the Grid
     Grid_init(&argc,&argv);
-    Coordinate simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
+    Coordinate simd_layout = GridDefaultSimd(Nd,COMP::Nsimd());
     Coordinate mpi_layout  = GridDefaultMpi();
     Grid_log("mpi     = ",mpi_layout);
     Grid_log("simd    = ",simd_layout);
@@ -106,11 +122,9 @@ int main (int argc, char** argv) {
     Grid_log("threads = ",threads);
     GridCartesian GRID(latt_size,simd_layout,mpi_layout);
 
-    XmlReader Reader("fatParams.xml",false,"grid");
-    ConfParameters param(Reader);
-    if(param.benchmark) Grid_log("  Nloop = ",param.Nloop);
-
     LGF Umu(&GRID), Usmr(&GRID), Unaik(&GRID), Ucontrol(&GRID);
+
+#if USE_DOUBLE // NerscIO is hard-coded to double.
 
     // Read the configuration into Umu
     FieldMetaData header;
@@ -136,46 +150,17 @@ int main (int argc, char** argv) {
         Grid_error("At least one test failed.");
     }
 
+#endif 
+
+    // Does a small hot start cause an issue?
+    hotStartSmear(GRID);
+    latt_size[0]=16; latt_size[1]=16; latt_size[2]=16; latt_size[3]=16;
+    GridCartesian SYMM(latt_size,simd_layout,mpi_layout);
+    hotStartSmear(SYMM);
+
     // Test a C-style instantiation 
     double path_coeff[6] = {1, 2, 3, 4, 5, 6};
-    Smear_HISQ<PeriodicGimplD> hisq_fat_Cstyle(&GRID,path_coeff);
-
-    if (param.benchmark) {
-
-        autoView(U_v, Umu, CpuRead); // Gauge accessor
-
-        // Read in lattice sequentially, Nloop times 
-        double lookupTime = 0.; 
-        for(int i=0;i<param.Nloop;i++) {
-            double start = usecond();
-            for(int ss=0;ss<U_v.size();ss++)
-                for(int mu=0;mu<Nd;mu++) {
-                    auto U1 = U_v[ss](mu);
-            }
-            double stop  = usecond();
-        	lookupTime += stop-start; // microseconds
-        }
-        Grid_log("Time to lookup: ",lookupTime,"[ms]");
-
-        // Raise a matrix to the power nmat, for each link. 
-        auto U1 = U_v[0](0);
-        for(int nmat=1;nmat<8;nmat++) {
-            double multTime = 0.; 
-            for(int i=0;i<param.Nloop;i++) {
-                double start=usecond();
-                for(int ss=0;ss<U_v.size();ss++)
-                    for(int mu=0;mu<Nd;mu++) {
-                        auto U2 = U1;
-                        for(int j=1;j<nmat;j++) {
-                            U2 *= U1;
-                        }
-                }
-                double stop=usecond();
-                multTime += stop-start;
-            }
-            Grid_log("Time to multiply ",nmat," matrices: ",multTime," [ms]");
-        }
-    }
+    Smear_HISQ<GIMPL> hisq_fat_Cstyle(&GRID,path_coeff);
 
     Grid_finalize();
 }
