@@ -156,12 +156,11 @@ public:
 class shiftSignal {
 public:
     enum {
-        BACKWARD_CONST = 16,
+        BACKWARD_CONST = GRID_MAX_LATTICE_DIMENSION + 2,
         NO_SHIFT       = -1
     };
 };
 
-// TODO: put a check somewhere that BACKWARD_CONST > Nd!
 
 /*!  @brief signals that you want to go backwards in direction dir */
 inline int Back(const int dir) {
@@ -169,6 +168,7 @@ inline int Back(const int dir) {
     // backward. Trick inspired by SIMULATeQCD. 
     return dir + shiftSignal::BACKWARD_CONST;
 }
+
 
 /*!  @brief shift one unit in direction dir */
 template<typename... Args>
@@ -183,6 +183,7 @@ void generalShift(Coordinate& shift, int dir) {
     }
 }
 
+
 /*!  @brief follow a path of directions, shifting one unit in each direction */
 template<typename... Args>
 void generalShift(Coordinate& shift, int dir, Args... args) {
@@ -195,6 +196,17 @@ void generalShift(Coordinate& shift, int dir, Args... args) {
         shift[dir]+=1;
     }
     generalShift(shift, args...);
+}
+
+
+/*!  @brief append arbitrary shift path to shifts of dimension d */
+template<int d, typename... Args>
+void appendShift(std::vector<Coordinate>& shifts, int dir, Args... args) {
+    Coordinate shift(d,0);
+    generalShift(shift, dir, args...); 
+    // push_back creates an element at the end of shift and
+    // assigns the data in the argument to it.
+    shifts.push_back(shift);
 }
 
 

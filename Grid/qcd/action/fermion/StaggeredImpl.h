@@ -163,7 +163,7 @@ public:
 
   inline void InsertForce4D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
     GaugeLinkField link(mat.Grid());
-    link = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); 
+    link = outerProduct(Btilde,A); 
     PokeIndex<LorentzIndex>(mat,link,mu);
   }   
       

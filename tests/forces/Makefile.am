@@ -12,3 +12,4 @@ check: tests
 	./Test_dwf_gpforce
 	./Test_mobius_force
 	./Test_zmobius_force
+	./Test_HISQ_force
