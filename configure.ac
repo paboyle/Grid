@@ -263,6 +263,17 @@ case ${ac_ACCELERATOR_AWARE_MPI} in
     *);;
 esac
 
+############### CHECKSUM COMMS
+AC_ARG_ENABLE([checksum-comms],
+    [AS_HELP_STRING([--enable-checksum-comms=yes|no],[checksum all communication])],
+    [ac_CHECKSUM_COMMS=${enable_checksum_comms}], [ac_CHECKSUM_COMMS=yes])
+
+case ${ac_CHECKSUM_COMMS} in
+    yes)
+      AC_DEFINE([GRID_CHECKSUM_COMMS],[1],[checksum all communication]);;
+    *);;
+esac
+
 ############### SYCL/CUDA/HIP/none
 AC_ARG_ENABLE([accelerator],
     [AS_HELP_STRING([--enable-accelerator=cuda|sycl|hip|none],[enable none,cuda,sycl,hip acceleration])],

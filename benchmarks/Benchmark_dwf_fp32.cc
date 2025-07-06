@@ -262,7 +262,7 @@ void Benchmark(int Ls, Coordinate Dirichlet,bool sloppy)
   FermionAction::ImplParams p;
   p.dirichlet=Dirichlet;
   FermionAction Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,p);
-  Dw.SloppyComms(sloppy);
+  //Dw.SloppyComms(sloppy);
   Dw.ImportGauge(Umu);
   
   int ncall =300;

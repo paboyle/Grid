@@ -125,11 +125,20 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
   int buffer_size = rhs.Grid()->_slice_nblock[dimension]*rhs.Grid()->_slice_block[dimension];
   static deviceVector<vobj> send_buf; send_buf.resize(buffer_size);
   static deviceVector<vobj> recv_buf; recv_buf.resize(buffer_size);
+
 #ifndef ACCELERATOR_AWARE_MPI
+#ifdef GRID_CHECKSUM_COMMS
+  buffer_size += (8 + sizeof(vobj) - 1) / sizeof(vobj);
+#endif
+
   static hostVector<vobj> hsend_buf; hsend_buf.resize(buffer_size);
   static hostVector<vobj> hrecv_buf; hrecv_buf.resize(buffer_size);
+
+#ifdef GRID_CHECKSUM_COMMS
+  buffer_size -= (8 + sizeof(vobj) - 1) / sizeof(vobj);
 #endif
-  
+#endif
+
   int cb= (cbmask==0x2)? Odd : Even;
   int sshift= rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,cb);
   RealD tcopy=0.0;
@@ -180,12 +189,29 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
 #else
       // bouncy bouncy
       acceleratorCopyFromDevice(&send_buf[0],&hsend_buf[0],bytes);
+
+#ifdef GRID_CHECKSUM_COMMS
+      assert(bytes % 8 == 0);
+      *(uint64_t*)(((char*)&hsend_buf[0]) + bytes) = svm_xor((uint64_t*)&send_buf[0], bytes / 8) ^ 1;
+      bytes += 8;
+#endif
+      
       grid->SendToRecvFrom((void *)&hsend_buf[0],
 			   xmit_to_rank,
 			   (void *)&hrecv_buf[0],
 			   recv_from_rank,
 			   bytes);
+
+#ifdef GRID_CHECKSUM_COMMS
+      bytes -= 8;
       acceleratorCopyToDevice(&hrecv_buf[0],&recv_buf[0],bytes);
+      uint64_t expected_cs = *(uint64_t*)(((char*)&hrecv_buf[0]) + bytes);
+      uint64_t computed_cs = svm_xor((uint64_t*)&recv_buf[0], bytes / 8) ^ 1;
+      assert(expected_cs == computed_cs);
+#else
+      acceleratorCopyToDevice(&hrecv_buf[0],&recv_buf[0],bytes);
+#endif
+
 #endif
       FlightRecorder::StepLog("Cshift_SendRecv_complete");
 
@@ -255,9 +281,18 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
     send_buf_extract[s].resize(buffer_size);
     recv_buf_extract[s].resize(buffer_size);
   }
+
 #ifndef ACCELERATOR_AWARE_MPI
-  hostVector<scalar_object> hsend_buf; hsend_buf.resize(buffer_size);
-  hostVector<scalar_object> hrecv_buf; hrecv_buf.resize(buffer_size);
+#ifdef GRID_CHECKSUM_COMMS
+  buffer_size += (8 + sizeof(vobj) - 1) / sizeof(vobj);
+#endif
+
+  static hostVector<vobj> hsend_buf; hsend_buf.resize(buffer_size);
+  static hostVector<vobj> hrecv_buf; hrecv_buf.resize(buffer_size);
+
+#ifdef GRID_CHECKSUM_COMMS
+  buffer_size -= (8 + sizeof(vobj) - 1) / sizeof(vobj);
+#endif
 #endif
   
   int bytes = buffer_size*sizeof(scalar_object);
@@ -320,12 +355,30 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
 #else
       // bouncy bouncy
 	acceleratorCopyFromDevice((void *)send_buf_extract_mpi,(void *)&hsend_buf[0],bytes);
+
+#ifdef GRID_CHECKSUM_COMMS
+	assert(bytes % 8 == 0);
+	*(uint64_t*)(((char*)&hsend_buf[0]) + bytes) = svm_xor((uint64_t*)send_buf_extract_mpi, bytes / 8) ^ 1;
+	bytes += 8;
+#endif
+	
 	grid->SendToRecvFrom((void *)&hsend_buf[0],
 			     xmit_to_rank,
 			     (void *)&hrecv_buf[0],
 			     recv_from_rank,
 			     bytes);
+	
+
+#ifdef GRID_CHECKSUM_COMMS
+	bytes -= 8;
 	acceleratorCopyToDevice((void *)&hrecv_buf[0],(void *)recv_buf_extract_mpi,bytes);
+	uint64_t expected_cs = *(uint64_t*)(((char*)&hrecv_buf[0]) + bytes);
+	uint64_t computed_cs = svm_xor((uint64_t*)recv_buf_extract_mpi, bytes / 8) ^ 1;
+	assert(expected_cs == computed_cs);
+#else
+	acceleratorCopyToDevice((void *)&hrecv_buf[0],(void *)recv_buf_extract_mpi,bytes);
+#endif
+
 #endif
 
 	xbytes+=bytes;

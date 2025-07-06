@@ -243,7 +243,7 @@ public:
     Broadcast(root,(void *)&data,sizeof(data));
   }
 
-}; 
+};
 
 NAMESPACE_END(Grid);
 
