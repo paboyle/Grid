@@ -29,8 +29,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef _GRID_CSHIFT_MPI_H_
 #define _GRID_CSHIFT_MPI_H_
 
+NAMESPACE_BEGIN(Grid);
 
-NAMESPACE_BEGIN(Grid); 
+#ifdef GRID_CHECKSUM_COMMS
+extern uint64_t checksum_index;
+#endif
+
 const int Cshift_verbose=0;
 template<class vobj> Lattice<vobj> Cshift(const Lattice<vobj> &rhs,int dimension,int shift)
 {
@@ -192,7 +196,8 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
 
 #ifdef GRID_CHECKSUM_COMMS
       assert(bytes % 8 == 0);
-      *(uint64_t*)(((char*)&hsend_buf[0]) + bytes) = svm_xor((uint64_t*)&send_buf[0], bytes / 8) ^ 1;
+      checksum_index++;
+      *(uint64_t*)(((char*)&hsend_buf[0]) + bytes) = checksum_gpu((uint64_t*)&send_buf[0], bytes / 8) ^ (1 + checksum_index);
       bytes += 8;
 #endif
       
@@ -206,7 +211,7 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
       bytes -= 8;
       acceleratorCopyToDevice(&hrecv_buf[0],&recv_buf[0],bytes);
       uint64_t expected_cs = *(uint64_t*)(((char*)&hrecv_buf[0]) + bytes);
-      uint64_t computed_cs = svm_xor((uint64_t*)&recv_buf[0], bytes / 8) ^ 1;
+      uint64_t computed_cs = checksum_gpu((uint64_t*)&recv_buf[0], bytes / 8) ^ (1 + checksum_index);
       assert(expected_cs == computed_cs);
 #else
       acceleratorCopyToDevice(&hrecv_buf[0],&recv_buf[0],bytes);
@@ -358,7 +363,8 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
 
 #ifdef GRID_CHECKSUM_COMMS
 	assert(bytes % 8 == 0);
-	*(uint64_t*)(((char*)&hsend_buf[0]) + bytes) = svm_xor((uint64_t*)send_buf_extract_mpi, bytes / 8) ^ 1;
+	checksum_index++;
+	*(uint64_t*)(((char*)&hsend_buf[0]) + bytes) = checksum_gpu((uint64_t*)send_buf_extract_mpi, bytes / 8) ^ (1 + checksum_index);
 	bytes += 8;
 #endif
 	
@@ -373,7 +379,7 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
 	bytes -= 8;
 	acceleratorCopyToDevice((void *)&hrecv_buf[0],(void *)recv_buf_extract_mpi,bytes);
 	uint64_t expected_cs = *(uint64_t*)(((char*)&hrecv_buf[0]) + bytes);
-	uint64_t computed_cs = svm_xor((uint64_t*)recv_buf_extract_mpi, bytes / 8) ^ 1;
+	uint64_t computed_cs = checksum_gpu((uint64_t*)recv_buf_extract_mpi, bytes / 8) ^ (1 + checksum_index);
 	assert(expected_cs == computed_cs);
 #else
 	acceleratorCopyToDevice((void *)&hrecv_buf[0],(void *)recv_buf_extract_mpi,bytes);
