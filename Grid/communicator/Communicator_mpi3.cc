@@ -562,7 +562,6 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
    */
 
 #ifdef GRID_CHECKSUM_COMMS
-  checksum_index += 1;
   rbytes += 8;
   xbytes += 8;
 #endif
@@ -844,8 +843,10 @@ void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsReque
       }
     }
   }
+
+  checksum_index += 1;
 #endif
-  
+
   list.resize(0);               // Delete the list
   this->HostBufferFreeAll();    // Clean up the buffer allocs
 #ifndef NVLINK_GET
