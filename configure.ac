@@ -274,6 +274,17 @@ case ${ac_CHECKSUM_COMMS} in
     *);;
 esac
 
+############### LOG VIEWS
+AC_ARG_ENABLE([log-views],
+    [AS_HELP_STRING([--enable-log-views=yes|no],[log information on all view open/close])],
+    [ac_LOG_VIEWS=${enable_log_views}], [ac_LOG_VIEWS=yes])
+
+case ${ac_LOG_VIEWS} in
+    yes)
+      AC_DEFINE([GRID_LOG_VIEWS],[1],[log information on all view open/close]);;
+    *);;
+esac
+
 ############### SYCL/CUDA/HIP/none
 AC_ARG_ENABLE([accelerator],
     [AS_HELP_STRING([--enable-accelerator=cuda|sycl|hip|none],[enable none,cuda,sycl,hip acceleration])],

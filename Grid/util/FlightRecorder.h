@@ -42,5 +42,23 @@ class FlightRecorder {
   static void xmitLog(void *,uint64_t bytes);
   static void recvLog(void *,uint64_t bytes,int rank);
 };
+
+#ifdef GRID_LOG_VIEWS
+class ViewLogger {
+  struct Entry_t {
+    const char* filename;
+    int line;
+    int index;
+    uint64_t head, tail;
+  };
+
+public:
+  static bool Enabled;
+  static std::vector<Entry_t> LogVector;
+  static void Begin();
+  static void End();
+  static void Log(const char* filename, int line, int index, int mode, void* data, uint64_t bytes);
+};
+#endif
 NAMESPACE_END(Grid);
 
