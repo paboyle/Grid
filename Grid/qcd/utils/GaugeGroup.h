@@ -641,6 +641,7 @@ class GaugeGroup {
 #endif
   }
 
+#if 0
   // Lattice-wide operator
   // Work with traceless anti-hermitian matrices for Lie algebra elements with Luscher's normalization convention
   // Explicitly, T^a = -i t^a where t^a is hermitian generators in Grid convention, c.f., Compute_MpInvJx_dNxxdSy
@@ -660,6 +661,7 @@ class GaugeGroup {
 	coalescedWrite(out_v[ss],out);
       });
   }
+  #endif
 
   // Site-local operation
   // Work with traceless anti-hermitian matrices for Lie algebra elements with Luscher's normalization convention
@@ -672,7 +674,7 @@ class GaugeGroup {
     int NNm1 = N * (N - 1);
     int hNNm1= NNm1/2;
 
-    using namespace CplxMultExt;
+    //    using namespace CplxMultExt;
     
     // Compute N_{ab} = tr(T^a P^b) where P^b is traceless anti-hermitian
     // Here, P^b = Ta(M^b) where M^b = adj(inL_v) * T'^b * inR_v => P^b = 0.5*( adj(inL_v(ss))*T'^b*inR_v(ss) + adj(inR_v(ss))*T'^b*inL_v(ss) )
@@ -737,8 +739,8 @@ class GaugeGroup {
 	}
 	//	tmpx = tmpx - ((RealD) k_b)*(adj(inL_v()()(k_b,i2))*inR_v()()(k_b,i1) + adj(inR_v()()(k_b,i2))*inL_v()()(k_b,i1));
 	//	tmpy = tmpy - ((RealD) k_b)*(adj(inL_v()()(k_b,i1))*inR_v()()(k_b,i2) + adj(inR_v()()(k_b,i1))*inL_v()()(k_b,i2));
-	tmpx = tmpx - k_b*(adj(inL_v()()(k_b,i2))*inR_v()()(k_b,i1) + adj(inR_v()()(k_b,i2))*inL_v()()(k_b,i1));
-	tmpy = tmpy - k_b*(adj(inL_v()()(k_b,i1))*inR_v()()(k_b,i2) + adj(inR_v()()(k_b,i1))*inL_v()()(k_b,i2));
+	tmpx = tmpx - ((RealD) k_b)*(adj(inL_v()()(k_b,i2))*inR_v()()(k_b,i1) + adj(inR_v()()(k_b,i2))*inL_v()()(k_b,i1));
+	tmpy = tmpy - ((RealD) k_b)*(adj(inL_v()()(k_b,i1))*inR_v()()(k_b,i2) + adj(inR_v()()(k_b,i1))*inL_v()()(k_b,i2));
 	
 	out_v()()(ax,b)=-scale_b*imag(tmpx);
 	out_v()()(ay,b)= scale_b*real(tmpy);

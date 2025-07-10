@@ -32,20 +32,58 @@ directory
 #ifndef ACTION_BASE_H
 #define ACTION_BASE_H
 
-#include <Grid/parallelIO/IldgIOtypes.h>
-#include <Grid/parallelIO/IldgIO.h>
+
+#define PRINT_SNAPSHOTS
+#ifdef PRINT_SNAPSHOTS
+#include <algorithm>
+#include <cctype>
+#endif
+
 
 NAMESPACE_BEGIN(Grid);
 
-#if 1
+#ifdef PRINT_SNAPSHOTS
+template <class vobj> LatticeComplex LocalFieldSquareNorm(Lattice<vobj>& U){
+  LatticeComplex Hloc(U.Grid());
+  Hloc = Zero();
+  for (int mu = 0; mu < Nd; mu++) {
+    auto Umu = PeekIndex<LorentzIndex>(U, mu);
+    Hloc += trace(Umu * Umu);
+  }
+  return Hloc;
+}
+template <class vobj> void writeField(Lattice<vobj> &F, std::string filename, bool reduce=true, bool alg=true) {
+  
+  filename.erase(std::remove_if(filename.begin(), filename.end(), [](unsigned char x) { return std::isspace(x); }), filename.end());
+  std::replace(filename.begin(),filename.end(), '/', '_');
 
-template <class Field> void writeFile(const Field F, std::string filename, bool reduce=true) {
-  auto F_out = reduce? localNorm2(F) : F;
+#ifdef HAVE_LIME
   emptyUserRecord record;
   ScidacWriter WR(F.Grid()->IsBoss());
   WR.open(filename);
-  WR.writeScidacFieldRecord(F_out,record,0);
+  if (reduce) {
+    auto F_reduced=alg? LocalFieldSquareNorm(F) : localNorm2(F);
+    WR.writeScidacFieldRecord(F_reduced,record,0);
+  }
+  else
+    WR.writeScidacFieldRecord(F,record,0);
   WR.close();
+#else
+  assert( false && "writeField function needs c-lime support!");
+#endif
+}
+
+// vobj = vLorentzColourMatrixD
+template <class vobj> void writeConfig(Lattice<vobj> &F, std::string filename){
+  
+  filename.erase(std::remove_if(filename.begin(), filename.end(), [](unsigned char x) { return std::isspace(x); }), filename.end());
+  std::replace(filename.begin(),filename.end(), '/', '_');
+  
+  // Use NERSC IO for consistency with our HMC runs
+  // Then, GaugeStats = PeriodicGaugeStatistics <- the default
+  int precision32 = 1;
+  int tworow = 0;
+  NerscIO::writeConfiguration(F, filename, tworow, precision32); 
 }
 #endif
 
@@ -68,7 +106,7 @@ template <class GaugeField >
 class Action 
 {
 public:
-  bool is_smeared = false;
+  bool  is_smeared = false;
   RealD deriv_norm_sum;
   RealD deriv_max_sum;
   RealD Fdt_norm_sum;
@@ -131,12 +169,17 @@ public:
   }
   virtual void deriv(ConfigurationBase<GaugeField>& U, GaugeField& dSdU)
   {
+    // For some actions, deriv is overwritten => could be better if we put writeField in update_P
     deriv(U.get_U(is_smeared),dSdU);
-    writeFile(dSdU, "F_"+action_name()+"_lat."+std::to_string(deriv_num));
-
+#ifdef PRINT_SNAPSHOTS
+    writeField(dSdU, "F_"+action_name()+"_lat."+std::to_string(deriv_num));
+#endif
+    
     if ( is_smeared ) {
       U.smeared_force(dSdU);
-      writeFile(dSdU, "F_"+action_name()+"_smr."+std::to_string(deriv_num));
+#ifdef PRINT_SNAPSHOTS
+      writeField(dSdU, "F_"+action_name()+"_smr."+std::to_string(deriv_num));
+#endif
     }
   }
   ///////////////////////////////

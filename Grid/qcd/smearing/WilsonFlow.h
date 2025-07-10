@@ -249,6 +249,11 @@ void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const{
 
   out = in;
   RealD taus = 0.;
+
+  // Perform initial t=0 measurements
+  for(auto const &meas : this->functions)
+    meas.second(0,taus,out);
+  
   for (unsigned int step = 1; step <= Nstep; step++) { //step indicates the number of smearing steps applied at the time of measurement
     auto start = std::chrono::high_resolution_clock::now();
     evolve_step(out, taus);

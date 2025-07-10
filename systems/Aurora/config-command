@@ -16,7 +16,6 @@ export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-narrowing -Wno-
 	--enable-reduction=grid \
 	--enable-gen-simd-width=64 \
 	--enable-comms=mpi-auto \
-	--enable-debug \
 	--disable-gparity \
 	--disable-fermion-reps \
 	--enable-shm=nvlink \
@@ -24,7 +23,10 @@ export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-narrowing -Wno-
 	--enable-accelerator-aware-mpi=no \
 	--enable-unified=no \
 	--with-lime=$CLIME \
+	--with-gmp=$GMP \
+	--with-mpfr=$MPFR \
 	MPICXX=mpicxx \
 	CXX=icpx 
 
 #	--prefix $HOME/gpt-install \
+#	--enable-debug \

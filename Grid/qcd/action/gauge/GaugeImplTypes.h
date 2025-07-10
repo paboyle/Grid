@@ -148,7 +148,7 @@ public:
    // diff += end - start;
    // std::cout << "Time to exponentiate matrix " << diff.count() << " s\n";
   }
-    
+
   static inline RealD FieldSquareNorm(Field& U){
     LatticeComplex Hloc(U.Grid());
     Hloc = Zero();

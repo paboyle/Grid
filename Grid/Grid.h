@@ -44,7 +44,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/qcd/utils/GaugeFix.h>
 #include <Grid/qcd/utils/CovariantSmearing.h>
 #include <Grid/qcd/smearing/Smearing.h>
-//#include <Grid/parallelIO/MetaData.h>//moved to ActionBash.h included from Action.h
+//#include <Grid/parallelIO/MetaData.h>//moved to ActionCore.h 
 #include <Grid/qcd/hmc/HMC_aggregate.h>
 
 #endif

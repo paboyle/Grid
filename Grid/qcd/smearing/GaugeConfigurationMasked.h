@@ -4,6 +4,7 @@
   @brief Declares the GaugeConfiguration class
 */
 #pragma once
+#ifndef GAUGE_CONFIG_MASK_H
 
 NAMESPACE_BEGIN(Grid);
 
@@ -139,6 +140,7 @@ private:
     std::cout << GridLogMessage << " BaseSmearDerivative " << t/1e3 << " ms " << std::endl;
     
   }
+#if 0
   //for debugging
   void BaseSmear_cb(GaugeLinkField& Cup, const GaugeField& U,int mu,RealD rho) {
     GRID_TRACE("BaseSmear_cb");
@@ -163,6 +165,7 @@ private:
     t+=usecond();
     std::cout << GridLogMessage << " BaseSmear " << t/1e3 << " ms " << std::endl;
   }
+#endif
   void BaseSmear(GaugeLinkField& Cup, const GaugeField& U,int mu,RealD rho) {
     GRID_TRACE("BaseSmear");
     GridBase *grid = U.Grid();
@@ -1850,7 +1853,7 @@ public:
   void logDetJacobianForce(GaugeField &force)
   {
     GRID_TRACE("logDetJacobianForce");
-    force =Zero();
+    force = Zero();
     GaugeField force_det(force.Grid());
 
     if (this->smearingLevels > 0)
@@ -1956,9 +1959,14 @@ private:
         RealD impl_plaq = WilsonLoops<Gimpl>::avgPlaquette(previous_u);
         std::cout << GridLogMessage << "[SmearedConfigurationMasked] smeared Plaq: " << impl_plaq << std::endl;
       }
+#ifdef PRINT_SNAPSHOTS
+      RealD intmdt_lnDetJ = logDetJacobian();
+      std::cout << GridLogMessage << "GaugeConfigurationMasked: Intermediate Jacobian " << intmdt_lnDetJ << std::endl;
+#endif
+
       double end = usecond();
       double time = (end - start)/ 1e3;
-      std::cout << GridLogMessage << "GaugeConfigurationMasked: Link smearing took " << time << " ms" << std::endl;  
+      std::cout << GridLogMessage << "GaugeConfigurationMasked: Link smearing took " << time << " ms" << std::endl;
     }
   }
   //====================================================================
@@ -2194,4 +2202,4 @@ public:
 };
 
 NAMESPACE_END(Grid);
-
+#endif

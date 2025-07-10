@@ -69,6 +69,7 @@ namespace Grid{
 template <class T> void writeFile(T& in, std::string const fname){  
 #ifdef HAVE_LIME
   // Ref: https://github.com/paboyle/Grid/blob/feature/scidac-wp1/tests/debug/Test_general_coarse_hdcg_phys48.cc#L111
+  // the same function also in ActionBase.h
   std::cout << Grid::GridLogMessage << "Writes to: " << fname << std::endl;
   Grid::emptyUserRecord record;
   Grid::ScidacWriter WR(in.Grid()->IsBoss());
@@ -165,6 +166,8 @@ int main(int argc, char **argv) {
     //double coeff = 2.0 / (1.0 * Nd * (Nd - 1)) / 3.0;
     //Plq = coeff * Plq;
 
+    RealD WFlow_TC5Li = WilsonLoops<PeriodicGimplR>::TopologicalCharge5Li(U);
+    
     int tau = std::round(t);
     std::string efile = file_pre + "E_dnsty_" + std::to_string(tau) + "_" + file_post;
     writeFile(R,efile);
@@ -177,7 +180,7 @@ int main(int argc, char **argv) {
     RealD E0 = real(peekSite(R,scoor));
     RealD T0 = real(peekSite(qfield,scoor));
     std::cout << GridLogMessage << "[WilsonFlow] Saved energy density (clover) & topo. charge density: "  << conf << " " << step << "  " << tau << "  "
-	      << "(E_avg,T_sum) " << E << " " << T << " (E, T at origin) " << E0 << " " << T0 << std::endl;
+	      << "(E_avg,T_sum) " << E << " " << T << " (E, T at origin) " << E0 << " " << T0 << " TC5Li " <<  WFlow_TC5Li << std::endl;
     
   });
   

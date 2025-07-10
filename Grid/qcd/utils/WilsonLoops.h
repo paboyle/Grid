@@ -640,7 +640,28 @@ public:
     return TensorRemove(Tq).real();
   }
 
+  // cp'ed from the above; added for convinience; used in Grid/HMC/analyze_snapshots.cc
+  static ComplexField TopologicalChargeDensity(const GaugeLorentz &U){
+    // 4d topological charge
+    assert(Nd==4);
+    // Bx = -iF(y,z), By = -iF(z,y), Bz = -iF(x,y)
+    GaugeMat Bx(U.Grid()), By(U.Grid()), Bz(U.Grid());
+    FieldStrength(Bx, U, Ydir, Zdir);
+    FieldStrength(By, U, Zdir, Xdir);
+    FieldStrength(Bz, U, Xdir, Ydir);
 
+    // Ex = -iF(t,x), Ey = -iF(t,y), Ez = -iF(t,z)
+    GaugeMat Ex(U.Grid()), Ey(U.Grid()), Ez(U.Grid());
+    FieldStrength(Ex, U, Tdir, Xdir);
+    FieldStrength(Ey, U, Tdir, Ydir);
+    FieldStrength(Ez, U, Tdir, Zdir);
+
+    double coeff = 8.0/(32.0*M_PI*M_PI);
+
+    ComplexField qfield = coeff*trace(Bx*Ex + By*Ey + Bz*Ez);
+    return qfield;
+  }
+  
   //Clover-leaf Wilson loop combination for arbitrary mu-extent M and nu extent N,  mu >= nu
   //cf  https://arxiv.org/pdf/hep-lat/9701012.pdf Eq 7  for 1x2 Wilson loop    
   //Clockwise ordering

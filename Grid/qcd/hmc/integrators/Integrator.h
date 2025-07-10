@@ -101,6 +101,11 @@ public:
   {
     t_P[level] += ep;
     update_P(P, U, level, ep);
+#ifdef PRINT_SNAPSHOTS
+    std::cout << GridLogMessage << " Half Mom Squared: " << level << " "<< t_P[level] << " "
+	      << - FieldImplementation::FieldSquareNorm(P)/HMC_MOMENTUM_DENOMINATOR << std::endl;
+    //writeField(P,"Mom_Field_"+std::to_string(t_P[level]));
+#endif
     std::cout << GridLogIntegrator << "[" << level << "] P " << " dt " << ep << " : t_P " << t_P[level] << std::endl;
   }
 
@@ -211,15 +216,17 @@ public:
 
     // exponential of Mom*U in the gauge fields case
     FieldImplementation::update_field(MomFiltered, U, ep);
-    writeFile(U,"U_lat"+std::to_string(t_U),false);
-    
+#ifdef PRINT_SNAPSHOTS
+    writeConfig(U,"U_lat_"+std::to_string(t_U+ep));
+#endif
     // Update the smeared fields, can be implemented as observer
     Smearer.set_Field(U);
 
     // Update the higher representations fields
     Representations.update(U);  // void functions if fundamental representation
-    
-    writeFile(U,"U_smr"+std::to_string(t_U),false);
+#ifdef PRINT_SNAPSHOTS
+    writeConfig(Smearer.get_SmearedU(),"U_smr_"+std::to_string(t_U+ep));
+#endif
   }
 
   virtual void step(Field& U, int level, int first, int last) = 0;
@@ -464,7 +471,10 @@ public:
     std::cout << GridLogIntegrator << "Integrator action\n";
 
     RealD H = - FieldImplementation::FieldSquareNorm(P)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
-
+#ifdef PRINT_SNAPSHOTS
+    std::cout << GridLogMessage << "Final Half Mom Squared: " << H << std::endl;
+#endif
+    
     RealD Hterm;
 
     // Actions
@@ -510,7 +520,10 @@ public:
     std::cout << GridLogIntegrator << "Integrator initial action\n";
 
     RealD H = - FieldImplementation::FieldSquareNorm(P)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
-
+#ifdef PRINT_SNAPSHOTS
+    std::cout << GridLogMessage << "Initial Half Mom Squared: " << H << std::endl;
+#endif
+    
     RealD Hterm;
 
     // Actions
