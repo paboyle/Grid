@@ -202,7 +202,7 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,deviceVector<
   {
     auto buffer_p = & buffer[0];
     auto table = MapCshiftTable();
-    autoView( rhs_v, rhs, AcceleratorWrite);
+    autoView( rhs_v, rhs, AcceleratorWriteDiscard);
     accelerator_for(i,ent,vobj::Nsimd(),{
 	coalescedWrite(rhs_v[table[i].first],coalescedRead(buffer_p[table[i].second]));
     });
@@ -228,7 +228,7 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
   if(cbmask ==0x3 ) {
     int _slice_stride = rhs.Grid()->_slice_stride[dimension];
     int _slice_block = rhs.Grid()->_slice_block[dimension];
-    autoView( rhs_v , rhs, AcceleratorWrite);
+    autoView( rhs_v , rhs, AcceleratorWriteDiscard);
     accelerator_for(nn,e1*e2,1,{
 	int n = nn%e1;
 	int b = nn/e1;
@@ -302,7 +302,7 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
   {
     auto table = MapCshiftTable();
     autoView(rhs_v , rhs, AcceleratorRead);
-    autoView(lhs_v , lhs, AcceleratorWrite);
+    autoView(lhs_v , lhs, AcceleratorWriteDiscard);
     accelerator_for(i,ent,vobj::Nsimd(),{
       coalescedWrite(lhs_v[table[i].first],coalescedRead(rhs_v[table[i].second]));
     });

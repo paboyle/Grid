@@ -500,7 +500,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
 {
     autoView(U_v  ,  U,AcceleratorRead);
     autoView(in_v , in,AcceleratorRead);
-    autoView(out_v,out,AcceleratorWrite);
+    autoView(out_v,out,AcceleratorWriteDiscard);
     autoView(st_v , st,AcceleratorRead);
 
    if( interior && exterior ) {
@@ -535,7 +535,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
 {
     autoView(U_v  ,  U,AcceleratorRead);
     autoView(in_v , in,AcceleratorRead);
-    autoView(out_v,out,AcceleratorWrite);
+    autoView(out_v,out,AcceleratorWriteDiscard);
     autoView(st_v , st,AcceleratorRead);
     KERNEL_CALL_ID(GenericDhopSite);
 }
@@ -546,7 +546,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
   {
     autoView(U_v  ,U,AcceleratorRead);
     autoView(in_v ,in,AcceleratorRead);
-    autoView(out_v,out,AcceleratorWrite);
+    autoView(out_v,out,AcceleratorWriteDiscard);
     autoView(st_v ,st,AcceleratorRead);
 
    if( interior && exterior ) {
