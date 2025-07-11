@@ -27,6 +27,7 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/Grid.h>
+#include <Grid/parallelIO/IldgIOtypes.h>
 
 using namespace std;
 using namespace Grid;
@@ -38,11 +39,28 @@ typedef typename WilsonFermionD::FermionField FermionField;
 
 RealD AllZero(RealD x) { return 0.; }
 
+template <class T> void writeFile(T& in, std::string const fname){
+#if 1
+  // Ref: https://github.com/paboyle/Grid/blob/feature/scidac-wp1/tests/debug/Test_general_coarse_hdcg_phys48.cc#L111
+  std::cout << Grid::GridLogMessage << "Writes to: " << fname << std::endl;
+  Grid::emptyUserRecord record;
+  Grid::ScidacWriter WR(in.Grid()->IsBoss());
+  WR.open(fname);
+  WR.writeScidacFieldRecord(in,record,0);
+  WR.close();
+#endif
+  // What is the appropriate way to throw error?
+}
+
+
 namespace Grid {
 
 struct LanczosParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParameters,
 		  		RealD, mass , 
+				Integer, Nstop,
+                                Integer, Nk,
+                                Integer, Np,
 	  			RealD, ChebyLow,
 	  			RealD, ChebyHigh,
 	  			Integer, ChebyOrder)
@@ -158,6 +176,10 @@ int main(int argc, char** argv) {
   }
 
   mass=LanParams.mass;
+  Nstop=LanParams.Nstop;
+  Nk=LanParams.Nk;
+  Np=LanParams.Np;
+  Nm = Nk + Np;
 
 
 while ( mass > - 5.0){
@@ -202,6 +224,12 @@ while ( mass > - 5.0){
     tmp = g5*evec[i];
     dot = innerProduct(tmp,evec[i]);
     std::cout << mass << " : " << eval[i]  << " " << real(dot) << " " << imag(dot)  << std::endl ;
+//    if ( i<1)
+    {
+	std::string evfile ("./evec_"+std::to_string(mass)+"_"+std::to_string(i));
+        auto evdensity = localInnerProduct(evec[i],evec[i] );
+	writeFile(evdensity,evfile);
+    }
   }
   src  = evec[0]+evec[1]+evec[2];
   mass += -0.1;
