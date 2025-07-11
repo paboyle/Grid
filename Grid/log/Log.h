@@ -180,6 +180,7 @@ extern GridLogger GridLogError;
 extern GridLogger GridLogWarning;
 extern GridLogger GridLogMessage;
 extern GridLogger GridLogDebug;
+extern GridLogger GridLogComms;
 extern GridLogger GridLogPerformance;
 extern GridLogger GridLogDslash;
 extern GridLogger GridLogIterative;

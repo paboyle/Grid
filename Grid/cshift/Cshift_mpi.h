@@ -186,6 +186,14 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
 			   recv_from_rank,
 			   bytes);
       acceleratorCopyToDevice(&hrecv_buf[0],&recv_buf[0],bytes);
+      std::cout << GridLogComms<< " Cshift: "
+		<<" dim"<<dimension
+		<<" shift "<<shift
+		<< " rank "<< grid->ThisRank()
+		<<" Coor "<<grid->ThisProcessorCoor()
+		<<" send "<<hsend_buf[0]<<" to   "<<xmit_to_rank
+		<<" recv "<<hrecv_buf[0]<<" from "<<recv_from_rank
+		<<std::endl;
 #endif
       FlightRecorder::StepLog("Cshift_SendRecv_complete");
 
@@ -326,6 +334,15 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
 			     recv_from_rank,
 			     bytes);
 	acceleratorCopyToDevice((void *)&hrecv_buf[0],(void *)recv_buf_extract_mpi,bytes);
+
+	std::cout << GridLogComms<< " Cshift_comms_simd: "
+		<<" dim"<<dimension
+		<<" shift "<<shift
+		<< " rank "<< grid->ThisRank()
+		<<" Coor "<<grid->ThisProcessorCoor()
+		<<" send "<<hsend_buf[0]<<" to   "<<xmit_to_rank
+		<<" recv "<<hrecv_buf[0]<<" from "<<recv_from_rank
+		<<std::endl;
 #endif
 
 	xbytes+=bytes;

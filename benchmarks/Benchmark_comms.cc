@@ -219,7 +219,8 @@ int main (int argc, char ** argv)
 	      int comm_proc = mpi_layout[mu]-1;
 	      Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
 	    }
-            int tid = omp_get_thread_num();
+	    //            int tid = omp_get_thread_num();
+	    int tid = 0;
 	    tbytes= Grid.StencilSendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,1,
 					       (void *)&rbuf[dir][0], recv_from_rank,1, bytes,tid);
 
