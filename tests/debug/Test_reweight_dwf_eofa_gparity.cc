@@ -83,6 +83,7 @@ std::vector<RealD> jack_stats(const std::vector<RealD>& data)
 
 int main(int argc, char **argv)
 {
+#ifdef ENABLE_GPARITY  
   Grid_init(&argc, &argv);
 
   // Initialize spacetime grid
@@ -206,4 +207,5 @@ int main(int argc, char **argv)
   std::cout << std::endl << "EOFA: rw = " << eofa_result[0] << " +/- " << eofa_result[1] << std::endl;
 
   Grid_finalize();
+#endif
 }

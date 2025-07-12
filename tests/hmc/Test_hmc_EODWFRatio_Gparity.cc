@@ -30,6 +30,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 
 int main(int argc, char **argv) {
+#ifdef ENABLE_GPARITY
   using namespace Grid;
    ;
 
@@ -139,7 +140,7 @@ int main(int argc, char **argv) {
   Grid_finalize();
 
 
-
+#endif
 
 } // main
 

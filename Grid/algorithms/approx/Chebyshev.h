@@ -269,7 +269,9 @@ public:
     RealD xscale = 2.0/(hi-lo);
     RealD mscale = -(hi+lo)/(hi-lo);
     Linop.HermOp(T0,y);
+    grid->Barrier();
     axpby(T1,xscale,mscale,y,in);
+    grid->Barrier();
 
     // sum = .5 c[0] T0 + c[1] T1
     //    out = ()*T0 + Coeffs[1]*T1;

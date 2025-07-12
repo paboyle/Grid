@@ -67,7 +67,7 @@ void acceleratorInit(void)
 	printf("AcceleratorCudaInit[%d]: Device identifier: %s\n",rank, prop.name);
 
 
-	GPU_PROP_FMT(totalGlobalMem,"%lld");
+	GPU_PROP_FMT(totalGlobalMem,"%zu");
 	GPU_PROP(managedMemory);
 	GPU_PROP(isMultiGpuBoard);
 	GPU_PROP(warpSize);
@@ -240,7 +240,7 @@ void acceleratorInit(void)
 
   char hostname[HOST_NAME_MAX+1];
   gethostname(hostname, HOST_NAME_MAX+1);
-  if ( rank==0 ) printf(" acceleratorInit world_rank %d is host %s \n",world_rank,hostname);
+  if ( rank==0 ) printf("AcceleratorSyclInit world_rank %d is host %s \n",world_rank,hostname);
 
   auto devices = sycl::device::get_devices();
   for(int d = 0;d<devices.size();d++){

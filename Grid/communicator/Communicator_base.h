@@ -183,6 +183,7 @@ public:
 		      int recv_from_rank,
 		      int bytes);
   
+  int IsOffNode(int rank);
   double StencilSendToRecvFrom(void *xmit,
 			       int xmit_to_rank,int do_xmit,
 			       void *recv,
@@ -201,9 +202,9 @@ public:
   void StencilSendToRecvFromPollIRecv(std::vector<CommsRequest_t> &list);
 
   double StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
-				    void *xmit,
+				    void *xmit,void *xmit_comp,
 				    int xmit_to_rank,int do_xmit,
-				    void *recv,
+				    void *recv,void *recv_comp,
 				    int recv_from_rank,int do_recv,
 				    int xbytes,int rbytes,int dir);
   

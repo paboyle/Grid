@@ -1,0 +1,17 @@
+export grid_config=/home/paboyle/GPT/install/bin/grid-config
+libs=`$grid_config --libs`
+ldflags=`$grid_config --ldflags`
+cxxflags=`$grid_config --cxxflags`
+cxx=`$grid_config --cxx`
+cc=icx
+
+mkdir build
+cd build
+
+echo CC $cc
+echo CXX $cxx
+echo CXXFLAGS $cxxflags
+echo LDFLAGS  $ldflags
+echo LIBS  $libs
+
+LDFLAGS="$ldflags $libs " cmake .. -DCMAKE_C_COMPILER=$cc -DCMAKE_CXX_COMPILER="$cxx" -DCMAKE_CXX_FLAGS="$cxxflags "

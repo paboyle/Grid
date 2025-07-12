@@ -62,7 +62,7 @@ int VerifyOnDevice(const FermionField &res, FermionField &ref)
     if (((random()&0xF)==0)&&injection) {
       uint64_t sF = random()%(NN);
       int lane=0;
-      printf("Error injection site %ld on rank %d\n",sF,res.Grid()->ThisRank());
+      printf("Error injection site %ld on rank %d\n",(long)sF,res.Grid()->ThisRank());
       auto vv = acceleratorGet(res_v[sF]);
       double *dd = (double *)&vv;
       *dd=M_PI;

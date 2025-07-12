@@ -154,6 +154,12 @@ public:
   StencilImpl Stencil;
   StencilImpl StencilEven;
   StencilImpl StencilOdd;
+  void SloppyComms(int sloppy)
+  {
+    Stencil.SetSloppyComms(sloppy);
+    StencilEven.SetSloppyComms(sloppy);
+    StencilOdd.SetSloppyComms(sloppy);
+  }
 
   // Copy of the gauge field , with even and odd subsets
   DoubledGaugeField Umu;

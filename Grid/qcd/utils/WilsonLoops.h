@@ -292,19 +292,21 @@ public:
   //////////////////////////////////////////////////
   // the sum over all nu-oriented staples for nu != mu on each site
   //////////////////////////////////////////////////
-  static void Staple(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
+  static void Staple(GaugeMat &staple, const GaugeLorentz &U, int mu) {
 
-    GridBase *grid = Umu.Grid();
-
-    std::vector<GaugeMat> U(Nd, grid);
+    std::vector<GaugeMat> Umu(Nd, U.Grid());
     for (int d = 0; d < Nd; d++) {
-      U[d] = PeekIndex<LorentzIndex>(Umu, d);
+      Umu[d] = PeekIndex<LorentzIndex>(U, d);
     }
-    Staple(staple, U, mu);
+    Staple(staple, Umu, mu);
   }
 
-  static void Staple(GaugeMat &staple, const std::vector<GaugeMat> &U, int mu) {
-    staple = Zero();
+  static void Staple(GaugeMat &staple, const std::vector<GaugeMat> &Umu, int mu) {
+
+    autoView(staple_v, staple, AcceleratorWrite);
+    accelerator_for(i, staple.Grid()->oSites(), Simd::Nsimd(), {
+        staple_v[i] = Zero();
+    });
 
     for (int nu = 0; nu < Nd; nu++) {
 
@@ -318,12 +320,12 @@ public:
         //      |
         //    __|
         //
-     
+
         staple += Gimpl::ShiftStaple(
 				     Gimpl::CovShiftForward(
-							    U[nu], nu,
+							    Umu[nu], nu,
 							    Gimpl::CovShiftBackward(
-										    U[mu], mu, Gimpl::CovShiftIdentityBackward(U[nu], nu))),
+										    Umu[mu], mu, Gimpl::CovShiftIdentityBackward(Umu[nu], nu))),
 				     mu);
 
         //  __
@@ -333,8 +335,8 @@ public:
         //
 
         staple += Gimpl::ShiftStaple(
-				     Gimpl::CovShiftBackward(U[nu], nu,
-							     Gimpl::CovShiftBackward(U[mu], mu, U[nu])), mu);
+				     Gimpl::CovShiftBackward(Umu[nu], nu,
+							     Gimpl::CovShiftBackward(Umu[mu], mu, Umu[nu])), mu);
       }
     }
   }

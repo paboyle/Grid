@@ -147,9 +147,11 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
     int comm_proc = ((x+sshift)/rd)%pd;
     
     if (comm_proc==0) {
+      FlightRecorder::StepLog("Cshift_Copy_plane");
       tcopy-=usecond();
       Copy_plane(ret,rhs,dimension,x,sx,cbmask); 
       tcopy+=usecond();
+      FlightRecorder::StepLog("Cshift_Copy_plane_complete");
     } else {
 
       int words = buffer_size;
@@ -157,9 +159,11 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
 
       int bytes = words * sizeof(vobj);
 
+      FlightRecorder::StepLog("Cshift_Gather_plane");
       tgather-=usecond();
       Gather_plane_simple (rhs,send_buf,dimension,sx,cbmask);
       tgather+=usecond();
+      FlightRecorder::StepLog("Cshift_Gather_plane_complete");
 
       //      int rank           = grid->_processor;
       int recv_from_rank;
@@ -170,6 +174,7 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
       tcomms-=usecond();
       grid->Barrier();
 
+      FlightRecorder::StepLog("Cshift_SendRecv");
 #ifdef ACCELERATOR_AWARE_MPI
       grid->SendToRecvFrom((void *)&send_buf[0],
 			   xmit_to_rank,
@@ -186,10 +191,12 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
 			   bytes);
       acceleratorCopyToDevice(&hrecv_buf[0],&recv_buf[0],bytes);
 #endif
+      FlightRecorder::StepLog("Cshift_SendRecv_complete");
 
       xbytes+=bytes;
       grid->Barrier();
       tcomms+=usecond();
+      FlightRecorder::StepLog("Cshift_barrier_complete");
 
       tscatter-=usecond();
       Scatter_plane_simple (ret,recv_buf,dimension,x,cbmask);

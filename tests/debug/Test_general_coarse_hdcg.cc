@@ -195,8 +195,8 @@ int main (int argc, char ** argv)
 
   int Nk=nrhs;
   int Nm=Nk*3;
-  int Nk=36;
-  int Nm=144;
+  //  int Nk=36;
+  //  int Nm=144;
   int Nstop=Nk;
   int Nconv_test_interval=1;
   

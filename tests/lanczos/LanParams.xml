@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<grid>
+  <LanczosParameters>
+    <mass>0.00107</mass>
+    <M5>1.8</M5>
+    <Ls>48</Ls>
+    <Nstop>10</Nstop>
+    <Nk>15</Nk>
+    <Np>85</Np>
+    <ChebyLow>0.003</ChebyLow>
+    <ChebyHigh>60</ChebyHigh>
+    <ChebyOrder>201</ChebyOrder>
+  </LanczosParameters>
+</grid>

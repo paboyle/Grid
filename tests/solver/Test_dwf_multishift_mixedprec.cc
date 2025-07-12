@@ -165,6 +165,7 @@ int main (int argc, char ** argv)
     }
   }
   if(gparity){
+#ifdef ENABLE_GPARITY
     std::cout << "Running test with G-parity BCs in " << gpdir << " direction" << std::endl;
     GparityWilsonImplParams params;
     params.twists[gpdir] = 1;
@@ -174,6 +175,9 @@ int main (int argc, char ** argv)
     ConjugateGimplD::setDirections(conj_dirs);
 
     run_test<GparityDomainWallFermionD, GparityDomainWallFermionF, ConjugateGaugeStatistics>(argc,argv,params);
+#else
+    std::cout << " Gparity is not compiled "<<std::endl;
+#endif
   }else{
     std::cout << "Running test with periodic BCs" << std::endl;
     WilsonImplParams params;

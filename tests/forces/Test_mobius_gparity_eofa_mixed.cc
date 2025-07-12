@@ -30,9 +30,10 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 #include <Grid/Grid.h>
 
+#ifdef ENABLE_GPARITY
+
 using namespace std;
 using namespace Grid;
- ;
 
 typedef GparityWilsonImplD FermionImplPolicyD;
 typedef GparityMobiusEOFAFermionD FermionActionD;
@@ -231,3 +232,7 @@ int main (int argc, char** argv)
   std::cout << GridLogMessage << "Done" << std::endl;
   Grid_finalize();
 }
+#else
+int main(int argc,char ** argv) { return 0;};
+
+#endif

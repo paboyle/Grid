@@ -32,6 +32,7 @@ using namespace std;
 using namespace Grid;
 
 //Here we test the G-parity action and force between the 1f (doubled-lattice) and 2f approaches 
+#ifdef ENABLE_GPARITY
 
 
 void copyConjGauge(LatticeGaugeFieldD &Umu_1f, const LatticeGaugeFieldD &Umu_2f, const int nu){
@@ -444,3 +445,7 @@ int main (int argc, char ** argv)
     assert(0);
   }
 }
+
+#else
+int main (int argc, char ** argv){};
+#endif

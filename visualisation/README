@@ -1,0 +1,153 @@
+========================================
+Visualisation of Grid / SciDAC format density fields using VTK (visualisation toolkit). Peter Boyle, 2025.
+========================================
+
+Uses:
+
+https://vtk.org
+
+Files are, for example, those produced by
+     Grid/HMC/ComputeWilsonFlow.cc
+and
+     Grid/HMC/site_plaquette.cc
+
+========================================
+Prerequisites:
+========================================
+
+
+1) Install ffmpeg-7.0.2  (developer install, includes headers and libraries).
+   MacOS note: must install ffmpeg from source -- homebrew only installs binaries.
+
+   https://ffmpeg.org/download.html#releases
+
+
+   Note: the latest ffmpeg (7.1.1) broke software compatibility with VTK.
+
+
+2) Build and install VTK-9.4.2, with FFMEG support enabled.
+
+   This is particularly involved on MacOS, so documented here.
+
+   cd VTK-9.4.2
+   mkdir build
+   cd build
+   ccmake ..
+
+
+Using ccmake editor, set:
+
+   FFMPEG_DIR                       /usr/local      
+
+Toggle "advanced mode" (t)
+
+Set:
+   CMAKE_EXE_LINKER_FLAGS 
+CMAKE_MODULE_LINKER_FLAGS 
+CMAKE_SHARED_LINKER_FLAGS 
+each to:
+   
+   -framework Foundation -framework AudioToolbox -framework CoreAudio -liconv -lm -framework AVFoundation -framework CoreVideo -framework CoreMedia -framework CoreGraphics -framework AudioToolbox -framework OpenGL -framework OpenGL -framework VideoToolbox -framework CoreImage -framework AppKit -framework CoreFoundation -framework CoreServices -lz -lbz2 -Wl,-framework,CoreFoundation -Wl,-framework,Security -L/usr/local/lib -lavdevice -lavfilter -lavformat -lavcodec -lswresample -lswscale -lavutil
+
+   Set paths for each of 
+ FFMPEG_DIR                       /usr/local                                                                                                                                                                                              
+ FFMPEG_avcodec_INCLUDE_DIR       /usr/local/include                                                                                                                                                                                      
+ FFMPEG_avcodec_LIBRARY           /usr/local/lib/libavcodec.a                                                                                                                                                                             
+ FFMPEG_avdevice_INCLUDE_DIR      /usr/local/include                                                                                                                                                                                      
+ FFMPEG_avdevice_LIBRARY          /usr/local/lib/libavdevice.a                                                                                                                                                                            
+ FFMPEG_avfilter_INCLUDE_DIR      /usr/local/include                                                                                                                                                                                      
+ FFMPEG_avfilter_LIBRARY          /usr/local/lib/libavfilter.a                                                                                                                                                                            
+ FFMPEG_avformat_INCLUDE_DIR      /usr/local/include                                                                                                                                                                                      
+ FFMPEG_avformat_LIBRARY          /usr/local/lib/libavformat.a                                                                                                                                                                            
+ FFMPEG_avresample_INCLUDE_DIR    /usr/local/include                                                                                                                                                                                      
+ FFMPEG_avresample_LIBRARY        /usr/local/lib/libavresample.a                                                                                                                                                                          
+ FFMPEG_avutil_INCLUDE_DIR        /usr/local/include                                                                                                                                                                                      
+ FFMPEG_avutil_LIBRARY            /usr/local/lib/libavutil.a                                                                                                                                                                              
+ FFMPEG_swresample_INCLUDE_DIR    /usr/local/include                                                                                                                                                                                      
+ FFMPEG_swresample_LIBRARY        /usr/local/lib/libswresample.a                                                                                                                                                                          
+ FFMPEG_swscale_INCLUDE_DIR       /usr/local/include                                                                                                                                                                                      
+ FFMPEG_swscale_LIBRARY           /usr/local/lib/libswscale.a      
+
+ VTK_MODULE_ENABLE_VTK_IOFFMPEG   YES                                                                                                                                                                                                     
+
+
+   VTK really should make it easier to pick up the flags required for FFMPEG linkage, especially as they are very quirky on MacOS.
+
+========================================
+Aurora compilation:
+========================================
+module load ffmpeg
+download & untar: VTK-7.0.2
+mkdir build
+cd build 
+ccmake ../
+
+"t"
+Enable: VTK_MODULE_ENABLE_VTK_IOFFMPEG   YES   
+"configure" ; should "discover" the installed ffmpeg module
+
+Still need an "X" connection to make the MPEG files.
+
+
+========================================
+Grid:
+========================================
+
+3) Build and install a version of Grid
+
+4) Ensure "grid-config" is in your path.
+
+5) cd Grid/visualisation/
+   libs=`grid-config --libs`
+   ldflags=`grid-config --ldflags`
+   cxxflags=`grid-config --cxxflags`
+   cxx=`grid-config --cxx`
+
+   mkdir build
+   cd build
+
+   LDFLAGS="$ldflags $libs " cmake .. -DCMAKE_CXX_COMPILER=$cxx -DCMAKE_CXX_FLAGS=$cxxflags 
+
+   make
+   
+6) Invoke as:
+
+   FieldDensityAnimate --isosurface <float-from-0-to-5> --grid X.Y.Z.T --file1 SciDacDensityFile1 [--xlate] [--mpeg] 
+   FieldDensityAnimate --isosurface <float-from-0-to-5> --grid X.Y.Z.T --file1 SciDacDensityFile1 --file2 SciDacDensityFile2 [--xlate] [--mpeg] 
+
+==================================
+Extensions
+==================================
+
+7) Direct calling from Grid ?:
+
+   Not yet implemented, but could develop sufficient interface to write a Lattice scalar field into MPEG direct from running code.
+
+8) Example python code: FieldDensity.py . This is not interfaced to Grid.
+
+================
+Windowless generation of AVI files: must enable offscreen rendering. From Shuhei Yamamoto:
+================
+Hi Peter,
+ 
+To make visualization work on Frontier, I did the following.
+ 
+For headless off-screen rendering, ccmake tabs in advanced mode shown below are set as indicated.
+VTK_OPENGL_HAS_* off  
+VTK_USE_X off  
+VTK_DEFAULT_RENDER_WINDOW_OFFSCREEN on
+VTK_DEFAULT_RENDER_WINDOW_HEADLESS on 
+The list can be greater than necessary.
+ 
+VTK can fall back to EGL or OSMesa at runtime. So I installed mesa via spack (as well as nasm and yasm).  Either mesa or meson package requires llvm-config, which is included after rocm6.1.  On Frontier, I used /opt/rocm-6.2.4.  The only problem is that llvm-config is located on /opt/rocm-6.2.4/llvm/bin, instead of /opt/rocm-6.2.4/bin.  So I edited packages.yaml for spack so that the prefix for rocm compiler is /opt/rocm-6.2.4/llvm.  Just in case, I also changed c and cxx to /opt/rocm-6.2.4/llvm/bin/amdclang, amdclang++, respectively, but this change might not be necessary. 
+After installation, I added a path to libOSMesa.so to LD_LIBRARY_PATH, for which there might be a better way such as specifying -rpath for OSMesa lib by editing cmake files.
+ 
+In addition, I have editied CMakeLists.txt for vtk to force vtk to find OSMesa package via find_package(OSMesa REQUIRED) after list(INSERT CMAKE_MODULE_PATH 0 "${vtk_cmake_dir}"), as there is Find package in vtk/CMake.  There will be more elegant method, but I was not able to find a tab to switch on OSMesa. 
+ 
+When I compiled vtk and linked to Grid visualization code, with ffmpeg option, it produces avi file.
+ 
+Best,
+Shuhei
+
+
+

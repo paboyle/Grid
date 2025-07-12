@@ -122,10 +122,10 @@ void GlobalSharedMemory::SharedMemoryZero(void *dest,size_t bytes)
 {
   acceleratorMemSet(dest,0,bytes);
 }
-void GlobalSharedMemory::SharedMemoryCopy(void *dest,void *src,size_t bytes)
-{
-  acceleratorCopyToDevice(src,dest,bytes);
-}
+//void GlobalSharedMemory::SharedMemoryCopy(void *dest,void *src,size_t bytes)
+//{
+//  acceleratorCopyToDevice(src,dest,bytes);
+//}
 ////////////////////////////////////////////////////////
 // Global shared functionality finished
 // Now move to per communicator functionality

@@ -215,7 +215,7 @@ inline void *acceleratorAllocHost(size_t bytes)
   auto err = cudaMallocHost((void **)&ptr,bytes);
   if( err != cudaSuccess ) {
     ptr = (void *) NULL;
-    printf(" cudaMallocHost failed for %d %s \n",bytes,cudaGetErrorString(err));
+    printf(" cudaMallocHost failed for %zu %s \n",bytes,cudaGetErrorString(err));
     assert(0);
   }
   return ptr;
@@ -226,7 +226,7 @@ inline void *acceleratorAllocShared(size_t bytes)
   auto err = cudaMallocManaged((void **)&ptr,bytes);
   if( err != cudaSuccess ) {
     ptr = (void *) NULL;
-    printf(" cudaMallocManaged failed for %d %s \n",bytes,cudaGetErrorString(err));
+    printf(" cudaMallocManaged failed for %zu %s \n",bytes,cudaGetErrorString(err));
     assert(0);
   }
   return ptr;
@@ -237,7 +237,7 @@ inline void *acceleratorAllocDevice(size_t bytes)
   auto err = cudaMalloc((void **)&ptr,bytes);
   if( err != cudaSuccess ) {
     ptr = (void *) NULL;
-    printf(" cudaMalloc failed for %d %s \n",bytes,cudaGetErrorString(err));
+    printf(" cudaMalloc failed for %zu %s \n",bytes,cudaGetErrorString(err));
   }
   return ptr;
 };
@@ -251,7 +251,7 @@ inline void acceleratorCopyToDevice(const void *from,void *to,size_t bytes)  { c
 inline void acceleratorCopyFromDevice(const void *from,void *to,size_t bytes){ cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToHost);}
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { cudaMemset(base,value,bytes);}
 inline acceleratorEvent_t acceleratorCopyToDeviceAsynch(void *from, void *to, size_t bytes, cudaStream_t stream = copyStream) {
-  acceleratorCopyToDevice(to,from,bytes, cudaMemcpyHostToDevice);
+  acceleratorCopyToDevice(from,to,bytes);
   return 0;
 }
 inline acceleratorEvent_t acceleratorCopyFromDeviceAsynch(void *from, void *to, size_t bytes, cudaStream_t stream = copyStream) {
@@ -339,7 +339,7 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
     cgh.parallel_for(							\
 		     sycl::nd_range<3>(global,local),			\
 		     [=] (sycl::nd_item<3> item) /*mutable*/		\
-		     [[intel::reqd_sub_group_size(16)]]			\
+		     [[sycl::reqd_sub_group_size(16)]]			\
 		     {							\
 		       auto iter1    = item.get_global_id(0);		\
 		       auto iter2    = item.get_global_id(1);		\
@@ -614,6 +614,8 @@ inline void acceleratorMem(void)
 
 accelerator_inline int acceleratorSIMTlane(int Nsimd) { return 0; } // CUDA specific
 
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { thread_bcopy(from,to,bytes); }
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes)  { thread_bcopy(from,to,bytes); }
 inline acceleratorEvent_t acceleratorCopyToDeviceAsynch(void *from,void *to,size_t bytes)        { acceleratorCopyToDevice(from,to,bytes); return 0; }
 inline acceleratorEvent_t acceleratorCopyFromDeviceAsynch(void *from,void *to,size_t bytes)      { acceleratorCopyFromDevice(from,to,bytes); return 0; }
 inline void acceleratorEventWait(acceleratorEvent_t ev){}

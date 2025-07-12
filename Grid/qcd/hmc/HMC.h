@@ -264,9 +264,11 @@ public:
       	std::cout << GridLogHMC << "-- Thermalization" << std::endl;
       }
       
+      Grid_heartbeat();
+      
       double t0=usecond();
       Ucopy = Ucur;
-
+      
       DeltaH = evolve_hmc_step(Ucopy);
       // Metropolis-Hastings test
       bool accept = true;
@@ -281,6 +283,8 @@ public:
       
       double t1=usecond();
       std::cout << GridLogHMC << "Total time for trajectory (s): " << (t1-t0)/1e6 << std::endl;
+
+      Grid_heartbeat_off();
 
       TheIntegrator.print_timer();
       

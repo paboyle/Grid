@@ -62,15 +62,15 @@ accelerator_inline int stencilIndex(int mu, int nu) {
 
 
 /*!  @brief structure holding the link treatment */
-struct SmearingParameters{
-    SmearingParameters(){}
+struct HISQSmearingParameters{
+    HISQSmearingParameters(){}
     Real c_1;               // 1 link
     Real c_naik;            // Naik term
     Real c_3;               // 3 link
     Real c_5;               // 5 link
     Real c_7;               // 7 link
     Real c_lp;              // 5 link Lepage
-    SmearingParameters(Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) 
+    HISQSmearingParameters(Real c1, Real cnaik, Real c3, Real c5, Real c7, Real clp) 
         : c_1(c1),
           c_naik(cnaik),
           c_3(c3),
@@ -86,7 +86,7 @@ class Smear_HISQ : public Gimpl {
 
 private:
     GridCartesian* const _grid;
-    SmearingParameters _linkTreatment;
+    HISQSmearingParameters _linkTreatment;
 
 public:
 
@@ -117,7 +117,7 @@ public:
     //          IN--u_thin
     void smear(GF& u_smr, GF& u_naik, GF& u_thin) const {
 
-        SmearingParameters lt = this->_linkTreatment;
+        HISQSmearingParameters lt = this->_linkTreatment;
         auto grid = this->_grid;
 
         // Create a padded cell of extra padding depth=1 and fill the padding.

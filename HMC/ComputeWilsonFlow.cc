@@ -66,6 +66,7 @@ namespace Grid{
   };
 }
 
+
 template <class T> void writeFile(T& in, std::string const fname){  
 #ifdef HAVE_LIME
   // Ref: https://github.com/paboyle/Grid/blob/feature/scidac-wp1/tests/debug/Test_general_coarse_hdcg_phys48.cc#L111
@@ -74,7 +75,7 @@ template <class T> void writeFile(T& in, std::string const fname){
   Grid::emptyUserRecord record;
   Grid::ScidacWriter WR(in.Grid()->IsBoss());
   WR.open(fname);
-  WR.writeScidacFieldRecord(in,record,0);
+  WR.writeScidacFieldRecord(in,record,0); // Lexico
   WR.close();
 #endif
   // What is the appropriate way to throw error?
@@ -108,8 +109,18 @@ int main(int argc, char **argv) {
 
   for (int conf = CPar.StartConfiguration; conf <= CPar.EndConfiguration; conf+= CPar.Skip){
 
+#if 0    
   CPNersc.CheckpointRestore(conf, Umu, sRNG, pRNG);
+#else
+  // Don't require Grid format RNGs
+  FieldMetaData header;
+  std::string file, filesmr;
+  file    = CPar.conf_path + "/" + CPar.conf_prefix      + "." + std::to_string(conf);
+  filesmr = CPar.conf_path + "/" + CPar.conf_smr_prefix  + "." + std::to_string(conf);
 
+  NerscIO::readConfiguration(Umu,header,file);
+#endif
+  
   std::cout << std::setprecision(15);
   std::cout << GridLogMessage << "Initial plaquette: "<< WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu) << std::endl;
   
@@ -117,6 +128,7 @@ int main(int argc, char **argv) {
   std::string file_post = CPar.conf_prefix + "." + std::to_string(conf);
 
   WilsonFlow<PeriodicGimplR> WF(WFPar.step_size,WFPar.steps,WFPar.meas_interval);
+  
   WF.addMeasurement(WFPar.meas_interval_density, [&file_pre,&file_post,&conf](int step, RealD t, const typename PeriodicGimplR::GaugeField &U){
     
     typedef typename PeriodicGimplR::GaugeLinkField GaugeMat;
@@ -133,7 +145,6 @@ int main(int argc, char **argv) {
     //However as  F_numu = -F_munu, only need to sum the trace of the squares of the following 6 field strengths:
     //F_01 F_02 F_03   F_12 F_13  F_23
     GaugeMat F(U.Grid());
-    //LatticeComplexD R(U.Grid());
     ComplexField R(U.Grid());
     R = Zero();
   
@@ -173,7 +184,12 @@ int main(int argc, char **argv) {
     writeFile(R,efile);
     std::string tfile = file_pre + "Top_dnsty_" + std::to_string(tau) + "_" + file_post;
     writeFile(qfield,tfile);
-
+    std::string ufile = file_pre + "U_" + std::to_string(tau) + "_" + file_post;
+    {
+      //      PeriodicGimplR::GaugeField Ucopy = U;
+      //      NerscIO::writeConfiguration(Ucopy,ufile);
+    }
+    
     RealD E = real(sum(R))/ RealD(U.Grid()->gSites());
     RealD T = real( sum(qfield) );
     Coordinate scoor; for (int mu=0; mu < Nd; mu++) scoor[mu] = 0;
@@ -186,15 +202,19 @@ int main(int argc, char **argv) {
   
   int t=WFPar.maxTau;
   WF.smear(Uflow, Umu);
-
+  //  NerscIO::writeConfiguration(Uflow,filesmr);
+  
+  
   RealD WFlow_plaq = WilsonLoops<PeriodicGimplR>::avgPlaquette(Uflow);
   RealD WFlow_TC   = WilsonLoops<PeriodicGimplR>::TopologicalCharge(Uflow);
+  RealD WFlow_TC5Li   = WilsonLoops<PeriodicGimplR>::TopologicalCharge5Li(Uflow);
   RealD WFlow_T0   = WF.energyDensityPlaquette(t,Uflow); // t
   RealD WFlow_EC   = WF.energyDensityCloverleaf(t,Uflow);
-  std::cout << GridLogMessage << "Plaquette          "<< conf << "   " << WFlow_plaq << std::endl;
-  std::cout << GridLogMessage << "T0                 "<< conf << "   " << WFlow_T0 << std::endl;
-  std::cout << GridLogMessage << "TC0                 "<< conf << "   " << WFlow_EC << std::endl;
-  std::cout << GridLogMessage << "TopologicalCharge  "<< conf << "   " << WFlow_TC   << std::endl;
+  std::cout << GridLogMessage << "Plaquette            "<< conf << "   " << WFlow_plaq << std::endl;
+  std::cout << GridLogMessage << "T0                   "<< conf << "   " << WFlow_T0 << std::endl;
+  std::cout << GridLogMessage << "TC0                  "<< conf << "   " << WFlow_EC << std::endl;
+  std::cout << GridLogMessage << "TopologicalCharge    "<< conf << "   " << WFlow_TC   << std::endl;
+  std::cout << GridLogMessage << "TopologicalCharge5Li "<< conf << "   " << WFlow_TC5Li<< std::endl;
 
   std::cout<< GridLogMessage << " Admissibility check:\n";
   const double sp_adm = 0.067;                // admissible threshold
