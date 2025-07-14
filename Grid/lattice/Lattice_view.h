@@ -133,7 +133,9 @@ class ViewCloser
 
     switch (mode) {
     case AcceleratorWrite:
+    case AcceleratorWriteDiscard:
     case CpuWrite:
+    // case CpuWriteDiscard: <- this is a duplicate of CpuWrite (does not make sense to differentiate)
       ViewLogger::Log(filename, line, -1, mode, &v[0], v.size() * sizeof(v[0]));
       break;
     }
