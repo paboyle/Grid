@@ -372,4 +372,53 @@ void FlightRecorder::recvLog(void *buf,uint64_t bytes,int rank)
   }
 }
 
+#ifdef GRID_LOG_VIEWS
+
+bool ViewLogger::Enabled = false;
+std::vector<ViewLogger::Entry_t> ViewLogger::LogVector;
+
+void ViewLogger::Begin() { Enabled = true; LogVector.resize(0); }
+void ViewLogger::End() { Enabled = false; }
+
+void ViewLogger::Log(const char* filename, int line, int index, int mode, void* data, uint64_t bytes)
+{
+  if (!Enabled)
+   return;
+   
+  size_t i = LogVector.size();
+  LogVector.resize(i + 1);
+  auto & n = LogVector[i];
+
+  n.filename = filename;
+  n.line = line;
+  n.index = index;
+
+  if (bytes < sizeof(uint64_t)) {
+    
+    n.head = n.tail = 0;
+    
+  } else {
+  
+    switch (mode) {
+    case AcceleratorRead:
+    case AcceleratorWrite:
+    case AcceleratorWriteDiscard:
+      acceleratorCopyFromDevice((char*)data, &n.head, sizeof(uint64_t));
+      acceleratorCopyFromDevice((char*)data + bytes - sizeof(uint64_t), &n.tail, sizeof(uint64_t));
+      break;
+      
+    case CpuRead:
+    case CpuWrite:
+      //case CpuWriteDiscard:
+      n.head = *(uint64_t*)data;
+      n.tail = *(uint64_t*)((char*)data + bytes - sizeof(uint64_t));
+      break;
+    }
+  }
+}
+
+#endif
+
+
+
 NAMESPACE_END(Grid);

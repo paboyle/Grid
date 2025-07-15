@@ -192,6 +192,11 @@ public:
 
   void ViewClose(void)  {  }
 
+#ifdef GRID_LOG_VIEWS
+  size_t size() { return 0; };
+  uint64_t & operator[](size_t i) { static uint64_t v=0; return v; };
+#endif
+  
 };
 
 ////////////////////////////////////////

@@ -416,12 +416,28 @@ void Grid_init(int *argc,char ***argv)
   } else { 
     FILE *fp;
     std::ostringstream fname;
+
+    int rank = CartesianCommunicator::RankWorld();
+    int radix=64;
+    char* root = getenv("GRID_STDOUT_ROOT");
+    if (root) {
+      fname << root ;
+      mkdir(fname.str().c_str(), S_IRWXU );
+      fname << "/";
+    }
+    fname << (rank/radix)*radix ;
+    mkdir(fname.str().c_str(), S_IRWXU );
+    fname << "/";
     fname<<"Grid.stdout.";
     fname<<CartesianCommunicator::RankWorld();
     fp=freopen(fname.str().c_str(),"w",stdout);
     assert(fp!=(FILE *)NULL);
 
     std::ostringstream ename;
+    if (root){
+      ename << root << "/";
+    }
+    ename << (rank/radix)*radix << "/";
     ename<<"Grid.stderr.";
     ename<<CartesianCommunicator::RankWorld();
     fp=freopen(ename.str().c_str(),"w",stderr);

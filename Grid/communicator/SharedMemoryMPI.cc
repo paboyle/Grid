@@ -43,10 +43,6 @@ Author: Christoph Lehner <christoph@lhnr.de>
 #define GRID_SYCL_LEVEL_ZERO_IPC
 #define SHM_SOCKETS
 #else
-#ifdef HAVE_NUMAIF_H
-  #warning " Using NUMAIF "
-#include <numaif.h>
-#endif 
 #endif 
 #include <syscall.h>
 #endif

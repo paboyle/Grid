@@ -10,10 +10,11 @@ export UNWIND=`spack find --paths libunwind  | grep ^libunwind  | awk '{print $2
 	--disable-gparity \
 	--disable-fermion-reps \
 	--enable-shm=nvlink \
+	--enable-checksum-comms=yes \
+	--enable-log-views=yes \
 	--enable-accelerator=sycl \
 	--enable-accelerator-aware-mpi=no \
 	--enable-unified=no \
-	--enable-debug \
 	--with-lime=$CLIME \
 	--with-gmp=$GMP \
 	--with-mpfr=$MPFR \
