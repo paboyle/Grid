@@ -1961,8 +1961,8 @@ private:
 #ifndef PRINT_SNAPSHOTS
       }
 #else
-        RealD impl_5Li = WilsonLoops<PeriodicGimplR>::TopologicalCharge5Li(U);
-        std::cout << GridLogMessage << "[SmearedConfigurationMasked] smeared 5Li at " + smearLvl + " : " << impl_5Li << std::endl;
+        RealD impl_5Li = WilsonLoops<PeriodicGimplR>::TopologicalCharge5Li(previous_u);
+        std::cout << GridLogMessage << "[SmearedConfigurationMasked] smeared 5Li at " << smearLvl << " : " << impl_5Li << std::endl;
       }
       RealD intmdt_lnDetJ = logDetJacobian();
       std::cout << GridLogMessage << "GaugeConfigurationMasked: Intermediate Jacobian " << intmdt_lnDetJ << std::endl;

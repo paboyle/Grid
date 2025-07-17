@@ -263,8 +263,10 @@ public:
       if (traj < Params.StartTrajectory + Params.NoMetropolisUntil) {
       	std::cout << GridLogHMC << "-- Thermalization" << std::endl;
       }
-      
+
+#ifndef PRINT_SNAPSHOTS
       Grid_heartbeat();
+#endif
       
       double t0=usecond();
       Ucopy = Ucur;
@@ -284,7 +286,9 @@ public:
       double t1=usecond();
       std::cout << GridLogHMC << "Total time for trajectory (s): " << (t1-t0)/1e6 << std::endl;
 
+#ifndef PRINT_SNAPSHOTS
       Grid_heartbeat_off();
+#endif
 
       TheIntegrator.print_timer();
       
