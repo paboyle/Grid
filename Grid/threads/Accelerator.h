@@ -346,7 +346,7 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 		     });						\
   });
 
-#define accelerator_barrier(dummy) { theGridAccelerator->wait(); }
+#define accelerator_barrier(dummy) { theGridAccelerator->wait(); theGridAccelerator->wait(); }
 
 inline void *acceleratorAllocShared(size_t bytes){ return malloc_shared(bytes,*theGridAccelerator);};
 inline void *acceleratorAllocHost(size_t bytes)  { return malloc_host(bytes,*theGridAccelerator);};
@@ -355,7 +355,7 @@ inline void acceleratorFreeHost(void *ptr){free(ptr,*theGridAccelerator);};
 inline void acceleratorFreeShared(void *ptr){free(ptr,*theGridAccelerator);};
 inline void acceleratorFreeDevice(void *ptr){free(ptr,*theGridAccelerator);};
 
-inline void acceleratorCopySynchronise(void) {  theCopyAccelerator->wait(); }
+inline void acceleratorCopySynchronise(void) {  theCopyAccelerator->wait(); theCopyAccelerator->wait(); }
 
 
 ///////
@@ -377,9 +377,9 @@ inline acceleratorEvent_t acceleratorCopyDeviceToDeviceAsynch(void *from,void *t
 inline acceleratorEvent_t acceleratorCopyToDeviceAsynch(void *from,void *to,size_t bytes)        { return theCopyAccelerator->memcpy(to,from,bytes); }
 inline acceleratorEvent_t acceleratorCopyFromDeviceAsynch(void *from,void *to,size_t bytes)      { return theCopyAccelerator->memcpy(to,from,bytes); }
 
-inline void acceleratorCopyToDevice(const void *from,void *to,size_t bytes)  { theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait();}
-inline void acceleratorCopyFromDevice(const void *from,void *to,size_t bytes){ theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait();}
-inline void acceleratorMemSet(void *base,int value,size_t bytes) { theCopyAccelerator->memset(base,value,bytes); theCopyAccelerator->wait();}
+inline void acceleratorCopyToDevice(const void *from,void *to,size_t bytes)  { theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait();theCopyAccelerator->wait();}
+inline void acceleratorCopyFromDevice(const void *from,void *to,size_t bytes){ theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait();theCopyAccelerator->wait();}
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { theCopyAccelerator->memset(base,value,bytes); theCopyAccelerator->wait();theCopyAccelerator->wait();}
 
 inline int  acceleratorIsCommunicable(void *ptr)
 {
@@ -652,7 +652,7 @@ inline void acceleratorFreeCpu  (void *ptr){free(ptr);};
 //////////////////////////////////////////////
 
 #ifdef GRID_SYCL
-inline void acceleratorFenceComputeStream(void){ theGridAccelerator->ext_oneapi_submit_barrier(); };
+inline void acceleratorFenceComputeStream(void){ theGridAccelerator->ext_oneapi_submit_barrier(); theGridAccelerator->ext_oneapi_submit_barrier(); };
 #else
 // Ordering within a stream guaranteed on Nvidia & AMD
 inline void acceleratorFenceComputeStream(void){ };
