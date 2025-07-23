@@ -317,13 +317,11 @@ extern sycl::queue *theCopyAccelerator;
 #define accelerator 
 #define accelerator_inline strong_inline
 
-accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 #ifdef GRID_SIMT
- return __spirv::initLocalInvocationId<3, sycl::id<3>>()[2]; 
+#define acceleratorSIMTlane(Nsimd) _lane
 #else
- return 0;
+#define acceleratorSIMTlane(Nsimd) 0
 #endif
-} // SYCL specific
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   theGridAccelerator->submit([&](sycl::handler &cgh) {		\
@@ -341,7 +339,7 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 		     {							\
 		       auto iter1    = item.get_global_id(0);		\
 		       auto iter2    = item.get_global_id(1);		\
-		       auto lane     = item.get_global_id(2);		\
+		       auto _lane     = item.get_global_id(2);		\
 		       { if (iter1 < unum1){ __VA_ARGS__ } };		\
 		     });						\
   });
