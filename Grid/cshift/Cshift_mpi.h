@@ -380,6 +380,10 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
 	acceleratorCopyToDevice((void *)&hrecv_buf[0],(void *)recv_buf_extract_mpi,bytes);
 	uint64_t expected_cs = *(uint64_t*)(((char*)&hrecv_buf[0]) + bytes);
 	uint64_t computed_cs = checksum_gpu((uint64_t*)recv_buf_extract_mpi, bytes / 8) ^ (1 + checksum_index);
+	if (expected_cs != computed_cs) {
+	  fprintf(stderr, "CSHIFT %ld <> %ld\n", expected_cs, computed_cs);
+	  fflush(stderr);
+	}
 	assert(expected_cs == computed_cs);
 #else
 	acceleratorCopyToDevice((void *)&hrecv_buf[0],(void *)recv_buf_extract_mpi,bytes);
