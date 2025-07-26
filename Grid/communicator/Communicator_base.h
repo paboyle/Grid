@@ -243,6 +243,11 @@ public:
     Broadcast(root,(void *)&data,sizeof(data));
   }
 
+#ifdef GRID_CHECKSUM_COMMS
+  uint64_t checksumIndex;
+
+  uint64_t incrementChecksumIndex() { return checksumIndex++; };
+#endif
 };
 
 NAMESPACE_END(Grid);

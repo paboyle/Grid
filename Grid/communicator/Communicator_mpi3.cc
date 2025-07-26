@@ -35,7 +35,6 @@ Grid_MPI_Comm       CartesianCommunicator::communicator_world;
 
 #ifdef GRID_CHECKSUM_COMMS
 extern void * Grid_backtrace_buffer[_NBACKTRACE];
-uint64_t checksum_index = 1;
 #endif
 
 ////////////////////////////////////////////
@@ -250,6 +249,10 @@ void CartesianCommunicator::InitFromMPICommunicator(const Coordinate &processors
     MPI_Comm_dup(communicator,&communicator_halo[i]);
   }
   assert(Size==_Nprocessors);
+
+#ifdef GRID_CHECKSUM_COMMS
+  checksumIndex = 0;
+#endif
 }
 
 CartesianCommunicator::~CartesianCommunicator()
@@ -599,7 +602,7 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
       uint64_t xbytes_data = xbytes - 8;
       srq.ev = acceleratorCopyFromDeviceAsynch(xmit, host_xmit,xbytes_data); // Make this Asynch
       assert(xbytes % 8 == 0);
-      *(uint64_t*)(((char*)host_xmit) + xbytes_data) = checksum_gpu((uint64_t*)xmit, xbytes_data / 8) ^ (checksum_index + 1 + 1000 * tag); // flip one bit so that a zero buffer is not consistent
+      *(uint64_t*)(((char*)host_xmit) + xbytes_data) = checksum_gpu((uint64_t*)xmit, xbytes_data / 8) ^ (checksumIndex + 1 + 1000 * tag); // flip one bit so that a zero buffer is not consistent
 #else
       srq.ev = acceleratorCopyFromDeviceAsynch(xmit, host_xmit,xbytes); // Make this Asynch
 #endif
@@ -817,7 +820,7 @@ void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsReque
     if ( list[r].PacketType == InterNodeReceiveHtoD ) {
       uint64_t rbytes_data = list[r].bytes - 8;
       uint64_t expected_cs = *(uint64_t*)(((char*)list[r].host_buf) + rbytes_data);
-      uint64_t computed_cs = checksum_gpu((uint64_t*)list[r].device_buf, rbytes_data / 8) ^ (checksum_index + 1 + 1000 * list[r].tag); //
+      uint64_t computed_cs = checksum_gpu((uint64_t*)list[r].device_buf, rbytes_data / 8) ^ (checksumIndex + 1 + 1000 * list[r].tag); //
       if (expected_cs != computed_cs) {
 	// TODO: error message, backtrace, quit
 
@@ -844,7 +847,7 @@ void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsReque
     }
   }
 
-  checksum_index += 1;
+  incrementChecksumIndex();
 #endif
 
   list.resize(0);               // Delete the list

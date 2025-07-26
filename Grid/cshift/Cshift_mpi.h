@@ -31,10 +31,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
-#ifdef GRID_CHECKSUM_COMMS
-extern uint64_t checksum_index;
-#endif
-
 const int Cshift_verbose=0;
 template<class vobj> Lattice<vobj> Cshift(const Lattice<vobj> &rhs,int dimension,int shift)
 {
@@ -196,7 +192,7 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
 
 #ifdef GRID_CHECKSUM_COMMS
       assert(bytes % 8 == 0);
-      checksum_index++;
+      uint64_t checksum_index = grid->incrementChecksumIndex();
       *(uint64_t*)(((char*)&hsend_buf[0]) + bytes) = checksum_gpu((uint64_t*)&send_buf[0], bytes / 8) ^ (1 + checksum_index);
       bytes += 8;
 #endif
@@ -363,7 +359,7 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
 
 #ifdef GRID_CHECKSUM_COMMS
 	assert(bytes % 8 == 0);
-	checksum_index++;
+	uint64_t checksum_index = grid->incrementChecksumIndex();
 	*(uint64_t*)(((char*)&hsend_buf[0]) + bytes) = checksum_gpu((uint64_t*)send_buf_extract_mpi, bytes / 8) ^ (1 + checksum_index);
 	bytes += 8;
 #endif
