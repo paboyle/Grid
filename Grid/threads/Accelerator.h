@@ -44,6 +44,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 inline void *memalign(size_t align, size_t bytes) { return malloc(bytes); }
 #endif
 
+#ifdef GRID_DEVICE_MEMORY_ALLOCATOR
+#define acceleratorAllocDevice acceleratorAllocDeviceInternal
+#define acceleratorFreeDevice acceleratorFreeDeviceInternal
+#endif
+
 NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -722,3 +727,8 @@ template<class T> T acceleratorGet(T& dev)
 
 
 NAMESPACE_END(Grid);
+
+#ifdef GRID_DEVICE_MEMORY_ALLOCATOR
+#undef acceleratorAllocDevice
+#undef acceleratorFreeDevice
+#endif
