@@ -4,7 +4,7 @@ NAMESPACE_BEGIN(Grid);
 
 #define DEVICE_MEMORY_ALLOCATOR_PAGE_SIZE (64*1024)
 
-
+#ifdef GRID_DEVICE_MEMORY_ALLOCATOR
 struct DeviceMemoryAllocator {
 
   bool initialized;
@@ -110,5 +110,6 @@ void acceleratorFreeDevice(void *ptr) {
   sm.push_back(index);
   
 }
+#endif
 
 NAMESPACE_END(Grid);
