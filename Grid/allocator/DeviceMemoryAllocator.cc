@@ -31,6 +31,7 @@ Author: Christoph Lehner <christoph@lhnr.de>
 NAMESPACE_BEGIN(Grid);
 
 #define DEVICE_MEMORY_ALLOCATOR_PAGE_SIZE (64*1024)
+#define OVERALLOCATION_FACTOR 1.2
 
 #ifdef GRID_DEVICE_MEMORY_ALLOCATOR
 struct DeviceMemoryAllocator {
@@ -59,6 +60,13 @@ struct DeviceMemoryAllocator {
 
   void Init(size_t _size) {
     assert(!initialized);
+
+    char* str;
+    if ((str = getenv("GRID_OVERALLOCATION_FACTOR"))) {
+      _size = (size_t)(_size * atof(str));
+    } else {
+      _size = (size_t)(_size * OVERALLOCATION_FACTOR);
+    }
     
     size_t n_pages = (_size + DEVICE_MEMORY_ALLOCATOR_PAGE_SIZE - 1) / DEVICE_MEMORY_ALLOCATOR_PAGE_SIZE;
     size = n_pages * DEVICE_MEMORY_ALLOCATOR_PAGE_SIZE;
@@ -73,9 +81,17 @@ struct DeviceMemoryAllocator {
     {
       uint64_t* ba = (uint64_t*)base;
       size_t n = size / sizeof(uint64_t);
-      accelerator_for(i, n, 1, {
-	  ba[i] = (uint64_t)-1;
-	});
+      size_t MAX_BLOCK_INIT = 128*1024*1024;
+      while (n > 0) {
+	size_t n0 = n;
+	if (n0 > MAX_BLOCK_INIT)
+	  n0 = MAX_BLOCK_INIT;
+	accelerator_for(i, n0, 1, {
+	    ba[i] = (uint64_t)-1;
+	  });
+	ba += n0;
+	n -= n0;
+      }
     }  
     
     std::cout << GridLogMessage << "Done" << std::endl;
@@ -108,6 +124,8 @@ void *acceleratorAllocDevice(size_t bytes) {
     sm.pop_back();
     assert(dma.pages[index] == 0);
     dma.pages[index] = n_pages;
+
+    std::cout << GridLogMessage << "Can re-use pointer for " << n_pages << " pages" << std::endl;
     
     return dma.base + index * DEVICE_MEMORY_ALLOCATOR_PAGE_SIZE;
   }
