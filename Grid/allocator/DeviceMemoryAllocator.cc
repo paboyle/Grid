@@ -118,27 +118,37 @@ void *acceleratorAllocDevice(size_t bytes) {
   size_t n_pages = (bytes + DEVICE_MEMORY_ALLOCATOR_PAGE_SIZE - 1) / DEVICE_MEMORY_ALLOCATOR_PAGE_SIZE;
   
   // first check if
-  auto & sm = dma.size_map[n_pages];
-  if (sm.size()) {
-    size_t index = sm.back();
-    sm.pop_back();
+  auto sm = dma.size_map.find(n_pages);
+  if (sm != dma.size_map.end() && sm->second.size() > 0) {
+    size_t index = sm->second.back();
+    sm->second.pop_back();
+
+    if (sm->second.size() == 0)
+      dma.size_map.erase(sm);
+    
     assert(dma.pages[index] == 0);
     dma.pages[index] = n_pages;
 
-    std::cout << GridLogMessage << "Can re-use pointer for " << n_pages << " pages" << std::endl;
+    std::cout << GridLogMessage << "Can re-use perfect pointer for " << n_pages << " pages" << std::endl;
     
     return dma.base + index * DEVICE_MEMORY_ALLOCATOR_PAGE_SIZE;
   }
 
   size_t end = (dma.offset + n_pages) * DEVICE_MEMORY_ALLOCATOR_PAGE_SIZE;
+
+  // TODO: if there are reusable pages, use one that is slightly too large; iterator goes from small to large
   assert(end <= dma.size);
   dma.pages[dma.offset] = n_pages;
 
   void* ptr = dma.base + dma.offset * DEVICE_MEMORY_ALLOCATOR_PAGE_SIZE;
   dma.offset += n_pages;
 
+  size_t reusable_pages = 0;
+  for (auto & sm : dma.size_map)
+    reusable_pages += sm.first * sm.second.size();
+
   std::cout << GridLogMessage << (dma.size - end) / DEVICE_MEMORY_ALLOCATOR_PAGE_SIZE << " pages left to allocate ("
-	    << (dma.size - end) * 100 / dma.size << "% free)" << std::endl;
+	    << (dma.size - end) * 100 / dma.size << "% free, " << reusable_pages << " reusable pages)" << std::endl;
 
   return ptr;
 
