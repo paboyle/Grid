@@ -277,7 +277,7 @@ esac
 ############### DEVICE MEMORY ALLOCATOR
 AC_ARG_ENABLE([device-memory-allocator],
     [AS_HELP_STRING([--enable-device-memory-allocator=yes|no],[device memory allocator])],
-    [ac_DEVICE_MEMORY_ALLOCATOR=${device_memory_allocator}], [ac_DEVICE_MEMORY_ALLOCATOR=no])
+    [ac_DEVICE_MEMORY_ALLOCATOR=${enable_device_memory_allocator}], [ac_DEVICE_MEMORY_ALLOCATOR=no])
 
 case ${ac_DEVICE_MEMORY_ALLOCATOR} in
     yes)
