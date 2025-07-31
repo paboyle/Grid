@@ -81,4 +81,7 @@ NAMESPACE_CHECK(PowerMethod);
 NAMESPACE_CHECK(multigrid);
 #include <Grid/algorithms/FFT.h>
 
+#include <Grid/algorithms/iterative/Arnoldi.h>
+#include <Grid/algorithms/iterative/KrylovSchur.h>
+
 #endif
