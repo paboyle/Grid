@@ -366,6 +366,7 @@ class KrylovSchur {
         }
 
         if (doubleOrthog) {
+          std::cout << GridLogMessage << "Double orthogonalizing." << std::endl;
           for (int j = 0; j < basis.size(); j++) {
             coeff = innerProduct(basis[j], w);      // see if there is any residual component in basis[j] direction
             Rayleigh(j, i) += coeff;                // if coeff is non-zero, adjust Rayleigh
