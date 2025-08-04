@@ -225,7 +225,7 @@ class KrylovSchur {
      *   - Permutes the Rayleigh quotient according to the eigenvalues. 
      *   - Truncate the Krylov-Schur expansion. 
      */
-    void operator()(const Field& v0, int _maxIter, int _Nm, int _Nk, int _Nstop, bool doubleOrthog = false) {
+    void operator()(const Field& v0, int _maxIter, int _Nm, int _Nk, int _Nstop, bool doubleOrthog = true) {
       MaxIter = _maxIter;
       Nm = _Nm; Nk = _Nk;
       Nstop = _Nstop;
@@ -331,7 +331,7 @@ class KrylovSchur {
      * start        : int (default = 0)
      *  If non-zero, assumes part of the Arnoldi basis has already been constructed. 
      */
-    void arnoldiIteration(const Field& v0, int Nm, int start = 0, bool doubleOrthog = false)
+    void arnoldiIteration(const Field& v0, int Nm, int start = 0, bool doubleOrthog = true)
     {
 
       ComplexD coeff;
@@ -366,7 +366,11 @@ class KrylovSchur {
         }
 
         if (doubleOrthog) {
-          // TODO implement
+          for (int j = 0; j < basis.size(); j++) {
+            coeff = innerProduct(basis[j], w);      // see if there is any residual component in basis[j] direction
+            Rayleigh(j, i) += coeff;                // if coeff is non-zero, adjust Rayleigh
+            w -= coeff * basis[j];
+          }
         }
 
         // add w_i to the pile
