@@ -58,6 +58,7 @@ namespace Grid {
 struct LanczosParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParameters,
 		  		RealD, mass , 
+		  		RealD, mstep , 
 				Integer, Nstop,
                                 Integer, Nk,
                                 Integer, Np,
@@ -181,9 +182,14 @@ int main(int argc, char** argv) {
   Np=LanParams.Np;
   Nm = Nk + Np;
 
+  FermionField src(FGrid);
+  gaussian(RNG5, src);
+  std::vector<Complex> boundary = {1,1,1,-1};
+  FermionOp::ImplParams Params(boundary);
 
-while ( mass > - 5.0){
-  FermionOp WilsonOperator(Umu,*FGrid,*FrbGrid,mass);
+
+while ( mass > - 2.5){
+  FermionOp WilsonOperator(Umu,*FGrid,*FrbGrid,mass,Params);
   MdagMLinearOperator<FermionOp,FermionField> HermOp(WilsonOperator); /// <-----
   //SchurDiagTwoOperator<FermionOp,FermionField> HermOp(WilsonOperator);
   Gamma5HermitianLinearOperator <FermionOp,LatticeFermion> HermOp2(WilsonOperator); /// <-----
@@ -204,8 +210,6 @@ while ( mass > - 5.0){
   ImplicitlyRestartedLanczos<FermionField> IRL(OpCheby, Op2, Nstop, Nk, Nm, resid, MaxIt);
 
   std::vector<RealD> eval(Nm);
-  FermionField src(FGrid);
-  gaussian(RNG5, src);
   std::vector<FermionField> evec(Nm, FGrid);
   for (int i = 0; i < 1; i++) {
     std::cout << i << " / " << Nm << " grid pointer " << evec[i].Grid()
@@ -232,7 +236,9 @@ while ( mass > - 5.0){
     }
   }
   src  = evec[0]+evec[1]+evec[2];
-  mass += -0.1;
+  src  += evec[3]+evec[4]+evec[5];
+  src  += evec[6]+evec[7]+evec[8];
+  mass += LanParams.mstep;
 }
 
   Grid_finalize();
