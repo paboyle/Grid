@@ -134,6 +134,7 @@ int main(int argc, char** argv) {
 
   LatticeGaugeField Umu(UGrid);
 //  SU<Nc>::HotConfiguration(RNG4, Umu);
+//  SU<Nc>::ColdConfiguration(Umu);
 
   FieldMetaData header;
   std::string file("./config");
@@ -185,6 +186,7 @@ int main(int argc, char** argv) {
   FermionField src(FGrid);
   gaussian(RNG5, src);
   std::vector<Complex> boundary = {1,1,1,-1};
+//  std::vector<Complex> boundary = {1,1,1,1};
   FermionOp::ImplParams Params(boundary);
 
 
@@ -208,6 +210,7 @@ while ( mass > - 2.5){
      PlainHermOp<FermionField> Op2     (HermOp2);
 
   ImplicitlyRestartedLanczos<FermionField> IRL(OpCheby, Op2, Nstop, Nk, Nm, resid, MaxIt);
+//  SimpleLanczos<FermionField> IRL(Op,Nstop, Nk, Nm, resid, MaxIt);
 
   std::vector<RealD> eval(Nm);
   std::vector<FermionField> evec(Nm, FGrid);
@@ -218,6 +221,7 @@ while ( mass > - 2.5){
 
   int Nconv;
   IRL.calc(eval, evec, src, Nconv);
+//  IRL.calc(eval,  src, Nconv);
 
   std::cout << mass <<" : " << eval << std::endl;
 

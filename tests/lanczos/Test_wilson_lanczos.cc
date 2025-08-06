@@ -61,7 +61,8 @@ int main(int argc, char** argv) {
   RNG5.SeedFixedIntegers(seeds5);
 
   LatticeGaugeField Umu(UGrid);
-  SU<Nc>::HotConfiguration(RNG4, Umu);
+//  SU<Nc>::HotConfiguration(RNG4, Umu);
+  SU<Nc>::ColdConfiguration(Umu);
 
 /*
   std::vector<LatticeColourMatrix> U(4, UGrid);
@@ -69,9 +70,15 @@ int main(int argc, char** argv) {
     U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
   }
 */
+//  std::vector<Complex> boundary = {1,1,1,-1};
+  std::vector<Complex> boundary = {1,1,1,1};
+  FermionOp::ImplParams Params(boundary);
 
-  RealD mass = -0.1;
-  FermionOp WilsonOperator(Umu,*FGrid,*FrbGrid,mass);
+
+
+  RealD mass = 0.0;
+//  FermionOp WilsonOperator(Umu,*FGrid,*FrbGrid,mass);
+  FermionOp WilsonOperator(Umu,*FGrid,*FrbGrid,mass,Params);
   MdagMLinearOperator<FermionOp,LatticeFermion> HermOp(WilsonOperator); /// <-----
   //SchurDiagTwoOperator<FermionOp,FermionField> HermOp(WilsonOperator);
 
@@ -89,7 +96,8 @@ int main(int argc, char** argv) {
   FunctionHermOp<FermionField> OpCheby(Cheby,HermOp);
      PlainHermOp<FermionField> Op     (HermOp);
 
-  ImplicitlyRestartedLanczos<FermionField> IRL(OpCheby, Op, Nstop, Nk, Nm, resid, MaxIt);
+//  ImplicitlyRestartedLanczos<FermionField> IRL(OpCheby, Op, Nstop, Nk, Nm, resid, MaxIt);
+  SimpleLanczos<FermionField> IRL(Op,Nstop, Nk, Nm, resid, MaxIt);
 
   std::vector<RealD> eval(Nm);
   FermionField src(FGrid);
@@ -101,7 +109,8 @@ int main(int argc, char** argv) {
   };
 
   int Nconv;
-  IRL.calc(eval, evec, src, Nconv);
+//  IRL.calc(eval, evec, src, Nconv);
+  IRL.calc(eval, src, Nconv);
 
   std::cout << eval << std::endl;
 
