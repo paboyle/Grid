@@ -292,26 +292,26 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
 
   bool ok;
 #ifdef GRID_SYCL
-  uint64_t csum=0;
-  uint64_t csum2=0;
-  if ( FlightRecorder::LoggingMode != FlightRecorder::LoggingModeNone)
-  {
-    // Hack
-    // Fast integer xor checksum. Can also be used in comms now.
-    autoView(l_v,left,AcceleratorRead);
-    Integer words = left.Grid()->oSites()*sizeof(vobj)/sizeof(uint64_t);
-    uint64_t *base= (uint64_t *)&l_v[0];
-    csum=svm_xor(base,words);
-    ok = FlightRecorder::CsumLog(csum);
-    if ( !ok ) {
-      csum2=svm_xor(base,words);
-      std::cerr<< " Bad CSUM " << std::hex<< csum << " recomputed as "<<csum2<<std::dec<<std::endl;
-    } else {
-      //      csum2=svm_xor(base,words);
-      //      std::cerr<< " ok CSUM " << std::hex<< csum << " recomputed as "<<csum2<<std::dec<<std::endl;
-    }
-    assert(ok);
-  }
+  //  uint64_t csum=0;
+  //  uint64_t csum2=0;
+  //  if ( FlightRecorder::LoggingMode != FlightRecorder::LoggingModeNone)
+  //  {
+  // Hack
+  // Fast integer xor checksum. Can also be used in comms now.
+  //    autoView(l_v,left,AcceleratorRead);
+  //    Integer words = left.Grid()->oSites()*sizeof(vobj)/sizeof(uint64_t);
+  //    uint64_t *base= (uint64_t *)&l_v[0];
+  //    csum=svm_xor(base,words);
+  //    ok = FlightRecorder::CsumLog(csum);
+  //    if ( !ok ) {
+  //      csum2=svm_xor(base,words);
+  //      std::cerr<< " Bad CSUM " << std::hex<< csum << " recomputed as "<<csum2<<std::dec<<std::endl;
+  //    } else {
+  //      csum2=svm_xor(base,words);
+  //      std::cerr<< " ok CSUM " << std::hex<< csum << " recomputed as "<<csum2<<std::dec<<std::endl;
+  //    }
+  //    GRID_ASSERT(ok);
+  // }
 #endif
   FlightRecorder::StepLog("rank inner product");
   ComplexD nrm = rankInnerProduct(left,right);
@@ -322,7 +322,7 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
     ComplexD nrm2 = rankInnerProduct(left,right);
     RealD local2 = real(nrm2);
     std::cerr<< " Bad NORM " << local << " recomputed as "<<local2<<std::endl;
-    assert(ok);
+    GRID_ASSERT(ok);
   }
   FlightRecorder::StepLog("Start global sum");
   grid->GlobalSumP2P(nrm);
@@ -376,40 +376,9 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
       coalescedWrite(z_v[ss],tmp);
   });
   bool ok;
-#ifdef GRID_SYCL
-  uint64_t csum=0;
-  uint64_t csum2=0;
-  if ( FlightRecorder::LoggingMode != FlightRecorder::LoggingModeNone)
-  {
-    // z_v
-    {
-      Integer words = sites*sizeof(vobj)/sizeof(uint64_t);
-      uint64_t *base= (uint64_t *)&z_v[0];
-      csum=svm_xor(base,words);
-      ok = FlightRecorder::CsumLog(csum);
-      if ( !ok ) {
-	csum2=svm_xor(base,words);
-	std::cerr<< " Bad z_v CSUM " << std::hex<< csum << " recomputed as "<<csum2<<std::dec<<std::endl;
-      }
-      assert(ok);
-    }
-    // inner_v
-    {
-      Integer words = sites*sizeof(inner_t)/sizeof(uint64_t);
-      uint64_t *base= (uint64_t *)&inner_tmp_v[0];
-      csum=svm_xor(base,words);
-      ok = FlightRecorder::CsumLog(csum);
-      if ( !ok ) {
-	csum2=svm_xor(base,words);
-	std::cerr<< " Bad inner_tmp_v CSUM " << std::hex<< csum << " recomputed as "<<csum2<<std::dec<<std::endl;
-      }
-      assert(ok);
-    }
-  }
-#endif
   nrm = real(TensorRemove(sumD(inner_tmp_v,sites)));
   ok = FlightRecorder::NormLog(real(nrm));
-  assert(ok);
+  GRID_ASSERT(ok);
   RealD local = real(nrm);
   grid->GlobalSum(nrm);
   FlightRecorder::ReductionLog(local,real(nrm));
@@ -495,13 +464,13 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,
   typedef typename vobj::scalar_object sobj;
   typedef typename vobj::scalar_object::scalar_type scalar_type;
   GridBase  *grid = Data.Grid();
-  assert(grid!=NULL);
+  GRID_ASSERT(grid!=NULL);
 
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
 
-  assert(orthogdim >= 0);
-  assert(orthogdim < Nd);
+  GRID_ASSERT(orthogdim >= 0);
+  GRID_ASSERT(orthogdim < Nd);
 
   int fd=grid->_fdimensions[orthogdim];
   int ld=grid->_ldimensions[orthogdim];
@@ -588,14 +557,14 @@ static void sliceInnerProductVector( std::vector<ComplexD> & result, const Latti
   typedef typename vobj::vector_type   vector_type;
   typedef typename vobj::scalar_type   scalar_type;
   GridBase  *grid = lhs.Grid();
-  assert(grid!=NULL);
+  GRID_ASSERT(grid!=NULL);
   conformable(grid,rhs.Grid());
 
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
 
-  assert(orthogdim >= 0);
-  assert(orthogdim < Nd);
+  GRID_ASSERT(orthogdim >= 0);
+  GRID_ASSERT(orthogdim < Nd);
 
   int fd=grid->_fdimensions[orthogdim];
   int ld=grid->_ldimensions[orthogdim];

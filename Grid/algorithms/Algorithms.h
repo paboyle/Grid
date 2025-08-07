@@ -51,6 +51,7 @@ NAMESPACE_CHECK(approx);
 #include <Grid/algorithms/deflation/MultiRHSBlockProject.h>
 #include <Grid/algorithms/deflation/MultiRHSDeflation.h>
 #include <Grid/algorithms/deflation/MultiRHSBlockCGLinalg.h>
+#include <Grid/algorithms/deflation/MomentumProject.h>
 NAMESPACE_CHECK(deflation);
 #include <Grid/algorithms/iterative/ConjugateGradient.h>
 NAMESPACE_CHECK(ConjGrad);

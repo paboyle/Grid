@@ -56,7 +56,8 @@ public:
   static std::vector<Entry_t> LogVector;
   static void Begin();
   static void End();
-  static void Log(const char* filename, int line, int index, int mode, void* data, uint64_t bytes);
+  static void LogOpen(const char* filename, int line, int index, int mode, void* data, uint64_t bytes);
+  static void LogClose(const char* filename, int line, int index, int mode, void* data, uint64_t bytes);
 };
 #endif
 NAMESPACE_END(Grid);

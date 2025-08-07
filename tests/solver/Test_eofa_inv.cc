@@ -106,7 +106,7 @@ int main (int argc, char** argv)
   LatticeFermion diff = MinvMeta - eta;
 
   std::cout << GridLogMessage << "eta: " << norm2(eta) << " M*eta: " << norm2(Meta) << " M^{-1}*M*eta: " << norm2(MinvMeta) << "  M^{-1}*M*eta - eta: " << norm2(diff) << " (expect 0)" << std::endl;
-  assert(norm2(diff) < 1e-8);
+  GRID_ASSERT(norm2(diff) < 1e-8);
 
   //Check right inverse
   LatticeFermion MinvEta(FGrid);
@@ -118,7 +118,7 @@ int main (int argc, char** argv)
   diff = MMinvEta - eta;
   
   std::cout << GridLogMessage << "eta: " << norm2(eta) << " M^{-1}*eta: " << norm2(MinvEta) << " M*M^{-1}*eta: " << norm2(MMinvEta) << "  M*M^{-1}*eta - eta: " << norm2(diff) << " (expect 0)" << std::endl;
-  assert(norm2(diff) < 1e-8);
+  GRID_ASSERT(norm2(diff) < 1e-8);
 
   std::cout << GridLogMessage << "Done" << std::endl;
   Grid_finalize();

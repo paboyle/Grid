@@ -64,32 +64,32 @@ ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GridCartesian      
   _tmp(&FiveDimRedBlackGrid)
 {
 
-  // some assertions
-  assert(FiveDimGrid._ndimension==5);
-  assert(FourDimGrid._ndimension==4);
-  assert(FourDimRedBlackGrid._ndimension==4);
-  assert(FiveDimRedBlackGrid._ndimension==5);
-  assert(FiveDimRedBlackGrid._checker_dim==1); // Don't checker the s direction
+  // some GRID_ASSERTions
+  GRID_ASSERT(FiveDimGrid._ndimension==5);
+  GRID_ASSERT(FourDimGrid._ndimension==4);
+  GRID_ASSERT(FourDimRedBlackGrid._ndimension==4);
+  GRID_ASSERT(FiveDimRedBlackGrid._ndimension==5);
+  GRID_ASSERT(FiveDimRedBlackGrid._checker_dim==1); // Don't checker the s direction
 
   // extent of fifth dim and not spread out
   Ls=FiveDimGrid._fdimensions[0];
-  assert(FiveDimRedBlackGrid._fdimensions[0]==Ls);
-  assert(FiveDimGrid._processors[0]         ==1);
-  assert(FiveDimRedBlackGrid._processors[0] ==1);
+  GRID_ASSERT(FiveDimRedBlackGrid._fdimensions[0]==Ls);
+  GRID_ASSERT(FiveDimGrid._processors[0]         ==1);
+  GRID_ASSERT(FiveDimRedBlackGrid._processors[0] ==1);
 
   // Other dimensions must match the decomposition of the four-D fields 
   for(int d=0;d<4;d++){
-    assert(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
-    assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
-    assert(FourDimRedBlackGrid._processors[d]   ==FourDimGrid._processors[d]);
+    GRID_ASSERT(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
+    GRID_ASSERT(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
+    GRID_ASSERT(FourDimRedBlackGrid._processors[d]   ==FourDimGrid._processors[d]);
 
-    assert(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
-    assert(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
-    assert(FourDimRedBlackGrid._fdimensions[d]  ==FourDimGrid._fdimensions[d]);
+    GRID_ASSERT(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
+    GRID_ASSERT(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
+    GRID_ASSERT(FourDimRedBlackGrid._fdimensions[d]  ==FourDimGrid._fdimensions[d]);
 
-    assert(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
-    assert(FiveDimRedBlackGrid._simd_layout[d+1]==FourDimGrid._simd_layout[d]);
-    assert(FourDimRedBlackGrid._simd_layout[d]  ==FourDimGrid._simd_layout[d]);
+    GRID_ASSERT(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
+    GRID_ASSERT(FiveDimRedBlackGrid._simd_layout[d+1]==FourDimGrid._simd_layout[d]);
+    GRID_ASSERT(FourDimRedBlackGrid._simd_layout[d]  ==FourDimGrid._simd_layout[d]);
   }
 
   if (Impl::LsVectorised) { 
@@ -97,20 +97,20 @@ ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GridCartesian      
     int nsimd = Simd::Nsimd();
     
     // Dimension zero of the five-d is the Ls direction
-    assert(FiveDimGrid._simd_layout[0]        ==nsimd);
-    assert(FiveDimRedBlackGrid._simd_layout[0]==nsimd);
+    GRID_ASSERT(FiveDimGrid._simd_layout[0]        ==nsimd);
+    GRID_ASSERT(FiveDimRedBlackGrid._simd_layout[0]==nsimd);
 
     for(int d=0;d<4;d++){
-      assert(FourDimGrid._simd_layout[d]==1);
-      assert(FourDimRedBlackGrid._simd_layout[d]==1);
-      assert(FiveDimRedBlackGrid._simd_layout[d+1]==1);
+      GRID_ASSERT(FourDimGrid._simd_layout[d]==1);
+      GRID_ASSERT(FourDimRedBlackGrid._simd_layout[d]==1);
+      GRID_ASSERT(FiveDimRedBlackGrid._simd_layout[d+1]==1);
     }
 
   } else {
     
     // Dimension zero of the five-d is the Ls direction
-    assert(FiveDimRedBlackGrid._simd_layout[0]==1);
-    assert(FiveDimGrid._simd_layout[0]        ==1);
+    GRID_ASSERT(FiveDimRedBlackGrid._simd_layout[0]==1);
+    GRID_ASSERT(FiveDimGrid._simd_layout[0]        ==1);
 
   }
   int LLs = FiveDimGrid._rdimensions[0];
@@ -242,7 +242,7 @@ void ImprovedStaggeredFermion5D<Impl>::DerivInternal(StencilImpl & st,
 						     int dag)
 {
   // No force terms in multi-rhs solver staggered
-  assert(0);
+  GRID_ASSERT(0);
 }
 
 template<class Impl>
@@ -251,7 +251,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDeriv(GaugeField &mat,
 						 const FermionField &B,
 						 int dag)
 {
-  assert(0);
+  GRID_ASSERT(0);
 }
 
 template<class Impl>
@@ -260,7 +260,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
 						   const FermionField &B,
 						   int dag)
 {
-  assert(0);
+  GRID_ASSERT(0);
 }
 
 
@@ -270,7 +270,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
 						   const FermionField &B,
 						   int dag)
 {
-  assert(0);
+  GRID_ASSERT(0);
 }
 
 /*CHANGE */
@@ -290,7 +290,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl &
 								   DoubledGaugeField & U,DoubledGaugeField & UUU,
 								   const FermionField &in, FermionField &out,int dag)
 {
-  //  assert((dag==DaggerNo) ||(dag==DaggerYes));
+  //  GRID_ASSERT((dag==DaggerNo) ||(dag==DaggerYes));
   Compressor compressor; 
 
   int LLs = in.Grid()->_rdimensions[0];
@@ -352,7 +352,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopOE(const FermionField &in, FermionFie
   conformable(in.Grid(),FermionRedBlackGrid());    // verifies half grid
   conformable(in.Grid(),out.Grid()); // drops the cb check
 
-  assert(in.Checkerboard()==Even);
+  GRID_ASSERT(in.Checkerboard()==Even);
   out.Checkerboard() = Odd;
 
   DhopInternal(StencilEven,UmuOdd,UUUmuOdd,in,out,dag);
@@ -363,7 +363,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopEO(const FermionField &in, FermionFie
   conformable(in.Grid(),FermionRedBlackGrid());    // verifies half grid
   conformable(in.Grid(),out.Grid()); // drops the cb check
 
-  assert(in.Checkerboard()==Odd);
+  GRID_ASSERT(in.Checkerboard()==Odd);
   out.Checkerboard() = Even;
 
   DhopInternal(StencilOdd,UmuEven,UUUmuEven,in,out,dag);
@@ -390,7 +390,7 @@ void ImprovedStaggeredFermion5D<Impl>::Mdir(const FermionField &in, FermionField
 template <class Impl>
 void ImprovedStaggeredFermion5D<Impl>::MdirAll(const FermionField &in, std::vector<FermionField> &out) 
 {
-  assert(0);
+  GRID_ASSERT(0);
 }
 template <class Impl>
 void ImprovedStaggeredFermion5D<Impl>::M(const FermionField &in, FermionField &out) 
@@ -467,7 +467,7 @@ void ImprovedStaggeredFermion5D<Impl>::ContractConservedCurrent(PropagatorField 
 								Current curr_type,
 								unsigned int mu)
 {
-  assert(0);
+  GRID_ASSERT(0);
 }
 
 template <class Impl>
@@ -480,7 +480,7 @@ void ImprovedStaggeredFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in
 							   unsigned int tmax,
 							   ComplexField &lattice_cmplx)
 {
-  assert(0);
+  GRID_ASSERT(0);
 
 }
   

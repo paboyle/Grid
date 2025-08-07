@@ -19,9 +19,9 @@ bool has_correct_group_block_structure(const T& U) {
       auto Ww = conjugate(Wstar);
       auto amizero = sum(W - Ww);
       auto amizeroo = TensorRemove(amizero);
-      assert(amizeroo.real() < 10e-6);
+      GRID_ASSERT(amizeroo.real() < 10e-6);
       amizeroo *= i;
-      assert(amizeroo.real() < 10e-6);
+      GRID_ASSERT(amizeroo.real() < 10e-6);
     }
   }
 
@@ -32,9 +32,9 @@ bool has_correct_group_block_structure(const T& U) {
       auto minusXx = conjugate(minusXstar);
       auto amizero = sum(X + minusXx);
       auto amizeroo = TensorRemove(amizero);
-      assert(amizeroo.real() < 10e-6);
+      GRID_ASSERT(amizeroo.real() < 10e-6);
       amizeroo *= i;
-      assert(amizeroo.real() < 10e-6);
+      GRID_ASSERT(amizeroo.real() < 10e-6);
     }
   }
   return true;
@@ -49,22 +49,22 @@ bool is_element_of_sp2n_group(const T& U) {
   Sp<Nc>::Omega(Omega);
 
   std::cout << GridLogMessage << "Check matrix is non-zero " << std::endl;
-  assert(norm2(U) > 1e-8);
+  GRID_ASSERT(norm2(U) > 1e-8);
 
   std::cout << GridLogMessage << "Unitary check" << std::endl;
   aux = U * adj(U) - identity;
   std::cout << GridLogMessage << "U adjU - 1 = " << norm2(aux) << std::endl;
-  assert(norm2(aux) < 1e-8);
+  GRID_ASSERT(norm2(aux) < 1e-8);
 
   aux = Omega - (U * Omega * transpose(U));
   std::cout << GridLogMessage << "Omega - U Omega transpose(U) = " << norm2(aux)
             << std::endl;
-  assert(norm2(aux) < 1e-8);
+  GRID_ASSERT(norm2(aux) < 1e-8);
 
   std::cout << GridLogMessage
             << "|Det| = " << norm2(Determinant(U)) / U.Grid()->gSites()
             << std::endl;
-  assert(norm2(Determinant(U)) / U.Grid()->gSites() - 1 < 1e-8);
+  GRID_ASSERT(norm2(Determinant(U)) / U.Grid()->gSites() - 1 < 1e-8);
 
   return has_correct_group_block_structure(U);
 }
@@ -91,17 +91,17 @@ int main (int argc, char **argv)
     std::cout << GridLogMessage << "Checking Cold Configuration " << std::endl;
     Sp<Nc>::ColdConfiguration(pRNG,Umu);
     U = PeekIndex<LorentzIndex>(Umu,1);
-    assert(is_element_of_sp2n_group(U));
+    GRID_ASSERT(is_element_of_sp2n_group(U));
     
     std::cout << GridLogMessage << "Checking Hot Configuration" << std::endl;
     Sp<Nc>::HotConfiguration(pRNG,Umu);
     U = PeekIndex<LorentzIndex>(Umu,1);
-    assert(is_element_of_sp2n_group(U));
+    GRID_ASSERT(is_element_of_sp2n_group(U));
     
     std::cout << GridLogMessage << "Checking Tepid Configuration" << std::endl;
     Sp<Nc>::TepidConfiguration(pRNG,Umu);
     U = PeekIndex<LorentzIndex>(Umu,1);
-    assert(is_element_of_sp2n_group(U));
+    GRID_ASSERT(is_element_of_sp2n_group(U));
     
     Grid_finalize();
 

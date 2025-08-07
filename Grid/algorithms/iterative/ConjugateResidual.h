@@ -106,7 +106,7 @@ public:
     }
 
     std::cout<<GridLogMessage<<"ConjugateResidual did NOT converge"<<std::endl;
-    assert(0);
+    GRID_ASSERT(0);
   }
 };
 NAMESPACE_END(Grid);

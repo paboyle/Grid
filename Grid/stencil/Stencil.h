@@ -277,7 +277,7 @@ protected:
     device_heap_bytes+= bytes;
     if ( device_heap_bytes > device_heap_size ) {
       std::cout << "DeviceBufferMalloc overflow bytes "<<bytes<<" heap bytes "<<device_heap_bytes<<" heap size "<<device_heap_size<<std::endl;
-      assert (device_heap_bytes <= device_heap_size);
+      GRID_ASSERT (device_heap_bytes <= device_heap_size);
     }
     return ptr;
   }
@@ -390,7 +390,7 @@ public:
     else                nbr_proc = pd-1;
 
     // FIXME  this logic needs to be sorted for three link term
-    //    assert( (displacement==1) || (displacement==-1));
+    //    GRID_ASSERT( (displacement==1) || (displacement==-1));
     // Present hack only works for >= 4^4 subvol per node
     _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank);
 
@@ -633,7 +633,7 @@ public:
     // Map to always positive shift modulo global full dimension.
     int shift = (displacement+fd)%fd;
 
-    assert (source.Checkerboard()== this->_checkerboard);
+    GRID_ASSERT (source.Checkerboard()== this->_checkerboard);
 
     // the permute type
     int simd_layout     = _grid->_simd_layout[dimension];
@@ -680,7 +680,7 @@ public:
     //////////////////////////////////
     _grid->StencilBarrier();// Synch shared memory on a single nodes
 
-    assert(source.Grid()==_grid);
+    GRID_ASSERT(source.Grid()==_grid);
 
     u_comm_offset=0;
 
@@ -697,7 +697,7 @@ public:
     // Or issue barrier AFTER the DMA is running
 #endif    
     face_table_computed=1;
-    assert(u_comm_offset==_unified_buffer_size);
+    GRID_ASSERT(u_comm_offset==_unified_buffer_size);
   }
 
   /////////////////////////
@@ -812,8 +812,8 @@ public:
     CommsMerge(decompress,Mergers,Decompressions);
   }
   template<class decompressor>  void CommsMergeSHM(decompressor decompress) {
-    assert(MergersSHM.size()==0);
-    assert(DecompressionsSHM.size()==0);
+    GRID_ASSERT(MergersSHM.size()==0);
+    GRID_ASSERT(DecompressionsSHM.size()==0);
   }
 
   template<class decompressor>
@@ -1003,7 +1003,7 @@ public:
       int splice_dim      = _grid->_simd_layout[dimension]>1 && (comm_dim);
       int rotate_dim      = _grid->_simd_layout[dimension]>2;
 
-      assert ( (rotate_dim && comm_dim) == false) ; // Do not think spread out is supported
+      GRID_ASSERT ( (rotate_dim && comm_dim) == false) ; // Do not think spread out is supported
 
       int sshift[2];
       //////////////////////////
@@ -1117,10 +1117,10 @@ public:
     int simd_layout     = _grid->_simd_layout[dimension];
     int comm_dim        = _grid->_processors[dimension] >1 ;
 
-    assert(comm_dim==1);
+    GRID_ASSERT(comm_dim==1);
     int shift = (shiftpm + fd) %fd;
-    assert(shift>=0);
-    assert(shift<fd);
+    GRID_ASSERT(shift>=0);
+    GRID_ASSERT(shift<fd);
 
     // done in reduced dims, so SIMD factored
     int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension];
@@ -1301,7 +1301,7 @@ public:
     //    int comms_partial_send   = this->_comms_partial_send[point] ;
     //    int comms_partial_recv   = this->_comms_partial_recv[point] ;
     
-    assert(rhs.Grid()==_grid);
+    GRID_ASSERT(rhs.Grid()==_grid);
     //	  conformable(_grid,rhs.Grid());
 
     int fd              = _grid->_fdimensions[dimension];
@@ -1309,10 +1309,10 @@ public:
     int pd              = _grid->_processors[dimension];
     int simd_layout     = _grid->_simd_layout[dimension];
     int comm_dim        = _grid->_processors[dimension] >1 ;
-    assert(simd_layout==1);
-    assert(comm_dim==1);
-    assert(shift>=0);
-    assert(shift<fd);
+    GRID_ASSERT(simd_layout==1);
+    GRID_ASSERT(comm_dim==1);
+    GRID_ASSERT(shift>=0);
+    GRID_ASSERT(shift<fd);
 
     int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension];
 
@@ -1450,11 +1450,11 @@ public:
     int pd              = _grid->_processors[dimension];
     int simd_layout     = _grid->_simd_layout[dimension];
     int comm_dim        = _grid->_processors[dimension] >1 ;
-    assert(comm_dim==1);
+    GRID_ASSERT(comm_dim==1);
     // This will not work with a rotate dim
-    assert(simd_layout==maxl);
-    assert(shift>=0);
-    assert(shift<fd);
+    GRID_ASSERT(simd_layout==maxl);
+    GRID_ASSERT(shift>=0);
+    GRID_ASSERT(shift<fd);
 
 
     int permute_type=_grid->PermuteType(dimension);
@@ -1465,8 +1465,8 @@ public:
     int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension];
     //    int words = sizeof(cobj)/sizeof(vector_type);
 
-    assert(cbmask==0x3); // Fixme think there is a latent bug if not true
-                         // This assert will trap it if ever hit. Not hit normally so far
+    GRID_ASSERT(cbmask==0x3); // Fixme think there is a latent bug if not true
+                         // This GRID_ASSERT will trap it if ever hit. Not hit normally so far
     int reduced_buffer_size = buffer_size;
     if (cbmask != 0x3) reduced_buffer_size=buffer_size>>1;
 
@@ -1477,7 +1477,7 @@ public:
     int xbytes; 
     int rbytes; 
     
-    assert(bytes*simd_layout == reduced_buffer_size*datum_bytes);
+    GRID_ASSERT(bytes*simd_layout == reduced_buffer_size*datum_bytes);
 
     std::vector<cobj *> rpointers(maxl);
     std::vector<cobj *> spointers(maxl);
@@ -1550,7 +1550,7 @@ public:
 	  int nbr_ox   = (nbr_lcoor%rd);      // outer coord of peer "x"
 
 	  int nbr_plane = nbr_ic;
-	  assert (sx == nbr_ox);
+	  GRID_ASSERT (sx == nbr_ox);
 
 	  auto rp = &u_simd_recv_buf[i        ][comm_off];
 	  auto sp = &u_simd_send_buf[nbr_plane][comm_off];

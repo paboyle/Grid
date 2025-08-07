@@ -231,8 +231,8 @@ NAMESPACE_BEGIN(Grid);
 
         // FIXME No force contribution from EvenEven assumed here
         // Needs a fix for clover.
-        assert(NumOp.ConstEE() == 1);
-        assert(DenOp.ConstEE() == 1);
+        GRID_ASSERT(NumOp.ConstEE() == 1);
+        GRID_ASSERT(DenOp.ConstEE() == 1);
 
         dSdU = -dSdU;
         

@@ -90,14 +90,14 @@ public:
     Reset();
   }
   void     Start(void) { 
-    assert(running == false);
+    GRID_ASSERT(running == false);
 #ifdef TIMERS_ON
     start = GridClock::now(); 
 #endif
     running = true;
   }
   void     Stop(void)  { 
-    assert(running == true);
+    GRID_ASSERT(running == true);
 #ifdef TIMERS_ON
     accumulator+= std::chrono::duration_cast<GridUsecs>(GridClock::now()-start); 
 #endif
@@ -111,11 +111,11 @@ public:
     accumulator = std::chrono::duration_cast<GridUsecs>(start-start); 
   }
   GridTime Elapsed(void) const {
-    assert(running == false);
+    GRID_ASSERT(running == false);
     return std::chrono::duration_cast<GridTime>( accumulator );
   }
   uint64_t useconds(void) const {
-    assert(running == false);
+    GRID_ASSERT(running == false);
     return (uint64_t) accumulator.count();
   }
   bool isRunning(void) const {

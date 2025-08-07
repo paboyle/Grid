@@ -121,10 +121,10 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
   int pd              = rhs.Grid()->_processors[dimension];
   int simd_layout     = rhs.Grid()->_simd_layout[dimension];
   int comm_dim        = rhs.Grid()->_processors[dimension] >1 ;
-  assert(simd_layout==1);
-  assert(comm_dim==1);
-  assert(shift>=0);
-  assert(shift<fd);
+  GRID_ASSERT(simd_layout==1);
+  GRID_ASSERT(comm_dim==1);
+  GRID_ASSERT(shift>=0);
+  GRID_ASSERT(shift<fd);
   
   int buffer_size = rhs.Grid()->_slice_nblock[dimension]*rhs.Grid()->_slice_block[dimension];
   static deviceVector<vobj> send_buf; send_buf.resize(buffer_size);
@@ -187,7 +187,7 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
       acceleratorCopyFromDevice(&send_buf[0],&hsend_buf[0],bytes);
 
 #ifdef GRID_CHECKSUM_COMMS
-      assert(bytes % 8 == 0);
+      GRID_ASSERT(bytes % 8 == 0);
       checksum_index++;
       uint64_t xsum = checksum_gpu((uint64_t*)&send_buf[0], bytes / 8) ^ (1 + checksum_index);
       *(uint64_t*)(((char*)&hsend_buf[0]) + bytes) = xsum;
@@ -213,7 +213,7 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
 		<<" send "<<xsum<<" to   "<<xmit_to_rank
 		<<" recv "<<computed_cs<<" from "<<recv_from_rank
 		<<std::endl;
-      assert(expected_cs == computed_cs);
+      GRID_ASSERT(expected_cs == computed_cs);
 #else
       acceleratorCopyToDevice(&hrecv_buf[0],&recv_buf[0],bytes);
 #endif
@@ -259,10 +259,10 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
   //	    << " ld "<<ld<<" pd " << pd<<" simd_layout "<<simd_layout 
   //	    << " comm_dim " << comm_dim << " cbmask " << cbmask <<std::endl;
 
-  assert(comm_dim==1);
-  assert(simd_layout==2);
-  assert(shift>=0);
-  assert(shift<fd);
+  GRID_ASSERT(comm_dim==1);
+  GRID_ASSERT(simd_layout==2);
+  GRID_ASSERT(shift>=0);
+  GRID_ASSERT(shift<fd);
 
   RealD tcopy=0.0;
   RealD tgather=0.0;
@@ -341,7 +341,7 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
 
       if (nbr_ic) nbr_lane|=inner_bit;
 
-      assert (sx == nbr_ox);
+      GRID_ASSERT (sx == nbr_ox);
 
       if(nbr_proc){
 	grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank); 

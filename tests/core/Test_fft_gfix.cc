@@ -196,7 +196,7 @@ int main (int argc, char ** argv)
   for(int i=1;i<argc;i++){
     std::string sarg(argv[i]);
     if(sarg == "--gimpl"){
-      assert(i<argc-1 && "--gimpl option requires an argument");
+      GRID_ASSERT(i<argc-1 && "--gimpl option requires an argument");
       gimpl = argv[i+1];
       if(gimpl != "periodic" && gimpl != "conjugate")
 	assert(0 && "Invalid gimpl");
@@ -206,7 +206,7 @@ int main (int argc, char ** argv)
       std::cout << "Not doing the Fourier accelerated gauge fixing tests" << std::endl;
       do_fft_gfix = false;
     }else if(sarg == "--alpha"){
-      assert(i<argc-1 && "--alpha option requires an argument");
+      GRID_ASSERT(i<argc-1 && "--alpha option requires an argument");
       std::istringstream ss(argv[i+1]); ss >> alpha;
     }
   }

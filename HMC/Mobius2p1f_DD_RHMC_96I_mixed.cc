@@ -95,7 +95,7 @@ template<class FermionOperatorD, class FermionOperatorF, class SchurOperatorD, c
       //      std::cout << GridLogMessage << " Mixed precision CG wrapper operator() FermOpD " <<std::hex<< &(LinOpD._Mat) <<std::dec <<std::endl;
       // Assumption made in code to extract gauge field
       // We could avoid storing LinopD reference alltogether ?
-      assert(&(SchurOpU->_Mat)==&(LinOpD._Mat));
+      GRID_ASSERT(&(SchurOpU->_Mat)==&(LinOpD._Mat));
 
       ////////////////////////////////////////////////////////////////////////////////////
       // Must snarf a single precision copy of the gauge field in Linop_d argument

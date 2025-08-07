@@ -96,7 +96,7 @@ public:
 		GridBase *FineGrid,
 		GridBase *CoarseGrid){
     int nevecs = evecs_in.size();
-    assert(nevecs > nbasis);
+    GRID_ASSERT(nevecs > nbasis);
     
     //Construct the basis
     basis.resize(nbasis, FineGrid);
@@ -273,7 +273,7 @@ struct Args{
 
 GparityWilsonImplD::ImplParams setupGparityParams(const std::vector<int> &GparityDirs){
   //Setup G-parity BCs
-  assert(Nd == 4);
+  GRID_ASSERT(Nd == 4);
   std::vector<int> dirs4(4);
   for(int i=0;i<3;i++) dirs4[i] = GparityDirs[i];
   dirs4[3] = 0; //periodic gauge BC in time
@@ -309,14 +309,14 @@ void run_b(ActionType &action, const std::string &config, const Args &args){
   auto fineLatt     = GridDefaultLatt();
   Coordinate coarseLatt(4);
   for (int d=0;d<4;d++){
-    coarseLatt[d] = fineLatt[d]/args.blockSize[d];    assert(coarseLatt[d]*args.blockSize[d]==fineLatt[d]);
+    coarseLatt[d] = fineLatt[d]/args.blockSize[d];    GRID_ASSERT(coarseLatt[d]*args.blockSize[d]==fineLatt[d]);
   }
 
   std::cout << GridLogMessage<< " 5d coarse lattice is ";
   for (int i=0;i<4;i++){
     std::cout << coarseLatt[i]<<"x";
   } 
-  int cLs = args.Ls/args.blockSize[4]; assert(cLs*args.blockSize[4]==args.Ls);
+  int cLs = args.Ls/args.blockSize[4]; GRID_ASSERT(cLs*args.blockSize[4]==args.Ls);
   std::cout << cLs<<std::endl;
   
   GridCartesian         * CoarseGrid4    = SpaceTimeGrid::makeFourDimGrid(coarseLatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
@@ -350,7 +350,7 @@ void run_b(ActionType &action, const std::string &config, const Args &args){
     XmlReader RDx(evals_file);
     read(RDx,"evals",evals);
     
-    assert(evals.size()==fine.N_true_get);
+    GRID_ASSERT(evals.size()==fine.N_true_get);
     
     std::cout << GridLogIRL<< "Reading evecs from "<<evecs_file<<std::endl;
     emptyUserRecord record;
@@ -369,7 +369,7 @@ void run_b(ActionType &action, const std::string &config, const Args &args){
     RealD resid = fine.stop_rsd;
     int MaxIt = fine.maxits;
     
-    assert(nbasis<=Nm);    
+    GRID_ASSERT(nbasis<=Nm);    
     Chebyshev<FermionField>      Cheby(fine.getChebyParams());
     FunctionHermOp<FermionField> ChebyOp(Cheby,SchurOp);
     PlainHermOp<FermionField>    Op(SchurOp);
@@ -386,7 +386,7 @@ void run_b(ActionType &action, const std::string &config, const Args &args){
 
     int Nconv;
     IRL.calc(evals, evecs,src,Nconv,false);
-    if(Nconv < Nstop) assert(0 && "Fine lanczos failed to converge the required number of evecs"); //algorithm doesn't consider this a failure
+    if(Nconv < Nstop) GRID_ASSERT(0 && "Fine lanczos failed to converge the required number of evecs"); //algorithm doesn't consider this a failure
     if(Nconv > Nstop){
       //Yes this potentially throws away some evecs but it is better than having a random number of evecs between Nstop and Nm!
       evals.resize(Nstop);
@@ -430,7 +430,7 @@ void run_b(ActionType &action, const std::string &config, const Args &args){
   Chebyshev<FermionField> smoother(fine.getChebyParams());
   
   //Test the quality of the uncompressed evecs
-  assert( compressor.testCompression(SchurOp, smoother, basis, compressed_evecs, evals, fine.stop_rsd, args.coarse_relax_tol) );   
+  GRID_ASSERT( compressor.testCompression(SchurOp, smoother, basis, compressed_evecs, evals, fine.stop_rsd, args.coarse_relax_tol) );   
 }
 
 template<typename ActionType>
@@ -453,7 +453,7 @@ void run(ActionType &action, const std::string &config, const Args &args){
   case 400:
     return run_b<400>(action,config,args);
   default:
-    assert(0 && "Unsupported basis size: allowed values are 50,100,200,250,300,350,400");
+    GRID_ASSERT(0 && "Unsupported basis size: allowed values are 50,100,200,250,300,350,400");
   }
 }
 
@@ -489,7 +489,7 @@ int main (int argc, char ** argv) {
 
   Args args;
   GridCmdOptionIntVector(argv[2], args.GparityDirs);
-  assert(args.GparityDirs.size() == 3);
+  GRID_ASSERT(args.GparityDirs.size() == 3);
 
   std::string action_s = "Mobius"; 
   
@@ -503,7 +503,7 @@ int main (int argc, char ** argv) {
       std::cout << GridLogMessage << "Set quark mass to " << args.mass << std::endl;
     }else if(sarg == "--block"){
       GridCmdOptionIntVector(argv[i+1], args.blockSize);
-      assert(args.blockSize.size() == 5);
+      GRID_ASSERT(args.blockSize.size() == 5);
       std::cout << GridLogMessage << "Set block size to ";
       for(int q=0;q<5;q++) std::cout << args.blockSize[q] << " ";
       std::cout << std::endl;      
@@ -567,7 +567,7 @@ int main (int argc, char ** argv) {
       run(action, config, args);	    
     }
 #else
-    assert(0);
+    GRID_ASSERT(0);
 #endif
   }else{
     WilsonImplD::ImplParams Params = setupParams();

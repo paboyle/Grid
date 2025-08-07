@@ -118,9 +118,9 @@ public:
     FieldF r_f(SinglePrecGrid);
     FieldD mmp_d(DoublePrecGrid);
 
-    assert(psi_d.size()==nshift);
-    assert(mass.size()==nshift);
-    assert(mresidual.size()==nshift);
+    GRID_ASSERT(psi_d.size()==nshift);
+    GRID_ASSERT(mass.size()==nshift);
+    GRID_ASSERT(mresidual.size()==nshift);
   
     // dynamic sized arrays on stack; 2d is a pain with vector
     std::vector<RealD>  bs(nshift);
@@ -141,7 +141,7 @@ public:
 
     // Check lightest mass
     for(int s=0;s<nshift;s++){
-      assert( mass[s]>= mass[primary] );
+      GRID_ASSERT( mass[s]>= mass[primary] );
       converged[s]=0;
     }
   
@@ -179,7 +179,7 @@ public:
     Linop_d.HermOpAndNorm(p_d,mmp_d,d,qq); // mmp = MdagM p        d=real(dot(p, mmp)),  qq=norm2(mmp)
     tmp_d = tmp_d - mmp_d;
     std::cout << " Testing operators match "<<norm2(mmp_d)<<" f "<<norm2(mmp_f)<<" diff "<< norm2(tmp_d)<<std::endl;
-    //    assert(norm2(tmp_d)< 1.0e-4);
+    //    GRID_ASSERT(norm2(tmp_d)< 1.0e-4);
 
     axpy(mmp_d,mass[0],p_d,mmp_d);
     RealD rn = norm2(p_d);
@@ -365,7 +365,7 @@ public:
    
     }
     std::cout<<GridLogMessage<<"CG multi shift did not converge"<<std::endl;
-    assert(0);
+    GRID_ASSERT(0);
   }
 
 };

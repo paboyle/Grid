@@ -110,9 +110,9 @@ public:
   // Derivative interface
   ////////////////////////
   // Interface calls an internal routine
-  void DhopDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag)  { assert(0);};
-  void DhopDerivOE(GaugeField &mat,const FermionField &U,const FermionField &V,int dag){ assert(0);};
-  void DhopDerivEO(GaugeField &mat,const FermionField &U,const FermionField &V,int dag){ assert(0);};
+  void DhopDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag)  { GRID_ASSERT(0);};
+  void DhopDerivOE(GaugeField &mat,const FermionField &U,const FermionField &V,int dag){ GRID_ASSERT(0);};
+  void DhopDerivEO(GaugeField &mat,const FermionField &U,const FermionField &V,int dag){ GRID_ASSERT(0);};
 
   ///////////////////////////////////////////////////////////////
   // non-hermitian hopping term; half cb or both
@@ -128,7 +128,7 @@ public:
   void DhopOE(const FermionField &in, FermionField &out, int dag)
   {
     FermionField tmp(in.Grid());
-    assert(in.Checkerboard()==Even);
+    GRID_ASSERT(in.Checkerboard()==Even);
     Dhop5(in,out,MassFieldOdd,MassFieldEven,dag);
     for(int mu=0;mu<4;mu++){
       DhopDirU(in,UmuOdd[mu],UmuEven[mu],tmp,mu,dag );    out = out + tmp;
@@ -137,7 +137,7 @@ public:
   void DhopEO(const FermionField &in, FermionField &out, int dag)
   {
     FermionField tmp(in.Grid());
-    assert(in.Checkerboard()==Odd);
+    GRID_ASSERT(in.Checkerboard()==Odd);
     Dhop5(in,out, MassFieldEven,MassFieldOdd ,dag );  
     for(int mu=0;mu<4;mu++){
       DhopDirU(in,UmuEven[mu],UmuOdd[mu],tmp,mu,dag );    out = out + tmp;
@@ -147,11 +147,11 @@ public:
   ///////////////////////////////////////////////////////////////
   // Multigrid assistance; force term uses too
   ///////////////////////////////////////////////////////////////
-  void Mdir(const FermionField &in, FermionField &out, int dir, int disp){ assert(0);};
-  void MdirAll(const FermionField &in, std::vector<FermionField> &out)   { assert(0);};
-  void DhopDir(const FermionField &in, FermionField &out, int dir, int disp) { assert(0);};
-  void DhopDirAll(const FermionField &in, std::vector<FermionField> &out)    { assert(0);};
-  void DhopDirCalc(const FermionField &in, FermionField &out, int dirdisp,int gamma, int dag) { assert(0);};
+  void Mdir(const FermionField &in, FermionField &out, int dir, int disp){ GRID_ASSERT(0);};
+  void MdirAll(const FermionField &in, std::vector<FermionField> &out)   { GRID_ASSERT(0);};
+  void DhopDir(const FermionField &in, FermionField &out, int dir, int disp) { GRID_ASSERT(0);};
+  void DhopDirAll(const FermionField &in, std::vector<FermionField> &out)    { GRID_ASSERT(0);};
+  void DhopDirCalc(const FermionField &in, FermionField &out, int dirdisp,int gamma, int dag) { GRID_ASSERT(0);};
 
   void DhopDirU(const FermionField &in, const GaugeLinkField &U5e, const GaugeLinkField &U5o, FermionField &out, int mu, int dag)
   {

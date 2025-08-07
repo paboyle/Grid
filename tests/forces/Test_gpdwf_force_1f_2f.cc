@@ -43,7 +43,7 @@ void copyConjGauge(LatticeGaugeFieldD &Umu_1f, const LatticeGaugeFieldD &Umu_2f,
 
   int L_2f = UGrid_2f->FullDimensions()[nu];
   int L_1f = UGrid_1f->FullDimensions()[nu]; 
-  assert(L_1f == 2 * L_2f);
+  GRID_ASSERT(L_1f == 2 * L_2f);
 
   //Coordinate grid for reference
   LatticeInteger xcoor_1f(UGrid_1f);
@@ -73,7 +73,7 @@ void convertFermion1f_from_2f(FermionField1f &out_1f, const FermionField2f &in_2
 
   Integer L_2f = FGrid_2f->FullDimensions()[nu+nuoff];
   Integer L_1f = FGrid_1f->FullDimensions()[nu+nuoff];
-  assert(L_1f == 2 * L_2f);
+  GRID_ASSERT(L_1f == 2 * L_2f);
   
   auto in_f0_2fgrid = PeekIndex<GparityFlavourIndex>(in_2f,0); //flavor 0 on 2f Grid
   FermionField1f in_f0_1fgrid(FGrid_1f);
@@ -442,7 +442,7 @@ int main (int argc, char ** argv)
   }else if(action == "DSDR"){
     runTest<GparityWilsonTMFermionD, WilsonTMFermionD>(argc,argv);
   }else{
-    assert(0);
+    GRID_ASSERT(0);
   }
 }
 

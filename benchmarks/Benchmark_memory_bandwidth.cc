@@ -187,7 +187,7 @@ int main (int argc, char ** argv)
       std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"
 	       <<bytes<<"  \t\t"<<bytes/time<<"\t\t"<<flops/time<< "\t\t"
 	       <<(stop-start)/1000./1000.<< "\t\t " <<std::endl;
-      assert(nn==nn);
+      GRID_ASSERT(nn==nn);
   }    
 
   Grid_finalize();

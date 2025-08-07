@@ -270,7 +270,7 @@ class TwoLevelCG : public LinearFunction<Field>
     std::vector<RealD> src_nrm(nrhs);
     for(int rhs=0;rhs<nrhs;rhs++) {
       src_nrm[rhs]=norm2(src[rhs]);
-      assert(src_nrm[rhs]!=0.0);
+      GRID_ASSERT(src_nrm[rhs]!=0.0);
     }
     std::vector<RealD> tn(nrhs);
 

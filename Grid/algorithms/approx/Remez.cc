@@ -121,7 +121,7 @@ double AlgRemez::generateApprox(int num_degree, int den_degree,
   // Reallocate arrays, since degree has changed
   if (num_degree != n || den_degree != d) allocate(num_degree,den_degree);
 
-  assert(a_len<=SUM_MAX);
+  GRID_ASSERT(a_len<=SUM_MAX);
 
   step = new bigfloat[num_degree+den_degree+2];
 
@@ -151,9 +151,9 @@ double AlgRemez::generateApprox(int num_degree, int den_degree,
     equations();
     if (delta < tolerance) {
       std::cout<<"Delta too small, try increasing precision\n";
-      assert(0);
+      GRID_ASSERT(0);
     };    
-    assert( delta>= tolerance);
+    GRID_ASSERT( delta>= tolerance);
 
     search(step);
   }

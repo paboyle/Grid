@@ -123,7 +123,7 @@ public:
     RealD eps = 1.0;
 
     Approx::zolotarev_data *zdata = Approx::higham(eps,this->Ls);// eps is ignored for higham
-    assert(zdata->n==this->Ls);
+    GRID_ASSERT(zdata->n==this->Ls);
 	
     //    std::cout<<GridLogMessage << "DomainWallFermion with Ls="<<this->Ls<<std::endl;
     // Call base setter

@@ -63,20 +63,20 @@ public:
 
   /*! Stout smearing with base explicitly specified */
   Smear_Stout(Smear<Gimpl>* base) : SmearBase{base} {
-    assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
+    GRID_ASSERT(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
   }
 
   /*! Construct stout smearing object from explicitly specified rho matrix */
   Smear_Stout(const std::vector<double>& rho_)
     : OwnedBase{new Smear_APE<Gimpl>(rho_)}, SmearBase{OwnedBase.get()} {
     std::cout << GridLogDebug << "Stout smearing constructor : Smear_Stout(const std::vector<double>& " << rho_ << " )" << std::endl;
-    assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
+    GRID_ASSERT(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
     }
 
   /*! Default constructor. rho is constant in all directions, optionally except for orthogonal dimension */
   Smear_Stout(double rho = 1.0, int orthogdim = -1)
   : OrthogDim{orthogdim}, SmearRho{ rho3D(rho,orthogdim) }, OwnedBase{ new Smear_APE<Gimpl>(SmearRho) }, SmearBase{OwnedBase.get()} {
-    assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
+    GRID_ASSERT(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
   }
 
   ~Smear_Stout() {}  // delete SmearBase...

@@ -80,12 +80,12 @@ public:
   // Can be used to do I/O on the operator matrices externally
   void SetMatrix (int p,CoarseMatrix & A)
   {
-    assert(A.size()==geom_srhs.npoint);
+    GRID_ASSERT(A.size()==geom_srhs.npoint);
     GridtoBLAS(A[p],BLAS_A[p]);
   }
   void GetMatrix (int p,CoarseMatrix & A)
   {
-    assert(A.size()==geom_srhs.npoint);
+    GRID_ASSERT(A.size()==geom_srhs.npoint);
     BLAStoGrid(A[p],BLAS_A[p]);
   }
   void CopyMatrix (GeneralCoarseOp &_Op)
@@ -178,14 +178,14 @@ public:
 	for(int32_t point = 0 ; point < geom.npoint; point++){
 	  int i=s*orhs*geom.npoint+point;
  	  int32_t nbr = Stencil._entries[i]._offset*CComplex::Nsimd(); // oSite -> lSite
-	  assert(nbr<BLAS_B.size());
+	  GRID_ASSERT(nbr<BLAS_B.size());
 	  ComplexD * ptr = (ComplexD *)&BLAS_B[nbr];
 	  acceleratorPut(BLAS_BP[point][j],ptr); // neighbour indexing in ghost zone volume
 	}
 	j++;
       }
     }
-    assert(j==unpadded_sites);
+    GRID_ASSERT(j==unpadded_sites);
   }
   template<class vobj> void GridtoBLAS(const Lattice<vobj> &from,deviceVector<typename vobj::scalar_object> &to)
   {
@@ -194,7 +194,7 @@ public:
   typedef typename vobj::vector_type vector_type;
 
   GridBase *Fg = from.Grid();
-  assert(!Fg->_isCheckerBoarded);
+  GRID_ASSERT(!Fg->_isCheckerBoarded);
   int nd = Fg->_ndimension;
 
   to.resize(Fg->lSites());
@@ -241,10 +241,10 @@ public:
   typedef typename vobj::vector_type vector_type;
 
   GridBase *Tg = grid.Grid();
-  assert(!Tg->_isCheckerBoarded);
+  GRID_ASSERT(!Tg->_isCheckerBoarded);
   int nd = Tg->_ndimension;
   
-  assert(in.size()==Tg->lSites());
+  GRID_ASSERT(in.size()==Tg->lSites());
 
   Coordinate LocalLatt = Tg->LocalDimensions();
   size_t nsite = 1;
@@ -669,7 +669,7 @@ Grid : Message : 328.193436 s : CoarsenOperator mat    122213270 us
     const int Nsimd = CComplex::Nsimd();
 
     int64_t nrhs  =pin.Grid()->GlobalDimensions()[0];
-    assert(nrhs>=1);
+    GRID_ASSERT(nrhs>=1);
 
     RealD flops,bytes;
     int64_t osites=in.Grid()->oSites(); // unpadded
@@ -721,7 +721,7 @@ Grid : Message : 328.193436 s : CoarsenOperator mat    122213270 us
     //    std::cout << GridLogMessage<<"Coarse overall flops/s "<< flops/t_tot<<" mflop/s"<<std::endl;
     //    std::cout << GridLogMessage<<"Coarse total bytes   "<< bytes/1e6<<" MB"<<std::endl;
   };
-  virtual  void Mdiag    (const Field &in, Field &out){ assert(0);};
+  virtual  void Mdiag    (const Field &in, Field &out){ GRID_ASSERT(0);};
   virtual  void Mdir     (const Field &in, Field &out,int dir, int disp){assert(0);};
   virtual  void MdirAll  (const Field &in, std::vector<Field> &out){assert(0);};
 };

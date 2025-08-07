@@ -42,7 +42,7 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
   //  Lattice<vobj> Xslice(SliceGrid);
   //  Lattice<vobj> Rslice(SliceGrid);
 
-  assert( FullGrid->_simd_layout[Orthog]==1);
+  GRID_ASSERT( FullGrid->_simd_layout[Orthog]==1);
 
   //FIXME package in a convenient iterator
   //Should loop over a plane orthogonal to direction "Orthog"
@@ -86,7 +86,7 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
   int Nblock = X.Grid()->GlobalDimensions()[Orthog];
 
   GridBase *FullGrid  = X.Grid();
-  assert( FullGrid->_simd_layout[Orthog]==1);
+  GRID_ASSERT( FullGrid->_simd_layout[Orthog]==1);
 
   //FIXME package in a convenient iterator
   //Should loop over a plane orthogonal to direction "Orthog"
@@ -140,7 +140,7 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
   
   mat = Eigen::MatrixXcd::Zero(Nblock,Nblock);
 
-  assert( FullGrid->_simd_layout[Orthog]==1);
+  GRID_ASSERT( FullGrid->_simd_layout[Orthog]==1);
   //  int nh =  FullGrid->_ndimension;
   //  int nl = SliceGrid->_ndimension;
   //  int nl = nh-1;

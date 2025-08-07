@@ -53,10 +53,10 @@ inline int RNGfillable(GridBase *coarse,GridBase *fine)
 
   // trivially extended in higher dims, with locality guaranteeing RNG state is local to node
   int lowerdims   = fine->_ndimension - coarse->_ndimension;
-  assert(lowerdims >= 0);
+  GRID_ASSERT(lowerdims >= 0);
   for(int d=0;d<lowerdims;d++){
-    assert(fine->_simd_layout[d]==1);
-    assert(fine->_processors[d]==1);
+    GRID_ASSERT(fine->_simd_layout[d]==1);
+    GRID_ASSERT(fine->_processors[d]==1);
   }
 
   int multiplicity=1;
@@ -66,9 +66,9 @@ inline int RNGfillable(GridBase *coarse,GridBase *fine)
   // local and global volumes subdivide cleanly after SIMDization
   for(int d=0;d<rngdims;d++){
     int fd= d+lowerdims;
-    assert(coarse->_processors[d]  == fine->_processors[fd]);
-    assert(coarse->_simd_layout[d] == fine->_simd_layout[fd]);
-    assert(((fine->_rdimensions[fd] / coarse->_rdimensions[d])* coarse->_rdimensions[d])==fine->_rdimensions[fd]); 
+    GRID_ASSERT(coarse->_processors[d]  == fine->_processors[fd]);
+    GRID_ASSERT(coarse->_simd_layout[d] == fine->_simd_layout[fd]);
+    GRID_ASSERT(((fine->_rdimensions[fd] / coarse->_rdimensions[d])* coarse->_rdimensions[d])==fine->_rdimensions[fd]); 
 
     multiplicity = multiplicity *fine->_rdimensions[fd] / coarse->_rdimensions[d]; 
   }
@@ -83,18 +83,18 @@ inline int RNGfillable_general(GridBase *coarse,GridBase *fine)
   int rngdims = coarse->_ndimension;
     
   // trivially extended in higher dims, with locality guaranteeing RNG state is local to node
-  int lowerdims   = fine->_ndimension - coarse->_ndimension;  assert(lowerdims >= 0);
+  int lowerdims   = fine->_ndimension - coarse->_ndimension;  GRID_ASSERT(lowerdims >= 0);
   // assumes that the higher dimensions are not using more processors
   // all further divisions are local
-  for(int d=0;d<lowerdims;d++) assert(fine->_processors[d]==1);
-  for(int d=0;d<rngdims;d++) assert(coarse->_processors[d] == fine->_processors[d+lowerdims]);
+  for(int d=0;d<lowerdims;d++) GRID_ASSERT(fine->_processors[d]==1);
+  for(int d=0;d<rngdims;d++) GRID_ASSERT(coarse->_processors[d] == fine->_processors[d+lowerdims]);
 
   // then divide the number of local sites
   // check that the total number of sims agree, meanse the iSites are the same
-  assert(fine->Nsimd() == coarse->Nsimd());
+  GRID_ASSERT(fine->Nsimd() == coarse->Nsimd());
 
   // check that the two grids divide cleanly
-  assert( (fine->lSites() / coarse->lSites() ) * coarse->lSites() == fine->lSites() );
+  GRID_ASSERT( (fine->lSites() / coarse->lSites() ) * coarse->lSites() == fine->lSites() );
 
   return fine->lSites() / coarse->lSites();
 }
@@ -177,7 +177,7 @@ public:
 
     skip = skip<<shift;
 
-    assert((skip >> shift)==site); // check for overflow
+    GRID_ASSERT((skip >> shift)==site); // check for overflow
 
     eng.discard(skip);
 #else
@@ -218,7 +218,7 @@ public:
     GetState(saved,_generators[gen]);
   }
   void SetState(std::vector<RngStateType> & saved,RngEngine &eng){
-    assert(saved.size()==RngStateCount);
+    GRID_ASSERT(saved.size()==RngStateCount);
     std::stringstream ss;
     for(int i=0;i<RngStateCount;i++){
       ss<< saved[i]<<" ";

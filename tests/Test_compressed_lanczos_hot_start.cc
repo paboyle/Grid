@@ -56,7 +56,7 @@ public:
   void checkpointFine(std::string evecs_file,std::string evals_file)
   {
 #ifdef HAVE_LIME
-    assert(this->subspace.size()==nbasis);
+    GRID_ASSERT(this->subspace.size()==nbasis);
     emptyUserRecord record;
     Grid::ScidacWriter WR(this->_FineGrid->IsBoss());
     WR.open(evecs_file);
@@ -68,7 +68,7 @@ public:
     XmlWriter WRx(evals_file);
     write(WRx,"evals",this->evals_fine);
 #else
-    assert(0);
+    GRID_ASSERT(0);
 #endif
   }
 
@@ -82,7 +82,7 @@ public:
     XmlReader RDx(evals_file);
     read(RDx,"evals",this->evals_fine);
     
-    assert(this->evals_fine.size()==nbasis);
+    GRID_ASSERT(this->evals_fine.size()==nbasis);
     
     std::cout << GridLogIRL<< "checkpointFineRestore:  Reading evecs from "<<evecs_file<<std::endl;
     emptyUserRecord record;
@@ -95,7 +95,7 @@ public:
     }
     RD.close();
 #else
-    assert(0);
+    GRID_ASSERT(0);
 #endif 
   }
 
@@ -114,7 +114,7 @@ public:
     XmlWriter WRx(evals_file);
     write(WRx,"evals",this->evals_coarse);
 #else
-    assert(0);
+    GRID_ASSERT(0);
 #endif
   }
 
@@ -128,7 +128,7 @@ public:
     XmlReader RDx(evals_file);
     read(RDx,"evals",this->evals_coarse);
 
-    assert(this->evals_coarse.size()==nvec);
+    GRID_ASSERT(this->evals_coarse.size()==nvec);
     emptyUserRecord record;
     std::cout << GridLogIRL<< "checkpointCoarseRestore:  Reading evecs from "<<evecs_file<<std::endl;
     Grid::ScidacReader RD ;
@@ -138,7 +138,7 @@ public:
     }
     RD.close();
 #else 
-    assert(0);
+    GRID_ASSERT(0);
 #endif
   }
 };
@@ -179,19 +179,19 @@ int main (int argc, char ** argv) {
 
   std::vector<int> fineLatt     = latt;
   int dims=fineLatt.size();
-  assert(blockSize.size()==dims+1);
+  GRID_ASSERT(blockSize.size()==dims+1);
   std::vector<int> coarseLatt(dims);
   std::vector<int> coarseLatt5d ;
 
   for (int d=0;d<coarseLatt.size();d++){
-    coarseLatt[d] = fineLatt[d]/blockSize[d];    assert(coarseLatt[d]*blockSize[d]==fineLatt[d]);
+    coarseLatt[d] = fineLatt[d]/blockSize[d];    GRID_ASSERT(coarseLatt[d]*blockSize[d]==fineLatt[d]);
   }
 
   std::cout << GridLogMessage<< " 5d coarse lattice is ";
   for (int i=0;i<coarseLatt.size();i++){
     std::cout << coarseLatt[i]<<"x";
   } 
-  int cLs = Ls/blockSize[dims]; assert(cLs*blockSize[dims]==Ls);
+  int cLs = Ls/blockSize[dims]; GRID_ASSERT(cLs*blockSize[dims]==Ls);
   std::cout << cLs<<std::endl;
   
   GridCartesian         * CoarseGrid4    = SpaceTimeGrid::makeFourDimGrid(coarseLatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
@@ -222,14 +222,14 @@ int main (int argc, char ** argv) {
 
   std::cout << GridLogMessage << "Keep " << fine.Nstop   << " fine   vectors" << std::endl;
   std::cout << GridLogMessage << "Keep " << coarse.Nstop << " coarse vectors" << std::endl;
-  assert(Nm2 >= Nm1);
+  GRID_ASSERT(Nm2 >= Nm1);
 
   const int nbasis= 60;
-  assert(nbasis==Ns1);
+  GRID_ASSERT(nbasis==Ns1);
   LocalCoherenceLanczosScidac<vSpinColourVector,vTComplex,nbasis> _LocalCoherenceLanczos(FrbGrid,CoarseGrid5,HermOp,Odd);
   std::cout << GridLogMessage << "Constructed LocalCoherenceLanczos" << std::endl;
 
-  assert( (Params.doFine)||(Params.doFineRead));
+  GRID_ASSERT( (Params.doFine)||(Params.doFineRead));
 
   if ( Params.doFine ) { 
     std::cout << GridLogMessage << "Performing fine grid IRL Nstop "<< Ns1 << " Nk "<<Nk1<<" Nm "<<Nm1<< std::endl;

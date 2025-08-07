@@ -77,7 +77,7 @@ public:
     actions(std::get<0>(actions_hirep)), multiplier(mul) {
     // initialize the hirep vectors to zero.
     // apply(this->resize, actions_hirep, 0); //need a working resize
-    assert(mul >= 1);
+    GRID_ASSERT(mul >= 1);
   }
 
   template < class GenField >

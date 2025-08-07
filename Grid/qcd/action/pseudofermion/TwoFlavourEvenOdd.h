@@ -168,7 +168,7 @@ public:
     //	FermOp.MeeDeriv(tmp , Y, X,DaggerNo );    dSdU=tmp;
     //  FermOp.MeeDeriv(tmp , X, Y,DaggerYes);  dSdU=dSdU+tmp;
 
-    assert(FermOp.ConstEE() == 1);
+    GRID_ASSERT(FermOp.ConstEE() == 1);
 
     /*
       FermOp.MooeeInvDag(PhiOdd,Y);

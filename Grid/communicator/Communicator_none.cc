@@ -34,6 +34,8 @@ NAMESPACE_BEGIN(Grid);
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 Grid_MPI_Comm       CartesianCommunicator::communicator_world;
 
+void GridAbort(void) { abort(); }
+
 void CartesianCommunicator::Init(int *argc, char *** arv)
 {
   GlobalSharedMemory::Init(communicator_world);
@@ -54,14 +56,14 @@ CartesianCommunicator::CartesianCommunicator(const Coordinate &processors)
 {
   _shm_processors = Coordinate(processors.size(),1);
   _processors = processors;
-  _ndimension = processors.size();  assert(_ndimension>=1);
+  _ndimension = processors.size();  GRID_ASSERT(_ndimension>=1);
   _processor_coor.resize(_ndimension);
   
   // Require 1^N processor grid for fake
   _Nprocessors=1;
   _processor = 0;
   for(int d=0;d<_ndimension;d++) {
-    assert(_processors[d]==1);
+    GRID_ASSERT(_processors[d]==1);
     _processor_coor[d] = 0;
   }
   SetCommunicator(communicator_world);
@@ -89,9 +91,9 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
 					   int from,
 					   int bytes)
 {
-  assert(0);
+  GRID_ASSERT(0);
 }
-void CartesianCommunicator::CommsComplete(std::vector<CommsRequest_t> &list){ assert(list.size()==0);}
+void CartesianCommunicator::CommsComplete(std::vector<CommsRequest_t> &list){ GRID_ASSERT(list.size()==0);}
 void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 						void *xmit,
 						int dest,
@@ -99,7 +101,7 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 						int from,
 						int bytes,int dir)
 {
-  assert(0);
+  GRID_ASSERT(0);
 }
 
 void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,uint64_t words,uint64_t bytes)

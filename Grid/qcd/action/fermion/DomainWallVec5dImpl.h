@@ -134,25 +134,25 @@ public:
       
   inline void InsertForce4D(GaugeField &mat, FermionField &Btilde,FermionField &A, int mu) 
   {
-    assert(0);
+    GRID_ASSERT(0);
   }
 
   inline void outerProductImpl(PropagatorField &mat, const FermionField &Btilde, const FermionField &A){
-    assert(0);
+    GRID_ASSERT(0);
   } 
 
   inline void TraceSpinImpl(GaugeLinkField &mat, PropagatorField&P) {
-    assert(0);
+    GRID_ASSERT(0);
   }
 
   inline void extractLinkField(std::vector<GaugeLinkField> &mat, DoubledGaugeField &Uds){
-    assert(0);
+    GRID_ASSERT(0);
   }
 
 
   inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde, int mu) {
 
-    assert(0);
+    GRID_ASSERT(0);
     // Following lines to be revised after Peter's addition of half prec
     // missing put lane...
     /*
@@ -184,7 +184,7 @@ public:
       slocal_coor[0] = s;
       for (int s4d = 1; s4d< dimF; s4d++) slocal_coor[s4d] = local_coor[s4d-1];
       int sF = Bgrid->oIndexReduced(slocal_coor);  
-      assert(sF < Bgrid->oSites());
+      GRID_ASSERT(sF < Bgrid->oSites());
 
       extract(traceIndex<SpinIndex>(outerProduct(Btilde[sF], Atilde[sF])), vres); 
       // sum across the 5d dimension

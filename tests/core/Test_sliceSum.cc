@@ -11,13 +11,13 @@ template<class vobj> inline void sliceSumCPU(const Grid::Lattice<vobj> &Data,std
   typedef typename vobj::scalar_object sobj;
   typedef typename vobj::scalar_object::scalar_type scalar_type;
   GridBase  *grid = Data.Grid();
-  assert(grid!=NULL);
+  GRID_ASSERT(grid!=NULL);
 
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
 
-  assert(orthogdim >= 0);
-  assert(orthogdim < Nd);
+  GRID_ASSERT(orthogdim >= 0);
+  GRID_ASSERT(orthogdim < Nd);
 
   int fd=grid->_fdimensions[orthogdim];
   int ld=grid->_ldimensions[orthogdim];
@@ -134,7 +134,7 @@ int main (int argc, char ** argv) {
       for(int t=0;t<reduction_reference.size();t++) {
 
         auto diff = reduction_reference[t]-reduction_result[t];
-        assert(abs(TensorRemove(diff)) < 1e-8 );
+        GRID_ASSERT(abs(TensorRemove(diff)) < 1e-8 );
 
       }
 
@@ -184,10 +184,10 @@ int main (int argc, char ** argv) {
       for(int t=0;t<reduction_reference_cv.size();t++) {
 
         auto diff = reduction_reference_cv[t]-reduction_result_cv[t];
-        assert(abs(diff()(0)()) < 1e-8 );
-        assert(abs(diff()(1)()) < 1e-8 );
-        assert(abs(diff()(2)()) < 1e-8 );
-        assert(abs(diff()(3)()) < 1e-8 );
+        GRID_ASSERT(abs(diff()(0)()) < 1e-8 );
+        GRID_ASSERT(abs(diff()(1)()) < 1e-8 );
+        GRID_ASSERT(abs(diff()(2)()) < 1e-8 );
+        GRID_ASSERT(abs(diff()(3)()) < 1e-8 );
 
       }
 
@@ -238,18 +238,18 @@ int main (int argc, char ** argv) {
 
         auto diff = reduction_reference_scv[t]-reduction_result_scv[t];
         // std::cout << diff <<std::endl;
-        assert(abs(diff()(0)(0)) < 1e-8 );
-        assert(abs(diff()(0)(1)) < 1e-8 );
-        assert(abs(diff()(0)(2)) < 1e-8 );
-        assert(abs(diff()(1)(0)) < 1e-8 );
-        assert(abs(diff()(1)(1)) < 1e-8 );
-        assert(abs(diff()(1)(2)) < 1e-8 );    
-        assert(abs(diff()(2)(0)) < 1e-8 );
-        assert(abs(diff()(2)(1)) < 1e-8 );
-        assert(abs(diff()(2)(2)) < 1e-8 );    
-        assert(abs(diff()(3)(0)) < 1e-8 );
-        assert(abs(diff()(3)(1)) < 1e-8 );
-        assert(abs(diff()(3)(2)) < 1e-8 );
+        GRID_ASSERT(abs(diff()(0)(0)) < 1e-8 );
+        GRID_ASSERT(abs(diff()(0)(1)) < 1e-8 );
+        GRID_ASSERT(abs(diff()(0)(2)) < 1e-8 );
+        GRID_ASSERT(abs(diff()(1)(0)) < 1e-8 );
+        GRID_ASSERT(abs(diff()(1)(1)) < 1e-8 );
+        GRID_ASSERT(abs(diff()(1)(2)) < 1e-8 );    
+        GRID_ASSERT(abs(diff()(2)(0)) < 1e-8 );
+        GRID_ASSERT(abs(diff()(2)(1)) < 1e-8 );
+        GRID_ASSERT(abs(diff()(2)(2)) < 1e-8 );    
+        GRID_ASSERT(abs(diff()(3)(0)) < 1e-8 );
+        GRID_ASSERT(abs(diff()(3)(1)) < 1e-8 );
+        GRID_ASSERT(abs(diff()(3)(2)) < 1e-8 );
 
       }
 
@@ -304,7 +304,7 @@ int main (int argc, char ** argv) {
           for (int js = 0; js < Ns; js++) {
             for (int ic = 0; ic < Nc; ic++) {
               for (int jc = 0; jc < Nc; jc++) {
-                assert(abs(diff()(is,js)(ic,jc)) < 1e-8);
+                GRID_ASSERT(abs(diff()(is,js)(ic,jc)) < 1e-8);
               }
             }
           }

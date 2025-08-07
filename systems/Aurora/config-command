@@ -2,7 +2,7 @@ export MPFR=`spack find --paths mpfr    | grep ^mpfr  | awk '{print $2}' `
 export GMP=`spack find --paths gmp   | grep ^gmp  | awk '{print $2}' `
 export CLIME=`spack find --paths c-lime  | grep ^c-lime  | awk '{print $2}' `
 export UNWIND=`spack find --paths libunwind  | grep ^libunwind  | awk '{print $2}' `
-
+export HDF5=/opt/cray/pe/hdf5/1.12.2.3/gnu/9.1
 ../../configure \
 	--enable-simd=GPU \
 	--enable-gen-simd-width=64 \
@@ -16,6 +16,7 @@ export UNWIND=`spack find --paths libunwind  | grep ^libunwind  | awk '{print $2
 	--enable-accelerator-aware-mpi=no \
 	--enable-unified=no \
 	--with-lime=$CLIME \
+	--with-hdf5=${HDF5} \
 	--with-gmp=$GMP \
 	--with-mpfr=$MPFR \
 	--with-unwind=$UNWIND \

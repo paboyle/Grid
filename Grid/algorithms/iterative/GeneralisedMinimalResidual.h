@@ -36,7 +36,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
  public:
   using OperatorFunction<Field>::operator();
 
-  bool ErrorOnNoConverge; // Throw an assert when GMRES fails to converge,
+  bool ErrorOnNoConverge; // Throw an GRID_ASSERT when GMRES fails to converge,
                           // defaults to true
 
   RealD   Tolerance;
@@ -80,7 +80,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     conformable(psi, src);
 
     RealD guess = norm2(psi);
-    assert(std::isnan(guess) == 0);
+    GRID_ASSERT(std::isnan(guess) == 0);
 
     RealD cp;
     RealD ssq = norm2(src);
@@ -135,7 +135,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     std::cout << GridLogMessage << "GeneralisedMinimalResidual did NOT converge" << std::endl;
 
     if (ErrorOnNoConverge)
-      assert(0);
+      GRID_ASSERT(0);
   }
 
   RealD outerLoopBody(LinearOperatorBase<Field> &LinOp, const Field &src, Field &psi, RealD rsq) {
@@ -181,7 +181,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
       }
     }
 
-    assert(0); // Never reached
+    GRID_ASSERT(0); // Never reached
     return cp;
   }
 

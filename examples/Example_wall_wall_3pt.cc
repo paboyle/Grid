@@ -157,8 +157,8 @@ void GaussianWallSource(GridParallelRNG &RNG,int tslice,LatticeGaugeField &U,Lat
 }
 void SequentialSource(int tslice,Coordinate &mom,LatticePropagator &spectator,LatticePropagator &source)
 {
-  assert(mom.size()==Nd);
-  assert(mom[Tdir] == 0);
+  GRID_ASSERT(mom.size()==Nd);
+  GRID_ASSERT(mom[Tdir] == 0);
 
   GridBase * grid = spectator.Grid();
 
@@ -331,7 +331,7 @@ void WallSinkMesonTrace(std::string file,std::vector<Propagator> &q1,std::vector
 int make_idx(int p, int m,int nmom)
 {
   if (m==0) return p;
-  assert(p==0);
+  GRID_ASSERT(p==0);
   return nmom + m - 1;
 }
 

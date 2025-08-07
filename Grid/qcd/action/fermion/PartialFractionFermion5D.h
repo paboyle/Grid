@@ -104,8 +104,8 @@ public:
     FermionField in_buf(in.Grid()); in_buf = Zero();
     typedef typename Simd::scalar_type Scalar;
     Scalar ci(0.0,1.0);
-    assert(twist.size() == Nd);//check that twist is Nd
-    assert(boundary.size() == Nd);//check that boundary conditions is Nd
+    GRID_ASSERT(twist.size() == Nd);//check that twist is Nd
+    GRID_ASSERT(boundary.size() == Nd);//check that boundary conditions is Nd
     int shift = 0;
     for(unsigned int nu = 0; nu < Nd; nu++)
       {
@@ -137,7 +137,7 @@ public:
     FreePropagator(in,out,mass,boundary,twist);
   };
 
-  void set_qmu(std::vector<RealD> _qmu) { qmu=_qmu; assert(qmu.size()==Nd);};
+  void set_qmu(std::vector<RealD> _qmu) { qmu=_qmu; GRID_ASSERT(qmu.size()==Nd);};
   void addQmu(const FermionField &in, FermionField &out, int dag);
 
 protected:

@@ -205,7 +205,7 @@ void runBenchmark(int* argc, char*** argv) {
   double secs_res = (t5-t4)/1e6; \
   grid_printf_msg("Performance(%35s, %s): %2.4f s, %6.0f GFlop/s, %6.0f GByte/s, speedup vs ref = %.2f, fraction of hop = %.2f\n", \
                   "compact_"#KERNEL, precision.c_str(), secs_res, clov_gflop_total/secs_res, clov_gbyte_total/secs_res, secs_ref/secs_res, secs_res/secs_hop); \
-  assert(resultsAgree(ref, res, #KERNEL)); \
+  GRID_ASSERT(resultsAgree(ref, res, #KERNEL)); \
 }
 
   BENCH_CLOVER_KERNEL(Mooee);

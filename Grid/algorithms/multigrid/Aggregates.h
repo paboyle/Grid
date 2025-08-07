@@ -292,7 +292,7 @@ public:
 	  
       }
     }
-    assert(b==nn);
+    GRID_ASSERT(b==nn);
   }
 
 

@@ -98,7 +98,7 @@ public:
   virtual void TrajectoryComplete(int traj,
                                   typename Impl::Field &U,
                                   GridSerialRNG &sRNG,
-                                  GridParallelRNG &pRNG) { assert(0); } ; // HMC should pass the smart config with smeared and unsmeared
+                                  GridParallelRNG &pRNG) { GRID_ASSERT(0); } ; // HMC should pass the smart config with smeared and unsmeared
   
   virtual void CheckpointRestore(int traj, typename Impl::Field &U,
                                  GridSerialRNG &sRNG,

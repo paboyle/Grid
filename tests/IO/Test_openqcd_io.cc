@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
   if(GridCmdOptionExists(argv, argv + argc, "--config")) {
     file = GridCmdOptionPayload(argv, argv + argc, "--config");
     std::cout << "file: " << file << std::endl;
-    assert(!file.empty());
+    GRID_ASSERT(!file.empty());
   }
 
   OpenQcdIOChromaReference::readConfiguration(Umu_ref, header_ref, file);

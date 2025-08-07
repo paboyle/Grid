@@ -387,7 +387,7 @@ public:
      Handle< LinearOperatorArray<T4> > M(S_f.linOp(fs));
      return  M;
    }
-   assert(0);
+   GRID_ASSERT(0);
   }
 
   static Chroma::Handle< Chroma::SystemSolver<QDP::LatticeFermion> > GetSolver(QDP::multi1d<QDP::LatticeColorMatrix> &u, ChromaAction parms)
@@ -745,7 +745,7 @@ void calc_grid(ChromaAction action,Grid::LatticeGaugeField & Umu, Grid::LatticeF
     return;
   }
   
-  assert(0);
+  GRID_ASSERT(0);
 }
 
 

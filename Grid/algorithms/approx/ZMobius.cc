@@ -74,7 +74,7 @@ bigfloat epsilonMobius(bigfloat x, void* data){
 void computeZmobiusOmega(std::vector<ComplexD> &omega_out, const int Ls_out,
 			 const std::vector<RealD> &omega_in, const int Ls_in,
 			 const RealD lambda_bound){
-  assert(omega_in.size() == Ls_in);
+  GRID_ASSERT(omega_in.size() == Ls_in);
   omega_out.resize(Ls_out);
 
   //Use the Remez algorithm to generate the appropriate rational polynomial

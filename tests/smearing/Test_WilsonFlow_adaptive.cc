@@ -47,7 +47,7 @@ RealD interpolate(const RealD t_int, const std::vector<std::pair<RealD,RealD> > 
     }
     else if(diff < tdiff2){ tdiff2 = diff; t2_idx = i; }
   }
-  assert(t1_idx != -1 && t2_idx != -1);
+  GRID_ASSERT(t1_idx != -1 && t2_idx != -1);
   
   RealD t2 = data[t2_idx].first,  v2 = data[t2_idx].second;
   RealD t1 = data[t1_idx].first,  v1 = data[t1_idx].second;

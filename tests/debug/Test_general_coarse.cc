@@ -48,16 +48,16 @@ class HermOpAdaptor : public LinearOperatorBase<Field>
   LinearOperatorBase<Field> & wrapped;
 public:
   HermOpAdaptor(LinearOperatorBase<Field> &wrapme) : wrapped(wrapme)  {};
-  void OpDiag (const Field &in, Field &out) {    assert(0);  }
-  void OpDir  (const Field &in, Field &out,int dir,int disp) {    assert(0);  }
-  void OpDirAll  (const Field &in, std::vector<Field> &out){    assert(0);  };
+  void OpDiag (const Field &in, Field &out) {    GRID_ASSERT(0);  }
+  void OpDir  (const Field &in, Field &out,int dir,int disp) {    GRID_ASSERT(0);  }
+  void OpDirAll  (const Field &in, std::vector<Field> &out){    GRID_ASSERT(0);  };
   void Op     (const Field &in, Field &out){
     wrapped.HermOp(in,out);
   }
   void AdjOp     (const Field &in, Field &out){
     wrapped.HermOp(in,out);
   }
-  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){    assert(0);  }
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){    GRID_ASSERT(0);  }
   void HermOp(const Field &in, Field &out){
     wrapped.HermOp(in,out);
   }
@@ -286,7 +286,7 @@ int main (int argc, char ** argv)
       chi=chi-Aphi;
       RealD diff =norm2(chi);
       std::cout << r << " diff " << diff<<std::endl;
-      assert(diff < 1.0e-10);
+      GRID_ASSERT(diff < 1.0e-10);
     }
     std::cout << nrhs<< " mrhs " << t0/ncall/nrhs <<" us"<<std::endl;
     std::cout << nrhs<< " srhs " << t1/ncall/nrhs <<" us"<<std::endl;

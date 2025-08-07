@@ -135,7 +135,7 @@ public:
     // FIXME : Clover term not yet..
     //////////////////////////////////////////////////////
 
-    assert(FermOp.ConstEE() == 1);
+    GRID_ASSERT(FermOp.ConstEE() == 1);
     PhiEven = Zero();
   };
 

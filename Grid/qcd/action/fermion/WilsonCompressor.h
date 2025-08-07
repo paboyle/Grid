@@ -241,7 +241,7 @@ public:
 
     this->_grid->StencilBarrier();
 
-    assert(source.Grid()==this->_grid);
+    GRID_ASSERT(source.Grid()==this->_grid);
     
     this->u_comm_offset=0;
       
@@ -278,7 +278,7 @@ public:
       vet_same_node(this->same_node[Tm],this->HaloGatherDir(source,TpCompress,Tm,face_idx));
     }
     this->face_table_computed=1;
-    assert(this->u_comm_offset==this->_unified_buffer_size);
+    GRID_ASSERT(this->u_comm_offset==this->_unified_buffer_size);
     accelerator_barrier();
 #ifdef NVLINK_GET
     this->_grid->StencilBarrier(); // He can now get mu local gather, I can get his

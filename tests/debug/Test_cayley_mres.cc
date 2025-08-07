@@ -471,8 +471,8 @@ void  TestConserved1(Action & Ddwf, Action & Ddwfrev,
       // Mobius parameters
       auto b=Ddwf.bs[s];
       auto c=Ddwf.cs[s];
-      assert(Ddwfrev.bs[sr]==Ddwf.bs[s]);
-      assert(Ddwfrev.cs[sr]==Ddwf.cs[s]);
+      GRID_ASSERT(Ddwfrev.bs[sr]==Ddwf.bs[s]);
+      GRID_ASSERT(Ddwfrev.cs[sr]==Ddwf.cs[s]);
 
       LatticePropagator tmp(UGrid); 
 

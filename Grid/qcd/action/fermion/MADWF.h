@@ -116,7 +116,7 @@ class MADWF
     ///////////////////////////////////////
     GridBase *src_grid = src.Grid();
 
-    assert( (src_grid == Mato.GaugeGrid()) || (src_grid == Mato.FermionGrid()));
+    GRID_ASSERT( (src_grid == Mato.GaugeGrid()) || (src_grid == Mato.FermionGrid()));
 
     if ( src_grid == Mato.GaugeGrid() ) {
       Mato.ImportPhysicalFermionSource(src,b);
@@ -204,7 +204,7 @@ class MADWF
     }
 
     std::cout << GridLogMessage << "MADWF : Exceeded maxiter "<<std::endl;
-    assert(0);
+    GRID_ASSERT(0);
 
   }
 

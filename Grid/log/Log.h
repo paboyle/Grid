@@ -33,10 +33,6 @@
 #ifndef GRID_LOG_H
 #define GRID_LOG_H
 
-#ifdef HAVE_EXECINFO_H
-#include <execinfo.h>
-#endif
-
 NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -227,8 +223,6 @@ inline void Grid_pass(Args&&... args) {
     std::cout << "\033[32m" << GridLogMessage << msg << "\033[0m" << std::endl;
 }
 
-#define _NBACKTRACE (256)
-extern void * Grid_backtrace_buffer[_NBACKTRACE];
 
 #define BACKTRACEFILE() {						\
     char string[20];							\

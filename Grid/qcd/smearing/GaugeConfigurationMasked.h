@@ -291,8 +291,8 @@ public:
     int idx=0;
     for(int mu=0;mu<4;mu++){
     for(int nu=0;nu<4;nu++){
-      if ( mu!=nu) assert(this->StoutSmearing->SmearRho[idx]==rho);
-      else         assert(this->StoutSmearing->SmearRho[idx]==0.0);
+      if ( mu!=nu) GRID_ASSERT(this->StoutSmearing->SmearRho[idx]==rho);
+      else         GRID_ASSERT(this->StoutSmearing->SmearRho[idx]==0.0);
       idx++;
     }}
     //////////////////////////////////////////////////////////////////
@@ -934,10 +934,10 @@ public:
   SmearedConfigurationMasked(GridCartesian* _UGrid, unsigned int Nsmear, Smear_Stout<Gimpl>& Stout)
     : SmearedConfiguration<Gimpl>(_UGrid, Nsmear,Stout)
   {
-    assert(Nsmear%(2*Nd)==0); // Or multiply by 8??
+    GRID_ASSERT(Nsmear%(2*Nd)==0); // Or multiply by 8??
 
     // was resized in base class
-    assert(this->SmearedSet.size()==Nsmear);
+    GRID_ASSERT(this->SmearedSet.size()==Nsmear);
     
     GridRedBlackCartesian * UrbGrid;
     UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(_UGrid);

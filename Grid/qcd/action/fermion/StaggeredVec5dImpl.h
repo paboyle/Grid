@@ -113,7 +113,7 @@ public:
       
   inline void InsertGaugeField(DoubledGaugeField &U_ds,const GaugeLinkField &U,int mu)
   {
-    assert(0);
+    GRID_ASSERT(0);
   }
   inline void DoubleStore(GridBase *GaugeGrid,
 			  DoubledGaugeField &UUUds, // for Naik term
@@ -176,11 +176,11 @@ public:
   }
 
   inline void InsertForce4D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
-    assert(0);
+    GRID_ASSERT(0);
   }   
       
   inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu){
-    assert (0); 
+    GRID_ASSERT (0); 
   }
 };
 typedef StaggeredVec5dImpl<vComplex,  FundamentalRepresentation > StaggeredVec5dImplR;   // Real.. whichever prec

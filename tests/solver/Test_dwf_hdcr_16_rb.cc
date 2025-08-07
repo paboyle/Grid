@@ -281,7 +281,7 @@ int main (int argc, char ** argv)
 
   Subspace Aggregates(Coarse5d,FGrid,0);
 
-  assert ( (nbasis & 0x1)==0);
+  GRID_ASSERT ( (nbasis & 0x1)==0);
   {
     int nb=nbasis/2;
     LatticeFermion A(FGrid);

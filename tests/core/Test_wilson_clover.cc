@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 
   err = ref - r_eo;
   std::cout << GridLogMessage << "EO norm diff\t" << norm2(err) << " (" << norm2(ref) << " - " << norm2(r_eo) << ")" << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
 
 
 
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
 
   err = ref - r_eo;
   std::cout << GridLogMessage << "EO norm diff compact\t" << norm2(err) << " (" << norm2(ref) << " - " << norm2(r_eo) << ")" << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
 
 
   std::cout << GridLogMessage << "==============================================================" << std::endl;
@@ -204,7 +204,7 @@ int main(int argc, char **argv)
 
   err = phi - chi;
   std::cout << GridLogMessage << "norm diff " << norm2(err) << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
 
   Dwc_compact.Mooee(chi_e, src_e);
   Dwc_compact.MooeeInv(src_e, phi_e);
@@ -217,7 +217,7 @@ int main(int argc, char **argv)
 
   err = phi - chi;
   std::cout << GridLogMessage << "norm diff compact " << norm2(err) << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
 
   std::cout << GridLogMessage << "==============================================================" << std::endl;
   std::cout << GridLogMessage << "= Test MeeDag MeeInvDag = 1    (if csw!=0)                    " << std::endl;
@@ -237,7 +237,7 @@ int main(int argc, char **argv)
 
   err = phi - chi;
   std::cout << GridLogMessage << "norm diff " << norm2(err) << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
 
   Dwc_compact.MooeeDag(chi_e, src_e);
   Dwc_compact.MooeeInvDag(src_e, phi_e);
@@ -250,7 +250,7 @@ int main(int argc, char **argv)
 
   err = phi - chi;
   std::cout << GridLogMessage << "norm diff compact " << norm2(err) << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
 
   std::cout << GridLogMessage << "==============================================================" << std::endl;
   std::cout << GridLogMessage << "= Test MeeInv MeeDag = 1      (if csw!=0)                     " << std::endl;
@@ -270,7 +270,7 @@ int main(int argc, char **argv)
 
   err = phi - chi;
   std::cout << GridLogMessage << "norm diff " << norm2(err) << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
 
   Dwc_compact.MooeeDag(chi_e, src_e);
   Dwc_compact.MooeeInv(src_e, phi_e);
@@ -283,7 +283,7 @@ int main(int argc, char **argv)
 
   err = phi - chi;
   std::cout << GridLogMessage << "norm diff compact " << norm2(err) << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
 
   std::cout << GridLogMessage << "================================================================" << std::endl;
   std::cout << GridLogMessage << "= Testing gauge covariance Clover term with EO preconditioning  " << std::endl;
@@ -339,7 +339,7 @@ int main(int argc, char **argv)
 
   err = chi - adj(Omega) * phi;
   std::cout << GridLogMessage << "norm diff " << norm2(err) << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
 
   chi = Zero();
   phi = Zero();
@@ -368,7 +368,7 @@ int main(int argc, char **argv)
 
   err = chi - adj(Omega) * phi;
   std::cout << GridLogMessage << "norm diff compact " << norm2(err) << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
 
   std::cout << GridLogMessage << "=================================================================" << std::endl;
   std::cout << GridLogMessage << "= Testing gauge covariance Clover term w/o EO preconditioning  " << std::endl;
@@ -389,10 +389,10 @@ int main(int argc, char **argv)
 
   err = result - adj(Omega) * result2;
   std::cout << GridLogMessage << "norm diff Wilson              " << norm2(err) << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
   err = chi - adj(Omega) * phi;
   std::cout << GridLogMessage << "norm diff WilsonClover        " << norm2(err) << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
 
   chi = Zero();
   phi = Zero();
@@ -402,7 +402,7 @@ int main(int argc, char **argv)
 
   err = chi - adj(Omega) * phi;
   std::cout << GridLogMessage << "norm diff CompactWilsonClover " << norm2(err) << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
 
   std::cout << GridLogMessage << "==========================================================" << std::endl;
   std::cout << GridLogMessage << "= Testing Mooee(csw=0) Clover to reproduce Mooee Wilson   " << std::endl;
@@ -432,7 +432,7 @@ int main(int argc, char **argv)
 
   err = chi - phi;
   std::cout << GridLogMessage << "norm diff " << norm2(err) << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
 
   chi = Zero();
   phi = Zero();
@@ -458,7 +458,7 @@ int main(int argc, char **argv)
 
   err = chi - phi;
   std::cout << GridLogMessage << "norm diff compact " << norm2(err) << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
 
   std::cout << GridLogMessage << "==========================================================" << std::endl;
   std::cout << GridLogMessage << "= Testing EO operator is equal to the unprec              " << std::endl;
@@ -493,7 +493,7 @@ int main(int argc, char **argv)
   std::cout << GridLogMessage << "ref (unpreconditioned operator) diff         : " << norm2(ref) << std::endl;
   std::cout << GridLogMessage << "phi (EO decomposition)          diff         : " << norm2(phi) << std::endl;
   std::cout << GridLogMessage << "norm diff                                    : " << norm2(err) << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
 
   chi = Zero();
   phi = Zero();
@@ -524,7 +524,7 @@ int main(int argc, char **argv)
   std::cout << GridLogMessage << "ref (unpreconditioned operator) diff compact : " << norm2(ref) << std::endl;
   std::cout << GridLogMessage << "phi (EO decomposition)          diff compact : " << norm2(phi) << std::endl;
   std::cout << GridLogMessage << "norm diff compact                            : " << norm2(err) << std::endl;
-  assert(fabs(norm2(err)) < tolerance);
+  GRID_ASSERT(fabs(norm2(err)) < tolerance);
 
   Grid_finalize();
 }

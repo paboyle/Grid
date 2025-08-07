@@ -113,7 +113,7 @@ public:
 
     }
     GCRLogLevel<<"Variable Preconditioned GCR did not converge"<<std::endl;
-    //    assert(0);
+    //    GRID_ASSERT(0);
   }
 
   RealD GCRnStep(const Field &src, Field &psi,RealD rsq){
@@ -224,7 +224,7 @@ public:
       int northog = ((kp)>(mmax-1))?(mmax-1):(kp);  // if more than mmax done, we orthog all mmax history.
       for(int back=0;back<northog;back++){
 
-	int peri_back=(k-back)%mmax;   	  assert((k-back)>=0);
+	int peri_back=(k-back)%mmax;   	  GRID_ASSERT((k-back)>=0);
 
 	b=-real(innerProduct(q[peri_back],Az))/qq[peri_back];
 	p[peri_kp]=p[peri_kp]+b*p[peri_back];
@@ -234,7 +234,7 @@ public:
       qq[peri_kp]=norm2(q[peri_kp]); // could use axpy_norm
       LinalgTimer.Stop();
     }
-    assert(0); // never reached
+    GRID_ASSERT(0); // never reached
     return cp;
   }
 };
