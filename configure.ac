@@ -292,7 +292,7 @@ AC_ARG_ENABLE([accelerator],
 case ${ac_ACCELERATOR} in
     cuda)
       echo CUDA acceleration
-      LIBS="${LIBS} -lcuda"
+      LIBS="${LIBS} -lcuda -lcublas"
       AC_DEFINE([GRID_CUDA],[1],[Use CUDA offload]);;
     sycl)
       echo SYCL acceleration

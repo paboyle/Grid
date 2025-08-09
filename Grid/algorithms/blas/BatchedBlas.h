@@ -111,6 +111,7 @@ public:
     default:
       GRID_ASSERT(0);
     }
+    return CUBLAS_COMPUTE_32F_FAST_16F;
   }
 #endif
   // Force construct once

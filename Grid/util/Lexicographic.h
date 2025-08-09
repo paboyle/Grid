@@ -31,7 +31,7 @@ namespace Grid{
     static accelerator_inline void IndexFromCoor (const coor_t& coor,int &index,const coor_t &dims){
       int64_t index64;
       IndexFromCoor(coor,index64,dims);
-      GRID_ASSERT(index64<2*1024*1024*1024LL);
+      assert(index64<2*1024*1024*1024LL);
       index = (int) index64;
     }
 
