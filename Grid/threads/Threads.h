@@ -77,7 +77,7 @@ inline void thread_bcopy(const void *from, void *to,size_t bytes)
 {
   const uint64_t *ufrom = (const uint64_t *)from;
   uint64_t *uto   = (uint64_t *)to;
-  assert(bytes%8==0);
+  GRID_ASSERT(bytes%8==0);
   uint64_t words=bytes/8;
   thread_for(w,words,{
       uto[w] = ufrom[w];

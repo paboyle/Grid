@@ -376,7 +376,7 @@ void ForceTest(Action<LatticeGaugeField> &action,LatticeGaugeField & U,MomentumF
   std::cout<< GridLogMessage << "dSpred : "<< dSpred.real() <<std::endl;
   std::cout<< GridLogMessage << "diff : "<< diff<<std::endl;
   std::cout<< GridLogMessage << "*********************************************************"<<std::endl;
-  //  assert(diff<1.0);
+  //  GRID_ASSERT(diff<1.0);
   std::cout<< GridLogMessage << "Done" <<std::endl;
   std::cout << GridLogMessage << "*********************************************************"<<std::endl;
 }

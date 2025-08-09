@@ -207,7 +207,7 @@ template<> inline void PrepareMetaData<vLorentzColourMatrixD>(Lattice<vLorentzCo
 //////////////////////////////////////////////////////////////////////
 inline void reconstruct3(LorentzColourMatrix & cm)
 {
-  assert( Nc < 4 && Nc > 1 ) ;
+  GRID_ASSERT( Nc < 4 && Nc > 1 ) ;
   for(int mu=0;mu<Nd;mu++){
     #if Nc == 2
       cm(mu)()(1,0) = -adj(cm(mu)()(0,y)) ;
@@ -244,7 +244,7 @@ struct BinarySimpleUnmunger {
     sobj_stype *in_buffer = (sobj_stype *)&in;
     size_t fobj_words = sizeof(out) / sizeof(fobj_stype);
     size_t sobj_words = sizeof(in) / sizeof(sobj_stype);
-    assert(fobj_words == sobj_words);
+    GRID_ASSERT(fobj_words == sobj_words);
     
     for (unsigned int word = 0; word < sobj_words; word++)
       out_buffer[word] = in_buffer[word];  // type conversion on the fly
@@ -263,7 +263,7 @@ struct BinarySimpleMunger {
     sobj_stype *out_buffer = (sobj_stype *)&out;
     size_t fobj_words = sizeof(in) / sizeof(fobj_stype);
     size_t sobj_words = sizeof(out) / sizeof(sobj_stype);
-    assert(fobj_words == sobj_words);
+    GRID_ASSERT(fobj_words == sobj_words);
     
     for (unsigned int word = 0; word < sobj_words; word++)
       out_buffer[word] = in_buffer[word];  // type conversion on the fly

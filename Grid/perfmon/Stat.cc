@@ -150,7 +150,7 @@ void PmuStat::KNLevsetup(const char *ename, int &fd, int event, int umask)
   }
   int type;
   int ret = fscanf(fp, "%d", &type);
-  assert(ret == 1);
+  GRID_ASSERT(ret == 1);
   fclose(fp);
   //  std::cout << "Using PMU type "<<type<<" from " << std::string(ename) <<std::endl;
 

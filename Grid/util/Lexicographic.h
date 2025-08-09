@@ -31,7 +31,7 @@ namespace Grid{
     static accelerator_inline void IndexFromCoor (const coor_t& coor,int &index,const coor_t &dims){
       int64_t index64;
       IndexFromCoor(coor,index64,dims);
-      assert(index64<2*1024*1024*1024LL);
+      GRID_ASSERT(index64<2*1024*1024*1024LL);
       index = (int) index64;
     }
 
@@ -52,7 +52,7 @@ namespace Grid{
       if ( index64>=2*1024*1024*1024LL ){
 	//	std::cout << " IndexFromCoorReversed " << coor<<" index " << index64<< " dims "<<dims<<std::endl;
       }
-      assert(index64<2*1024*1024*1024LL);
+      GRID_ASSERT(index64<2*1024*1024*1024LL);
       index = (int) index64;
     }
     template<class coor_t>

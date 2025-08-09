@@ -11,14 +11,22 @@ export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-narrowing -Wno-
 #export LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel  -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel  -fsycl  -lsycl " 
 #export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-tautological-compare -qmkl=parallel  -fsycl -fno-exceptions "
 
+### upstream
+#export MPFR=`spack find --paths mpfr    | grep ^mpfr  | awk '{print $2}' `
+#export GMP=`spack find --paths gmp   | grep ^gmp  | awk '{print $2}' `
+#export CLIME=`spack find --paths c-lime  | grep ^c-lime  | awk '{print $2}' `
+#export UNWIND=`spack find --paths libunwind  | grep ^libunwind  | awk '{print $2}' `
+#export HDF5=/opt/cray/pe/hdf5/1.12.2.3/gnu/9.1
+
 ../../configure \
 	--enable-simd=GPU \
-	--enable-reduction=grid \
 	--enable-gen-simd-width=64 \
 	--enable-comms=mpi-auto \
 	--disable-gparity \
 	--disable-fermion-reps \
 	--enable-shm=nvlink \
+	--enable-checksum-comms=yes \
+	--enable-log-views=yes \
 	--enable-accelerator=sycl \
 	--enable-accelerator-aware-mpi=no \
 	--enable-unified=no \
@@ -26,7 +34,11 @@ export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-narrowing -Wno-
 	--with-gmp=$GMP \
 	--with-mpfr=$MPFR \
 	MPICXX=mpicxx \
-	CXX=icpx 
+	CXX=icpx \
+	LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel -lsycl -fsycl-max-parallel-link-jobs=16 -fno-sycl-rdc -lnuma" \
+	CXXFLAGS="-fPIC -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-tautological-compare -qmkl=parallel"
 
+
+#	--with-unwind=$UNWIND \
 #	--prefix $HOME/gpt-install \
 #	--enable-debug \

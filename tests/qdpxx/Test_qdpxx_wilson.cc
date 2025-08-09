@@ -440,7 +440,7 @@ void calc_grid(ChromaAction action, Grid::LatticeGaugeField &Umu, Grid::LatticeF
     return;
   }
 
-  assert(0);
+  GRID_ASSERT(0);
 }
 
 int main(int argc, char **argv)

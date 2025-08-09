@@ -169,7 +169,7 @@ int main(int argc, char** argv) {
     std::cout << GridLogMessage << "norm2(Munprec), norm2(Dhop + Mdiag), abs. deviation, rel. deviation: "
               << norm2(ref) << " " << norm2(res) << " " << absDev << " " << relDev << " -> check "
               << ((relDev < checkTolerance) ? "passed" : "failed") << std::endl;
-    assert(relDev <= checkTolerance);
+    GRID_ASSERT(relDev <= checkTolerance);
   }
 
   {
@@ -200,7 +200,7 @@ int main(int argc, char** argv) {
     std::cout << GridLogMessage << "norm2(Dhop), norm2(Meo + Moe), abs. deviation, rel. deviation: "
               << norm2(ref) << " " << norm2(res) << " " << absDev << " " << relDev
               << " -> check " << ((relDev < checkTolerance) ? "passed" : "failed") << std::endl;
-    assert(relDev <= checkTolerance);
+    GRID_ASSERT(relDev <= checkTolerance);
   }
 
   {
@@ -222,7 +222,7 @@ int main(int argc, char** argv) {
     std::cout << GridLogMessage << "Re(v^dag M^dag M v), Im(v^dag M^dag M v), rel.deviation: "
               << real(dot) << " " << imag(dot) << " " << relDev
               << " -> check " << ((relDev < checkTolerance) ? "passed" : "failed") << std::endl;
-    assert(relDev <= checkTolerance);
+    GRID_ASSERT(relDev <= checkTolerance);
   }
 
   {
@@ -242,7 +242,7 @@ int main(int argc, char** argv) {
     std::cout << GridLogMessage << "Re(v^dag Mooee^dag Mooee v), Im(v^dag Mooee^dag Mooee v), rel.deviation: "
               << real(dot) << " " << imag(dot) << " " << relDev
               << " -> check " << ((relDev < checkTolerance) ? "passed" : "failed") << std::endl;
-    assert(relDev <= checkTolerance);
+    GRID_ASSERT(relDev <= checkTolerance);
   }
 
   {
@@ -262,7 +262,7 @@ int main(int argc, char** argv) {
     std::cout << GridLogMessage << "norm2(src), norm2(MooeeInv Mooee src), abs. deviation, rel. deviation: "
               << norm2(src) << " " << norm2(phi) << " " << absDev << " " << relDev
               << " -> check " << ((relDev < checkTolerance) ? "passed" : "failed") << std::endl;
-    assert(relDev <= checkTolerance);
+    GRID_ASSERT(relDev <= checkTolerance);
   }
 
   {
@@ -343,7 +343,7 @@ int main(int argc, char** argv) {
     std::cout << GridLogMessage << "norm2(chi), norm2(MeeInv Mee chi), abs. deviation, rel. deviation: "
               << norm2(chi) << " " << norm2(phi) << " " << absDev << " " << relDev
               << " -> check " << ((relDev < checkTolerance) ? "passed" : "failed") << std::endl;
-    assert(relDev <= checkTolerance);
+    GRID_ASSERT(relDev <= checkTolerance);
   }
 
   {
@@ -380,7 +380,7 @@ int main(int argc, char** argv) {
     std::cout << GridLogMessage << "norm2(chi), norm2(MeeDag MeeInvDag chi), abs. deviation, rel. deviation: "
               << norm2(chi) << " " << norm2(phi) << " " << absDev << " " << relDev
               << " -> check " << ((relDev < checkTolerance) ? "passed" : "failed") << std::endl;
-    assert(relDev <= checkTolerance);
+    GRID_ASSERT(relDev <= checkTolerance);
   }
 
   {
@@ -429,7 +429,7 @@ int main(int argc, char** argv) {
     std::cout << GridLogMessage << "norm2(Dunprec), norm2(Deoprec), abs. deviation, rel. deviation: "
               << norm2(ref) << " " << norm2(phi) << " " << absDev << " " << relDev
               << " -> check " << ((relDev < checkTolerance) ? "passed" : "failed") << std::endl;
-    assert(relDev <= checkTolerance);
+    GRID_ASSERT(relDev <= checkTolerance);
   }
 
   {

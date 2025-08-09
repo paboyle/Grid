@@ -624,7 +624,7 @@ void StaggeredKernels<Impl>::DhopSiteAsm(StencilView &st,
 					 SiteSpinor *buf, int sF,
 					 int sU, const FermionFieldView &in, FermionFieldView &out,int dag) 
 {
-  assert(0);
+  GRID_ASSERT(0);
 };
 
 
@@ -733,7 +733,7 @@ template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilView 
     }
    }
 #else 
-    assert(0);
+    GRID_ASSERT(0);
 #endif
    
 }
@@ -787,7 +787,7 @@ template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilView 
     }
   }
 #else 
-  assert(0);
+  GRID_ASSERT(0);
 #endif
 }
    
@@ -889,7 +889,7 @@ template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilView &st,
     }
   }
 #else 
-  assert(0);
+  GRID_ASSERT(0);
 #endif
 }
 
@@ -958,7 +958,7 @@ template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilView &st,
     }
   }
 #else 
-  assert(0);
+  GRID_ASSERT(0);
 #endif
 }
 

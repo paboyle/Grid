@@ -388,7 +388,7 @@ accelerator_inline auto operator*(const GparityFlavour &G, const iVector<vtype, 
     multFlavourProjMinus(ret, arg); break;
   case GparityFlavour::Algebra::MinusProjMinus:
     multFlavourMinusProjMinus(ret, arg); break;
-  default: assert(0);
+  default: GRID_ASSERT(0);
   }
  
   return ret;
@@ -426,7 +426,7 @@ accelerator_inline auto operator*(const GparityFlavour &G, const iMatrix<vtype, 
     lmultFlavourProjMinus(ret, arg); break;
   case GparityFlavour::Algebra::MinusProjMinus:
     lmultFlavourMinusProjMinus(ret, arg); break;  
-  default: assert(0);
+  default: GRID_ASSERT(0);
   }
   
   return ret;
@@ -464,7 +464,7 @@ accelerator_inline auto operator*(const iMatrix<vtype, Ngp> &arg, const GparityF
     rmultFlavourProjMinus(ret, arg); break;
   case GparityFlavour::Algebra::MinusProjMinus:
     rmultFlavourMinusProjMinus(ret, arg); break;
-  default: assert(0);
+  default: GRID_ASSERT(0);
   }
 
   return ret;

@@ -375,8 +375,8 @@ template <class Impl>
 void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor *buf, int Ls,
 					 int Nsite, const FermionField &in, FermionField &out, int dirdisp, int gamma)
 {
-  assert(dirdisp<=7);
-  assert(dirdisp>=0);
+  GRID_ASSERT(dirdisp<=7);
+  GRID_ASSERT(dirdisp>=0);
 
    autoView(U_v  ,U  ,AcceleratorRead);
    autoView(in_v ,in ,AcceleratorRead);
@@ -405,7 +405,7 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
    LoopBody(Zm);
    LoopBody(Tm);
    default:
-     assert(0);
+     GRID_ASSERT(0);
      break;
    }
 #undef LoopBody
@@ -525,7 +525,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteExt);    return;}
 #endif
    }
-   assert(0 && " Kernel optimisation case not covered ");
+   GRID_ASSERT(0 && " Kernel optimisation case not covered ");
   }
 
 template <class Impl>
@@ -535,7 +535,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
 {
     autoView(U_v  ,  U,AcceleratorRead);
     autoView(in_v , in,AcceleratorRead);
-    autoView(out_v,out,AcceleratorWrite);
+    autoView(out_v,out,AcceleratorWriteDiscard);
     autoView(st_v , st,AcceleratorRead);
     KERNEL_CALL_ID(GenericDhopSite);
 }
@@ -571,7 +571,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDagExt);     return;}
 #endif
    }
-   assert(0 && " Kernel optimisation case not covered ");
+   GRID_ASSERT(0 && " Kernel optimisation case not covered ");
   }
 
 #undef KERNEL_CALLNB

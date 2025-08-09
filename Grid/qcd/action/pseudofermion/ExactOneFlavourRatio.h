@@ -400,7 +400,7 @@ NAMESPACE_BEGIN(Grid);
 	  std::cout << GridLogMessage << action_name() << " initial action " << action << " expect " << norm2_eta << "; diff " << diff << std::endl;
 	  std::cout << GridLogMessage << action_name() << "[ eta^dag ( M^{-1/2} M M^{-1/2} - 1 ) eta ]/|eta^2| = " << test << "  expect 0 (tol " << param.BoundsCheckTol << ")" << std::endl;
 
-	  assert( ( test < param.BoundsCheckTol ) && " Initial action check failed" );
+	  GRID_ASSERT( ( test < param.BoundsCheckTol ) && " Initial action check failed" );
 	  initial_action = false;
 	}
 

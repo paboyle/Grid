@@ -1,3 +1,4 @@
+
 ### After Update (Hopefully Working) Setup
 module reset
 module use /opt/aurora/24.347.0/spack/unified/0.9.2/install/modulefiles/Core
@@ -33,5 +34,10 @@ spack load mpfr
 export CLIME=`spack find --paths c-lime | grep ^c-lime | awk '{print $2}' `
 export GMP=`spack find --paths gmp | grep ^gmp | awk '{print $2}' `
 export MPFR=`spack find --paths mpfr | grep ^mpfr | awk '{print $2}' `
+
 git config --global http.proxy http://proxy.alcf.anl.gov:3128
+
+#spack load openssl@3.3.1%gcc@12.2.0
+#spack load unwind
+#export UNWIND=`spack find --paths libunwind  | grep ^libunwind  | awk '{print $2}' `
 export SYCL_PROGRAM_COMPILE_OPTIONS="-ze-opt-large-register-file"

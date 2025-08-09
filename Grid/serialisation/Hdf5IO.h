@@ -174,7 +174,7 @@ namespace Grid
           // Now make sure overall size is not too big
           hsize_t OverflowCheck = ElementsPerChunk;
           ElementsPerChunk *= d;
-          assert( OverflowCheck == ElementsPerChunk / d && "Product of dimensions overflowed hsize_t" );
+          GRID_ASSERT( OverflowCheck == ElementsPerChunk / d && "Product of dimensions overflowed hsize_t" );
           // If product of dimensions too big, reduce by prime factors
           while( ElementsPerChunk > MaxElements && ( ElementsPerChunk & 1 ) == 0 ) {
             bTooBig = true;

@@ -77,7 +77,7 @@ int main (int argc, char ** argv)
 	ns=ns+norm2(sl);
       }
       std::cout <<GridLogMessage <<" sliceNorm" <<mu<<" "<< nn <<" "<<ns<<" err " << nn-ns<<std::endl;
-      assert(abs(nn-ns) < 1.0e-10);
+      GRID_ASSERT(abs(nn-ns) < 1.0e-10);
     }
   }
 
@@ -105,7 +105,7 @@ int main (int argc, char ** argv)
 	ns=ns+norm2(sl);
       }
       std::cout <<GridLogMessage <<" sliceNorm" <<mu<<" "<< nn <<" "<<ns<<" err " << nn-ns<<std::endl;
-      assert(abs(nn-ns) < 1.0e-10);
+      GRID_ASSERT(abs(nn-ns) < 1.0e-10);
     }
   }
 
@@ -135,7 +135,7 @@ int main (int argc, char ** argv)
 	ns=ns+norm2(sl);
       }
       std::cout <<GridLogMessage <<" sliceNorm" <<mu<<" "<< nn <<" "<<ns<<" err " << nn-ns<<std::endl;
-      assert(abs(nn-ns) < 1.0e-10);
+      GRID_ASSERT(abs(nn-ns) < 1.0e-10);
     }
   }
 

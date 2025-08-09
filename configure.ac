@@ -222,7 +222,7 @@ esac
 
 ############### Symplectic group
 AC_ARG_ENABLE([Sp],
-    [AC_HELP_STRING([--enable-Sp=yes|no], [enable gauge group Sp2n])],
+    [AS_HELP_STRING([--enable-Sp=yes|no],[enable gauge group Sp2n])],
     [ac_ENABLE_SP=${enable_Sp}], [ac_ENABLE_SP=no])
 
 AM_CONDITIONAL(BUILD_SP, [ test "${ac_ENABLE_SP}X" == "yesX" ])
@@ -260,6 +260,28 @@ AC_DEFINE([ACCELERATOR_CSHIFT],[1],[ Cshift runs on device])
 case ${ac_ACCELERATOR_AWARE_MPI} in
     yes)
       AC_DEFINE([ACCELERATOR_AWARE_MPI],[1],[ Stencil can use device pointers]);;
+    *);;
+esac
+
+############### CHECKSUM COMMS
+AC_ARG_ENABLE([checksum-comms],
+    [AS_HELP_STRING([--enable-checksum-comms=yes|no],[checksum all communication])],
+    [ac_CHECKSUM_COMMS=${enable_checksum_comms}], [ac_CHECKSUM_COMMS=yes])
+
+case ${ac_CHECKSUM_COMMS} in
+    yes)
+      AC_DEFINE([GRID_CHECKSUM_COMMS],[1],[checksum all communication]);;
+    *);;
+esac
+
+############### LOG VIEWS
+AC_ARG_ENABLE([log-views],
+    [AS_HELP_STRING([--enable-log-views=yes|no],[log information on all view open/close])],
+    [ac_LOG_VIEWS=${enable_log_views}], [ac_LOG_VIEWS=yes])
+
+case ${ac_LOG_VIEWS} in
+    yes)
+      AC_DEFINE([GRID_LOG_VIEWS],[1],[log information on all view open/close]);;
     *);;
 esac
 

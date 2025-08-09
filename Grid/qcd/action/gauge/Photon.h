@@ -193,7 +193,7 @@ NAMESPACE_BEGIN(Grid);
         break;
       }
       default:
-        assert(0);
+        GRID_ASSERT(0);
         break;
     }
   }
@@ -246,10 +246,10 @@ NAMESPACE_BEGIN(Grid);
         transverseProjectSpatial(out);
         break;
       case Gauge::landau:
-        assert(0);
+        GRID_ASSERT(0);
         break;
       default:
-        assert(0);
+        GRID_ASSERT(0);
         break;
     }
   }

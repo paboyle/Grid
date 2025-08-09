@@ -37,7 +37,7 @@ void stats(Mat &mean, Mat &stdDev, const std::vector<Mat> &data)
   Eigen::MatrixXd sqSum(nr, nc);
   double          n = static_cast<double>(data.size());
 
-  assert(n > 1.);
+  GRID_ASSERT(n > 1.);
   mean  = Mat::Zero(nr, nc);
   sqSum = Mat::Zero(nr, nc);
   for (auto &d: data)

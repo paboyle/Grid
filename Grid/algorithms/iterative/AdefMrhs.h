@@ -161,7 +161,7 @@ class TwoLevelCGmrhs
     ////////////////////////////////////////////
     std::vector<RealD> ssq(nrhs);
     for(int rhs=0;rhs<nrhs;rhs++){
-      ssq[rhs]=norm2(src[rhs]); assert(ssq[rhs]!=0.0);
+      ssq[rhs]=norm2(src[rhs]); GRID_ASSERT(ssq[rhs]!=0.0);
     }      
 
     ///////////////////////////
@@ -382,7 +382,7 @@ class TwoLevelCGmrhs
     }
     HDCGTimer.Stop();
     std::cout<<GridLogMessage<<"HDCG: PrecBlockCGrQ not converged "<<HDCGTimer.Elapsed()<<std::endl;
-    assert(0);
+    GRID_ASSERT(0);
   }
 
   virtual void SolveSingleSystem (std::vector<Field> &src, std::vector<Field> &x)
@@ -415,7 +415,7 @@ class TwoLevelCGmrhs
     std::vector<RealD> src_nrm(nrhs);
     for(int rhs=0;rhs<nrhs;rhs++) {
       src_nrm[rhs]=norm2(src[rhs]);
-      assert(src_nrm[rhs]!=0.0);
+      GRID_ASSERT(src_nrm[rhs]!=0.0);
     }
     std::vector<RealD> tn(nrhs);
 

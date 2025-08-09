@@ -45,7 +45,7 @@ public:
 
   using OperatorFunction<Field>::operator();
   
-  bool ErrorOnNoConverge;  // throw an assert when the CG fails to converge.
+  bool ErrorOnNoConverge;  // throw an GRID_ASSERT when the CG fails to converge.
                            // Defaults true.
   RealD Tolerance;
   Integer MaxIterations;
@@ -94,7 +94,7 @@ public:
     ssq = norm2(src);
     RealD guess = norm2(psi);
     NormTimer.Stop();
-    assert(std::isnan(guess) == 0);
+    GRID_ASSERT(std::isnan(guess) == 0);
     AssignTimer.Start();
     if ( guess == 0.0 ) {
       r = src;
@@ -222,7 +222,7 @@ public:
 
 	std::cout << GridLogDebug << "\tMobius flop rate " << DwfFlops/ usecs<< " Gflops " <<std::endl;
 
-        if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0);
+        if (ErrorOnNoConverge) GRID_ASSERT(true_residual / Tolerance < 10000.0);
 
 	IterationsToComplete = k;	
 	TrueResidual = true_residual;
@@ -251,7 +251,7 @@ public:
     std::cout << GridLogPerformance << "\t\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
     std::cout << GridLogPerformance << "\t\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
 
-    if (ErrorOnNoConverge) assert(0);
+    if (ErrorOnNoConverge) GRID_ASSERT(0);
     IterationsToComplete = k;
 
   }

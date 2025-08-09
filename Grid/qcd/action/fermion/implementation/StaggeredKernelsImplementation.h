@@ -234,7 +234,7 @@ void StaggeredKernels<Impl>::DhopDirKernel(StencilImpl &st, DoubledGaugeFieldVie
   // What about "dag" ?
   // Because we work out pU . dS/dU 
   // U
-  assert(0);
+  GRID_ASSERT(0);
 }
 
 #define KERNEL_CALLNB(A,improved)					\
@@ -291,7 +291,7 @@ void StaggeredKernels<Impl>::DhopImproved(StencilImpl &st,
     if (Opt == OptGeneric    ) { KERNEL_CALL(DhopSiteGenericExt,1); return;}
     if (Opt == OptHandUnroll ) { KERNEL_CALL(DhopSiteHandExt,1);    return;}
   }
-  assert(0 && " Kernel optimisation case not covered ");
+  GRID_ASSERT(0 && " Kernel optimisation case not covered ");
 }
 template <class Impl> 
 void StaggeredKernels<Impl>::DhopNaive(StencilImpl &st, 

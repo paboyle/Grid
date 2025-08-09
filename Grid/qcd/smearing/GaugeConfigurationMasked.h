@@ -1217,8 +1217,8 @@ public:
     int idx=0;
     for(int mu=0;mu<4;mu++){
     for(int nu=0;nu<4;nu++){
-      if ( mu!=nu) assert(this->StoutSmearing->SmearRho[idx]==rho);
-      else         assert(this->StoutSmearing->SmearRho[idx]==0.0);
+      if ( mu!=nu) GRID_ASSERT(this->StoutSmearing->SmearRho[idx]==rho);
+      else         GRID_ASSERT(this->StoutSmearing->SmearRho[idx]==0.0);
       idx++;
     }}
     //////////////////////////////////////////////////////////////////
@@ -1924,7 +1924,7 @@ public:
     }  // if smearingLevels = 0 do nothing
   }
 
-private:
+public:
   //====================================================================
   // Override base clas here to mask it
   virtual void fill_smearedSet(GaugeField &U)
@@ -2063,10 +2063,10 @@ public:
       UGrid(_UGrid),
       Ghost(1,_UGrid)
   {
-    assert(Nsmear%(2*Nd)==0); // Or multiply by 8??
+    GRID_ASSERT(Nsmear%(2*Nd)==0); // Or multiply by 8??
 
     // was resized in base class
-    assert(this->SmearedSet.size()==Nsmear);
+    GRID_ASSERT(this->SmearedSet.size()==Nsmear);
     
     UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(_UGrid);
     

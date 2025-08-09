@@ -47,7 +47,7 @@ class BiCGSTAB : public OperatorFunction<Field>
   public:
     using OperatorFunction<Field>::operator();
     
-    bool ErrorOnNoConverge;  // throw an assert when the CG fails to converge.
+    bool ErrorOnNoConverge;  // throw an GRID_ASSERT when the CG fails to converge.
                              // Defaults true.
     RealD Tolerance;
     Integer MaxIterations;
@@ -77,7 +77,7 @@ class BiCGSTAB : public OperatorFunction<Field>
 
       // Initial residual computation & set up
       RealD guess = norm2(psi);
-      assert(std::isnan(guess) == 0);
+      GRID_ASSERT(std::isnan(guess) == 0);
     
       Linop.Op(psi, v);
       b = norm2(v);
@@ -214,7 +214,7 @@ class BiCGSTAB : public OperatorFunction<Field>
           std::cout << GridLogMessage << "\tAxpyNorm   " << AxpyNormTimer.Elapsed() << std::endl;
           std::cout << GridLogMessage << "\tLinearComb " << LinearCombTimer.Elapsed() << std::endl;
 
-          if(ErrorOnNoConverge){ assert(true_residual / Tolerance < 10000.0); }
+          if(ErrorOnNoConverge){ GRID_ASSERT(true_residual / Tolerance < 10000.0); }
 
           IterationsToComplete = k;	
 
@@ -224,7 +224,7 @@ class BiCGSTAB : public OperatorFunction<Field>
       
       std::cout << GridLogMessage << "BiCGSTAB did NOT converge" << std::endl;
 
-      if(ErrorOnNoConverge){ assert(0); }
+      if(ErrorOnNoConverge){ GRID_ASSERT(0); }
       IterationsToComplete = k;
     }
 };

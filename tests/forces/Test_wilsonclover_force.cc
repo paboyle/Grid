@@ -188,7 +188,7 @@ int main(int argc, char **argv)
 
   std::cout << GridLogMessage << "Total dS    " << Hmomprime - Hmom + Sprime - S << std::endl;
 
-  assert(fabs(real(Sprime - S - dSpred)) < 1.0);
+  GRID_ASSERT(fabs(real(Sprime - S - dSpred)) < 1.0);
 
   std::cout << GridLogMessage << "Done" << std::endl;
   Grid_finalize();

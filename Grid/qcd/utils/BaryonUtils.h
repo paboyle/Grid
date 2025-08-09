@@ -508,7 +508,7 @@ void BaryonUtils<FImpl>::BaryonSiteMatrix(const mobj &D1,
  * The array wick_contractions must be of length 6               */
 template<class FImpl>
 void BaryonUtils<FImpl>::WickContractions(std::string qi, std::string qf, int &wick_contractions) {
-    assert(qi.size() == 3 && qf.size() == 3 && "Only sets of 3 quarks accepted.");
+    GRID_ASSERT(qi.size() == 3 && qf.size() == 3 && "Only sets of 3 quarks accepted.");
     const int epsilon[6][3] = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
     wick_contractions=0;
     for (int ie=0; ie < 6 ; ie++) {
@@ -536,10 +536,10 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
              ComplexField &baryon_corr)
 {
 
-  assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
-  assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
+  GRID_ASSERT(Ns==4 && "Baryon code only implemented for N_spin = 4");
+  GRID_ASSERT(Nc==3 && "Baryon code only implemented for N_colour = 3");
  
-  assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
+  GRID_ASSERT(parity==1 || parity == -1 && "Parity must be +1 or -1");
 
   GridBase *grid = q1_left.Grid();
   
@@ -587,8 +587,8 @@ void BaryonUtils<FImpl>::ContractBaryonsMatrix(const PropagatorField &q1_left,
              SpinMatrixField &baryon_corr)
 {
 
-  assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
-  assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
+  GRID_ASSERT(Ns==4 && "Baryon code only implemented for N_spin = 4");
+  GRID_ASSERT(Nc==3 && "Baryon code only implemented for N_colour = 3");
 
   GridBase *grid = q1_left.Grid();
 
@@ -628,10 +628,10 @@ void BaryonUtils<FImpl>::ContractBaryonsSliced(const mobj &D1,
              robj &result)
 {
 
-  assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
-  assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
+  GRID_ASSERT(Ns==4 && "Baryon code only implemented for N_spin = 4");
+  GRID_ASSERT(Nc==3 && "Baryon code only implemented for N_colour = 3");
  
-  assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
+  GRID_ASSERT(parity==1 || parity == -1 && "Parity must be +1 or -1");
 
   for (int t=0; t<nt; t++) {
     BaryonSite(D1[t],D2[t],D3[t],GammaA_left,GammaB_left,GammaA_right,GammaB_right,parity,wick_contractions,result[t]);
@@ -652,8 +652,8 @@ void BaryonUtils<FImpl>::ContractBaryonsSlicedMatrix(const mobj &D1,
              robj &result)
 {
 
-  assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
-  assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
+  GRID_ASSERT(Ns==4 && "Baryon code only implemented for N_spin = 4");
+  GRID_ASSERT(Nc==3 && "Baryon code only implemented for N_colour = 3");
 
   for (int t=0; t<nt; t++) {
     BaryonSiteMatrix(D1[t],D2[t],D3[t],GammaA_left,GammaB_left,GammaA_right,GammaB_right,wick_contractions,result[t]);
@@ -962,8 +962,8 @@ void BaryonUtils<FImpl>::BaryonGamma3pt(
                         const Gamma GammaBf,
                         SpinMatrixField &stn_corr)
 {
-  assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
-  assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
+  GRID_ASSERT(Ns==4 && "Baryon code only implemented for N_spin = 4");
+  GRID_ASSERT(Nc==3 && "Baryon code only implemented for N_colour = 3");
 
   GridBase *grid = q_tf.Grid();
 
@@ -1292,8 +1292,8 @@ void BaryonUtils<FImpl>::SigmaToNucleonEye(const PropagatorField &qq_loop,
              SpinMatrixField &stn_corr)
 {
 
-  assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
-  assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
+  GRID_ASSERT(Ns==4 && "Baryon code only implemented for N_spin = 4");
+  GRID_ASSERT(Nc==3 && "Baryon code only implemented for N_colour = 3");
 
   GridBase *grid = qs_ti.Grid();
 
@@ -1327,7 +1327,7 @@ void BaryonUtils<FImpl>::SigmaToNucleonEye(const PropagatorField &qq_loop,
       coalescedWrite(vcorr[ss],result);
     });//end loop over lattice sites
   } else {
-    assert(0 && "Weak Operator not correctly specified");
+    GRID_ASSERT(0 && "Weak Operator not correctly specified");
   }
 }
 
@@ -1345,8 +1345,8 @@ void BaryonUtils<FImpl>::SigmaToNucleonNonEye(const PropagatorField &qq_ti,
              SpinMatrixField &stn_corr)
 {
 
-  assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
-  assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
+  GRID_ASSERT(Ns==4 && "Baryon code only implemented for N_spin = 4");
+  GRID_ASSERT(Nc==3 && "Baryon code only implemented for N_colour = 3");
 
   GridBase *grid = qs_ti.Grid();
 
@@ -1383,7 +1383,7 @@ void BaryonUtils<FImpl>::SigmaToNucleonNonEye(const PropagatorField &qq_ti,
       coalescedWrite(vcorr[ss],result);
     });//end loop over lattice sites
   } else {
-    assert(0 && "Weak Operator not correctly specified");
+    GRID_ASSERT(0 && "Weak Operator not correctly specified");
   }
 }
 
@@ -1538,8 +1538,8 @@ void BaryonUtils<FImpl>::XiToSigmaEye(const PropagatorField &qq_loop,
 						 SpinMatrixField &xts_corr)
 {
 
-  assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
-  assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
+  GRID_ASSERT(Ns==4 && "Baryon code only implemented for N_spin = 4");
+  GRID_ASSERT(Nc==3 && "Baryon code only implemented for N_colour = 3");
 
   GridBase *grid = qs_ti.Grid();
 
@@ -1574,7 +1574,7 @@ void BaryonUtils<FImpl>::XiToSigmaEye(const PropagatorField &qq_loop,
       coalescedWrite(vcorr[ss],result);
     }  );//end loop over lattice sites
   } else {
-    assert(0 && "Weak Operator not correctly specified");
+    GRID_ASSERT(0 && "Weak Operator not correctly specified");
   }
 }
 

@@ -156,8 +156,8 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
   int Lblock = mat.dimension(3); 
   int Rblock = mat.dimension(4);
 
-  //  assert(Lblock % block==0);
-  //  assert(Rblock % block==0);
+  //  GRID_ASSERT(Lblock % block==0);
+  //  GRID_ASSERT(Rblock % block==0);
   
   GridBase *grid = lhs_wi[0].Grid();
   
@@ -170,7 +170,15 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
 
   LatticeVecSpinMatrix SpinMat(grid);
   LatticeVecSpinMatrix MomSpinMat(grid);
-  
+
+  std::cout <<GridLogMessage<< "A2A Meson Field"<<std::endl;
+  MomentumProject<LatticeVecSpinMatrix,ComplexField> MP;
+  std::cout <<GridLogMessage<< "Momentum project constructed"<<std::endl;
+  MP.Allocate(Nmom,grid);
+  std::cout <<GridLogMessage<< "Momentum project allocated"<<std::endl;
+  MP.ImportMomenta(mom);
+  std::cout <<GridLogMessage<< "Momentum project momenta imported"<<std::endl;
+    
   std::vector<VecSpinMatrix> sliced;
   for(int i=0;i<Lblock;i++){
     autoView(SpinMat_v,SpinMat,AcceleratorWrite);
@@ -198,6 +206,25 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
 
       }// j within block
       // After getting the sitewise product do the mom phase loop
+#if 1
+      std::cout <<GridLogMessage<< "A2A contract "<<std::endl;
+      assert(orthogdim==Nd-1);
+      MP.Project(SpinMat,sliced);
+      std::cout <<GridLogMessage<< "A2A MP Project "<<std::endl;
+      for(int m=0;m<Nmom;m++){
+	for(int t=0;t<Nt;t++){
+	  int idx = t+m*Nt;
+	  for(int j=jo;j<MIN(Rblock,jo+block);j++){
+	    int jj=j%block;
+	    auto tmp = peekIndex<LorentzIndex>(sliced[idx],jj);
+	    for(int mu=0;mu<Ngamma;mu++){
+	      auto trSG = trace(tmp*Gamma(gammas[mu]));
+	      mat(m,mu,t,i,j) = trSG()();
+	    }
+	  }
+	}
+      }      
+#else
       for(int m=0;m<Nmom;m++){
 
 	MomSpinMat   = SpinMat * mom[m];
@@ -215,6 +242,7 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
 	  }
 	}
       }
+#endif
     }//jo
   }
 }
@@ -253,10 +281,10 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
   int Rblock = mat.dimension(4);
 
   int Nem = emB0.size();
-  assert(emB1.size() == Nem);
+  GRID_ASSERT(emB1.size() == Nem);
 
-  //  assert(Lblock % block==0);
-  //  assert(Rblock % block==0);
+  //  GRID_ASSERT(Lblock % block==0);
+  //  GRID_ASSERT(Rblock % block==0);
   
   GridBase *grid = lhs_wi[0].Grid();
   
@@ -453,9 +481,9 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
     }}}
   }
   if (t_kernel) *t_kernel += usecond();
-  assert(mat.dimension(0) == Nmom);
-  assert(mat.dimension(1) == Ngamma);
-  assert(mat.dimension(2) == Nt);
+  GRID_ASSERT(mat.dimension(0) == Nmom);
+  GRID_ASSERT(mat.dimension(1) == Ngamma);
+  GRID_ASSERT(mat.dimension(2) == Nt);
 
   // ld loop and local only??
   int pd = grid->_processors[orthogdim];
@@ -529,7 +557,7 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
 
   int Nt  = grid->GlobalDimensions()[orthogdim];
   int Nem = emB0.size();
-  assert(emB1.size() == Nem);
+  GRID_ASSERT(emB1.size() == Nem);
 
   int fd=grid->_fdimensions[orthogdim];
   int ld=grid->_ldimensions[orthogdim];
@@ -956,7 +984,7 @@ void A2Autils<FImpl>::ContractFourQuarkColourDiagonal(const PropagatorField &WWV
 						      ComplexField &O_trtr,
 						      ComplexField &O_fig8)
 {
-  assert(gamma0.size()==gamma1.size());
+  GRID_ASSERT(gamma0.size()==gamma1.size());
   int Ng = gamma0.size();
 
   GridBase *grid = WWVV0.Grid();
@@ -1000,7 +1028,7 @@ void A2Autils<FImpl>::ContractFourQuarkColourMix(const PropagatorField &WWVV0,
 						 ComplexField &O_trtr,
 						 ComplexField &O_fig8)
 {
-  assert(gamma0.size()==gamma1.size());
+  GRID_ASSERT(gamma0.size()==gamma1.size());
   int Ng = gamma0.size();
 
   GridBase *grid = WWVV0.Grid();
@@ -1119,7 +1147,7 @@ void A2Autils<FImpl>::DeltaFeq2(int dt_min,int dt_max,
   int N_s = WW_sd.dimension(1); 
   int N_d = WW_sd.dimension(2);
 
-  assert(grid->GlobalDimensions()[orthogdim] == N_t);
+  GRID_ASSERT(grid->GlobalDimensions()[orthogdim] == N_t);
   double vol         = 1.0;
   for(int dim=0;dim<nd;dim++){
     vol = vol * grid->GlobalDimensions()[dim];
@@ -1472,9 +1500,9 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
     }}}
   }
   if (t_kernel) *t_kernel += usecond();
-  assert(mat.dimension(0) == Nmom);
-  assert(mat.dimension(1) == Ngamma);
-  assert(mat.dimension(2) == Nt);
+  GRID_ASSERT(mat.dimension(0) == Nmom);
+  GRID_ASSERT(mat.dimension(1) == Ngamma);
+  GRID_ASSERT(mat.dimension(2) == Nt);
 
   // ld loop and local only??
   int pd = grid->_processors[orthogdim];
@@ -1637,7 +1665,7 @@ void A2Autils<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat,
     }}
   });
 
-  assert(mat.dimension(0) == Nt);
+  GRID_ASSERT(mat.dimension(0) == Nt);
   // ld loop and local only??
   int pd = grid->_processors[orthogdim];
   int pc = grid->_processor_coor[orthogdim];
@@ -1785,8 +1813,8 @@ void A2Autils<FImpl>::PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat,
     }}}
   });
 
-  assert(mat.dimension(0) == Nmom);
-  assert(mat.dimension(1) == Nt);
+  GRID_ASSERT(mat.dimension(0) == Nmom);
+  GRID_ASSERT(mat.dimension(1) == Nt);
  
   int pd = grid->_processors[orthogdim];
   int pc = grid->_processor_coor[orthogdim];

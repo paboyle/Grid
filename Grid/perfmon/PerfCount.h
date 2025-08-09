@@ -146,8 +146,8 @@ public:
 
   PerformanceCounter(int _pct) {
 #ifdef __linux__
-    assert(_pct>=0);
-    assert(_pct<PERFORMANCE_COUNTER_NUM_TYPES);
+    GRID_ASSERT(_pct>=0);
+    GRID_ASSERT(_pct<PERFORMANCE_COUNTER_NUM_TYPES);
     fd=-1;
     cyclefd=-1;
     count=0;
@@ -213,7 +213,7 @@ public:
       ::ioctl(cyclefd, PERF_EVENT_IOC_DISABLE, 0);
       ign=::read(fd, &count, sizeof(long long));
       ign+=::read(cyclefd, &cycles, sizeof(long long));
-      assert(ign==2*sizeof(long long));
+      GRID_ASSERT(ign==2*sizeof(long long));
     }
     elapsed = cyclecount() - begin;
 #else

@@ -34,7 +34,7 @@ NAMESPACE_BEGIN(Grid);
 /*Construct from an MPI communicator*/
 void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
 {
-  assert(_ShmSetup==0);
+  GRID_ASSERT(_ShmSetup==0);
   WorldComm = 0;
   WorldRank = 0;
   WorldSize = 1;
@@ -62,8 +62,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
   std::cout << header "SharedMemoryAllocate "<< bytes<< " GPU implementation "<<std::endl;
   void * ShmCommBuf ; 
-  assert(_ShmSetup==1);
-  assert(_ShmAlloc==0);
+  GRID_ASSERT(_ShmSetup==1);
+  GRID_ASSERT(_ShmAlloc==0);
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Each MPI rank should allocate our own buffer
@@ -92,8 +92,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
   void * ShmCommBuf ; 
-  assert(_ShmSetup==1);
-  assert(_ShmAlloc==0);
+  GRID_ASSERT(_ShmSetup==1);
+  GRID_ASSERT(_ShmAlloc==0);
   int mmap_flag =0;
 #ifdef MAP_ANONYMOUS
   mmap_flag = mmap_flag| MAP_SHARED | MAP_ANONYMOUS;
@@ -132,7 +132,7 @@ void GlobalSharedMemory::SharedMemoryZero(void *dest,size_t bytes)
 ////////////////////////////////////////////////////////
 void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
 {
-  assert(GlobalSharedMemory::ShmAlloc()==1);
+  GRID_ASSERT(GlobalSharedMemory::ShmAlloc()==1);
   ShmRanks.resize(1);
   ShmCommBufs.resize(1);
   ShmRanks[0] = 0;

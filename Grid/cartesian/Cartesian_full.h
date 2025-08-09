@@ -128,10 +128,10 @@ public:
         // Use a reduced simd grid
         _ldimensions[d] = _gdimensions[d] / _processors[d]; //local dimensions
         //std::cout << _ldimensions[d] << "  " << _gdimensions[d] << "  " << _processors[d] << std::endl;
-        assert(_ldimensions[d] * _processors[d] == _gdimensions[d]);
+        GRID_ASSERT(_ldimensions[d] * _processors[d] == _gdimensions[d]);
 
         _rdimensions[d] = _ldimensions[d] / _simd_layout[d]; //overdecomposition
-        assert(_rdimensions[d] * _simd_layout[d] == _ldimensions[d]);
+        GRID_ASSERT(_rdimensions[d] * _simd_layout[d] == _ldimensions[d]);
 
         _lstart[d] = _processor_coor[d] * _ldimensions[d];
         _lend[d] = _processor_coor[d] * _ldimensions[d] + _ldimensions[d] - 1;

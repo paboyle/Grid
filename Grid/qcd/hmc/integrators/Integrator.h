@@ -133,7 +133,7 @@ public:
     // input U actually not used in the fundamental case
     // Fundamental updates, include smearing
 
-    assert(as.size()==LevelForces.size());
+    GRID_ASSERT(as.size()==LevelForces.size());
     
     Field level_force(U.Grid()); level_force =Zero();
     for (int a = 0; a < as[level].actions.size(); ++a) {
@@ -279,13 +279,13 @@ public:
 
   void reset_timer(void)
   {
-    assert(as.size()==LevelForces.size());
+    GRID_ASSERT(as.size()==LevelForces.size());
     for (int level = 0; level < as.size(); ++level) {
       for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
         as[level].actions.at(actionID)->reset_timer();
       }
       int actionID=0;
-      assert(LevelForces.at(level).actions.size()==1);
+      GRID_ASSERT(LevelForces.at(level).actions.size()==1);
       LevelForces.at(level).actions.at(actionID)->reset_timer();
     }
   }
@@ -410,7 +410,7 @@ public:
   // Initialization of momenta and actions
   void refresh(Field& U,  GridSerialRNG & sRNG, GridParallelRNG& pRNG) 
   {
-    assert(P.Grid() == U.Grid());
+    GRID_ASSERT(P.Grid() == U.Grid());
     std::cout << GridLogIntegrator << "Integrator refresh" << std::endl;
 
     std::cout << GridLogIntegrator << "Generating momentum" << std::endl;
@@ -467,7 +467,7 @@ public:
   RealD S(Field& U) 
   {  // here also U not used
 
-    assert(as.size()==LevelForces.size());
+    GRID_ASSERT(as.size()==LevelForces.size());
     std::cout << GridLogIntegrator << "Integrator action\n";
 
     RealD H = - FieldImplementation::FieldSquareNorm(P)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
@@ -563,14 +563,14 @@ public:
 
     // Check the clocks all match on all levels
     for (int level = 0; level < as.size(); ++level) {
-      assert(fabs(t_U - t_P[level]) < 1.0e-6);  // must be the same
+      GRID_ASSERT(fabs(t_U - t_P[level]) < 1.0e-6);  // must be the same
       std::cout << GridLogIntegrator << " times[" << level << "]= " << t_P[level] << " " << t_U << std::endl;
     }
 
     FieldImplementation::Project(U);
 
     // and that we indeed got to the end of the trajectory
-    assert(fabs(t_U - Params.trajL) < 1.0e-6);
+    GRID_ASSERT(fabs(t_U - Params.trajL) < 1.0e-6);
 
   }
 

@@ -10,16 +10,16 @@ void check_huge_pages(void *Buf,uint64_t BYTES)
 {
 #ifdef __linux__
   int fd = open("/proc/self/pagemap", O_RDONLY);
-  assert(fd >= 0);
+  GRID_ASSERT(fd >= 0);
   const int page_size = 4096;
   uint64_t virt_pfn = (uint64_t)Buf / page_size;
   off_t offset = sizeof(uint64_t) * virt_pfn;
   uint64_t npages = (BYTES + page_size-1) / page_size;
   std::vector<uint64_t> pagedata(npages);
   uint64_t ret = lseek(fd, offset, SEEK_SET);
-  assert(ret == offset);
+  GRID_ASSERT(ret == offset);
   ret = ::read(fd, &pagedata[0], sizeof(uint64_t)*npages);
-  assert(ret == sizeof(uint64_t) * npages);
+  GRID_ASSERT(ret == sizeof(uint64_t) * npages);
   int nhugepages = npages / 512;
   int n4ktotal, nnothuge;
   n4ktotal = 0;

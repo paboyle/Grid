@@ -149,7 +149,7 @@ public:
 			    sizeof(obj),d*100+p);
 
       }
-      if (!list.empty()) // avoid triggering assert in comms == none
+      if (!list.empty()) // avoid triggering GRID_ASSERT in comms == none
 	CommsComplete(list);
       for(int p=1;p<_processors[d];p++){
 	accum = accum + column[p];
@@ -226,14 +226,14 @@ public:
   // All2All down one dimension
   ////////////////////////////////////////////////////////////
   template<class T> void AllToAll(int dim,std::vector<T> &in, std::vector<T> &out){
-    assert(dim>=0);
-    assert(dim<_ndimension);
-    assert(in.size()==out.size());
+    GRID_ASSERT(dim>=0);
+    GRID_ASSERT(dim<_ndimension);
+    GRID_ASSERT(in.size()==out.size());
     int numnode = _processors[dim];
     uint64_t bytes=sizeof(T);
     uint64_t words=in.size()/numnode;
-    assert(numnode * words == in.size());
-    assert(words < (1ULL<<31));
+    GRID_ASSERT(numnode * words == in.size());
+    GRID_ASSERT(words < (1ULL<<31));
     AllToAll(dim,(void *)&in[0],(void *)&out[0],words,bytes);
   }
   void AllToAll(int dim  ,void *in,void *out,uint64_t words,uint64_t bytes);

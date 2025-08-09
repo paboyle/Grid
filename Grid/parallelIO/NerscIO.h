@@ -76,7 +76,7 @@ public:
     removeWhitespace(line);
     std::cout << GridLogMessage << "* " << line << std::endl;
 
-    assert(line==std::string("BEGIN_HEADER"));
+    GRID_ASSERT(line==std::string("BEGIN_HEADER"));
 
     do {
       getline(fin,line); // read one line
@@ -106,9 +106,9 @@ public:
     field.dimension[2] = std::stol(header["DIMENSION_3"]);
     field.dimension[3] = std::stol(header["DIMENSION_4"]);
 
-    assert(grid->_ndimension == 4);
+    GRID_ASSERT(grid->_ndimension == 4);
     for(int d=0;d<4;d++){
-      assert(grid->_fdimensions[d]==field.dimension[d]);
+      GRID_ASSERT(grid->_fdimensions[d]==field.dimension[d]);
     }
 
     field.link_trace = std::stod(header["LINK_TRACE"]);
@@ -183,7 +183,7 @@ public:
 	   nersc_csum,scidac_csuma,scidac_csumb);
       }
     } else {
-      assert(0);
+      GRID_ASSERT(0);
     }
 
     GaugeStats Stats; Stats(Umu,clone);
@@ -205,9 +205,9 @@ public:
       std::cerr << " nersc_csum  " <<std::hex<< nersc_csum << " " << header.checksum<< std::dec<< std::endl;
       exit(0);
     }
-    if(exitOnReadPlaquetteMismatch()) assert(fabs(clone.plaquette -header.plaquette ) < 1.0e-5 );
-    assert(fabs(clone.link_trace-header.link_trace) < 1.0e-6 );
-    assert(nersc_csum == header.checksum );
+    if(exitOnReadPlaquetteMismatch()) GRID_ASSERT(fabs(clone.plaquette -header.plaquette ) < 1.0e-5 );
+    GRID_ASSERT(fabs(clone.link_trace-header.link_trace) < 1.0e-6 );
+    GRID_ASSERT(nersc_csum == header.checksum );
       
     std::cout<<GridLogMessage <<"NERSC Configuration "<<file<< " and plaquette, link trace, and checksum agree"<<std::endl;
   }
@@ -246,7 +246,7 @@ public:
     GridBase *grid = Umu.Grid();
 
     GridMetaData(grid,header);
-    assert(header.nd==4);
+    GRID_ASSERT(header.nd==4);
     GaugeStats Stats; Stats(Umu,header);
     MachineCharacteristics(header);
 
@@ -302,7 +302,7 @@ public:
     GridBase *grid = parallel.Grid();
 
     GridMetaData(grid,header);
-    assert(header.nd==4);
+    GRID_ASSERT(header.nd==4);
     header.link_trace=0.0;
     header.plaquette=0.0;
     MachineCharacteristics(header);
@@ -355,16 +355,16 @@ public:
     std::string data_type(header.data_type);
 
 #ifdef RNG_RANLUX
-    assert(format == std::string("UINT64"));
-    assert(data_type == std::string("RANLUX48"));
+    GRID_ASSERT(format == std::string("UINT64"));
+    GRID_ASSERT(data_type == std::string("RANLUX48"));
 #endif
 #ifdef RNG_MT19937
-    assert(format == std::string("UINT32"));
-    assert(data_type == std::string("MT19937"));
+    GRID_ASSERT(format == std::string("UINT32"));
+    GRID_ASSERT(data_type == std::string("MT19937"));
 #endif
 #ifdef RNG_SITMO
-    assert(format == std::string("UINT64"));
-    assert(data_type == std::string("SITMO"));
+    GRID_ASSERT(format == std::string("UINT64"));
+    GRID_ASSERT(data_type == std::string("SITMO"));
 #endif
 
     // depending on datatype, set up munger;
@@ -376,7 +376,7 @@ public:
       std::cerr << "checksum mismatch "<<std::hex<< nersc_csum <<" "<<header.checksum<<std::dec<<std::endl;
       exit(0);
     }
-    assert(nersc_csum == header.checksum );
+    GRID_ASSERT(nersc_csum == header.checksum );
 
     std::cout<<GridLogMessage <<"Read NERSC RNG file "<<file<< " format "<< data_type <<std::endl;
   }

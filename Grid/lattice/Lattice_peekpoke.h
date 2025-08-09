@@ -98,8 +98,8 @@ void pokeSite(const sobj &s,Lattice<vobj> &l,const Coordinate &site){
 
   int Nsimd = grid->Nsimd();
 
-  assert( l.Checkerboard()== l.Grid()->CheckerBoard(site));
-  assert( sizeof(sobj)*Nsimd == sizeof(vobj));
+  GRID_ASSERT( l.Checkerboard()== l.Grid()->CheckerBoard(site));
+  GRID_ASSERT( sizeof(sobj)*Nsimd == sizeof(vobj));
 
   int rank,odx,idx;
   // Optional to broadcast from node 0.
@@ -135,7 +135,7 @@ void peekSite(sobj &s,const Lattice<vobj> &l,const Coordinate &site){
 
   int Nsimd = grid->Nsimd();
 
-  assert( l.Checkerboard() == l.Grid()->CheckerBoard(site));
+  GRID_ASSERT( l.Checkerboard() == l.Grid()->CheckerBoard(site));
 
   int rank,odx,idx;
   grid->GlobalCoorToRankIndex(rank,odx,idx,site);
@@ -159,14 +159,14 @@ template<class vobj,class sobj>
 inline void peekLocalSite(sobj &s,const LatticeView<vobj> &l,Coordinate &site)
 {
   GridBase *grid = l.getGrid();
-  assert(l.mode==CpuRead);
+  GRID_ASSERT(l.mode==CpuRead);
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   int Nsimd = grid->Nsimd();
 
-  //  assert( l.Checkerboard()== grid->CheckerBoard(site));
-  assert( sizeof(sobj)*Nsimd == sizeof(vobj));
+  //  GRID_ASSERT( l.Checkerboard()== grid->CheckerBoard(site));
+  GRID_ASSERT( sizeof(sobj)*Nsimd == sizeof(vobj));
 
   static const int words=sizeof(vobj)/sizeof(vector_type);
   int odx,idx;
@@ -195,15 +195,15 @@ template<class vobj,class sobj>
 inline void pokeLocalSite(const sobj &s,LatticeView<vobj> &l,Coordinate &site)
 {
   GridBase *grid=l.getGrid();
-  assert(l.mode==CpuWrite);
+  GRID_ASSERT(l.mode==CpuWrite);
 
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   int Nsimd = grid->Nsimd();
 
-  //  assert( l.Checkerboard()== grid->CheckerBoard(site));
-  assert( sizeof(sobj)*Nsimd == sizeof(vobj));
+  //  GRID_ASSERT( l.Checkerboard()== grid->CheckerBoard(site));
+  GRID_ASSERT( sizeof(sobj)*Nsimd == sizeof(vobj));
 
   static const int words=sizeof(vobj)/sizeof(vector_type);
   int odx,idx;

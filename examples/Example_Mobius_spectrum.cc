@@ -115,8 +115,8 @@ void GaussianWallSource(GridParallelRNG &RNG,int tslice,LatticeGaugeField &U,Lat
 }
 void SequentialSource(int tslice,Coordinate &mom,LatticePropagator &spectator,LatticePropagator &source)
 {
-  assert(mom.size()==Nd);
-  assert(mom[Tdir] == 0);
+  GRID_ASSERT(mom.size()==Nd);
+  GRID_ASSERT(mom[Tdir] == 0);
 
   GridBase * grid = spectator.Grid();
 

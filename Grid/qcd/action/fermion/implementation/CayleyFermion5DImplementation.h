@@ -285,7 +285,7 @@ void CayleyFermion5D<Impl>::addQmu(const FermionField &psi,FermionField &chi, in
     std::vector<ComplexD> coeff(Nd);
     ComplexD ci(0,1);
 
-    assert(qmu.size()==Nd);
+    GRID_ASSERT(qmu.size()==Nd);
 
     for(int mu=0;mu<Nd;mu++){
        coeff[mu] = ci*qmu[mu];
@@ -451,7 +451,7 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
   ///////////////////////////////////////////////////////////
   // The Cayley coeffs (unprec)
   ///////////////////////////////////////////////////////////
-  assert(gamma.size()==Ls);
+  GRID_ASSERT(gamma.size()==Ls);
 
   omega.resize(Ls);
   bs.resize(Ls);
@@ -489,7 +489,7 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
   for(int i=0; i < Ls; i++){
     as[i] = 1.0;
     omega[i] = _gamma[i]*_zolo_hi; //NB reciprocal relative to Chroma NEF code
-    assert(omega[i]!=Coeff_t(0.0));
+    GRID_ASSERT(omega[i]!=Coeff_t(0.0));
     bs[i] = 0.5*(bpc/omega[i] + bmc);
     cs[i] = 0.5*(bpc/omega[i] - bmc);
   }
@@ -504,7 +504,7 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
   
   for(int i=0;i<Ls;i++){
     bee[i]=as[i]*(bs[i]*(4.0-this->M5) +1.0);     
-    assert(bee[i]!=Coeff_t(0.0));
+    GRID_ASSERT(bee[i]!=Coeff_t(0.0));
     cee[i]=as[i]*(1.0-cs[i]*(4.0-this->M5));
     beo[i]=as[i]*bs[i];
     ceo[i]=-as[i]*cs[i];
@@ -531,8 +531,8 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
     
     if ( i < Ls-1 ) {
 
-      assert(bee[i]!=Coeff_t(0.0));
-      assert(bee[0]!=Coeff_t(0.0));
+      GRID_ASSERT(bee[i]!=Coeff_t(0.0));
+      GRID_ASSERT(bee[0]!=Coeff_t(0.0));
       
       lee[i] =-cee[i+1]/bee[i]; // sub-diag entry on the ith column
       
@@ -559,7 +559,7 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
   { 
     Coeff_t delta_d=mass_minus*cee[Ls-1];
     for(int j=0;j<Ls-1;j++) {
-      assert(bee[j] != Coeff_t(0.0));
+      GRID_ASSERT(bee[j] != Coeff_t(0.0));
       delta_d *= cee[j]/bee[j];
     }
     dee[Ls-1] += delta_d;
@@ -639,7 +639,7 @@ void CayleyFermion5D<Impl>::ContractConservedCurrent( PropagatorField &q_in_1,
 						      unsigned int mu)
 {
 
-  assert(mass_plus == mass_minus);
+  GRID_ASSERT(mass_plus == mass_minus);
   RealD mass = mass_plus;
   
   Gamma::Algebra Gmu [] = {
@@ -773,10 +773,10 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                                 unsigned int tmax,
 						ComplexField &ph)// Complex phase factor
 {
-  assert(mu>=0);
-  assert(mu<Nd);
+  GRID_ASSERT(mu>=0);
+  GRID_ASSERT(mu<Nd);
 
-  assert(mass_plus == mass_minus);
+  GRID_ASSERT(mass_plus == mass_minus);
   RealD mass = mass_plus;
 
 #if 0
@@ -895,7 +895,7 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
     }
     else {
       std::cerr << "Error: Tadpole implementation currently unavailable for non-Shamir actions." << std::endl;
-      assert(b==1 && c==0);
+      GRID_ASSERT(b==1 && c==0);
     }
   }
 

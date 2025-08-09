@@ -169,7 +169,7 @@ public:
   void FFT_dim(Lattice<vobj> &result,const Lattice<vobj> &source,int dim, int sign){
 #ifndef HAVE_FFTW
     std::cerr << "FFTW is not compiled but is called"<<std::endl;
-    assert(0);
+    GRID_ASSERT(0);
 #else
     conformable(result.Grid(),vgrid);
     conformable(source.Grid(),vgrid);
@@ -213,7 +213,7 @@ public:
     scalar div;
     if ( sign == backward ) div = 1.0/G;
     else if ( sign == forward ) div = 1.0;
-    else assert(0);
+    else GRID_ASSERT(0);
       
     //std::cout << GridLogPerformance<<"Making FFTW plan" << std::endl;
     FFTW_plan p;

@@ -98,7 +98,7 @@ class BlockConjugateGradient : public OperatorFunction<Field> {
   int Nblock;
 
   BlockCGtype CGtype;
-  bool ErrorOnNoConverge;  // throw an assert when the CG fails to converge.
+  bool ErrorOnNoConverge;  // throw an GRID_ASSERT when the CG fails to converge.
                            // Defaults true.
   RealD Tolerance;
   Integer MaxIterations;
@@ -201,7 +201,7 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
   } else if (CGtype == CGmultiRHS ) {
     CGmultiRHSsolve(Linop,Src,Psi);
   } else {
-    assert(0);
+    GRID_ASSERT(0);
   }
 }
 virtual void operator()(LinearOperatorBase<Field> &Linop, const std::vector<Field> &Src, std::vector<Field> &Psi) 
@@ -209,7 +209,7 @@ virtual void operator()(LinearOperatorBase<Field> &Linop, const std::vector<Fiel
   if ( CGtype == BlockCGrQVec ) {
     BlockCGrQsolveVec(Linop,Src,Psi);
   } else {
-    assert(0);
+    GRID_ASSERT(0);
   }
 }
 
@@ -259,10 +259,10 @@ void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X)
   for(int b=0;b<Nblock;b++) std::cout << "src["<<b<<"]" << ssq[b] <<std::endl;
 
   sliceNorm(residuals,B,Orthog);
-  for(int b=0;b<Nblock;b++){ assert(std::isnan(residuals[b])==0); }
+  for(int b=0;b<Nblock;b++){ GRID_ASSERT(std::isnan(residuals[b])==0); }
 
   sliceNorm(residuals,X,Orthog);
-  for(int b=0;b<Nblock;b++){ assert(std::isnan(residuals[b])==0); }
+  for(int b=0;b<Nblock;b++){ GRID_ASSERT(std::isnan(residuals[b])==0); }
 
   /************************************************************************
    * Block conjugate gradient rQ (Sebastien Birk Thesis, after Dubrulle 2001)
@@ -402,7 +402,7 @@ void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X)
   std::cout << GridLogMessage << "BlockConjugateGradient(rQ) did NOT converge "<<k<<" / "<<MaxIterations
 	    <<" residual "<< std::sqrt(max_resid)<< std::endl;
 
-  if (ErrorOnNoConverge) assert(0);
+  if (ErrorOnNoConverge) GRID_ASSERT(0);
   IterationsToComplete = k;
 }
 //////////////////////////////////////////////////////////////////////////
@@ -438,10 +438,10 @@ void CGmultiRHSsolve(LinearOperatorBase<Field> &Linop, const Field &Src, Field &
   for(int b=0;b<Nblock;b++) sssum+=ssq[b];
 
   sliceNorm(residuals,Src,Orthog);
-  for(int b=0;b<Nblock;b++){ assert(std::isnan(residuals[b])==0); }
+  for(int b=0;b<Nblock;b++){ GRID_ASSERT(std::isnan(residuals[b])==0); }
 
   sliceNorm(residuals,Psi,Orthog);
-  for(int b=0;b<Nblock;b++){ assert(std::isnan(residuals[b])==0); }
+  for(int b=0;b<Nblock;b++){ GRID_ASSERT(std::isnan(residuals[b])==0); }
 
   // Initial search dir is guess
   Linop.HermOp(Psi, AP);
@@ -540,7 +540,7 @@ void CGmultiRHSsolve(LinearOperatorBase<Field> &Linop, const Field &Src, Field &
   }
   std::cout << GridLogMessage << "MultiRHSConjugateGradient did NOT converge" << std::endl;
 
-  if (ErrorOnNoConverge) assert(0);
+  if (ErrorOnNoConverge) GRID_ASSERT(0);
   IterationsToComplete = k;
 }
 
@@ -554,7 +554,7 @@ void CGmultiRHSsolve(LinearOperatorBase<Field> &Linop, const Field &Src, Field &
 void BlockCGrQsolveVec(LinearOperatorBase<Field> &Linop, const std::vector<Field> &B, std::vector<Field> &X) 
 {
   Nblock = B.size();
-  assert(Nblock == X.size());
+  GRID_ASSERT(Nblock == X.size());
 
   std::cout<<GridLogMessage<<" Block Conjugate Gradient Vec rQ : Nblock "<<Nblock<<std::endl;
 
@@ -594,10 +594,10 @@ void BlockCGrQsolveVec(LinearOperatorBase<Field> &Linop, const std::vector<Field
   for(int b=0;b<Nblock;b++) sssum+=ssq[b];
 
   for(int b=0;b<Nblock;b++){ residuals[b] = norm2(B[b]);}
-  for(int b=0;b<Nblock;b++){ assert(std::isnan(residuals[b])==0); }
+  for(int b=0;b<Nblock;b++){ GRID_ASSERT(std::isnan(residuals[b])==0); }
 
   for(int b=0;b<Nblock;b++){ residuals[b] = norm2(X[b]);}
-  for(int b=0;b<Nblock;b++){ assert(std::isnan(residuals[b])==0); }
+  for(int b=0;b<Nblock;b++){ GRID_ASSERT(std::isnan(residuals[b])==0); }
 
   /************************************************************************
    * Block conjugate gradient rQ (Sebastien Birk Thesis, after Dubrulle 2001)
@@ -731,7 +731,7 @@ void BlockCGrQsolveVec(LinearOperatorBase<Field> &Linop, const std::vector<Field
   }
   std::cout << GridLogMessage << "BlockConjugateGradient(rQ) did NOT converge" << std::endl;
 
-  if (ErrorOnNoConverge) assert(0);
+  if (ErrorOnNoConverge) GRID_ASSERT(0);
   IterationsToComplete = k;
 }
 

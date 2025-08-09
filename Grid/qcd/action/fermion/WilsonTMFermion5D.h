@@ -136,8 +136,8 @@ class WilsonTMFermion5D : public WilsonFermion5D<Impl>
   // needed for fast PV
   void update(const std::vector<RealD>& _mass, const std::vector<RealD>& _mu) 
   {
-    assert(_mass.size() == _mu.size());
-    assert(_mass.size() == this->FermionGrid()->_fdimensions[0]);
+    GRID_ASSERT(_mass.size() == _mu.size());
+    GRID_ASSERT(_mass.size() == this->FermionGrid()->_fdimensions[0]);
     this->mass = _mass;
     this->mu = _mu;
   }

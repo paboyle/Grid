@@ -43,10 +43,6 @@ Author: Christoph Lehner <christoph@lhnr.de>
 #define GRID_SYCL_LEVEL_ZERO_IPC
 #define SHM_SOCKETS
 #else
-#ifdef HAVE_NUMAIF_H
-  #warning " Using NUMAIF "
-#include <numaif.h>
-#endif 
 #endif 
 #include <syscall.h>
 #endif
@@ -71,7 +67,7 @@ public:
   {
     int errnum;
 
-    sock = socket(AF_UNIX, SOCK_DGRAM, 0);  assert(sock>0);
+    sock = socket(AF_UNIX, SOCK_DGRAM, 0);  GRID_ASSERT(sock>0);
 
     struct sockaddr_un sa_un = { 0 };
     sa_un.sun_family = AF_UNIX;
@@ -162,7 +158,7 @@ public:
 /*Construct from an MPI communicator*/
 void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
 {
-  assert(_ShmSetup==0);
+  GRID_ASSERT(_ShmSetup==0);
   WorldComm = comm;
   MPI_Comm_rank(WorldComm,&WorldRank);
   MPI_Comm_size(WorldComm,&WorldSize);
@@ -188,7 +184,7 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
 
   // WorldNodes
   WorldNodes = WorldSize/WorldShmSize;
-  assert( (WorldNodes * WorldShmSize) == WorldSize );
+  GRID_ASSERT( (WorldNodes * WorldShmSize) == WorldSize );
 
 
   // FIXME: Check all WorldShmSize are the same ?
@@ -213,7 +209,7 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
   MyGroup.resize(WorldShmSize);
   for(int rank=0;rank<WorldSize;rank++){
     if(WorldShmRanks[rank]!=MPI_UNDEFINED){
-      assert(g<WorldShmSize);
+      GRID_ASSERT(g<WorldShmSize);
       MyGroup[g++] = rank;
     }
   }
@@ -229,7 +225,7 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
   // global sum leaders over comm world
   ///////////////////////////////////////////////////////////////////
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&leaders_1hot[0],WorldSize,MPI_INT,MPI_SUM,WorldComm);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 
   ///////////////////////////////////////////////////////////////////
   // find the group leaders world rank
@@ -250,7 +246,7 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
       WorldNode=g;
     }
   }
-  assert(WorldNode!=-1);
+  GRID_ASSERT(WorldNode!=-1);
   _ShmSetup=1;
 }
 // Gray encode support 
@@ -292,7 +288,7 @@ void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processo
   // Assert power of two shm_size.
   ////////////////////////////////////////////////////////////////
   int log2size = Log2Size(WorldShmSize,MAXLOG2RANKSPERNODE);
-  assert(log2size != -1);
+  GRID_ASSERT(log2size != -1);
 
   ////////////////////////////////////////////////////////////////
   // Identify the hypercube coordinate of this node using hostname
@@ -313,7 +309,7 @@ void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processo
   // Parse ICE-XA hostname to get hypercube location
   gethostname(name,namelen);
   int nscan = sscanf(name,"r%di%dn%d",&R,&I,&N) ;
-  assert(nscan==3);
+  GRID_ASSERT(nscan==3);
 
   int nlo = N%9;
   int nhi = N/9;
@@ -337,8 +333,8 @@ void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processo
   //////////////////////////////////////////////////////////////////
   MPI_Bcast(&rootcoor, sizeof(rootcoor), MPI_BYTE, 0, WorldComm); 
   hypercoor=hypercoor-rootcoor;
-  assert(hypercoor<WorldSize);
-  assert(hypercoor>=0);
+  GRID_ASSERT(hypercoor<WorldSize);
+  GRID_ASSERT(hypercoor>=0);
 
   //////////////////////////////////////
   // Printing
@@ -386,7 +382,7 @@ void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processo
   for(int i=0;i<ndimension;i++){
     Nprocessors*=processors[i];
   }
-  assert(WorldSize==Nprocessors);
+  GRID_ASSERT(WorldSize==Nprocessors);
 
   ////////////////////////////////////////////////////////////////
   // Establish mapping between lexico physics coord and WorldRank
@@ -405,7 +401,7 @@ void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processo
   // Build the new communicator
   /////////////////////////////////////////////////////////////////
   int ierr= MPI_Comm_split(WorldComm,0,rank,&optimal_comm);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 void GlobalSharedMemory::OptimalCommunicatorSharedMemory(const Coordinate &processors,Grid_MPI_Comm & optimal_comm,Coordinate &SHM)
 {
@@ -435,7 +431,8 @@ void GlobalSharedMemory::OptimalCommunicatorSharedMemory(const Coordinate &proce
   for(int i=0;i<ndimension;i++){
     Nprocessors*=processors[i];
   }
-  assert(WorldSize==Nprocessors);
+  //  std::cerr << " WorldSize "<<WorldSize << " Nprocessors "<<Nprocessors<<" "<<processors<<std::endl; 
+  GRID_ASSERT(WorldSize==Nprocessors);
 
   ////////////////////////////////////////////////////////////////
   // Establish mapping between lexico physics coord and WorldRank
@@ -451,7 +448,7 @@ void GlobalSharedMemory::OptimalCommunicatorSharedMemory(const Coordinate &proce
   // Build the new communicator
   /////////////////////////////////////////////////////////////////
   int ierr= MPI_Comm_split(WorldComm,0,rank,&optimal_comm);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////
 // SHMGET
@@ -460,8 +457,8 @@ void GlobalSharedMemory::OptimalCommunicatorSharedMemory(const Coordinate &proce
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
   std::cout << Mheader "SharedMemoryAllocate "<< bytes<< " shmget implementation "<<std::endl;
-  assert(_ShmSetup==1);
-  assert(_ShmAlloc==0);
+  GRID_ASSERT(_ShmSetup==1);
+  GRID_ASSERT(_ShmAlloc==0);
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
   // allocate the shared windows for our group
@@ -522,8 +519,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
   void * ShmCommBuf ; 
-  assert(_ShmSetup==1);
-  assert(_ShmAlloc==0);
+  GRID_ASSERT(_ShmSetup==1);
+  GRID_ASSERT(_ShmAlloc==0);
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
   // allocate the pointer array for shared windows for our group
@@ -632,7 +629,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 			 MPI_BYTE,
 			 r,
 			 WorldShmComm);
-      assert(ierr==0);
+      GRID_ASSERT(ierr==0);
     }
     
     ///////////////////////////////////////////////////////////////
@@ -671,7 +668,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 	std::cerr << "SharedMemoryMPI.cc zeMemOpenIpcHandle failed for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl; 
 	exit(EXIT_FAILURE);
       }
-      assert(thisBuf!=nullptr);
+      GRID_ASSERT(thisBuf!=nullptr);
     }
 #endif
 #ifdef GRID_CUDA
@@ -712,8 +709,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
   std::cout << Mheader "SharedMemoryAllocate "<< bytes<< " MMAP implementation "<< GRID_SHM_PATH <<std::endl;
-  assert(_ShmSetup==1);
-  assert(_ShmAlloc==0);
+  GRID_ASSERT(_ShmSetup==1);
+  GRID_ASSERT(_ShmAlloc==0);
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
   // allocate the shared windows for our group
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -743,9 +740,9 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     void *ptr = (void *) mmap(NULL, bytes, PROT_READ | PROT_WRITE, mmap_flag,fd, 0); 
     if ( ptr == (void *)MAP_FAILED ) {    
       printf("mmap %s failed\n",shm_name);
-      perror("failed mmap");      assert(0);    
+      perror("failed mmap");      GRID_ASSERT(0);    
     }
-    assert(((uint64_t)ptr&0x3F)==0);
+    GRID_ASSERT(((uint64_t)ptr&0x3F)==0);
     close(fd);
     WorldShmCommBufs[r] =ptr;
     //    std::cout << Mheader "Set WorldShmCommBufs["<<r<<"]="<<ptr<< "("<< bytes<< "bytes)"<<std::endl;
@@ -760,8 +757,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
   std::cout << Mheader "SharedMemoryAllocate "<< bytes<< " MMAP anonymous implementation "<<std::endl;
-  assert(_ShmSetup==1);
-  assert(_ShmAlloc==0);
+  GRID_ASSERT(_ShmSetup==1);
+  GRID_ASSERT(_ShmAlloc==0);
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
   // allocate the shared windows for our group
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -772,7 +769,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   // Hugetlbf and others map filesystems as mappable huge pages
   ////////////////////////////////////////////////////////////////////////////////////////////
   char shm_name [NAME_MAX];
-  assert(WorldShmSize == 1);
+  GRID_ASSERT(WorldShmSize == 1);
   for(int r=0;r<WorldShmSize;r++){
     
     int fd=-1;
@@ -786,9 +783,9 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     void *ptr = (void *) mmap(NULL, bytes, PROT_READ | PROT_WRITE, mmap_flag,fd, 0); 
     if ( ptr == (void *)MAP_FAILED ) {    
       printf("mmap %s failed\n",shm_name);
-      perror("failed mmap");      assert(0);    
+      perror("failed mmap");      GRID_ASSERT(0);    
     }
-    assert(((uint64_t)ptr&0x3F)==0);
+    GRID_ASSERT(((uint64_t)ptr&0x3F)==0);
     close(fd);
     WorldShmCommBufs[r] =ptr;
     //    std::cout << "Set WorldShmCommBufs["<<r<<"]="<<ptr<< "("<< bytes<< "bytes)"<<std::endl;
@@ -807,8 +804,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 { 
   std::cout << Mheader "SharedMemoryAllocate "<< bytes<< " SHMOPEN implementation "<<std::endl;
-  assert(_ShmSetup==1);
-  assert(_ShmAlloc==0); 
+  GRID_ASSERT(_ShmSetup==1);
+  GRID_ASSERT(_ShmAlloc==0); 
   MPI_Barrier(WorldShmComm);
   WorldShmCommBufs.resize(WorldShmSize);
 
@@ -839,7 +836,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 	perror("failed mmap");     
 	assert(0);    
       }
-      assert(((uint64_t)ptr&0x3F)==0);
+      GRID_ASSERT(((uint64_t)ptr&0x3F)==0);
       
       WorldShmCommBufs[r] =ptr;
       close(fd);
@@ -860,8 +857,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
       if ( fd<0 ) {	perror("failed shm_open");	assert(0);      }
       
       void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-      if ( ptr == MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
-      assert(((uint64_t)ptr&0x3F)==0);
+      if ( ptr == MAP_FAILED ) {       perror("failed mmap");      GRID_ASSERT(0);    }
+      GRID_ASSERT(((uint64_t)ptr&0x3F)==0);
       WorldShmCommBufs[r] =ptr;
 
       close(fd);
@@ -918,7 +915,7 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
   //////////////////////////////////////////////////////////////////////
   // Map ShmRank to WorldShmRank and use the right buffer
   //////////////////////////////////////////////////////////////////////
-  assert (GlobalSharedMemory::ShmAlloc()==1);
+  GRID_ASSERT (GlobalSharedMemory::ShmAlloc()==1);
   heap_size = GlobalSharedMemory::ShmAllocBytes();
   for(int r=0;r<ShmSize;r++){
 
@@ -986,9 +983,9 @@ void SharedMemory::SharedMemoryTest(void)
   ShmBarrier();
   for(uint64_t r=0;r<ShmSize;r++){
     acceleratorCopyFromDevice(ShmCommBufs[r],check,3*sizeof(uint64_t));
-    assert(check[0]==GlobalSharedMemory::WorldNode);
-    assert(check[1]==r);
-    assert(check[2]==magic);
+    GRID_ASSERT(check[0]==GlobalSharedMemory::WorldNode);
+    GRID_ASSERT(check[1]==r);
+    GRID_ASSERT(check[2]==magic);
   }
   ShmBarrier();
   std::cout << GridLogDebug << " SharedMemoryTest has passed "<<std::endl;
@@ -1006,7 +1003,7 @@ void *SharedMemory::ShmBuffer(int rank)
 void *SharedMemory::ShmBufferTranslate(int rank,void * local_p)
 {
   int gpeer = ShmRanks[rank];
-  assert(gpeer!=ShmRank); // never send to self
+  GRID_ASSERT(gpeer!=ShmRank); // never send to self
   //  std::cout << "ShmBufferTranslate for rank " << rank<<" peer "<<gpeer<<std::endl;
   if (gpeer == MPI_UNDEFINED){
     return NULL;

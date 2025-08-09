@@ -245,7 +245,7 @@ void   PartialFractionFermion5D<Impl>::M_internal(const FermionField &psi, Fermi
   if ( qmu.size() ) {
 
     std::cout<< "Mat" << "qmu ("<<qmu[0]<<","<<qmu[1]<<","<<qmu[2]<<","<<qmu[3]<<")"<<std::endl;
-    assert(qmu.size()==Nd);
+    GRID_ASSERT(qmu.size()==Nd);
 
     FermionField qslash_psi(psi.Grid());
 
@@ -446,7 +446,7 @@ void  PartialFractionFermion5D<Impl>::SetCoefficientsZolotarev(RealD zolo_hi,App
   //      std::cout<<GridLogMessage << zdata->dd << " -dd"<<std::endl;
   int Ls = this->Ls;
 
-  assert(Ls == (2*zdata->da -1) );
+  GRID_ASSERT(Ls == (2*zdata->da -1) );
 
   // Part frac
   //      RealD R;
@@ -509,7 +509,7 @@ PartialFractionFermion5D<Impl>::PartialFractionFermion5D(GaugeField &_Umu,
 {
   int Ls = this->Ls;
   qmu.resize(0);
-  assert((Ls&0x1)==1); // Odd Ls required
+  GRID_ASSERT((Ls&0x1)==1); // Odd Ls required
   int nrational=Ls-1;
 
 

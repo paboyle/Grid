@@ -53,9 +53,9 @@ public:
   //////////////////////////////////
   // Usual cases are not used
   //////////////////////////////////
-  virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG){ assert(0);};
-  virtual RealD S(const GaugeField &U) { assert(0); }
-  virtual void deriv(const GaugeField &U, GaugeField &dSdU) { assert(0);  }
+  virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG){ GRID_ASSERT(0);};
+  virtual RealD S(const GaugeField &U) { GRID_ASSERT(0); }
+  virtual void deriv(const GaugeField &U, GaugeField &dSdU) { GRID_ASSERT(0);  }
 
   //////////////////////////////////
   // Functions of smart configs only
@@ -67,7 +67,7 @@ public:
   virtual RealD S(ConfigurationBase<GaugeField>& U)
   {
     // det M = e^{ - ( - logDetM) }
-    assert( &U == smearer );
+    GRID_ASSERT( &U == smearer );
     return -smearer->logDetJacobian();
   }
   virtual RealD Sinitial(ConfigurationBase<GaugeField>& U) 
@@ -76,7 +76,7 @@ public:
   }
   virtual void deriv(ConfigurationBase<GaugeField>& U, GaugeField& dSdU)
   {
-    assert( &U == smearer );
+    GRID_ASSERT( &U == smearer );
     smearer->logDetJacobianForce(dSdU);
 #ifdef PRINT_SNAPSHOTS
     writeField(dSdU, "F_"+action_name()+"_smr."+std::to_string(this->deriv_num));

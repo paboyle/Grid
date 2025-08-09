@@ -67,8 +67,8 @@ public:
   }
 
   int point(int dir, int disp) {
-    assert(disp == -1 || disp == 0 || disp == 1);
-    assert(base+0 <= dir && dir < base+4);
+    GRID_ASSERT(disp == -1 || disp == 0 || disp == 1);
+    GRID_ASSERT(base+0 <= dir && dir < base+4);
 
     // directions faster index = new indexing
     // 4d (base = 0):
@@ -131,7 +131,7 @@ public:
 	return p;
       }
     }
-    assert(0);
+    GRID_ASSERT(0);
     return -1;
   }
   void BuildShifts(void)

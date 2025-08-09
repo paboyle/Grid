@@ -69,8 +69,8 @@ public:
   DeflatedGuesser(const std::vector<Field> & _evec, const std::vector<RealD> & _eval, const unsigned int _N)
   : evec(_evec), eval(_eval), N(_N)
   {
-    assert(evec.size()==eval.size());
-    assert(N <= evec.size());
+    GRID_ASSERT(evec.size()==eval.size());
+    GRID_ASSERT(N <= evec.size());
   } 
 
   virtual void operator()(const Field &src,Field &guess) {
@@ -141,11 +141,10 @@ public:
     }
     //postprocessing
     std::cout << GridLogMessage << "Start BlockPromote for loop" << std::endl;
-    for (int j=0;j<Nsrc;j++)
-    {
-    std::cout << GridLogMessage << "BlockProject iter: " << j << std::endl;
-    blockPromote(guess_coarse[j],guess[j],subspace);
-    guess[j].Checkerboard() = src[j].Checkerboard();
+    for (int j=0;j<Nsrc;j++) {
+      std::cout << GridLogMessage << "BlockProject iter: " << j << std::endl;
+      blockPromote(guess_coarse[j],guess[j],subspace);
+      guess[j].Checkerboard() = src[j].Checkerboard();
     }
   };
 

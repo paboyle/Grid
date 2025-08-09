@@ -176,7 +176,7 @@ void computeEigenvalues(std::string param_file,
   SchurDiagMooeeOperator<FermionActionD, FermionFieldD> hermop(action);
   PlainHermOp<FermionFieldD> hermop_wrap(hermop);
   //ChebyshevLanczos<FermionFieldD> Cheb(params.alpha, params.beta, params.mu, params.ord);
-  assert(params.mu == 0.0);
+  GRID_ASSERT(params.mu == 0.0);
 
   Chebyshev<FermionFieldD> Cheb(params.beta*params.beta, params.alpha*params.alpha, params.ord+1);
   FunctionHermOp<FermionFieldD> Cheb_wrap(Cheb, hermop);
@@ -202,7 +202,7 @@ template<typename FermionActionD, typename FermionFieldD, typename RHMCtype>
 void checkRHMC(GridCartesian* Grid, GridRedBlackCartesian* rbGrid, const LatticeGaugeFieldD &latt,  //expect lattice to have been initialized to something
 	       FermionActionD &numOp, FermionActionD &denOp, RHMCtype &rhmc, GridParallelRNG &rng,
 	       int inv_pow, const std::string &quark_descr, int action_or_md){
-  assert(action_or_md == 0 || action_or_md == 1 || action_or_md == 2);
+  GRID_ASSERT(action_or_md == 0 || action_or_md == 1 || action_or_md == 2);
   
   FermionFieldD gauss_o(rbGrid);
   FermionFieldD gauss(Grid);
@@ -291,13 +291,13 @@ public:
   EOFAlinop(ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> &EOFA, LatticeGaugeFieldD &U): EOFA(EOFA), U(U){}
 
   typedef typename FermionImplPolicy::FermionField Field;
-  void OpDiag (const Field &in, Field &out){ assert(0); }
-  void OpDir  (const Field &in, Field &out,int dir,int disp){ assert(0); }
-  void OpDirAll  (const Field &in, std::vector<Field> &out){ assert(0); } 
+  void OpDiag (const Field &in, Field &out){ GRID_ASSERT(0); }
+  void OpDir  (const Field &in, Field &out,int dir,int disp){ GRID_ASSERT(0); }
+  void OpDirAll  (const Field &in, std::vector<Field> &out){ GRID_ASSERT(0); } 
 
-  void Op     (const Field &in, Field &out){ assert(0); }
-  void AdjOp  (const Field &in, Field &out){ assert(0); }
-  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){ assert(0); }
+  void Op     (const Field &in, Field &out){ GRID_ASSERT(0); }
+  void AdjOp  (const Field &in, Field &out){ GRID_ASSERT(0); }
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){ GRID_ASSERT(0); }
   void HermOp(const Field &in, Field &out){ EOFA.Meofa(U, in, out); }
 };
 
@@ -322,13 +322,13 @@ public:
   EOFAinvLinop(ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> &EOFA, LatticeGaugeFieldD &U): EOFA(EOFA), U(U){}
 
   typedef typename FermionImplPolicy::FermionField Field;
-  void OpDiag (const Field &in, Field &out){ assert(0); }
-  void OpDir  (const Field &in, Field &out,int dir,int disp){ assert(0); }
-  void OpDirAll  (const Field &in, std::vector<Field> &out){ assert(0); } 
+  void OpDiag (const Field &in, Field &out){ GRID_ASSERT(0); }
+  void OpDir  (const Field &in, Field &out,int dir,int disp){ GRID_ASSERT(0); }
+  void OpDirAll  (const Field &in, std::vector<Field> &out){ GRID_ASSERT(0); } 
 
-  void Op     (const Field &in, Field &out){ assert(0); }
-  void AdjOp  (const Field &in, Field &out){ assert(0); }
-  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){ assert(0); }
+  void Op     (const Field &in, Field &out){ GRID_ASSERT(0); }
+  void AdjOp  (const Field &in, Field &out){ GRID_ASSERT(0); }
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){ GRID_ASSERT(0); }
   void HermOp(const Field &in, Field &out){ EOFA.MeofaInv(U, in, out); }
 };
 
@@ -400,7 +400,7 @@ NAMESPACE_BEGIN(Grid);
       std::cout << GridLogMessage << " Mixed precision CG wrapper operator() "<<std::endl;
 
       SchurOperatorD * SchurOpU = static_cast<SchurOperatorD *>(&LinOpU);
-      assert(&(SchurOpU->_Mat)==&(LinOpD._Mat));
+      GRID_ASSERT(&(SchurOpU->_Mat)==&(LinOpD._Mat));
 
       precisionChange(FermOpF.Umu, FermOpD.Umu);
 
@@ -465,7 +465,7 @@ NAMESPACE_BEGIN(Grid);
       std::cout << GridLogMessage << " Mixed precision reliable CG update wrapper operator() "<<std::endl;
 
       SchurOperatorD * SchurOpU = static_cast<SchurOperatorD *>(&LinOpU);
-      assert(&(SchurOpU->_Mat)==&(LinOpD._Mat));
+      GRID_ASSERT(&(SchurOpU->_Mat)==&(LinOpD._Mat));
 
       precisionChange(FermOpF.Umu, FermOpD.Umu);
 
@@ -502,7 +502,7 @@ int main(int argc, char **argv) {
   for(int i=1;i<argc;i++){
     std::string sarg(argv[i]);
     if(sarg == "--param_file"){
-      assert(i!=argc-1);
+      GRID_ASSERT(i!=argc-1);
       param_file = argv[i+1];
     }else if(sarg == "--read_check"){ //check the fields load correctly and pass checksum/plaquette repro
       file_load_check = true;
@@ -665,7 +665,7 @@ int main(int argc, char **argv) {
   std::vector<RealD> eofa_light_masses = { light_mass ,  0.004,   0.016,   0.064,   0.256    };
   std::vector<RealD> eofa_pv_masses =    { 0.004       , 0.016,   0.064,   0.256,   1.0      };
   int n_light_hsb = 5;
-  assert(user_params.eofa_l.size() == n_light_hsb);
+  GRID_ASSERT(user_params.eofa_l.size() == n_light_hsb);
   
   EOFAmixPrecPFaction* EOFA_pfactions[n_light_hsb];
 
@@ -791,42 +791,42 @@ int main(int argc, char **argv) {
   for(int i=1;i<argc;i++){
     std::string sarg(argv[i]);
     if(sarg == "--tune_rhmc_s"){
-      assert(i < argc-1);
+      GRID_ASSERT(i < argc-1);
       tune_rhmc_s=true;
       tune_rhmc_s_action_or_md = std::stoi(argv[i+1]);
     }
     else if(sarg == "--eigenrange_s"){
-      assert(i < argc-1);
+      GRID_ASSERT(i < argc-1);
       eigenrange_s=true;
       lanc_params_s = argv[i+1];
     }
     else if(sarg == "--tune_rhmc_DSDR"){
-      assert(i < argc-1);
+      GRID_ASSERT(i < argc-1);
       tune_rhmc_DSDR=true;
       tune_rhmc_DSDR_action_or_md = std::stoi(argv[i+1]);
     }
     else if(sarg == "--eigenrange_DSDR"){
-      assert(i < argc-1);
+      GRID_ASSERT(i < argc-1);
       eigenrange_DSDR=true;
       lanc_params_DSDR = argv[i+1];
     }
     else if(sarg == "--check_eofa"){
-      assert(i < argc-1);
+      GRID_ASSERT(i < argc-1);
       check_eofa = true;
       eofa_which_hsb = std::stoi(argv[i+1]); //-1 indicates all hasenbusch
-      assert(eofa_which_hsb == -1 || (eofa_which_hsb >= 0 && eofa_which_hsb < n_light_hsb) );
+      GRID_ASSERT(eofa_which_hsb == -1 || (eofa_which_hsb >= 0 && eofa_which_hsb < n_light_hsb) );
     }
     else if(sarg == "--upper_bound_eofa"){
-      assert(i < argc-1);
+      GRID_ASSERT(i < argc-1);
       upper_bound_eofa = true;
       eofa_which_hsb = std::stoi(argv[i+1]);
-      assert(eofa_which_hsb >= 0 && eofa_which_hsb < n_light_hsb);
+      GRID_ASSERT(eofa_which_hsb >= 0 && eofa_which_hsb < n_light_hsb);
     }
     else if(sarg == "--lower_bound_eofa"){
-      assert(i < argc-1);
+      GRID_ASSERT(i < argc-1);
       lower_bound_eofa = true;      
       eofa_which_hsb = std::stoi(argv[i+1]);
-      assert(eofa_which_hsb >= 0 && eofa_which_hsb < n_light_hsb);
+      GRID_ASSERT(eofa_which_hsb >= 0 && eofa_which_hsb < n_light_hsb);
     }
   }
   if(tune_rhmc_s || eigenrange_s || tune_rhmc_DSDR || eigenrange_DSDR ||check_eofa || upper_bound_eofa || lower_bound_eofa) {

@@ -253,8 +253,8 @@ int main (int argc, char ** argv)
 
   // guard
   double err1 = norm2(err);
-  assert(fabs(err0) < 1.0e-3);
-  assert(fabs(err1) < 1.0e-3);
+  GRID_ASSERT(fabs(err0) < 1.0e-3);
+  GRID_ASSERT(fabs(err1) < 1.0e-3);
 
   Grid_finalize();
 }

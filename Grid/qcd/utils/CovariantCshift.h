@@ -242,7 +242,7 @@ namespace ConjugateBC {
   {
     GridBase *grid = Link.Grid();
     int Lmu = grid->GlobalDimensions()[mu];
-    assert(abs(shift) < Lmu && "Invalid shift value");
+    GRID_ASSERT(abs(shift) < Lmu && "Invalid shift value");
 
     Lattice<iScalar<vInteger>> coor(grid);
     LatticeCoordinate(coor, mu);

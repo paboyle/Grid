@@ -61,7 +61,7 @@ public:
     RealD eps = lo/hi;
 
     Approx::zolotarev_data *zdata = Approx::zolotarev(eps,this->Ls,0);
-    assert(zdata->n==this->Ls);
+    GRID_ASSERT(zdata->n==this->Ls);
 
     std::cout<<GridLogMessage << "MobiusZolotarevFermion (b="<<b<<",c="<<c<<") with Ls= "<<this->Ls<<" Zolotarev range ["<<lo<<","<<hi<<"]"<<std::endl;
 	

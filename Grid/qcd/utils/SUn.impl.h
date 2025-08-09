@@ -119,7 +119,7 @@ static accelerator_inline void generatorDiagonal(int diagIndex, iGroupMatrix<cpl
 // Map a su2 subgroup number to the pair of rows that are non zero
 ////////////////////////////////////////////////////////////////////////
 static accelerator_inline void su2SubGroupIndex(int &i1, int &i2, int su2_index, GroupName::SU) {
-  assert((su2_index >= 0) && (su2_index < (ncolour * (ncolour - 1)) / 2));
+  GRID_ASSERT((su2_index >= 0) && (su2_index < (ncolour * (ncolour - 1)) / 2));
 
   int spare = su2_index;
   for (i1 = 0; spare >= (ncolour - 1 - i1); i1++) {
@@ -313,7 +313,7 @@ static void SubGroupHeatBath(
   // Debug test for sanity
   uinv = adj(u);
   b = u * uinv - 1.0;
-  assert(norm2(b) < 1.0e-4);
+  GRID_ASSERT(norm2(b) < 1.0e-4);
 
   /*
     Measure: Haar measure dh has d^4a delta(1-|a^2|)
@@ -452,22 +452,22 @@ static void SubGroupHeatBath(
   u = Zero();
   check = ua * adj(ua) - 1.0;
   check = where(Accepted, check, u);
-  assert(norm2(check) < 1.0e-4);
+  GRID_ASSERT(norm2(check) < 1.0e-4);
 
   check = b * adj(b) - 1.0;
   check = where(Accepted, check, u);
-  assert(norm2(check) < 1.0e-4);
+  GRID_ASSERT(norm2(check) < 1.0e-4);
 
   LatticeMatrix Vcheck(grid);
   Vcheck = Zero();
   Vcheck = where(Accepted, V * adj(V) - 1.0, Vcheck);
   //    std::cout<<GridLogMessage << "SU3 check " <<norm2(Vcheck)<<std::endl;
-  assert(norm2(Vcheck) < 1.0e-4);
+  GRID_ASSERT(norm2(Vcheck) < 1.0e-4);
 
   // Verify the link stays in SU(3)
   //    std::cout<<GridLogMessage <<"Checking the modified link"<<std::endl;
   Vcheck = link * adj(link) - 1.0;
-  assert(norm2(Vcheck) < 1.0e-4);
+  GRID_ASSERT(norm2(Vcheck) < 1.0e-4);
   /////////////////////////////////
 }
 
@@ -485,8 +485,8 @@ static void testGenerators(GroupName::SU) {
       Complex tr = TensorRemove(trace(ta * tb));
       std::cout << GridLogMessage << "(" << a << "," << b << ") =  " << tr
                 << std::endl;
-      if (a == b) assert(abs(tr - Complex(0.5)) < 1.0e-6);
-      if (a != b) assert(abs(tr) < 1.0e-6);
+      if (a == b) GRID_ASSERT(abs(tr - Complex(0.5)) < 1.0e-6);
+      if (a != b) GRID_ASSERT(abs(tr) < 1.0e-6);
     }
     std::cout << GridLogMessage << std::endl;
   }
@@ -495,7 +495,7 @@ static void testGenerators(GroupName::SU) {
   for (int a = 0; a < AdjointDimension; a++) {
     generator(a, ta);
     std::cout << GridLogMessage << a << std::endl;
-    assert(norm2(ta - adj(ta)) < 1.0e-6);
+    GRID_ASSERT(norm2(ta - adj(ta)) < 1.0e-6);
   }
   std::cout << GridLogMessage << std::endl;
 
@@ -505,7 +505,7 @@ static void testGenerators(GroupName::SU) {
     generator(a, ta);
     Complex tr = TensorRemove(trace(ta));
     std::cout << GridLogMessage << a << " " << std::endl;
-    assert(abs(tr) < 1.0e-6);
+    GRID_ASSERT(abs(tr) < 1.0e-6);
   }
   std::cout << GridLogMessage << std::endl;
 }

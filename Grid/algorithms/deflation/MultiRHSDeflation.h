@@ -98,7 +98,7 @@ public:
   void ImportEigenVector(Field &evec,RealD &_eval, int ev)
   {
     //    std::cout << " ev " <<ev<<" eval "<<_eval<< std::endl;
-    assert(ev<eval.size());
+    GRID_ASSERT(ev<eval.size());
     eval[ev] = _eval;
 
     int64_t offset = ev*vol*words;
@@ -113,7 +113,7 @@ public:
   // Could use to import a batch of eigenvectors
   void ImportEigenBasis(std::vector<Field> &evec,std::vector<RealD> &_eval, int _ev0, int _nev)
   {
-    assert(_ev0+_nev<=evec.size());
+    GRID_ASSERT(_ev0+_nev<=evec.size());
 
     Allocate(_nev,evec[0].Grid());
     
@@ -126,8 +126,8 @@ public:
   void DeflateSources(std::vector<Field> &source,std::vector<Field> & guess)
   {
     int nrhs = source.size();
-    assert(source.size()==guess.size());
-    assert(grid == guess[0].Grid());
+    GRID_ASSERT(source.size()==guess.size());
+    GRID_ASSERT(grid == guess[0].Grid());
     conformable(guess[0],source[0]);
 
     int64_t vw = vol * words;
@@ -189,7 +189,7 @@ public:
 		     Cd);
     BLAS.synchronise();
 
-    assert(BLAS_C.size()==nev*nrhs);
+    GRID_ASSERT(BLAS_C.size()==nev*nrhs);
 
     std::vector<scalar> HOST_C(BLAS_C.size());      // nrhs . nev -- the coefficients 
     acceleratorCopyFromDevice(&BLAS_C[0],&HOST_C[0],BLAS_C.size()*sizeof(scalar));

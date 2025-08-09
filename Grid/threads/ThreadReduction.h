@@ -61,7 +61,7 @@ public:
     _threads = 1;
 #endif
   };
-  static int GetHyperThreads(void) { assert(_threads%_cores ==0); return _threads/_cores; };
+  static int GetHyperThreads(void) { GRID_ASSERT(_threads%_cores ==0); return _threads/_cores; };
   static int GetCores(void)   { return _cores; };
   static int GetThreads(void) { return _threads; };
   static int SumArraySize(void) {return _threads;};

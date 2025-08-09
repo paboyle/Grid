@@ -43,9 +43,9 @@ class PVdagMLinearOperator : public LinearOperatorBase<Field> {
 public:
   PVdagMLinearOperator(Matrix &Mat,Matrix &PV): _Mat(Mat),_PV(PV){};
 
-  void OpDiag (const Field &in, Field &out) {    assert(0);  }
-  void OpDir  (const Field &in, Field &out,int dir,int disp) {    assert(0);  }
-  void OpDirAll  (const Field &in, std::vector<Field> &out){    assert(0);  };
+  void OpDiag (const Field &in, Field &out) {    GRID_ASSERT(0);  }
+  void OpDir  (const Field &in, Field &out,int dir,int disp) {    GRID_ASSERT(0);  }
+  void OpDirAll  (const Field &in, std::vector<Field> &out){    GRID_ASSERT(0);  };
   void Op     (const Field &in, Field &out){
     //    std::cout << "Op: PVdag M "<<std::endl;
     Field tmp(in.Grid());
@@ -58,7 +58,7 @@ public:
     _PV.M(in,tmp);
     _Mat.Mdag(tmp,out);
   }
-  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){    assert(0);  }
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){    GRID_ASSERT(0);  }
   void HermOp(const Field &in, Field &out){
     //    std::cout << "HermOp: Mdag PV PVdag M"<<std::endl;
     Field tmp(in.Grid());
@@ -79,9 +79,9 @@ class ShiftedPVdagMLinearOperator : public LinearOperatorBase<Field> {
 public:
   ShiftedPVdagMLinearOperator(RealD _shift,Matrix &Mat,Matrix &PV): shift(_shift),_Mat(Mat),_PV(PV){};
 
-  void OpDiag (const Field &in, Field &out) {    assert(0);  }
-  void OpDir  (const Field &in, Field &out,int dir,int disp) {    assert(0);  }
-  void OpDirAll  (const Field &in, std::vector<Field> &out){    assert(0);  };
+  void OpDiag (const Field &in, Field &out) {    GRID_ASSERT(0);  }
+  void OpDir  (const Field &in, Field &out,int dir,int disp) {    GRID_ASSERT(0);  }
+  void OpDirAll  (const Field &in, std::vector<Field> &out){    GRID_ASSERT(0);  };
   void Op     (const Field &in, Field &out){
     //    std::cout << "Op: PVdag M "<<std::endl;
     Field tmp(in.Grid());
@@ -96,7 +96,7 @@ public:
     _Mat.Mdag(in,tmp);
     out = out + shift * in;
   }
-  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){    assert(0);  }
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){    GRID_ASSERT(0);  }
   void HermOp(const Field &in, Field &out){
     //    std::cout << "HermOp: Mdag PV PVdag M"<<std::endl;
     Field tmp(in.Grid());

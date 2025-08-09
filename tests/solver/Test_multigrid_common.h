@@ -86,13 +86,13 @@ void checkParameterValidity(MultiGridParams const &params) {
 
   auto correctSize = params.nLevels - 1;
 
-  assert(correctSize == params.blockSizes.size());
-  assert(correctSize == params.smootherTol.size());
-  assert(correctSize == params.smootherMaxOuterIter.size());
-  assert(correctSize == params.smootherMaxInnerIter.size());
-  assert(correctSize == params.kCycleTol.size());
-  assert(correctSize == params.kCycleMaxOuterIter.size());
-  assert(correctSize == params.kCycleMaxInnerIter.size());
+  GRID_ASSERT(correctSize == params.blockSizes.size());
+  GRID_ASSERT(correctSize == params.smootherTol.size());
+  GRID_ASSERT(correctSize == params.smootherMaxOuterIter.size());
+  GRID_ASSERT(correctSize == params.smootherMaxInnerIter.size());
+  GRID_ASSERT(correctSize == params.kCycleTol.size());
+  GRID_ASSERT(correctSize == params.kCycleMaxOuterIter.size());
+  GRID_ASSERT(correctSize == params.kCycleMaxInnerIter.size());
 }
 
 struct LevelInfo {
@@ -105,7 +105,7 @@ public:
 
     auto nCoarseLevels = mgParams.blockSizes.size();
 
-    assert(nCoarseLevels == mgParams.nLevels - 1);
+    GRID_ASSERT(nCoarseLevels == mgParams.nLevels - 1);
 
     // set up values for finest grid
     Grids.push_back(FineGrid);
@@ -117,7 +117,7 @@ public:
     for(int level = 1; level < mgParams.nLevels; ++level) {
       auto Nd  = Grids[level - 1]->_ndimension;
       auto tmp = Grids[level - 1]->_fdimensions;
-      assert(tmp.size() == Nd);
+      GRID_ASSERT(tmp.size() == Nd);
 
       Seeds.push_back(std::vector<int>(Nd));
 

@@ -78,8 +78,8 @@ CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
   Vector<iSinglet<Simd> > l(LLs);
   Vector<iSinglet<Simd> > d(LLs);
 
-  assert(Ls/LLs==nsimd);
-  assert(phi.Checkerboard() == psi.Checkerboard());
+  GRID_ASSERT(Ls/LLs==nsimd);
+  GRID_ASSERT(phi.Checkerboard() == psi.Checkerboard());
 
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
@@ -96,7 +96,7 @@ CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
       d_p[ss] = diag[s];
     }}
 
-  assert(Nc==3);
+  GRID_ASSERT(Nc==3);
 
   thread_loop( (int ss=0;ss<grid->oSites();ss+=LLs),{ // adds LLs
 #if 0
@@ -221,8 +221,8 @@ CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
   Vector<iSinglet<Simd> > l(LLs);
   Vector<iSinglet<Simd> > d(LLs);
 
-  assert(Ls/LLs==nsimd);
-  assert(phi.Checkerboard() == psi.Checkerboard());
+  GRID_ASSERT(Ls/LLs==nsimd);
+  GRID_ASSERT(phi.Checkerboard() == psi.Checkerboard());
 
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
@@ -805,7 +805,7 @@ CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField &chi,
     _Matp = &Matp;
     _Matm = &Matm;
   }
-  assert(_Matp->size()==Ls*LLs);
+  GRID_ASSERT(_Matp->size()==Ls*LLs);
 
   if ( switcheroo<Coeff_t>::iscomplex() ) {
     thread_loop( (auto site=0;site<vol;site++),{

@@ -106,7 +106,7 @@ class AlgRemezGeneral{
 		  bigfloat (*f)(bigfloat x, void *data), void *data);
 
   inline int getDegree(void) const{ 
-    assert(n==d);
+    GRID_ASSERT(n==d);
     return n;
   }
   // Reset the bounds of the approximation

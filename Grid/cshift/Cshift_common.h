@@ -205,7 +205,7 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,deviceVector<
   {
     auto buffer_p = & buffer[0];
     auto table = MapCshiftTable();
-    autoView( rhs_v, rhs, AcceleratorWrite);
+    autoView( rhs_v, rhs, AcceleratorWriteDiscard);
     accelerator_for(i,ent,vobj::Nsimd(),{
 	coalescedWrite(rhs_v[table[i].first],coalescedRead(buffer_p[table[i].second]));
     });
@@ -232,7 +232,7 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
   if(cbmask ==0x3 ) {
     int _slice_stride = rhs.Grid()->_slice_stride[dimension];
     int _slice_block = rhs.Grid()->_slice_block[dimension];
-    autoView( rhs_v , rhs, AcceleratorWrite);
+    autoView( rhs_v , rhs, AcceleratorWriteDiscard);
     accelerator_for(nn,e1*e2,1,{
 	int n = nn%e1;
 	int b = nn/e1;
@@ -244,9 +244,9 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
 
     // Case of SIMD split AND checker dim cannot currently be hit, except in 
     // Test_cshift_red_black code.
-    std::cout << "Scatter_plane merge assert(0); think this is buggy FIXME "<< std::endl;// think this is buggy FIXME
+    std::cout << "Scatter_plane merge GRID_ASSERT(0); think this is buggy FIXME "<< std::endl;// think this is buggy FIXME
     std::cout<<" Unthreaded warning -- buffer is not densely packed ??"<<std::endl;
-    assert(0); // This will fail if hit on GPU
+    GRID_ASSERT(0); // This will fail if hit on GPU
     autoView( rhs_v, rhs, CpuWrite);
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
@@ -307,7 +307,7 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
   {
     auto table = MapCshiftTable();
     autoView(rhs_v , rhs, AcceleratorRead);
-    autoView(lhs_v , lhs, AcceleratorWrite);
+    autoView(lhs_v , lhs, AcceleratorWriteDiscard);
     accelerator_for(i,ent,vobj::Nsimd(),{
       coalescedWrite(lhs_v[table[i].first],coalescedRead(rhs_v[table[i].second]));
     });

@@ -245,7 +245,7 @@ template <class T1,typename std::enable_if<is_lattice<T1>::value, T1>::type * = 
 inline void CBFromExpression(int &cb, const T1 &lat)  // Lattice leaf
 {
   if ((cb == Odd) || (cb == Even)) {
-    assert(cb == lat.Checkerboard());
+    GRID_ASSERT(cb == lat.Checkerboard());
   }
   cb = lat.Checkerboard();
 }

@@ -98,8 +98,8 @@ void LebesgueOrder::CartesianBlocking(void)
 
   IndexInteger ND = grid->_ndimension;
 
-  assert(ND==4);
-  assert(ND==Block.size());
+  GRID_ASSERT(ND==4);
+  GRID_ASSERT(ND==Block.size());
 
   Coordinate dims(ND);
   Coordinate xo(ND,0);
@@ -164,7 +164,7 @@ void LebesgueOrder::ZGraph(void)
   
   for(IndexInteger mu=0;mu<ND;mu++){
     dims[mu] = grid->_rdimensions[mu];
-    assert ( dims[mu] != 0 );
+    GRID_ASSERT ( dims[mu] != 0 );
     adims[mu] = alignup(dims[mu]);
   }
   
@@ -221,11 +221,11 @@ void LebesgueOrder::ZGraph(void)
 	+dims[0]*dims[1]*ax[2]
 	+dims[0]*dims[1]*dims[2]*ax[3];
 
-      assert(site < vol);
+      GRID_ASSERT(site < vol);
       _LebesgueReorder.push_back(site);
     }
   }
-  assert( _LebesgueReorder.size() == vol );
+  GRID_ASSERT( _LebesgueReorder.size() == vol );
 
   /*
     std::vector<int> coor(4);

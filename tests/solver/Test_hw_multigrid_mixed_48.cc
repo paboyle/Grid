@@ -109,7 +109,7 @@ public:
     ///////////////////////////////////////////////////////////
     // The Cayley coeffs (unprec)
     ///////////////////////////////////////////////////////////
-    assert(gamma.size()==Ls);
+    GRID_ASSERT(gamma.size()==Ls);
 
     omega.resize(Ls);
     bs.resize(Ls);
@@ -125,7 +125,7 @@ public:
     for(int i=0; i < Ls; i++){
       as[i] = 1.0;
       omega[i] = _gamma[i]*_zolo_hi; //NB reciprocal relative to Chroma NEF code
-      assert(omega[i]!=Coeff_t(0.0));
+      GRID_ASSERT(omega[i]!=Coeff_t(0.0));
       bs[i] = 0.5*(bpc/omega[i] + bmc);
       cs[i] = 0.5*(bpc/omega[i] - bmc);
     }
@@ -140,7 +140,7 @@ public:
     
     for(int i=0;i<Ls;i++){
       bee[i]=as[i]*(bs[i]*(4.0-this->M5) +1.0);     
-      assert(bee[i]!=Coeff_t(0.0));
+      GRID_ASSERT(bee[i]!=Coeff_t(0.0));
       cee[i]=as[i]*(1.0-cs[i]*(4.0-this->M5));
       beo[i]=as[i]*bs[i];
       ceo[i]=-as[i]*cs[i];
@@ -174,7 +174,7 @@ public:
       
 	leem[i]=mass*cee[Ls-1]/bee[0];
 	for(int j=0;j<i;j++) {
-	  assert(bee[j+1]!=Coeff_t(0.0));
+	  GRID_ASSERT(bee[j+1]!=Coeff_t(0.0));
 	  leem[i]*= aee[j]/bee[j+1];
 	}
       
@@ -316,7 +316,7 @@ public:
     autoView(psi , psi_i,AcceleratorRead);
     autoView(phi , phi_i,AcceleratorRead);
     autoView(chi , chi_i,AcceleratorWrite);
-    assert(phi.Checkerboard() == psi.Checkerboard());
+    GRID_ASSERT(phi.Checkerboard() == psi.Checkerboard());
 
     auto pdiag = &diag[0];
     auto pupper = &upper[0];
@@ -354,7 +354,7 @@ public:
     autoView(psi , psi_i,AcceleratorRead);
     autoView(phi , phi_i,AcceleratorRead);
     autoView(chi , chi_i,AcceleratorWrite);
-    assert(phi.Checkerboard() == psi.Checkerboard());
+    GRID_ASSERT(phi.Checkerboard() == psi.Checkerboard());
     
     auto pdiag = &diag[0];
     auto pupper = &upper[0];
@@ -438,7 +438,7 @@ public:
   }
   virtual  void Mdir     (const CoarseVector &in, CoarseVector &out,int dir, int disp)
   {
-    assert(0);
+    GRID_ASSERT(0);
   }
   virtual  void MdirAll  (const CoarseVector &in, std::vector<CoarseVector> &out)
   {
@@ -679,13 +679,13 @@ public:
   virtual std::vector<int> Displacements(void){ return _Mat.Displacements();};
 
   void OpDiag (const Field &in, Field &out) {
-    assert(0);
+    GRID_ASSERT(0);
   }
   void OpDir  (const Field &in, Field &out,int dir,int disp) {
-    assert(0);
+    GRID_ASSERT(0);
   }
   void OpDirAll  (const Field &in, std::vector<Field> &out){
-    assert(0);
+    GRID_ASSERT(0);
   };
   void Op     (const Field &in, Field &out){
     Field tmp(in.Grid());
@@ -698,10 +698,10 @@ public:
     _Mat.Mdag(in,tmp);
   }
   void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
-    assert(0);
+    GRID_ASSERT(0);
   }
   void HermOp(const Field &in, Field &out){
-    assert(0);
+    GRID_ASSERT(0);
   }
 };
 
@@ -1024,7 +1024,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << " 4D subspace build                                " <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   Subspace Aggregates4D(Coarse4d,UGrid,0);
-  assert ( (nbasis & 0x1)==0);
+  GRID_ASSERT ( (nbasis & 0x1)==0);
   int nb=nbasis/2;
   Gamma g5(Gamma::Algebra::Gamma5);
 

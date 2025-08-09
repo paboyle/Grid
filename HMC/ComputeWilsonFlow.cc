@@ -38,6 +38,7 @@ namespace Grid{
             int, meas_interval,
 	    double, maxTau, // for the adaptive algorithm
 	    int, meas_interval_density,
+	    std::string, flow_type,
 	    std::string, path); 
        
 
@@ -128,13 +129,21 @@ int main(int argc, char **argv) {
   std::string file_post = CPar.conf_prefix + "." + std::to_string(conf);
 
   WilsonFlow<PeriodicGimplR> WF(WFPar.step_size,WFPar.steps,WFPar.meas_interval);
-  
+  WilsonGaugeAction<PeriodicGimplR>   WGA(3.0);
+  IwasakiGaugeAction<PeriodicGimplR>  IWGA(3.0);
+  SymanzikGaugeAction<PeriodicGimplR> SZGA(3.0);
+  DBW2GaugeAction<PeriodicGimplR>     DBGA(3.0);
+  if (     WFPar.flow_type == std::string("Wilson"))   WF.setGaugeAction(&WGA);
+  else if (WFPar.flow_type == std::string("Iwasaki" )) WF.setGaugeAction(&IWGA);
+  else if (WFPar.flow_type == std::string("Symanzik")) WF.setGaugeAction(&SZGA);
+  else if (WFPar.flow_type == std::string("DBW2"))     WF.setGaugeAction(&DBGA);
+    
   WF.addMeasurement(WFPar.meas_interval_density, [&file_pre,&file_post,&conf](int step, RealD t, const typename PeriodicGimplR::GaugeField &U){
     
     typedef typename PeriodicGimplR::GaugeLinkField GaugeMat;
     typedef typename PeriodicGimplR::ComplexField ComplexField;
     
-    assert(Nd == 4);
+    GRID_ASSERT(Nd == 4);
 
     // NOTE:
     // Ideally, turn the folloing into methods of the appropriate class

@@ -78,7 +78,7 @@ void MobiusEOFAFermion<Impl>::MooeeInternal(const FermionField& psi, FermionFiel
 
   chi.Checkerboard() = psi.Checkerboard();
 
-  assert(Ls==LLs);
+  GRID_ASSERT(Ls==LLs);
 
   Eigen::MatrixXd Pplus  = Eigen::MatrixXd::Zero(Ls,Ls);
   Eigen::MatrixXd Pminus = Eigen::MatrixXd::Zero(Ls,Ls);

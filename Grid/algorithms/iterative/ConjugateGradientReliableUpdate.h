@@ -35,7 +35,7 @@ template<class FieldD,class FieldF,
 	 typename std::enable_if< getPrecision<FieldF>::value == 1, int>::type = 0> 
 class ConjugateGradientReliableUpdate : public LinearFunction<FieldD> {
 public:
-  bool ErrorOnNoConverge;  // throw an assert when the CG fails to converge.
+  bool ErrorOnNoConverge;  // throw an GRID_ASSERT when the CG fails to converge.
   // Defaults true.
   RealD Tolerance;
   Integer MaxIterations;
@@ -66,7 +66,7 @@ public:
       DoFinalCleanup(true),
       Linop_fallback(NULL)
   {
-    assert(Delta > 0. && Delta < 1. && "Expect  0 < Delta < 1");
+    GRID_ASSERT(Delta > 0. && Delta < 1. && "Expect  0 < Delta < 1");
   };
 
   void setFallbackLinop(LinearOperatorBase<FieldF> &_Linop_fallback, const RealD _fallback_transition_tol){
@@ -90,7 +90,7 @@ public:
 
     // Initial residual computation & set up
     RealD guess = norm2(psi);
-    assert(std::isnan(guess) == 0);
+    GRID_ASSERT(std::isnan(guess) == 0);
     
     Linop_d.HermOpAndNorm(psi, mmp, d, b);
     
@@ -217,7 +217,7 @@ public:
 	  CG(Linop_d,src,psi);
 	  IterationsToCleanup = CG.IterationsToComplete;
 	}
-	else if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0);
+	else if (ErrorOnNoConverge) GRID_ASSERT(true_residual / Tolerance < 10000.0);
 
 	std::cout << GridLogMessage << "ConjugateGradientReliableUpdate complete.\n";
 	return;
@@ -263,7 +263,7 @@ public:
     std::cout << GridLogMessage << "ConjugateGradientReliableUpdate did NOT converge"
 	      << std::endl;
       
-    if (ErrorOnNoConverge) assert(0);
+    if (ErrorOnNoConverge) GRID_ASSERT(0);
     IterationsToComplete = k;
     ReliableUpdatesPerformed = l;      
   }    
