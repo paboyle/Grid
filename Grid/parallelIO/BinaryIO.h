@@ -387,9 +387,10 @@ class BinaryIO {
         GRID_ASSERT(fin.fail() == 0);
         fin.close();
       }
-      timer.Stop();
-
+      
       grid->Barrier();
+
+	  timer.Stop();
 
       bstimer.Start();
       ScidacChecksum(grid,iodata,scidac_csuma,scidac_csumb);
@@ -506,6 +507,7 @@ class BinaryIO {
   offset  = fout.tellp();
 	fout.close();
       }
+      grid->Barrier();
       timer.Stop();
     }
     
