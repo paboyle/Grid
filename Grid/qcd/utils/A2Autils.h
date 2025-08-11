@@ -63,15 +63,36 @@ public:
 			 std::vector<Gamma::Algebra> gammas,
 			 const std::vector<ComplexField > &mom,
 			 int orthogdim);
+  template <typename TensorType> 
+  static void MesonField(TensorType &mat, 
+			 const FermionField *lhs_wi,
+			 const FermionField *rhs_vj,
+			 std::vector<Gamma::Algebra> gammas,
+			 const std::vector<ComplexField > &mom,
+			 int orthogdim,double *timer)
+  {
+    MesonField(mat,lhs_wi,rhs_vj,gammas,mom,orthogdim);
+  }
 
   template <typename TensorType> // output: rank 5 tensor, e.g. Eigen::Tensor<ComplexD, 5>
   static void AslashField(TensorType &mat, 
-        const FermionField *lhs_wi,
-        const FermionField *rhs_vj,
-        const std::vector<ComplexField> &emB0,
-        const std::vector<ComplexField> &emB1,
-        int orthogdim);
+			  const FermionField *lhs_wi,
+			  const FermionField *rhs_vj,
+			  const std::vector<ComplexField> &emB0,
+			  const std::vector<ComplexField> &emB1,
+			  int orthogdim);
 
+  template <typename TensorType> // output: rank 5 tensor, e.g. Eigen::Tensor<ComplexD, 5>
+  static void AslashField(TensorType &mat, 
+			  const FermionField *lhs_wi,
+			  const FermionField *rhs_vj,
+			  const std::vector<ComplexField> &emB0,
+			  const std::vector<ComplexField> &emB1,
+			  int orthogdim,double *timer)
+  {
+    AslashField(mat,lhs_wi,rhs_vj,emB0,emB1,orthogdim);
+  }
+  
   template <typename TensorType>
   typename std::enable_if<(std::is_same<Eigen::Tensor<ComplexD,3>, TensorType>::value ||
                            std::is_same<Eigen::TensorMap<Eigen::Tensor<Complex, 3, Eigen::RowMajor>>, TensorType>::value),
