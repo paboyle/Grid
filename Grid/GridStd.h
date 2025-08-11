@@ -23,6 +23,7 @@ extern void * Grid_backtrace_buffer[_NBACKTRACE];
 #include <random>
 #include <functional>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <strings.h>
@@ -38,7 +39,7 @@ extern void * Grid_backtrace_buffer[_NBACKTRACE];
 
 void GridAbort(void);
 
-#define ASSLOG(A) ::write(STDERR_FILENO,A,strlen(A));
+#define ASSLOG(A) ::write(STDERR_FILENO,A,::strlen(A));
 #ifdef HAVE_EXECINFO_H
 #define GRID_ASSERT(b) if(!(b)) {					\
     ASSLOG(" GRID_ASSERT failure: ");					\
