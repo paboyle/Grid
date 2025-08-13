@@ -294,7 +294,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   // Usage : $ ./Example_spec_kryschur <Nm> <Nk> <maxiter> <Nstop>
-  assert (argc == 5);
+  // assert (argc == 5);
   std::string NmStr = argv[1];
   std::string NkStr = argv[2];
   std::string maxIterStr = argv[3];
