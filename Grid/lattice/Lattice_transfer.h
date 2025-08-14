@@ -102,7 +102,7 @@ template<class vobj> inline void acceleratorPickCheckerboard(int cb,Lattice<vobj
     int linear=0;
 
     Lexicographic::CoorFromIndex(coor,ss,rdim_full);
-    GRID_ASSERT(coor.size()==ndim_half);
+    assert(coor.size()==ndim_half);
 
     for(int d=0;d<ndim_half;d++){ 
       if(checker_dim_mask_half[d]) linear += coor[d];
