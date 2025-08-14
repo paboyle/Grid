@@ -613,6 +613,7 @@ class KrylovSchur {
         tmp = Zero();
         for (int j = 0; j < N; j++) {
           std::cout << GridLogDebug << "Adding R(j, i) = " << R(j, i) << " to rotated" << std::endl;
+          std::cout << GridLogDebug << "Norm of U[j] is " << norm2(U[j]) << " to rotated" << std::endl;
           tmp = tmp + U[j] * R(j, i);
         }
         std::cout << GridLogDebug << "rotated norm at i = " << i << " is: " << norm2(tmp) << std::endl;
