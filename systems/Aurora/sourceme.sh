@@ -40,4 +40,4 @@ git config --global http.proxy http://proxy.alcf.anl.gov:3128
 #spack load openssl@3.3.1%gcc@12.2.0
 #spack load unwind
 #export UNWIND=`spack find --paths libunwind  | grep ^libunwind  | awk '{print $2}' `
-export SYCL_PROGRAM_COMPILE_OPTIONS="-ze-opt-large-register-file"
+#export SYCL_PROGRAM_COMPILE_OPTIONS="-ze-opt-large-register-file"

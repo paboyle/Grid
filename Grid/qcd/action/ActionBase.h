@@ -43,12 +43,13 @@ directory
 NAMESPACE_BEGIN(Grid);
 
 #ifdef PRINT_SNAPSHOTS
-template <class vobj> LatticeComplex LocalFieldSquareNorm(Lattice<vobj>& U){
-  LatticeComplex Hloc(U.Grid());
+template <class vobj> LatticeComplex LocalFieldSquareNorm(Lattice<vobj>& F){
+  LatticeComplex Hloc(F.Grid());
   Hloc = Zero();
   for (int mu = 0; mu < Nd; mu++) {
-    auto Umu = PeekIndex<LorentzIndex>(U, mu);
-    Hloc += trace(Umu * Umu);
+    auto Fmu = PeekIndex<LorentzIndex>(F, mu);
+    auto tmp = -trace(Fmu * Fmu)/HMC_MOMENTUM_DENOMINATOR;
+    Hloc = Hloc + tmp;
   }
   return Hloc;
 }
@@ -78,6 +79,8 @@ template <class vobj> void writeConfig(Lattice<vobj> &F, std::string filename){
   
   filename.erase(std::remove_if(filename.begin(), filename.end(), [](unsigned char x) { return std::isspace(x); }), filename.end());
   std::replace(filename.begin(),filename.end(), '/', '_');
+  std::replace(filename.begin(),filename.end(), '(', '_');
+  std::replace(filename.begin(),filename.end(), ')', '_');
   
   // Use NERSC IO for consistency with our HMC runs
   // Then, GaugeStats = PeriodicGaugeStatistics <- the default
