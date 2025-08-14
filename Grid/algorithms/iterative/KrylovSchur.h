@@ -519,6 +519,7 @@ class KrylovSchur {
       int k = basis.size();         // number of basis vectors, also the size of Rayleigh.
 
       // rotate basis by Rayleigh to construct UR
+      // std::vector<Field> rotated;
       std::vector<Field> rotated = basis;
       Eigen::MatrixXcd Rt = Rayleigh.adjoint();
       constructUR(rotated, basis, Rayleigh, k);             // manually rotate
@@ -611,8 +612,10 @@ class KrylovSchur {
       for (int i = 0; i < N; i++) {
         tmp = Zero();
         for (int j = 0; j < N; j++) {
+          std::cout << GridLogDebug << "Adding R(j, i) = " << R(j, i) << " to rotated" << std::endl;
           tmp = tmp + U[j] * R(j, i);
         }
+        std::cout << GridLogDebug << "rotated norm at i = " << i << " is: " << norm2(tmp) << std::endl;
         UR.push_back(tmp);
       }
       return;
