@@ -288,6 +288,8 @@ class KrylovSchur {
 
         std::cout << GridLogMessage << "*** TRUNCATING FOR RESTART *** " << std::endl;
 
+        std::cout << GridLogDebug << "Rayleigh before truncation: " << std::endl << Rayleigh << std::endl;
+
         Rayleigh = Rayleigh(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
         basis = std::vector<Field> (basis.begin(), basis.begin() + Nk);
         // evecs = std::vector<Field> (evecs.begin(), evecs.begin() + Nk);
@@ -298,8 +300,7 @@ class KrylovSchur {
         checkKSDecomposition();
 
         // Compute eigensystem of Rayleigh. Note the eigenvectors correspond to the sorted eigenvalues.
-        std::cout << GridLogDebug << "S: " << std::endl << S << std::endl;
-        // computeEigensystem(S);
+        std::cout << GridLogDebug << "Rayleigh after truncation: " << std::endl << Rayleigh << std::endl;
         computeEigensystem(Rayleigh);
         std::cout << GridLogMessage << "Eigenvalues (first Nk sorted): " << std::endl << evals << std::endl;
 
