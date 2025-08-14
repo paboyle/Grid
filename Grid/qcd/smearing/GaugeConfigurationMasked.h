@@ -1217,8 +1217,8 @@ public:
     int idx=0;
     for(int mu=0;mu<4;mu++){
     for(int nu=0;nu<4;nu++){
-      if ( mu!=nu) GRID_ASSERT(this->StoutSmearing->SmearRho[idx]==rho);
-      else         GRID_ASSERT(this->StoutSmearing->SmearRho[idx]==0.0);
+      if ( mu!=nu) assert(this->StoutSmearing->SmearRho[idx]==rho);
+      else         assert(this->StoutSmearing->SmearRho[idx]==0.0);
       idx++;
     }}
     //////////////////////////////////////////////////////////////////
