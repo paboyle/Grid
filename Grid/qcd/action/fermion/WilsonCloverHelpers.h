@@ -222,7 +222,7 @@ public:
 
   #if 0
   static accelerator_inline typename SiteCloverTriangle::vector_type triangle_elem(const SiteCloverTriangle& triangle, int block, int i, int j) {
-    GRID_ASSERT(i != j);
+    assert(i != j);
     if(i < j) {
       return triangle()(block)(triangle_index(i, j));
     } else { // i > j
@@ -232,7 +232,7 @@ public:
   #else
   template<typename vobj>
   static accelerator_inline vobj triangle_elem(const iImplCloverTriangle<vobj>& triangle, int block, int i, int j) {
-    GRID_ASSERT(i != j);
+    assert(i != j);
     if(i < j) {
       return triangle()(block)(triangle_index(i, j));
     } else { // i > j

@@ -119,7 +119,7 @@ static accelerator_inline void generatorDiagonal(int diagIndex, iGroupMatrix<cpl
 // Map a su2 subgroup number to the pair of rows that are non zero
 ////////////////////////////////////////////////////////////////////////
 static accelerator_inline void su2SubGroupIndex(int &i1, int &i2, int su2_index, GroupName::SU) {
-  GRID_ASSERT((su2_index >= 0) && (su2_index < (ncolour * (ncolour - 1)) / 2));
+  assert((su2_index >= 0) && (su2_index < (ncolour * (ncolour - 1)) / 2));
 
   int spare = su2_index;
   for (i1 = 0; spare >= (ncolour - 1 - i1); i1++) {

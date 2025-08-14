@@ -228,6 +228,11 @@ public:
   //
   void Project(Field &data,std::vector< typename Field::scalar_object > & projected_gdata)
   {
+    double t_import=0;
+    double t_export=0;
+    double t_gemm  =0;
+    double t_allreduce=0;
+    t_import-=usecond();
     this->ImportVector(data);
 
     std::vector< typename Field::scalar_object > projected_planes;
@@ -243,12 +248,14 @@ public:
     acceleratorPut(Vd[0],Vh);
     acceleratorPut(Md[0],Mh);
     acceleratorPut(Pd[0],Ph);
+    t_import+=usecond();
 
     GridBLAS BLAS;
 
     /////////////////////////////////////////
     // P_im = VMmx . Vxi
     /////////////////////////////////////////
+    t_gemm-=usecond();
     BLAS.gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N, 
     		     words*nt,nmom,nxyz,
 		     scalar(1.0),
@@ -257,8 +264,11 @@ public:
 		     scalar(0.0),  // wipe out result
 		     Pd);
     BLAS.synchronise();
+    t_gemm+=usecond();
 
+    t_export-=usecond();
     ExportMomentumProjection(projected_planes); // resizes
+    t_export+=usecond();
 
     /////////////////////////////////
     // Reduce across MPI ranks
@@ -275,7 +285,15 @@ public:
       int st = grid->LocalStarts()[nd-1];
       projected_gdata[t+st + gt*m] = projected_planes[t+lt*m];
     }}
+    t_allreduce-=usecond();
     grid->GlobalSumVector((scalar *)&projected_gdata[0],gt*nmom*words);
+    t_allreduce+=usecond();
+
+    std::cout << GridLogPerformance<<" MomentumProject t_import  "<<t_import<<"us"<<std::endl;
+    std::cout << GridLogPerformance<<" MomentumProject t_export  "<<t_export<<"us"<<std::endl;
+    std::cout << GridLogPerformance<<" MomentumProject t_gemm    "<<t_gemm<<"us"<<std::endl;
+    std::cout << GridLogPerformance<<" MomentumProject t_reduce  "<<t_allreduce<<"us"<<std::endl;
+
   }
 };
 
