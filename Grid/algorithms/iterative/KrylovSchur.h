@@ -290,11 +290,19 @@ class KrylovSchur {
 
         std::cout << GridLogDebug << "Rayleigh before truncation: " << std::endl << Rayleigh << std::endl;
 
-        Rayleigh = Rayleigh(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
-        basis = std::vector<Field> (basis.begin(), basis.begin() + Nk);
+        // Rayleigh = Rayleigh(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
+        Eigen::MatrixXcd RayTmp = Rayleigh(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
+        Rayleigh = RayTmp;
+
+        // basis = std::vector<Field> (basis.begin(), basis.begin() + Nk);
+        std::vector<Field> basisTmp = std::vector<Field> (basis.begin(), basis.begin() + Nk);
+        basis = basisTmp;
+
         // evecs = std::vector<Field> (evecs.begin(), evecs.begin() + Nk);
         // littleEvecs = littleEvecs(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
-        Eigen::VectorXcd btmp = b.head(Nk);             // careful about how you slice Eigen::VectorXcd!
+        
+        // b = b.head(Nk);
+        Eigen::VectorXcd btmp = b.head(Nk);
         b = btmp;
 
         std::cout << GridLogDebug << "Rayleigh after truncation: " << std::endl << Rayleigh << std::endl;
