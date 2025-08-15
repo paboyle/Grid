@@ -297,10 +297,11 @@ class KrylovSchur {
         Eigen::VectorXcd btmp = b.head(Nk);             // careful about how you slice Eigen::VectorXcd!
         b = btmp;
 
+        std::cout << GridLogDebug << "Rayleigh after truncation: " << std::endl << Rayleigh << std::endl;
+
         checkKSDecomposition();
 
         // Compute eigensystem of Rayleigh. Note the eigenvectors correspond to the sorted eigenvalues.
-        std::cout << GridLogDebug << "Rayleigh after truncation: " << std::endl << Rayleigh << std::endl;
         computeEigensystem(Rayleigh);
         std::cout << GridLogMessage << "Eigenvalues (first Nk sorted): " << std::endl << evals << std::endl;
 
@@ -520,9 +521,12 @@ class KrylovSchur {
 
       // rotate basis by Rayleigh to construct UR
       // std::vector<Field> rotated;
+
+      std::cout << GridLogDebug << "Rayleigh in KSDecomposition: " << std::endl << Rayleigh << std::endl;
+
       std::vector<Field> rotated = basis;
-      Eigen::MatrixXcd Rt = Rayleigh.adjoint();
       constructUR(rotated, basis, Rayleigh, k);             // manually rotate
+      // Eigen::MatrixXcd Rt = Rayleigh.adjoint();
       // basisRotate(rotated, Rt, 0, k, 0, k, k);           // UR
 
       // TODO: make a new function that I'm positive does what this is doing
@@ -609,10 +613,13 @@ class KrylovSchur {
     void constructUR(std::vector<Field>& UR, std::vector<Field> &U, Eigen::MatrixXcd& R, int N) {
       Field tmp (Grid);
       UR.clear();
+
+      std::cout << GridLogDebug << "R to rotate by (should be Rayleigh): " << R << std::endl;
+
       for (int i = 0; i < N; i++) {
         tmp = Zero();
         for (int j = 0; j < N; j++) {
-          std::cout << GridLogDebug << "Adding R(j, i) = " << R(j, i) << " to rotated" << std::endl;
+          std::cout << GridLogDebug << "Adding R("<<j<<", "<<i<<") = " << R(j, i) << " to rotated" << std::endl;
           std::cout << GridLogDebug << "Norm of U[j] is " << norm2(U[j]) << " to rotated" << std::endl;
           tmp = tmp + U[j] * R(j, i);
         }
