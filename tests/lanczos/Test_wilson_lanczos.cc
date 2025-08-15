@@ -64,14 +64,19 @@ int main(int argc, char** argv) {
 //  SU<Nc>::HotConfiguration(RNG4, Umu);
   SU<Nc>::ColdConfiguration(Umu);
 
+  FieldMetaData header;
+  std::string file("./config");
+  NerscIO::readConfiguration(Umu,header,file);
+
+
 /*
   std::vector<LatticeColourMatrix> U(4, UGrid);
   for (int mu = 0; mu < Nd; mu++) {
     U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
   }
 */
-//  std::vector<Complex> boundary = {1,1,1,-1};
-  std::vector<Complex> boundary = {1,1,1,1};
+  std::vector<Complex> boundary = {1,1,1,-1};
+//  std::vector<Complex> boundary = {1,1,1,1};
   FermionOp::ImplParams Params(boundary);
 
 
