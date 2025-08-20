@@ -148,9 +148,9 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
   return 0.0;
 }
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
-							 void *xmit,
+							 void *xmit, void *xmit_comp,
 							 int xmit_to_rank,int dox,
-							 void *recv,
+							 void *recv, void *recv_comp,
 							 int recv_from_rank,int dor,
 							 int xbytes,int rbytes, int dir)
 {
