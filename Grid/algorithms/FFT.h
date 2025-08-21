@@ -36,11 +36,13 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <hipfft/hipfft.h>
 #endif
 
+#if !defined(GRID_CUDA) && !defined(GRID_HIP)
 #ifdef HAVE_FFTW
 #if defined(USE_MKL) || defined(GRID_SYCL)
 #include <fftw/fftw3.h>
 #else
 #include <fftw3.h>
+#endif
 #endif
 #endif
 
@@ -174,6 +176,7 @@ public:
 };
 #endif
 
+#if !defined(GRID_CUDA) && !defined(GRID_HIP)
 #ifdef HAVE_FFTW
 template<> struct FFTW<ComplexD> {
 public:
@@ -215,6 +218,7 @@ public:
     ::fftwf_destroy_plan(p);
   }
 };
+#endif
 #endif
 
 class FFT {
