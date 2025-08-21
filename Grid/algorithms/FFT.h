@@ -140,7 +140,7 @@ public:
     
   inline static void fftw_execute_dft(const FFTW_plan p,FFTW_scalar *in,FFTW_scalar *out, int sign) {
     if ( sign == forward ) cufftExecZ2Z(p,in,out,CUFFT_FORWARD);
-    else                   cufftExecZ2Z(p,in,out,CUFFT_BACKWARD);
+    else                   cufftExecZ2Z(p,in,out,CUFFT_INVERSE);
     accelerator_barrier();
   }
   inline static void fftw_destroy_plan(const FFTW_plan p) {
@@ -167,7 +167,7 @@ public:
     
   inline static void fftw_execute_dft(const FFTW_plan p,FFTW_scalar *in,FFTW_scalar *out, int sign) {
     if ( sign == forward ) cufftExecC2C(p,in,out,CUFFT_FORWARD);
-    else                   cufftExecC2C(p,in,out,CUFFT_BACKWARD);
+    else                   cufftExecC2C(p,in,out,CUFFT_INVERSE);
     accelerator_barrier();
   }
   inline static void fftw_destroy_plan(const FFTW_plan p) {

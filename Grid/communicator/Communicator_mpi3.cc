@@ -349,7 +349,6 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<MpiCommsRequest_t> &
 
   GRID_ASSERT(dest != _processor);
   GRID_ASSERT(from != _processor);
-  GRID_ASSERT(bytes/(sizeof(int32_t))<= 2*1024*1024*1024);
   int tag;
 
   tag= dir+from*32;
