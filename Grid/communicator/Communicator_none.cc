@@ -89,7 +89,7 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
 					   int dest,
 					   void *recv,
 					   int from,
-					   int bytes)
+					   uint64_t bytes)
 {
   GRID_ASSERT(0);
 }
@@ -99,7 +99,7 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 						int dest,
 						void *recv,
 						int from,
-						int bytes,int dir)
+						uint64_t bytes,int dir)
 {
   GRID_ASSERT(0);
 }
@@ -115,8 +115,8 @@ void CartesianCommunicator::AllToAll(void  *in,void *out,uint64_t words,uint64_t
 
 int  CartesianCommunicator::RankWorld(void){return 0;}
 void CartesianCommunicator::Barrier(void){}
-void CartesianCommunicator::Broadcast(int root,void* data, int bytes) {}
-void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes) { }
+void CartesianCommunicator::Broadcast(int root,void* data, uint64_t bytes) {}
+void CartesianCommunicator::BroadcastWorld(int root,void* data, uint64_t bytes) { }
 void CartesianCommunicator::BarrierWorld(void) { }
 int  CartesianCommunicator::RankFromProcessorCoor(Coordinate &coor) {  return 0;}
 void CartesianCommunicator::ProcessorCoorFromRank(int rank, Coordinate &coor){  coor = _processor_coor; }
@@ -132,7 +132,7 @@ double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
 						     int xmit_to_rank,int dox,
 						     void *recv,
 						     int recv_from_rank,int dor,
-						     int bytes, int dir)
+						     uint64_t bytes, int dir)
 {
   return 2.0*bytes;
 }
@@ -143,7 +143,7 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
 							   int xmit_to_rank,int dox,
 							   void *recv,
 							   int recv_from_rank,int dor,
-							   int xbytes,int rbytes, int dir)
+							   uint64_t xbytes,uint64_t rbytes, int dir)
 {
   return 0.0;
 }
@@ -152,7 +152,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 							 int xmit_to_rank,int dox,
 							 void *recv, void *recv_comp,
 							 int recv_from_rank,int dor,
-							 int xbytes,int rbytes, int dir)
+							 uint64_t xbytes,uint64_t rbytes, int dir)
 {
   return xbytes+rbytes;
 }

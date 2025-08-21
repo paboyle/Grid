@@ -108,7 +108,7 @@ public:
   // very VERY rarely (Log, serial RNG) we need world without a grid
   ////////////////////////////////////////////////////////////////////////////////
   static int  RankWorld(void) ;
-  static void BroadcastWorld(int root,void* data, int bytes);
+  static void BroadcastWorld(int root,void* data, uint64_t bytes);
   static void BarrierWorld(void);
   
   ////////////////////////////////////////////////////////////
@@ -175,27 +175,27 @@ public:
 			   int dest,
 			   void *recv,
 			   int from,
-			   int bytes,int dir);
+			   uint64_t bytes,int dir);
   
   void SendToRecvFrom(void *xmit,
 		      int xmit_to_rank,
 		      void *recv,
 		      int recv_from_rank,
-		      int bytes);
+		      uint64_t bytes);
   
   int IsOffNode(int rank);
   double StencilSendToRecvFrom(void *xmit,
 			       int xmit_to_rank,int do_xmit,
 			       void *recv,
 			       int recv_from_rank,int do_recv,
-			       int bytes,int dir);
+			       uint64_t bytes,int dir);
 
   double StencilSendToRecvFromPrepare(std::vector<CommsRequest_t> &list,
 				      void *xmit,
 				      int xmit_to_rank,int do_xmit,
 				      void *recv,
 				      int recv_from_rank,int do_recv,
-				      int xbytes,int rbytes,int dir);
+				      uint64_t xbytes,uint64_t rbytes,int dir);
 
   // Could do a PollHtoD and have a CommsMerge dependence
   void StencilSendToRecvFromPollDtoH (std::vector<CommsRequest_t> &list);
@@ -206,7 +206,7 @@ public:
 				    int xmit_to_rank,int do_xmit,
 				    void *recv,void *recv_comp,
 				    int recv_from_rank,int do_recv,
-				    int xbytes,int rbytes,int dir);
+				    uint64_t xbytes,uint64_t rbytes,int dir);
   
   
   void StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int i);
@@ -220,7 +220,7 @@ public:
   ////////////////////////////////////////////////////////////
   // Broadcast a buffer and composite larger
   ////////////////////////////////////////////////////////////
-  void Broadcast(int root,void* data, int bytes);
+  void Broadcast(int root,void* data, uint64_t bytes);
 
   ////////////////////////////////////////////////////////////
   // All2All down one dimension
