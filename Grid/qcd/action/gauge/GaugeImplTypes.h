@@ -176,6 +176,8 @@ public:
     Group::ColdConfiguration(pRNG, U);
   }
 
+  static const int num_colours = Group::Dimension;
+
 };
 
 
