@@ -292,13 +292,14 @@ AC_ARG_ENABLE([accelerator],
 case ${ac_ACCELERATOR} in
     cuda)
       echo CUDA acceleration
-      LIBS="${LIBS} -lcuda -lcublas"
+      LIBS="${LIBS} -lcuda -lcublas -lcufft"
       AC_DEFINE([GRID_CUDA],[1],[Use CUDA offload]);;
     sycl)
       echo SYCL acceleration
       AC_DEFINE([GRID_SYCL],[1],[Use SYCL offload]);;
     hip)
       echo HIP acceleration
+      LIBS="${LIBS} -lhipblas -lrocblas -lhipfft"
       AC_DEFINE([GRID_HIP],[1],[Use HIP offload]);;
     none)
       echo NO acceleration    ;;
