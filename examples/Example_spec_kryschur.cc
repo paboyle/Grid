@@ -40,8 +40,56 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/iterative/PrecGeneralisedConjugateResidualNonHermitian.h>
 #include <Grid/algorithms/iterative/BiCGSTAB.h>
 
+#include <Grid/parallelIO/IldgIOtypes.h>
+#include <Grid/parallelIO/IldgIO.h>
+
 using namespace std;
 using namespace Grid;
+
+template <class T> void writeFile(T& in, std::string const fname){  
+  #ifdef HAVE_LIME
+    // Ref: https://github.com/paboyle/Grid/blob/feature/scidac-wp1/tests/debug/Test_general_coarse_hdcg_phys48.cc#L111
+    std::cout << Grid::GridLogMessage << "Writes to: " << fname << std::endl;
+    Grid::emptyUserRecord record;
+    Grid::ScidacWriter WR(in.Grid()->IsBoss());
+    WR.open(fname);
+    WR.writeScidacFieldRecord(in,record,0); // Lexico
+    WR.close();
+  #endif
+}
+
+/**
+ * Writes the eigensystem of a Krylov Schur object to a directory. 
+ * 
+ * Parameters
+ * ----------
+ * std::string path
+ *    Directory to write to. 
+ */
+template <class Field>
+void writeEigensystem(KrylovSchur<Field> KS, std::string outDir) {
+  int Nk = KS.getNk();
+  std::cout << GridLogMessage << "Writing output to directory: " << outDir << std::endl;
+  
+  // Write evals
+  std::string evalPath = outDir + "/evals.txt";
+  std::ofstream fEval;
+  fEval.open(evalPath);
+  Eigen::VectorXcd evals = KS.getEvals();
+  for (int i = 0; i < Nk; i++) {
+    // write Eigenvalues
+    fEval << i << " " << evals(i);
+    if (i < Nk - 1) { fEval << "\n"; }
+  }
+  fEval.close();
+  
+  // Write evecs
+  std::vector<Field> evecs = KS.getEvecs();
+  for (int i = 0; i < Nk; i++) {
+    std::string fName = outDir + "/evec" + std::to_string(i);
+    writeFile(evecs[i], fName);     // using method from Grid/HMC/ComputeWilsonFlow.cc
+  }
+}
 
 // Hermitize a DWF operator by squaring it
 template<class Matrix,class Field>
@@ -293,12 +341,14 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  // Usage : $ ./Example_spec_kryschur <Nm> <Nk> <maxiter> <Nstop>
+  // Usage : $ ./Example_spec_kryschur <Nm> <Nk> <maxiter> <Nstop> <inFile> <outDir>
   // assert (argc == 5);
-  std::string NmStr = argv[1];
-  std::string NkStr = argv[2];
+  std::string NmStr      = argv[1];
+  std::string NkStr      = argv[2];
   std::string maxIterStr = argv[3];
-  std::string NstopStr = argv[4];
+  std::string NstopStr   = argv[4];
+  std::string file       = argv[5];
+  std::string outDir     = argv[6];
 
   //const int Ls=16;
   const int Ls = 8;
@@ -342,10 +392,11 @@ int main (int argc, char ** argv)
 
   FieldMetaData header;
   // std::string file ("/sdcc/u/poare/PETSc-Grid/ckpoint_EODWF_lat.125");
-  std::string file("/Users/patrickoare/libraries/PETSc-Grid/ckpoint_EODWF_lat.125");
+  // std::string file("/Users/patrickoare/libraries/PETSc-Grid/ckpoint_EODWF_lat.125");
   NerscIO::readConfiguration(Umu,header,file);
 
-  RealD mass=0.01;
+  // RealD mass=0.01;
+  RealD mass=0.001;
   RealD M5=1.8;
 
   DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
@@ -396,6 +447,10 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "Krylov Schur eigenvalues: " << std::endl << KrySchur.getEvals() << std::endl;
   //std::cout << GridLogMessage << "Lanczos eigenvalues: " << std::endl << levals << std::endl;
+
+  // KrySchur.writeEigensystem(outDir);
+
+  writeEigensystem(KrySchur, outDir);
 
   std::cout<<GridLogMessage<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;

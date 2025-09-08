@@ -32,6 +32,12 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #ifndef GRID_KRYLOVSCHUR_H
 #define GRID_KRYLOVSCHUR_H
 
+// #include <Grid/Grid.h>
+// #include <Grid/parallelIO/IldgIOtypes.h>
+// #include <Grid/parallelIO/IldgIO.h>
+
+// #include <Grid/serialisation/emptyUserRecord.h>
+
 NAMESPACE_BEGIN(Grid); 
 
 /**
@@ -167,6 +173,15 @@ class ComplexSchurDecomposition {
 
 };
 
+// template<class Field>
+// inline void writeFile(const Field &field, const std::string &fname) {
+//   emptyUserRecord record;
+//   ScidacWriter WR(field.Grid()->IsBoss());
+//   WR.open(fname);
+//   WR.writeScidacFieldRecord(field, record, 0); // 0 = Lexico
+//   WR.close();
+// }
+
 /**
  * Implementation of the Krylov-Schur algorithm.
  */
@@ -212,6 +227,7 @@ class KrylovSchur {
 
 
     /* Getters */
+    int                 getNk()                { return Nk;       }
     Eigen::MatrixXcd    getRayleighQuotient()  { return Rayleigh; }
     Field               getU()                 { return u;        }
     std::vector<Field>  getBasis()             { return basis;    }
@@ -321,6 +337,9 @@ class KrylovSchur {
                         << i << "." << std::endl;
           basisRotate(evecs, Qt, 0, Nk, 0, Nk, Nm);
           std::cout << GridLogMessage << "Eigenvalues: " << evals << std::endl;
+
+          // writeEigensystem(path);
+
           return;
         }
       }
@@ -412,8 +431,6 @@ class KrylovSchur {
      * Approximates the eigensystem of the linear operator by computing the eigensystem of 
      * the Rayleigh quotient. Assumes that the Rayleigh quotient has already been constructed (by 
      * calling the operator() function).
-     * 
-     * TODO implement in parent class eventually.
      * 
      * Parameters
      * ----------
@@ -653,7 +670,49 @@ class KrylovSchur {
       return;
     }
 
+    // void writeEvec(Field& in, std::string const fname){  
+    //   #ifdef HAVE_LIME
+    //     // Ref: https://github.com/paboyle/Grid/blob/feature/scidac-wp1/tests/debug/Test_general_coarse_hdcg_phys48.cc#L111
+    //     std::cout << GridLogMessage << "Writing evec to: " << fname << std::endl;
+    //     Grid::emptyUserRecord record;
+    //     Grid::ScidacWriter WR(in.Grid()->IsBoss());
+    //     WR.open(fname);
+    //     WR.writeScidacFieldRecord(in,record,0); // Lexico
+    //     WR.close();
+    //   #endif
+    //     // What is the appropriate way to throw error?
+    // }
+
+    // /**
+    //  * Writes the eigensystem of a Krylov Schur object to a directory. 
+    //  * 
+    //  * Parameters
+    //  * ----------
+    //  * std::string path
+    //  *    Directory to write to. 
+    //  */
+    // void writeEigensystem(std::string outDir) {
+    //   std::cout << GridLogMessage << "Writing output to directory: " << outDir << std::endl;
+    //   // TODO write a scidac density file so that we can easily integrate with visualization toolkit
+    //   std::string evalPath = outDir + "/evals.txt";
+    //   std::ofstream fEval;
+    //   fEval.open(evalPath);
+    //   for (int i = 0; i < Nk; i++) {
+    //     // write Eigenvalues
+    //     fEval << i << " " << evals(i);
+    //     if (i < Nk - 1) { fEval << "\n"; }
+    //   }
+    //   fEval.close();
+      
+    //   for (int i = 0; i < Nk; i++) {
+    //     std::string fName = outDir + "/evec" + std::to_string(i);
+    //     // writeFile(evecs[i], fName);     // using method from Grid/HMC/ComputeWilsonFlow.cc
+    //     // writeEvec(evecs[i], fName);
+    //   }
+      
+    // }
+
 };
-    
+
 NAMESPACE_END(Grid);
 #endif
