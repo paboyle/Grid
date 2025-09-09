@@ -445,9 +445,9 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "Runnning Krylov Schur. Nm = " << Nm << ", Nk = " << Nk << ", maxIter = " << maxIter 
                   << ", Nstop = " << Nstop << std::endl;
-  // Arnoldi Arn(PVdagM, FGrid, 1e-8);
-  // Arn(src, maxIter, Nm, Nk, Nstop);
-  KrylovSchur KrySchur (PVdagM, FGrid, 1e-8, RF);
+  
+  // KrylovSchur KrySchur (PVdagM, FGrid, 1e-8, RF);      // use preconditioned PV^\dag D_{dwf}
+  KrylovSchur KrySchur (DLinOp, FGrid, 1e-8, RF);         // use D_{dwf}
   KrySchur(src, maxIter, Nm, Nk, Nstop);
 
   std::cout<<GridLogMessage << "*******************************************" << std::endl;
