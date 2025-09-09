@@ -8,8 +8,6 @@ Copyright (C) 2015
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
-Author: Chulwoo Jung <chulwoo@bnl.gov>
-Author: Christoph Lehner <clehner@bnl.gov>
 Author: Patrick Oare <poare@bnl.gov>
 
 This program is free software; you can redistribute it and/or modify
@@ -33,37 +31,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define GRID_ARNOLDI_H
 
 NAMESPACE_BEGIN(Grid); 
-
-/**
- * Options for which Ritz values to keep in implicit restart.
- */
-enum RitzFilter {
-  EvalNormSmall,           // Keep evals with smallest norm
-  EvalNormLarge,           // Keep evals with largest norm
-  EvalReSmall,             // Keep evals with smallest real part
-  EvalReLarge              // Keep evals with largest real part
-};
-
-// Select comparison function from RitzFilter
-struct ComplexComparator
-{
-  RitzFilter f;
-  ComplexComparator (RitzFilter _f) : f(_f) {}
-  bool operator()(std::complex<double> z1, std::complex<double> z2) { 
-    switch (f) {
-      case EvalNormSmall:
-        return std::abs(z1) < std::abs(z2);
-      case EvalNormLarge:
-        return std::abs(z1) > std::abs(z2);
-      case EvalReSmall:
-        return std::abs(std::real(z1)) < std::abs(std::real(z2));
-      case EvalReLarge:
-        return std::abs(std::real(z1)) > std::abs(std::real(z2));
-      default:
-        assert(0);
-    }
-  }
-};
 
 /**
  * Implementation of the Arnoldi algorithm.

@@ -8,8 +8,6 @@ Copyright (C) 2015
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
-Author: Chulwoo Jung <chulwoo@bnl.gov>
-Author: Christoph Lehner <clehner@bnl.gov>
 Author: Patrick Oare <poare@bnl.gov>
 
 This program is free software; you can redistribute it and/or modify
@@ -32,13 +30,75 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #ifndef GRID_KRYLOVSCHUR_H
 #define GRID_KRYLOVSCHUR_H
 
-// #include <Grid/Grid.h>
-// #include <Grid/parallelIO/IldgIOtypes.h>
-// #include <Grid/parallelIO/IldgIO.h>
-
-// #include <Grid/serialisation/emptyUserRecord.h>
-
 NAMESPACE_BEGIN(Grid); 
+
+/**
+ * Options for which Ritz values to keep in implicit restart. TODO move this and utilities into a new file
+ */
+enum RitzFilter {
+  EvalNormSmall,           // Keep evals with smallest norm
+  EvalNormLarge,           // Keep evals with largest norm
+  EvalReSmall,             // Keep evals with smallest real part
+  EvalReLarge,             // Keep evals with largest real part
+  EvalImSmall,             // Keep evals with smallest imaginary part
+  EvalImLarge              // Keep evals with largest imaginary part
+};
+
+/** Selects the RitzFilter corresponding to the input string. */
+RitzFilter selectRitzFilter(std::string s) {
+  if (s == "EvalNormSmall") { return EvalNormSmall; } else
+  if (s == "EvalNormLarge") { return EvalNormLarge; } else
+  if (s == "EvalReSmall")   { return EvalReSmall; }   else
+  if (s == "EvalReLarge")   { return EvalReLarge; }   else
+  if (s == "EvalImSmall")   { return EvalImSmall; }   else
+  if (s == "EvalImLarge")   { return EvalImLarge; }   else 
+  { assert(0); }
+}
+
+/** Returns a string saying which RitzFilter it is. */
+std::string rfToString(RitzFilter RF) {
+  switch (RF) {
+    case EvalNormSmall:
+      return "EvalNormSmall";
+    case EvalNormLarge:
+      return "EvalNormLarge";
+    case EvalReSmall:
+      return "EvalReSmall";
+    case EvalReLarge:
+      return "EvalReLarge";
+    case EvalImSmall:
+      return "EvalImSmall";
+    case EvalImLarge:
+      return "EvalImLarge";
+    default:
+      assert(0);
+  }
+}
+
+// Select comparison function from RitzFilter
+struct ComplexComparator
+{
+  RitzFilter RF;
+  ComplexComparator (RitzFilter _rf) : RF(_rf) {}
+  bool operator()(std::complex<double> z1, std::complex<double> z2) { 
+    switch (RF) {
+      case EvalNormSmall:
+        return std::abs(z1) < std::abs(z2);
+      case EvalNormLarge:
+        return std::abs(z1) > std::abs(z2);
+      case EvalReSmall:
+        return std::abs(std::real(z1)) < std::abs(std::real(z2));
+      case EvalReLarge:
+        return std::abs(std::real(z1)) > std::abs(std::real(z2));
+      case EvalImSmall:
+        return std::abs(std::imag(z1)) < std::abs(std::imag(z2));
+      case EvalImLarge:
+        return std::abs(std::imag(z1)) > std::abs(std::imag(z2));
+      default:
+        assert(0);
+    }
+  }
+};
 
 /**
  * Computes a complex Schur decomposition of a complex matrix A using Eigen's matrix library. The Schur decomposition,

@@ -350,6 +350,15 @@ int main (int argc, char ** argv)
   std::string file       = argv[5];
   std::string outDir     = argv[6];
 
+  RitzFilter RF;
+  if (argc == 8) {
+    std::string rf       = argv[7];
+    RF = selectRitzFilter(rf);
+  } else {
+    RF = EvalReSmall;
+  }
+  std::cout << "Sorting eigenvalues using " << rfToString(RF) << std::endl;
+
   //const int Ls=16;
   const int Ls = 8;
 
@@ -438,7 +447,7 @@ int main (int argc, char ** argv)
                   << ", Nstop = " << Nstop << std::endl;
   // Arnoldi Arn(PVdagM, FGrid, 1e-8);
   // Arn(src, maxIter, Nm, Nk, Nstop);
-  KrylovSchur KrySchur (PVdagM, FGrid, 1e-8);
+  KrylovSchur KrySchur (PVdagM, FGrid, 1e-8, RF);
   KrySchur(src, maxIter, Nm, Nk, Nstop);
 
   std::cout<<GridLogMessage << "*******************************************" << std::endl;
