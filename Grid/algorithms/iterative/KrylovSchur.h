@@ -45,7 +45,7 @@ enum RitzFilter {
 };
 
 /** Selects the RitzFilter corresponding to the input string. */
-RitzFilter selectRitzFilter(std::string s) {
+inline RitzFilter selectRitzFilter(std::string s) {
   if (s == "EvalNormSmall") { return EvalNormSmall; } else
   if (s == "EvalNormLarge") { return EvalNormLarge; } else
   if (s == "EvalReSmall")   { return EvalReSmall; }   else
@@ -56,7 +56,7 @@ RitzFilter selectRitzFilter(std::string s) {
 }
 
 /** Returns a string saying which RitzFilter it is. */
-std::string rfToString(RitzFilter RF) {
+inline std::string rfToString(RitzFilter RF) {
   switch (RF) {
     case EvalNormSmall:
       return "EvalNormSmall";
@@ -367,7 +367,7 @@ class KrylovSchur {
         std::cout << GridLogMessage << "*** TRUNCATING FOR RESTART *** " << std::endl;
 
         std::cout << GridLogDebug << "Rayleigh before truncation: " << std::endl << Rayleigh << std::endl;
-        
+
         Eigen::MatrixXcd RayTmp = Rayleigh(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
         Rayleigh = RayTmp;
 
