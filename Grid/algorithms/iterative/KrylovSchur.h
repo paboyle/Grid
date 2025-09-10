@@ -265,34 +265,36 @@ class KrylovSchur {
     RealD approxLambdaMax;
     RealD beta_k;
     Field u;                                // Residual vector perpendicular to Krylov space (u_{k+1} in notes)
-    Eigen::VectorXcd b;                     // b vector in Schur decomposition (e_{k+1} in Arnoldi).
+    Eigen::VectorXcd   b;                   // b vector in Schur decomposition (e_{k+1} in Arnoldi).
     std::vector<Field> basis;               // orthonormal Krylov basis
-    Eigen::MatrixXcd Rayleigh;              // Rayleigh quotient of size Nbasis (after construction)
-    Eigen::MatrixXcd Qt;                    // Transpose of basis rotation which projects out high modes.
+    Eigen::MatrixXcd   Rayleigh;            // Rayleigh quotient of size Nbasis (after construction)
+    Eigen::MatrixXcd   Qt;                  // Transpose of basis rotation which projects out high modes.
 
-    Eigen::VectorXcd evals;                 // evals of Rayleigh quotient
-    Eigen::MatrixXcd littleEvecs;           // Nm x Nm evecs matrix
+    Eigen::VectorXcd   evals;               // evals of Rayleigh quotient
+    std::vector<RealD> ritzEstimates;       // corresponding ritz estimates for evals
+    Eigen::MatrixXcd   littleEvecs;         // Nm x Nm evecs matrix
     std::vector<Field> evecs;               // Vector of evec fields
 
-    RitzFilter ritzFilter;                        // how to sort evals
+    RitzFilter ritzFilter;                  // how to sort evals
 
   public:       
 
     KrylovSchur(LinearOperatorBase<Field> &_Linop, GridBase *_Grid, RealD _Tolerance, RitzFilter filter = EvalReSmall)
       : Linop(_Linop), Grid(_Grid), Tolerance(_Tolerance), ritzFilter(filter), u(_Grid), MaxIter(-1), Nm(-1), Nk(-1), Nstop (-1),
-        evals (0), evecs (), ssq (0.0), rtol (0.0), beta_k (0.0), approxLambdaMax (0.0)
+        evals (0), ritzEstimates (), evecs (), ssq (0.0), rtol (0.0), beta_k (0.0), approxLambdaMax (0.0)
     {
       u = Zero();
     };
 
 
     /* Getters */
-    int                 getNk()                { return Nk;       }
-    Eigen::MatrixXcd    getRayleighQuotient()  { return Rayleigh; }
-    Field               getU()                 { return u;        }
-    std::vector<Field>  getBasis()             { return basis;    }
-    Eigen::VectorXcd    getEvals()             { return evals;    }
-    std::vector<Field>  getEvecs()             { return evecs;    }
+    int                 getNk()                { return Nk;            }
+    Eigen::MatrixXcd    getRayleighQuotient()  { return Rayleigh;      }
+    Field               getU()                 { return u;             }
+    std::vector<Field>  getBasis()             { return basis;         }
+    Eigen::VectorXcd    getEvals()             { return evals;         }
+    std::vector<RealD>  getRitzEstimates()     { return ritzEstimates; }
+    std::vector<Field>  getEvecs()             { return evecs;         }
 
     /**
      * Runs the Krylov-Schur loop.
@@ -365,19 +367,13 @@ class KrylovSchur {
         std::cout << GridLogMessage << "*** TRUNCATING FOR RESTART *** " << std::endl;
 
         std::cout << GridLogDebug << "Rayleigh before truncation: " << std::endl << Rayleigh << std::endl;
-
-        // Rayleigh = Rayleigh(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
+        
         Eigen::MatrixXcd RayTmp = Rayleigh(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
         Rayleigh = RayTmp;
 
-        // basis = std::vector<Field> (basis.begin(), basis.begin() + Nk);
         std::vector<Field> basisTmp = std::vector<Field> (basis.begin(), basis.begin() + Nk);
         basis = basisTmp;
 
-        // evecs = std::vector<Field> (evecs.begin(), evecs.begin() + Nk);
-        // littleEvecs = littleEvecs(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
-        
-        // b = b.head(Nk);
         Eigen::VectorXcd btmp = b.head(Nk);
         b = btmp;
 
@@ -580,9 +576,11 @@ class KrylovSchur {
       int Nconv = 0;
       std::cout << GridLogDebug << "b: " << b << std::endl;
       Field tmp (Grid); Field fullEvec (Grid);
+      ritzEstimates.clear();
       for (int k = 0; k < evecs.size(); k++) {
         Eigen::VectorXcd evec_k = littleEvecs.col(k);
         RealD ritzEstimate = std::abs(b.dot(evec_k));           // b^\dagger s
+        ritzEstimates.push_back(ritzEstimate);
         std::cout << GridLogMessage << "Ritz estimate for evec " << k << " = " << ritzEstimate << std::endl;
         if (ritzEstimate < rtol) {
           Nconv++;

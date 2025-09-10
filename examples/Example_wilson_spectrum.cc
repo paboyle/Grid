@@ -1,7 +1,6 @@
 /*************************************************************************************
 
-    Runs the Krylov-Schur algorithm on a (pre-conditioned) domain-wall fermion operator 
-    to determine part of its spectrum. 
+    Runs the Krylov-Schur algorithm on a Wilson fermion operator to determine part of its spectrum. 
 
     Usage : 
       $ ./Example_spec_kryschur <Nm> <Nk> <maxiter> <Nstop> <inFile> <outDir> <?rf>
@@ -288,39 +287,29 @@ int main (int argc, char ** argv)
 								          GridDefaultSimd(Nd,vComplex::Nsimd()),
 								          GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
-
-  GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
-  GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
+  GridCartesian* FGrid = UGrid;
+  GridRedBlackCartesian* FrbGrid = UrbGrid;
 
   std::vector<int> seeds4({1,2,3,4});
-  std::vector<int> seeds5({5,6,7,8});
-  GridParallelRNG          RNG5(FGrid);   RNG5.SeedFixedIntegers(seeds5);
-  GridParallelRNG          RNG4(UGrid);   RNG4.SeedFixedIntegers(seeds4);
+  GridParallelRNG RNG4(UGrid);
+  RNG4.SeedFixedIntegers(seeds4);
 
-  LatticeFermion    src(FGrid); random(RNG5,src);
+  LatticeFermion    src(FGrid); random(RNG4, src);
   LatticeGaugeField Umu(UGrid);
 
   FieldMetaData header;
   NerscIO::readConfiguration(Umu,header,file);
 
-  // RealD mass=0.01;
-  RealD mass=0.001;
-  RealD M5=1.8;
-
-  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  DomainWallFermionD Dpv(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,M5);
+  RealD mass = -0.1;
+  WilsonFermionD DWilson (Umu,*FGrid,*FrbGrid,mass);
 
   std::cout<<GridLogMessage<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
   std::cout<<GridLogMessage<<std::endl;
+  
 
-  typedef PVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> PVdagM_t;
-  typedef ShiftedPVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> ShiftedPVdagM_t;
-  typedef ShiftedComplexPVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> ShiftedComplexPVdagM_t;
-  PVdagM_t PVdagM(Ddwf, Dpv);
-  ShiftedPVdagM_t ShiftedPVdagM(0.1,Ddwf,Dpv);
-  SquaredLinearOperator<DomainWallFermionD, LatticeFermionD> Dsq (Ddwf);
-  NonHermitianLinearOperator<DomainWallFermionD, LatticeFermionD> DLinOp (Ddwf);
+  SquaredLinearOperator<WilsonFermionD, LatticeFermionD> Dsq (DWilson);
+  NonHermitianLinearOperator<WilsonFermionD, LatticeFermionD> DLinOp (DWilson);
 
   int Nm = std::stoi(NmStr);
   int Nk = std::stoi(NkStr);
@@ -330,8 +319,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "Runnning Krylov Schur. Nm = " << Nm << ", Nk = " << Nk << ", maxIter = " << maxIter 
                   << ", Nstop = " << Nstop << std::endl;
   
-  KrylovSchur KrySchur (PVdagM, FGrid, 1e-8, RF);      // use preconditioned PV^\dag D_{dwf}
-  // KrylovSchur KrySchur (DLinOp, FGrid, 1e-8, RF);         // use D_{dwf}
+  KrylovSchur KrySchur (DLinOp, FGrid, 1e-8, RF);         // use DWilson
   KrySchur(src, maxIter, Nm, Nk, Nstop);
 
   std::cout<<GridLogMessage << "*******************************************" << std::endl;
