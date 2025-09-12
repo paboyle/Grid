@@ -86,14 +86,22 @@ struct ComplexComparator
         return std::abs(z1) < std::abs(z2);
       case EvalNormLarge:
         return std::abs(z1) > std::abs(z2);
+      // case EvalReSmall:
+      //   return std::abs(std::real(z1)) < std::abs(std::real(z2));     // DELETE THE ABS HERE!!!
+      // case EvalReLarge:
+      //   return std::abs(std::real(z1)) > std::abs(std::real(z2));
+      // case EvalImSmall:
+      //   return std::abs(std::imag(z1)) < std::abs(std::imag(z2));
+      // case EvalImLarge:
+      //   return std::abs(std::imag(z1)) > std::abs(std::imag(z2));
       case EvalReSmall:
-        return std::abs(std::real(z1)) < std::abs(std::real(z2));
+        return std::real(z1) < std::real(z2);     // DELETE THE ABS HERE!!!
       case EvalReLarge:
-        return std::abs(std::real(z1)) > std::abs(std::real(z2));
+        return std::real(z1) > std::real(z2);
       case EvalImSmall:
-        return std::abs(std::imag(z1)) < std::abs(std::imag(z2));
+        return std::imag(z1) < std::imag(z2);
       case EvalImLarge:
-        return std::abs(std::imag(z1)) > std::abs(std::imag(z2));
+        return std::imag(z1) > std::imag(z2);
       default:
         assert(0);
     }
@@ -311,6 +319,7 @@ class KrylovSchur {
       ssq = norm2(v0);
       RealD approxLambdaMax = approxMaxEval(v0);
       rtol = Tolerance * approxLambdaMax;
+      std::cout << GridLogMessage << "Approximate max eigenvalue: " << approxLambdaMax << std::endl;
       // rtol = Tolerance;
 
       b = Eigen::VectorXcd::Zero(Nm);       // start as e_{k+1}
