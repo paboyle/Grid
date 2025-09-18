@@ -103,12 +103,12 @@ void writeEigensystem(KrylovSchur<Field> KS, std::string outDir) {
   }
   fEval.close();
   
-  // Write evecs
-  std::vector<Field> evecs = KS.getEvecs();
-  for (int i = 0; i < Nk; i++) {
-    std::string fName = outDir + "/evec" + std::to_string(i);
-    writeFile(evecs[i], fName);     // using method from Grid/HMC/ComputeWilsonFlow.cc
-  }
+  // Write evecs (TODO: very heavy on storage costs! Don't write them all out)
+  // std::vector<Field> evecs = KS.getEvecs();
+  // for (int i = 0; i < Nk; i++) {
+  //   std::string fName = outDir + "/evec" + std::to_string(i);
+  //   writeFile(evecs[i], fName);     // using method from Grid/HMC/ComputeWilsonFlow.cc
+  // }
 }
 
 // Hermitize a DWF operator by squaring it
