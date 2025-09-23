@@ -2,6 +2,8 @@
 
     Runs the Krylov-Schur algorithm on a Wilson fermion operator to determine part of its spectrum. 
 
+    TODO rename this file: really is running the topology change jobs on Aurora. 
+
     Usage : 
       $ ./Example_spec_kryschur <Nm> <Nk> <maxiter> <Nstop> <inFile> <outDir> <?rf>
 
@@ -276,12 +278,11 @@ int main (int argc, char ** argv)
   }
   std::cout << "Sorting eigenvalues using " << rfToString(RF) << std::endl;
 
-  //const int Ls=16;
-  const int Ls = 8;
+  const int Ls=16;
 
 //   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   //std::vector<int> lat_size {16, 16, 16, 32};
-  std::vector<int> lat_size {8, 8, 8, 8};
+  std::vector<int> lat_size {32, 32, 32, 32};
   std::cout << "Lattice size: " << lat_size << std::endl;
   GridCartesian * UGrid = SpaceTimeGrid::makeFourDimGrid(lat_size, 
 								          GridDefaultSimd(Nd,vComplex::Nsimd()),
@@ -298,18 +299,26 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu(UGrid);
 
   FieldMetaData header;
-  NerscIO::readConfiguration(Umu,header,file);
+  NerscIO::readConfiguration(Umu, header, file);
 
-  RealD mass = -0.1;
-  WilsonFermionD DWilson (Umu,*FGrid,*FrbGrid,mass);
+  RealD mass = 0.01;
+  RealD M5 = 1.8;
+
+  // Define domain wall D
+  DomainWallFermionD Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5);
+  NonHermitianLinearOperator<DomainWallFermionD, LatticeFermionD> DLinOp (Ddwf);
+
+  // Define PV^dag D (if we want)
+  DomainWallFermionD Dpv(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, 1.0, M5);
+  typedef PVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> PVdagM_t;
+  PVdagM_t PVdagM(Ddwf, Dpv);
 
   std::cout<<GridLogMessage<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
   std::cout<<GridLogMessage<<std::endl;
-  
 
-  SquaredLinearOperator<WilsonFermionD, LatticeFermionD> Dsq (DWilson);
-  NonHermitianLinearOperator<WilsonFermionD, LatticeFermionD> DLinOp (DWilson);
+  // SquaredLinearOperator<WilsonFermionD, LatticeFermionD> Dsq (DWilson);
+  // NonHermitianLinearOperator<WilsonFermionD, LatticeFermionD> DLinOp (DWilson);
 
   int Nm = std::stoi(NmStr);
   int Nk = std::stoi(NkStr);
@@ -319,7 +328,8 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "Runnning Krylov Schur. Nm = " << Nm << ", Nk = " << Nk << ", maxIter = " << maxIter 
                   << ", Nstop = " << Nstop << std::endl;
   
-  KrylovSchur KrySchur (DLinOp, FGrid, 1e-8, RF);         // use DWilson
+  // KrylovSchur KrySchur (PVdagM, FGrid, 1e-8, RF);         // use PV^\dag M
+  KrylovSchur KrySchur (DLinOp, FGrid, 1e-8, RF);         // use Ddwf
   KrySchur(src, maxIter, Nm, Nk, Nstop);
 
   std::cout<<GridLogMessage << "*******************************************" << std::endl;
