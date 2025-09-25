@@ -288,8 +288,8 @@ int main (int argc, char ** argv)
 								          GridDefaultSimd(Nd,vComplex::Nsimd()),
 								          GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
-  GridCartesian* FGrid = UGrid;
-  GridRedBlackCartesian* FrbGrid = UrbGrid;
+  GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
+  GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
   std::vector<int> seeds4({1,2,3,4});
   GridParallelRNG RNG4(UGrid);
@@ -301,12 +301,18 @@ int main (int argc, char ** argv)
   FieldMetaData header;
   NerscIO::readConfiguration(Umu, header, file);
 
+  std::cout << GridLogMessage << "Loaded configuration" << std::endl;
+
   RealD mass = 0.01;
   RealD M5 = 1.8;
 
-  // Define domain wall D
+  std::cout << GridLogMessage << "masses specified" << std::endl;
+
+  // Define domain wall D. This is giving a floating point exception?
   DomainWallFermionD Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5);
   NonHermitianLinearOperator<DomainWallFermionD, LatticeFermionD> DLinOp (Ddwf);
+
+  std::cout << GridLogMessage << "DWF operator defined" << std::endl;
 
   // Define PV^dag D (if we want)
   DomainWallFermionD Dpv(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, 1.0, M5);
