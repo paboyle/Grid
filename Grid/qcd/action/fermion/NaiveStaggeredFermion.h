@@ -36,6 +36,8 @@ public:
   static const std::vector<int> directions;
   static const std::vector<int> displacements;
   static const int npoint = 8;
+  static std::vector<int> MakeDirections(void);
+  static std::vector<int> MakeDisplacements(void);
 };
 
 template <class Impl>

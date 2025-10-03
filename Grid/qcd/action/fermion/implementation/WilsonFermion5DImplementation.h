@@ -63,10 +63,10 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   Dirichlet(0)
 {
   // some assertions
-  assert(FiveDimGrid._ndimension==5);
-  assert(FourDimGrid._ndimension==4);
-  assert(FourDimRedBlackGrid._ndimension==4);
-  assert(FiveDimRedBlackGrid._ndimension==5);
+  assert(FiveDimGrid._ndimension==Nd+1);
+  assert(FourDimGrid._ndimension==Nd);
+  assert(FourDimRedBlackGrid._ndimension==Nd);
+  assert(FiveDimRedBlackGrid._ndimension==Nd+1);
   assert(FiveDimRedBlackGrid._checker_dim==1); // Don't checker the s direction
 
   // extent of fifth dim and not spread out
@@ -76,7 +76,7 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   assert(FiveDimRedBlackGrid._processors[0] ==1);
 
   // Other dimensions must match the decomposition of the four-D fields 
-  for(int d=0;d<4;d++){
+  for(int d=0;d<Nd;d++){
 
     assert(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
     assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
@@ -93,11 +93,13 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
 
   if ( p.dirichlet.size() == Nd+1) {
     Coordinate block = p.dirichlet;
-    if ( block[0] || block[1] || block[2] || block[3] || block[4] ){
-      Dirichlet = 1;
-      std::cout << GridLogMessage << " WilsonFermion: non-trivial Dirichlet condition "<< block << std::endl;
-      std::cout << GridLogMessage << " WilsonFermion: partial Dirichlet "<< p.partialDirichlet << std::endl;
-      Block = block;
+    for(int d=0;d<Nd+1;d++) {
+      if ( block[d] ){
+	Dirichlet = 1;
+	std::cout << GridLogMessage << " WilsonFermion: non-trivial Dirichlet condition "<< block << std::endl;
+	std::cout << GridLogMessage << " WilsonFermion: partial Dirichlet "<< p.partialDirichlet << std::endl;
+	Block = block;
+      }
     }
   } else {
     Coordinate block(Nd+1,0);
@@ -112,7 +114,7 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
     assert(FiveDimGrid._simd_layout[0]        ==nsimd);
     assert(FiveDimRedBlackGrid._simd_layout[0]==nsimd);
 
-    for(int d=0;d<4;d++){
+    for(int d=0;d<Nd;d++){
       assert(FourDimGrid._simd_layout[d]==1);
       assert(FourDimRedBlackGrid._simd_layout[d]==1);
       assert(FiveDimRedBlackGrid._simd_layout[d+1]==1);
@@ -183,8 +185,8 @@ void WilsonFermion5D<Impl>::DhopDir(const FermionField &in, FermionField &out,in
   //  assert( (dir>=0)&&(dir<4) ); //must do x,y,z or t;
 
   int skip = (disp==1) ? 0 : 1;
-  int dirdisp = dir+skip*4;
-  int gamma   = dir+(1-skip)*4;
+  int dirdisp = dir+skip*Nd;
+  int gamma   = dir+(1-skip)*Nd;
 
   Compressor compressor(DaggerNo);
   Stencil.HaloExchange(in,compressor);
@@ -483,7 +485,7 @@ void WilsonFermion5D<Impl>::DW(const FermionField &in, FermionField &out,int dag
 {
   out.Checkerboard()=in.Checkerboard();
   Dhop(in,out,dag); // -0.5 is included
-  axpy(out,4.0-M5,in,out);
+  axpy(out,Nd*1.0-M5,in,out);
 }
 template <class Impl>
 void WilsonFermion5D<Impl>::Meooe(const FermionField &in, FermionField &out)
@@ -509,7 +511,7 @@ template <class Impl>
 void WilsonFermion5D<Impl>::Mooee(const FermionField &in, FermionField &out)
 {
   out.Checkerboard() = in.Checkerboard();
-  typename FermionField::scalar_type scal(4.0 + M5);
+  typename FermionField::scalar_type scal(Nd*1.0 + M5);
   out = scal * in;
 }
 
@@ -524,7 +526,7 @@ template<class Impl>
 void WilsonFermion5D<Impl>::MooeeInv(const FermionField &in, FermionField &out)
 {
   out.Checkerboard() = in.Checkerboard();
-  out = (1.0/(4.0 + M5))*in;
+  out = (1.0/(Nd*1.0 + M5))*in;
 }
 
 template<class Impl>
@@ -635,7 +637,7 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt_5d(FermionField &out,const
   A = one / (abs(W) * sinha * 2.0) * one / (sinhaLs * 2.0);
   F = eaLs * (one - Wea + (Wema - one) * mass*mass);
   F = F + emaLs * (Wema - one + (one - Wea) * mass*mass);
-  F = F - abs(W) * sinha * 4.0 * mass;
+  F = F - abs(W) * sinha * (Nd* 1.0) * mass;
 
   Bpp =  (A/F) * (ema2Ls - one) * (one - Wema) * (one - mass*mass * one);
   Bmm =  (A/F) * (one - ea2Ls)  * (one - Wea) * (one - mass*mass * one);

@@ -30,7 +30,27 @@ directory
 
 NAMESPACE_BEGIN(Grid);
 
-const std::vector<int> NaiveStaggeredFermionStatic::directions({0, 1, 2, 3, 0, 1, 2, 3});
-const std::vector<int> NaiveStaggeredFermionStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1});
+//const std::vector<int> NaiveStaggeredFermionStatic::directions({0, 1, 2, 3, 0, 1, 2, 3});
+//const std::vector<int> NaiveStaggeredFermionStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1});
+const std::vector<int> NaiveStaggeredFermionStatic::directions(NaiveStaggeredFermionStatic::MakeDirections());
+const std::vector<int> NaiveStaggeredFermionStatic::displacements(NaiveStaggeredFermionStatic::MakeDisplacements());
+std::vector<int> NaiveStaggeredFermionStatic::MakeDirections(void)
+{
+  std::vector<int> directions(4*Nd);
+  for(int d=0;d<Nd;d++){
+    directions[d+Nd*0] = d;
+    directions[d+Nd*1] = d;
+  }
+  return directions;
+}
+std::vector<int> NaiveStaggeredFermionStatic::MakeDisplacements(void)
+{
+  std::vector<int> displacements(4*Nd);
+  for(int d=0;d<Nd;d++){
+    displacements[d+Nd*0] =+1;
+    displacements[d+Nd*1] =-1;
+  }
+  return displacements;
+}
 
 NAMESPACE_END(Grid);

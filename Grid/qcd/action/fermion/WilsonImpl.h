@@ -166,7 +166,7 @@ public:
 
       U = adj(Cshift(U, mu, -1));
       U = where(coor == 0, conjugate(phase) * U, U); 
-      PokeIndex<LorentzIndex>(Uds, U, mu + 4);
+      PokeIndex<LorentzIndex>(Uds, U, mu + Nd);
     }
   }
 

@@ -36,11 +36,16 @@ DWF_IMPL_LIST=" \
 	   ZWilsonImplF \
 	   ZWilsonImplD2 "
 
+TWOSPIN_WILSON_IMPL_LIST=" \
+	   TwoSpinWilsonImplF \
+	   TwoSpinWilsonImplD "
+
+
 GDWF_IMPL_LIST=" \
 	   GparityWilsonImplF \
 	   GparityWilsonImplD "
 
-IMPL_LIST="$STAG_IMPL_LIST  $WILSON_IMPL_LIST $DWF_IMPL_LIST $GDWF_IMPL_LIST"
+IMPL_LIST="$STAG_IMPL_LIST  $WILSON_IMPL_LIST $DWF_IMPL_LIST $GDWF_IMPL_LIST $TWOSPIN_WILSON_IMPL_LIST"
 
 for impl in $IMPL_LIST
 do
@@ -110,7 +115,12 @@ do
 done
 done
 
-CC_LIST=" \
-  ImprovedStaggeredFermion5DInstantiation \
-  StaggeredKernelsInstantiation "
+CC_LIST="TwoSpinWilsonFermion3plus1DInstantiation.cc.master	TwoSpinWilsonKernelsInstantiation.cc.master"
 
+for impl in $TWOSPIN_WILSON_IMPL_LIST
+do
+for f in $CC_LIST
+do
+  ln -f -s ../$f.cc.master $impl/$f$impl.cc
+done
+done

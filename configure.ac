@@ -198,6 +198,8 @@ AC_ARG_ENABLE([Nc],
     [ac_Nc=${enable_Nc}], [ac_Nc=3])
 
 case ${ac_Nc} in
+     1)
+        AC_DEFINE([Config_Nc],[1],[Gauge group Nc]);;
     2)
         AC_DEFINE([Config_Nc],[2],[Gauge group Nc]);;
     3)
@@ -208,6 +210,21 @@ case ${ac_Nc} in
         AC_DEFINE([Config_Nc],[5],[Gauge group Nc]);;
     8)
         AC_DEFINE([Config_Nc],[8],[Gauge group Nc]);;
+    *)
+      AC_MSG_ERROR(["Unsupport gauge group choice Nc = ${ac_Nc}"]);;
+esac
+############### Nd
+AC_ARG_ENABLE([Nd],
+    [AS_HELP_STRING([--enable-Nd=2|3|4],[enable default LGT dimension])],
+    [ac_Nd=${enable_Nd}], [ac_Nd=4])
+
+case ${ac_Nd} in
+    2)
+        AC_DEFINE([Config_Nd],[2],[Gauge field dimension Nd]);;
+    3)
+        AC_DEFINE([Config_Nd],[3],[Gauge field dimension Nd]);;
+    4)
+        AC_DEFINE([Config_Nd],[4],[Gauge field dimension Nd]);;
     *)
       AC_MSG_ERROR(["Unsupport gauge group choice Nc = ${ac_Nc}"]);;
 esac

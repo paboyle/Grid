@@ -37,6 +37,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/qcd/QCD.h>
 #include <Grid/qcd/spin/Spin.h>
 #include <Grid/qcd/gparity/Gparity.h>
+#include <Grid/qcd/spin/Pauli.h> // depends on Gparity
 #include <Grid/qcd/utils/Utils.h>
 #include <Grid/qcd/representations/Representations.h>
 NAMESPACE_CHECK(GridQCDCore);

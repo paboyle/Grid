@@ -141,9 +141,9 @@ public:
       Udag = Udag *phases;
 
 	InsertGaugeField(Uds,U,mu);
-	InsertGaugeField(Uds,Udag,mu+4);
+	InsertGaugeField(Uds,Udag,mu+Nd);
 	//	PokeIndex<LorentzIndex>(Uds, U, mu);
-	//	PokeIndex<LorentzIndex>(Uds, Udag, mu + 4);
+	//	PokeIndex<LorentzIndex>(Uds, Udag, mu + Nd);
 
       // 3 hop based on thin links. Crazy huh ?
       U  = PeekIndex<LorentzIndex>(Uthin, mu);
@@ -156,7 +156,7 @@ public:
       UUUdag = UUUdag *phases;
 
 	InsertGaugeField(UUUds,UUU,mu);
-	InsertGaugeField(UUUds,UUUdag,mu+4);
+	InsertGaugeField(UUUds,UUUdag,mu+Nd);
 
     }
   }

@@ -123,10 +123,10 @@ public:
       GaugeGrid->LocalIndexToLocalCoor(lidx, lcoor);
       
       peekLocalSite(ScalarUmu, Umu_v, lcoor);
-      for (int mu = 0; mu < 4; mu++) ScalarUds(mu) = ScalarUmu(mu);
+      for (int mu = 0; mu < Nd; mu++) ScalarUds(mu) = ScalarUmu(mu);
       
       peekLocalSite(ScalarUmu, Uadj_v, lcoor);
-      for (int mu = 0; mu < 4; mu++) ScalarUds(mu + 4) = ScalarUmu(mu);
+      for (int mu = 0; mu < Nd; mu++) ScalarUds(mu + Nd) = ScalarUmu(mu);
       
       pokeLocalSite(ScalarUds, Uds_v, lcoor);
     });

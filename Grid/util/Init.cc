@@ -187,8 +187,8 @@ void GridParseLayout(char **argv,int argc,
 		     Coordinate &latt_c,
 		     Coordinate &mpi_c)
 {
-  auto mpi =std::vector<int>({1,1,1,1});
-  auto latt=std::vector<int>({8,8,8,8});
+  auto mpi =std::vector<int>(1,Nd);
+  auto latt=std::vector<int>(8,Nd);
 
   GridThread::SetMaxThreads();
 

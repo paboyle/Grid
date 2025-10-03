@@ -56,7 +56,7 @@ class WilsonTMFermion5D : public WilsonFermion5D<Impl>
 			Frbgrid,
 			Ugrid,
 			Urbgrid,
-			4.0,p)
+			Nd*1.0,p)
    
     {
       update(_mass,_mu);
@@ -83,7 +83,7 @@ class WilsonTMFermion5D : public WilsonFermion5D<Impl>
     out.Checkerboard() = in.Checkerboard();
     //axpibg5x(out,in,a,b); // out = a*in + b*i*G5*in
     for (int s=0;s<(int)this->mass.size();s++) {
-      ComplexD a = 4.0+this->mass[s];
+      ComplexD a = Nd*1.0+this->mass[s];
       ComplexD b(0.0,this->mu[s]);
       axpbg5y_ssp(out,a,in,b,in,s,s);
     }
@@ -92,7 +92,7 @@ class WilsonTMFermion5D : public WilsonFermion5D<Impl>
   virtual void MooeeDag(const FermionField &in, FermionField &out) {
     out.Checkerboard() = in.Checkerboard();
     for (int s=0;s<(int)this->mass.size();s++) {
-      ComplexD a = 4.0+this->mass[s];
+      ComplexD a = Nd*1.0+this->mass[s];
       ComplexD b(0.0,-this->mu[s]);
       axpbg5y_ssp(out,a,in,b,in,s,s);
     }
@@ -101,7 +101,7 @@ class WilsonTMFermion5D : public WilsonFermion5D<Impl>
     for (int s=0;s<(int)this->mass.size();s++) {
       RealD m    = this->mass[s];
       RealD tm   = this->mu[s];
-      RealD mtil = 4.0+this->mass[s];
+      RealD mtil = Nd*1.0+this->mass[s];
       RealD sq   = mtil*mtil+tm*tm;
       ComplexD a    = mtil/sq;
       ComplexD b(0.0, -tm /sq);
@@ -112,7 +112,7 @@ class WilsonTMFermion5D : public WilsonFermion5D<Impl>
     for (int s=0;s<(int)this->mass.size();s++) {
       RealD m    = this->mass[s];
       RealD tm   = this->mu[s];
-      RealD mtil = 4.0+this->mass[s];
+      RealD mtil = Nd*1.0+this->mass[s];
       RealD sq   = mtil*mtil+tm*tm;
       ComplexD a    = mtil/sq;
       ComplexD b(0.0,tm /sq);
@@ -126,7 +126,7 @@ class WilsonTMFermion5D : public WilsonFermion5D<Impl>
     this->Dhop(in, out, DaggerNo);
     FermionField tmp(out.Grid());
     for (int s=0;s<(int)this->mass.size();s++) {
-      ComplexD a = 4.0+this->mass[s];
+      ComplexD a = Nd*1.0+this->mass[s];
       ComplexD b(0.0,this->mu[s]);
       axpbg5y_ssp(tmp,a,in,b,in,s,s);
     }

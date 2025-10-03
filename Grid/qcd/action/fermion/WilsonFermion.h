@@ -38,6 +38,8 @@ public:
   static int MortonOrder;
   static const std::vector<int> directions;
   static const std::vector<int> displacements;
+  static std::vector<int> MakeDirections(void);
+  static std::vector<int> MakeDisplacements(void);
   static const int npoint = 8;
 };
 

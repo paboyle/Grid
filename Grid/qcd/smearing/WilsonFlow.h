@@ -158,8 +158,8 @@ RealD WilsonFlowBase<Gimpl>::energyDensityCloverleaf(const RealD t, const GaugeF
   LatticeComplexD R(U.Grid());
   R = Zero();
   
-  for(int mu=0;mu<3;mu++){
-    for(int nu=mu+1;nu<4;nu++){
+  for(int mu=0;mu<Nd-1;mu++){
+    for(int nu=mu+1;nu<Nd;nu++){
       WilsonLoops<Gimpl>::FieldStrength(F, U, mu, nu);
       R = R + trace(F*F);
     }

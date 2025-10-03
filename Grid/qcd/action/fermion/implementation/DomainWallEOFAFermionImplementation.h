@@ -240,7 +240,7 @@ void DomainWallEOFAFermion<Impl>::SetCoefficientsInternal(RealD zolo_hi, std::ve
   this->ceo.resize(Ls);
 
   for(int i=0; i<Ls; ++i){
-    this->bee[i] = 4.0 - this->M5 + 1.0;
+    this->bee[i] = Nd*1.0 - this->M5 + 1.0;
     this->cee[i] = 1.0;
   }
 

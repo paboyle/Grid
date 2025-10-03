@@ -32,5 +32,26 @@ NAMESPACE_BEGIN(Grid);
 
 const std::vector<int> ImprovedStaggeredFermionStatic::directions({0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3});
 const std::vector<int> ImprovedStaggeredFermionStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1, 3, 3, 3, 3, -3, -3, -3, -3});
-
+std::vector<int> ImprovedStaggeredFermionStatic::MakeDirections(void)
+{
+  std::vector<int> directions(4*Nd);
+  for(int d=0;d<Nd;d++){
+    directions[d+Nd*0] = d;
+    directions[d+Nd*1] = d;
+    directions[d+Nd*2] = d;
+    directions[d+Nd*3] = d;
+  }
+  return directions;
+}
+std::vector<int> ImprovedStaggeredFermionStatic::MakeDisplacements(void)
+{
+  std::vector<int> displacements(4*Nd);
+  for(int d=0;d<Nd;d++){
+    displacements[d+Nd*0] =+1;
+    displacements[d+Nd*1] =-1;
+    displacements[d+Nd*2] =+3;
+    displacements[d+Nd*3] =-3;
+  }
+  return displacements;
+}
 NAMESPACE_END(Grid);

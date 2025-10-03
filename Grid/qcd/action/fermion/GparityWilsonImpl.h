@@ -274,7 +274,7 @@ public:
 	autoView( Uds_v , Uds, CpuWrite);
 	autoView( Utmp_v, Utmp, CpuWrite);
 	thread_foreach(ss,Utmp_v,{
-	    Uds_v[ss](0)(mu+4) = Utmp_v[ss]();
+	    Uds_v[ss](0)(mu+Nd) = Utmp_v[ss]();
 	  });
       }
       Utmp = Uconj;
@@ -286,7 +286,7 @@ public:
 	autoView( Uds_v , Uds, CpuWrite);
 	autoView( Utmp_v, Utmp, CpuWrite);
 	thread_foreach(ss,Utmp_v,{
-	    Uds_v[ss](1)(mu+4) = Utmp_v[ss]();
+	    Uds_v[ss](1)(mu+Nd) = Utmp_v[ss]();
         });
       }
     }
@@ -320,7 +320,7 @@ public:
       }
       
       Uconj = conjugate(*Upoke);
-      pokeGparityDoubledGaugeField(Uds, *Upoke, Uconj, mu + 4);
+      pokeGparityDoubledGaugeField(Uds, *Upoke, Uconj, mu + Nd);
     }
   }
       

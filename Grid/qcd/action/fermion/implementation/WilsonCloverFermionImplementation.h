@@ -61,7 +61,7 @@ WilsonCloverFermion<Impl, CloverHelpers>::WilsonCloverFermion(GaugeField&       
     diag_mass = _mass + 1.0 + (Nd - 1) * (clover_anisotropy.nu / clover_anisotropy.xi_0);
   } else {
     csw_r     = _csw_r * 0.5;
-    diag_mass = 4.0 + _mass;
+    diag_mass = Nd*1.0 + _mass;
   }
   csw_t = _csw_t * 0.5;
 
@@ -297,9 +297,9 @@ void WilsonCloverFermion<Impl, CloverHelpers>::MDeriv(GaugeField &force, const F
     {
       if (mu == nu)
       continue;
-
+      
       RealD factor;
-      if (nu == 4 || mu == 4)
+      if (nu == (Nd-1) || mu == (Nd-1)) // This was a bug - surely mu/nu is NEVER 4 but rather (Nd-1)=3 ??
       {
         factor = 2.0 * csw_t;
       }
@@ -307,9 +307,11 @@ void WilsonCloverFermion<Impl, CloverHelpers>::MDeriv(GaugeField &force, const F
       {
         factor = 2.0 * csw_r;
       }
-      PropagatorField Slambda = Gamma(sigma[count]) * Lambda; // sigma checked
-      Impl::TraceSpinImpl(lambda, Slambda);                   // traceSpin ok
-      force_mu -= factor*CloverHelpers::Cmunu(U, lambda, mu, nu);                   // checked
+      if ( mu < Nd && nu < Nd ) { // Allow to restrict range to Nd=3, but preserve orders of SigmaMuNu in table by counting ALL
+	PropagatorField Slambda = Gamma(sigma[count]) * Lambda; // sigma checked
+	Impl::TraceSpinImpl(lambda, Slambda);                   // traceSpin ok
+	force_mu -= factor*CloverHelpers::Cmunu(U, lambda, mu, nu);                   // checked
+      }
       count++;
     }
 

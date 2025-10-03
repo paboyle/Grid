@@ -63,7 +63,7 @@ WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
   if  (anisotropyCoeff.isAnisotropic){
     diag_mass = mass + 1.0 + (Nd-1)*(anisotropyCoeff.nu / anisotropyCoeff.xi_0);
   } else {
-    diag_mass = 4.0 + mass;
+    diag_mass = Nd*1.0 + mass;
   }
 
   int vol4;
@@ -354,8 +354,8 @@ void WilsonFermion<Impl>::DhopDir(const FermionField &in, FermionField &out, int
   Stencil.HaloExchange(in, compressor);
 
   int skip = (disp == 1) ? 0 : 1;
-  int dirdisp = dir + skip * 4;
-  int gamma = dir + (1 - skip) * 4;
+  int dirdisp = dir + skip * Nd;
+  int gamma = dir + (1 - skip) * Nd;
 
   DhopDirCalc(in, out, dirdisp, gamma, DaggerNo);
 };
@@ -370,8 +370,8 @@ void WilsonFermion<Impl>::DhopDirAll(const FermionField &in, std::vector<Fermion
     for(int disp=-1;disp<=1;disp+=2){
 
       int skip = (disp == 1) ? 0 : 1;
-      int dirdisp = dir + skip * 4;
-      int gamma = dir + (1 - skip) * 4;
+      int dirdisp = dir + skip * Nd;
+      int gamma = dir + (1 - skip) * Nd;
 
       DhopDirCalc(in, out[dirdisp], dirdisp, gamma, DaggerNo);
     }

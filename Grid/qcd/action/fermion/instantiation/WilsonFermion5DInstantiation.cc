@@ -34,8 +34,28 @@ directory
 NAMESPACE_BEGIN(Grid);
 
 // S-direction is INNERMOST and takes no part in the parity.
-const std::vector<int> WilsonFermion5DStatic::directions   ({1,2,3,4, 1, 2, 3, 4});
-const std::vector<int> WilsonFermion5DStatic::displacements({1,1,1,1,-1,-1,-1,-1});
+
+const std::vector<int> WilsonFermion5DStatic::directions   (WilsonFermion5DStatic::MakeDirections());
+const std::vector<int> WilsonFermion5DStatic::displacements(WilsonFermion5DStatic::MakeDisplacements());
+
+std::vector<int> WilsonFermion5DStatic::MakeDirections (void)
+{
+  std::vector<int> directions(2*Nd);
+  for(int d=0;d<Nd;d++){
+    directions[d]    = d+1;
+    directions[d+Nd] = d+1;
+  }
+  return directions;
+}
+std::vector<int> WilsonFermion5DStatic::MakeDisplacements(void)
+{
+  std::vector<int> displacements(2*Nd);
+  for(int d=0;d<Nd;d++){
+    displacements[d]    = +1;
+    displacements[d+Nd] = -1;
+  }
+  return displacements;
+}
 
 NAMESPACE_END(Grid);
 

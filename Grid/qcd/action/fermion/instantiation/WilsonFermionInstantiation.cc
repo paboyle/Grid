@@ -33,9 +33,27 @@ directory
 
 NAMESPACE_BEGIN(Grid);
 
-const std::vector<int> WilsonFermionStatic::directions({0, 1, 2, 3, 0, 1, 2, 3});
-const std::vector<int> WilsonFermionStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1});
+const std::vector<int> WilsonFermionStatic::directions(WilsonFermionStatic::MakeDirections());
+const std::vector<int> WilsonFermionStatic::displacements(WilsonFermionStatic::MakeDisplacements());
 int WilsonFermionStatic::HandOptDslash;
+std::vector<int> WilsonFermionStatic::MakeDirections (void)
+{
+  std::vector<int> directions(2*Nd);
+  for(int d=0;d<Nd;d++){
+    directions[d]    = d;
+    directions[d+Nd] = d;
+  }
+  return directions;
+}
+std::vector<int> WilsonFermionStatic::MakeDisplacements(void)
+{
+  std::vector<int> displacements(2*Nd);
+  for(int d=0;d<Nd;d++){
+    displacements[d]    = +1;
+    displacements[d+Nd] = -1;
+  }
+  return displacements;
+}
 
 NAMESPACE_END(Grid);
 

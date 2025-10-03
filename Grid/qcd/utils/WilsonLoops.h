@@ -179,20 +179,17 @@ public:
   //////////////////////////////////////////////////
   // average over all x,y,z the temporal loop
   //////////////////////////////////////////////////
-  static ComplexD avgPolyakovLoop(const GaugeField &Umu) {  //assume Nd=4
+  static ComplexD avgPolyakovLoop(const GaugeField &Umu) {  
     GaugeMat Ut(Umu.Grid()), P(Umu.Grid());
     ComplexD out;
-    int T = Umu.Grid()->GlobalDimensions()[3];
-    int X = Umu.Grid()->GlobalDimensions()[0];
-    int Y = Umu.Grid()->GlobalDimensions()[1];
-    int Z = Umu.Grid()->GlobalDimensions()[2];
-
-    Ut = peekLorentz(Umu,3); //Select temporal direction
+    uint64_t vol = Umu.Grid()->gSites();
+    int T = Umu.Grid()->GlobalDimensions()[Nd-1];
+    Ut = peekLorentz(Umu,Nd-1); //Select temporal direction
     P = Ut;
     for (int t=1;t<T;t++){ 
-      P = Gimpl::CovShiftForward(Ut,3,P);
+      P = Gimpl::CovShiftForward(Ut,Nd-1,P);
     }
-   RealD norm = 1.0/(Nc*X*Y*Z*T);
+   RealD norm = 1.0/(Nc*vol);
    out = sum(trace(P))*norm;
    return out;   
 }
@@ -215,7 +212,7 @@ public:
 
     double vol = Umu.Grid()->gSites();
 
-    return p.real() / vol / (4.0 * Nc ) ;
+    return p.real() / vol / (Nd * Nc ) ;
   };
 
   //////////////////////////////////////////////////
@@ -740,6 +737,7 @@ public:
   //cf  https://arxiv.org/pdf/hep-lat/9701012.pdf  Eq 6
   //output is the charge by timeslice: sum over timeslices to obtain the total
   static std::vector<Real> TimesliceTopologicalChargeMxN(const GaugeLorentz &U, int M, int N){
+    // Audit: 4D epsilon is hard coded
     assert(Nd == 4);
     std::vector<std::vector<GaugeMat*> > F(Nd,std::vector<GaugeMat*>(Nd,nullptr));
     //Note F_numu = - F_munu
@@ -829,6 +827,25 @@ public:
     return out;
   }
 
+  //Compute the 5Li topological charge density
+  static std::vector<Real> TopologicalChargeDensity5Li(const GaugeLorentz &U){
+
+    static const int exts[5][2] = { {1,1}, {2,2}, {1,2}, {1,3}, {3,3} };
+    std::vector<std::vector<Real> > loops = TimesliceTopologicalCharge5LiContributions(U);
+
+    double c5=1./20.;
+    double c4=1./5.-2.*c5;
+    double c3=(-64.+640.*c5)/45.;
+    double c2=(1-64.*c5)/9.;
+    double c1=(19.-55.*c5)/9.;
+
+    int Lt = loops[0].size();
+    std::vector<Real> out(Lt,0.);
+    for(int t=0;t<Lt;t++)
+      out[t] += c1*loops[0][t] + c2*loops[1][t] + c3*loops[2][t] + c4*loops[3][t] + c5*loops[4][t];
+    return out;
+  }
+  
   static Real TopologicalCharge5Li(const GaugeLorentz &U){
     std::vector<Real> Qt = TimesliceTopologicalCharge5Li(U);
     Real Q = 0.;
@@ -1455,7 +1472,7 @@ public:
   //////////////////////////////////////////////////
   static Real sumWilsonLoop(const GaugeLorentz &Umu,
                             const int R1, const int R2) {
-    std::vector<GaugeMat> U(4, Umu.Grid());
+    std::vector<GaugeMat> U(Nd, Umu.Grid());
 
     for (int mu = 0; mu < Umu.Grid()->_ndimension; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
@@ -1474,7 +1491,7 @@ public:
   //////////////////////////////////////////////////
   static Real sumTimelikeWilsonLoop(const GaugeLorentz &Umu,
                             const int R1, const int R2) {
-    std::vector<GaugeMat> U(4, Umu.Grid());
+    std::vector<GaugeMat> U(Nd, Umu.Grid());
 
     for (int mu = 0; mu < Umu.Grid()->_ndimension; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
@@ -1492,8 +1509,8 @@ public:
   // sum over all x,y,z,t and over all planes of spatial Wilson loop
   //////////////////////////////////////////////////
   static Real sumSpatialWilsonLoop(const GaugeLorentz &Umu,
-                            const int R1, const int R2) {
-    std::vector<GaugeMat> U(4, Umu.Grid());
+				   const int R1, const int R2) {
+    std::vector<GaugeMat> U(Nd, Umu.Grid());
 
     for (int mu = 0; mu < Umu.Grid()->_ndimension; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);

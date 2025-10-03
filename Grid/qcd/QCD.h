@@ -49,7 +49,7 @@ static constexpr int Tm = 7;
 
 static constexpr int Nc=Config_Nc;
 static constexpr int Ns=4;
-static constexpr int Nd=4;
+static constexpr int Nd=Config_Nd;
 static constexpr int Nhs=2; // half spinor
 static constexpr int Nds=8; // double stored gauge field
 static constexpr int Ngp=2; // gparity index range
@@ -75,6 +75,7 @@ static constexpr int InverseYes=1;
 //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
 
 const int SpinorIndex = 2;
+const int PauliIndex  = 2; //TensorLevel counts from the bottom!
 template<typename T> struct isSpinor {
   static constexpr bool value = (SpinorIndex==T::TensorLevel);
 };

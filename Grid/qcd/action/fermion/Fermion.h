@@ -85,6 +85,15 @@ NAMESPACE_CHECK(DomainWall);
 #include <Grid/qcd/action/fermion/OverlapWilsonPartialFractionTanhFermion.h>
 #include <Grid/qcd/action/fermion/OverlapWilsonPartialFractionZolotarevFermion.h>
 NAMESPACE_CHECK(Overlap);
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Two spin wilson fermion based
+///////////////////////////////////////////////////////////////////////////////
+
+#include <Grid/qcd/action/fermion/TwoSpinWilsonFermion3plus1D.h>
+NAMESPACE_CHECK(TwoSpinWilson);
+
 ///////////////////////////////////////////////////////////////////////////////
 // G5 herm -- this has to live in QCD since dirac matrix is not in the broader sector of code
 ///////////////////////////////////////////////////////////////////////////////

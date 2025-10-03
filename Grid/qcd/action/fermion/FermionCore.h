@@ -41,8 +41,9 @@ NAMESPACE_CHECK(Compressor);
 NAMESPACE_CHECK(FermionOperatorImpl);
 #include <Grid/qcd/action/fermion/FermionOperator.h>
 NAMESPACE_CHECK(FermionOperator);
-#include <Grid/qcd/action/fermion/WilsonKernels.h>        //used by all wilson type fermions
+#include <Grid/qcd/action/fermion/WilsonKernels.h>           //used by all wilson type fermions
 #include <Grid/qcd/action/fermion/StaggeredKernels.h>        //used by all wilson type fermions
+#include <Grid/qcd/action/fermion/TwoSpinWilsonKernels.h>    //used for 3D fermions, pauli in place of Dirac
 NAMESPACE_CHECK(Kernels);
 
 #endif
