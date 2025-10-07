@@ -226,7 +226,7 @@ case ${ac_Nd} in
     4)
         AC_DEFINE([Config_Nd],[4],[Gauge field dimension Nd]);;
     *)
-      AC_MSG_ERROR(["Unsupport gauge group choice Nc = ${ac_Nc}"]);;
+      AC_MSG_ERROR(["Unsupport dimension Nd = ${ac_Nd}"]);;
 esac
 
 ############### Symplectic group
@@ -835,6 +835,7 @@ os (target)                 : $target_os
 compiler vendor             : ${ax_cv_cxx_compiler_vendor}
 compiler version            : ${ax_cv_gxx_version}
 ----- BUILD OPTIONS -----------------------------------
+Nd                          : ${ac_Nd}
 Nc                          : ${ac_Nc}
 SIMD                        : ${ac_SIMD}${SIMD_GEN_WIDTH_MSG}
 Threading                   : ${ac_openmp}
