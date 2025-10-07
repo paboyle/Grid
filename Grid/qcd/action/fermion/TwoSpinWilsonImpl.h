@@ -1,0 +1,222 @@
+/*************************************************************************************
+
+Grid physics library, www.github.com/paboyle/Grid
+
+Source file: ./lib/qcd/action/fermion/FermionOperatorImpl.h
+
+Copyright (C) 2015
+
+Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+See the full license in the file "LICENSE" in the top level distribution
+directory
+*************************************************************************************/
+			   /*  END LEGAL */
+#pragma once
+
+NAMESPACE_BEGIN(Grid);
+
+  
+/////////////////////////////////////////////////////////////////////////////
+// Single flavour four spinors with colour index
+/////////////////////////////////////////////////////////////////////////////
+template <class S, class Representation = FundamentalRepresentation,class Options = CoeffReal >
+class TwoSpinWilsonImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation::Dimension > > {
+public:
+  
+  static const int Dimension = Representation::Dimension;
+  static const bool isFundamental = Representation::isFundamental;
+
+  typedef PeriodicGaugeImpl<GaugeImplTypes<S, Dimension > > Gimpl;
+  INHERIT_GIMPL_TYPES(Gimpl);
+      
+  //Necessary?
+  constexpr bool is_fundamental() const{return Dimension == Nc ? 1 : 0;}
+    
+  typedef typename Options::_Coeff_t Coeff_t;
+      
+  template <typename vtype> using iImplSpinor            = iScalar<iVector<iVector<vtype, Dimension>, Nhs> >;
+  template <typename vtype> using iImplPropagator        = iScalar<iMatrix<iMatrix<vtype, Dimension>, Nhs> >;
+  template <typename vtype> using iImplHalfSpinor        = iScalar<iVector<iVector<vtype, Dimension>, Nhs> >;
+  template <typename vtype> using iImplHalfCommSpinor    = iScalar<iVector<iVector<vtype, Dimension>, Nhs> >;
+  template <typename vtype> using iImplDoubledGaugeField = iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>;
+    
+  typedef iImplSpinor<Simd>            SiteSpinor;
+  typedef iImplPropagator<Simd>        SitePropagator;
+  typedef iImplHalfSpinor<Simd>        SiteHalfSpinor;
+  typedef iImplHalfCommSpinor<Simd>    SiteHalfCommSpinor;
+  typedef iImplDoubledGaugeField<Simd> SiteDoubledGaugeField;
+    
+  typedef Lattice<SiteSpinor>            FermionField;
+  typedef Lattice<SitePropagator>        PropagatorField;
+  typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
+    
+  typedef SimpleCompressor<SiteSpinor> Compressor;
+  typedef WilsonImplParams ImplParams;
+  typedef CartesianStencil<SiteSpinor, SiteSpinor, ImplParams> StencilImpl;
+  typedef const typename StencilImpl::View_type StencilView;
+    
+  ImplParams Params;
+
+  TwoSpinWilsonImpl(const ImplParams &p = ImplParams()) : Params(p){
+  };
+
+  template<class _Spinor>
+  static accelerator_inline void multLink(_Spinor &phi,
+					  const SiteDoubledGaugeField &U,
+					  const _Spinor &chi,
+					  int mu) 
+  {
+    auto UU = coalescedRead(U(mu));
+    mult(&phi(), &UU, &chi());
+  }
+  template<class _Spinor>
+  static accelerator_inline void multLink(_Spinor &phi,
+					  const SiteDoubledGaugeField &U,
+					  const _Spinor &chi,
+					  int mu,
+					  StencilEntry *SE,
+					  StencilView &St) 
+  {
+    multLink(phi,U,chi,mu);
+  }
+
+  template<class _SpinorField> 
+  inline void multLinkField(_SpinorField & out,
+			    const DoubledGaugeField &Umu,
+			    const _SpinorField & phi,
+			    int mu)
+  {
+    const int Nsimd = SiteHalfSpinor::Nsimd();
+    autoView( out_v, out, AcceleratorWrite);
+    autoView( phi_v, phi, AcceleratorRead);
+    autoView( Umu_v, Umu, AcceleratorRead);
+    typedef decltype(coalescedRead(out_v[0]))   calcSpinor;
+    accelerator_for(sss,out.Grid()->oSites(),Nsimd,{
+	calcSpinor tmp;
+	multLink(tmp,Umu_v[sss],phi_v(sss),mu);
+	coalescedWrite(out_v[sss],tmp);
+    });
+  }
+					   
+  template <class ref>
+  static accelerator_inline void loadLinkElement(Simd &reg, ref &memory) 
+  {
+    reg = memory;
+  }
+      
+  inline void DoubleStore(GridBase *GaugeGrid,
+			  DoubledGaugeField &Uds,
+			  const GaugeField &Umu) 
+  {
+    typedef typename Simd::scalar_type scalar_type;
+
+    conformable(Uds.Grid(), GaugeGrid);
+    conformable(Umu.Grid(), GaugeGrid);
+
+    GaugeLinkField U(GaugeGrid);
+    GaugeLinkField tmp(GaugeGrid);
+
+    Lattice<iScalar<vInteger> > coor(GaugeGrid);
+      ////////////////////////////////////////////////////
+      // apply any boundary phase or twists
+      ////////////////////////////////////////////////////
+    for (int mu = 0; mu < Nd; mu++) {
+
+	////////// boundary phase /////////////
+      auto pha = Params.boundary_phases[mu];
+      scalar_type phase( real(pha),imag(pha) );
+
+	int L   = GaugeGrid->GlobalDimensions()[mu];
+        int Lmu = L - 1;
+
+      LatticeCoordinate(coor, mu);
+
+      U = PeekIndex<LorentzIndex>(Umu, mu);
+
+	// apply any twists
+	RealD theta = Params.twist_n_2pi_L[mu] * 2*M_PI / L;
+	if ( theta != 0.0) { 
+	  scalar_type twphase(::cos(theta),::sin(theta));
+	  U = twphase*U;
+	  std::cout << GridLogMessage << " Twist ["<<mu<<"] "<< Params.twist_n_2pi_L[mu]<< " phase"<<phase <<std::endl;
+	}
+
+      tmp = where(coor == Lmu, phase * U, U);
+      PokeIndex<LorentzIndex>(Uds, tmp, mu);
+
+      U = adj(Cshift(U, mu, -1));
+      U = where(coor == 0, conjugate(phase) * U, U); 
+      PokeIndex<LorentzIndex>(Uds, U, mu + Nd);
+    }
+  }
+
+  inline void InsertForce4D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
+    GaugeLinkField link(mat.Grid());
+    link = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); 
+    PokeIndex<LorentzIndex>(mat,link,mu);
+  }   
+      
+    inline void outerProductImpl(PropagatorField &mat, const FermionField &B, const FermionField &A){
+      mat = outerProduct(B,A); 
+    }  
+
+    inline void TraceSpinImpl(GaugeLinkField &mat, PropagatorField&P) {
+      mat = TraceIndex<SpinIndex>(P); 
+    }
+      
+    inline void extractLinkField(std::vector<GaugeLinkField> &mat, DoubledGaugeField &Uds)
+    {
+      for (int mu = 0; mu < Nd; mu++)
+      mat[mu] = PeekIndex<LorentzIndex>(Uds, mu);
+    }
+
+  inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu)
+  {
+    int Ls=Btilde.Grid()->_fdimensions[0];
+    autoView( mat_v , mat, AcceleratorWrite);
+    {
+      const int Nsimd = SiteSpinor::Nsimd();
+      autoView( Btilde_v , Btilde, AcceleratorRead);
+      autoView( Atilde_v , Atilde, AcceleratorRead);
+      accelerator_for(sss,mat.Grid()->oSites(),Nsimd,{
+	  int sU=sss;
+  	  typedef decltype(coalescedRead(mat_v[sU](mu)() )) ColorMatrixType;
+  	  ColorMatrixType sum;
+	  zeroit(sum);  
+	  for(int s=0;s<Ls;s++){
+	    int sF = s+Ls*sU;
+  	    for(int spn=0;spn<Ns;spn++){ //sum over spin
+  	      auto bb = coalescedRead(Btilde_v[sF]()(spn) ); //color vector
+  	      auto aa = coalescedRead(Atilde_v[sF]()(spn) );
+	      auto op = outerProduct(bb,aa);
+  	      sum = sum + op;
+	    }
+	  }
+  	  coalescedWrite(mat_v[sU](mu)(), sum);
+      });
+    }
+  }
+};
+
+
+typedef TwoSpinWilsonImpl<vComplex,  FundamentalRepresentation, CoeffReal > TwoSpinWilsonImplR;  // Real.. whichever prec
+typedef TwoSpinWilsonImpl<vComplexF, FundamentalRepresentation, CoeffReal > TwoSpinWilsonImplF;  // Float
+typedef TwoSpinWilsonImpl<vComplexD, FundamentalRepresentation, CoeffReal > TwoSpinWilsonImplD;  // Double
+typedef TwoSpinWilsonImpl<vComplexD2, FundamentalRepresentation, CoeffReal > TwoSpinWilsonImplD2;  // Double
+
+NAMESPACE_END(Grid);

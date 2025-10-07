@@ -86,11 +86,20 @@ public:
 
 public:
 
+  // Icosahedral decisions
+  virtual int Icosahedral(void) { return 0;}
+  virtual int ownsNorthPole(void) const { return 0; };
+  virtual int ownsSouthPole(void) const { return 0; };
+  virtual int NorthPoleOsite(void) const { return 0; };
+  virtual int SouthPoleOsite(void) const { return 0; };
+  virtual int NorthPoleOsites(void) const { std::cout << "base osites" <<std::endl;return 0; };
+  virtual int SouthPoleOsites(void) const { std::cout << "base osites" <<std::endl;return 0; };
+
   ////////////////////////////////////////////////////////////////
   // Checkerboarding interface is virtual and overridden by 
   // GridCartesian / GridRedBlackCartesian
   ////////////////////////////////////////////////////////////////
-  virtual int Icosahedral(void) { return 0;}
+
   virtual int CheckerBoarded(int dim) =0;
   virtual int CheckerBoard(const Coordinate &site)=0;
   virtual int CheckerBoardDestination(int source_cb,int shift,int dim)=0;
@@ -177,6 +186,8 @@ public:
     }
     return permute_type;
   }
+
+  
   ////////////////////////////////////////////////////////////////
   // Array sizing queries
   ////////////////////////////////////////////////////////////////

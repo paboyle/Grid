@@ -141,13 +141,141 @@ void peekSite(sobj &s,const Lattice<vobj> &l,const Coordinate &site){
   grid->GlobalCoorToRankIndex(rank,odx,idx,site);
 
   ExtractBuffer<sobj> buf(Nsimd);
-  autoView( l_v , l, CpuWrite);
+  autoView( l_v , l, CpuRead);
   extract(l_v[odx],buf);
 
   s = buf[idx];
 
   grid->Broadcast(rank,s);
 
+  return;
+};
+
+// zero for south pole, one for north pole
+template<class vobj,class sobj>
+void peekPole(sobj &s,const Lattice<vobj> &l,const Coordinate &orthog,NorthSouth isNorth)
+{
+  s=Zero();
+  
+  GridBase *grid=l.Grid();
+
+  assert(grid->Icosahedral());
+
+  int Nsimd = grid->Nsimd();
+
+  int rank;
+
+  int Ndm1         = grid->_ndimension-1;
+  Coordinate pgrid = grid->ProcessorGrid();
+  const int xdim=0;
+  const int ydim=1;
+  const int pdim=Ndm1;
+
+  int64_t pole_osite;
+  int64_t pole_isite;
+  Coordinate rdims;
+  Coordinate idims;
+  Coordinate ocoor;
+  Coordinate icoor;
+  Coordinate pcoor(grid->_ndimension);
+  for(int d=2;d<Ndm1;d++){
+    int dd=d-2;
+    rdims.push_back(grid->_rdimensions[d]);
+    idims.push_back(grid->_simd_layout[d]);
+    icoor.push_back((orthog[dd]%grid->_ldimensions[d])/grid->_rdimensions[d]);
+    ocoor.push_back(orthog[dd]%grid->_rdimensions[d]);
+    pcoor[d] = orthog[dd]/grid->_ldimensions[d];
+  }
+  Lexicographic::IndexFromCoor(ocoor,pole_osite,rdims);
+  Lexicographic::IndexFromCoor(icoor,pole_isite,idims);
+  
+  int64_t osite;
+  if(isNorth == North){
+    pcoor[xdim] = 0;
+    pcoor[ydim] = pgrid[ydim]-1;
+    pcoor[Ndm1] = pgrid[Ndm1]-1;
+    osite = pole_osite + grid->NorthPoleOsite();
+  } else {
+    pcoor[xdim] = pgrid[xdim]-1;
+    pcoor[ydim] = 0;
+    pcoor[Ndm1] = 0;
+    osite = pole_osite + grid->SouthPoleOsite();
+  }
+
+  rank = grid->RankFromProcessorCoor(pcoor);
+
+  if ( rank == grid->ThisRank() ) {
+    ExtractBuffer<sobj> buf(Nsimd);
+    autoView( l_v , l, CpuWrite);
+    extract(l_v[osite],buf);
+    s = buf[pole_isite];
+  }
+  grid->Broadcast(rank,s);
+
+  return;
+};
+template<class vobj,class sobj>
+void pokePole(const sobj &s,Lattice<vobj> &l,const Coordinate &orthog,NorthSouth isNorth)
+{
+  GridBase *grid=l.Grid();
+
+  assert(grid->Icosahedral());
+
+  grid->Broadcast(grid->BossRank(),s);
+
+  int Nsimd = grid->Nsimd();
+  int rank;
+  int Ndm1         = grid->_ndimension-1;
+  Coordinate pgrid = grid->ProcessorGrid();
+  const int xdim=0;
+  const int ydim=1;
+  const int pdim=Ndm1;
+
+  int64_t pole_osite;
+  int64_t pole_isite;
+  Coordinate rdims;
+  Coordinate idims;
+  Coordinate ocoor;
+  Coordinate icoor;
+  Coordinate pcoor(grid->_ndimension,0);
+  for(int d=2;d<Ndm1;d++){
+    int dd = d-2;
+    rdims.push_back(grid->_rdimensions[d]);
+    idims.push_back(grid->_simd_layout[d]);
+    icoor.push_back((orthog[dd]%grid->_ldimensions[d])/grid->_rdimensions[d]);
+    ocoor.push_back(orthog[dd]%grid->_rdimensions[d]);
+    pcoor[d] = orthog[dd]/grid->_ldimensions[d];
+
+    int o = orthog[dd];
+    int r = grid->_rdimensions[d];
+    int omr = o % r;
+  }
+  Lexicographic::IndexFromCoor(ocoor,pole_osite,rdims);
+  Lexicographic::IndexFromCoor(icoor,pole_isite,idims);
+  
+  int64_t osite;
+  if(isNorth ==North){
+    pcoor[xdim] = 0;
+    pcoor[ydim] = pgrid[ydim]-1;
+    pcoor[Ndm1] = pgrid[Ndm1]-1;
+    osite = pole_osite + grid->NorthPoleOsite();
+  } else {
+    pcoor[xdim] = pgrid[xdim]-1;
+    pcoor[ydim] = 0;
+    pcoor[Ndm1] = 0;
+    osite = pole_osite + grid->SouthPoleOsite();
+  }
+
+  rank = grid->RankFromProcessorCoor(pcoor);
+
+  // extract-modify-merge cycle is easiest way and this is not perf critical
+  if ( rank == grid->ThisRank() ) {
+    ExtractBuffer<sobj> buf(Nsimd);
+    autoView( l_v , l, CpuWrite);
+    extract(l_v[osite],buf);
+    buf[pole_isite] = s;
+    merge(l_v[osite],buf);
+  }
   return;
 };
 
@@ -179,7 +307,7 @@ inline void peekLocalSite(sobj &s,const LatticeView<vobj> &l,Coordinate &site)
   for(int w=0;w<words;w++){
     pt[w] = getlane(vp[w],idx);
   }
-  //  std::cout << "peekLocalSite "<<site<<" "<<odx<<","<<idx<<" "<<s<<std::endl;
+
   return;
 };
 template<class vobj,class sobj>

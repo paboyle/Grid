@@ -373,20 +373,58 @@ public:
 
 template<class vobj> std::ostream& operator<< (std::ostream& stream, const Lattice<vobj> &o){
   typedef typename vobj::scalar_object sobj;
-  for(int64_t g=0;g<o.Grid()->_gsites;g++){
+  uint64_t gsites=1;
+  uint64_t polesites=0;
+  for(int d=0;d<o.Grid()->_ndimension;d++) gsites *= o.Grid()->_gdimensions[d];
+  for(int64_t g=0;g<gsites;g++){
 
     Coordinate gcoor;
     o.Grid()->GlobalIndexToGlobalCoor(g,gcoor);
 
     sobj ss;
     peekSite(ss,o,gcoor);
-    stream<<"[";
+    stream<<"["<<  g<<" : ";
     for(int d=0;d<gcoor.size();d++){
       stream<<gcoor[d];
       if(d!=gcoor.size()-1) stream<<",";
     }
     stream<<"]\t";
     stream<<ss<<std::endl;
+  }
+  if ( o.Grid()->Icosahedral() ) {
+    uint64_t psites=1;
+    Coordinate perpdims;
+    for(int d=2;d<o.Grid()->_ndimension-1;d++){
+      int pd=o.Grid()->_gdimensions[d];
+      psites*=pd;
+      perpdims.push_back(pd);
+    }
+    for(uint64_t p=0;p<psites;p++){
+      sobj ss;
+      Coordinate orthog;
+      Lexicographic::CoorFromIndex(orthog,p,perpdims);
+      peekPole(ss,o,orthog,South);
+      stream<<"[ SouthPole : ";
+      for(int d=0;d<orthog.size();d++){
+	stream<<orthog[d];
+	if(d!=orthog.size()-1) stream<<",";
+      }
+      stream<<"]\t";
+      stream<<ss<<std::endl;
+    }
+    for(uint64_t p=0;p<psites;p++){
+      sobj ss;
+      Coordinate orthog;
+      Lexicographic::CoorFromIndex(orthog,p,perpdims);
+      peekPole(ss,o,orthog,North);
+      stream<<"[ NorthPole : ";
+      for(int d=0;d<orthog.size();d++){
+	stream<<orthog[d];
+	if(d!=orthog.size()-1) stream<<",";
+      }
+      stream<<"]\t";
+      stream<<ss<<std::endl;
+    }
   }
   return stream;
 }

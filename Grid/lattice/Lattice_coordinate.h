@@ -34,22 +34,84 @@ template<class iobj> inline void LatticeCoordinate(Lattice<iobj> &l,int mu)
   typedef typename iobj::scalar_type scalar_type;
   typedef typename iobj::vector_type vector_type;
 
+  l=Zero();
+  
   GridBase *grid = l.Grid();
   int Nsimd = grid->iSites();
 
-  autoView(l_v, l, CpuWrite);
-  thread_for( o, grid->oSites(), {
-    vector_type vI;
-    Coordinate gcoor;
-    ExtractBuffer<scalar_type> mergebuf(Nsimd);
-    for(int i=0;i<grid->iSites();i++){
-      grid->RankIndexToGlobalCoor(grid->ThisRank(),o,i,gcoor);
-      mergebuf[i]=(Integer)gcoor[mu];
+  int cartesian_vol = grid->oSites();
+  if ( grid->Icosahedral() ) {
+    cartesian_vol = cartesian_vol - grid->NorthPoleOsites()-grid->SouthPoleOsites();
+  }
+  {
+    autoView(l_v, l, CpuWrite);
+    thread_for( o, cartesian_vol, {
+	vector_type vI;
+	Coordinate gcoor;
+	ExtractBuffer<scalar_type> mergebuf(Nsimd);
+	for(int i=0;i<grid->iSites();i++){
+	  grid->RankIndexToGlobalCoor(grid->ThisRank(),o,i,gcoor);
+	  mergebuf[i]=(Integer)gcoor[mu];
+	}
+	merge<vector_type,scalar_type>(vI,mergebuf);
+	l_v[o]=vI;
+      });
+  }
+
+  if (grid->Icosahedral()) {
+    uint64_t psites=1;
+    Coordinate perpdims;
+    typename iobj::scalar_object ss;
+    for(int d=2;d<grid->_ndimension-1;d++){
+      int pd=grid->_gdimensions[d];
+      psites*=pd;
+      perpdims.push_back(pd);
     }
-    merge<vector_type,scalar_type>(vI,mergebuf);
-    l_v[o]=vI;
-  });
+    for(uint64_t p=0;p<psites;p++){
+      Coordinate orthog;
+      Lexicographic::CoorFromIndex(orthog,p,perpdims);
+
+      int icoor;
+      if ( mu>=2 && mu < grid->_ndimension-1) {
+	icoor = orthog[mu-2];
+      } else {
+	icoor = -1;
+      }
+
+      ss=scalar_type(icoor);
+
+      pokePole(ss,l,orthog,South);
+      pokePole(ss,l,orthog,North);
+    }
+  }
+};
+template<class iobj> inline void LatticePole(Lattice<iobj> &l,NorthSouth pole)
+{
+  typedef typename iobj::scalar_object sobj;
+  typedef typename iobj::scalar_type scalar_type;
+  typedef typename iobj::vector_type vector_type;
+
+  GridBase *grid = l.Grid();
+
+  l=Zero();
+
+  if (grid->Icosahedral()) {
+    uint64_t psites=1;
+    Coordinate perpdims;
+    sobj ss;
+    scalar_type one(1.0);
+    ss=one;
+    for(int d=2;d<l.Grid()->_ndimension-1;d++){
+      int pd=l.Grid()->_gdimensions[d];
+      psites*=pd;
+      perpdims.push_back(pd);
+    }
+    for(uint64_t p=0;p<psites;p++){
+      Coordinate orthog;
+      Lexicographic::CoorFromIndex(orthog,p,perpdims);
+      pokePole(ss,l,orthog,pole);
+    }
+  }
 };
 
 NAMESPACE_END(Grid);
-

@@ -1,3 +1,8 @@
+
+* Clean up the extract merge and replace with insertLane/extractLane
+
+-----
+
 i)    Refine subspace with HDCG & recompute
 ii)   Block Lanczos in coarse space
 iii)  Batched block project in the operator computation

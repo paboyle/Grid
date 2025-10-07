@@ -31,5 +31,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/cartesian/Cartesian_base.h>
 #include <Grid/cartesian/Cartesian_full.h>
 #include <Grid/cartesian/Cartesian_red_black.h> 
+#include <Grid/cartesian/CartesianCrossIcosahedron.h>
 
 #endif
