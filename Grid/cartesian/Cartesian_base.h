@@ -88,6 +88,8 @@ public:
 
   // Icosahedral decisions
   virtual int Icosahedral(void) { return 0;}
+  virtual int IcosahedralVertices(void) { return 0;}
+  virtual int IcosahedralEdges   (void) { return 0;}
   virtual int ownsNorthPole(void) const { return 0; };
   virtual int ownsSouthPole(void) const { return 0; };
   virtual int NorthPoleOsite(void) const { return 0; };

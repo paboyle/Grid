@@ -58,7 +58,7 @@ template<class iobj> inline void LatticeCoordinate(Lattice<iobj> &l,int mu)
       });
   }
 
-  if (grid->Icosahedral()) {
+  if (grid->IcosahedralVertices()) {
     uint64_t psites=1;
     Coordinate perpdims;
     typename iobj::scalar_object ss;
@@ -95,7 +95,9 @@ template<class iobj> inline void LatticePole(Lattice<iobj> &l,NorthSouth pole)
 
   l=Zero();
 
-  if (grid->Icosahedral()) {
+  assert(grid->IcosahedralVertices());
+  
+  if (grid->IcosahedralVertices()) {
     uint64_t psites=1;
     Coordinate perpdims;
     sobj ss;
