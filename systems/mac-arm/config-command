@@ -7,7 +7,5 @@ MPICXX=mpicxx CXXFLAGS=-I/opt/local/include LDFLAGS=-L/opt/local/lib/ CXX=clang+
 	      --with-openssl=$BREW \
 	      --disable-fermion-reps \
 	      --disable-gparity \
-	      --enable-Nd=3 \
-	      --enable-Nc=1 \
 	      --enable-debug
 

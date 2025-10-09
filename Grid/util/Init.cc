@@ -187,9 +187,10 @@ void GridParseLayout(char **argv,int argc,
 		     Coordinate &latt_c,
 		     Coordinate &mpi_c)
 {
-  auto mpi =std::vector<int>(1,Nd);
-  auto latt=std::vector<int>(8,Nd);
-
+  auto mpi =std::vector<int>(Nd,1);
+  auto latt=std::vector<int>(Nd,8);
+  std::cout << "Default mpi "<<mpi<<std::endl;
+  std::cout << "Default latt"<<latt<<std::endl;
   GridThread::SetMaxThreads();
 
   std::string arg;
@@ -228,6 +229,9 @@ void GridParseLayout(char **argv,int argc,
   }
   // Copy back into coordinate format
   int nd = mpi.size();
+  std::cout << "mpi.size() "<<nd<<std::endl;
+  std::cout << "latt.size() "<<latt.size()<<std::endl;
+  std::cout << "Nd "<<Nd<<std::endl;
   assert(latt.size()==nd);
   latt_c.resize(nd);
    mpi_c.resize(nd);
