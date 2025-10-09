@@ -34,7 +34,7 @@ NAMESPACE_BEGIN(Grid);
 const int Cshift_verbose=0;
 template<class vobj> Lattice<vobj> Cshift(const Lattice<vobj> &rhs,int dimension,int shift)
 {
-  assert(!rhs.Grid()->Icosahedral());
+  assert(!rhs.Grid()->isIcosahedral());
   
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;

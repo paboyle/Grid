@@ -391,7 +391,7 @@ template<class vobj> std::ostream& operator<< (std::ostream& stream, const Latti
     stream<<"]\t";
     stream<<ss<<std::endl;
   }
-  if ( o.Grid()->Icosahedral() ) {
+  if ( o.Grid()->isIcosahedral() ) {
     uint64_t psites=1;
     Coordinate perpdims;
     for(int d=2;d<o.Grid()->_ndimension-1;d++){

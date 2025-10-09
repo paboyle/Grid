@@ -107,9 +107,9 @@ public:
   int northPoleOsites;
   int southPoleOsites;
 
-  virtual int Icosahedral(void)     override { return 1;}
-  virtual int IcosahedralVertices(void)     override { return meshType==IcosahedralVertices;}
-  virtual int IcosahedralEdges  (void)      override { return meshType==IcosahedralEdges;}
+  virtual int isIcosahedral(void)           override { return 1;}
+  virtual int isIcosahedralVertex(void)     override { return meshType==IcosahedralVertices;}
+  virtual int isIcosahedralEdge  (void)     override { return meshType==IcosahedralEdges;}
   virtual int ownsNorthPole(void)   const override { return hasNorthPole; };
   virtual int NorthPoleOsite(void)  const override { return northPoleOsite; };
   virtual int NorthPoleOsites(void) const override { return northPoleOsites; };

@@ -159,8 +159,8 @@ void peekPole(sobj &s,const Lattice<vobj> &l,const Coordinate &orthog,NorthSouth
   
   GridBase *grid=l.Grid();
 
-  assert(grid->Icosahedral());
-  assert(grid->IcosahedralVertices());
+  assert(grid->isIcosahedral());
+  assert(grid->isIcosahedralVertex());
 
   int Nsimd = grid->Nsimd();
 
@@ -220,8 +220,8 @@ void pokePole(const sobj &s,Lattice<vobj> &l,const Coordinate &orthog,NorthSouth
 {
   GridBase *grid=l.Grid();
 
-  assert(grid->Icosahedral());
-  assert(grid->IcosahedralVertices());
+  assert(grid->isIcosahedral());
+  assert(grid->isIcosahedralVertex());
 
   grid->Broadcast(grid->BossRank(),s);
 

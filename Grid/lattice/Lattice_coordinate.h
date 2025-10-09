@@ -40,7 +40,7 @@ template<class iobj> inline void LatticeCoordinate(Lattice<iobj> &l,int mu)
   int Nsimd = grid->iSites();
 
   int cartesian_vol = grid->oSites();
-  if ( grid->Icosahedral() ) {
+  if ( grid->isIcosahedral() ) {
     cartesian_vol = cartesian_vol - grid->NorthPoleOsites()-grid->SouthPoleOsites();
   }
   {
@@ -58,7 +58,7 @@ template<class iobj> inline void LatticeCoordinate(Lattice<iobj> &l,int mu)
       });
   }
 
-  if (grid->IcosahedralVertices()) {
+  if (grid->isIcosahedralVertex()) {
     uint64_t psites=1;
     Coordinate perpdims;
     typename iobj::scalar_object ss;
@@ -95,9 +95,9 @@ template<class iobj> inline void LatticePole(Lattice<iobj> &l,NorthSouth pole)
 
   l=Zero();
 
-  assert(grid->IcosahedralVertices());
+  assert(grid->isIcosahedralVertex());
   
-  if (grid->IcosahedralVertices()) {
+  if (grid->isIcosahedralVertex()) {
     uint64_t psites=1;
     Coordinate perpdims;
     sobj ss;

@@ -30,7 +30,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 template<class vobj> Lattice<vobj> Cshift(const Lattice<vobj> &rhs,int dimension,int shift)
 {
-  assert(!rhs.Grid()->Icosahedral());
+  assert(!rhs.Grid()->isIcosahedral());
   Lattice<vobj> ret(rhs.Grid());
   ret.Checkerboard() = rhs.Grid()->CheckerBoardDestination(rhs.Checkerboard(),shift,dimension);
   Cshift_local(ret,rhs,dimension,shift);
