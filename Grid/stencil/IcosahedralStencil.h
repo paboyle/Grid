@@ -1,0 +1,766 @@
+/*************************************************************************************
+
+     Grid physics library, www.github.com/paboyle/Grid 
+
+     Source file: ./lib/GeneralLocalStencil.h
+
+     Copyright (C) 2019
+
+ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+
+     This program is free software; you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation; either version 2 of the License, or
+     (at your option) any later version.
+
+     This program is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
+
+     You should have received a copy of the GNU General Public License along
+     with this program; if not, write to the Free Software Foundation, Inc.,
+     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+     See the full license in the file "LICENSE" in the top level distribution directory
+*************************************************************************************/
+/*  END LEGAL */
+#pragma once
+NAMESPACE_BEGIN(Grid);
+
+// Share with Cartesian Stencil
+struct IcosahedralStencilEntry { 
+  uint64_t _offset;            // 8 bytes 
+  uint8_t _is_local;           // is this with our lattice array (else in a comms buf)
+  uint8_t _adjoint;            // is this with our lattice array (else in a comms buf)
+  uint8_t _polarisation;       // which lorentz index on the neighbours patch
+  uint8_t _missing_link;       // 
+};
+
+enum IcoshedralDirections {
+  IcosahedronPatchX = 0,
+  IcosahedronPatchY = 1,
+  IcosahedronPatchDiagonal=2,
+  IcosahedronTime=3
+};
+
+inline int periAdd(int A,int inc,int L) { return (A+inc+L)%L ; }
+
+class IcosahedralStencilView {
+ public:
+  ////////////////////////////////////////
+  // Basic Grid and stencil info
+  ////////////////////////////////////////
+  int                       _npoints; // Move to template param?
+  IcosahedralStencilEntry*  _entries_p;
+
+  accelerator_inline IcosahedralStencilEntry * GetEntry(int point,int osite) const { 
+    return & this->_entries_p[point+this->_npoints*osite]; 
+  }
+  void ViewClose(void){};
+};
+
+////////////////////////////////////////
+// The Stencil Class itself
+////////////////////////////////////////
+class IcosahedralStencil : public IcosahedralStencilView {
+public:
+  typedef IcosahedralStencilView View_type;
+
+protected:
+  GridBase *                        _grid;
+
+public: 
+  GridBase *Grid(void) const { return _grid; }
+
+  View_type View(int mode) const {
+    View_type accessor(*( (View_type *) this));
+    return accessor;
+  }
+  // NB x+, y+ is ALWAYS present, as are the forward 3 directions for links owned by each site
+  //
+  // These are VERTEX mesh neigbours being returned, with isPole indicating we need N/S pole according to
+  // hemisphere.
+  //
+  // If needing edge mesh "neigbours" to assemble loops we must find the mapping of a forward link
+  // to a corresponding "backward link" on the pole
+  deviceVector<IcosahedralStencilEntry>  _entries;
+  
+  void GetNbrForPlusX(GridBase *grid,Coordinate &Coor,Coordinate &NbrCoor, int &isPole)
+  {
+    int nd = grid->Nd();
+    int L  = grid->LocalDimensions()[0];
+    assert (grid->LocalDimensions()[0] == grid->LocalDimensions()[1]);
+    int patch = Coor[nd-1];
+    int north = patch/HemiPatches;
+    int south = 1-north;
+    int HemiPatch = patch%HemiPatches;
+    int NbrPatch;
+    
+    NbrCoor = Coor;
+    isPole = 0;
+    if ( Coor[0]<(L-1) ) { 
+      NbrCoor[0]=Coor[0]+1;
+      // Nbr is inside THIS patch
+      return;
+    }
+    if ( north ) {
+      assert(Coor[0]==(L-1));
+      // Simple connect to southern neighbour tile
+      NbrCoor[0]=0;
+      NbrCoor[nd-1]=periAdd(HemiPatch,+1,HemiPatches) + SouthernHemisphere;
+      return;
+    }
+    ////////////////////////////////////////////////////////////
+    // FIXME:
+    // Can store the rotation of polarisation here: get xdir instead of ydir and must take adjoint
+    ////////////////////////////////////////////////////////////
+    if ( south ) {
+      assert(Coor[0]==(L-1));
+      if ( Coor[1] == 0 ) {
+	isPole = 1;
+	NbrCoor[0] = (L-1); // Coordinate of the edge graph site holding the edge for other vertex in pole triangle
+	NbrCoor[1] = 0;
+	NbrCoor[nd-1]=periAdd(HemiPatch,+1,HemiPatches) + SouthernHemisphere;
+	return;
+      } else {
+	NbrCoor[1] = 0;
+	NbrCoor[0] = L-Coor[1];
+	NbrCoor[nd-1]=periAdd(HemiPatch,+1,HemiPatches) + SouthernHemisphere;
+	return;
+      }
+    }
+    assert(0);
+  }
+  void GetNbrForPlusY(GridBase *grid,Coordinate &Coor,Coordinate &NbrCoor, int &isPole)
+  {
+    int nd = grid->Nd();
+    int L  = grid->LocalDimensions()[0];
+    assert (grid->LocalDimensions()[0] == grid->LocalDimensions()[1]);
+    int patch = Coor[nd-1];
+    int north = patch/HemiPatches;
+    int south = 1-north;
+    int HemiPatch = patch%HemiPatches;
+    int NbrPatch;
+    
+    NbrCoor = Coor;
+    isPole = 0;
+    if ( Coor[1]<(L-1) ) { 
+      NbrCoor[1]=Coor[1]+1;
+      // Nbr is inside THIS patch
+      return;
+    }
+    if ( south ) {
+      // Simple connect to northern neighbour tile
+      assert(Coor[1]==(L-1));
+      NbrCoor[1]=0;
+      NbrCoor[nd-1]=HemiPatch + NorthernHemisphere;
+      return;
+    }
+    ////////////////////////////////////////////////////////////
+    // FIXME:
+    // Could store the rotation of polarisation here: get xdir instead of ydir and must take adjoint
+    // But probaby just write "getLinkPropertiesToCloseTriangleA" "getLinkPropertiesToCloseTriangleB"
+    // Or write a 'double store' method to move edge graph to a vertex graph with all fermion transports
+    ////////////////////////////////////////////////////////////
+    if ( north ) {
+      assert(Coor[1]==(L-1));
+      if ( Coor[0] == 0 ) {
+	isPole = 1;
+	NbrCoor[1] = (L-1); // Coordinate of the edge graph site holding the edge for other vertex in pole triangle
+	NbrCoor[0] = 0;
+	NbrCoor[nd-1]=periAdd(HemiPatch,+1,HemiPatches) + NorthernHemisphere;
+	return;
+      } else {
+	NbrCoor[0] = 0;
+	NbrCoor[1] = L-Coor[0]; // x=1 --> y=L-1 for y+
+	NbrCoor[nd-1]=periAdd(HemiPatch,+1,HemiPatches) + NorthernHemisphere;
+	return;
+      }
+    }
+    assert(0);
+  }
+  // Missing links are at (0,0) on local patch coordinates in -diagonal direction 
+  // We are here returning VERTEX grid coordinates.
+  void GetNbrForMinusX(GridBase *grid,Coordinate &Coor,Coordinate &NbrCoor)
+  {
+    int nd = grid->Nd();
+    int L  = grid->LocalDimensions()[0];
+    assert (grid->LocalDimensions()[0] == grid->LocalDimensions()[1]);
+    int patch = Coor[nd-1];
+    int north = patch/HemiPatches;
+    int south = 1-north;
+    int HemiPatch = patch%HemiPatches;
+    int NbrPatch;
+    
+    NbrCoor = Coor;
+    if ( Coor[0]>0 ) { 
+      NbrCoor[0]=Coor[0]-1;
+      return;
+    }
+    if ( south ) {
+      assert(Coor[0]==0);
+      // Simple connect to northern neighbour tile
+      NbrCoor[0]=L-1;
+      NbrCoor[nd-1]=periAdd(HemiPatch,-1,HemiPatches) + NorthernHemisphere;
+      return;
+    }
+    if ( north ) {
+	NbrCoor[0] = L-1-Coor[1];
+	NbrCoor[1] = L-1;
+	NbrCoor[nd-1]=periAdd(HemiPatch,+1,HemiPatches) + SouthernHemisphere;
+	return;
+    }      
+    assert(0);
+  }
+  
+  void GetNbrForMinusY(GridBase *grid,Coordinate &Coor,Coordinate &NbrCoor)
+  {
+    int nd = grid->Nd();
+    int L  = grid->LocalDimensions()[0];
+    assert (grid->LocalDimensions()[0] == grid->LocalDimensions()[1]);
+    int patch = Coor[nd-1];
+    int north = patch/HemiPatches;
+    int south = 1-north;
+    int HemiPatch = patch%HemiPatches;
+    int NbrPatch;
+    
+    NbrCoor = Coor;
+    if ( Coor[1]>0 ) { 
+      NbrCoor[1]=Coor[1]-1;
+      return;
+    }
+    if ( north ) {
+      assert(Coor[1]==0);
+      // Simple connect to northern neighbour tile
+      NbrCoor[1]=L-1;
+      NbrCoor[nd-1]=HemiPatch + SouthernHemisphere;
+      return;
+    }
+    if ( south ) {
+	NbrCoor[1] = L-1-Coor[0];
+	NbrCoor[0] = L-1;
+	NbrCoor[nd-1]=periAdd(HemiPatch,-1,HemiPatches) + SouthernHemisphere;
+	return;
+    }      
+    assert(0);
+  }
+  void GetNbrForMinusDiagonal(GridBase *grid,Coordinate &Coor,Coordinate &NbrCoor,int &missingLink)
+  {
+    int nd = grid->Nd();
+    int L  = grid->LocalDimensions()[0];
+    assert (grid->LocalDimensions()[0] == grid->LocalDimensions()[1]);
+    int patch = Coor[nd-1];
+    int north = patch/HemiPatches;
+    int south = 1-north;
+    int HemiPatch = patch%HemiPatches;
+    int NbrPatch;
+    
+    NbrCoor = Coor;
+    
+    missingLink = 0;
+    if( Coor[0]==0 && Coor[1]==0) {
+      missingLink=1;
+      return;
+    }
+    if ( (Coor[0]>0) && (Coor[1]>0) ) { 
+      // Nbr is inside THIS patch
+      NbrCoor[0]=Coor[0]-1;
+      NbrCoor[1]=Coor[1]-1;
+      return;
+    }
+    if ( north ) {
+      if ( Coor[0]==0 ) {
+	// We are on -x edge
+	// Maps to +y edge of hemipatch to the left
+	NbrCoor[nd-1] = periAdd(HemiPatch,-1,HemiPatches) + NorthernHemisphere;
+	NbrCoor[0]=(L-Coor[1]);
+	NbrCoor[1]=(L-1);
+	return;
+      } else {
+        // We are on the -y edge and NOT bottom left corner; Nbr is in the patch LEFT
+	assert( (Coor[0]>0) && (Coor[1]==0) );
+	NbrCoor[nd-1] = HemiPatch + SouthernHemisphere; // Map from north to south
+	NbrCoor[0]=Coor[0]-1;
+	NbrCoor[1]=(L-1);
+	return;
+      }
+      assert(0);
+    }
+    if ( south ) {
+      // We are on the -y edge
+      if ( Coor[1]==0 ) {
+	NbrCoor[nd-1] = periAdd(HemiPatch,-1,HemiPatches) + SouthernHemisphere;
+        NbrCoor[0]=(L-1);
+        NbrCoor[1]=(L-Coor[0]);
+	return;
+      } else {
+      // We are on the -x edge and NOT bottom left corner; Nbr is in the patch LEFT
+	assert( (Coor[0]==0) && (Coor[1]>0) );
+	NbrCoor[nd-1] = periAdd(HemiPatch,-1,HemiPatches) + NorthernHemisphere; // south to north
+	NbrCoor[0]=(L-1);
+	NbrCoor[1]= Coor[1]-1;
+	return;
+      }
+      assert(0);
+    }
+    assert(0);
+  }
+  void GetNbrForPlusDiagonal(GridBase *grid,Coordinate &Coor,Coordinate &NbrCoor)
+  {
+    int nd = grid->Nd();
+    int L  = grid->LocalDimensions()[0];
+    assert (grid->LocalDimensions()[0] == grid->LocalDimensions()[1]);
+    int patch = Coor[nd-1];
+    int north = patch/HemiPatches;
+    int south = 1-north;
+    int HemiPatch = patch%HemiPatches;
+    int NbrPatch;
+    
+    NbrCoor = Coor;
+    
+    if ( (Coor[0]<L-1) && (Coor[1]<L-1) ) { 
+      // Nbr is inside THIS patch
+      NbrCoor[0]=Coor[0]+1; 
+      NbrCoor[1]=Coor[1]+1;
+      return;
+    }
+
+    if ( north ) {
+      // We are on +y edge
+      if ( Coor[1]==(L-1) ) {
+	NbrCoor[nd-1] = periAdd(HemiPatch,+1,HemiPatches) + NorthernHemisphere;
+	NbrCoor[0]=0;
+	NbrCoor[1]=(L-1)-Coor[0];
+	return;
+      } else {
+      // Else we are on the +x edge, not top right corner
+	assert( Coor[0]==(L-1) && Coor[1]<(L-1) );
+	NbrCoor[nd-1] = periAdd(HemiPatch,+1,HemiPatches) + SouthernHemisphere;
+	NbrCoor[0]=0;
+	NbrCoor[1]=Coor[1]+1;
+	return;
+      }
+      assert(0);
+    }
+
+    if ( south ) {
+      // We are on the +x edge
+      if ( Coor[0]==(L-1) ) {
+	NbrCoor[nd-1] = periAdd(HemiPatch,+1,HemiPatches) + SouthernHemisphere;
+	NbrCoor[0]=(L-1)-Coor[1]; //y=(L-1) <-> x=0 ; y=0<->x=(L-1)  [ Sanity check ]
+	NbrCoor[1]=0;
+	return;
+      } else { 
+      // We are on the +y edge and NOT top right corner; Nbr is in the patch UP
+	assert( (Coor[1]==L-1) && (Coor[0]<(L-1)) );
+	NbrCoor[nd-1] = HemiPatch + NorthernHemisphere;
+	NbrCoor[0]=Coor[0]+1;
+	NbrCoor[1]=0;
+	return;
+      }
+      assert(0);
+    }
+    assert(0);
+  }
+  
+  void  TestGeometry(void)
+  {
+    GridBase *grid = this->_grid;
+    uint64_t cart_sites = grid->CartesianOsites();
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    //    Loop over cart sites.
+    //    Find two triangles per site.
+    //    Check going forward in X, Up and forward in Diag match
+    //    Check going Up, forward in X and forward Diag match; subtleties at poles and rotation in cross patch
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    std::cout << "*************************************"<<std::endl;
+    std::cout << " Icosahedral Stencil Geometry Test !"<<std::endl;
+    std::cout << "*************************************"<<std::endl;
+
+    const int triangle_ref = cart_sites;
+    std::cout << " Base triangle count for each type " <<triangle_ref;
+    
+    std::cout << "------------------------------------"<<std::endl;
+    std::cout << "testing +x+y vs +diag"<<std::endl;
+    std::cout << "testing +y+x vs +diag"<<std::endl;
+    std::cout << "------------------------------------"<<std::endl;
+    int xyd_pole_count=0;
+    int xyd_count=0;
+    int yxd_pole_count=0;
+    int yxd_count=0;
+    for(uint64_t site=0;site<cart_sites; site ++) {
+
+      Coordinate Coor;
+      Coordinate DiagCoor;
+
+      int nd = grid->Nd();
+      int L  = grid->LocalDimensions()[0];
+
+      grid->oCoorFromOindex(Coor,site);
+
+      int patch = Coor[nd-1];
+      int north = patch/HemiPatches;
+      int south = 1-north;
+      int isPole      = 0;
+      int discard;
+      int missingLink = 0;
+      
+      int HemiPatch = patch%HemiPatches;
+
+      //////////////////////////////
+      // First test of triangle
+      //////////////////////////////
+      // Compare +x, +y to +diag
+      Coordinate XpCoor;
+      Coordinate YpXpCoor;
+      GetNbrForPlusDiagonal(grid,Coor,DiagCoor);
+      GetNbrForPlusX(grid,Coor,XpCoor,isPole);
+
+      int XpHemiPatch  = XpCoor[nd-1]%HemiPatches;
+      int XpHemisphere = XpCoor[nd-1]/HemiPatches;
+      
+      if (isPole) {
+	YpXpCoor = XpCoor;
+      } else if ( XpHemiPatch != HemiPatch && south ) {
+	GetNbrForMinusX(grid,XpCoor,YpXpCoor);
+      } else {
+	GetNbrForPlusY(grid,XpCoor,YpXpCoor,discard);
+      }
+      
+      if(isPole) {
+	std::cout << "Forward xyd triangle "<<Coor<<"-Pole["<<XpCoor[2]<<"]-"<<YpXpCoor<<" should be " <<DiagCoor<<std::endl;
+	xyd_pole_count++;
+      } else {
+	std::cout << "Forward xyd triangle "<<Coor<<"-"<<XpCoor<<"-"<<YpXpCoor<<" should be " <<DiagCoor<<std::endl;
+	xyd_count++;
+      }
+      for(int d=0;d<DiagCoor.size();d++) {
+	assert(DiagCoor[d]==YpXpCoor[d]);
+      }
+
+      Coordinate YpCoor;
+      Coordinate XpYpCoor;
+      GetNbrForPlusDiagonal(grid,Coor,DiagCoor);
+      GetNbrForPlusY(grid,Coor,YpCoor,isPole);
+
+      int YpHemiPatch  = YpCoor[nd-1]%HemiPatches;
+      int YpHemisphere = YpCoor[nd-1]/HemiPatches;
+      
+      if(isPole) {
+	XpYpCoor = YpCoor;
+      } else if ( YpHemiPatch != HemiPatch  && north ) {
+	GetNbrForMinusY(grid,YpCoor,XpYpCoor); // we hopped - this rotates the directions
+      } else {
+	GetNbrForPlusX(grid,YpCoor,XpYpCoor,discard);
+      }
+
+      if(isPole) {
+	yxd_pole_count++;
+	std::cout << "Forward yxd triangle "<<Coor<<"-Pole["<<YpCoor[2]<<"]-"<<XpYpCoor<<" should be " <<DiagCoor<<std::endl;
+      } else {
+	yxd_count++;
+	std::cout << "Forward yxd triangle "<<Coor<<"-"<<YpCoor<<"-"<<XpYpCoor<<" should be " <<DiagCoor<<std::endl;
+      }
+      for(int d=0;d<DiagCoor.size();d++) {
+	assert(DiagCoor[d]==XpYpCoor[d]);
+      }
+    }
+    std::cout << " xyd_count "<<xyd_count<<" + poles_count "<<xyd_pole_count<<" expect "<<triangle_ref<<" triangles "<<std::endl;
+    std::cout << " yxd_count "<<yxd_count<<" + poles_count "<<yxd_pole_count<<" expect "<<triangle_ref<<" triangles "<<std::endl;
+    assert(xyd_count+xyd_pole_count == triangle_ref);
+    assert(yxd_count+yxd_pole_count == triangle_ref);
+    std::cout << "------------------------------------"<<std::endl;
+    std::cout << "testing -diag +x+y = identity"<<std::endl;
+    std::cout << "testing -diag +y+x = identity"<<std::endl;
+    std::cout << "------------------------------------"<<std::endl;
+
+    int dmxy_count=0;
+    int dmyx_count=0;
+    int dmxy_count_special=0;
+    int dmyx_count_special=0;
+    int num_missing=0;
+
+    for(uint64_t site=0;site<cart_sites; site ++) {
+
+      Coordinate Coor;
+
+      int nd = grid->Nd();
+      int L  = grid->LocalDimensions()[0];
+
+      grid->oCoorFromOindex(Coor,site);
+
+      int patch = Coor[nd-1];
+      int north = patch/HemiPatches;
+      int south = 1-north;
+      int isPole      = 0;
+      int discard;
+      int missingLink = 0;
+      int HemiPatch = patch%HemiPatches;
+
+      Coordinate DmCoor;
+      GetNbrForMinusDiagonal(grid,Coor,DmCoor,missingLink);
+      if ( missingLink ) {
+	std::cout << Coor << " has no backwards diagonal link "<<std::endl;
+	num_missing++;
+      } else {
+
+	int DmPatch  = DmCoor[nd-1];
+	int DmHemiPatch  = DmCoor[nd-1]%HemiPatches;
+	int DmHemisphere = DmCoor[nd-1]/HemiPatches;
+
+	Coordinate XpDmCoor;
+	Coordinate YpXpDmCoor;
+
+	Coordinate YpDmCoor;
+	Coordinate XpYpDmCoor;
+	
+	if ( DmHemiPatch != HemiPatch && north ) {
+	  GetNbrForPlusDiagonal(grid,DmCoor,XpDmCoor);
+	  GetNbrForPlusY(grid,XpDmCoor,YpXpDmCoor,isPole); assert(!isPole);
+
+	  GetNbrForMinusX(grid,DmCoor,YpDmCoor);
+	  GetNbrForPlusDiagonal(grid,YpDmCoor,XpYpDmCoor);
+	  dmxy_count_special++;
+	  dmyx_count_special++;
+	} else if ( DmPatch == periAdd(HemiPatch,-1,HemiPatches) && south ) {
+	  GetNbrForPlusDiagonal(grid,DmCoor,YpDmCoor);
+	  GetNbrForPlusX(grid,YpDmCoor,XpYpDmCoor,isPole); assert(!isPole);
+
+	  GetNbrForMinusY(grid,DmCoor,XpDmCoor);
+	  GetNbrForPlusDiagonal(grid,XpDmCoor,YpXpDmCoor);
+	  dmxy_count_special++;
+	  dmyx_count_special++;
+	} else {
+	  GetNbrForPlusX(grid,DmCoor,XpDmCoor,isPole); assert(!isPole);
+	  GetNbrForPlusY(grid,XpDmCoor,YpXpDmCoor,isPole); assert(!isPole);
+
+	  GetNbrForPlusY(grid,DmCoor,YpDmCoor,isPole); assert(!isPole);
+	  GetNbrForPlusX(grid,YpDmCoor,XpYpDmCoor,isPole); assert(!isPole);
+	  dmxy_count++;
+	  dmyx_count++;
+	}
+	std::cout << Coor<<" DmXpYp triangle YpXpDm"<<YpXpDmCoor<<"-XpDm"<<XpDmCoor<<"-Dm"<<DmCoor<<" should be " <<Coor<<std::endl;
+	for(int d=0;d<Coor.size();d++) {
+	  assert(Coor[d]==YpXpDmCoor[d]);
+	}
+
+	std::cout << Coor<<"DmXpYp triangle XpYpDm"<<XpYpDmCoor<<"-YpDm"<<YpDmCoor<<"-Dm"<<DmCoor<<" should be " <<Coor<<std::endl;
+	for(int d=0;d<Coor.size();d++) {
+	  assert(Coor[d]==XpYpDmCoor[d]);
+	}
+      }
+    }
+    std::cout << " dmxy_count "<<dmxy_count<<" + special "<<dmxy_count_special<<" + missing "<<num_missing<<" expect "<<triangle_ref<<" triangles "<<std::endl;
+      std::cout << " dmyx_count "<<dmyx_count<<" + special "<<dmyx_count_special<<" + missing "<<num_missing<<" expect "<<triangle_ref<<" triangles "<<std::endl;
+    assert(dmxy_count + dmxy_count_special + num_missing == triangle_ref);
+    assert(dmyx_count + dmyx_count_special + num_missing == triangle_ref);
+    
+    std::cout << "------------------------------------"<<std::endl;
+    std::cout << "testing diag -x-y = identity "<<std::endl;
+    std::cout << "testing diag -y-x = identity"<<std::endl;
+    std::cout << "------------------------------------"<<std::endl;
+
+    std::cout << "------------------------------------"<<std::endl;
+    std::cout << "testing -diag = -x-y "<<std::endl;
+    std::cout << "testing -diag = -y-x "<<std::endl;
+    std::cout << "------------------------------------"<<std::endl;
+    
+    std::cout << "*************************************"<<std::endl;
+    std::cout << " Icosahedral Stencil Geometry Test Complete"<<std::endl;
+    std::cout << "*************************************"<<std::endl;
+  }
+  IcosahedralStencil(GridBase *grid) // Must be +1 or -1
+  {
+    this->_grid    = grid;
+    // Loop over L^2 x T x npatch and the
+    assert(grid->isIcosahedral());
+  }
+  void NearestNeighbourStencil(void)
+  {
+    GridBase * grid = this->_grid;
+    assert(grid->isIcosahedralVertex());
+    
+  }
+  /*
+   * For gauge action implementation
+   */
+  void FaceStencil(void)
+  {
+    GridBase * grid = this->_grid;
+
+    int osites  = grid->oSites();
+
+    uint64_t cart_sites = grid->CartesianOsites();
+    uint64_t Npole_sites = grid->NorthPoleOsites();
+    uint64_t Spole_sites = grid->SouthPoleOsites();
+    Coordinate pcoor = grid->ThisProcessorCoor();
+    Coordinate pgrid = grid->ProcessorGrid();
+
+    /*
+     * resize the stencil entries array and set npoints
+     */
+    this->_npoints=2; // Move to template param?
+    this->_entries.resize(this->_npoints * cart_sites);
+    this->_entries_p = &_entries[0];
+
+    for(uint64_t site=0;site<cart_sites; site ++) {
+
+      Coordinate Coor;
+      Coordinate NbrCoor;
+
+      int nd = grid->Nd();
+      int L  = grid->LocalDimensions()[0];
+
+      Integer lexXY = site*2;
+      Integer lexYX = site*2+1;
+
+      IcosahedralStencilEntry SE;
+	
+      ////////////////////////////////////////////////
+      // Outer index of neighbour Offset calculation
+      ////////////////////////////////////////////////
+      grid->oCoorFromOindex(Coor,site);
+      NbrCoor = Coor;
+      assert( grid->LocalDimensions()[1]==grid->LocalDimensions()[0]);
+      assert( grid->_simd_layout[0]==1); // Cannot vectorise in these dims
+      assert( grid->_simd_layout[1]==1);
+      assert( grid->_processors[0]==1); // Cannot mpi distribute in these dims
+      assert( grid->_processors[1]==1);
+
+      int Patch = Coor[nd-1];
+      int HemiPatch = Patch%HemiPatches;
+      int north = Patch/HemiPatches;
+      int south = 1-north;
+      int isPoleY;
+      int isPoleX;
+      
+      assert(Patch<IcosahedralPatches);
+      assert((north==1)||(south==1));
+	/*
+	 * Minimal stencil for edge -> face triangle evaluation
+	 *
+	 * On each edge grid site, hold +x,+y,+diag links
+	 * Must locate the closing link to form the two forward triangles
+	 *
+	 * case: +x,+d 
+	 *
+	 *   north: +x neighbours ydir link always
+	 *   south: +x neighbours ydir link except
+	 *            cross into a different patch in south
+	 *         then
+	 *          +d neighbours xdir link
+	 *
+	 * case: +y,+d 
+	 *   south: +y neighbours xdir link always
+	 *   north: +y neighbours xdir link unless
+	 *            cross into a different patch in north
+	 *         then
+	 *          +d neighbours ydir link
+	 *
+	 */
+      Coordinate XpCoor;
+      Coordinate YpCoor;
+      Coordinate DpCoor;
+
+      GetNbrForPlusDiagonal(grid,Coor,DpCoor);
+      GetNbrForPlusX(grid,Coor,XpCoor,isPoleX);
+      GetNbrForPlusY(grid,Coor,YpCoor,isPoleY);
+
+      int XpHemiPatch  = XpCoor[nd-1]%HemiPatches;
+      int XpHemisphere = XpCoor[nd-1]/HemiPatches;
+
+      int DpPatch  = DpCoor[nd-1];
+      int DpHemiPatch  = DpCoor[nd-1]%HemiPatches;
+      int DpHemisphere = DpCoor[nd-1]/HemiPatches;
+
+      ////////////////////////////////////////////////
+      // for trace [ U_x(z) U_y(z+\hat x) adj(U_d(z)) ]
+      ////////////////////////////////////////////////
+      if ( DpHemiPatch != HemiPatch && south ) {
+	SE._offset       = grid->oIndex(DpCoor);
+	SE._is_local     = true;
+	SE._polarisation = IcosahedronPatchX;
+	SE._adjoint      = true;
+	SE._missing_link = false;
+      } else {
+	SE._offset       = grid->oIndex(XpCoor);
+	SE._is_local     = true;
+	SE._polarisation = IcosahedronPatchY;
+	SE._adjoint      = false;
+	SE._missing_link = false;
+      }
+
+      ////////////////////////////////////////////////
+      // Store in look up table
+      ////////////////////////////////////////////////
+      acceleratorPut(this->_entries[lexXY],SE);
+      
+      ////////////////////////////////////////////////
+      // for trace [  U_y(z) adj(U_d(z))  U_x(z+\hat y) ]
+      ////////////////////////////////////////////////
+      if ( DpHemiPatch != HemiPatch && north ) {
+	SE._offset       = grid->oIndex(DpCoor);
+	SE._is_local     = true;
+	SE._polarisation = IcosahedronPatchY;
+	SE._adjoint      = true;
+	SE._missing_link = false;
+      } else {
+	SE._offset       = grid->oIndex(YpCoor);
+	SE._is_local     = true;
+	SE._polarisation = IcosahedronPatchX;
+	SE._adjoint      = false;
+	SE._missing_link = false;
+      }
+      ////////////////////////////////////////////////
+      // Store in look up table
+      ////////////////////////////////////////////////
+      acceleratorPut(this->_entries[lexYX],SE);
+    };
+  }
+
+  /*
+   * For gauge action derivative implementation
+   * Staple 
+   *
+   * Case1: I x T loops
+   *
+   * Need: DirP this site; no entry
+   *       Tp   @ dir++
+   *       DirP @ t++
+   *       Tp   @ t--
+   *       DirP @ t--
+   *       Tp   @ t--, dir++
+   *
+   * There is no complex rotation of links on other site
+   *
+   * Case2: I x I loops
+   *
+   * Y staple: need
+   *     Diag @ (xy)
+   *     X    @ y++  ; care needed for rotation
+   *     Diag @ x--  ; care needed for rotation
+   *     X    @ x--  ; care needed for rotation
+   *
+   * X staple: need
+   *     Diag @ (xy)
+   *     X    @ y++  ; care needed for rotation
+   *     Diag @ x--  ; care needed for rotation
+   *     X    @ x--  ; care needed for rotation
+   *
+   * Diag staple: need
+   *
+   *     X@  (xy)
+   *     Y@  x++  ; care needed for rotation
+   *     Y@  (xy)
+   *     X@  y++  ; care needed for rotation
+   */
+  void StapleDiagStencil(void){  }
+  void StapleXpStencil(void)  {  }
+  void StapleYpStencil(void)  {  }
+  void StapleTpStencil(void)  {  }
+  
+};
+NAMESPACE_END(Grid);

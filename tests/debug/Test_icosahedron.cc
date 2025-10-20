@@ -26,6 +26,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
+#include <Grid/stencil/IcosahedralStencil.h>
 
 using namespace std;
 using namespace Grid;
@@ -42,7 +43,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   const int L=8;
-  const int Npatch = num_icosahedron_tiles;
+  const int Npatch = IcosahedralPatches;
 
   // Put SIMD all in time direction
   Coordinate latt_size = GridDefaultLatt();
@@ -78,16 +79,70 @@ int main (int argc, char ** argv)
   //  std::cout << " Umu "<<Umu<<std::endl;
   //  std::cout << " Phi "<<Phi<<std::endl;
   LatticePole(Phi,South);
-  std::cout << " Phi South Pole set\n"<<Phi<<std::endl;
+  //  std::cout << " Phi South Pole set\n"<<Phi<<std::endl;
 
   LatticePole(Phi,North);
-  std::cout << " Phi North Pole set\n"<<Phi<<std::endl;
+  //  std::cout << " Phi North Pole set\n"<<Phi<<std::endl;
 
   for(int mu=0;mu<VertexGrid._ndimension;mu++){
     std::cout << " Calling lattice coordinate mu="<<mu<<std::endl;
     LatticeCoordinate(Phi,mu);
-    std::cout << " Phi coor mu="<<mu<<"\n"<<Phi<<std::endl;
+    //    std::cout << " Phi coor mu="<<mu<<"\n"<<Phi<<std::endl;
   }
+  IcosahedralStencil stencil(&EdgeGrid);
+  
+  stencil.TestGeometry();
 
+  std::cout << "Creating face stencil"<<std::endl;
+  
+  stencil.FaceStencil();
+  Umu=one;
+  LatticeComplex plaq1(&EdgeGrid);
+  LatticeComplex plaq2(&EdgeGrid);
+
+  {
+    autoView(Umu_v,Umu,AcceleratorRead);
+    autoView(plaq1_v,plaq1,AcceleratorWrite);
+    autoView(plaq2_v,plaq2,AcceleratorWrite);
+    autoView(stencil_v,stencil,AcceleratorRead);
+    accelerator_for(ss,EdgeGrid.oSites(),vComplexD::Nsimd(),{
+
+	const int x = IcosahedronPatchX;
+	const int y = IcosahedronPatchY;
+	const int d = IcosahedronPatchDiagonal;
+	
+	auto Lx = Umu_v(ss)(x);
+	auto Ly = Umu_v(ss)(y);
+	auto Ld = Umu_v(ss)(d);
+
+	// for trace [ U_x(z) U_y(z+\hat x) adj(U_d(z)) ]
+	{
+	  auto SE1 = stencil_v.GetEntry(0,ss);
+	  auto doAdj = SE1->_adjoint;
+	  auto pol   = SE1->_polarisation;
+	  auto s1    = SE1->_offset;
+	  auto L1 = Umu_v(s1)(pol);
+	  if(doAdj)
+	    L1 = adj(L1);
+
+	  coalescedWrite(plaq1_v[ss](),trace(Lx*L1*adj(Ld) ) );
+	}
+	
+	// for trace [  U_y(z) adj(U_d(z))  U_x(z+\hat y) ]
+	{
+	  auto SE2 = stencil_v.GetEntry(1,ss);
+	  auto doAdj = SE2->_adjoint;
+	  auto pol   = SE2->_polarisation;
+	  auto s2    = SE2->_offset;
+	  auto L2 = Umu_v(s2)(pol);
+	  if(doAdj)
+	    L2 = adj(L2);
+
+	  coalescedWrite(plaq2_v[ss](),trace(Ly*adj(Ld)*L2 ) );
+	}
+      });
+  }
+  std::cout << " plaq1 "<< norm2(plaq1)<<std::endl;
+  std::cout << " plaq2 "<< norm2(plaq2)<<std::endl;
   Grid_finalize();
 }

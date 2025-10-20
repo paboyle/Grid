@@ -42,7 +42,10 @@ enum NorthSouth {
   South = 0
 };
 
-const int num_icosahedron_tiles = 10;
+const int IcosahedralPatches = 10;
+const int HemiPatches=IcosahedralPatches/2;
+const int NorthernHemisphere = HemiPatches;
+const int SouthernHemisphere = 0;
 
 class GridCartesianCrossIcosahedron: public GridCartesian {
 
@@ -86,8 +89,11 @@ public:
 
     assert(simd_layout[0]==1); // Force simd into perpendicular dimensions
     assert(simd_layout[1]==1); // to avoid pole storage complexity interacting with SIMD.
-    assert(dimensions[_ndimension-1]==num_icosahedron_tiles);
+    assert(dimensions[_ndimension-1]==IcosahedralPatches);
     assert(processor_grid[_ndimension-1]<=2); // Keeps the patches that need a pole on the same node
+
+    // Save a copy of the basic cartesian initialisation volume
+    cartesianOsites = this->_osites;
 
     // allocate the pole storage if we are seeking vertex domain data
     if ( meshType == IcosahedralVertices ) {
@@ -106,16 +112,18 @@ public:
   int southPoleOsite;
   int northPoleOsites;
   int southPoleOsites;
+  int cartesianOsites;
 
   virtual int isIcosahedral(void)           override { return 1;}
   virtual int isIcosahedralVertex(void)     override { return meshType==IcosahedralVertices;}
   virtual int isIcosahedralEdge  (void)     override { return meshType==IcosahedralEdges;}
-  virtual int ownsNorthPole(void)   const override { return hasNorthPole; };
   virtual int NorthPoleOsite(void)  const override { return northPoleOsite; };
   virtual int NorthPoleOsites(void) const override { return northPoleOsites; };
-  virtual int ownsSouthPole(void)   const override { return hasSouthPole; };
   virtual int SouthPoleOsite(void)  const override { return southPoleOsite; };
   virtual int SouthPoleOsites(void) const override { return southPoleOsites; };
+  virtual int ownsNorthPole(void)   const override { return hasNorthPole; };
+  virtual int ownsSouthPole(void)   const override { return hasSouthPole; };
+  virtual int CartesianOsites(void) const override { return cartesianOsites; };
 
   void InitPoles(void)
   {
@@ -166,7 +174,7 @@ public:
      * Hence all 5 patches associated with the pole must have the
      * appropriate "corner" of the patch L^2 located on the SAME rank.
      */ 
-     
+    
     if( (pcoor[xdim]==pgrid[xdim]-1) && (pcoor[ydim]==0) && (pcoor[Ndm1]==0) ){
       hasSouthPole   =1;
       southPoleOsite=this->_osites;
