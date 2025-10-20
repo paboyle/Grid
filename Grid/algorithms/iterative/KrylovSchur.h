@@ -41,17 +41,21 @@ enum RitzFilter {
   EvalReSmall,             // Keep evals with smallest real part
   EvalReLarge,             // Keep evals with largest real part
   EvalImSmall,             // Keep evals with smallest imaginary part
-  EvalImLarge              // Keep evals with largest imaginary part
+  EvalImLarge,             // Keep evals with largest imaginary part
+  EvalImNormSmall,         // Keep evals with smallest |imaginary| part
+  EvalImNormLarge,         // Keep evals with largest |imaginary| part
 };
 
 /** Selects the RitzFilter corresponding to the input string. */
 inline RitzFilter selectRitzFilter(std::string s) {
-  if (s == "EvalNormSmall") { return EvalNormSmall; } else
-  if (s == "EvalNormLarge") { return EvalNormLarge; } else
-  if (s == "EvalReSmall")   { return EvalReSmall; }   else
-  if (s == "EvalReLarge")   { return EvalReLarge; }   else
-  if (s == "EvalImSmall")   { return EvalImSmall; }   else
-  if (s == "EvalImLarge")   { return EvalImLarge; }   else 
+  if (s == "EvalNormSmall")   { return EvalNormSmall; }   else
+  if (s == "EvalNormLarge")   { return EvalNormLarge; }   else
+  if (s == "EvalReSmall")     { return EvalReSmall; }     else
+  if (s == "EvalReLarge")     { return EvalReLarge; }     else
+  if (s == "EvalImSmall")     { return EvalImSmall; }     else
+  if (s == "EvalImLarge")     { return EvalImLarge; }     else 
+  if (s == "EvalImNormSmall") { return EvalImNormSmall; } else
+  if (s == "EvalImNormLarge") { return EvalImNormLarge; } else 
   { assert(0); }
 }
 
@@ -70,6 +74,10 @@ inline std::string rfToString(RitzFilter RF) {
       return "EvalImSmall";
     case EvalImLarge:
       return "EvalImLarge";
+    case EvalImNormSmall:
+      return "EvalImNormSmall";
+    case EvalImNormLarge:
+      return "EvalImNormLarge";
     default:
       assert(0);
   }
@@ -86,14 +94,6 @@ struct ComplexComparator
         return std::abs(z1) < std::abs(z2);
       case EvalNormLarge:
         return std::abs(z1) > std::abs(z2);
-      // case EvalReSmall:
-      //   return std::abs(std::real(z1)) < std::abs(std::real(z2));     // DELETE THE ABS HERE!!!
-      // case EvalReLarge:
-      //   return std::abs(std::real(z1)) > std::abs(std::real(z2));
-      // case EvalImSmall:
-      //   return std::abs(std::imag(z1)) < std::abs(std::imag(z2));
-      // case EvalImLarge:
-      //   return std::abs(std::imag(z1)) > std::abs(std::imag(z2));
       case EvalReSmall:
         return std::real(z1) < std::real(z2);     // DELETE THE ABS HERE!!!
       case EvalReLarge:
@@ -102,6 +102,10 @@ struct ComplexComparator
         return std::imag(z1) < std::imag(z2);
       case EvalImLarge:
         return std::imag(z1) > std::imag(z2);
+      case EvalImNormSmall:
+        return std::abs(std::imag(z1)) < std::abs(std::imag(z2));
+      case EvalImNormLarge:
+        return std::abs(std::imag(z1)) > std::abs(std::imag(z2));
       default:
         assert(0);
     }
@@ -325,6 +329,9 @@ class KrylovSchur {
       b = Eigen::VectorXcd::Zero(Nm);       // start as e_{k+1}
       b(Nm-1) = 1.0;
 
+      // basis = new std::vector<Field> (Nm, Grid);
+      // evecs.reserve();
+
       int start = 0;
       Field startVec = v0;
       littleEvecs = Eigen::MatrixXcd::Zero(Nm, Nm);
@@ -360,6 +367,10 @@ class KrylovSchur {
         // basisRotate(evecs, Q, 0, Nm, 0, Nm, Nm);
 
         std::vector<Field> basis2; 
+        // basis2.reserve(Nm);
+        // for (int i = start; i < Nm; i++) {
+        //   basis2.emplace_back(Grid);
+        // }
         constructUR(basis2, basis, Qt, Nm);
         basis = basis2;
 
@@ -431,14 +442,25 @@ class KrylovSchur {
       ComplexD coeff;
       Field w (Grid);           // A acting on last Krylov vector. 
 
+      // basis.reserve(Nm);
+      // for (int i = start; i < Nm; i++) {
+      //   basis.emplace_back(Grid);
+      // }
+      // basis.assign(Nm, Field(Grid));
+      // basis.resize(Nm);
+      // for (int i = start; i < Nm; i++) {
+      //   basis[i] = Field(Grid);
+      // }
+
       if (start == 0) {       // initialize everything that we need.
         RealD v0Norm = 1 / std::sqrt(ssq);
         basis.push_back(v0Norm * v0);                // normalized source
+        // basis[0] = v0Norm * v0;                // normalized source
 
         Rayleigh = Eigen::MatrixXcd::Zero(Nm, Nm);
         u = Zero();
       } else {
-        assert( start == basis.size() );      // should be starting at the end of basis (start = Nk)
+        // assert( start == basis.size() );      // should be starting at the end of basis (start = Nk)
         std::cout << GridLogMessage << "Resetting Rayleigh and b" << std::endl;
         Eigen::MatrixXcd RayleighCp = Rayleigh;
         Rayleigh = Eigen::MatrixXcd::Zero(Nm, Nm);
@@ -447,12 +469,14 @@ class KrylovSchur {
         // append b^\dag to Rayleigh, add u to basis
         Rayleigh(Nk, Eigen::seqN(0, Nk)) = b.adjoint();
         basis.push_back(u);
+        // basis[start] = u;       // TODO make sure this is correct
         b = Eigen::VectorXcd::Zero(Nm);
       }
 
       // Construct next Arnoldi vector by normalizing w_i = Dv_i - \sum_j v_j h_{ji}
       for (int i = start; i < Nm; i++) {
         Linop.Op(basis.back(), w);
+        // Linop.Op(basis[i], w);
         for (int j = 0; j < basis.size(); j++) {
           coeff = innerProduct(basis[j], w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
           Rayleigh(j, i) = coeff;
@@ -475,6 +499,7 @@ class KrylovSchur {
           basis.push_back(
             (1.0/coeff) * w
           );
+          // basis[i+1] = (1.0/coeff) * w;
         }
 
         // after iterations, update u and beta_k = ||u|| before norm
@@ -506,8 +531,11 @@ class KrylovSchur {
     {
       std::cout << GridLogMessage << "Computing eigenvalues." << std::endl;
 
-      evecs.clear();
       evals = S.diagonal();
+      int n = evals.size();       // should be regular Nm
+
+      evecs.clear();
+      // evecs.assign(n, Field(Grid));
 
       // TODO: is there a faster way to get the eigenvectors of a triangular matrix?
       // Rayleigh.triangularView<Eigen::Upper> tri;
@@ -520,7 +548,7 @@ class KrylovSchur {
       std::cout << GridLogDebug << "Little evecs: " << littleEvecs << std::endl;
 
       // Convert evecs to lattice fields
-      for (int k = 0; k < evals.size(); k++) {
+      for (int k = 0; k < n; k++) {
         Eigen::VectorXcd vec = littleEvecs.col(k);
         Field tmp (basis[0].Grid());
         tmp = Zero();
@@ -528,6 +556,7 @@ class KrylovSchur {
           tmp = tmp + vec[j] * basis[j];
         }
         evecs.push_back(tmp);
+        // evecs[k] = tmp;
       }
     }
 
@@ -583,13 +612,16 @@ class KrylovSchur {
      */
     int converged() {
       int Nconv = 0;
+      int _Nm = evecs.size();
       std::cout << GridLogDebug << "b: " << b << std::endl;
       Field tmp (Grid); Field fullEvec (Grid);
       ritzEstimates.clear();
-      for (int k = 0; k < evecs.size(); k++) {
+      // ritzEstimates.resize(_Nm);
+      for (int k = 0; k < _Nm; k++) {
         Eigen::VectorXcd evec_k = littleEvecs.col(k);
         RealD ritzEstimate = std::abs(b.dot(evec_k));           // b^\dagger s
         ritzEstimates.push_back(ritzEstimate);
+        // ritzEstimates[k] = ritzEstimate;
         std::cout << GridLogMessage << "Ritz estimate for evec " << k << " = " << ritzEstimate << std::endl;
         if (ritzEstimate < rtol) {
           Nconv++;
@@ -704,7 +736,9 @@ class KrylovSchur {
      */
     void constructUR(std::vector<Field>& UR, std::vector<Field> &U, Eigen::MatrixXcd& R, int N) {
       Field tmp (Grid);
+
       UR.clear();
+      // UR.resize(N);
 
       std::cout << GridLogDebug << "R to rotate by (should be Rayleigh): " << R << std::endl;
 
@@ -717,6 +751,7 @@ class KrylovSchur {
         }
         std::cout << GridLogDebug << "rotated norm at i = " << i << " is: " << norm2(tmp) << std::endl;
         UR.push_back(tmp);
+        // UR[i] = tmp;
       }
       return;
     }
@@ -727,12 +762,14 @@ class KrylovSchur {
     void constructRU(std::vector<Field>& RU, std::vector<Field> &U, Eigen::MatrixXcd& R, int N) {
       Field tmp (Grid);
       RU.clear();
+      // RU.resize(N);
       for (int i = 0; i < N; i++) {
         tmp = Zero();
         for (int j = 0; j < N; j++) {
           tmp = tmp + R(i, j) * U[j];
         }
         RU.push_back(tmp);
+        // RU[i] = tmp;
       }
       return;
     }
