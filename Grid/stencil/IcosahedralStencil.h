@@ -584,6 +584,8 @@ public:
     assert(grid->isIcosahedralVertex());
     
   }
+
+  
   /*
    * For gauge action implementation
    */

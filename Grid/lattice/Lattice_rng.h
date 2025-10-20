@@ -48,31 +48,45 @@ NAMESPACE_BEGIN(Grid);
 //////////////////////////////////////////////////////////////
 inline int RNGfillable(GridBase *coarse,GridBase *fine)
 {
+  if ( coarse == fine ) return 1;
 
-  int rngdims = coarse->_ndimension;
-
-  // trivially extended in higher dims, with locality guaranteeing RNG state is local to node
-  int lowerdims   = fine->_ndimension - coarse->_ndimension;
-  assert(lowerdims >= 0);
-  for(int d=0;d<lowerdims;d++){
-    assert(fine->_simd_layout[d]==1);
-    assert(fine->_processors[d]==1);
+  if ( coarse->isIcosahedral()) assert(coarse->isIcosahedralEdge());
+  
+  if ( fine->isIcosahedralVertex() && coarse->isIcosahedralEdge() ) {
+    assert(fine->Nd()==coarse->Nd());
+    for(int d=0;d<fine->Nd();d++){
+      assert(fine->LocalDimensions()[d] == coarse->LocalDimensions()[d]);
+    }
+    return 1;
   }
+    
+  {
+    
+    int rngdims = coarse->_ndimension;
 
-  int multiplicity=1;
-  for(int d=0;d<lowerdims;d++){
-    multiplicity=multiplicity*fine->_rdimensions[d];
-  }
-  // local and global volumes subdivide cleanly after SIMDization
-  for(int d=0;d<rngdims;d++){
-    int fd= d+lowerdims;
-    assert(coarse->_processors[d]  == fine->_processors[fd]);
-    assert(coarse->_simd_layout[d] == fine->_simd_layout[fd]);
-    assert(((fine->_rdimensions[fd] / coarse->_rdimensions[d])* coarse->_rdimensions[d])==fine->_rdimensions[fd]); 
+    // trivially extended in higher dims, with locality guaranteeing RNG state is local to node
+    int lowerdims   = fine->_ndimension - coarse->_ndimension;
+    assert(lowerdims >= 0);
+    for(int d=0;d<lowerdims;d++){
+      assert(fine->_simd_layout[d]==1);
+      assert(fine->_processors[d]==1);
+    }
 
-    multiplicity = multiplicity *fine->_rdimensions[fd] / coarse->_rdimensions[d]; 
+    int multiplicity=1;
+    for(int d=0;d<lowerdims;d++){
+      multiplicity=multiplicity*fine->_rdimensions[d];
+    }
+    // local and global volumes subdivide cleanly after SIMDization
+    for(int d=0;d<rngdims;d++){
+      int fd= d+lowerdims;
+      assert(coarse->_processors[d]  == fine->_processors[fd]);
+      assert(coarse->_simd_layout[d] == fine->_simd_layout[fd]);
+      assert(((fine->_rdimensions[fd] / coarse->_rdimensions[d])* coarse->_rdimensions[d])==fine->_rdimensions[fd]); 
+
+      multiplicity = multiplicity *fine->_rdimensions[fd] / coarse->_rdimensions[d]; 
+    }
+    return multiplicity;
   }
-  return multiplicity;
 }
 
   
@@ -80,6 +94,19 @@ inline int RNGfillable(GridBase *coarse,GridBase *fine)
 // this function is necessary for the LS vectorised field
 inline int RNGfillable_general(GridBase *coarse,GridBase *fine)
 {
+
+  if ( coarse == fine ) return 1;
+
+  if ( coarse->isIcosahedral()) assert(coarse->isIcosahedralEdge());
+  
+  if ( fine->isIcosahedralVertex() && coarse->isIcosahedralEdge() ) {
+    assert(fine->Nd()==coarse->Nd());
+    for(int d=0;d<fine->Nd();d++){
+      assert(fine->LocalDimensions()[d] == coarse->LocalDimensions()[d]);
+    }
+    return 1;
+  }
+
   int rngdims = coarse->_ndimension;
     
   // trivially extended in higher dims, with locality guaranteeing RNG state is local to node
@@ -352,12 +379,12 @@ private:
 public:
   GridBase *Grid(void) const { return _grid; }
   int generator_idx(int os,int is) {
-    return is*_grid->oSites()+os;
+    return (is*_grid->CartesianOsites()+os)%_grid->lSites(); // On the pole sites wrap back to normal generators; Icosahedral hack
   }
 
   GridParallelRNG(GridBase *grid) : GridRNGbase() {
     _grid = grid;
-    _vol  =_grid->iSites()*_grid->oSites();
+    _vol  =_grid->lSites();
 
     _generators.resize(_vol);
     _uniform.resize(_vol,std::uniform_real_distribution<RealD>{0,1});
@@ -381,7 +408,7 @@ public:
 
     int multiplicity = RNGfillable_general(_grid, l.Grid()); // l has finer or same grid
     int Nsimd  = _grid->Nsimd();  // guaranteed to be the same for l.Grid() too
-    int osites = _grid->oSites();  // guaranteed to be <= l.Grid()->oSites() by a factor multiplicity
+    int osites = _grid->CartesianOsites();  // guaranteed to be <= l.Grid()->oSites() by a factor multiplicity, except on Icosahedral
     int words  = sizeof(scalar_object) / sizeof(scalar_type);
 
     autoView(l_v, l, CpuWrite);
@@ -402,8 +429,27 @@ public:
 	// merge into SIMD lanes, FIXME suboptimal implementation
 	merge(l_v[sm], buf);
       }
-      });
-    //    });
+    });
+
+    /*
+     * Fill in the poles for an Icosahedral vertex mesh
+     */
+    if (l.Grid()->isIcosahedralVertex()) { 
+      int64_t pole_sites=l.Grid()->NorthPoleOsites()+l.Grid()->SouthPoleOsites();
+      int64_t pole_base =l.Grid()->CartesianOsites();
+
+      ExtractBuffer<scalar_object> buf(Nsimd);
+      for (int m = 0; m < pole_sites; m++) {  // Draw from same generator multiplicity times                                                                                                           
+        for (int si = 0; si < Nsimd; si++) {
+          int gdx = 0;
+	  scalar_type *pointer = (scalar_type *)&buf[si];
+          dist[gdx].reset();
+          for (int idx = 0; idx < words; idx++)
+            fillScalar(pointer[idx], dist[gdx], _generators[gdx]);
+        }
+        merge(l_v[pole_base+m], buf);
+      }      
+    }
 
     _time_counter += usecond()- inner_time_counter;
   }

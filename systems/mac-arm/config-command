@@ -1,5 +1,6 @@
 MPICXX=mpicxx CXXFLAGS=-I/opt/local/include LDFLAGS=-L/opt/local/lib/ CXX=clang++ ../../configure \
 	      --enable-simd=GEN \
+	      --enable-Nc=1 \
 	      --enable-comms=mpi-auto \
 	      --enable-unified=yes \
 	      --prefix $HOME/QCD/GridInstall \
