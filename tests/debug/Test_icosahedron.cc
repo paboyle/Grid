@@ -59,7 +59,7 @@ public:
 };
   
 template< class Gimpl>
-class IcosahedralEdgeSupport {
+class IcosahedralSupport {
 public:
   // Move to inherit types macro as before
   typedef typename Gimpl::GaugeField GaugeField;
@@ -74,7 +74,7 @@ public:
   IcosahedralStencil NNev; // vertex neighbours but in edge domain
   IcosahedralStencil NNvv; // vertex neighbours with vertex domain
   
-  IcosahedralEdgeSupport(GridBase *_VertexGrid,GridBase *_EdgeGrid)
+  IcosahedralSupport(GridBase *_VertexGrid,GridBase *_EdgeGrid)
     : FaceStencil (_EdgeGrid), NNee(_EdgeGrid), NNev(_VertexGrid), NNvv(_VertexGrid), VertexGrid(_VertexGrid), EdgeGrid(_EdgeGrid)
   {
     FaceStencil.FaceStencil();
@@ -530,7 +530,7 @@ int main (int argc, char ** argv)
   }
 
   std::cout << GridLogMessage << "Creating face stencil"<<std::endl;
-  IcosahedralEdgeSupport<IcosahedralGimpl> Support(&VertexGrid,&EdgeGrid);
+  IcosahedralSupport<IcosahedralGimpl> Support(&VertexGrid,&EdgeGrid);
 
   std::cout << GridLogMessage << " Calling Test Geometry "<<std::endl;
   Support.FaceStencil.TestGeometry();
