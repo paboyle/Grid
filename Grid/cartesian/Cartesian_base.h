@@ -97,6 +97,8 @@ public:
   virtual int NorthPoleOsites(void) const { std::cout << "base osites" <<std::endl;return 0; };
   virtual int SouthPoleOsites(void) const { std::cout << "base osites" <<std::endl;return 0; };
   virtual int CartesianOsites(void) const { return this->oSites(); };
+  virtual int64_t PoleIdxForOcoor(Coordinate &Coor) { return 0;};
+  virtual int64_t PoleSiteForOcoor(Coordinate &Coor){ return 0;}
 
   ////////////////////////////////////////////////////////////////
   // Checkerboarding interface is virtual and overridden by 

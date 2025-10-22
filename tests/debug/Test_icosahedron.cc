@@ -68,14 +68,19 @@ public:
   //
   GridBase *VertexGrid;
   GridBase *EdgeGrid;
+
   IcosahedralStencil FaceStencil;
-  IcosahedralStencil NNStencil;
+  IcosahedralStencil NNee; // edge neighbours with edge domain
+  IcosahedralStencil NNev; // vertex neighbours but in edge domain
+  IcosahedralStencil NNvv; // vertex neighbours with vertex domain
   
   IcosahedralEdgeSupport(GridBase *_VertexGrid,GridBase *_EdgeGrid)
-    : FaceStencil (EdgeGrid), NNStencil(EdgeGrid), VertexGrid(_VertexGrid), EdgeGrid(_EdgeGrid)
+    : FaceStencil (_EdgeGrid), NNee(_EdgeGrid), NNev(_VertexGrid), NNvv(_VertexGrid), VertexGrid(_VertexGrid), EdgeGrid(_EdgeGrid)
   {
     FaceStencil.FaceStencil();
-    NNStencil.NearestNeighbourStencil(); // Vertex nearest neighbour
+    NNee.NearestNeighbourStencil(false);// Edge nearest neighbour
+    NNev.NearestNeighbourStencil(false);// Edge result, vertex neighbour
+    NNvv.NearestNeighbourStencil(true); // vertex result and neighbour
   }
 
   ////////////////////////////////////////////////////////////////////////////////////
@@ -147,9 +152,9 @@ public:
       autoView(stapleDX_v,stapleDX,AcceleratorWrite);
       autoView(stapleYD_v,stapleYD,AcceleratorWrite);
       autoView(stapleDY_v,stapleDY,AcceleratorWrite);
-      autoView(stencil_v,NNStencil,AcceleratorRead);
+      autoView(stencil_v,NNee,AcceleratorRead);
 
-      const int np = NNStencil._npoints;
+      const int np = NNee._npoints;
       
       accelerator_for(ss,EdgeGrid->oSites(),vComplex::Nsimd(),{
 
@@ -266,9 +271,82 @@ public:
   }
   
   /*
+   * Should be able to use the Vertex based stencil to do the GT, picking forward hops
+   */
+  template<class MatterField>
+  void  CovariantLaplacian(MatterField &in,MatterField &out, GaugeField &Umu)
+  {
+  }
+  void  GaugeTransform(GaugeLinkField &gt, GaugeField &Umu)
+  {
+    autoView(Umu_v,Umu,AcceleratorWrite);
+    autoView(g_v,gt,AcceleratorRead);
+    autoView(stencil_v,NNev,AcceleratorRead);
+
+    const int np = NNev._npoints;
+
+    std::cout << GridLogMessage<< "GaugeTransform via STENCIL "<<std::endl;
+
+    accelerator_for(ss,EdgeGrid->oSites(),vComplex::Nsimd(),{
+
+      const int ent_Xp = 0;
+      const int ent_Yp = 1;
+      const int ent_Dp = 2;
+      const int ent_Xm = 3;
+      const int ent_Ym = 4;
+      const int ent_Dm = 5;
+      
+      Integer lexXp = ss*np+ent_Xp;
+      Integer lexYp = ss*np+ent_Yp;
+      Integer lexDp = ss*np+ent_Dp;
+      Integer lexXm = ss*np+ent_Xm;
+      Integer lexYm = ss*np+ent_Ym;
+      Integer lexDm = ss*np+ent_Dm;
+	  
+      const int x = IcosahedronPatchX;
+      const int y = IcosahedronPatchY;
+      const int d = IcosahedronPatchDiagonal;
+
+      // Three forward links from this site
+      auto Lx = Umu_v(ss)(x);
+      auto Ly = Umu_v(ss)(y);
+      auto Ld = Umu_v(ss)(d);
+
+      uint64_t xp_idx;
+      uint64_t yp_idx;
+      uint64_t dp_idx;
+
+      auto SE = stencil_v.GetEntry(ent_Xp,ss);
+      xp_idx = SE->_offset;
+
+      SE = stencil_v.GetEntry(ent_Yp,ss);
+      yp_idx = SE->_offset;
+
+      SE = stencil_v.GetEntry(ent_Dp,ss);
+      dp_idx = SE->_offset;
+
+      auto g  = g_v(ss)();
+      auto gx = g_v(xp_idx)();
+      auto gy = g_v(yp_idx)();
+      auto gd = g_v(dp_idx)();
+
+      auto lx = Umu_v(ss)(IcosahedronPatchX);
+      auto ly = Umu_v(ss)(IcosahedronPatchY);
+      auto ld = Umu_v(ss)(IcosahedronPatchDiagonal);
+
+      lx = g*lx*adj(gx);
+      ly = g*ly*adj(gy);
+      ld = g*ld*adj(gd);
+      
+      coalescedWrite(Umu_v[ss](IcosahedronPatchX),lx);
+      coalescedWrite(Umu_v[ss](IcosahedronPatchY),ly);
+      coalescedWrite(Umu_v[ss](IcosahedronPatchDiagonal),ld);
+      });
+  }
+  /*
    * This routine is slow and single threaded on CPU
    */
-  void  GaugeTransform(GaugeLinkField &gt, GaugeField &Umu)
+  void  GaugeTransformCPU(GaugeLinkField &gt, GaugeField &Umu)
   {
     assert(gt.Grid()==VertexGrid);
     assert(Umu.Grid()==EdgeGrid);
@@ -372,6 +450,20 @@ public:
       auto ly = Umu_v(site)(IcosahedronPatchY);
       auto ld = Umu_v(site)(IcosahedronPatchDiagonal);
       
+      /*
+	std::cout << "site "<<site<<std::endl;
+	std::cout << " xp_idx "<<xp_idx<<std::endl;
+	std::cout << " yp_idx "<<yp_idx<<std::endl;
+	std::cout << " dp_idx "<<dp_idx<<std::endl;
+	std::cout << " g  "<<g<<std::endl;
+	std::cout << " gx "<<gx<<std::endl;
+	std::cout << " gy "<<gy<<std::endl;
+	std::cout << " gd "<<gd<<std::endl;
+	std::cout << " lx "<<lx<<std::endl;
+	std::cout << " ly "<<ly<<std::endl;
+	std::cout << " ld "<<ld<<std::endl;
+      */
+      
       lx = g*lx*adj(gx);
       ly = g*ly*adj(gy);
       ld = g*ld*adj(gd);
@@ -405,6 +497,7 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << " Created vertex grid "<<std::endl;
   LatticeIcosahedralLorentzColourMatrix Umu(&EdgeGrid);
+  LatticeIcosahedralLorentzColourMatrix Umuck(&EdgeGrid);
   LatticeComplex Phi(&VertexGrid);
   std::cout << GridLogMessage << " Created two fields "<<std::endl;
 
@@ -476,7 +569,11 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Check plaquette is gauge invariant "<<std::endl;
   std::cout << GridLogMessage << "****************************************"<<std::endl;
   std::cout << GridLogMessage << " applying gauge transform"<<std::endl;
-  Support.GaugeTransform(g,Umu);
+  Umuck = Umu;
+  Support.GaugeTransform    (g,Umuck);
+  Support.GaugeTransformCPU(g,Umu);
+  Umuck = Umuck - Umu;
+  std::cout << GridLogMessage <<"Diff between reference GT and stencil GT: "<<norm2(Umuck) <<std::endl;
   std::cout << GridLogMessage << " applied gauge transform "<<std::endl;
   //  std::cout << "Umu\n"<< Umu << std::endl;
   std::cout << GridLogMessage << " recalculating plaquette "<<std::endl;

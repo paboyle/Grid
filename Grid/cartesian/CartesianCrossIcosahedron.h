@@ -124,6 +124,34 @@ public:
   virtual int ownsNorthPole(void)   const override { return hasNorthPole; };
   virtual int ownsSouthPole(void)   const override { return hasSouthPole; };
   virtual int CartesianOsites(void) const override { return cartesianOsites; };
+  virtual int64_t PoleIdxForOcoor(Coordinate &Coor) override
+  {
+    // Work out the pole_osite. Pick the higher dims
+    Coordinate rdims;
+    Coordinate ocoor;
+    int64_t pole_idx;
+    int Ndm1 = this->Nd()-1;
+    for(int d=2;d<Ndm1;d++){
+      int dd=d-2;
+      rdims.push_back(this->_rdimensions[d]);
+      ocoor.push_back(Coor[d]%this->_rdimensions[d]);
+    }
+    Lexicographic::IndexFromCoor(ocoor,pole_idx,rdims);
+    return pole_idx;
+  }
+  virtual int64_t PoleSiteForOcoor(Coordinate &Coor) override
+  {
+    int Ndm1 = this->Nd()-1;
+    int64_t pole_idx = this->PoleIdxForOcoor(Coor);
+    int64_t pole_osite;
+    if ( Coor[Ndm1] >= HemiPatches ) {
+      pole_osite = pole_idx + this->NorthPoleOsite();
+    } else {
+      pole_osite = pole_idx + this->SouthPoleOsite();
+    }
+    return pole_osite;
+  }
+
 
   void InitPoles(void)
   {

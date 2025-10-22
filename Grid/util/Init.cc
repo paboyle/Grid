@@ -189,8 +189,8 @@ void GridParseLayout(char **argv,int argc,
 {
   auto mpi =std::vector<int>(Nd,1);
   auto latt=std::vector<int>(Nd,8);
-  std::cout << "Default mpi "<<mpi<<std::endl;
-  std::cout << "Default latt"<<latt<<std::endl;
+
+
   GridThread::SetMaxThreads();
 
   std::string arg;

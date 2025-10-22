@@ -578,11 +578,22 @@ public:
     // Loop over L^2 x T x npatch and the
     assert(grid->isIcosahedral());
   }
-  void NearestNeighbourStencil(void)
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // VertexInputs = true  implies the neighbour has vertex support
+  // VertexInputs = false implies the neighbout has edge support
+  // 
+  // isVertex implies must generate stencil entries to evaluate result on north/south pole
+  //
+  // These are independent:
+  //     can apply a vertex support gauge transform to edge supported gauge field
+  //     can apply a vertex supported link double store to edge supported gauge field
+  //     can apply a vertex supported laplace or dirac operator vertex supported matter field
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  void NearestNeighbourStencil(int vertexOutputs)
   {
     GridBase * grid = this->_grid;
 
-    int isVertex = grid->isIcosahedralVertex();
+    int vertexInputs = grid->isIcosahedralVertex(); 
 
     int osites  = grid->oSites();
 
@@ -599,13 +610,14 @@ public:
     this->_entries.resize(this->_npoints * cart_sites);
     this->_entries_p = &_entries[0];
 
+    int nd = grid->Nd();
+    int L  = grid->LocalDimensions()[0];
+
     for(uint64_t site=0;site<cart_sites; site ++) {
 
       Coordinate Coor;
       Coordinate NbrCoor;
 
-      int nd = grid->Nd();
-      int L  = grid->LocalDimensions()[0];
 
       Integer lexXp = site*np  ;
       Integer lexYp = site*np+1;
@@ -669,42 +681,64 @@ public:
       int YmHemiPatch  = YmCoor[nd-1]%HemiPatches;
       int YmHemisphere = YmCoor[nd-1]/HemiPatches;
 
-      if ( isVertex ) assert(0);
-
-      ////////////////////////////////////////////////
-      // XpCoor stencil entry
-      // Store in look up table
-      ////////////////////////////////////////////////
-      // Basis rotates dictates BOTH adjoint and polarisation
-      // Could reduce the amount of information stored here
-      SE._adjoint      = false;
-      SE._is_local     = true;
-      SE._missing_link = false;
-      if ( DpHemiPatch != HemiPatch && south ) {
-	SE._offset       = grid->oIndex(DpCoor);
+      if ( vertexInputs ) {
+	////////////////////////////////////////////////
+	// XpCoor stencil entry; consider isPole case
+	////////////////////////////////////////////////
+	SE._is_local     = true;
+	SE._missing_link = false;
+	SE._offset       = grid->oIndex(XpCoor);
+	if ( isPoleX ) {
+	  SE._offset     = grid->PoleSiteForOcoor(Coor);
+	}
+	SE._polarisation = IcosahedronPatchY;
+	SE._adjoint      = false;
+	acceleratorPut(this->_entries[lexXp],SE);
+	////////////////////////////////////////////////
+	// for YpCoor
+	////////////////////////////////////////////////
+	SE._is_local     = true;
+	SE._missing_link = false;
+	SE._offset       = grid->oIndex(YpCoor);
+	if ( isPoleY ) {
+	  SE._offset     = grid->PoleSiteForOcoor(Coor); 
+	}
 	SE._polarisation = IcosahedronPatchX;
-	SE._adjoint      = true;
-      } else {
+	SE._adjoint      = false;
+	acceleratorPut(this->_entries[lexYp],SE);
+      } else { 
+	////////////////////////////////////////////////
+	// XpCoor stencil entry
+	// Store in look up table
+	////////////////////////////////////////////////
+	// Basis rotates dictates BOTH adjoint and polarisation
+	// Could reduce the amount of information stored here
+	SE._is_local     = true;
+	SE._missing_link = false;
 	SE._offset       = grid->oIndex(XpCoor);
 	SE._polarisation = IcosahedronPatchY;
-      }
-      acceleratorPut(this->_entries[lexXp],SE);
-      
-      ////////////////////////////////////////////////
-      // for YpCoor
-      ////////////////////////////////////////////////
-      SE._adjoint      = false;
-      SE._is_local     = true;
-      SE._missing_link = false;
-      if ( YpHemiPatch != HemiPatch && north ) {
-	SE._offset       = grid->oIndex(DpCoor);
-	SE._polarisation = IcosahedronPatchY;
-	SE._adjoint      = true;
-      } else {
+	SE._adjoint      = false;
+	if ( DpHemiPatch != HemiPatch && south ) {
+	  SE._offset       = grid->oIndex(DpCoor);
+	  SE._polarisation = IcosahedronPatchX;
+	  SE._adjoint      = true;
+	}
+	acceleratorPut(this->_entries[lexXp],SE);
+	////////////////////////////////////////////////
+	// for YpCoor
+	////////////////////////////////////////////////
+	SE._is_local     = true;
+	SE._missing_link = false;
 	SE._offset       = grid->oIndex(YpCoor);
 	SE._polarisation = IcosahedronPatchX;
+	SE._adjoint      = false;
+	if ( YpHemiPatch != HemiPatch && north ) {
+	  SE._offset       = grid->oIndex(DpCoor);
+	  SE._polarisation = IcosahedronPatchY;
+	  SE._adjoint      = true;
+	}
+	acceleratorPut(this->_entries[lexYp],SE);
       }
-      acceleratorPut(this->_entries[lexYp],SE);
 
       SE._adjoint      = false;
       SE._is_local     = true;
@@ -713,24 +747,20 @@ public:
       // XmCoor stencil entry
       // Store in look up table
       ////////////////////////////////////////////////
+      SE._offset       = grid->oIndex(XmCoor);
+      SE._polarisation = IcosahedronPatchDiagonal;
       if ( XmHemiPatch != HemiPatch && north ) {
-	SE._offset       = grid->oIndex(XmCoor);
 	SE._polarisation = IcosahedronPatchY; // nbrs Y instead of diagonal in North hemisphere exceptional case
-      } else {
-	SE._offset       = grid->oIndex(XmCoor);
-	SE._polarisation = IcosahedronPatchDiagonal;
       }
       acceleratorPut(this->_entries[lexXm],SE);
       
       ////////////////////////////////////////////////
       // for YmCoor
       ////////////////////////////////////////////////
+      SE._offset       = grid->oIndex(YmCoor);
+      SE._polarisation = IcosahedronPatchDiagonal;
       if ( YmHemiPatch != HemiPatch && south ) {
-	SE._offset       = grid->oIndex(YmCoor);
 	SE._polarisation = IcosahedronPatchX;   // Basis rotates
-      } else {
-	SE._offset       = grid->oIndex(YmCoor);
-	SE._polarisation = IcosahedronPatchDiagonal;
       }
       acceleratorPut(this->_entries[lexYm],SE);
       
@@ -750,6 +780,51 @@ public:
       SE._polarisation = IcosahedronPatchDiagonal; // should ignore
       SE._missing_link = missingLink;
       acceleratorPut(this->_entries[lexDm],SE);
+    }
+    if ( vertexOutputs ) {
+      int ndm1 = grid->Nd()-1;
+      if ( grid->ownsSouthPole() ) {
+	IcosahedralStencilEntry SE;
+	for(uint64_t site=0;site<cart_sites; site ++) {
+	  Coordinate Coor;
+	  grid->oCoorFromOindex(Coor,site);
+	  if( (Coor[0]==L)&&(Coor[1]==0) ) {
+	    int64_t pole_site = grid->PoleSiteForOcoor(Coor);
+	    int64_t lex       = pole_site*np+Coor[ndm1];
+	    SE._offset       = site;
+	    SE._is_local     = true;
+	    SE._polarisation = IcosahedronPatchX;  // ignored
+	    SE._adjoint      = false;              // ignored
+	    SE._missing_link = false;
+	    acceleratorPut(this->_entries[lex],SE);
+	    
+	    int64_t lex5      = pole_site*np+5; // We miss the backwards link
+	    SE._missing_link = true;
+	    acceleratorPut(this->_entries[lex5],SE);
+	  }
+	}
+      }
+      if ( grid->ownsNorthPole() ) {
+	IcosahedralStencilEntry SE;
+	for(uint64_t site=0;site<cart_sites; site ++) {
+	  Coordinate Coor;
+	  grid->oCoorFromOindex(Coor,site);
+	  if( (Coor[0]==0)&&(Coor[1]==L) ) {
+	    int64_t pole_site = grid->PoleSiteForOcoor(Coor);
+	    int64_t lex       = pole_site*np+Coor[ndm1];
+	    SE._offset       = site;
+	    SE._is_local     = true;
+	    SE._polarisation = IcosahedronPatchX;  // ignored
+	    SE._adjoint      = false;              // ignored
+	    SE._missing_link = false;
+	    acceleratorPut(this->_entries[lex],SE);
+	    
+	    int64_t lex5     = pole_site*np+5; // We miss the backwards link
+	    SE._missing_link = true;
+	    acceleratorPut(this->_entries[lex5],SE);
+	  }
+	}
+      }
     }
   }
     /*************************************************************
