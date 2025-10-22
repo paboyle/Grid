@@ -69,11 +69,13 @@ public:
   GridBase *VertexGrid;
   GridBase *EdgeGrid;
   IcosahedralStencil FaceStencil;
+  IcosahedralStencil NNStencil;
   
   IcosahedralEdgeSupport(GridBase *_VertexGrid,GridBase *_EdgeGrid)
-    : FaceStencil (EdgeGrid), VertexGrid(_VertexGrid), EdgeGrid(_EdgeGrid)
+    : FaceStencil (EdgeGrid), NNStencil(EdgeGrid), VertexGrid(_VertexGrid), EdgeGrid(_EdgeGrid)
   {
     FaceStencil.FaceStencil();
+    NNStencil.NearestNeighbourStencil(); // Vertex nearest neighbour
   }
 
   ////////////////////////////////////////////////////////////////////////////////////
@@ -110,8 +112,10 @@ public:
 
 	  coalescedWrite(plaq1_v[ss](),trace(Lx*L1*adj(Ld) ) );
 	}
-	
-	// for trace [  U_y(z) adj(U_d(z))  U_x(z+\hat y) ]
+
+	// This was wrong after GT
+	// Could be EITHER the GT or the the plaq / stencil
+	// for trace [  U_y(z) U_x(z+\hat y) adj(U_d(z))   ]
 	{
 	  auto SE2 = stencil_v.GetEntry(1,ss);
 	  auto doAdj = SE2->_adjoint;
@@ -120,17 +124,156 @@ public:
 	  auto L2 = Umu_v(s2)(pol);
 	  if(doAdj)
 	    L2 = adj(L2);
-
-	  coalescedWrite(plaq2_v[ss](),trace(Ly*adj(Ld)*L2 ) );
+	  coalescedWrite(plaq2_v[ss](),trace(Ly*L2*adj(Ld) ) );
+	  //	  std::cout << "site "<< ss<<" plaq "<< plaq2_v[ss] << " doAdj "<< (int) doAdj<<" pol "<<(int) pol <<std::endl;
 	}
       });
     }
   }
 
+  // Staples for gauge force
+  void IcosahedralStaples(GaugeField &Umu,
+			  GaugeLinkField &stapleXY,
+			  GaugeLinkField &stapleYX,
+			  GaugeLinkField &stapleXD,
+			  GaugeLinkField &stapleDX,
+			  GaugeLinkField &stapleYD,
+			  GaugeLinkField &stapleDY)
+  {
+      autoView(Umu_v,Umu,AcceleratorRead);
+      autoView(stapleXY_v,stapleXY,AcceleratorWrite);
+      autoView(stapleYX_v,stapleYX,AcceleratorWrite);
+      autoView(stapleXD_v,stapleXD,AcceleratorWrite);
+      autoView(stapleDX_v,stapleDX,AcceleratorWrite);
+      autoView(stapleYD_v,stapleYD,AcceleratorWrite);
+      autoView(stapleDY_v,stapleDY,AcceleratorWrite);
+      autoView(stencil_v,NNStencil,AcceleratorRead);
+
+      const int np = NNStencil._npoints;
+      
+      accelerator_for(ss,EdgeGrid->oSites(),vComplex::Nsimd(),{
+
+	const int ent_Xp = 0;
+	const int ent_Yp = 1;
+	const int ent_Xm = 3;
+	const int ent_Ym = 4;
+
+	Integer lexXp = ss*np+ent_Xp;
+	Integer lexYp = ss*np+ent_Yp;
+	Integer lexXm = ss*np+ent_Xm;
+	Integer lexYm = ss*np+ent_Ym;
+	//	Integer lexDp = ss*np+2; // Not touched by staples.
+	//	Integer lexDm = ss*np+5;
+	  
+	const int x = IcosahedronPatchX;
+	const int y = IcosahedronPatchY;
+	const int d = IcosahedronPatchDiagonal;
+
+	// Three forward links from this site
+	auto Lx = Umu_v(ss)(x);
+	auto Ly = Umu_v(ss)(y);
+	auto Ld = Umu_v(ss)(d);
+
+	///////////////////////////////////////////////////////////////////
+	// Terms for the staple orthog to PlusDiagonal
+	///////////////////////////////////////////////////////////////////
+	// adj( U_y(z+\hat x)) adj(U_x(z)) 
+	{
+	  auto SE1 = stencil_v.GetEntry(ent_Xp,ss);
+	  auto doAdj = SE1->_adjoint;
+	  auto pol   = SE1->_polarisation;
+	  auto s1    = SE1->_offset;
+	  auto Ly_at_xp = Umu_v(s1)(pol);
+	  if(doAdj)
+	    Ly_at_xp = adj(Ly_at_xp);
+	  coalescedWrite(stapleXY_v[ss](),adj(Ly_at_xp)*adj(Lx)  );
+	}
+	// adj( U_y(z) )  adj(U_x(z+\hat y))
+	{
+	  auto SE2 = stencil_v.GetEntry(ent_Yp,ss);
+	  auto doAdj = SE2->_adjoint;
+	  auto pol   = SE2->_polarisation;
+	  auto s2    = SE2->_offset;
+	  auto Lx_at_yp = Umu_v(s2)(pol);
+	  if(doAdj)
+	    Lx_at_yp = adj(Lx_at_yp);
+
+	  coalescedWrite(stapleYX_v[ss](),adj(Lx_at_yp)*adj(Ly) );
+	}
+	///////////////////////////////////////////////////////////////////
+	// Terms for the staple covering Xp : Dp Yp(x++) and Yp(y--) Dp(y--)
+	///////////////////////////////////////////////////////////////////
+	// U_y(z+\hat x)*adj(U_d(z)) 
+	{
+	  auto SE1 = stencil_v.GetEntry(ent_Xp,ss);
+	  auto doAdj = SE1->_adjoint;
+	  auto pol   = SE1->_polarisation;
+	  auto s1    = SE1->_offset;
+	  auto Ly_at_xp = Umu_v(s1)(pol);
+	  if(doAdj)
+	    Ly_at_xp = adj(Ly_at_xp);
+	  coalescedWrite(stapleDY_v[ss](), Ly_at_xp *adj(Ld));
+	}
+	//  adj(U_d(z-\hat y)) U_y(z-\hat y)
+	{
+	  auto SE2 = stencil_v.GetEntry(ent_Ym,ss);
+	  auto doAdj = SE2->_adjoint;
+	  auto pol   = SE2->_polarisation;
+	  auto s2    = SE2->_offset;
+	  int pol1 = IcosahedronPatchY;
+	  int pol2 = IcosahedronPatchDiagonal;
+	  if ( pol != IcosahedronPatchDiagonal ) {
+	    pol1 = IcosahedronPatchDiagonal;
+	    pol2 = IcosahedronPatchX;
+	  }
+	  auto Ly_at_ym = Umu_v(s2)(pol1);
+	  auto Ld_at_ym = Umu_v(s2)(pol2);
+	  coalescedWrite(stapleYD_v[ss](),adj(Ld_at_ym)*Ly_at_ym );
+	}
+	///////////////////////////////////////////////////////////////////
+	// Terms for the staple covering Yp : Dp Xp(y++) and Xp(x--) Dp(x--)
+	///////////////////////////////////////////////////////////////////
+	//  U_x(z+\hat y)adj(U_d(z))
+	{
+	  auto SE1 = stencil_v.GetEntry(ent_Yp,ss);
+	  auto doAdj = SE1->_adjoint;
+	  auto pol   = SE1->_polarisation;
+	  auto s1    = SE1->_offset;
+	  auto Lx_at_yp = Umu_v(s1)(pol);
+	  if(doAdj)
+	    Lx_at_yp = adj(Lx_at_yp);
+	  coalescedWrite(stapleDX_v[ss](),Lx_at_yp*adj(Ld) );
+	}
+
+	//  adj(U_d(z-\hat x))U_x(z-\hat x)
+	{
+	  auto SE2 = stencil_v.GetEntry(ent_Xm,ss);
+	  auto doAdj = SE2->_adjoint;
+	  auto pol   = SE2->_polarisation;
+	  auto s2    = SE2->_offset;
+	  int pol1 = IcosahedronPatchX;
+	  int pol2 = IcosahedronPatchDiagonal;
+	  if ( pol != IcosahedronPatchDiagonal ) {
+	    pol1 = IcosahedronPatchDiagonal;
+	    pol2 = IcosahedronPatchY;
+	  }
+	  auto Ly = Umu_v(ss)(IcosahedronPatchY);
+	  auto Lx_at_xm = Umu_v(s2)(pol1);
+	  auto Ld_at_xm = Umu_v(s2)(pol2);
+	  coalescedWrite(stapleXD_v[ss](),adj(Ld_at_xm)*Lx_at_xm );
+	}
+      });
+  }
+  
+  /*
+   * This routine is slow and single threaded on CPU
+   */
   void  GaugeTransform(GaugeLinkField &gt, GaugeField &Umu)
   {
     assert(gt.Grid()==VertexGrid);
     assert(Umu.Grid()==EdgeGrid);
+    assert(VertexGrid->isIcosahedralVertex());
+    assert(EdgeGrid->isIcosahedralEdge());
     
     GridBase * vgrid = VertexGrid;
     GridBase * grid  = EdgeGrid;
@@ -208,13 +351,13 @@ public:
       uint64_t dp_idx;
       if ( isPoleX ) {
 	assert(vgrid->ownsSouthPole());
-	xp_idx = pole_osite + grid->SouthPoleOsite();
+	xp_idx = pole_osite + vgrid->SouthPoleOsite();
       } else {
 	xp_idx = grid->oIndex(XpCoor);
       }
       if ( isPoleY ) {
 	assert(vgrid->ownsNorthPole());
-	yp_idx = pole_osite + grid->NorthPoleOsite();
+	yp_idx = pole_osite + vgrid->NorthPoleOsite();
       } else {
 	yp_idx = grid->oIndex(YpCoor);
       }
@@ -279,24 +422,24 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " E = "<<norm2(Umu)<<std::endl;
   std::cout << GridLogMessage << " Expect "<<latt_size[0]*latt_size[1]*latt_size[2]*10*4<<std::endl;
 
-  //  std::cout << " Umu "<<Umu<<std::endl;
-  //  std::cout << " Phi "<<Phi<<std::endl;
+  //  std::cout << " Umu "<<Umu<<std::endl; // debugged, so comment out to reduce verbose
+  //  std::cout << " Phi "<<Phi<<std::endl; // debugged, so comment out to reduce verbose
   LatticePole(Phi,South);
-  //  std::cout << " Phi South Pole set\n"<<Phi<<std::endl;
+  //  std::cout << " Phi South Pole set\n"<<Phi<<std::endl; // debugged, so comment out to reduce verbose
 
   LatticePole(Phi,North);
-  //  std::cout << " Phi North Pole set\n"<<Phi<<std::endl;
+  //  std::cout << " Phi North Pole set\n"<<Phi<<std::endl; // debugged, so comment out to reduce verbose
 
   for(int mu=0;mu<VertexGrid._ndimension;mu++){
-    std::cout << " Calling lattice coordinate mu="<<mu<<std::endl;
+    std::cout << GridLogMessage << " Calling lattice coordinate mu="<<mu<<std::endl;
     LatticeCoordinate(Phi,mu);
-    //    std::cout << " Phi coor mu="<<mu<<"\n"<<Phi<<std::endl;
+    //    std::cout << GridLogMessage << " Phi coor mu="<<mu<<"\n"<<Phi<<std::endl; // debugged, so comment out to reduce verbose
   }
 
-  std::cout << "Creating face stencil"<<std::endl;
+  std::cout << GridLogMessage << "Creating face stencil"<<std::endl;
   IcosahedralEdgeSupport<IcosahedralGimpl> Support(&VertexGrid,&EdgeGrid);
 
-  std::cout << " Calling Test Geometry "<<std::endl;
+  std::cout << GridLogMessage << " Calling Test Geometry "<<std::endl;
   Support.FaceStencil.TestGeometry();
 
 
@@ -304,32 +447,99 @@ int main (int argc, char ** argv)
   LatticeComplex plaq1(&EdgeGrid);
   LatticeComplex plaq2(&EdgeGrid);
 
+  LatticeComplex plaq_ref(&EdgeGrid);
+  plaq_ref=1.0;
+
   Support.ForwardTriangles(Umu,plaq1,plaq2);
-  std::cout << " plaq1 "<< norm2(plaq1)<<std::endl;
-  std::cout << " plaq2 "<< norm2(plaq2)<<std::endl;
+  std::cout << GridLogMessage << " plaq1 "<< norm2(plaq1)<<std::endl;
+  std::cout << GridLogMessage << " plaq2 "<< norm2(plaq2)<<std::endl;
+
+  std::cout << GridLogMessage << " plaq1 err "<< norm2(plaq1-plaq_ref)<<std::endl;
+  std::cout << GridLogMessage << " plaq2 err "<< norm2(plaq2-plaq_ref)<<std::endl;
 
   // Random gauge xform
   std::vector<int> seeds({1,2,3,4});
   GridParallelRNG  vRNG(&EdgeGrid);   vRNG.SeedFixedIntegers(seeds);
-  LatticeIcosahedralColourMatrix g(&VertexGrid);
   
   //  SU<Nc>::LieRandomize(vRNG,g);
-
+  LatticeIcosahedralColourMatrix g(&VertexGrid);
   LatticeReal gr(&VertexGrid);
   LatticeComplex gc(&VertexGrid);
+  gr = 1.0;
   gaussian(vRNG,gr);
   Complex ci(0.0,1.0);
   gc = toComplex(gr);
   g=one;
   g = g * exp(ci*gc);
   
-  std::cout << "applying gauge transform"<<std::endl;
+  std::cout << GridLogMessage << "****************************************"<<std::endl;
+  std::cout << GridLogMessage << " Check plaquette is gauge invariant "<<std::endl;
+  std::cout << GridLogMessage << "****************************************"<<std::endl;
+  std::cout << GridLogMessage << " applying gauge transform"<<std::endl;
   Support.GaugeTransform(g,Umu);
-  std::cout << "applied gauge transform "<<Umu<<std::endl;
-  
+  std::cout << GridLogMessage << " applied gauge transform "<<std::endl;
+  //  std::cout << "Umu\n"<< Umu << std::endl;
+  std::cout << GridLogMessage << " recalculating plaquette "<<std::endl;
   Support.ForwardTriangles(Umu,plaq1,plaq2);
-  std::cout << " plaq1 "<< norm2(plaq1)<<std::endl;
-  std::cout << " plaq2 "<< norm2(plaq2)<<std::endl;
+  std::cout << GridLogMessage << " plaq1 "<< norm2(plaq1)<<std::endl;
+  std::cout << GridLogMessage << " plaq2 "<< norm2(plaq2)<<std::endl;
+
+  //  std::cout << " plaq1 "<< plaq1<<std::endl;
+  //  std::cout << " plaq2 "<< plaq2<<std::endl;
+
+  std::cout << GridLogMessage << " plaq1 err "<< norm2(plaq1-plaq_ref)<<std::endl;
+  std::cout << GridLogMessage << " plaq2 err "<< norm2(plaq2-plaq_ref)<<std::endl;
+  
+
+  typedef IcosahedralGimpl::GaugeLinkField GaugeLinkField;
+  typedef IcosahedralGimpl::GaugeField     GaugeField;
+
+  GaugeLinkField stapleXY(&EdgeGrid);
+  GaugeLinkField stapleYX(&EdgeGrid);
+  GaugeLinkField stapleXD(&EdgeGrid);
+  GaugeLinkField stapleDX(&EdgeGrid);
+  GaugeLinkField stapleYD(&EdgeGrid);
+  GaugeLinkField stapleDY(&EdgeGrid);
+
+  GaugeLinkField linkX(&EdgeGrid);
+  GaugeLinkField linkY(&EdgeGrid);
+  GaugeLinkField linkD(&EdgeGrid);
+  std::cout << GridLogMessage << "****************************************"<<std::endl;
+  std::cout << GridLogMessage << " Check triangular staples match plaquette "<<std::endl;
+  std::cout << GridLogMessage << "****************************************"<<std::endl;
+
+  Support.IcosahedralStaples(Umu,stapleXY,stapleYX,
+			     stapleXD,stapleDX,
+			     stapleYD,stapleDY);
+
+  linkX = peekLorentz(Umu,IcosahedronPatchX);
+  linkY = peekLorentz(Umu,IcosahedronPatchY);
+  linkD = peekLorentz(Umu,IcosahedronPatchDiagonal);
+
+  // OK
+  std::cout << GridLogMessage << " trace D*StapleXY "<<norm2(trace(linkD * stapleXY))<<std::endl;
+  std::cout << GridLogMessage << " err " << norm2(trace(linkD * stapleXY)-plaq_ref)<<std::endl;
+
+  // BAD
+  std::cout << GridLogMessage << " trace D*StapleYX "<<norm2(trace(linkD * stapleYX))<<std::endl;
+  std::cout << GridLogMessage << " err " << norm2(trace(linkD * stapleYX)-plaq_ref)<<std::endl;
+
+  std::cout << GridLogMessage << " trace X*StapleYD "<<norm2(trace(linkX * stapleYD))<<std::endl;
+  std::cout << GridLogMessage << " err " << norm2(trace(linkX * stapleYD)-plaq_ref)<<std::endl;
+  std::cout << GridLogMessage << " trace X*StapleDY "<<norm2(trace(linkX * stapleDY))<<std::endl;
+  std::cout << GridLogMessage << " err " << norm2(trace(linkX * stapleDY)-plaq_ref)<<std::endl;
+
+  std::cout << GridLogMessage << " trace Y*StapleXD "<<norm2(trace(linkY * stapleXD))<<std::endl;
+  std::cout << GridLogMessage << " err " << norm2(trace(linkY * stapleXD)-plaq_ref)<<std::endl;
+  std::cout << GridLogMessage << " trace Y*StapleDX "<<norm2(trace(linkY * stapleDX))<<std::endl;
+  std::cout << GridLogMessage << " err " << norm2(trace(linkY * stapleDX)-plaq_ref)<<std::endl;
+
+  //  std::cout << " D " << linkD<<std::endl;
+  //  std::cout << " X " << linkX<<std::endl;
+  //  std::cout << " Y " << linkY<<std::endl;
+  //  std::cout << " DXY\n " << closure(linkD * stapleYX) <<std::endl;
+  //  std::cout << " YXD\n " << closure(linkY * stapleXD) <<std::endl;
+
 
   
   Grid_finalize();

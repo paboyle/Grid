@@ -229,9 +229,9 @@ void GridParseLayout(char **argv,int argc,
   }
   // Copy back into coordinate format
   int nd = mpi.size();
-  std::cout << "mpi.size() "<<nd<<std::endl;
-  std::cout << "latt.size() "<<latt.size()<<std::endl;
-  std::cout << "Nd "<<Nd<<std::endl;
+  //  std::cout << "mpi.size() "<<nd<<std::endl;
+  //  std::cout << "latt.size() "<<latt.size()<<std::endl;
+  //  std::cout << "Nd "<<Nd<<std::endl;
   assert(latt.size()==nd);
   latt_c.resize(nd);
    mpi_c.resize(nd);

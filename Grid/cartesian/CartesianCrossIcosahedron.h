@@ -177,7 +177,7 @@ public:
     
     if( (pcoor[xdim]==pgrid[xdim]-1) && (pcoor[ydim]==0) && (pcoor[Ndm1]==0) ){
       hasSouthPole   =1;
-      southPoleOsite=this->_osites;
+      southPoleOsite=this->_osites; 
       southPoleOsites=OrthogSize;
       this->_osites += OrthogSize;
     } else {
@@ -195,11 +195,11 @@ public:
       northPoleOsites=0;
       northPoleOsite=0;
     }
-    std::cout << "Icosahedral vertex field volume " << this->_osites<<std::endl;
-    std::cout << "Icosahedral south pole offset   " << this->southPoleOsite<<std::endl;
-    std::cout << "Icosahedral north pole offset   " << this->northPoleOsite<<std::endl;
-    std::cout << "Icosahedral south pole size     " << this->southPoleOsites<<std::endl;
-    std::cout << "Icosahedral north pole size     " << this->northPoleOsites<<std::endl;
+    std::cout << GridLogDebug<<"Icosahedral vertex field volume " << this->_osites<<std::endl;
+    std::cout << GridLogDebug<<"Icosahedral south pole offset   " << this->southPoleOsite<<std::endl;
+    std::cout << GridLogDebug<<"Icosahedral north pole offset   " << this->northPoleOsite<<std::endl;
+    std::cout << GridLogDebug<<"Icosahedral south pole size     " << this->southPoleOsites<<std::endl;
+    std::cout << GridLogDebug<<"Icosahedral north pole size     " << this->northPoleOsites<<std::endl;
   };
 
 };

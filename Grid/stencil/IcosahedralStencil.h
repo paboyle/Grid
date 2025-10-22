@@ -208,7 +208,7 @@ public:
     if ( north ) {
 	NbrCoor[0] = L-1-Coor[1];
 	NbrCoor[1] = L-1;
-	NbrCoor[nd-1]=periAdd(HemiPatch,+1,HemiPatches) + SouthernHemisphere;
+	NbrCoor[nd-1]=periAdd(HemiPatch,-1,HemiPatches) + NorthernHemisphere;
 	return;
     }      
     assert(0);
@@ -376,17 +376,17 @@ public:
     //    Check going Up, forward in X and forward Diag match; subtleties at poles and rotation in cross patch
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    std::cout << "*************************************"<<std::endl;
-    std::cout << " Icosahedral Stencil Geometry Test !"<<std::endl;
-    std::cout << "*************************************"<<std::endl;
+    std::cout << GridLogMessage<< "*************************************"<<std::endl;
+    std::cout << GridLogMessage<< " Icosahedral Stencil Geometry Test !"<<std::endl;
+    std::cout << GridLogMessage<< "*************************************"<<std::endl;
 
     const int triangle_ref = cart_sites;
-    std::cout << " Base triangle count for each type " <<triangle_ref;
+    std::cout << GridLogMessage<< " Base triangle count for each type " <<triangle_ref;
     
-    std::cout << "------------------------------------"<<std::endl;
-    std::cout << "testing +x+y vs +diag"<<std::endl;
-    std::cout << "testing +y+x vs +diag"<<std::endl;
-    std::cout << "------------------------------------"<<std::endl;
+    std::cout << GridLogMessage<< "------------------------------------"<<std::endl;
+    std::cout << GridLogMessage<< "testing +x+y vs +diag"<<std::endl;
+    std::cout << GridLogMessage<< "testing +y+x vs +diag"<<std::endl;
+    std::cout << GridLogMessage<< "------------------------------------"<<std::endl;
     int xyd_pole_count=0;
     int xyd_count=0;
     int yxd_pole_count=0;
@@ -431,10 +431,10 @@ public:
       }
       
       if(isPole) {
-	std::cout << "Forward xyd triangle "<<Coor<<"-Pole["<<XpCoor[2]<<"]-"<<YpXpCoor<<" should be " <<DiagCoor<<std::endl;
+	std::cout << GridLogDebug<<"Forward xyd triangle "<<Coor<<"-Pole["<<XpCoor[2]<<"]-"<<YpXpCoor<<" should be " <<DiagCoor<<std::endl;
 	xyd_pole_count++;
       } else {
-	std::cout << "Forward xyd triangle "<<Coor<<"-"<<XpCoor<<"-"<<YpXpCoor<<" should be " <<DiagCoor<<std::endl;
+	std::cout << GridLogDebug<<"Forward xyd triangle "<<Coor<<"-"<<XpCoor<<"-"<<YpXpCoor<<" should be " <<DiagCoor<<std::endl;
 	xyd_count++;
       }
       for(int d=0;d<DiagCoor.size();d++) {
@@ -459,23 +459,23 @@ public:
 
       if(isPole) {
 	yxd_pole_count++;
-	std::cout << "Forward yxd triangle "<<Coor<<"-Pole["<<YpCoor[2]<<"]-"<<XpYpCoor<<" should be " <<DiagCoor<<std::endl;
+	std::cout << GridLogDebug<<"Forward yxd triangle "<<Coor<<"-Pole["<<YpCoor[2]<<"]-"<<XpYpCoor<<" should be " <<DiagCoor<<std::endl;
       } else {
 	yxd_count++;
-	std::cout << "Forward yxd triangle "<<Coor<<"-"<<YpCoor<<"-"<<XpYpCoor<<" should be " <<DiagCoor<<std::endl;
+	std::cout <<GridLogDebug << "Forward yxd triangle "<<Coor<<"-"<<YpCoor<<"-"<<XpYpCoor<<" should be " <<DiagCoor<<std::endl;
       }
       for(int d=0;d<DiagCoor.size();d++) {
 	assert(DiagCoor[d]==XpYpCoor[d]);
       }
     }
-    std::cout << " xyd_count "<<xyd_count<<" + poles_count "<<xyd_pole_count<<" expect "<<triangle_ref<<" triangles "<<std::endl;
-    std::cout << " yxd_count "<<yxd_count<<" + poles_count "<<yxd_pole_count<<" expect "<<triangle_ref<<" triangles "<<std::endl;
+    std::cout << GridLogMessage<< " xyd_count "<<xyd_count<<" + poles_count "<<xyd_pole_count<<" expect "<<triangle_ref<<" triangles "<<std::endl;
+    std::cout << GridLogMessage<<" yxd_count "<<yxd_count<<" + poles_count "<<yxd_pole_count<<" expect "<<triangle_ref<<" triangles "<<std::endl;
     assert(xyd_count+xyd_pole_count == triangle_ref);
     assert(yxd_count+yxd_pole_count == triangle_ref);
-    std::cout << "------------------------------------"<<std::endl;
-    std::cout << "testing -diag +x+y = identity"<<std::endl;
-    std::cout << "testing -diag +y+x = identity"<<std::endl;
-    std::cout << "------------------------------------"<<std::endl;
+    std::cout << GridLogMessage<< "------------------------------------"<<std::endl;
+    std::cout << GridLogMessage<< "testing -diag +x+y = identity"<<std::endl;
+    std::cout << GridLogMessage<< "testing -diag +y+x = identity"<<std::endl;
+    std::cout << GridLogMessage<< "------------------------------------"<<std::endl;
 
     int dmxy_count=0;
     int dmyx_count=0;
@@ -503,7 +503,7 @@ public:
       Coordinate DmCoor;
       GetNbrForMinusDiagonal(grid,Coor,DmCoor,missingLink);
       if ( missingLink ) {
-	std::cout << Coor << " has no backwards diagonal link "<<std::endl;
+	std::cout << GridLogDebug<< Coor << " has no backwards diagonal link "<<std::endl;
 	num_missing++;
       } else {
 
@@ -542,35 +542,35 @@ public:
 	  dmxy_count++;
 	  dmyx_count++;
 	}
-	std::cout << Coor<<" DmXpYp triangle YpXpDm"<<YpXpDmCoor<<"-XpDm"<<XpDmCoor<<"-Dm"<<DmCoor<<" should be " <<Coor<<std::endl;
+	std::cout<< GridLogDebug << Coor<<" DmXpYp triangle YpXpDm"<<YpXpDmCoor<<"-XpDm"<<XpDmCoor<<"-Dm"<<DmCoor<<" should be " <<Coor<<std::endl;
 	for(int d=0;d<Coor.size();d++) {
 	  assert(Coor[d]==YpXpDmCoor[d]);
 	}
 
-	std::cout << Coor<<"DmXpYp triangle XpYpDm"<<XpYpDmCoor<<"-YpDm"<<YpDmCoor<<"-Dm"<<DmCoor<<" should be " <<Coor<<std::endl;
+	std::cout << GridLogDebug<< Coor<<"DmXpYp triangle XpYpDm"<<XpYpDmCoor<<"-YpDm"<<YpDmCoor<<"-Dm"<<DmCoor<<" should be " <<Coor<<std::endl;
 	for(int d=0;d<Coor.size();d++) {
 	  assert(Coor[d]==XpYpDmCoor[d]);
 	}
       }
     }
-    std::cout << " dmxy_count "<<dmxy_count<<" + special "<<dmxy_count_special<<" + missing "<<num_missing<<" expect "<<triangle_ref<<" triangles "<<std::endl;
-      std::cout << " dmyx_count "<<dmyx_count<<" + special "<<dmyx_count_special<<" + missing "<<num_missing<<" expect "<<triangle_ref<<" triangles "<<std::endl;
+    std::cout <<GridLogMessage<<" dmxy_count "<<dmxy_count<<" + special "<<dmxy_count_special<<" + missing "<<num_missing<<" expect "<<triangle_ref<<" triangles "<<std::endl;
+    std::cout <<GridLogMessage<<" dmyx_count "<<dmyx_count<<" + special "<<dmyx_count_special<<" + missing "<<num_missing<<" expect "<<triangle_ref<<" triangles "<<std::endl;
     assert(dmxy_count + dmxy_count_special + num_missing == triangle_ref);
     assert(dmyx_count + dmyx_count_special + num_missing == triangle_ref);
     
-    std::cout << "------------------------------------"<<std::endl;
-    std::cout << "testing diag -x-y = identity "<<std::endl;
-    std::cout << "testing diag -y-x = identity"<<std::endl;
-    std::cout << "------------------------------------"<<std::endl;
+    std::cout << GridLogMessage<< "------------------------------------"<<std::endl;
+    std::cout << GridLogMessage<< "NOT testing diag -x-y = identity "<<std::endl;
+    std::cout << GridLogMessage<< "NOT testing diag -y-x = identity"<<std::endl;
+    std::cout << GridLogMessage<< "------------------------------------"<<std::endl;
 
-    std::cout << "------------------------------------"<<std::endl;
-    std::cout << "testing -diag = -x-y "<<std::endl;
-    std::cout << "testing -diag = -y-x "<<std::endl;
-    std::cout << "------------------------------------"<<std::endl;
+    std::cout << GridLogMessage<< "------------------------------------"<<std::endl;
+    std::cout << GridLogMessage<< "NOT testing -diag = -x-y "<<std::endl;
+    std::cout << GridLogMessage<< "NOT testing -diag = -y-x "<<std::endl;
+    std::cout << GridLogMessage<< "------------------------------------"<<std::endl;
     
-    std::cout << "*************************************"<<std::endl;
-    std::cout << " Icosahedral Stencil Geometry Test Complete"<<std::endl;
-    std::cout << "*************************************"<<std::endl;
+    std::cout << GridLogMessage<< "*************************************"<<std::endl;
+    std::cout << GridLogMessage<< " Icosahedral Stencil Geometry Test Complete"<<std::endl;
+    std::cout << GridLogMessage<< "*************************************"<<std::endl;
   }
   IcosahedralStencil(GridBase *grid) // Must be +1 or -1
   {
@@ -581,14 +581,181 @@ public:
   void NearestNeighbourStencil(void)
   {
     GridBase * grid = this->_grid;
-    assert(grid->isIcosahedralVertex());
-    
-  }
 
-  
-  /*
-   * For gauge action implementation
-   */
+    int isVertex = grid->isIcosahedralVertex();
+
+    int osites  = grid->oSites();
+
+    uint64_t cart_sites = grid->CartesianOsites();
+    uint64_t Npole_sites = grid->NorthPoleOsites();
+    uint64_t Spole_sites = grid->SouthPoleOsites();
+    Coordinate pcoor = grid->ThisProcessorCoor();
+    Coordinate pgrid = grid->ProcessorGrid();
+    /*
+     * resize the stencil entries array and set npoints
+     */
+    const int np=6;
+    this->_npoints=np; // Move to template param?
+    this->_entries.resize(this->_npoints * cart_sites);
+    this->_entries_p = &_entries[0];
+
+    for(uint64_t site=0;site<cart_sites; site ++) {
+
+      Coordinate Coor;
+      Coordinate NbrCoor;
+
+      int nd = grid->Nd();
+      int L  = grid->LocalDimensions()[0];
+
+      Integer lexXp = site*np  ;
+      Integer lexYp = site*np+1;
+      Integer lexDp = site*np+2;
+      Integer lexXm = site*np+3;
+      Integer lexYm = site*np+4;
+      Integer lexDm = site*np+5;
+
+      IcosahedralStencilEntry SE;
+	
+      ////////////////////////////////////////////////
+      // Outer index of neighbour Offset calculation
+      ////////////////////////////////////////////////
+      grid->oCoorFromOindex(Coor,site);
+      NbrCoor = Coor;
+      assert( grid->LocalDimensions()[1]==grid->LocalDimensions()[0]);
+      assert( grid->_simd_layout[0]==1); // Cannot vectorise in these dims
+      assert( grid->_simd_layout[1]==1);
+      assert( grid->_processors[0]==1); // Cannot mpi distribute in these dims
+      assert( grid->_processors[1]==1);
+
+      int Patch = Coor[nd-1];
+      int HemiPatch = Patch%HemiPatches;
+      int north = Patch/HemiPatches;
+      int south = 1-north;
+      int isPoleY;
+      int isPoleX;
+      int missingLink;
+      assert(Patch<IcosahedralPatches);
+      assert((north==1)||(south==1));
+
+      /*
+       * Just get all six neighbours (if present).
+       */
+      Coordinate XpCoor;
+      Coordinate YpCoor;
+      Coordinate DpCoor;
+      Coordinate XmCoor;
+      Coordinate YmCoor;
+      Coordinate DmCoor;
+
+      GetNbrForPlusDiagonal(grid,Coor,DpCoor);
+      GetNbrForPlusX(grid,Coor,XpCoor,isPoleX);
+      GetNbrForPlusY(grid,Coor,YpCoor,isPoleY);
+
+      GetNbrForMinusDiagonal(grid,Coor,DmCoor,missingLink);
+      GetNbrForMinusX(grid,Coor,XmCoor);
+      GetNbrForMinusY(grid,Coor,YmCoor);
+
+      int DpPatch  = DpCoor[nd-1];
+      int DpHemiPatch  = DpCoor[nd-1]%HemiPatches;
+      int DpHemisphere = DpCoor[nd-1]/HemiPatches;
+
+      int YpHemiPatch  = YpCoor[nd-1]%HemiPatches;
+      int XpHemiPatch  = XpCoor[nd-1]%HemiPatches;
+      // For negative direction cannot use the Diagonal link
+      // as this may not be present on the 5-points
+      // Makes for a hemisphere dependent behaviour
+      int XmHemiPatch  = XmCoor[nd-1]%HemiPatches;
+      int XmHemisphere = XmCoor[nd-1]/HemiPatches;
+      int YmHemiPatch  = YmCoor[nd-1]%HemiPatches;
+      int YmHemisphere = YmCoor[nd-1]/HemiPatches;
+
+      if ( isVertex ) assert(0);
+
+      ////////////////////////////////////////////////
+      // XpCoor stencil entry
+      // Store in look up table
+      ////////////////////////////////////////////////
+      // Basis rotates dictates BOTH adjoint and polarisation
+      // Could reduce the amount of information stored here
+      SE._adjoint      = false;
+      SE._is_local     = true;
+      SE._missing_link = false;
+      if ( DpHemiPatch != HemiPatch && south ) {
+	SE._offset       = grid->oIndex(DpCoor);
+	SE._polarisation = IcosahedronPatchX;
+	SE._adjoint      = true;
+      } else {
+	SE._offset       = grid->oIndex(XpCoor);
+	SE._polarisation = IcosahedronPatchY;
+      }
+      acceleratorPut(this->_entries[lexXp],SE);
+      
+      ////////////////////////////////////////////////
+      // for YpCoor
+      ////////////////////////////////////////////////
+      SE._adjoint      = false;
+      SE._is_local     = true;
+      SE._missing_link = false;
+      if ( YpHemiPatch != HemiPatch && north ) {
+	SE._offset       = grid->oIndex(DpCoor);
+	SE._polarisation = IcosahedronPatchY;
+	SE._adjoint      = true;
+      } else {
+	SE._offset       = grid->oIndex(YpCoor);
+	SE._polarisation = IcosahedronPatchX;
+      }
+      acceleratorPut(this->_entries[lexYp],SE);
+
+      SE._adjoint      = false;
+      SE._is_local     = true;
+      SE._missing_link = false;
+      ////////////////////////////////////////////////
+      // XmCoor stencil entry
+      // Store in look up table
+      ////////////////////////////////////////////////
+      if ( XmHemiPatch != HemiPatch && north ) {
+	SE._offset       = grid->oIndex(XmCoor);
+	SE._polarisation = IcosahedronPatchY; // nbrs Y instead of diagonal in North hemisphere exceptional case
+      } else {
+	SE._offset       = grid->oIndex(XmCoor);
+	SE._polarisation = IcosahedronPatchDiagonal;
+      }
+      acceleratorPut(this->_entries[lexXm],SE);
+      
+      ////////////////////////////////////////////////
+      // for YmCoor
+      ////////////////////////////////////////////////
+      if ( YmHemiPatch != HemiPatch && south ) {
+	SE._offset       = grid->oIndex(YmCoor);
+	SE._polarisation = IcosahedronPatchX;   // Basis rotates
+      } else {
+	SE._offset       = grid->oIndex(YmCoor);
+	SE._polarisation = IcosahedronPatchDiagonal;
+      }
+      acceleratorPut(this->_entries[lexYm],SE);
+      
+      /////////////////////////////////////////////////////////////////////
+      // for DpCoor ; never needed for staples, only for vertex diff ops
+      // no polarisation rotation
+      /////////////////////////////////////////////////////////////////////
+      SE._offset       = grid->oIndex(DpCoor);
+      SE._polarisation = IcosahedronPatchDiagonal; // should ignore
+      acceleratorPut(this->_entries[lexDp],SE);
+    
+      /////////////////////////////////////////////////////////////////////
+      // for DmCoor ; never needed for staples, only for vertex diff ops
+      // no polarisation rotation
+      /////////////////////////////////////////////////////////////////////
+      SE._offset       = grid->oIndex(DmCoor);
+      SE._polarisation = IcosahedronPatchDiagonal; // should ignore
+      SE._missing_link = missingLink;
+      acceleratorPut(this->_entries[lexDm],SE);
+    }
+  }
+    /*************************************************************
+     * For gauge action implementation
+     *************************************************************
+     */
   void FaceStencil(void)
   {
     GridBase * grid = this->_grid;
@@ -671,10 +838,10 @@ public:
       GetNbrForPlusX(grid,Coor,XpCoor,isPoleX);
       GetNbrForPlusY(grid,Coor,YpCoor,isPoleY);
 
-      int XpHemiPatch  = XpCoor[nd-1]%HemiPatches;
-      int XpHemisphere = XpCoor[nd-1]/HemiPatches;
+      //      int XpHemiPatch  = XpCoor[nd-1]%HemiPatches;
+      //      int XpHemisphere = XpCoor[nd-1]/HemiPatches;
 
-      int DpPatch  = DpCoor[nd-1];
+      int DpPatch      = DpCoor[nd-1];
       int DpHemiPatch  = DpCoor[nd-1]%HemiPatches;
       int DpHemisphere = DpCoor[nd-1]/HemiPatches;
 
@@ -700,10 +867,12 @@ public:
       ////////////////////////////////////////////////
       acceleratorPut(this->_entries[lexXY],SE);
       
+      // failed in the if case here
       ////////////////////////////////////////////////
-      // for trace [  U_y(z) adj(U_d(z))  U_x(z+\hat y) ]
+      // for trace [  U_y(z) U_x(z+\hat y) adj(U_d(z))   ]
       ////////////////////////////////////////////////
-      if ( DpHemiPatch != HemiPatch && north ) {
+      int YpHemiPatch  = YpCoor[nd-1]%HemiPatches;
+      if ( YpHemiPatch != HemiPatch && north ) {
 	SE._offset       = grid->oIndex(DpCoor);
 	SE._is_local     = true;
 	SE._polarisation = IcosahedronPatchY;
@@ -722,7 +891,6 @@ public:
       acceleratorPut(this->_entries[lexYX],SE);
     };
   }
-
   /*
    * For gauge action derivative implementation
    * Staple 
@@ -739,30 +907,7 @@ public:
    * There is no complex rotation of links on other site
    *
    * Case2: I x I loops
-   *
-   * Y staple: need
-   *     Diag @ (xy)
-   *     X    @ y++  ; care needed for rotation
-   *     Diag @ x--  ; care needed for rotation
-   *     X    @ x--  ; care needed for rotation
-   *
-   * X staple: need
-   *     Diag @ (xy)
-   *     X    @ y++  ; care needed for rotation
-   *     Diag @ x--  ; care needed for rotation
-   *     X    @ x--  ; care needed for rotation
-   *
-   * Diag staple: need
-   *
-   *     X@  (xy)
-   *     Y@  x++  ; care needed for rotation
-   *     Y@  (xy)
-   *     X@  y++  ; care needed for rotation
+   * Just use a general 6 point stencil and cherry pick terms
    */
-  void StapleDiagStencil(void){  }
-  void StapleXpStencil(void)  {  }
-  void StapleYpStencil(void)  {  }
-  void StapleTpStencil(void)  {  }
-  
 };
 NAMESPACE_END(Grid);

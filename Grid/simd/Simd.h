@@ -252,7 +252,7 @@ inline std::ostream& operator<< (std::ostream& stream, const vComplexF &o){
  
 inline std::ostream& operator<< (std::ostream& stream, const vComplexD &o){
   int nn=vComplexD::Nsimd();
-  std::vector<ComplexD,alignedAllocator<ComplexD> > buf(nn);
+  std::vector<ComplexD> buf(nn);
   vstore(o,&buf[0]);
   stream<<"<";
   for(int i=0;i<nn;i++){
@@ -272,7 +272,7 @@ inline std::ostream& operator<< (std::ostream& stream, const vComplexD2 &o){
 
 inline std::ostream& operator<< (std::ostream& stream, const vRealF &o){
   int nn=vRealF::Nsimd();
-  std::vector<RealF,alignedAllocator<RealF> > buf(nn);
+  std::vector<RealF> buf(nn);
   vstore(o,&buf[0]);
   stream<<"<";
   for(int i=0;i<nn;i++){
