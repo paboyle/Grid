@@ -285,31 +285,16 @@ public:
 
     std::cout << GridLogMessage<< "Free Laplacian via STENCIL "<<std::endl;
 
+
+    const int ent_Xp = 0;
+    const int ent_Yp = 1;
+    const int ent_Dp = 2;
+    const int ent_Xm = 3;
+    const int ent_Ym = 4;
+    const int ent_Dm = 5;
+    
     accelerator_for(ss,VertexGrid->oSites(),vComplex::Nsimd(),{
-
-      const int ent_Xp = 0;
-      const int ent_Yp = 1;
-      const int ent_Dp = 2;
-      const int ent_Xm = 3;
-      const int ent_Ym = 4;
-      const int ent_Dm = 5;
-      
-      Integer lexXp = ss*np+ent_Xp;
-      Integer lexYp = ss*np+ent_Yp;
-      Integer lexDp = ss*np+ent_Dp;
-      Integer lexXm = ss*np+ent_Xm;
-      Integer lexYm = ss*np+ent_Ym;
-      Integer lexDm = ss*np+ent_Dm;
 	  
-      const int x = IcosahedronPatchX;
-      const int y = IcosahedronPatchY;
-      const int d = IcosahedronPatchDiagonal;
-
-      //      // Three forward links from this site
-      //      auto Lx = Umu_v(ss)(x);
-      //      auto Ly = Umu_v(ss)(y);
-      //      auto Ld = Umu_v(ss)(d);
-
       auto SE = stencil_v.GetEntry(ent_Xp,ss);
       uint64_t xp_idx = SE->_offset;
 
