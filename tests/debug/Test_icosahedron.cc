@@ -41,6 +41,7 @@ typedef iIcosahedralLorentzComplex<Complex >  IcosahedralLorentzComplex;
 typedef iIcosahedralLorentzComplex<vComplex> vIcosahedralLorentzComplex;
 typedef Lattice<vIcosahedralLorentzComplex> LatticeIcosahedralLorentzComplex;
 
+
 typedef iIcosahedralLorentzColourMatrix<Complex >  IcosahedralLorentzColourMatrix;
 typedef iIcosahedralLorentzColourMatrix<vComplex> vIcosahedralLorentzColourMatrix;
 typedef Lattice<vIcosahedralLorentzColourMatrix>  LatticeIcosahedralLorentzColourMatrix;
@@ -274,20 +275,17 @@ public:
    * Should be able to use the Vertex based stencil to do the GT, picking forward hops
    */
   template<class MatterField>
-  void  CovariantLaplacian(MatterField &in,MatterField &out, GaugeField &Umu)
+  void Laplacian(MatterField &in,MatterField &out)
   {
-  }
-  void  GaugeTransform(GaugeLinkField &gt, GaugeField &Umu)
-  {
-    autoView(Umu_v,Umu,AcceleratorWrite);
-    autoView(g_v,gt,AcceleratorRead);
-    autoView(stencil_v,NNev,AcceleratorRead);
+    autoView(out_v,out,AcceleratorWrite);
+    autoView(in_v,in,AcceleratorRead);
+    autoView(stencil_v,NNvv,AcceleratorRead);
 
-    const int np = NNev._npoints;
+    const int np = NNvv._npoints;
 
-    std::cout << GridLogMessage<< "GaugeTransform via STENCIL "<<std::endl;
+    std::cout << GridLogMessage<< "Free Laplacian via STENCIL "<<std::endl;
 
-    accelerator_for(ss,EdgeGrid->oSites(),vComplex::Nsimd(),{
+    accelerator_for(ss,VertexGrid->oSites(),vComplex::Nsimd(),{
 
       const int ent_Xp = 0;
       const int ent_Yp = 1;
@@ -307,23 +305,84 @@ public:
       const int y = IcosahedronPatchY;
       const int d = IcosahedronPatchDiagonal;
 
-      // Three forward links from this site
-      auto Lx = Umu_v(ss)(x);
-      auto Ly = Umu_v(ss)(y);
-      auto Ld = Umu_v(ss)(d);
-
-      uint64_t xp_idx;
-      uint64_t yp_idx;
-      uint64_t dp_idx;
+      //      // Three forward links from this site
+      //      auto Lx = Umu_v(ss)(x);
+      //      auto Ly = Umu_v(ss)(y);
+      //      auto Ld = Umu_v(ss)(d);
 
       auto SE = stencil_v.GetEntry(ent_Xp,ss);
-      xp_idx = SE->_offset;
+      uint64_t xp_idx = SE->_offset;
 
       SE = stencil_v.GetEntry(ent_Yp,ss);
-      yp_idx = SE->_offset;
+      uint64_t yp_idx = SE->_offset;
 
       SE = stencil_v.GetEntry(ent_Dp,ss);
-      dp_idx = SE->_offset;
+      uint64_t dp_idx = SE->_offset;
+
+      SE = stencil_v.GetEntry(ent_Xm,ss);
+      uint64_t xm_idx = SE->_offset;
+
+      SE = stencil_v.GetEntry(ent_Ym,ss);
+      uint64_t ym_idx = SE->_offset;
+
+      SE = stencil_v.GetEntry(ent_Dm,ss);
+      uint64_t dm_idx = SE->_offset;
+      int missingLink = SE->_missing_link;
+      
+      auto i    = in_v(ss)();
+      auto inxp = in_v(xp_idx)();
+      auto inyp = in_v(yp_idx)();
+      auto indp = in_v(dp_idx)();
+      auto inxm = in_v(xm_idx)();
+      auto inym = in_v(ym_idx)();
+      auto indm = in_v(dm_idx)();
+
+      auto o    = out_v(ss)();
+
+      if ( missingLink ) {
+	o = (1.0/5.0)*(inxp+inyp+indp+inxm+inym)-o;
+      } else {
+	o = (1.0/6.0)*(inxp+inyp+indp+inxm+inym+indm)-o;
+      }
+      
+      coalescedWrite(out_v[ss](),o);
+      });
+  }
+    
+  
+  void  GaugeTransform(GaugeLinkField &gt, GaugeField &Umu)
+  {
+    autoView(Umu_v,Umu,AcceleratorWrite);
+    autoView(g_v,gt,AcceleratorRead);
+    autoView(stencil_v,NNev,AcceleratorRead);
+
+    const int np = NNev._npoints;
+
+    std::cout << GridLogMessage<< "GaugeTransform via STENCIL "<<std::endl;
+
+    accelerator_for(ss,EdgeGrid->oSites(),vComplex::Nsimd(),{
+
+      const int ent_Xp = 0;
+      const int ent_Yp = 1;
+      const int ent_Dp = 2;
+      
+      Integer lexXp = ss*np+ent_Xp;
+      Integer lexYp = ss*np+ent_Yp;
+      Integer lexDp = ss*np+ent_Dp;
+	  
+      // Three forward links from this site
+      auto Lx = Umu_v(ss)(IcosahedronPatchX);
+      auto Ly = Umu_v(ss)(IcosahedronPatchY);
+      auto Ld = Umu_v(ss)(IcosahedronPatchDiagonal);
+
+      auto SE = stencil_v.GetEntry(ent_Xp,ss);
+      uint64_t xp_idx = SE->_offset;
+
+      SE = stencil_v.GetEntry(ent_Yp,ss);
+      uint64_t yp_idx = SE->_offset;
+
+      SE = stencil_v.GetEntry(ent_Dp,ss);
+      uint64_t dp_idx = SE->_offset;
 
       auto g  = g_v(ss)();
       auto gx = g_v(xp_idx)();
@@ -586,7 +645,6 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << " plaq1 err "<< norm2(plaq1-plaq_ref)<<std::endl;
   std::cout << GridLogMessage << " plaq2 err "<< norm2(plaq2-plaq_ref)<<std::endl;
-  
 
   typedef IcosahedralGimpl::GaugeLinkField GaugeLinkField;
   typedef IcosahedralGimpl::GaugeField     GaugeField;
@@ -637,7 +695,12 @@ int main (int argc, char ** argv)
   //  std::cout << " DXY\n " << closure(linkD * stapleYX) <<std::endl;
   //  std::cout << " YXD\n " << closure(linkY * stapleXD) <<std::endl;
 
-
+  
+  std::cout << GridLogMessage<< "Calling Laplacian" <<std::endl;
+  LatticeComplex in(&VertexGrid);
+  LatticeComplex out(&VertexGrid);
+  gaussian(vRNG,in);
+  Support.Laplacian(in,out);
   
   Grid_finalize();
 }
