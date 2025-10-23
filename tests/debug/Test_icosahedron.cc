@@ -97,14 +97,10 @@ public:
       autoView(stencil_v,FaceStencil,AcceleratorRead);
 
       accelerator_for(ss,EdgeGrid->oSites(),vComplex::Nsimd(),{
-
-	const int x = IcosahedronPatchX;
-	const int y = IcosahedronPatchY;
-	const int d = IcosahedronPatchDiagonal;
 	
-	auto Lx = Umu_v(ss)(x);
-	auto Ly = Umu_v(ss)(y);
-	auto Ld = Umu_v(ss)(d);
+	auto Lx = Umu_v(ss)(IcosahedronPatchX);
+	auto Ly = Umu_v(ss)(IcosahedronPatchY);
+	auto Ld = Umu_v(ss)(IcosahedronPatchDiagonal);
 
 	// for trace [ U_x(z) U_y(z+\hat x) adj(U_d(z)) ]
 	{
@@ -119,8 +115,6 @@ public:
 	  coalescedWrite(plaq1_v[ss](),trace(Lx*L1*adj(Ld) ) );
 	}
 
-	// This was wrong after GT
-	// Could be EITHER the GT or the the plaq / stencil
 	// for trace [  U_y(z) U_x(z+\hat y) adj(U_d(z))   ]
 	{
 	  auto SE2 = stencil_v.GetEntry(1,ss);
@@ -131,7 +125,6 @@ public:
 	  if(doAdj)
 	    L2 = adj(L2);
 	  coalescedWrite(plaq2_v[ss](),trace(Ly*L2*adj(Ld) ) );
-	  //	  std::cout << "site "<< ss<<" plaq "<< plaq2_v[ss] << " doAdj "<< (int) doAdj<<" pol "<<(int) pol <<std::endl;
 	}
       });
     }
@@ -157,28 +150,17 @@ public:
 
       const int np = NNee._npoints;
       
+      const int ent_Xp = 0;
+      const int ent_Yp = 1;
+      const int ent_Xm = 3;
+      const int ent_Ym = 4;
+
       accelerator_for(ss,EdgeGrid->oSites(),vComplex::Nsimd(),{
 
-	const int ent_Xp = 0;
-	const int ent_Yp = 1;
-	const int ent_Xm = 3;
-	const int ent_Ym = 4;
-
-	Integer lexXp = ss*np+ent_Xp;
-	Integer lexYp = ss*np+ent_Yp;
-	Integer lexXm = ss*np+ent_Xm;
-	Integer lexYm = ss*np+ent_Ym;
-	//	Integer lexDp = ss*np+2; // Not touched by staples.
-	//	Integer lexDm = ss*np+5;
-	  
-	const int x = IcosahedronPatchX;
-	const int y = IcosahedronPatchY;
-	const int d = IcosahedronPatchDiagonal;
-
 	// Three forward links from this site
-	auto Lx = Umu_v(ss)(x);
-	auto Ly = Umu_v(ss)(y);
-	auto Ld = Umu_v(ss)(d);
+	auto Lx = Umu_v(ss)(IcosahedronPatchX);
+	auto Ly = Umu_v(ss)(IcosahedronPatchY);
+	auto Ld = Umu_v(ss)(IcosahedronPatchDiagonal);
 
 	///////////////////////////////////////////////////////////////////
 	// Terms for the staple orthog to PlusDiagonal
@@ -283,9 +265,6 @@ public:
 
     const int np = NNvv._npoints;
 
-    std::cout << GridLogMessage<< "Free Laplacian via STENCIL "<<std::endl;
-
-
     const int ent_Xp = 0;
     const int ent_Yp = 1;
     const int ent_Dp = 2;
@@ -344,17 +323,13 @@ public:
     const int np = NNev._npoints;
 
     std::cout << GridLogMessage<< "GaugeTransform via STENCIL "<<std::endl;
+    
+    const int ent_Xp = 0;
+    const int ent_Yp = 1;
+    const int ent_Dp = 2;
 
     accelerator_for(ss,EdgeGrid->oSites(),vComplex::Nsimd(),{
 
-      const int ent_Xp = 0;
-      const int ent_Yp = 1;
-      const int ent_Dp = 2;
-      
-      Integer lexXp = ss*np+ent_Xp;
-      Integer lexYp = ss*np+ent_Yp;
-      Integer lexDp = ss*np+ent_Dp;
-	  
       // Three forward links from this site
       auto Lx = Umu_v(ss)(IcosahedronPatchX);
       auto Ly = Umu_v(ss)(IcosahedronPatchY);
@@ -389,7 +364,6 @@ public:
   }
   /*
    * This routine is slow and single threaded on CPU
-   */
   void  GaugeTransformCPU(GaugeLinkField &gt, GaugeField &Umu)
   {
     assert(gt.Grid()==VertexGrid);
@@ -407,9 +381,7 @@ public:
     uint64_t Spole_sites = grid->SouthPoleOsites();
     Coordinate pcoor = grid->ThisProcessorCoor();
     Coordinate pgrid = grid->ProcessorGrid();
-    /*
-     * resize the stencil entries array and set npoints
-     */
+
     autoView(g_v,gt,CpuRead);
     autoView(Umu_v,Umu,CpuWrite);
     for(uint64_t site=0;site<cart_sites; site ++) {
@@ -493,21 +465,7 @@ public:
       auto lx = Umu_v(site)(IcosahedronPatchX);
       auto ly = Umu_v(site)(IcosahedronPatchY);
       auto ld = Umu_v(site)(IcosahedronPatchDiagonal);
-      
-      /*
-	std::cout << "site "<<site<<std::endl;
-	std::cout << " xp_idx "<<xp_idx<<std::endl;
-	std::cout << " yp_idx "<<yp_idx<<std::endl;
-	std::cout << " dp_idx "<<dp_idx<<std::endl;
-	std::cout << " g  "<<g<<std::endl;
-	std::cout << " gx "<<gx<<std::endl;
-	std::cout << " gy "<<gy<<std::endl;
-	std::cout << " gd "<<gd<<std::endl;
-	std::cout << " lx "<<lx<<std::endl;
-	std::cout << " ly "<<ly<<std::endl;
-	std::cout << " ld "<<ld<<std::endl;
-      */
-      
+       
       lx = g*lx*adj(gx);
       ly = g*ly*adj(gy);
       ld = g*ld*adj(gd);
@@ -519,6 +477,7 @@ public:
   }
 
 };
+   */
 
 int main (int argc, char ** argv)
 {
@@ -613,11 +572,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Check plaquette is gauge invariant "<<std::endl;
   std::cout << GridLogMessage << "****************************************"<<std::endl;
   std::cout << GridLogMessage << " applying gauge transform"<<std::endl;
-  Umuck = Umu;
-  Support.GaugeTransform    (g,Umuck);
-  Support.GaugeTransformCPU(g,Umu);
-  Umuck = Umuck - Umu;
-  std::cout << GridLogMessage <<"Diff between reference GT and stencil GT: "<<norm2(Umuck) <<std::endl;
+  Support.GaugeTransform    (g,Umu);
   std::cout << GridLogMessage << " applied gauge transform "<<std::endl;
   //  std::cout << "Umu\n"<< Umu << std::endl;
   std::cout << GridLogMessage << " recalculating plaquette "<<std::endl;
@@ -679,7 +634,6 @@ int main (int argc, char ** argv)
   //  std::cout << " Y " << linkY<<std::endl;
   //  std::cout << " DXY\n " << closure(linkD * stapleYX) <<std::endl;
   //  std::cout << " YXD\n " << closure(linkY * stapleXD) <<std::endl;
-
   
   std::cout << GridLogMessage<< "Calling Laplacian" <<std::endl;
   LatticeComplex in(&VertexGrid);
