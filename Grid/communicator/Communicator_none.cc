@@ -27,6 +27,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 /*  END LEGAL */
 #include <Grid/GridCore.h>
 
+void GridAbort(void) { abort(); }
+
 NAMESPACE_BEGIN(Grid);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -34,7 +36,6 @@ NAMESPACE_BEGIN(Grid);
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 Grid_MPI_Comm       CartesianCommunicator::communicator_world;
 
-void GridAbort(void) { abort(); }
 
 void CartesianCommunicator::Init(int *argc, char *** arv)
 {
