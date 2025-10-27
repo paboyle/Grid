@@ -69,6 +69,7 @@ public:
 
 protected:
   GridBase *                        _grid;
+  GridBase *                        _vertexgrid;
 
 public: 
   GridBase *Grid(void) const { return _grid; }
@@ -572,10 +573,12 @@ public:
     std::cout << GridLogMessage<< " Icosahedral Stencil Geometry Test Complete"<<std::endl;
     std::cout << GridLogMessage<< "*************************************"<<std::endl;
   }
-  IcosahedralStencil(GridBase *grid) // Must be +1 or -1
+  IcosahedralStencil(GridBase *grid,GridBase *vertexgrid) 
   {
-    this->_grid    = grid;
+    this->_grid          = grid;
+    this->_vertexgrid    = vertexgrid;
     // Loop over L^2 x T x npatch and the
+    assert(grid->isIcosahedral());
     assert(grid->isIcosahedral());
   }
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -589,14 +592,11 @@ public:
   //     can apply a vertex supported link double store to edge supported gauge field
   //     can apply a vertex supported laplace or dirac operator vertex supported matter field
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  void NearestNeighbourStencil(int vertexOutputs)
+  void NearestNeighbourStencil(int vertexInputs,int vertexOutputs)
   {
-    GridBase * grid = this->_grid;
-
-    int vertexInputs = grid->isIcosahedralVertex(); 
-
-    int osites  = grid->oSites();
-
+    GridBase * grid = this->_grid; // the edge grid
+    GridBase * vertexgrid = this->_vertexgrid;
+    
     uint64_t cart_sites = grid->CartesianOsites();
     uint64_t Npole_sites = grid->NorthPoleOsites();
     uint64_t Spole_sites = grid->SouthPoleOsites();
@@ -641,6 +641,7 @@ public:
 
       int Patch = Coor[nd-1];
       int HemiPatch = Patch%HemiPatches;
+      int Hemisphere= Patch/HemiPatches;
       int north = Patch/HemiPatches;
       int south = 1-north;
       int isPoleY;
@@ -681,7 +682,11 @@ public:
       int YmHemiPatch  = YmCoor[nd-1]%HemiPatches;
       int YmHemisphere = YmCoor[nd-1]/HemiPatches;
 
-      if ( vertexInputs ) {
+      int DmPatch  = DmCoor[nd-1];
+      int DmHemiPatch  = DmCoor[nd-1]%HemiPatches;
+      int DmHemisphere = DmCoor[nd-1]/HemiPatches;
+
+      if ( vertexInputs ) {// Neighbour will live on poles and peer point
 	////////////////////////////////////////////////
 	// XpCoor stencil entry; consider isPole case
 	////////////////////////////////////////////////
@@ -689,7 +694,8 @@ public:
 	SE._missing_link = false;
 	SE._offset       = grid->oIndex(XpCoor);
 	if ( isPoleX ) {
-	  SE._offset     = grid->PoleSiteForOcoor(Coor);
+	  SE._offset     = vertexgrid->PoleSiteForOcoor(Coor);
+	  //	  std::cout << site<<" setting X-Pole site "<<SE._offset<<" for coor "<<Coor<<std::endl;
 	}
 	SE._polarisation = IcosahedronPatchY;
 	SE._adjoint      = false;
@@ -701,12 +707,13 @@ public:
 	SE._missing_link = false;
 	SE._offset       = grid->oIndex(YpCoor);
 	if ( isPoleY ) {
-	  SE._offset     = grid->PoleSiteForOcoor(Coor); 
+	  SE._offset     = vertexgrid->PoleSiteForOcoor(Coor);
+	  //	  std::cout << site<<" setting Y-Pole site "<<SE._offset<<" for coor "<<Coor<<std::endl;
 	}
 	SE._polarisation = IcosahedronPatchX;
 	SE._adjoint      = false;
 	acceleratorPut(this->_entries[lexYp],SE);
-      } else { 
+      } else { // Neighbour will be a forward edge and connection may be more complicated
 	////////////////////////////////////////////////
 	// XpCoor stencil entry
 	// Store in look up table
@@ -718,7 +725,7 @@ public:
 	SE._offset       = grid->oIndex(XpCoor);
 	SE._polarisation = IcosahedronPatchY;
 	SE._adjoint      = false;
-	if ( DpHemiPatch != HemiPatch && south ) {
+	if ( DpHemiPatch != HemiPatch && south ) { // These are the sneaky redirect for edge / faces
 	  SE._offset       = grid->oIndex(DpCoor);
 	  SE._polarisation = IcosahedronPatchX;
 	  SE._adjoint      = true;
@@ -732,7 +739,7 @@ public:
 	SE._offset       = grid->oIndex(YpCoor);
 	SE._polarisation = IcosahedronPatchX;
 	SE._adjoint      = false;
-	if ( YpHemiPatch != HemiPatch && north ) {
+	if ( YpHemiPatch != HemiPatch && north ) {  // These are the sneaky redirect for edge / faces
 	  SE._offset       = grid->oIndex(DpCoor);
 	  SE._polarisation = IcosahedronPatchY;
 	  SE._adjoint      = true;
@@ -774,23 +781,34 @@ public:
     
       /////////////////////////////////////////////////////////////////////
       // for DmCoor ; never needed for staples, only for vertex diff ops
-      // no polarisation rotation
+      // No polarisation rotation.
+      // But polarisation rotation is needed for double storing.
       /////////////////////////////////////////////////////////////////////
       SE._offset       = grid->oIndex(DmCoor);
-      SE._polarisation = IcosahedronPatchDiagonal; // should ignore
+      SE._polarisation = IcosahedronPatchDiagonal; // default
+      if ( (DmHemiPatch != HemiPatch) && (DmHemisphere==Hemisphere)  && south ) {
+        SE._polarisation = IcosahedronPatchX;   // Basis rotates
+      }
+      if ( DmHemiPatch != HemiPatch && (DmHemisphere==Hemisphere) && north ) {
+        SE._polarisation = IcosahedronPatchY;   // Basis rotates
+      }
       SE._missing_link = missingLink;
       acceleratorPut(this->_entries[lexDm],SE);
     }
+
     if ( vertexOutputs ) {
       int ndm1 = grid->Nd()-1;
-      if ( grid->ownsSouthPole() ) {
+      if ( vertexgrid->ownsSouthPole() ) {
 	IcosahedralStencilEntry SE;
-	for(uint64_t site=0;site<cart_sites; site ++) {
+	for(uint64_t site=0;site<cart_sites; site ++) { // loops over volume
 	  Coordinate Coor;
-	  grid->oCoorFromOindex(Coor,site);
-	  if( (Coor[0]==L)&&(Coor[1]==0) ) {
-	    int64_t pole_site = grid->PoleSiteForOcoor(Coor);
-	    int64_t lex       = pole_site*np+Coor[ndm1];
+	  vertexgrid->oCoorFromOindex(Coor,site);
+	  int north = Coor[ndm1]/HemiPatches;
+	  int south = 1-north;
+	  if( (Coor[0]==(L-1))&&(Coor[1]==0) &&south ) {
+	    int64_t pole_site = vertexgrid->PoleSiteForOcoor(Coor);
+	    int64_t lex       = pole_site*np+(Coor[ndm1]%HemiPatches);
+	    //	    std::cout << "Coor "<<Coor<<" connects to south pole_site "<<pole_site<<std::endl;
 	    SE._offset       = site;
 	    SE._is_local     = true;
 	    SE._polarisation = IcosahedronPatchX;  // ignored
@@ -804,17 +822,19 @@ public:
 	  }
 	}
       }
-      if ( grid->ownsNorthPole() ) {
+      if ( vertexgrid->ownsNorthPole() ) {
 	IcosahedralStencilEntry SE;
 	for(uint64_t site=0;site<cart_sites; site ++) {
 	  Coordinate Coor;
-	  grid->oCoorFromOindex(Coor,site);
-	  if( (Coor[0]==0)&&(Coor[1]==L) ) {
-	    int64_t pole_site = grid->PoleSiteForOcoor(Coor);
-	    int64_t lex       = pole_site*np+Coor[ndm1];
+	  vertexgrid->oCoorFromOindex(Coor,site);
+	  int north = Coor[ndm1]/HemiPatches;
+	  if( (Coor[0]==0)&&(Coor[1]==(L-1))&&north ) {
+	    int64_t pole_site = vertexgrid->PoleSiteForOcoor(Coor);
+	    int64_t lex       = pole_site*np+(Coor[ndm1]%HemiPatches);
+	    //	    std::cout << "Coor "<<Coor<<" connects to north pole_site "<<pole_site<<std::endl;
 	    SE._offset       = site;
 	    SE._is_local     = true;
-	    SE._polarisation = IcosahedronPatchX;  // ignored
+	    SE._polarisation = IcosahedronPatchY;  // ignored
 	    SE._adjoint      = false;              // ignored
 	    SE._missing_link = false;
 	    acceleratorPut(this->_entries[lex],SE);
@@ -986,3 +1006,4 @@ public:
    */
 };
 NAMESPACE_END(Grid);
+  
