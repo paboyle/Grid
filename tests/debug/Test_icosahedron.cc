@@ -78,7 +78,6 @@ public:
   }
 
   ////////////////////////////////////////////////////////////////////////////////////
-  // Fixme: will need a version of "Gimpl" and a wrapper class following "WilsonLoops" style.
   // Gauge Link field GT is the gauge transform and lives on the VERTEX field
   ////////////////////////////////////////////////////////////////////////////////////
   void ForwardTriangles(GaugeField &Umu,LatticeComplex &plaq1,LatticeComplex &plaq2)
@@ -359,10 +358,8 @@ public:
       auto o    = i;
 
       if ( missingLink ) {
-	//	std::cout << " CL site "<<ss<<" "<<i<<" "<<inxp<<" "<<inyp<<" "<<indp<<" "<<inxm<<" "<<inym<<std::endl;
 	o = (1.0/5.0)*(inxp+inyp+indp+inxm+inym)-i;
       } else {
-	//	std::cout << " CL site "<<ss<<" "<<i<<" "<<inxp<<" "<<inyp<<" "<<indp<<" "<<inxm<<" "<<inym<<std::endl;
 	indm = U_v(ss)(5)*indm;
 	o = (1.0/6.0)*(inxp+inyp+indp+inxm+inym+indm)-i;
       }
@@ -389,18 +386,6 @@ public:
     const int ent_Dm = 5;
     
     accelerator_for(ss,VertexGrid->CartesianOsites(),vComplex::Nsimd(),{
-	/*
-      Coordinate sc;
-      Coordinate xc;
-      Coordinate yc;
-      Coordinate dc;
-      int isPoleY;
-      int isPoleX;
-	*/
-      //      EdgeGrid->oCoorFromOindex(sc,ss);
-      //      FaceStencil.GetNbrForPlusDiagonal(EdgeGrid,sc,dc);
-      //      FaceStencil.GetNbrForPlusX(EdgeGrid,sc,xc,isPoleX);
-      //      FaceStencil.GetNbrForPlusY(EdgeGrid,sc,yc,isPoleY);
 	
       // Three local links
       {
@@ -428,8 +413,6 @@ public:
 	auto Lx_at_xm = U_v(s)(pol1);
 	Lx_at_xm = adj(Lx_at_xm);
 	coalescedWrite(Uds_v[ss](3),Lx_at_xm );
-	//	EdgeGrid->oCoorFromOindex(xc,s);
-	//	std::cout << " Coor "<<sc<<" Xm "<<xc<<" stencil entry "<<s<<" "<<Lx_at_xm<<std::endl;
       }
       {
 	auto SE   = stencil_v.GetEntry(ent_Ym,ss);
@@ -447,8 +430,6 @@ public:
 	auto Ly_at_ym = U_v(s)(pol1);
 	Ly_at_ym = adj(Ly_at_ym);
 	coalescedWrite(Uds_v[ss](4),Ly_at_ym );
-	//	EdgeGrid->oCoorFromOindex(yc,s);
-	//	std::cout << " Coor "<<sc<<" Ym "<<yc<<" stencil entry "<<s<<" "<<Ly_at_ym<<std::endl;
       }
       int missingLink;
       {      
@@ -461,8 +442,6 @@ public:
 	  auto Ld_at_dm  =  U_v(s)(pol);
 	  Ld_at_dm = adj(Ld_at_dm);
 	  coalescedWrite(Uds_v[ss](5),Ld_at_dm );
-	  //	  EdgeGrid->oCoorFromOindex(dc,s);
-	  //	  std::cout << " Coor "<<sc<<" Dm "<<dc<<" stencil entry "<<s<<" "<<Ld_at_dm<<std::endl;
 	}
       }
     });
@@ -476,125 +455,9 @@ public:
 	auto pol= SE->_polarisation;
 	auto Link =  adj(U_v(s)(pol));
 	coalescedWrite(Uds_v[pole_offset+ss](p),Link);
-	//	Coordinate pc;
-	//	EdgeGrid->oCoorFromOindex(pc,s);
-	//	std::cout << " Stencil pole neighbour hemi "<<p<<" site "<<s<<" "<<pc<<" Link "<<Link<<std::endl;
       }
     });
   }
-  /*
-  void  GaugeTransformCPU(GaugeLinkField &gt, GaugeField &Umu)
-  {
-    assert(gt.Grid()==VertexGrid);
-    assert(Umu.Grid()==EdgeGrid);
-    assert(VertexGrid->isIcosahedralVertex());
-    assert(EdgeGrid->isIcosahedralEdge());
-    
-    GridBase * vgrid = VertexGrid;
-    GridBase * grid  = EdgeGrid;
-
-    int osites  = grid->oSites();
-
-    uint64_t cart_sites = grid->CartesianOsites();
-    uint64_t Npole_sites = grid->NorthPoleOsites();
-    uint64_t Spole_sites = grid->SouthPoleOsites();
-    Coordinate pcoor = grid->ThisProcessorCoor();
-    Coordinate pgrid = grid->ProcessorGrid();
-
-    autoView(g_v,gt,CpuRead);
-    autoView(Umu_v,Umu,CpuWrite);
-    for(uint64_t site=0;site<cart_sites; site ++) {
-
-      Coordinate Coor;
-      Coordinate NbrCoor;
-
-      int nd = grid->Nd();
-      int L  = grid->LocalDimensions()[0];
-	
-      ////////////////////////////////////////////////
-      // Outer index of neighbour Offset calculation
-      ////////////////////////////////////////////////
-      grid->oCoorFromOindex(Coor,site);
-      NbrCoor = Coor;
-      assert( grid->LocalDimensions()[1]==grid->LocalDimensions()[0]);
-      assert( grid->_simd_layout[0]==1); // Cannot vectorise in these dims
-      assert( grid->_simd_layout[1]==1);
-      assert( grid->_processors[0]==1); // Cannot mpi distribute in these dims
-      assert( grid->_processors[1]==1);
-
-      int Patch = Coor[nd-1];
-      int HemiPatch = Patch%HemiPatches;
-      int north = Patch/HemiPatches;
-      int south = 1-north;
-      int isPoleY;
-      int isPoleX;
-      
-      assert(Patch<IcosahedralPatches);
-      assert((north==1)||(south==1));
-
-      Coordinate XpCoor;
-      Coordinate YpCoor;
-      Coordinate DpCoor;
-
-      FaceStencil.GetNbrForPlusDiagonal(grid,Coor,DpCoor);
-      FaceStencil.GetNbrForPlusX(grid,Coor,XpCoor,isPoleX);
-      FaceStencil.GetNbrForPlusY(grid,Coor,YpCoor,isPoleY);
-
-      int XpHemiPatch  = XpCoor[nd-1]%HemiPatches;
-      int XpHemisphere = XpCoor[nd-1]/HemiPatches;
-
-      int DpPatch  = DpCoor[nd-1];
-      int DpHemiPatch  = DpCoor[nd-1]%HemiPatches;
-      int DpHemisphere = DpCoor[nd-1]/HemiPatches;
-
-      // Work out the pole_osite
-      Coordinate rdims;
-      Coordinate ocoor;
-      int64_t pole_osite;
-      int Ndm1 = grid->Nd()-1;
-      for(int d=2;d<Ndm1;d++){
-	int dd=d-2;
-	rdims.push_back(grid->_rdimensions[d]);
-	ocoor.push_back(Coor[d]%grid->_rdimensions[d]);
-      }
-      Lexicographic::IndexFromCoor(ocoor,pole_osite,rdims);
-      
-      uint64_t xp_idx;
-      uint64_t yp_idx;
-      uint64_t dp_idx;
-      if ( isPoleX ) {
-	assert(vgrid->ownsSouthPole());
-	xp_idx = pole_osite + vgrid->SouthPoleOsite();
-      } else {
-	xp_idx = grid->oIndex(XpCoor);
-      }
-      if ( isPoleY ) {
-	assert(vgrid->ownsNorthPole());
-	yp_idx = pole_osite + vgrid->NorthPoleOsite();
-      } else {
-	yp_idx = grid->oIndex(YpCoor);
-      }
-      dp_idx = grid->oIndex(DpCoor);
-
-      auto g  = g_v(site)();
-      auto gx = g_v(xp_idx)();
-      auto gy = g_v(yp_idx)();
-      auto gd = g_v(dp_idx)();
-
-      auto lx = Umu_v(site)(IcosahedronPatchX);
-      auto ly = Umu_v(site)(IcosahedronPatchY);
-      auto ld = Umu_v(site)(IcosahedronPatchDiagonal);
-       
-      lx = g*lx*adj(gx);
-      ly = g*ly*adj(gy);
-      ld = g*ld*adj(gd);
-
-      coalescedWrite(Umu_v[site](IcosahedronPatchX),lx);
-      coalescedWrite(Umu_v[site](IcosahedronPatchY),ly);
-      coalescedWrite(Umu_v[site](IcosahedronPatchDiagonal),ld);
-    };
-  }
-  */  
   void  GaugeTransform(GaugeLinkField &gt, GaugeField &Umu)
   {
     autoView(Umu_v,Umu,AcceleratorWrite);
@@ -636,31 +499,6 @@ public:
       ly = g*ly*adj(gy);
       ld = g*ld*adj(gd);
 
-      /*
-      Coordinate sc;
-      Coordinate xc;
-      Coordinate yc;
-      Coordinate dc;
-      int isPoleY;
-      int isPoleX;
-      
-	EdgeGrid->oCoorFromOindex(sc,ss);
-      FaceStencil.GetNbrForPlusDiagonal(EdgeGrid,sc,dc);
-      FaceStencil.GetNbrForPlusX(EdgeGrid,sc,xc,isPoleX);
-      FaceStencil.GetNbrForPlusY(EdgeGrid,sc,yc,isPoleY);
-
-      if (isPoleX) {
-	std::cout << " ss "<<ss<<" "<<sc<< " POLE xp_idx "<<xp_idx<<" gxp "<<adj(gx)<<std::endl;
-      } else {
-	std::cout << " ss "<<ss<<" "<<sc<< " xp_idx "<<xp_idx<<" "<<xc<<" gxp "<<adj(gx)<<std::endl;
-      }
-      if (isPoleY) {
-	std::cout << " ss "<<ss<<" "<<sc<< " POLE yp_idx "<<yp_idx<<" gyp "<<adj(gy)<<std::endl;
-      } else {
-	std::cout << " ss "<<ss<<" "<<sc<< " yp_idx "<<yp_idx<<" "<<yc<<" gyp "<<adj(gy)<<std::endl;
-      }
-      std::cout << " ss "<<ss<<" "<<sc<< " dp_idx "<<dp_idx<<" "<<dc<<" gdp "<<adj(gd)<<std::endl;
-      */      
       coalescedWrite(Umu_v[ss](IcosahedronPatchX),lx);
       coalescedWrite(Umu_v[ss](IcosahedronPatchY),ly);
       coalescedWrite(Umu_v[ss](IcosahedronPatchDiagonal),ld);
@@ -756,18 +594,6 @@ int main (int argc, char ** argv)
   gc = toComplex(gr);
   g=one;
   g = g * exp(ci*gc);
-  /*
-    Complex m1(1.0,0.0);
-  typename LatticeComplex::scalar_object sobj; sobj = m1;
-  int nd = EdgeGrid.Nd();
-  Coordinate coor(nd,0);
-  coor[0]=1;
-  coor[1]=latt_size[1]-1;
-  coor[2]=2;
-  coor[3]=5;
-  //  pokeSite(m1,gc,coor);
-  */
-  //  std::cout << "GT is "<<g<<std::endl;
  
   std::cout << GridLogMessage << "****************************************"<<std::endl;
   std::cout << GridLogMessage << " Check plaquette is gauge invariant "<<std::endl;
@@ -775,14 +601,11 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " applying gauge transform"<<std::endl;
   Support.GaugeTransform    (g,Umu);
   std::cout << GridLogMessage << " applied gauge transform "<<std::endl;
-  //  std::cout << "Umu\n"<< Umu << std::endl;
+
   std::cout << GridLogMessage << " recalculating plaquette "<<std::endl;
   Support.ForwardTriangles(Umu,plaq1,plaq2);
   std::cout << GridLogMessage << " plaq1 "<< norm2(plaq1)<<std::endl;
   std::cout << GridLogMessage << " plaq2 "<< norm2(plaq2)<<std::endl;
-
-  //  std::cout << " plaq1 "<< plaq1<<std::endl;
-  //  std::cout << " plaq2 "<< plaq2<<std::endl;
 
   std::cout << GridLogMessage << " plaq1 err "<< norm2(plaq1-plaq_ref)<<std::endl;
   std::cout << GridLogMessage << " plaq2 err "<< norm2(plaq2-plaq_ref)<<std::endl;
@@ -830,12 +653,6 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " trace Y*StapleDX "<<norm2(trace(linkY * stapleDX))<<std::endl;
   std::cout << GridLogMessage << " err " << norm2(trace(linkY * stapleDX)-plaq_ref)<<std::endl;
 
-  //  std::cout << " D " << linkD<<std::endl;
-  //  std::cout << " X " << linkX<<std::endl;
-  //  std::cout << " Y " << linkY<<std::endl;
-  //  std::cout << " DXY\n " << closure(linkD * stapleYX) <<std::endl;
-  //  std::cout << " YXD\n " << closure(linkY * stapleXD) <<std::endl;
-  
   std::cout << GridLogMessage<< "Calling Laplacian" <<std::endl;
   LatticeColourVector in(&VertexGrid);
   LatticeColourVector out(&VertexGrid);
@@ -847,9 +664,10 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< "Calling double storing gauge field" <<std::endl;
   LatticeDoubledGaugeField Uds(&VertexGrid);
   Support.DoubleStore(Umu,Uds);
-  //  std::cout << "Uds is"<<Uds<<std::endl;
 
   Support.CovariantLaplacian(in,out,Uds);
+
+  auto ip = innerProduct(out, in);
   std::cout << GridLogMessage<< "Applied covariant laplacian !" <<std::endl;
   /*
    * CovariantLaplacian testing -- check the laplacian is gauge invariant
@@ -863,20 +681,13 @@ int main (int argc, char ** argv)
   Support.DoubleStore(Umu,Uds);
   Support.CovariantLaplacian(gin,out,Uds);
   std::cout << GridLogMessage<< "Applied gauge transformed covariant laplacian to transformed vector !" <<std::endl;
+  auto ipgt = innerProduct(out, gin);
 
   std::cout << "Testing D[U_gt](gF) = g D[U] F : defect is "<<norm2(out-gout)<<std::endl;
-  
-  //  std::cout << "Support.CovariantLaplacian(gin,out,Uds) "<<out<<std::endl;
-  //  std::cout << "g * out  "<<gout<<std::endl;
-  //  out = out - gout;
-  //  std::cout << "diff  "<<out<<std::endl;
+
+  ip = ip - ipgt;
+  std::cout << "Testing F D[U](F) = (gF) D[U_gt] gF : defect is "<<ip<<std::endl;
 
   Grid_finalize();
 }
-  /**********************************************************************************************
-   * This routine is slow and single threaded on CPU
-   * Preserved as potentially useful in future, but only in comments
-   *********************************************************************************************
-   */
-
 
