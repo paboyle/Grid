@@ -409,10 +409,16 @@ AC_SEARCH_LIBS([unw_backtrace], [unwind],
                [have_unwind=true],
 	             [AC_MSG_WARN(libunwind library was not found in your system.)])
 
-AC_SEARCH_LIBS([_Ux86_64_step], [unwind-x86_64],
-               [AC_DEFINE([HAVE_UNWIND_X86_64], [1], [Define to 1 if you have the `libunwind-x86_64' library])]
-               [have_unwind_x86_64=true],
-	             [AC_MSG_WARN(libunwind library was not found in your system.)])
+AS_CASE([$host_cpu], [x86_64],
+  [AC_SEARCH_LIBS([_Ux86_64_step], [unwind-x86_64],
+                [AC_DEFINE([HAVE_UNWIND_X86_64], [1], [Define to 1 if you have the `libunwind-x86_64' library])]
+                [have_unwind_x86_64=true],
+                [AC_MSG_WARN(libunwind library was not found in your system.)])],
+  [aarch64],
+  [AC_SEARCH_LIBS([_Uaarch64_step], [unwind-aarch64],
+                [AC_DEFINE([HAVE_UNWIND_AARCH64], [1], [Define to 1 if you have the `libunwind-aarch64' library])]
+                [have_unwind_aarch64=true],
+                [AC_MSG_WARN(libunwind library was not found in your system.)])])
 
 AC_SEARCH_LIBS([SHA256_Init], [crypto],
                [AC_DEFINE([HAVE_CRYPTO], [1], [Define to 1 if you have the `OpenSSL' library])]

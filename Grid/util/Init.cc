@@ -755,7 +755,7 @@ void Grid_generic_handler(int sig,siginfo_t *si,void * ptr)
   sig_print_uint(si->si_code);
   SIGLOG("\n");
 
-  ucontext_t *uc= (ucontext_t *)ptr;
+  unw_context_t *uc= (unw_context_t *)ptr;
   
   SIGLOG("Backtrace:\n");
 #ifdef HAVE_UNWIND
