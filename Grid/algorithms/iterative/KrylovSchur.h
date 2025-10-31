@@ -646,7 +646,7 @@ class KrylovSchur {
       // rotate basis by Rayleigh to construct UR
       // std::vector<Field> rotated;
 
-      std::cout << GridLogDebug << "Rayleigh in KSDecomposition: " << std::endl << Rayleigh << std::endl;
+      // std::cout << GridLogDebug << "Rayleigh in KSDecomposition: " << std::endl << Rayleigh << std::endl;
 
       std::vector<Field> rotated = basis;
       constructUR(rotated, basis, Rayleigh, k);             // manually rotate
@@ -665,10 +665,10 @@ class KrylovSchur {
         delta = delta / norm2(tmp);               // relative tolerance
         deltaSum += delta;
 
-        std::cout << GridLogDebug << "Iteration " << i << std::endl;
-        std::cout << GridLogDebug << "Du = " << norm2(tmp) << std::endl;
-        std::cout << GridLogDebug << "rotated = " << norm2(rotated[i]) << std::endl;
-        std::cout << GridLogDebug << "b[i] = " << b(i) << std::endl;
+        // std::cout << GridLogDebug << "Iteration " << i << std::endl;
+        // std::cout << GridLogDebug << "Du = " << norm2(tmp) << std::endl;
+        // std::cout << GridLogDebug << "rotated = " << norm2(rotated[i]) << std::endl;
+        // std::cout << GridLogDebug << "b[i] = " << b(i) << std::endl;
         std::cout << GridLogMessage << "Deviation in decomp, column " << i << ": " << delta << std::endl;
       }
       std::cout << GridLogMessage << "Squared sum of relative deviations in decomposition: " << deltaSum << std::endl;
