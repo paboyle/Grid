@@ -411,7 +411,7 @@ class KrylovSchur {
         if (Nconv >= Nstop || i == MaxIter - 1) {
           std::cout << GridLogMessage << "Converged with " << Nconv << " / " << Nstop << " eigenvectors on iteration " 
                         << i << "." << std::endl;
-          basisRotate(evecs, Qt, 0, Nk, 0, Nk, Nm);
+          // basisRotate(evecs, Qt, 0, Nk, 0, Nk, Nm);      // Think this might have been the issue
           std::cout << GridLogMessage << "Eigenvalues: " << evals << std::endl;
 
           // writeEigensystem(path);
@@ -629,7 +629,7 @@ class KrylovSchur {
 
       }
       // Check that Ritz estimate is explicitly || D (Uy) - lambda (Uy) ||
-      // checkRitzEstimate();
+      checkRitzEstimate();
       return Nconv;
     }
 

@@ -1,8 +1,6 @@
 /*************************************************************************************
 
-    Runs the Krylov-Schur algorithm on a Wilson fermion operator to determine part of its spectrum. 
-
-    TODO rename this file: really is running the topology change jobs on Aurora. 
+    Script for studying the Wilson eigenvectors resulting from the Krylov-Schur process. 
 
     Usage : 
       $ ./Example_spec_kryschur <Nm> <Nk> <maxiter> <Nstop> <inFile> <outDir> <?rf>
@@ -75,6 +73,19 @@ template <class T> void writeFile(T& in, std::string const fname){
     WR.open(fname);
     WR.writeScidacFieldRecord(in,record,0); // Lexico
     WR.close();
+  #endif
+}
+
+template <class T> void readFile(T& out, std::string const fname){  
+  #ifdef HAVE_LIME
+    // Ref: https://github.com/paboyle/Grid/blob/feature/scidac-wp1/tests/debug/Test_general_coarse_hdcg_phys48.cc#L111
+    std::cout << Grid::GridLogMessage << "Reads at: " << fname << std::endl;
+    Grid::emptyUserRecord record;
+    // Grid::ScidacReader SR(out.Grid()->IsBoss());
+    Grid::ScidacReader SR;
+    SR.open(fname);
+    SR.readScidacFieldRecord(out, record);
+    SR.close();
   #endif
 }
 
@@ -262,25 +273,8 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  // Usage : $ ./Example_spec_kryschur <Nm> <Nk> <maaxiter> <Nstop> <inFile> <outDir>
-  std::string NmStr      = argv[1];
-  std::string NkStr      = argv[2];
-  std::string maxIterStr = argv[3];
-  std::string NstopStr   = argv[4];
-  std::string file       = argv[5];
-  std::string outDir     = argv[6];
-
-  // RitzFilter RF;
-  // if (argc == 8) {
-  //   std::string rf       = argv[7];
-  //   RF = selectRitzFilter(rf);
-  // } else {
-  //   RF = EvalReSmall;
-  // }
-  // RitzFilter RF;
-  std::string rf       = argv[7];
-  RitzFilter RF        = selectRitzFilter(rf);
-  std::cout << "Sorting eigenvalues using " << rfToString(RF) << std::endl;
+  // Usage : $ ./Example_wilson_evecs ${inFile}
+  std::string file       = argv[1];
 
   const int Ls=16;
 
@@ -329,40 +323,55 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "Dirac operator defined" << std::endl;
 
-  // Define PV^dag D (if we want)
-  // DomainWallFermionD Dpv(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, 1.0, M5);
-  // typedef PVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> PVdagM_t;
-  // PVdagM_t PVdagM(Ddwf, Dpv);
+  std::string eigenPath = "/home/poare/lqcd/multigrid/spectra/32cube-rho0.124-tau4/U_smr_3.000000/Nm72_Nk24_8111835.aurora-pbs-0001.hostmgmt.cm.aurora.alcf.anl.gov/";
 
-  std::cout<<GridLogMessage<<std::endl;
-  std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
-  std::cout<<GridLogMessage<<std::endl;
+  std::cout << GridLogMessage << "Loading eigenvalues" << std::endl;
+  std::ifstream evalFile(eigenPath + "evals.txt");
+  std::string str;
+  std::vector<ComplexD> evals;
+  while (std::getline(evalFile, str)) {
+      std::cout << GridLogMessage << "Reading line: " << str << std::endl;
+      int i1 = str.find("(") + 1;
+      int i2 = str.find(",") + 1;
+      int i3 = str.find(")");
+      std::cout << "i1,i2,i3 = " << i1 << "," << i2 << "," << i3 << std::endl;
+      std::string reStr = str.substr(i1, i2 - i1);
+      std::string imStr = str.substr(i2, i3 - i2);
+      std::cout << GridLogMessage << "Parsed re = " << reStr << " and im = " << imStr << std::endl;
+      // ComplexD z (std::stof(reStr), std::stof(imStr));
+      ComplexD z (std::stod(reStr), std::stod(imStr));
+      evals.push_back(z);
+  }
+  std::cout << GridLogMessage << "Eigenvalues: " << evals << std::endl;
 
-  // SquaredLinearOperator<WilsonFermionD, LatticeFermionD> Dsq (DWilson);
-  // NonHermitianLinearOperator<WilsonFermionD, LatticeFermionD> DLinOp (DWilson);
+  int Nevecs = 24;
+  std::vector<LatticeFermion> evecs;
+  LatticeFermion evec (FGrid);
+  for (int i = 0; i < Nevecs; i++) {
+    std::string evecPath = eigenPath + "evec" + std::to_string(i);
+    readFile(evec, evecPath);
+    evecs.push_back(evec);
+  }
+  std::cout << GridLogMessage << "Evecs loaded" << std::endl;
 
-  int Nm = std::stoi(NmStr);
-  int Nk = std::stoi(NkStr);
-  int maxIter = std::stoi(maxIterStr);
-  int Nstop = std::stoi(NstopStr);
+  // Compute < evec | D - \lambda | evec >
+  std::cout << GridLogMessage << "Testing eigenvectors" << std::endl;
+  LatticeFermion Devec (FGrid);
+  ComplexD ritz;
+  for (int i = 0; i < Nevecs; i++) {
+    Devec = Zero();
+    DLinOp.Op(evecs[i], Devec);
+    ritz = std::sqrt(norm2(Devec - evals[i] * evecs[i]));
+    std::cout << GridLogMessage << "i = " << i << ", || (D - lambda) |vi> || = " << ritz << std::endl;
+  }
+  // Eigen::MatrixXcd Dw_evecs;
+  // Dw_evecs = Eigen::MatrixXcd::Zero(Nevecs, Nevecs);
+  // for (int i = 0; i < Nevecs; i++) {
+  //   Linop.Op(evecs[i], Devec);
+  //   for (int j = 0; j < Nevecs; j++) {
 
-  std::cout << GridLogMessage << "Runnning Krylov Schur. Nm = " << Nm << ", Nk = " << Nk << ", maxIter = " << maxIter 
-                  << ", Nstop = " << Nstop << std::endl;
-  
-  // KrylovSchur KrySchur (PVdagM, FGrid, 1e-8, RF);         // use PV^\dag M
-  KrylovSchur KrySchur (DLinOp, FGrid, 1e-8, RF);         // use Ddwf
-  KrySchur(src, maxIter, Nm, Nk, Nstop);
-
-  std::cout << GridLogMessage << "Checking eigensystem." << std::endl;
-  KrySchur.checkRitzEstimate();
-
-  std::cout<<GridLogMessage << "*******************************************" << std::endl;
-  std::cout<<GridLogMessage << "***************** RESULTS *****************" << std::endl;
-  std::cout<<GridLogMessage << "*******************************************" << std::endl;
-
-  std::cout << GridLogMessage << "Krylov Schur eigenvalues: " << std::endl << KrySchur.getEvals() << std::endl;
-
-  writeEigensystem(KrySchur, outDir);
+  //   }
+  // }
 
   std::cout<<GridLogMessage<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
