@@ -62,6 +62,8 @@ struct LanczosParameters: Serializable {
 				Integer, Nstop,
                                 Integer, Nk,
                                 Integer, Np,
+                                Integer, ReadEvec,
+	  			RealD, resid,
 	  			RealD, ChebyLow,
 	  			RealD, ChebyHigh,
 	  			Integer, ChebyOrder)
@@ -139,8 +141,8 @@ int main(int argc, char** argv) {
   FieldMetaData header;
   std::string file("./config");
 
-  int precision32 = 0;
-  int tworow      = 0;
+//  int precision32 = 0;
+//  int tworow      = 0;
 //  NerscIO::writeConfiguration(Umu,file,tworow,precision32);
   NerscIO::readConfiguration(Umu,header,file);
 
@@ -178,6 +180,7 @@ int main(int argc, char** argv) {
   }
 
   mass=LanParams.mass;
+  resid=LanParams.resid;
   Nstop=LanParams.Nstop;
   Nk=LanParams.Nk;
   Np=LanParams.Np;
@@ -185,12 +188,22 @@ int main(int argc, char** argv) {
 
   FermionField src(FGrid);
   gaussian(RNG5, src);
+  if(LanParams.ReadEvec) {
+    std::string evecs_file="evec_in";
+    std::cout << GridLogIRL<< "Reading evecs from "<<evecs_file<<std::endl;
+    emptyUserRecord record;
+    Grid::ScidacReader RD;
+    RD.open(evecs_file);
+    RD.readScidacFieldRecord(src,record);
+    RD.close();
+  }
+
   std::vector<Complex> boundary = {1,1,1,-1};
 //  std::vector<Complex> boundary = {1,1,1,1};
   FermionOp::ImplParams Params(boundary);
 
 
-while ( mass > - 2.5){
+while ( mass > - 2.0){
   FermionOp WilsonOperator(Umu,*FGrid,*FrbGrid,mass,Params);
   MdagMLinearOperator<FermionOp,FermionField> HermOp(WilsonOperator); /// <-----
   //SchurDiagTwoOperator<FermionOp,FermionField> HermOp(WilsonOperator);
@@ -228,6 +241,8 @@ while ( mass > - 2.5){
   Gamma g5(Gamma::Algebra::Gamma5) ;
   ComplexD dot;
   FermionField tmp(FGrid);
+  FermionField sav(FGrid);
+  sav=evec[0];
   for (int i = 0; i < Nstop ; i++) {
     tmp = g5*evec[i];
     dot = innerProduct(tmp,evec[i]);
@@ -237,7 +252,23 @@ while ( mass > - 2.5){
 	std::string evfile ("./evec_"+std::to_string(mass)+"_"+std::to_string(i));
         auto evdensity = localInnerProduct(evec[i],evec[i] );
 	writeFile(evdensity,evfile);
+//  if(LanParams.ReadEvec) {
+//    std::string evecs_file="evec_in";
+  {
+    std::cout << GridLogIRL<< "Reading evecs from "<<evfile<<std::endl;
+    emptyUserRecord record;
+    Grid::ScidacReader RD;
+    RD.open(evfile);
+    RD.readScidacFieldRecord(evdensity,record);
+    RD.close();
+  }
     }
+    if (i>0) sav += evec[i];
+  }
+  {
+	std::string evfile ("./evec_"+std::to_string(mass)+"_sum");
+//        auto evdensity = localInnerProduct(evec[i],evec[i] );
+	writeFile(sav,evfile);
   }
   src  = evec[0]+evec[1]+evec[2];
   src  += evec[3]+evec[4]+evec[5];
