@@ -10,7 +10,7 @@ export HDF5=/opt/cray/pe/hdf5/1.12.2.3/gnu/9.1
 	--disable-gparity \
 	--disable-fermion-reps \
 	--enable-shm=nvlink \
-	--enable-checksum-comms=yes \
+	--enable-checksum-comms=no \
 	--enable-log-views=yes \
 	--enable-accelerator=sycl \
 	--enable-accelerator-aware-mpi=no \

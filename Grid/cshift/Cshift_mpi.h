@@ -124,7 +124,7 @@ template<class vobj> void Cshift_simple(Lattice<vobj>& ret,const Lattice<vobj> &
     void *hsend_buf = (void *)&hrhs[0];
     void *hrecv_buf = (void *)&hret[0];
 
-    acceleratorCopyFromDevice(&send_buf[0],&hsend_buf[0],bytes);
+    acceleratorCopyFromDevice(send_buf,hsend_buf,bytes);
 
     grid->SendToRecvFrom(hsend_buf,
 			 xmit_to_rank,
@@ -132,7 +132,7 @@ template<class vobj> void Cshift_simple(Lattice<vobj>& ret,const Lattice<vobj> &
 			 recv_from_rank,
 			 bytes);
 
-    acceleratorCopyToDevice(&hrecv_buf[0],&recv_buf[0],bytes);
+    acceleratorCopyToDevice(hrecv_buf,recv_buf,bytes);
 #endif
   }
 }
