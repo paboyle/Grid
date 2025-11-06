@@ -41,6 +41,12 @@ enum NorthSouth {
   North = 1,
   South = 0
 };
+enum IcoshedralDirections {
+  IcosahedronPatchX = 0,
+  IcosahedronPatchY = 1,
+  IcosahedronPatchDiagonal=2,
+  NumIcosahedralPolarizations
+};
 
 const int IcosahedralPatches = 10;
 const int HemiPatches=IcosahedralPatches/2;

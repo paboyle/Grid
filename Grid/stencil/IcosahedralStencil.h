@@ -35,16 +35,17 @@ struct IcosahedralStencilEntry {
   uint8_t _adjoint;            // is this with our lattice array (else in a comms buf)
   uint8_t _polarisation;       // which lorentz index on the neighbours patch
   uint8_t _missing_link;       // 
+  uint8_t _permute;            // did this wrap (in T-direction)
 };
 
-enum IcoshedralDirections {
-  IcosahedronPatchX = 0,
-  IcosahedronPatchY = 1,
-  IcosahedronPatchDiagonal=2,
-  IcosahedronTime=3
-};
 
 inline int periAdd(int A,int inc,int L) { return (A+inc+L)%L ; }
+inline int periAdd(int A,int inc,int L,int & wrap) {
+  int r = (A+inc+L)%L;
+  if ( r != (A+inc) ) wrap = 1;
+  else wrap =0;
+  return r;
+}
 
 class IcosahedralStencilView {
  public:
@@ -86,6 +87,7 @@ public:
   // If needing edge mesh "neigbours" to assemble loops we must find the mapping of a forward link
   // to a corresponding "backward link" on the pole
   deviceVector<IcosahedralStencilEntry>  _entries;
+
   
   void GetNbrForPlusX(GridBase *grid,Coordinate &Coor,Coordinate &NbrCoor, int &isPole)
   {
@@ -559,16 +561,6 @@ public:
     assert(dmxy_count + dmxy_count_special + num_missing == triangle_ref);
     assert(dmyx_count + dmyx_count_special + num_missing == triangle_ref);
     
-    std::cout << GridLogMessage<< "------------------------------------"<<std::endl;
-    std::cout << GridLogMessage<< "NOT testing diag -x-y = identity "<<std::endl;
-    std::cout << GridLogMessage<< "NOT testing diag -y-x = identity"<<std::endl;
-    std::cout << GridLogMessage<< "------------------------------------"<<std::endl;
-
-    std::cout << GridLogMessage<< "------------------------------------"<<std::endl;
-    std::cout << GridLogMessage<< "NOT testing -diag = -x-y "<<std::endl;
-    std::cout << GridLogMessage<< "NOT testing -diag = -y-x "<<std::endl;
-    std::cout << GridLogMessage<< "------------------------------------"<<std::endl;
-    
     std::cout << GridLogMessage<< "*************************************"<<std::endl;
     std::cout << GridLogMessage<< " Icosahedral Stencil Geometry Test Complete"<<std::endl;
     std::cout << GridLogMessage<< "*************************************"<<std::endl;
@@ -577,6 +569,7 @@ public:
   {
     this->_grid          = grid;
     this->_vertexgrid    = vertexgrid;
+    assert(grid->ProcessorCount() ==1);
     // Loop over L^2 x T x npatch and the
     assert(grid->isIcosahedral());
     assert(grid->isIcosahedral());
@@ -598,16 +591,21 @@ public:
     GridBase * vertexgrid = this->_vertexgrid;
     
     uint64_t cart_sites = grid->CartesianOsites();
-    uint64_t Npole_sites = grid->NorthPoleOsites();
-    uint64_t Spole_sites = grid->SouthPoleOsites();
+    uint64_t Npole_sites = vertexgrid->NorthPoleOsites();
+    uint64_t Spole_sites = vertexgrid->SouthPoleOsites();
+
     Coordinate pcoor = grid->ThisProcessorCoor();
     Coordinate pgrid = grid->ProcessorGrid();
     /*
      * resize the stencil entries array and set npoints
      */
-    const int np=6;
+    const int np=8;
     this->_npoints=np; // Move to template param?
-    this->_entries.resize(this->_npoints * cart_sites);
+    if ( vertexOutputs ) {
+      this->_entries.resize(this->_npoints * (cart_sites+Npole_sites+Spole_sites));
+    } else {
+      this->_entries.resize(this->_npoints * cart_sites);
+    }
     this->_entries_p = &_entries[0];
 
     int nd = grid->Nd();
@@ -618,13 +616,14 @@ public:
       Coordinate Coor;
       Coordinate NbrCoor;
 
-
       Integer lexXp = site*np  ;
       Integer lexYp = site*np+1;
       Integer lexDp = site*np+2;
       Integer lexXm = site*np+3;
       Integer lexYm = site*np+4;
       Integer lexDm = site*np+5;
+      Integer lexTp = site*np+6;
+      Integer lexTm = site*np+7;
 
       IcosahedralStencilEntry SE;
 	
@@ -659,6 +658,8 @@ public:
       Coordinate XmCoor;
       Coordinate YmCoor;
       Coordinate DmCoor;
+      Coordinate TpCoor;
+      Coordinate TmCoor;
 
       GetNbrForPlusDiagonal(grid,Coor,DpCoor);
       GetNbrForPlusX(grid,Coor,XpCoor,isPoleX);
@@ -668,7 +669,13 @@ public:
       GetNbrForMinusX(grid,Coor,XmCoor);
       GetNbrForMinusY(grid,Coor,YmCoor);
 
-      int DpPatch  = DpCoor[nd-1];
+      int tdim  = 2; int delta = 1;
+      int permuteTp;
+      int permuteTm;
+      GetOrthogNbr(grid,Coor,TpCoor,tdim, delta,permuteTp);
+      GetOrthogNbr(grid,Coor,TmCoor,tdim,-delta,permuteTm);
+	
+      int DpPatch      = DpCoor[nd-1];
       int DpHemiPatch  = DpCoor[nd-1]%HemiPatches;
       int DpHemisphere = DpCoor[nd-1]/HemiPatches;
 
@@ -682,10 +689,11 @@ public:
       int YmHemiPatch  = YmCoor[nd-1]%HemiPatches;
       int YmHemisphere = YmCoor[nd-1]/HemiPatches;
 
-      int DmPatch  = DmCoor[nd-1];
+      int DmPatch      = DmCoor[nd-1];
       int DmHemiPatch  = DmCoor[nd-1]%HemiPatches;
       int DmHemisphere = DmCoor[nd-1]/HemiPatches;
 
+      SE._permute=0;
       if ( vertexInputs ) {// Neighbour will live on poles and peer point
 	////////////////////////////////////////////////
 	// XpCoor stencil entry; consider isPole case
@@ -794,6 +802,17 @@ public:
       }
       SE._missing_link = missingLink;
       acceleratorPut(this->_entries[lexDm],SE);
+      /////////////////////////////////////////////////////////////////////
+      // for Tp/mCoor 
+      /////////////////////////////////////////////////////////////////////
+      SE._polarisation = 0;
+      SE._offset       = grid->oIndex(TpCoor);
+      SE._permute      = permuteTp;
+      acceleratorPut(this->_entries[lexTp],SE);
+      SE._offset       = grid->oIndex(TmCoor);
+      SE._permute      = permuteTm;
+      acceleratorPut(this->_entries[lexTm],SE);
+      SE._permute      = 0;
     }
 
     if ( vertexOutputs ) {
@@ -802,23 +821,47 @@ public:
 	IcosahedralStencilEntry SE;
 	for(uint64_t site=0;site<cart_sites; site ++) { // loops over volume
 	  Coordinate Coor;
+	  Coordinate tCoor;
 	  vertexgrid->oCoorFromOindex(Coor,site);
 	  int north = Coor[ndm1]/HemiPatches;
 	  int south = 1-north;
 	  if( (Coor[0]==(L-1))&&(Coor[1]==0) &&south ) {
 	    int64_t pole_site = vertexgrid->PoleSiteForOcoor(Coor);
 	    int64_t lex       = pole_site*np+(Coor[ndm1]%HemiPatches);
-	    //	    std::cout << "Coor "<<Coor<<" connects to south pole_site "<<pole_site<<std::endl;
+
 	    SE._offset       = site;
 	    SE._is_local     = true;
 	    SE._polarisation = IcosahedronPatchX;  // ignored
 	    SE._adjoint      = false;              // ignored
 	    SE._missing_link = false;
+	    SE._permute=0;
 	    acceleratorPut(this->_entries[lex],SE);
 	    
 	    int64_t lex5      = pole_site*np+5; // We miss the backwards link
 	    SE._missing_link = true;
 	    acceleratorPut(this->_entries[lex5],SE);
+
+	    int tdim = 2;
+	    int Rt = vertexgrid->_rdimensions[tdim];
+	    int permute;
+	    int64_t nbr_pole_site;
+
+	    tCoor = Coor;
+	    
+	    lex = pole_site*np+6;// tp
+	    tCoor[tdim] = periAdd(tCoor[tdim],1,Rt,permute);
+	    nbr_pole_site = vertexgrid->PoleSiteForOcoor(tCoor);
+	    SE._offset = nbr_pole_site;
+	    SE._permute= permute;
+	    acceleratorPut(this->_entries[lex],SE);
+
+	    lex = pole_site*np+7;// tm
+	    tCoor[tdim] = periAdd(tCoor[tdim],-1,Rt,permute);
+	    nbr_pole_site = vertexgrid->PoleSiteForOcoor(tCoor);
+	    SE._offset = nbr_pole_site;
+	    SE._permute= permute;
+	    acceleratorPut(this->_entries[lex],SE);
+
 	  }
 	}
       }
@@ -826,6 +869,7 @@ public:
 	IcosahedralStencilEntry SE;
 	for(uint64_t site=0;site<cart_sites; site ++) {
 	  Coordinate Coor;
+	  Coordinate tCoor;
 	  vertexgrid->oCoorFromOindex(Coor,site);
 	  int north = Coor[ndm1]/HemiPatches;
 	  if( (Coor[0]==0)&&(Coor[1]==(L-1))&&north ) {
@@ -837,11 +881,36 @@ public:
 	    SE._polarisation = IcosahedronPatchY;  // ignored
 	    SE._adjoint      = false;              // ignored
 	    SE._missing_link = false;
+	    SE._permute=0;
 	    acceleratorPut(this->_entries[lex],SE);
 	    
 	    int64_t lex5     = pole_site*np+5; // We miss the backwards link
 	    SE._missing_link = true;
 	    acceleratorPut(this->_entries[lex5],SE);
+
+	    int tdim = 2;
+	    int Rt = vertexgrid->_rdimensions[tdim];
+	    int permute;
+	    int64_t nbr_pole_site;
+
+	    tCoor = Coor;
+	    
+	    lex = pole_site*np+6;// tp
+	    tCoor[tdim] = periAdd(tCoor[tdim],1,Rt,permute);
+	    nbr_pole_site = vertexgrid->PoleSiteForOcoor(tCoor);
+	    SE._offset = nbr_pole_site;
+	    SE._permute= permute;
+	    acceleratorPut(this->_entries[lex],SE);
+	    //	    std::cout << " Put nbr "<<SE._offset<<" for north site "<<lex<<std::endl;
+	    
+	    lex = pole_site*np+7;// tm
+	    tCoor[tdim] = periAdd(tCoor[tdim],-1,Rt,permute);
+	    nbr_pole_site = vertexgrid->PoleSiteForOcoor(tCoor);
+	    SE._offset = nbr_pole_site;
+	    SE._permute= permute;
+	    acceleratorPut(this->_entries[lex],SE);
+	    //	    std::cout << " Put nbr "<<SE._offset<<" for north site "<<lex<<std::endl;
+	    
 	  }
 	}
       }
@@ -873,7 +942,6 @@ public:
     for(uint64_t site=0;site<cart_sites; site ++) {
 
       Coordinate Coor;
-      Coordinate NbrCoor;
 
       int nd = grid->Nd();
       int L  = grid->LocalDimensions()[0];
@@ -887,7 +955,6 @@ public:
       // Outer index of neighbour Offset calculation
       ////////////////////////////////////////////////
       grid->oCoorFromOindex(Coor,site);
-      NbrCoor = Coor;
       assert( grid->LocalDimensions()[1]==grid->LocalDimensions()[0]);
       assert( grid->_simd_layout[0]==1); // Cannot vectorise in these dims
       assert( grid->_simd_layout[1]==1);
@@ -949,12 +1016,14 @@ public:
 	SE._polarisation = IcosahedronPatchX;
 	SE._adjoint      = true;
 	SE._missing_link = false;
+	SE._permute=0;
       } else {
 	SE._offset       = grid->oIndex(XpCoor);
 	SE._is_local     = true;
 	SE._polarisation = IcosahedronPatchY;
 	SE._adjoint      = false;
 	SE._missing_link = false;
+	SE._permute=0;
       }
 
       ////////////////////////////////////////////////
@@ -973,12 +1042,14 @@ public:
 	SE._polarisation = IcosahedronPatchY;
 	SE._adjoint      = true;
 	SE._missing_link = false;
+	SE._permute=0;
       } else {
 	SE._offset       = grid->oIndex(YpCoor);
 	SE._is_local     = true;
 	SE._polarisation = IcosahedronPatchX;
 	SE._adjoint      = false;
 	SE._missing_link = false;
+	SE._permute=0;
       }
       ////////////////////////////////////////////////
       // Store in look up table
@@ -986,24 +1057,459 @@ public:
       acceleratorPut(this->_entries[lexYX],SE);
     };
   }
+  //
+  // Orthogonal direction support
+  //
+  // Plaquettes:
+  // Must be able to get the sites +T, and +X, +Y, +D
+  //
+  // Staples
+  // Must be able to get the sites (+T, and +X, +Y, +D) (-T, and -T+X, -T+Y, -T+D)
+  //
+  // Laplacian:
+  // Must be able to get the sites +-T
+  //
+  void GetOrthogNbr(GridBase *grid,Coordinate &Coor,Coordinate &NbrCoor,int dim,int delta, int & permute)
+  {
+    assert(delta==1 || delta==-1);
+    int L = grid->_rdimensions[dim];
+
+    NbrCoor = Coor;
+    NbrCoor[dim] = periAdd(Coor[dim],delta,L,permute);
+  }
+  void TemporalPlaquetteStencil(void)
+  {
+    GridBase * grid = this->_grid; // the edge grid
+    GridBase * vertexgrid = this->_vertexgrid;
+
+    int osites  = grid->oSites();
+
+    uint64_t cart_sites = grid->CartesianOsites();
+    uint64_t Npole_sites = grid->NorthPoleOsites();
+    uint64_t Spole_sites = grid->SouthPoleOsites();
+    Coordinate pcoor = grid->ThisProcessorCoor();
+    Coordinate pgrid = grid->ProcessorGrid();
+
+    /*
+     * resize the stencil entries array and set npoints
+     */
+    this->_npoints=4; 
+    this->_entries.resize(this->_npoints * cart_sites);
+    this->_entries_p = &_entries[0];
+
+    for(uint64_t site=0;site<cart_sites; site ++) {
+
+      int nd = grid->Nd();
+      int L  = grid->LocalDimensions()[0];
+
+      Coordinate Coor;
+      IcosahedralStencilEntry SE;
+
+      Integer lexT = site*4+0;
+      Integer lexX = site*4+1;
+      Integer lexY = site*4+2;
+      Integer lexD = site*4+3;
+
+      ////////////////////////////////////////////////
+      // Outer index of neighbour Offset calculation
+      ////////////////////////////////////////////////
+      grid->oCoorFromOindex(Coor,site);
+      assert( grid->LocalDimensions()[1]==grid->LocalDimensions()[0]);
+      assert( grid->_simd_layout[0]==1); // Cannot vectorise in these dims
+      assert( grid->_simd_layout[1]==1);
+      assert( grid->_processors[0]==1); // Cannot mpi distribute in these dims
+      assert( grid->_processors[1]==1);
+
+      int Patch = Coor[nd-1];
+      int HemiPatch = Patch%HemiPatches;
+      int Hemisphere= Patch/HemiPatches;
+      int north = Patch/HemiPatches;
+      int south = 1-north;
+      int isPoleY;
+      int isPoleX;
+      
+      assert(Patch<IcosahedralPatches);
+      assert((north==1)||(south==1));
+
+      Coordinate XpCoor;
+      Coordinate YpCoor;
+      Coordinate DpCoor;
+      Coordinate TpCoor;
+
+      GetNbrForPlusDiagonal(grid,Coor,DpCoor);
+      GetNbrForPlusX(grid,Coor,XpCoor,isPoleX);
+      GetNbrForPlusY(grid,Coor,YpCoor,isPoleY);
+
+      int DpPatch      = DpCoor[nd-1];
+      int DpHemiPatch  = DpCoor[nd-1]%HemiPatches;
+      int DpHemisphere = DpCoor[nd-1]/HemiPatches;
+
+      SE._is_local     = true;
+      SE._polarisation = 0;
+      SE._adjoint      = false;
+      SE._missing_link = false;
+      SE._permute=0;
+      //////////////////////////////////////////////////
+      // Forward one site in time direction
+      //////////////////////////////////////////////////
+      int tdim  = 2;
+      int delta = 1;
+      int permute;
+      GetOrthogNbr(grid,Coor,TpCoor,tdim,delta,permute);
+      SE._offset = vertexgrid->oIndex(TpCoor);
+      SE._permute=permute;
+      //      std::cout << " Plaq stencil "<<Coor<<"  Tp "<<TpCoor<<" perm "<<permute<<std::endl;
+      acceleratorPut(this->_entries[lexT],SE);
+      SE._permute=0;
+      ////////////////////////////////////////////////
+      // X+ direction
+      ////////////////////////////////////////////////
+      if ( isPoleX ) {
+	SE._offset     = vertexgrid->PoleSiteForOcoor(Coor);
+      }	else {
+	SE._offset     = vertexgrid->oIndex(XpCoor);
+      }
+      acceleratorPut(this->_entries[lexX],SE);
+      ////////////////////////////////////////////////
+      // Y+ direction
+      ////////////////////////////////////////////////
+      if ( isPoleY ) {
+	SE._offset     = vertexgrid->PoleSiteForOcoor(Coor);
+      }	else {
+	SE._offset     = vertexgrid->oIndex(YpCoor);
+      }
+      acceleratorPut(this->_entries[lexY],SE);
+      ////////////////////////////////////////////////
+      // D+ direction
+      ////////////////////////////////////////////////
+      SE._offset     = vertexgrid->oIndex(DpCoor);
+      //      std::cout << "Coor "<<Coor<<" DpCoor "<<DpCoor<<" site "<<SE._offset<<std::endl;
+      acceleratorPut(this->_entries[lexD],SE);
+    };
+  }
+
+  /*
+   * enough to build staples in ico-T dir
+   */
   /*
    * For gauge action derivative implementation
    * Staple 
    *
    * Case1: I x T loops
-   *
-   * Need: DirP this site; no entry
-   *       Tp   @ dir++
-   *       DirP @ t++
-   *       Tp   @ t--
-   *       DirP @ t--
-   *       Tp   @ t--, dir++
-   *
    * There is no complex rotation of links on other site
    *
    * Case2: I x I loops
    * Just use a general 6 point stencil and cherry pick terms
    */
+  void TemporalStapleStencil(void)
+  {
+    GridBase * grid = this->_grid; // the edge grid
+    GridBase * vertexgrid = this->_vertexgrid;
+
+    int osites  = grid->oSites();
+
+    uint64_t cart_sites = grid->CartesianOsites();
+    uint64_t Npole_sites = grid->NorthPoleOsites();
+    uint64_t Spole_sites = grid->SouthPoleOsites();
+    Coordinate pcoor = grid->ThisProcessorCoor();
+    Coordinate pgrid = grid->ProcessorGrid();
+
+    /*
+     * resize the stencil entries array and set npoints
+     */
+    this->_npoints=14; 
+    this->_entries.resize(this->_npoints * cart_sites);
+    this->_entries_p = &_entries[0];
+    int np= this->_npoints;
+
+    for(uint64_t site=0;site<cart_sites; site ++) {
+
+      int nd = grid->Nd();
+      int L  = grid->LocalDimensions()[0];
+
+      Coordinate Coor;
+      IcosahedralStencilEntry SE;
+
+      Integer lexTp   = site*np+0;
+      Integer lexXp   = site*np+1;
+      Integer lexYp   = site*np+2;
+      Integer lexDp   = site*np+3;
+      Integer lexTm   = site*np+4;
+      Integer lexTmXp = site*np+5;
+      Integer lexTmYp = site*np+6;
+      Integer lexTmDp = site*np+7;
+
+      Integer lexXm   = site*np+8;
+      Integer lexYm   = site*np+9;
+      Integer lexDm   = site*np+10; // If !missingLink
+      Integer lexXmTp = site*np+11;
+      Integer lexYmTp = site*np+12;
+      Integer lexDmTp = site*np+13; // If !missingLink
+      
+      ////////////////////////////////////////////////
+      // Outer index of neighbour Offset calculation
+      ////////////////////////////////////////////////
+      grid->oCoorFromOindex(Coor,site);
+      assert( grid->LocalDimensions()[1]==grid->LocalDimensions()[0]);
+      assert( grid->_simd_layout[0]==1); // Cannot vectorise in these dims
+      assert( grid->_simd_layout[1]==1);
+      assert( grid->_processors[0]==1); // Cannot mpi distribute in these dims
+      assert( grid->_processors[1]==1);
+
+      int Patch = Coor[nd-1];
+      int HemiPatch  = Coor[nd-1]%HemiPatches;
+      int Hemisphere = Coor[nd-1]/HemiPatches;
+      int north = Patch/HemiPatches;
+      int south = 1-north;
+      int isPoleY;
+      int isPoleX;
+      
+      assert(Patch<IcosahedralPatches);
+      assert((north==1)||(south==1));
+
+      Coordinate XpCoor;
+      Coordinate YpCoor;
+      Coordinate DpCoor;
+      Coordinate TpCoor;
+      Coordinate TmCoor;
+      Coordinate TmXpCoor;
+      Coordinate TmYpCoor;
+      Coordinate TmDpCoor;
+
+      int missingLink;
+      Coordinate XmCoor;
+      Coordinate YmCoor;
+      Coordinate DmCoor;
+      Coordinate XmTpCoor;
+      Coordinate YmTpCoor;
+      Coordinate DmTpCoor;
+
+
+      GetNbrForPlusDiagonal(grid,Coor,DpCoor);
+      GetNbrForPlusX(grid,Coor,XpCoor,isPoleX);
+      GetNbrForPlusY(grid,Coor,YpCoor,isPoleY);
+
+      GetNbrForMinusDiagonal(grid,Coor,DmCoor,missingLink);
+      GetNbrForMinusX(grid,Coor,XmCoor);
+      GetNbrForMinusY(grid,Coor,YmCoor);
+
+      
+      int DpPatch      = DpCoor[nd-1];
+      int DpHemiPatch  = DpCoor[nd-1]%HemiPatches;
+      int DpHemisphere = DpCoor[nd-1]/HemiPatches;
+
+      int XmHemiPatch  = XmCoor[nd-1]%HemiPatches;
+      int XmHemisphere = XmCoor[nd-1]/HemiPatches;
+      int YmHemiPatch  = YmCoor[nd-1]%HemiPatches;
+      int YmHemisphere = YmCoor[nd-1]/HemiPatches;
+
+      int DmPatch      = DmCoor[nd-1];
+      int DmHemiPatch  = DmCoor[nd-1]%HemiPatches;
+      int DmHemisphere = DmCoor[nd-1]/HemiPatches;
+      
+      SE._is_local     = true;
+      SE._polarisation = 0;
+      SE._adjoint      = false;
+      SE._missing_link = false;
+      SE._permute=0;
+      //////////////////////////////////////////////////
+      // Forward one site in time direction
+      //////////////////////////////////////////////////
+      int tdim  = 2;
+      int delta = 1;
+      int permute;
+      GetOrthogNbr(grid,Coor,TpCoor,tdim,delta,permute);
+      SE._offset = vertexgrid->oIndex(TpCoor);
+      SE._permute= permute;
+      acceleratorPut(this->_entries[lexTp],SE);
+      SE._permute=0;
+      ////////////////////////////////////////////////
+      // X+ direction
+      ////////////////////////////////////////////////
+      if ( isPoleX ) {
+	SE._offset     = vertexgrid->PoleSiteForOcoor(Coor);
+      }	else {
+	SE._offset     = vertexgrid->oIndex(XpCoor);
+      }
+      acceleratorPut(this->_entries[lexXp],SE);
+      ////////////////////////////////////////////////
+      // Y+ direction
+      ////////////////////////////////////////////////
+      if ( isPoleY ) {
+	SE._offset     = vertexgrid->PoleSiteForOcoor(Coor);
+      }	else {
+	SE._offset     = vertexgrid->oIndex(YpCoor);
+      }
+      acceleratorPut(this->_entries[lexYp],SE);
+      ////////////////////////////////////////////////
+      // D+ direction
+      ////////////////////////////////////////////////
+      SE._offset     = vertexgrid->oIndex(DpCoor);
+      acceleratorPut(this->_entries[lexDp],SE);
+      //////////////////////////////////////////////////
+      // Backward one site in time direction
+      //////////////////////////////////////////////////
+      GetOrthogNbr(grid,Coor,TmCoor,tdim,-delta,permute);
+      SE._permute = permute;
+      SE._offset = vertexgrid->oIndex(TmCoor);
+      acceleratorPut(this->_entries[lexTm],SE);
+      ////////////////////////////////////////////////
+      // T-X+ hop
+      // T-Y+ hop
+      // T-D+ hop
+      ////////////////////////////////////////////////
+      GetNbrForPlusX(grid,TmCoor,TmXpCoor,isPoleX);
+      GetNbrForPlusY(grid,TmCoor,TmYpCoor,isPoleY);
+      GetNbrForPlusDiagonal(grid,TmCoor,TmDpCoor);
+      if ( isPoleX ) {
+	SE._offset     = vertexgrid->PoleSiteForOcoor(TmCoor);
+      }	else {
+	SE._offset     = vertexgrid->oIndex(TmXpCoor);
+      }
+      acceleratorPut(this->_entries[lexTmXp],SE);
+
+      if ( isPoleY ) {
+	SE._offset     = vertexgrid->PoleSiteForOcoor(TmCoor);
+      }	else {
+	SE._offset     = vertexgrid->oIndex(TmYpCoor);
+      }
+      acceleratorPut(this->_entries[lexTmYp],SE);
+
+      SE._offset     = vertexgrid->oIndex(TmDpCoor);
+      acceleratorPut(this->_entries[lexTmDp],SE);
+      
+      ////////////////////////////////////////////////
+      // Links for the negative XYD staple on the forward T link
+      ////////////////////////////////////////////////
+      SE._permute = 0;
+      SE._offset     = vertexgrid->oIndex(XmCoor);
+      SE._polarisation = IcosahedronPatchX;
+      if ( XmHemiPatch != HemiPatch && north ) {
+	SE._polarisation = IcosahedronPatchDiagonal; 
+      }
+      acceleratorPut(this->_entries[lexXm],SE);
+      GetOrthogNbr(grid,XmCoor,XmTpCoor,tdim,delta,permute);
+      SE._permute = permute;
+      SE._offset     = vertexgrid->oIndex(XmTpCoor);
+      acceleratorPut(this->_entries[lexXmTp],SE);
+
+      SE._permute = 0;
+      SE._offset     = vertexgrid->oIndex(YmCoor);
+      SE._polarisation = IcosahedronPatchY;
+      if ( YmHemiPatch != HemiPatch && south ) {
+	SE._polarisation = IcosahedronPatchDiagonal; 
+      }
+      acceleratorPut(this->_entries[lexYm],SE);
+      GetOrthogNbr(grid,YmCoor,YmTpCoor,tdim,delta,permute);
+      SE._permute = permute;
+      SE._offset     = vertexgrid->oIndex(YmTpCoor);
+      acceleratorPut(this->_entries[lexYmTp],SE);
+
+      if ( ! missingLink ) {
+
+	SE._polarisation = IcosahedronPatchDiagonal;   // Basis rotates
+	if ( (DmHemiPatch != HemiPatch) && (DmHemisphere==Hemisphere) && south ) {
+	  SE._polarisation = IcosahedronPatchX;   // Basis rotates
+	}
+	if ( (DmHemiPatch != HemiPatch) && (DmHemisphere==Hemisphere) && north ) {
+	  SE._polarisation = IcosahedronPatchY;   // Basis rotates
+	}
+	
+	SE._permute = 0;
+	SE._offset     = vertexgrid->oIndex(DmCoor);
+	acceleratorPut(this->_entries[lexDm],SE);
+	
+	GetOrthogNbr(grid,DmCoor,DmTpCoor,tdim,delta,permute);
+	SE._permute = permute;
+	SE._offset     = vertexgrid->oIndex(DmTpCoor);
+	acceleratorPut(this->_entries[lexDmTp],SE);
+
+      } else {
+	
+	SE._permute = 0;
+	SE._offset  = 0;
+	SE._missing_link = 1;
+	acceleratorPut(this->_entries[lexDm],SE);
+	acceleratorPut(this->_entries[lexDmTp],SE);
+
+      }
+    };
+
+    int ndm1 = grid->Nd()-1;
+    int L    = grid->LocalDimensions()[0];
+    if ( vertexgrid->ownsSouthPole() ) {
+      IcosahedralStencilEntry SE;
+      for(uint64_t site=0;site<cart_sites; site ++) { // loops over volume
+
+	Coordinate Coor;
+	Coordinate tCoor;
+	vertexgrid->oCoorFromOindex(Coor,site);
+	int north = Coor[ndm1]/HemiPatches;
+	int south = 1-north;
+	int tdim = 2;
+
+	if( (Coor[0]==(L-1))&&(Coor[1]==0)&&south ) {
+
+	  int64_t pole_site = vertexgrid->PoleSiteForOcoor(Coor);
+	  int64_t lex       = pole_site*np+(Coor[ndm1]%HemiPatches)*2;
+
+	  SE._offset       = site;
+	  SE._is_local     = true;
+	  SE._polarisation = IcosahedronPatchX;  // ignored
+	  SE._adjoint      = false;              // ignored
+	  SE._missing_link = false;
+	  SE._permute=0;
+	  acceleratorPut(this->_entries[lex],SE);
+	    
+	  lex       = pole_site*np+(Coor[ndm1]%HemiPatches)*2+1;
+
+	  int Rt = vertexgrid->_rdimensions[tdim];
+	  int permute;
+	  tCoor = Coor;
+	  tCoor[tdim] = periAdd(tCoor[tdim],1,Rt,permute);
+	  SE._offset  = vertexgrid->oIndex(tCoor);
+	  SE._permute= permute;
+	  acceleratorPut(this->_entries[lex],SE);
+	    
+	}
+      }
+    }
+    if ( vertexgrid->ownsNorthPole() ) {
+      IcosahedralStencilEntry SE;
+      for(uint64_t site=0;site<cart_sites; site ++) {
+	Coordinate Coor;
+	Coordinate tCoor;
+	vertexgrid->oCoorFromOindex(Coor,site);
+	int north = Coor[ndm1]/HemiPatches;
+	int tdim = 2;
+	
+	if( (Coor[0]==0)&&(Coor[1]==(L-1))&&north ) {
+
+	  int64_t pole_site = vertexgrid->PoleSiteForOcoor(Coor);
+	  int64_t lex       = pole_site*np+(Coor[ndm1]%HemiPatches)*2;
+
+	  SE._offset       = site;
+	  SE._is_local     = true;
+	  SE._polarisation = IcosahedronPatchY;  // ignored
+	  SE._adjoint      = false;              // ignored
+	  SE._missing_link = false;
+	  SE._permute=0;
+	  acceleratorPut(this->_entries[lex],SE);
+	    
+	  lex       = pole_site*np+(Coor[ndm1]%HemiPatches)*2+1;
+
+	  int Rt = vertexgrid->_rdimensions[tdim];
+	  int permute;
+	  tCoor = Coor;
+	  tCoor[tdim] = periAdd(tCoor[tdim],1,Rt,permute);
+	  SE._offset  = vertexgrid->oIndex(tCoor);
+	  SE._permute= permute;
+	  acceleratorPut(this->_entries[lex],SE);
+	    
+	}
+      }
+    }
+  }
 };
 NAMESPACE_END(Grid);
   
