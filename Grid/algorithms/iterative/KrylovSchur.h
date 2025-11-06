@@ -145,8 +145,8 @@ class ComplexSchurDecomposition {
      * TODO: pass in compare function as an argument, default to compare with <. 
      */
     // void schurReorder(int Nk, std::function compare) {
-    void schurReorder(int Nk) {
-      for (int i = 0; i < Nk; i++) {
+    int schurReorder(int Nk) {
+      for (int i = 0; i < Nm; i++) {
         for (int k = 0; k <= Nm - 2; k++) {
           int idx = Nm - 2 - k;
           // TODO use RitzFilter enum here
@@ -157,7 +157,12 @@ class ComplexSchurDecomposition {
           }
         }
       }
-      return;
+      int temp=1;
+      for (int i = 0; i < Nm-1; i++) {
+        std::cout << GridLogMessage << "S " << i << " "<<std::real(S(i,i))<<" "<<std::imag(S(i,i)) << std::endl;
+	if (std::abs(std::imag(S(i,i))< 0.01)) temp= i+1;
+      }
+      return temp;
     }
 
     void schurReorderBlock() {
@@ -197,7 +202,6 @@ class KrylovSchur {
 
     Eigen::VectorXcd evals;                 // evals of Rayleigh quotient
     Eigen::MatrixXcd littleEvecs;           // Nm x Nm evecs matrix
-    std::vector<Field> evecs;               // Vector of evec fields
 
     RitzFilter ritzFilter;                        // how to sort evals
 
@@ -209,6 +213,8 @@ class KrylovSchur {
     {
       u = Zero();
     };
+
+    std::vector<Field> evecs;               // Vector of evec fields
 
 
     /* Getters */
@@ -257,8 +263,10 @@ class KrylovSchur {
         std::cout << GridLogDebug << "Schur decomp holds? " << schur.checkDecomposition() << std::endl;
 
         // Rearrange Schur matrix so wanted evals are on top left (like MATLAB's ordschur)
-        std::cout << GridLogMessage << "Reordering Schur eigenvalues" << std::endl;
+        std::cout << GridLogMessage << "Reordering Schur eigenvalues Nk=" << Nk << std::endl;
+//        Nk=schur.schurReorder(_Nk);
         schur.schurReorder(Nk);
+	std::cout << GridLogMessage << "After Reorder Nk= "<<Nk<<std::endl;
         Eigen::MatrixXcd Q = schur.getMatrixQ();
         Qt = Q.adjoint();                           // TODO should Q be real?
         Eigen::MatrixXcd S = schur.getMatrixS();
@@ -286,7 +294,7 @@ class KrylovSchur {
 
         // checkKSDecomposition();
 
-        std::cout << GridLogMessage << "*** TRUNCATING FOR RESTART *** " << std::endl;
+        std::cout << GridLogMessage << "*** TRUNCATING FOR RESTART *** Nk=" << Nk << std::endl;
 
         std::cout << GridLogDebug << "Rayleigh before truncation: " << std::endl << Rayleigh << std::endl;
 
@@ -354,7 +362,8 @@ class KrylovSchur {
         Rayleigh = Eigen::MatrixXcd::Zero(Nm, Nm);
         u = Zero();
       } else {
-        assert( start == basis.size() );      // should be starting at the end of basis (start = Nk)
+        std::cout << GridLogMessage << "start= " <<start<< " basis.size= "<<basis.size()<<std::endl;
+        assert( start <= basis.size() );      // should be starting at the end of basis (start = Nk)
         std::cout << GridLogMessage << "Resetting Rayleigh and b" << std::endl;
         Eigen::MatrixXcd RayleighCp = Rayleigh;
         Rayleigh = Eigen::MatrixXcd::Zero(Nm, Nm);
@@ -376,7 +385,7 @@ class KrylovSchur {
         }
 
         if (doubleOrthog) {
-          std::cout << GridLogMessage << "Double orthogonalizing." << std::endl;
+//          std::cout << GridLogMessage << "Double orthogonalizing." << std::endl;
           for (int j = 0; j < basis.size(); j++) {
             coeff = innerProduct(basis[j], w);      // see if there is any residual component in basis[j] direction
             Rayleigh(j, i) += coeff;                // if coeff is non-zero, adjust Rayleigh

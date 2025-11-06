@@ -51,14 +51,23 @@ struct ComplexComparator
   ComplexComparator (RitzFilter _f) : f(_f) {}
   bool operator()(std::complex<double> z1, std::complex<double> z2) { 
     switch (f) {
+      RealD tmp1, tmp2;
+      tmp1=std::abs(std::imag(z1));
+      tmp2=std::abs(std::imag(z2));
       case EvalNormSmall:
         return std::abs(z1) < std::abs(z2);
       case EvalNormLarge:
         return std::abs(z1) > std::abs(z2);
+// Terrible hack
+//        return std::abs(std::real(z1)) < std::abs(std::real(z2));
+//	if ( std::abs(std::real(z1))  >4.) tmp1 +=1.;
+//	if ( std::abs(std::real(z2))  >4.) tmp2 +=1.;
       case EvalReSmall:
-        return std::abs(std::real(z1)) < std::abs(std::real(z2));
+	  return tmp1 < tmp2;
+//        return std::abs(std::imag(z1)) < std::abs(std::imag(z2));
       case EvalReLarge:
-        return std::abs(std::real(z1)) > std::abs(std::real(z2));
+	  return tmp1 > tmp2;
+//        return std::abs(std::real(z1)) > std::abs(std::real(z2));
       default:
         assert(0);
     }

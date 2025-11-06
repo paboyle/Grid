@@ -41,6 +41,71 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 using namespace std;
 using namespace Grid;
 
+namespace Grid {
+
+struct LanczosParameters: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParameters,
+		  		RealD, mass , 
+		  		RealD, mstep , 
+				Integer, Nstop,
+                                Integer, Nk,
+                                Integer, Np,
+                                Integer, ReadEvec,
+	  			RealD, resid,
+	  			RealD, ChebyLow,
+	  			RealD, ChebyHigh,
+	  			Integer, ChebyOrder)
+
+  LanczosParameters() {
+    ////////////////////////////// Default values
+      mass = 0;
+    /////////////////////////////////
+  }
+
+  template <class ReaderClass >
+  LanczosParameters(Reader<ReaderClass> & TheReader){
+    initialize(TheReader);
+  }
+
+  template < class ReaderClass > 
+  void initialize(Reader<ReaderClass> &TheReader){
+//    std::cout << GridLogMessage << "Reading HMC\n";
+    read(TheReader, "HMC", *this);
+  }
+
+
+  void print_parameters() const {
+//    std::cout << GridLogMessage << "[HMC parameters] Trajectories            : " << Trajectories << "\n";
+//    std::cout << GridLogMessage << "[HMC parameters] Start trajectory        : " << StartTrajectory << "\n";
+//    std::cout << GridLogMessage << "[HMC parameters] Metropolis test (on/off): " << std::boolalpha << MetropolisTest << "\n";
+//    std::cout << GridLogMessage << "[HMC parameters] Thermalization trajs    : " << NoMetropolisUntil << "\n";
+//    std::cout << GridLogMessage << "[HMC parameters] Starting type           : " << StartingType << "\n";
+//    MD.print_parameters();
+  }
+  
+};
+
+}
+
+template <class T> void writeFile(T& in, std::string const fname){
+#if 1
+  // Ref: https://github.com/paboyle/Grid/blob/feature/scidac-wp1/tests/debug/Test_general_coarse_hdcg_phys48.cc#L111
+  std::cout << Grid::GridLogMessage << "Writes to: " << fname << std::endl;
+  Grid::emptyUserRecord record;
+  Grid::ScidacWriter WR(in.Grid()->IsBoss());
+  WR.open(fname);
+  WR.writeScidacFieldRecord(in,record,0);
+  WR.close();
+#endif
+  // What is the appropriate way to throw error?
+}
+
+
+typedef WilsonFermionD WilsonOp;
+typedef typename WilsonFermionD::FermionField FermionField;
+
+
+#if 0
 // Hermitize a DWF operator by squaring it
 template<class Matrix,class Field>
 class SquaredLinearOperator : public LinearOperatorBase<Field> {
@@ -286,6 +351,7 @@ public:
     std::cout<<GridLogMessage << "Done " <<std::endl;
   }
 };
+#endif
 
 template<class Field>
 void testSchurFromHess(Arnoldi<Field>& Arn, Field& src, int Nlarge, int Nm, int Nk) {
@@ -332,21 +398,24 @@ int main (int argc, char ** argv)
   const int Ls=16;
 
 //   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
-  std::vector<int> lat_size {16, 16, 16, 32};
-  std::cout << "Lattice size: " << lat_size << std::endl;
-  GridCartesian * UGrid = SpaceTimeGrid::makeFourDimGrid(lat_size, 
+//  std::vector<int> lat_size {32, 32, 32, 32};
+//  std::cout << "Lattice size: " << lat_size << std::endl;
+  GridCartesian * UGrid = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), 
 								          GridDefaultSimd(Nd,vComplex::Nsimd()),
 								          GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
 
-  GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
-  GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
+//  GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
+//  GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
+  GridCartesian         * FGrid   = UGrid;
+  GridRedBlackCartesian * FrbGrid = UrbGrid;
 
   // Construct a coarsened grid
   // poare TODO: replace this with the following line?
-  Coordinate clatt = lat_size;
+  Coordinate clatt = GridDefaultLatt();
 //   Coordinate clatt = GridDefaultLatt();              // [PO] initial line before I edited it
   for(int d=0;d<clatt.size();d++){
+  std::cout << GridLogMessage<< clatt[d] <<std::endl;
     clatt[d] = clatt[d]/2;
     //    clatt[d] = clatt[d]/4;
   }
@@ -360,7 +429,6 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG4(UGrid);   RNG4.SeedFixedIntegers(seeds4);
   GridParallelRNG          CRNG(Coarse5d);CRNG.SeedFixedIntegers(cseeds);
 
-  LatticeFermion    src(FGrid); random(RNG5,src);
   LatticeFermion result(FGrid); result=Zero();
   LatticeFermion    ref(FGrid); ref=Zero();
   LatticeFermion    tmp(FGrid);
@@ -369,14 +437,56 @@ int main (int argc, char ** argv)
 
   FieldMetaData header;
 //   std::string file("ckpoint_lat.4000");
-  std::string file("/Users/patrickoare/libraries/PETSc-Grid/ckpoint_lat.4000");
+//  std::string file("/Users/patrickoare/libraries/PETSc-Grid/ckpoint_lat.4000");
+  std::string file("./config");
   NerscIO::readConfiguration(Umu,header,file);
+
+  LanczosParameters LanParams;
+  {
+    XmlReader  HMCrd("LanParams.xml");
+    read(HMCrd,"LanczosParameters",LanParams);
+  }
+
+  std::cout << GridLogMessage<< LanParams <<std::endl;
+  {
+    XmlWriter HMCwr("LanParams.xml.out");
+    write(HMCwr,"LanczosParameters",LanParams);
+  }
+
+#if 0
+  if(LanParams.ReadEvec) {
+    std::string evecs_file="evec_in";
+    std::cout << GridLogIRL<< "Reading evecs from "<<evecs_file<<std::endl;
+    emptyUserRecord record;
+    Grid::ScidacReader RD;
+    RD.open(evecs_file);
+    RD.readScidacFieldRecord(src,record);
+    RD.close();
+  }
+#endif
+
 
   RealD mass=0.01;
   RealD M5=1.8;
 
-  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  DomainWallFermionD Dpv(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,M5);
+  // PowerMethod<LatticeFermion> PM; PM(PVdagM, src);
+  int Nm = 50;
+  int Nk = 12; 
+  int Np = 38; 
+  // int Nk = Nm+1;     // if just running once
+  int maxIter = 10000;
+  int Nstop = 10;
+  RealD resid = 1.0e-5;
+
+  std::vector<Complex> boundary = {1,1,1,-1};
+  WilsonOp::ImplParams Params(boundary);
+
+//  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+//  DomainWallFermionD Dpv(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,M5);
+
+  mass=LanParams.mass;
+  std::cout << GridLogIRL<< "mass "<<mass<<std::endl;
+  WilsonOp WilsonOperator(Umu,*UGrid,*UrbGrid,mass,Params);
 
   // const int nbasis = 20;            // size of approximate basis for low-mode space
   const int nbasis = 3;            // size of approximate basis for low-mode space
@@ -392,34 +502,61 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
   std::cout<<GridLogMessage<<std::endl;
 
-  typedef PVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> PVdagM_t;
-  typedef ShiftedPVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> ShiftedPVdagM_t;
-  typedef ShiftedComplexPVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> ShiftedComplexPVdagM_t;
-  PVdagM_t PVdagM(Ddwf, Dpv);
-  ShiftedPVdagM_t ShiftedPVdagM(0.1,Ddwf,Dpv);
-  SquaredLinearOperator<DomainWallFermionD, LatticeFermionD> Dsq (Ddwf);
-  NonHermitianLinearOperator<DomainWallFermionD, LatticeFermionD> DLinOp (Ddwf);
+//  typedef PVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> PVdagM_t;
+//  typedef ShiftedPVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> ShiftedPVdagM_t;
+//  typedef ShiftedComplexPVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> ShiftedComplexPVdagM_t;
+//  PVdagM_t PVdagM(Ddwf, Dpv);
+//  ShiftedPVdagM_t ShiftedPVdagM(0.1,Ddwf,Dpv);
+//  SquaredLinearOperator<DomainWallFermionD, LatticeFermionD> Dsq (Ddwf);
+//  NonHermitianLinearOperator<DomainWallFermionD, LatticeFermionD> DLinOp (Ddwf);
+
+
+  NonHermitianLinearOperator<WilsonOp,FermionField> Dwilson(WilsonOperator); /// <-----
+  MdagMLinearOperator<WilsonOp,FermionField> HermOp(WilsonOperator); /// <-----
+  Gamma5HermitianLinearOperator <WilsonOp,LatticeFermion> HermOp2(WilsonOperator); /// <----
 
   // PowerMethod<LatticeFermion> PM; PM(PVdagM, src);
-  int Nm = 10;
-  int Nk = 4; 
-  // int Nk = Nm+1;     // if just running once
-  // int maxIter = 5;
-  // int maxIter = 1;
-  int maxIter = 5;
-  // int maxIter = 100;
-  int Nstop = 4;
+
+  resid=LanParams.resid;
+  Nstop=LanParams.Nstop;
+  Nk=LanParams.Nk;
+  Np=LanParams.Np;
+  Nm = Nk + Np;
+  int Nu=16;
+  std::vector<LatticeFermion> src(Nu,FGrid); 
+  for(int i=0;i<Nu;i++) random(RNG5,src[i]);
 
   Coordinate origin ({0,0,0,0});
-  auto tmpSrc = peekSite(src, origin);
+  auto tmpSrc = peekSite(src[0], origin);
   std::cout << "[DEBUG] Source at origin = " <<  tmpSrc << std::endl;
-  LatticeFermion src2 = src;
+  LatticeFermion src2 = src[0];
 
   // Run KrylovSchur and Arnoldi on a Hermitian matrix
-  std::cout << GridLogMessage << "Runnning Krylov Schur" << std::endl;
+  std::cout << GridLogMessage << "Running Krylov Schur" << std::endl;
   // KrylovSchur KrySchur (Dsq, FGrid, 1e-8, EvalNormLarge);
-  KrylovSchur KrySchur (Dsq, FGrid, 1e-8);
-  KrySchur(src, maxIter, Nm, Nk, Nstop);
+//  KrylovSchur KrySchur (HermOp2, UGrid, resid,EvalNormSmall);
+//  Hacked, really EvalImagSmall
+  KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalReSmall);
+//  BlockKrylovSchur KrySchur (HermOp2, UGrid, Nu, resid,EvalNormSmall);
+  KrySchur(src[0], maxIter, Nm, Nk, Nstop);
+  std::cout << GridLogMessage << "evec.size= " << KrySchur.evecs.size()<< std::endl;
+
+  src[0]=KrySchur.evecs[0];
+  for (int i=1;i<Nstop;i++) src[0]+=KrySchur.evecs[i];
+  for (int i=0;i<Nstop;i++) 
+  {
+	std::string evfile ("./evec_"+std::to_string(mass)+"_"+std::to_string(i));
+        auto evdensity = localInnerProduct(KrySchur.evecs[i],KrySchur.evecs[i] );
+        writeFile(evdensity,evfile);
+
+  }
+
+  {
+        std::string evfile ("./evec_"+std::to_string(mass)+"_sum");
+//        auto evdensity = localInnerProduct(evec[i],evec[i] );
+        writeFile(src[0],evfile);
+  }
+
 
   /*
   std::cout << GridLogMessage << "Running Arnoldi" << std::endl;

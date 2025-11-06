@@ -43,6 +43,50 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 using namespace std;
 using namespace Grid;
 
+namespace Grid {
+
+struct LanczosParameters: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParameters,
+		  		RealD, mass , 
+		  		RealD, mstep , 
+				Integer, Nstop,
+                                Integer, Nk,
+                                Integer, Np,
+                                Integer, ReadEvec,
+	  			RealD, resid,
+	  			RealD, ChebyLow,
+	  			RealD, ChebyHigh,
+	  			Integer, ChebyOrder)
+
+  LanczosParameters() {
+    /////////////////////////////////
+  }
+
+  template <class ReaderClass >
+  LanczosParameters(Reader<ReaderClass> & TheReader){
+    initialize(TheReader);
+  }
+
+  template < class ReaderClass > 
+  void initialize(Reader<ReaderClass> &TheReader){
+    read(TheReader, "HMC", *this);
+  }
+
+
+  void print_parameters() const {
+//    std::cout << GridLogMessage << "[HMC parameters] Trajectories            : " << Trajectories << "\n";
+//    std::cout << GridLogMessage << "[HMC parameters] Start trajectory        : " << StartTrajectory << "\n";
+//    std::cout << GridLogMessage << "[HMC parameters] Metropolis test (on/off): " << std::boolalpha << MetropolisTest << "\n";
+//    std::cout << GridLogMessage << "[HMC parameters] Thermalization trajs    : " << NoMetropolisUntil << "\n";
+//    std::cout << GridLogMessage << "[HMC parameters] Starting type           : " << StartingType << "\n";
+//    MD.print_parameters();
+  }
+  
+};
+
+}
+
+#if 0
 // Hermitize a DWF operator by squaring it
 template<class Matrix,class Field>
 class SquaredLinearOperator : public LinearOperatorBase<Field> {
@@ -288,6 +332,7 @@ public:
     std::cout<<GridLogMessage << "Done " <<std::endl;
   }
 };
+#endif
 
 int main (int argc, char ** argv)
 {
