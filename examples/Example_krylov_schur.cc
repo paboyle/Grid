@@ -536,7 +536,7 @@ int main (int argc, char ** argv)
   // KrylovSchur KrySchur (Dsq, FGrid, 1e-8, EvalNormLarge);
 //  KrylovSchur KrySchur (HermOp2, UGrid, resid,EvalNormSmall);
 //  Hacked, really EvalImagSmall
-  KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalReSmall);
+  KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
 //  BlockKrylovSchur KrySchur (HermOp2, UGrid, Nu, resid,EvalNormSmall);
   KrySchur(src[0], maxIter, Nm, Nk, Nstop);
   std::cout << GridLogMessage << "evec.size= " << KrySchur.evecs.size()<< std::endl;

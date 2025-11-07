@@ -1,7 +1,8 @@
 /*************************************************************************************
 
-    Runs the Krylov-Schur algorithm on a (pre-conditioned) domain-wall fermion operator 
-    to determine part of its spectrum. 
+    Runs the Krylov-Schur algorithm on a Wilson fermion operator to determine part of its spectrum. 
+
+    TODO rename this file: really is running the topology change jobs on Aurora. 
 
     Usage : 
       $ ./Example_spec_kryschur <Nm> <Nk> <maxiter> <Nstop> <inFile> <outDir> <?rf>
@@ -65,52 +66,6 @@
 using namespace std;
 using namespace Grid;
 
-<<<<<<< HEAD
-namespace Grid {
-
-struct LanczosParameters: Serializable {
-  GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParameters,
-		  		RealD, mass , 
-		  		RealD, mstep , 
-				Integer, Nstop,
-                                Integer, Nk,
-                                Integer, Np,
-                                Integer, ReadEvec,
-	  			RealD, resid,
-	  			RealD, ChebyLow,
-	  			RealD, ChebyHigh,
-	  			Integer, ChebyOrder)
-
-  LanczosParameters() {
-    /////////////////////////////////
-  }
-
-  template <class ReaderClass >
-  LanczosParameters(Reader<ReaderClass> & TheReader){
-    initialize(TheReader);
-  }
-
-  template < class ReaderClass > 
-  void initialize(Reader<ReaderClass> &TheReader){
-    read(TheReader, "HMC", *this);
-  }
-
-
-  void print_parameters() const {
-//    std::cout << GridLogMessage << "[HMC parameters] Trajectories            : " << Trajectories << "\n";
-//    std::cout << GridLogMessage << "[HMC parameters] Start trajectory        : " << StartTrajectory << "\n";
-//    std::cout << GridLogMessage << "[HMC parameters] Metropolis test (on/off): " << std::boolalpha << MetropolisTest << "\n";
-//    std::cout << GridLogMessage << "[HMC parameters] Thermalization trajs    : " << NoMetropolisUntil << "\n";
-//    std::cout << GridLogMessage << "[HMC parameters] Starting type           : " << StartingType << "\n";
-//    MD.print_parameters();
-  }
-  
-};
-
-}
-
-#if 0
-=======
 template <class T> void writeFile(T& in, std::string const fname){  
   #ifdef HAVE_LIME
     // Ref: https://github.com/paboyle/Grid/blob/feature/scidac-wp1/tests/debug/Test_general_coarse_hdcg_phys48.cc#L111
@@ -149,15 +104,15 @@ void writeEigensystem(KrylovSchur<Field> KS, std::string outDir) {
   }
   fEval.close();
   
-  // Write evecs (TODO: very heavy on storage costs! Don't write them all out)
-  // std::vector<Field> evecs = KS.getEvecs();
-  // for (int i = 0; i < Nk; i++) {
-  //   std::string fName = outDir + "/evec" + std::to_string(i);
-  //   writeFile(evecs[i], fName);     // using method from Grid/HMC/ComputeWilsonFlow.cc
-  // }
+  // Write evecs
+  int Nevecs = Nk;          // don't write all of them
+  std::vector<Field> evecs = KS.getEvecs();
+  for (int i = 0; i < Nevecs; i++) {
+    std::string fName = outDir + "/evec" + std::to_string(i);
+    writeFile(evecs[i], fName);     // using method from Grid/HMC/ComputeWilsonFlow.cc
+  }
 }
 
->>>>>>> 68af1bba67dd62881ead5ab1e54962a5486a0791
 // Hermitize a DWF operator by squaring it
 template<class Matrix,class Field>
 class SquaredLinearOperator : public LinearOperatorBase<Field> {
@@ -303,111 +258,6 @@ ShiftedComplexPVdagMLinearOperator(ComplexD _shift,Matrix &Mat,Matrix &PV): shif
   }
 };
 
-<<<<<<< HEAD
-template<class Fobj,class CComplex,int nbasis>
-class MGPreconditioner : public LinearFunction< Lattice<Fobj> > {
-public:
-  using LinearFunction<Lattice<Fobj> >::operator();
-
-  typedef Aggregation<Fobj,CComplex,nbasis> Aggregates;
-  typedef typename Aggregation<Fobj,CComplex,nbasis>::FineField    FineField;
-  typedef typename Aggregation<Fobj,CComplex,nbasis>::CoarseVector CoarseVector;
-  typedef typename Aggregation<Fobj,CComplex,nbasis>::CoarseMatrix CoarseMatrix;
-  typedef LinearOperatorBase<FineField>                            FineOperator;
-  typedef LinearFunction    <FineField>                            FineSmoother;
-  typedef LinearOperatorBase<CoarseVector>                         CoarseOperator;
-  typedef LinearFunction    <CoarseVector>                         CoarseSolver;
-  Aggregates     & _Aggregates;
-  FineOperator   & _FineOperator;
-  FineSmoother   & _PreSmoother;
-  FineSmoother   & _PostSmoother;
-  CoarseOperator & _CoarseOperator;
-  CoarseSolver   & _CoarseSolve;
-
-  int    level;  void Level(int lv) {level = lv; };
-
-  MGPreconditioner(Aggregates &Agg,
-		   FineOperator &Fine,
-		   FineSmoother &PreSmoother,
-		   FineSmoother &PostSmoother,
-		   CoarseOperator &CoarseOperator_,
-		   CoarseSolver &CoarseSolve_)
-    : _Aggregates(Agg),
-      _FineOperator(Fine),
-      _PreSmoother(PreSmoother),
-      _PostSmoother(PostSmoother),
-      _CoarseOperator(CoarseOperator_),
-      _CoarseSolve(CoarseSolve_),
-      level(1)  {  }
-
-  virtual void operator()(const FineField &in, FineField & out) 
-  {
-    GridBase *CoarseGrid = _Aggregates.CoarseGrid;
-    //    auto CoarseGrid = _CoarseOperator.Grid();
-    CoarseVector Csrc(CoarseGrid);
-    CoarseVector Csol(CoarseGrid);
-    FineField vec1(in.Grid());
-    FineField vec2(in.Grid());
-
-    std::cout<<GridLogMessage << "Calling PreSmoother " <<std::endl;
-
-    //    std::cout<<GridLogMessage << "Calling PreSmoother input residual "<<norm2(in) <<std::endl;
-    double t;
-    // Fine Smoother
-    //    out = in;
-    out = Zero();
-    t=-usecond();
-    _PreSmoother(in,out);
-    t+=usecond();
-
-    std::cout<<GridLogMessage << "PreSmoother took "<< t/1000.0<< "ms" <<std::endl;
-
-    // Update the residual
-    _FineOperator.Op(out,vec1);  sub(vec1, in ,vec1);   
-    //    std::cout<<GridLogMessage <<"Residual-1 now " <<norm2(vec1)<<std::endl;
-
-    // Fine to Coarse 
-    t=-usecond();
-    _Aggregates.ProjectToSubspace  (Csrc,vec1);
-    t+=usecond();
-    std::cout<<GridLogMessage << "Project to coarse took "<< t/1000.0<< "ms" <<std::endl;
-
-    // Coarse correction
-    t=-usecond();
-    Csol = Zero();
-    _CoarseSolve(Csrc,Csol);
-    //Csol=Zero();
-    t+=usecond();
-    std::cout<<GridLogMessage << "Coarse solve took "<< t/1000.0<< "ms" <<std::endl;
-
-    // Coarse to Fine
-    t=-usecond();  
-    //    _CoarseOperator.PromoteFromSubspace(_Aggregates,Csol,vec1);
-    _Aggregates.PromoteFromSubspace(Csol,vec1); 
-    add(out,out,vec1);
-    t+=usecond();
-    std::cout<<GridLogMessage << "Promote to this level took "<< t/1000.0<< "ms" <<std::endl;
-
-    // Residual
-    _FineOperator.Op(out,vec1);  sub(vec1 ,in , vec1);  
-    //    std::cout<<GridLogMessage <<"Residual-2 now " <<norm2(vec1)<<std::endl;
-
-    // Fine Smoother
-    t=-usecond();
-    //    vec2=vec1;
-    vec2=Zero();
-    _PostSmoother(vec1,vec2);
-    t+=usecond();
-    std::cout<<GridLogMessage << "PostSmoother took "<< t/1000.0<< "ms" <<std::endl;
-
-    add( out,out,vec2);
-    std::cout<<GridLogMessage << "Done " <<std::endl;
-  }
-};
-#endif
-
-=======
->>>>>>> 68af1bba67dd62881ead5ab1e54962a5486a0791
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
@@ -420,59 +270,76 @@ int main (int argc, char ** argv)
   std::string file       = argv[5];
   std::string outDir     = argv[6];
 
-  RitzFilter RF;
-  if (argc == 8) {
-    std::string rf       = argv[7];
-    RF = selectRitzFilter(rf);
-  } else {
-    RF = EvalReSmall;
-  }
+  // RitzFilter RF;
+  // if (argc == 8) {
+  //   std::string rf       = argv[7];
+  //   RF = selectRitzFilter(rf);
+  // } else {
+  //   RF = EvalReSmall;
+  // }
+  // RitzFilter RF;
+  std::string rf       = argv[7];
+  RitzFilter RF        = selectRitzFilter(rf);
   std::cout << "Sorting eigenvalues using " << rfToString(RF) << std::endl;
 
-  //const int Ls=16;
-  const int Ls = 8;
+  const int Ls=16;
 
 //   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   //std::vector<int> lat_size {16, 16, 16, 32};
-  std::vector<int> lat_size {8, 8, 8, 8};
+  std::vector<int> lat_size {32, 32, 32, 32};
   std::cout << "Lattice size: " << lat_size << std::endl;
   GridCartesian * UGrid = SpaceTimeGrid::makeFourDimGrid(lat_size, 
 								          GridDefaultSimd(Nd,vComplex::Nsimd()),
 								          GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
-
-  GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
-  GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
+  // GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
+  // GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
+  GridCartesian * FGrid = UGrid;
+  GridRedBlackCartesian * FrbGrid = UrbGrid;
 
   std::vector<int> seeds4({1,2,3,4});
-  std::vector<int> seeds5({5,6,7,8});
-  GridParallelRNG          RNG5(FGrid);   RNG5.SeedFixedIntegers(seeds5);
-  GridParallelRNG          RNG4(UGrid);   RNG4.SeedFixedIntegers(seeds4);
+  GridParallelRNG RNG4(UGrid);
+  RNG4.SeedFixedIntegers(seeds4);
 
-  LatticeFermion    src(FGrid); random(RNG5,src);
+  LatticeFermion    src(FGrid); random(RNG4, src);
   LatticeGaugeField Umu(UGrid);
 
   FieldMetaData header;
-  NerscIO::readConfiguration(Umu,header,file);
+  NerscIO::readConfiguration(Umu, header, file);
 
-  // RealD mass=0.01;
-  RealD mass=0.001;
-  RealD M5=1.8;
+  std::cout << GridLogMessage << "Loaded configuration" << std::endl;
 
-  DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  DomainWallFermionD Dpv(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,M5);
+  // RealD mass = 0.01;
+  RealD M5 = 1.8;
+
+  // Wilson mass
+  RealD mass = -1.6;
+
+  std::cout << GridLogMessage << "masses specified" << std::endl;
+
+  std::vector<Complex> boundary = {1,1,1,-1};
+  WilsonFermionD::ImplParams Params(boundary);
+
+  // DomainWallFermionD Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5);
+  // NonHermitianLinearOperator<DomainWallFermionD, LatticeFermionD> DLinOp (Ddwf);
+
+  // WilsonFermionD Dwilson(Umu, *FGrid, *FrbGrid, mass);
+  WilsonFermionD Dwilson(Umu, *UGrid, *UrbGrid, mass, Params);
+  NonHermitianLinearOperator<WilsonFermionD, LatticeFermionD> DLinOp (Dwilson);
+
+  std::cout << GridLogMessage << "Dirac operator defined" << std::endl;
+
+  // Define PV^dag D (if we want)
+  // DomainWallFermionD Dpv(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, 1.0, M5);
+  // typedef PVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> PVdagM_t;
+  // PVdagM_t PVdagM(Ddwf, Dpv);
 
   std::cout<<GridLogMessage<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
   std::cout<<GridLogMessage<<std::endl;
 
-  typedef PVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> PVdagM_t;
-  typedef ShiftedPVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> ShiftedPVdagM_t;
-  typedef ShiftedComplexPVdagMLinearOperator<DomainWallFermionD,LatticeFermionD> ShiftedComplexPVdagM_t;
-  PVdagM_t PVdagM(Ddwf, Dpv);
-  ShiftedPVdagM_t ShiftedPVdagM(0.1,Ddwf,Dpv);
-  SquaredLinearOperator<DomainWallFermionD, LatticeFermionD> Dsq (Ddwf);
-  NonHermitianLinearOperator<DomainWallFermionD, LatticeFermionD> DLinOp (Ddwf);
+  // SquaredLinearOperator<WilsonFermionD, LatticeFermionD> Dsq (DWilson);
+  // NonHermitianLinearOperator<WilsonFermionD, LatticeFermionD> DLinOp (DWilson);
 
   int Nm = std::stoi(NmStr);
   int Nk = std::stoi(NkStr);
@@ -482,9 +349,12 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "Runnning Krylov Schur. Nm = " << Nm << ", Nk = " << Nk << ", maxIter = " << maxIter 
                   << ", Nstop = " << Nstop << std::endl;
   
-  KrylovSchur KrySchur (PVdagM, FGrid, 1e-8, RF);      // use preconditioned PV^\dag D_{dwf}
-  // KrylovSchur KrySchur (DLinOp, FGrid, 1e-8, RF);         // use D_{dwf}
+  // KrylovSchur KrySchur (PVdagM, FGrid, 1e-8, RF);         // use PV^\dag M
+  KrylovSchur KrySchur (DLinOp, FGrid, 1e-8, RF);         // use Ddwf
   KrySchur(src, maxIter, Nm, Nk, Nstop);
+
+  std::cout << GridLogMessage << "Checking eigensystem." << std::endl;
+  KrySchur.checkRitzEstimate();
 
   std::cout<<GridLogMessage << "*******************************************" << std::endl;
   std::cout<<GridLogMessage << "***************** RESULTS *****************" << std::endl;

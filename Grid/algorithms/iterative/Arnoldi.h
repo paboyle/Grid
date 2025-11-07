@@ -8,8 +8,6 @@ Copyright (C) 2015
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
-Author: Chulwoo Jung <chulwoo@bnl.gov>
-Author: Christoph Lehner <clehner@bnl.gov>
 Author: Patrick Oare <poare@bnl.gov>
 
 This program is free software; you can redistribute it and/or modify
@@ -34,7 +32,10 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 NAMESPACE_BEGIN(Grid); 
 
+//Moved to KrylovSchur
+#if 0
 /**
+<<<<<<< HEAD
  * Options for which Ritz values to keep in implicit restart.
  */
 enum RitzFilter {
@@ -73,6 +74,10 @@ struct ComplexComparator
     }
   }
 };
+
+=======
+>>>>>>> 68af1bba67dd62881ead5ab1e54962a5486a0791
+#endif
 
 /**
  * Implementation of the Arnoldi algorithm.

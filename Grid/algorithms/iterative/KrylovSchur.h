@@ -8,8 +8,6 @@ Copyright (C) 2015
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
-Author: Chulwoo Jung <chulwoo@bnl.gov>
-Author: Christoph Lehner <clehner@bnl.gov>
 Author: Patrick Oare <poare@bnl.gov>
 
 This program is free software; you can redistribute it and/or modify
@@ -33,6 +31,86 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define GRID_KRYLOVSCHUR_H
 
 NAMESPACE_BEGIN(Grid); 
+
+/**
+ * Options for which Ritz values to keep in implicit restart. TODO move this and utilities into a new file
+ */
+enum RitzFilter {
+  EvalNormSmall,           // Keep evals with smallest norm
+  EvalNormLarge,           // Keep evals with largest norm
+  EvalReSmall,             // Keep evals with smallest real part
+  EvalReLarge,             // Keep evals with largest real part
+  EvalImSmall,             // Keep evals with smallest imaginary part
+  EvalImLarge,             // Keep evals with largest imaginary part
+  EvalImNormSmall,         // Keep evals with smallest |imaginary| part
+  EvalImNormLarge,         // Keep evals with largest |imaginary| part
+};
+
+/** Selects the RitzFilter corresponding to the input string. */
+inline RitzFilter selectRitzFilter(std::string s) {
+  if (s == "EvalNormSmall")   { return EvalNormSmall; }   else
+  if (s == "EvalNormLarge")   { return EvalNormLarge; }   else
+  if (s == "EvalReSmall")     { return EvalReSmall; }     else
+  if (s == "EvalReLarge")     { return EvalReLarge; }     else
+  if (s == "EvalImSmall")     { return EvalImSmall; }     else
+  if (s == "EvalImLarge")     { return EvalImLarge; }     else 
+  if (s == "EvalImNormSmall") { return EvalImNormSmall; } else
+  if (s == "EvalImNormLarge") { return EvalImNormLarge; } else 
+  { assert(0); }
+}
+
+/** Returns a string saying which RitzFilter it is. */
+inline std::string rfToString(RitzFilter RF) {
+  switch (RF) {
+    case EvalNormSmall:
+      return "EvalNormSmall";
+    case EvalNormLarge:
+      return "EvalNormLarge";
+    case EvalReSmall:
+      return "EvalReSmall";
+    case EvalReLarge:
+      return "EvalReLarge";
+    case EvalImSmall:
+      return "EvalImSmall";
+    case EvalImLarge:
+      return "EvalImLarge";
+    case EvalImNormSmall:
+      return "EvalImNormSmall";
+    case EvalImNormLarge:
+      return "EvalImNormLarge";
+    default:
+      assert(0);
+  }
+}
+
+// Select comparison function from RitzFilter
+struct ComplexComparator
+{
+  RitzFilter RF;
+  ComplexComparator (RitzFilter _rf) : RF(_rf) {}
+  bool operator()(std::complex<double> z1, std::complex<double> z2) { 
+    switch (RF) {
+      case EvalNormSmall:
+        return std::abs(z1) < std::abs(z2);
+      case EvalNormLarge:
+        return std::abs(z1) > std::abs(z2);
+      case EvalReSmall:
+        return std::real(z1) < std::real(z2);     // DELETE THE ABS HERE!!!
+      case EvalReLarge:
+        return std::real(z1) > std::real(z2);
+      case EvalImSmall:
+        return std::imag(z1) < std::imag(z2);
+      case EvalImLarge:
+        return std::imag(z1) > std::imag(z2);
+      case EvalImNormSmall:
+        return std::abs(std::imag(z1)) < std::abs(std::imag(z2));
+      case EvalImNormLarge:
+        return std::abs(std::imag(z1)) > std::abs(std::imag(z2));
+      default:
+        assert(0);
+    }
+  }
+};
 
 /**
  * Computes a complex Schur decomposition of a complex matrix A using Eigen's matrix library. The Schur decomposition,
@@ -172,6 +250,15 @@ class ComplexSchurDecomposition {
 
 };
 
+// template<class Field>
+// inline void writeFile(const Field &field, const std::string &fname) {
+//   emptyUserRecord record;
+//   ScidacWriter WR(field.Grid()->IsBoss());
+//   WR.open(fname);
+//   WR.writeScidacFieldRecord(field, record, 0); // 0 = Lexico
+//   WR.close();
+// }
+
 /**
  * Implementation of the Krylov-Schur algorithm.
  */
@@ -195,21 +282,22 @@ class KrylovSchur {
     RealD approxLambdaMax;
     RealD beta_k;
     Field u;                                // Residual vector perpendicular to Krylov space (u_{k+1} in notes)
-    Eigen::VectorXcd b;                     // b vector in Schur decomposition (e_{k+1} in Arnoldi).
+    Eigen::VectorXcd   b;                   // b vector in Schur decomposition (e_{k+1} in Arnoldi).
     std::vector<Field> basis;               // orthonormal Krylov basis
-    Eigen::MatrixXcd Rayleigh;              // Rayleigh quotient of size Nbasis (after construction)
-    Eigen::MatrixXcd Qt;                    // Transpose of basis rotation which projects out high modes.
+    Eigen::MatrixXcd   Rayleigh;            // Rayleigh quotient of size Nbasis (after construction)
+    Eigen::MatrixXcd   Qt;                  // Transpose of basis rotation which projects out high modes.
 
-    Eigen::VectorXcd evals;                 // evals of Rayleigh quotient
-    Eigen::MatrixXcd littleEvecs;           // Nm x Nm evecs matrix
+    Eigen::VectorXcd   evals;               // evals of Rayleigh quotient
+    std::vector<RealD> ritzEstimates;       // corresponding ritz estimates for evals
+    Eigen::MatrixXcd   littleEvecs;         // Nm x Nm evecs matrix
 
-    RitzFilter ritzFilter;                        // how to sort evals
+    RitzFilter ritzFilter;                  // how to sort evals
 
   public:       
 
     KrylovSchur(LinearOperatorBase<Field> &_Linop, GridBase *_Grid, RealD _Tolerance, RitzFilter filter = EvalReSmall)
       : Linop(_Linop), Grid(_Grid), Tolerance(_Tolerance), ritzFilter(filter), u(_Grid), MaxIter(-1), Nm(-1), Nk(-1), Nstop (-1),
-        evals (0), evecs (), ssq (0.0), rtol (0.0), beta_k (0.0), approxLambdaMax (0.0)
+        evals (0), ritzEstimates (), evecs (), ssq (0.0), rtol (0.0), beta_k (0.0), approxLambdaMax (0.0)
     {
       u = Zero();
     };
@@ -218,11 +306,13 @@ class KrylovSchur {
 
 
     /* Getters */
-    Eigen::MatrixXcd    getRayleighQuotient()  { return Rayleigh; }
-    Field               getU()                 { return u;        }
-    std::vector<Field>  getBasis()             { return basis;    }
-    Eigen::VectorXcd    getEvals()             { return evals;    }
-    std::vector<Field>  getEvecs()             { return evecs;    }
+    int                 getNk()                { return Nk;            }
+    Eigen::MatrixXcd    getRayleighQuotient()  { return Rayleigh;      }
+    Field               getU()                 { return u;             }
+    std::vector<Field>  getBasis()             { return basis;         }
+    Eigen::VectorXcd    getEvals()             { return evals;         }
+    std::vector<RealD>  getRitzEstimates()     { return ritzEstimates; }
+    std::vector<Field>  getEvecs()             { return evecs;         }
 
     /**
      * Runs the Krylov-Schur loop.
@@ -239,10 +329,14 @@ class KrylovSchur {
       ssq = norm2(v0);
       RealD approxLambdaMax = approxMaxEval(v0);
       rtol = Tolerance * approxLambdaMax;
+      std::cout << GridLogMessage << "Approximate max eigenvalue: " << approxLambdaMax << std::endl;
       // rtol = Tolerance;
 
       b = Eigen::VectorXcd::Zero(Nm);       // start as e_{k+1}
       b(Nm-1) = 1.0;
+
+      // basis = new std::vector<Field> (Nm, Grid);
+      // evecs.reserve();
 
       int start = 0;
       Field startVec = v0;
@@ -281,6 +375,10 @@ class KrylovSchur {
         // basisRotate(evecs, Q, 0, Nm, 0, Nm, Nm);
 
         std::vector<Field> basis2; 
+        // basis2.reserve(Nm);
+        // for (int i = start; i < Nm; i++) {
+        //   basis2.emplace_back(Grid);
+        // }
         constructUR(basis2, basis, Qt, Nm);
         basis = basis2;
 
@@ -298,18 +396,12 @@ class KrylovSchur {
 
         std::cout << GridLogDebug << "Rayleigh before truncation: " << std::endl << Rayleigh << std::endl;
 
-        // Rayleigh = Rayleigh(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
         Eigen::MatrixXcd RayTmp = Rayleigh(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
         Rayleigh = RayTmp;
 
-        // basis = std::vector<Field> (basis.begin(), basis.begin() + Nk);
         std::vector<Field> basisTmp = std::vector<Field> (basis.begin(), basis.begin() + Nk);
         basis = basisTmp;
 
-        // evecs = std::vector<Field> (evecs.begin(), evecs.begin() + Nk);
-        // littleEvecs = littleEvecs(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
-        
-        // b = b.head(Nk);
         Eigen::VectorXcd btmp = b.head(Nk);
         b = btmp;
 
@@ -327,8 +419,11 @@ class KrylovSchur {
         if (Nconv >= Nstop || i == MaxIter - 1) {
           std::cout << GridLogMessage << "Converged with " << Nconv << " / " << Nstop << " eigenvectors on iteration " 
                         << i << "." << std::endl;
-          basisRotate(evecs, Qt, 0, Nk, 0, Nk, Nm);
+          // basisRotate(evecs, Qt, 0, Nk, 0, Nk, Nm);      // Think this might have been the issue
           std::cout << GridLogMessage << "Eigenvalues: " << evals << std::endl;
+
+          // writeEigensystem(path);
+
           return;
         }
       }
@@ -355,15 +450,27 @@ class KrylovSchur {
       ComplexD coeff;
       Field w (Grid);           // A acting on last Krylov vector. 
 
+      // basis.reserve(Nm);
+      // for (int i = start; i < Nm; i++) {
+      //   basis.emplace_back(Grid);
+      // }
+      // basis.assign(Nm, Field(Grid));
+      // basis.resize(Nm);
+      // for (int i = start; i < Nm; i++) {
+      //   basis[i] = Field(Grid);
+      // }
+
       if (start == 0) {       // initialize everything that we need.
         RealD v0Norm = 1 / std::sqrt(ssq);
         basis.push_back(v0Norm * v0);                // normalized source
+        // basis[0] = v0Norm * v0;                // normalized source
 
         Rayleigh = Eigen::MatrixXcd::Zero(Nm, Nm);
         u = Zero();
       } else {
         std::cout << GridLogMessage << "start= " <<start<< " basis.size= "<<basis.size()<<std::endl;
-        assert( start <= basis.size() );      // should be starting at the end of basis (start = Nk)
+//        assert( start <= basis.size() );      // should be starting at the end of basis (start = Nk)
+        // assert( start == basis.size() );      // should be starting at the end of basis (start = Nk)
         std::cout << GridLogMessage << "Resetting Rayleigh and b" << std::endl;
         Eigen::MatrixXcd RayleighCp = Rayleigh;
         Rayleigh = Eigen::MatrixXcd::Zero(Nm, Nm);
@@ -372,12 +479,14 @@ class KrylovSchur {
         // append b^\dag to Rayleigh, add u to basis
         Rayleigh(Nk, Eigen::seqN(0, Nk)) = b.adjoint();
         basis.push_back(u);
+        // basis[start] = u;       // TODO make sure this is correct
         b = Eigen::VectorXcd::Zero(Nm);
       }
 
       // Construct next Arnoldi vector by normalizing w_i = Dv_i - \sum_j v_j h_{ji}
       for (int i = start; i < Nm; i++) {
         Linop.Op(basis.back(), w);
+        // Linop.Op(basis[i], w);
         for (int j = 0; j < basis.size(); j++) {
           coeff = innerProduct(basis[j], w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
           Rayleigh(j, i) = coeff;
@@ -400,6 +509,7 @@ class KrylovSchur {
           basis.push_back(
             (1.0/coeff) * w
           );
+          // basis[i+1] = (1.0/coeff) * w;
         }
 
         // after iterations, update u and beta_k = ||u|| before norm
@@ -422,8 +532,6 @@ class KrylovSchur {
      * the Rayleigh quotient. Assumes that the Rayleigh quotient has already been constructed (by 
      * calling the operator() function).
      * 
-     * TODO implement in parent class eventually.
-     * 
      * Parameters
      * ----------
      * Eigen::MatrixXcd& S
@@ -433,8 +541,11 @@ class KrylovSchur {
     {
       std::cout << GridLogMessage << "Computing eigenvalues." << std::endl;
 
-      evecs.clear();
       evals = S.diagonal();
+      int n = evals.size();       // should be regular Nm
+
+      evecs.clear();
+      // evecs.assign(n, Field(Grid));
 
       // TODO: is there a faster way to get the eigenvectors of a triangular matrix?
       // Rayleigh.triangularView<Eigen::Upper> tri;
@@ -447,7 +558,7 @@ class KrylovSchur {
       std::cout << GridLogDebug << "Little evecs: " << littleEvecs << std::endl;
 
       // Convert evecs to lattice fields
-      for (int k = 0; k < evals.size(); k++) {
+      for (int k = 0; k < n; k++) {
         Eigen::VectorXcd vec = littleEvecs.col(k);
         Field tmp (basis[0].Grid());
         tmp = Zero();
@@ -455,6 +566,7 @@ class KrylovSchur {
           tmp = tmp + vec[j] * basis[j];
         }
         evecs.push_back(tmp);
+        // evecs[k] = tmp;
       }
     }
 
@@ -510,11 +622,16 @@ class KrylovSchur {
      */
     int converged() {
       int Nconv = 0;
+      int _Nm = evecs.size();
       std::cout << GridLogDebug << "b: " << b << std::endl;
       Field tmp (Grid); Field fullEvec (Grid);
-      for (int k = 0; k < evecs.size(); k++) {
+      ritzEstimates.clear();
+      // ritzEstimates.resize(_Nm);
+      for (int k = 0; k < _Nm; k++) {
         Eigen::VectorXcd evec_k = littleEvecs.col(k);
         RealD ritzEstimate = std::abs(b.dot(evec_k));           // b^\dagger s
+        ritzEstimates.push_back(ritzEstimate);
+        // ritzEstimates[k] = ritzEstimate;
         std::cout << GridLogMessage << "Ritz estimate for evec " << k << " = " << ritzEstimate << std::endl;
         if (ritzEstimate < rtol) {
           Nconv++;
@@ -522,7 +639,7 @@ class KrylovSchur {
 
       }
       // Check that Ritz estimate is explicitly || D (Uy) - lambda (Uy) ||
-      // checkRitzEstimate();
+      checkRitzEstimate();
       return Nconv;
     }
 
@@ -539,7 +656,7 @@ class KrylovSchur {
       // rotate basis by Rayleigh to construct UR
       // std::vector<Field> rotated;
 
-      std::cout << GridLogDebug << "Rayleigh in KSDecomposition: " << std::endl << Rayleigh << std::endl;
+      // std::cout << GridLogDebug << "Rayleigh in KSDecomposition: " << std::endl << Rayleigh << std::endl;
 
       std::vector<Field> rotated = basis;
       constructUR(rotated, basis, Rayleigh, k);             // manually rotate
@@ -558,10 +675,10 @@ class KrylovSchur {
         delta = delta / norm2(tmp);               // relative tolerance
         deltaSum += delta;
 
-        std::cout << GridLogDebug << "Iteration " << i << std::endl;
-        std::cout << GridLogDebug << "Du = " << norm2(tmp) << std::endl;
-        std::cout << GridLogDebug << "rotated = " << norm2(rotated[i]) << std::endl;
-        std::cout << GridLogDebug << "b[i] = " << b(i) << std::endl;
+        // std::cout << GridLogDebug << "Iteration " << i << std::endl;
+        // std::cout << GridLogDebug << "Du = " << norm2(tmp) << std::endl;
+        // std::cout << GridLogDebug << "rotated = " << norm2(rotated[i]) << std::endl;
+        // std::cout << GridLogDebug << "b[i] = " << b(i) << std::endl;
         std::cout << GridLogMessage << "Deviation in decomp, column " << i << ": " << delta << std::endl;
       }
       std::cout << GridLogMessage << "Squared sum of relative deviations in decomposition: " << deltaSum << std::endl;
@@ -629,7 +746,9 @@ class KrylovSchur {
      */
     void constructUR(std::vector<Field>& UR, std::vector<Field> &U, Eigen::MatrixXcd& R, int N) {
       Field tmp (Grid);
+
       UR.clear();
+      // UR.resize(N);
 
       std::cout << GridLogDebug << "R to rotate by (should be Rayleigh): " << R << std::endl;
 
@@ -642,6 +761,7 @@ class KrylovSchur {
         }
         std::cout << GridLogDebug << "rotated norm at i = " << i << " is: " << norm2(tmp) << std::endl;
         UR.push_back(tmp);
+        // UR[i] = tmp;
       }
       return;
     }
@@ -652,17 +772,61 @@ class KrylovSchur {
     void constructRU(std::vector<Field>& RU, std::vector<Field> &U, Eigen::MatrixXcd& R, int N) {
       Field tmp (Grid);
       RU.clear();
+      // RU.resize(N);
       for (int i = 0; i < N; i++) {
         tmp = Zero();
         for (int j = 0; j < N; j++) {
           tmp = tmp + R(i, j) * U[j];
         }
         RU.push_back(tmp);
+        // RU[i] = tmp;
       }
       return;
     }
 
+    // void writeEvec(Field& in, std::string const fname){  
+    //   #ifdef HAVE_LIME
+    //     // Ref: https://github.com/paboyle/Grid/blob/feature/scidac-wp1/tests/debug/Test_general_coarse_hdcg_phys48.cc#L111
+    //     std::cout << GridLogMessage << "Writing evec to: " << fname << std::endl;
+    //     Grid::emptyUserRecord record;
+    //     Grid::ScidacWriter WR(in.Grid()->IsBoss());
+    //     WR.open(fname);
+    //     WR.writeScidacFieldRecord(in,record,0); // Lexico
+    //     WR.close();
+    //   #endif
+    //     // What is the appropriate way to throw error?
+    // }
+
+    // /**
+    //  * Writes the eigensystem of a Krylov Schur object to a directory. 
+    //  * 
+    //  * Parameters
+    //  * ----------
+    //  * std::string path
+    //  *    Directory to write to. 
+    //  */
+    // void writeEigensystem(std::string outDir) {
+    //   std::cout << GridLogMessage << "Writing output to directory: " << outDir << std::endl;
+    //   // TODO write a scidac density file so that we can easily integrate with visualization toolkit
+    //   std::string evalPath = outDir + "/evals.txt";
+    //   std::ofstream fEval;
+    //   fEval.open(evalPath);
+    //   for (int i = 0; i < Nk; i++) {
+    //     // write Eigenvalues
+    //     fEval << i << " " << evals(i);
+    //     if (i < Nk - 1) { fEval << "\n"; }
+    //   }
+    //   fEval.close();
+      
+    //   for (int i = 0; i < Nk; i++) {
+    //     std::string fName = outDir + "/evec" + std::to_string(i);
+    //     // writeFile(evecs[i], fName);     // using method from Grid/HMC/ComputeWilsonFlow.cc
+    //     // writeEvec(evecs[i], fName);
+    //   }
+      
+    // }
+
 };
-    
+
 NAMESPACE_END(Grid);
 #endif
