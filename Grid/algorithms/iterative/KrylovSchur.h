@@ -531,7 +531,7 @@ class KrylovSchur {
     {
       std::cout << GridLogMessage << "Computing eigenvalues." << std::endl;
 
-      evals = S.diagonal();
+      // evals = S.diagonal();
       int n = evals.size();       // should be regular Nm
 
       evecs.clear();
@@ -543,9 +543,12 @@ class KrylovSchur {
       Eigen::ComplexEigenSolver<Eigen::MatrixXcd> es;
       // es.compute(Rayleigh);
       es.compute(S);
+      evals = es.eigenvalues();
       littleEvecs = es.eigenvectors();
 
-      std::cout << GridLogDebug << "Little evecs: " << littleEvecs << std::endl;
+      // std::cout << GridLogDebug << "Little evecs: " << littleEvecs << std::endl;
+      // std::cout << "Rayleigh diag: " << S.diagonal() << std::endl;
+      // std::cout << "Rayleigh evals: " << evals << std::endl;
 
       // Convert evecs to lattice fields
       for (int k = 0; k < n; k++) {
@@ -629,7 +632,7 @@ class KrylovSchur {
 
       }
       // Check that Ritz estimate is explicitly || D (Uy) - lambda (Uy) ||
-      checkRitzEstimate();
+      // checkRitzEstimate();
       return Nconv;
     }
 
@@ -717,12 +720,23 @@ class KrylovSchur {
      */
     void checkRitzEstimate(RealD tol = 1e-8) {
       std::cout << GridLogMessage << "*** CHECKING RITZ ESTIMATE *** " << std::endl;
+
+      // The issue was that the Eigen::eigensolver occasionally returned the complex conjugate pairs in the wrong 
+      // order compared to the diagonal, which is how I was reading them out. When this happened, the Ritz estimate would 
+      // be wrong. So, just need to be more careful and actually read out the eigenvalues. 
+
       Field tmp (Grid);
+      // std::cout << "n evecs: " << evecs.size() << std::endl;
       for (int k = 0; k < evecs.size(); k++) {
         tmp = Zero();
         Linop.Op(evecs[k], tmp);        // D evec
         RealD ritz = std::sqrt(norm2(tmp - evals[k] * evecs[k]));
         std::cout << "Ritz estimate " << k << " = " << ritz << std::endl;
+
+        // Checking little Ritz estimate
+        // Eigen::VectorXcd littleEvec = littleEvecs.col(k);
+        // Eigen::VectorXcd dev = Rayleigh * littleEvec - evals[k] * littleEvec;
+        // std::cout << GridLogMessage << "Little Ritz estimate = " << dev.norm() << std::endl;
       }
       return;
     }
