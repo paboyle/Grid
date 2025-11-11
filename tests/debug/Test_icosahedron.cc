@@ -282,6 +282,8 @@ public:
     const int ent_Xm = 3;
     const int ent_Ym = 4;
     const int ent_Dm = 5;
+    const int ent_Tp = 6;
+    const int ent_Tm = 7;
     
     accelerator_for(ss,VertexGrid->oSites(),vComplex::Nsimd(),{
 	  
@@ -303,6 +305,14 @@ public:
       SE = stencil_v.GetEntry(ent_Dm,ss);
       uint64_t dm_idx = SE->_offset;
       int missingLink = SE->_missing_link;
+
+      SE = stencil_v.GetEntry(ent_Tm,ss);
+      uint64_t tm_idx = SE->_offset;
+      int permuteTm   = SE->_permute;
+      
+      SE = stencil_v.GetEntry(ent_Tp,ss);
+      uint64_t tp_idx = SE->_offset;
+      int permuteTp   = SE->_permute;
       
       auto i    = in_v(ss)();
       auto inxp = in_v(xp_idx)();
@@ -312,16 +322,22 @@ public:
       auto inym = in_v(ym_idx)();
       auto indm = in_v(dm_idx)();
 
-      auto o    = out_v(ss)();
+      auto intm = in_v(tm_idx)();
+      auto intp = in_v(tp_idx)();
+      const int Nsimdm1 = vComplex::Nsimd()-1;
+      if ( permuteTp ) rotate(intp,intp,1);
+      if ( permuteTm ) rotate(intm,intm,Nsimdm1);
+
+      auto o    = i;
 
       if ( missingLink ) {
-	o = (1.0/5.0)*(inxp+inyp+indp+inxm+inym)-o;
+	o = (1.0/5.0)*(inxp+inyp+indp+inxm+inym)-i;
       } else {
-	o = (1.0/6.0)*(inxp+inyp+indp+inxm+inym+indm)-o;
+	o = (1.0/6.0)*(inxp+inyp+indp+inxm+inym+indm)-i;
       }
-      
+      o = o + (1.0/2.0)*(intp+intm)-i; // Coefficients need to be supplied; relative time/space weight
       coalescedWrite(out_v[ss](),o);
-      });
+    });
   }
   /*
    * Temporarily compute all without summing p and m directions, and XYD for the temporal links
@@ -887,8 +903,25 @@ public:
       indp = U_v(ss)(2)*indp;
       inxm = U_v(ss)(3)*inxm;
       inym = U_v(ss)(4)*inym;
+
+      const int Nsimdm1 = vComplex::Nsimd()-1;
+
+      SE = stencil_v.GetEntry(ent_Tp,ss);
+      uint64_t tp_idx = SE->_offset;
+      auto permuteTp  = SE->_permute;
+
+      SE = stencil_v.GetEntry(ent_Tm,ss);
+      uint64_t tm_idx = SE->_offset;
+      auto permuteTm  = SE->_permute;
       
-      auto o    = i;
+      auto intm = in_v(tm_idx)();
+      auto intp = in_v(tp_idx)();
+      if ( permuteTp ) rotate(intp,intp,1);
+      if ( permuteTm ) rotate(intm,intm,Nsimdm1);
+      intp = U_v(ss)(6)*intp;
+      intm = U_v(ss)(7)*intm;
+      
+      auto o  = i;
 
       if ( missingLink ) {
 	o = (1.0/5.0)*(inxp+inyp+indp+inxm+inym)-i;
@@ -896,17 +929,19 @@ public:
 	indm = U_v(ss)(5)*indm;
 	o = (1.0/6.0)*(inxp+inyp+indp+inxm+inym+indm)-i;
       }
+      o = o + (1.0/2.0)*(intp+intm)-i; // Coefficients need to be supplied; relative time/space weight
       
       coalescedWrite(out_v[ss](),o);
       });
   }
   
-  void DoubleStore(GaugeField &U,DoubledGaugeField &Uds)
+  void DoubleStore(GaugeField &U,GaugeLinkField &Ut,DoubledGaugeField &Uds)
   {
     assert(U.Grid()==EdgeGrid);
     assert(Uds.Grid()==VertexGrid);
     autoView(Uds_v,Uds,AcceleratorWrite);
     autoView(U_v,U,AcceleratorRead);
+    autoView(Ut_v,Ut,AcceleratorRead);
     autoView(stencil_v,NNvv,AcceleratorRead);
 
     // Vertex result
@@ -984,8 +1019,20 @@ public:
 	  coalescedWrite(Uds_v[ss](5),Link);
 	}
       }
-      coalescedWrite(Uds_v[ss](6),Link);
-      coalescedWrite(Uds_v[ss](7),Link);
+      { 
+	auto Lt = Ut_v(ss)();
+	coalescedWrite(Uds_v[ss](6),Lt);
+      }
+      { 
+	const int Nsimdm1 = vComplex::Nsimd()-1;
+	auto SE = stencil_v.GetEntry(ent_Tm,ss);
+	auto s  = SE->_offset;
+	auto p  = SE->_permute;
+	auto Lt_at_tm = Ut_v(s)();
+	if(p) rotate(Lt_at_tm,Lt_at_tm,Nsimdm1);
+	Lt_at_tm  = adj(Lt_at_tm);
+	coalescedWrite(Uds_v[ss](7),Lt_at_tm);
+      }
     });
     auto pole_sites = VertexGrid->oSites() - VertexGrid->CartesianOsites();
     auto pole_offset= VertexGrid->CartesianOsites();
@@ -1001,8 +1048,20 @@ public:
 	auto Link =  adj(U_v(0)(0));
 	Link=Zero();
 	coalescedWrite(Uds_v[pole_offset+ss](5),Link);
-	coalescedWrite(Uds_v[pole_offset+ss](6),Link);
-	coalescedWrite(Uds_v[pole_offset+ss](7),Link);
+	{
+	  auto Lt = Ut_v(pole_offset+ss)();
+	  coalescedWrite(Uds_v[pole_offset+ss](6),Lt);
+	}
+	{
+	  const int Nsimdm1 = vComplex::Nsimd()-1;
+	  auto SE = stencil_v.GetEntry(ent_Tm,pole_offset+ss);
+	  auto s  = SE->_offset;
+	  auto p  = SE->_permute;
+	  auto Link = Ut_v(s)();
+	  if ( p ) rotate(Link,Link,Nsimdm1);
+	  Link = adj(Link);
+	  coalescedWrite(Uds_v[pole_offset+ss](7),Link);
+	}
     });
   }
   void  GaugeTransform(GaugeLinkField &gt, GaugeField &Umu, GaugeLinkField &Ut)
@@ -1304,8 +1363,11 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage<< "Calling double storing gauge field" <<std::endl;
   DoubledGaugeField Uds(&VertexGrid);
-  Support.DoubleStore(Umu,Uds);
-  
+  Support.DoubleStore(Umu,Ut,Uds);
+
+  //  std::cout << " Umu "<<Umu<<std::endl;
+  //  std::cout << " Ut  "<<Ut<<std::endl;
+  //  std::cout << " Uds "<<Uds<<std::endl;
   Support.CovariantLaplacian(in,out,Uds);
 
   auto ip = innerProduct(out, in);
@@ -1319,12 +1381,19 @@ int main (int argc, char ** argv)
   gin  = g*in;
 
   Support.GaugeTransform(g,Umu,Ut);
-  Support.DoubleStore(Umu,Uds);
+  Support.DoubleStore(Umu,Ut,Uds);
+
+  //  std::cout << " Umu "<<Umu<<std::endl;
+  //  std::cout << " Ut  "<<Ut<<std::endl;
+  //  std::cout << " Uds "<<Uds<<std::endl;
+  
   Support.CovariantLaplacian(gin,out,Uds);
   std::cout << GridLogMessage<< "Applied gauge transformed covariant laplacian to transformed vector !" <<std::endl;
   auto ipgt = innerProduct(out, gin);
 
   std::cout <<GridLogMessage<< "Testing D[U_gt](gF) = g D[U] F : defect is "<<norm2(out-gout)<<std::endl;
+  //  out = out - gout;
+  //  std::cout << out <<std::endl;
 
   ip = ip - ipgt;
   std::cout <<GridLogMessage<< "Testing F D[U](F) = (gF) D[U_gt] gF : defect is "<<ip<<std::endl;
@@ -1335,7 +1404,6 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< " Computing temporal plaquettes"<<std::endl;
   Support.TemporalPlaquette(Ut, Umu,plaq1,plaq2,plaq3);
 
-  
   std::cout << GridLogMessage<<" Computed temporal plaquettes"<<std::endl;
   std::cout << GridLogMessage<<" XT plaq1 "<<norm2(plaq1)<<std::endl;
   std::cout << GridLogMessage<<" YT plaq2 "<<norm2(plaq2)<<std::endl;
@@ -1355,6 +1423,7 @@ int main (int argc, char ** argv)
   Support.TemporalStaples(Ut,Umu,stapleX,stapleY,stapleD,stapleT);
   
   std::cout << GridLogMessage<<" Computed temporal staples"<<std::endl;
+
   linkX = peekLorentz(Umu,IcosahedronPatchX);
   linkY = peekLorentz(Umu,IcosahedronPatchY);
   linkD = peekLorentz(Umu,IcosahedronPatchDiagonal);
@@ -1373,6 +1442,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage <<"------------------------------------------------"<<std::endl;
 
   int L = latt_size[0];
+  assert(L == latt_size[1]);
   int T = latt_size[2];
 
   double T_staple_norm = 10*(L*L-1)*T*36.0 + 12*T*25.0;
@@ -1380,7 +1450,6 @@ int main (int argc, char ** argv)
   double tr = norm2(trace(Ut * stapleT));
   std::cout << GridLogMessage << " trace T*StapleT "<<tr<<std::endl;
   std::cout << GridLogMessage << " got " << tr<<" expect "<<T_staple_norm<<" diff "<<tr-T_staple_norm <<std::endl;
-
   
   /*
   GaugeLinkField stapleXTp(&EdgeGrid);

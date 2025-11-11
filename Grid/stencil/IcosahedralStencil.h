@@ -809,6 +809,7 @@ public:
       SE._offset       = grid->oIndex(TpCoor);
       SE._permute      = permuteTp;
       acceleratorPut(this->_entries[lexTp],SE);
+
       SE._offset       = grid->oIndex(TmCoor);
       SE._permute      = permuteTm;
       acceleratorPut(this->_entries[lexTm],SE);
@@ -846,9 +847,8 @@ public:
 	    int permute;
 	    int64_t nbr_pole_site;
 
-	    tCoor = Coor;
-	    
 	    lex = pole_site*np+6;// tp
+	    tCoor = Coor;
 	    tCoor[tdim] = periAdd(tCoor[tdim],1,Rt,permute);
 	    nbr_pole_site = vertexgrid->PoleSiteForOcoor(tCoor);
 	    SE._offset = nbr_pole_site;
@@ -856,7 +856,9 @@ public:
 	    acceleratorPut(this->_entries[lex],SE);
 
 	    lex = pole_site*np+7;// tm
+	    tCoor = Coor;
 	    tCoor[tdim] = periAdd(tCoor[tdim],-1,Rt,permute);
+	    //	    std::cout << " pole_site "<<pole_site<<" t"<<Coor[tdim]<<" tm "<<tCoor[tdim]<<" perm "<<permute<<std::endl;
 	    nbr_pole_site = vertexgrid->PoleSiteForOcoor(tCoor);
 	    SE._offset = nbr_pole_site;
 	    SE._permute= permute;
@@ -893,9 +895,9 @@ public:
 	    int permute;
 	    int64_t nbr_pole_site;
 
-	    tCoor = Coor;
 	    
 	    lex = pole_site*np+6;// tp
+	    tCoor = Coor;
 	    tCoor[tdim] = periAdd(tCoor[tdim],1,Rt,permute);
 	    nbr_pole_site = vertexgrid->PoleSiteForOcoor(tCoor);
 	    SE._offset = nbr_pole_site;
@@ -904,6 +906,7 @@ public:
 	    //	    std::cout << " Put nbr "<<SE._offset<<" for north site "<<lex<<std::endl;
 	    
 	    lex = pole_site*np+7;// tm
+	    tCoor = Coor;
 	    tCoor[tdim] = periAdd(tCoor[tdim],-1,Rt,permute);
 	    nbr_pole_site = vertexgrid->PoleSiteForOcoor(tCoor);
 	    SE._offset = nbr_pole_site;
