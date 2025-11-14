@@ -62,6 +62,7 @@ void ForceTest(Action<LatticeGaugeField> &action,ConfigurationBase<LatticeGaugeF
   
   Gimpl::generate_momenta(P,sRNG,RNG4);
   //  Filter.applyFilter(P);
+  std::cout << GridLogMessage << "Initial momenta " << norm2(P) << std::endl;
 
   action.refresh(smU,sRNG,RNG4);
 
@@ -70,6 +71,8 @@ void ForceTest(Action<LatticeGaugeField> &action,ConfigurationBase<LatticeGaugeF
   std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
 
   RealD S1 = action.S(smU);
+  std::cout << GridLogMessage << "Initial action " << S1 << std::endl;
+
 
   Gimpl::update_field(P,U,eps);
   smU.set_Field(U);
@@ -80,6 +83,7 @@ void ForceTest(Action<LatticeGaugeField> &action,ConfigurationBase<LatticeGaugeF
   action.deriv(smU,UdSdU);
   UdSdU = Ta(UdSdU);
   //  Filter.applyFilter(UdSdU);
+  std::cout << GridLogMessage << "Derivative " << norm2(UdSdU) << std::endl;
 
   DumpSliceNorm("Force",UdSdU,Nd-1);
   
@@ -91,6 +95,7 @@ void ForceTest(Action<LatticeGaugeField> &action,ConfigurationBase<LatticeGaugeF
   std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
   
   RealD S2 = action.S(smU);
+  std::cout << GridLogMessage << "Final action " << S1 << std::endl;
 
   // Use the derivative
   LatticeComplex dS(UGrid); dS = Zero();
@@ -145,6 +150,8 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds);
   SU<Nc>::HotConfiguration(RNG4,U);
 #endif
+  std::cout << GridLogMessage << "Initial plaquette: " << WilsonLoops<PeriodicGimplR>::avgPlaquette(U) << std::endl;
+
 
   
   WilsonGaugeActionR  PlaqAction(6.0);

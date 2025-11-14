@@ -291,8 +291,8 @@ public:
     int idx=0;
     for(int mu=0;mu<4;mu++){
     for(int nu=0;nu<4;nu++){
-      if ( mu!=nu) GRID_ASSERT(this->StoutSmearing->SmearRho[idx]==rho);
-      else         GRID_ASSERT(this->StoutSmearing->SmearRho[idx]==0.0);
+      if ( mu!=nu) assert(this->StoutSmearing->SmearRho[idx]==rho);
+      else         assert(this->StoutSmearing->SmearRho[idx]==0.0);
       idx++;
     }}
     //////////////////////////////////////////////////////////////////
@@ -825,6 +825,7 @@ public:
   virtual void fill_smearedSet(GaugeField &U)
   {
     this->ThinLinks = &U;  // attach the smearing routine to the field U
+    std::cout << GridLogMessage << " fill_smearedSet " << WilsonLoops<PeriodicGimplR>::avgPlaquette(U) << std::endl;
 
     // check the pointer is not null
     if (this->ThinLinks == NULL)
@@ -846,6 +847,8 @@ public:
 	ApplyMask(smeared_A,smearLvl);
 	smeared_B = previous_u;
 	ApplyMask(smeared_B,smearLvl);
+	std::cout << GridLogMessage << " smeared_A " << norm2(smeared_A) << std::endl;
+	std::cout << GridLogMessage << " smeared_B " << norm2(smeared_B) << std::endl;
 	// Replace only the masked portion
 	this->SmearedSet[smearLvl] = previous_u-smeared_B + smeared_A;
         previous_u = this->SmearedSet[smearLvl];
@@ -934,10 +937,10 @@ public:
   SmearedConfigurationMasked(GridCartesian* _UGrid, unsigned int Nsmear, Smear_Stout<Gimpl>& Stout)
     : SmearedConfiguration<Gimpl>(_UGrid, Nsmear,Stout)
   {
-    GRID_ASSERT(Nsmear%(2*Nd)==0); // Or multiply by 8??
+    assert(Nsmear%(2*Nd)==0); // Or multiply by 8??
 
     // was resized in base class
-    GRID_ASSERT(this->SmearedSet.size()==Nsmear);
+    assert(this->SmearedSet.size()==Nsmear);
     
     GridRedBlackCartesian * UrbGrid;
     UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(_UGrid);
