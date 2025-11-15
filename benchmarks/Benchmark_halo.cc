@@ -20,6 +20,9 @@
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+#include "disable_benchmarks_without_instantiations.h"
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
 #include <Grid/Grid.h>
 #ifdef GRID_CUDA
 #define CUDA_PROFILE
@@ -129,3 +132,5 @@ int main (int argc, char ** argv)
   Grid_finalize();
   exit(0);
 }
+
+#endif

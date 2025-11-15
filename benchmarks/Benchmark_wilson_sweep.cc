@@ -19,6 +19,9 @@ Author: Richard Rollins <rprollins@users.noreply.github.com>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
+#include "disable_benchmarks_without_instantiations.h"
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
 #include <Grid/Grid.h>
 
 using namespace std;
@@ -161,3 +164,5 @@ void bench_wilson_eo (
   double flops = (single_site_flops * volume * ncall)/2.0;
   std::cout << flops/(t1-t0) << "\t\t";
 }
+
+#endif

@@ -25,6 +25,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+#include "disable_tests_without_instantiations.h"
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
 #include <Grid/Grid.h>
 
 using namespace std;
@@ -273,8 +276,6 @@ void  TestWhat(What & Ddwf,
 
   err = phi-chi;
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<< std::endl;
-
-  
 }
 
-
+#endif
