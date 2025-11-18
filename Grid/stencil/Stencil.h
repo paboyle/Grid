@@ -751,7 +751,7 @@ public:
     obj.xbytes      = xbytes;
     obj.rbytes      = rbytes;
     obj.cb          = cb;
-
+    
     for(int i=0;i<CachedTransfers.size();i++){
       if (   (CachedTransfers[i].direction  ==direction)
 	   &&(CachedTransfers[i].OrthogPlane==OrthogPlane)
@@ -763,11 +763,13 @@ public:
 	     ){
 	// FIXME worry about duplicate with partial compression
 	// Wont happen as DWF has no duplicates, but...
-	AddCopy(CachedTransfers[i].recv_buf,recv_buf,rbytes);
+	//	AddCopy(CachedTransfers[i].recv_buf,recv_buf,rbytes);
+	std::cout << "Duplicate dir " <<direction<<" "<<" OrthogPlane "<<OrthogPlane<<" Dest"<<DestProc <<" xbytes " <<xbytes<<" lane "<< lane<<" cb "<<cb<<std::endl;
+	return 0;
+	
 	return 1;
       }
     }
-
     CachedTransfers.push_back(obj);
     return 0;
   }
