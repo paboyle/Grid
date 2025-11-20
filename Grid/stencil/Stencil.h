@@ -764,10 +764,10 @@ public:
 	// FIXME worry about duplicate with partial compression
 	// Wont happen as DWF has no duplicates, but...
 	//	AddCopy(CachedTransfers[i].recv_buf,recv_buf,rbytes);
-	std::cout << "Duplicate dir " <<direction<<" "<<" OrthogPlane "<<OrthogPlane<<" Dest"<<DestProc <<" xbytes " <<xbytes<<" lane "<< lane<<" cb "<<cb<<std::endl;
+	//	std::cout << "Duplicate dir " <<direction<<" "<<" OrthogPlane "<<OrthogPlane<<" Dest"<<DestProc <<" xbytes " <<xbytes<<" lane "<< lane<<" cb "<<cb<<std::endl;
 	return 0;
 	
-	return 1;
+	//	return 1;
       }
     }
     CachedTransfers.push_back(obj);
