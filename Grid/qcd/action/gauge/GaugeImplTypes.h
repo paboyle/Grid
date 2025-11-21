@@ -138,10 +138,13 @@ public:
     //auto start = std::chrono::high_resolution_clock::now();
     autoView(U_v,U,AcceleratorWrite);
     autoView(P_v,P,AcceleratorRead);
-    accelerator_for(ss, P.Grid()->oSites(),1,{
+    typedef typename Field::vector_object vobj;
+    const int Nsimd = vobj::Nsimd();
+    accelerator_for(ss, P.Grid()->oSites(),Nsimd,{
       for (int mu = 0; mu < Nd; mu++) {
-          U_v[ss](mu) = Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu);
-          U_v[ss](mu) = Group::ProjectOnGeneralGroup(U_v[ss](mu));
+	auto tmp = Exponentiate(P_v(ss)(mu), ep, Nexp) * U_v(ss)(mu);
+	tmp      = Group::ProjectOnGeneralGroup(tmp);
+	coalescedWrite(U_v[ss](mu),tmp);
       }
     });
    //auto end = std::chrono::high_resolution_clock::now();
