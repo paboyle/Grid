@@ -290,10 +290,11 @@ class KrylovSchur {
     RitzFilter ritzFilter;                  // how to sort evals
 
   public:       
+    RealD *shift;                           // for Harmonic (shift and invert)
 
     KrylovSchur(LinearOperatorBase<Field> &_Linop, GridBase *_Grid, RealD _Tolerance, RitzFilter filter = EvalReSmall)
       : Linop(_Linop), Grid(_Grid), Tolerance(_Tolerance), ritzFilter(filter), u(_Grid), MaxIter(-1), Nm(-1), Nk(-1), Nstop (-1),
-        evals (0), ritzEstimates (), evecs (), ssq (0.0), rtol (0.0), beta_k (0.0), approxLambdaMax (0.0)
+        evals (0), ritzEstimates (), evecs (), ssq (0.0), rtol (0.0), beta_k (0.0), approxLambdaMax (0.0),shift(NULL)
     {
       u = Zero();
     };
@@ -316,6 +317,10 @@ class KrylovSchur {
      *   - Truncate the Krylov-Schur expansion. 
      */
     void operator()(const Field& v0, int _maxIter, int _Nm, int _Nk, int _Nstop, bool doubleOrthog = true) {
+      RealD shift_=1.;
+      shift = &shift_;
+      if (shift) 
+          std::cout << GridLogMessage << "Shift " << approxLambdaMax << std::endl;
       MaxIter = _maxIter;
       Nm = _Nm; Nk = _Nk;
       Nstop = _Nstop;
@@ -347,7 +352,16 @@ class KrylovSchur {
 
         // Perform a Schur decomposition on Rayleigh
         // ComplexSchurDecomposition schur (Rayleigh, false);
+	
+        Eigen::MatrixXcd temp = Rayleigh;
+	for (int m=0;m<Nm;m++) temp(m,m) -= *shift;
+        Eigen::MatrixXcd RayleighS = temp.inverse();
+        Eigen::MatrixXcd temp2 = RayleighS*temp;
+	std::cout << GridLogMessage  << "Shift inverse check: shift= "<<*shift <<std::endl;
+	
+
         ComplexSchurDecomposition schur (Rayleigh, false, ritzFilter);
+        ComplexSchurDecomposition schurS (RayleighS, false, ritzFilter);
         std::cout << GridLogDebug << "Schur decomp holds? " << schur.checkDecomposition() << std::endl;
 
         // Rearrange Schur matrix so wanted evals are on top left (like MATLAB's ordschur)
@@ -457,8 +471,8 @@ class KrylovSchur {
         basis.push_back(v0Norm * v0);                // normalized source
         // basis[0] = v0Norm * v0;                // normalized source
 
-        Rayleigh = Eigen::MatrixXcd::Zero(Nm, Nm);
-        u = Zero();
+        Rayleigh = Eigen::MatrixXcd::Zero(Nm, Nm); // CJ: B in SLEPc
+        u = Zero();                      
       } else {
         // assert( start == basis.size() );      // should be starting at the end of basis (start = Nk)
         std::cout << GridLogMessage << "Resetting Rayleigh and b" << std::endl;

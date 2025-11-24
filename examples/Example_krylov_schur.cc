@@ -368,8 +368,8 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu(UGrid);
 
   FieldMetaData header;
-//   std::string file("ckpoint_lat.4000");
-  std::string file("/Users/patrickoare/libraries/PETSc-Grid/ckpoint_lat.4000");
+  std::string file("config");
+//  std::string file("Users/patrickoare/libraries/PETSc-Grid/ckpoint_lat.4000");
   NerscIO::readConfiguration(Umu,header,file);
 
   RealD mass=0.01;
@@ -406,8 +406,8 @@ int main (int argc, char ** argv)
   // int Nk = Nm+1;     // if just running once
   // int maxIter = 5;
   // int maxIter = 1;
-  int maxIter = 5;
-  // int maxIter = 100;
+//  int maxIter = 5;
+  int maxIter = 100;
   int Nstop = 4;
 
   Coordinate origin ({0,0,0,0});
@@ -418,7 +418,7 @@ int main (int argc, char ** argv)
   // Run KrylovSchur and Arnoldi on a Hermitian matrix
   std::cout << GridLogMessage << "Runnning Krylov Schur" << std::endl;
   // KrylovSchur KrySchur (Dsq, FGrid, 1e-8, EvalNormLarge);
-  KrylovSchur KrySchur (Dsq, FGrid, 1e-8);
+  KrylovSchur KrySchur (Dsq, FGrid, 1e-8,EvalImNormSmall);
   KrySchur(src, maxIter, Nm, Nk, Nstop);
 
   /*
