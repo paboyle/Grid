@@ -320,7 +320,7 @@ class KrylovSchur {
       RealD shift_=1.;
       shift = &shift_;
       if (shift) 
-          std::cout << GridLogMessage << "Shift " << approxLambdaMax << std::endl;
+          std::cout << GridLogMessage << "Shift " << *shift << std::endl;
       MaxIter = _maxIter;
       Nm = _Nm; Nk = _Nk;
       Nstop = _Nstop;
@@ -357,7 +357,7 @@ class KrylovSchur {
 	for (int m=0;m<Nm;m++) temp(m,m) -= *shift;
         Eigen::MatrixXcd RayleighS = temp.inverse();
         Eigen::MatrixXcd temp2 = RayleighS*temp;
-	std::cout << GridLogMessage  << "Shift inverse check: shift= "<<*shift <<std::endl;
+	std::cout << GridLogMessage  << "Shift inverse check: shift= "<<*shift<<" "<< temp2 <<std::endl;
 	
 
         ComplexSchurDecomposition schur (Rayleigh, false, ritzFilter);
@@ -367,6 +367,8 @@ class KrylovSchur {
         // Rearrange Schur matrix so wanted evals are on top left (like MATLAB's ordschur)
         std::cout << GridLogMessage << "Reordering Schur eigenvalues" << std::endl;
         schur.schurReorder(Nk);
+        std::cout << GridLogMessage << "Shifted Schur eigenvalues" << std::endl;
+        schurS.schurReorder(Nk);
         Eigen::MatrixXcd Q = schur.getMatrixQ();
         Qt = Q.adjoint();                           // TODO should Q be real?
         Eigen::MatrixXcd S = schur.getMatrixS();

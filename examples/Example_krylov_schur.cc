@@ -332,7 +332,7 @@ int main (int argc, char ** argv)
   const int Ls=16;
 
 //   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
-  std::vector<int> lat_size {16, 16, 16, 32};
+  std::vector<int> lat_size {16, 16, 16, 16};
   std::cout << "Lattice size: " << lat_size << std::endl;
   GridCartesian * UGrid = SpaceTimeGrid::makeFourDimGrid(lat_size, 
 								          GridDefaultSimd(Nd,vComplex::Nsimd()),
