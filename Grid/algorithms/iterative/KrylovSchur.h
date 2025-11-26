@@ -89,6 +89,14 @@ struct ComplexComparator
   RitzFilter RF;
   ComplexComparator (RitzFilter _rf) : RF(_rf) {}
   bool operator()(std::complex<double> z1, std::complex<double> z2) { 
+      RealD tmp1, tmp2;
+      tmp1=std::abs(std::imag(z1));
+      tmp2=std::abs(std::imag(z2));
+//      if ( std::abs(std::real(z1)) <0.76) tmp1 +=4.;
+//      if ( std::abs(std::real(z2)) <0.76) tmp2 +=4.;
+      if ( std::abs(std::real(z1)) >2.) tmp1 +=4.;
+      if ( std::abs(std::real(z2)) >2.) tmp2 +=4.;
+
     switch (RF) {
       case EvalNormSmall:
         return std::abs(z1) < std::abs(z2);
@@ -103,9 +111,11 @@ struct ComplexComparator
       case EvalImLarge:
         return std::imag(z1) > std::imag(z2);
       case EvalImNormSmall:
-        return std::abs(std::imag(z1)) < std::abs(std::imag(z2));
+	return tmp1 < tmp2;
+//        return std::abs(std::imag(z1)) < std::abs(std::imag(z2));
       case EvalImNormLarge:
-        return std::abs(std::imag(z1)) > std::abs(std::imag(z2));
+	return tmp1 > tmp2;
+//        return std::abs(std::imag(z1)) > std::abs(std::imag(z2));
       default:
         assert(0);
     }
@@ -224,8 +234,8 @@ class ComplexSchurDecomposition {
      */
     // void schurReorder(int Nk, std::function compare) {
     int schurReorder(int Nk) {
-      for (int i = 0; i < Nm; i++) {
-        for (int k = 0; k <= Nm - 2; k++) {
+      for (int i = 0; i < Nk; i++) {
+        for (int k = 0; k <= Nm - 2-i ; k++) {
           int idx = Nm - 2 - k;
           // TODO use RitzFilter enum here
           // if (std::abs(S(idx, idx)) < std::abs(S(idx+1, idx+1))) {            // sort by largest modulus of eigenvalue
@@ -235,10 +245,10 @@ class ComplexSchurDecomposition {
           }
         }
       }
-      int temp=1;
-      for (int i = 0; i < Nm-1; i++) {
+      int temp=Nk/2;
+      for (int i = temp; i < Nk; i++) {
         std::cout << GridLogMessage << "S " << i << " "<<std::real(S(i,i))<<" "<<std::imag(S(i,i)) << std::endl;
-	if (std::abs(std::imag(S(i,i))< 0.01)) temp= i+1;
+	if (std::abs(std::imag(S(i,i)))< 0.01) temp= i+1;
       }
       return temp;
     }
@@ -341,13 +351,13 @@ class KrylovSchur {
       int start = 0;
       Field startVec = v0;
       littleEvecs = Eigen::MatrixXcd::Zero(Nm, Nm);
+      int Nconv=Nstop;
       for (int i = 0; i < MaxIter; i++) {
         std::cout << GridLogMessage << "Restart Iteration " << i << std::endl;
 
         // Perform Arnoldi steps to compute Krylov basis and Rayleigh quotient (Hess)
         arnoldiIteration(startVec, Nm, start, doubleOrthog);
         startVec = u;        // original code
-        start = Nk;
 
         // checkKSDecomposition();
 
@@ -359,7 +369,10 @@ class KrylovSchur {
         // Rearrange Schur matrix so wanted evals are on top left (like MATLAB's ordschur)
         std::cout << GridLogMessage << "Reordering Schur eigenvalues Nk=" << Nk << std::endl;
 //        Nk=schur.schurReorder(_Nk);
-        schur.schurReorder(Nk);
+//        start = Nk;
+        schur.schurReorder(_Nk);
+	Nk = (Nconv+_Nk)/2;
+	start=Nk;
 	std::cout << GridLogMessage << "After Reorder Nk= "<<Nk<<std::endl;
         Eigen::MatrixXcd Q = schur.getMatrixQ();
         Qt = Q.adjoint();                           // TODO should Q be real?
@@ -414,7 +427,7 @@ class KrylovSchur {
         std::cout << GridLogMessage << "Eigenvalues (first Nk sorted): " << std::endl << evals << std::endl;
 
         // check convergence and return if needed. 
-        int Nconv = converged();
+        Nconv = converged();
         std::cout << GridLogMessage << "Number of evecs converged: " << Nconv << std::endl;
         if (Nconv >= Nstop || i == MaxIter - 1) {
           std::cout << GridLogMessage << "Converged with " << Nconv << " / " << Nstop << " eigenvectors on iteration " 
@@ -469,7 +482,6 @@ class KrylovSchur {
         u = Zero();
       } else {
         std::cout << GridLogMessage << "start= " <<start<< " basis.size= "<<basis.size()<<std::endl;
-//        assert( start <= basis.size() );      // should be starting at the end of basis (start = Nk)
         // assert( start == basis.size() );      // should be starting at the end of basis (start = Nk)
         std::cout << GridLogMessage << "Resetting Rayleigh and b" << std::endl;
         Eigen::MatrixXcd RayleighCp = Rayleigh;

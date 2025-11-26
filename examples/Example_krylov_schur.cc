@@ -51,6 +51,7 @@ struct LanczosParameters: Serializable {
                                 Integer, Nk,
                                 Integer, Np,
                                 Integer, ReadEvec,
+                                Integer, maxIter,
 	  			RealD, resid,
 	  			RealD, ChebyLow,
 	  			RealD, ChebyHigh,
@@ -453,18 +454,6 @@ int main (int argc, char ** argv)
     write(HMCwr,"LanczosParameters",LanParams);
   }
 
-#if 0
-  if(LanParams.ReadEvec) {
-    std::string evecs_file="evec_in";
-    std::cout << GridLogIRL<< "Reading evecs from "<<evecs_file<<std::endl;
-    emptyUserRecord record;
-    Grid::ScidacReader RD;
-    RD.open(evecs_file);
-    RD.readScidacFieldRecord(src,record);
-    RD.close();
-  }
-#endif
-
 
   RealD mass=0.01;
   RealD M5=1.8;
@@ -521,10 +510,23 @@ int main (int argc, char ** argv)
   Nstop=LanParams.Nstop;
   Nk=LanParams.Nk;
   Np=LanParams.Np;
+  maxIter=LanParams.maxIter;
   Nm = Nk + Np;
   int Nu=16;
   std::vector<LatticeFermion> src(Nu,FGrid); 
   for(int i=0;i<Nu;i++) random(RNG5,src[i]);
+
+#if 1
+  if(LanParams.ReadEvec) {
+    std::string evecs_file="evec_in";
+    std::cout << GridLogIRL<< "Reading evecs from "<<evecs_file<<std::endl;
+    emptyUserRecord record;
+    Grid::ScidacReader RD;
+    RD.open(evecs_file);
+    RD.readScidacFieldRecord(src[0],record);
+    RD.close();
+  }
+#endif
 
   Coordinate origin ({0,0,0,0});
   auto tmpSrc = peekSite(src[0], origin);
