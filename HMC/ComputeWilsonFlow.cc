@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
   auto latt_size   = GridDefaultLatt();
   auto simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
   auto mpi_layout  = GridDefaultMpi();
-  GridCartesian               Grid(latt_size, simd_layout, mpi_layout);
+  GridCartesian Grid(latt_size, simd_layout, mpi_layout);
   
   std::vector<int> seeds({1, 2, 3, 4, 5});
   GridSerialRNG sRNG;

@@ -32,7 +32,7 @@ directory
 #ifndef ACTION_BASE_H
 #define ACTION_BASE_H
 
-
+//#define TIMom
 #define PRINT_SNAPSHOTS
 #ifdef PRINT_SNAPSHOTS
 #include <algorithm>
@@ -44,19 +44,22 @@ NAMESPACE_BEGIN(Grid);
 
 #ifdef PRINT_SNAPSHOTS
 template <class vobj> LatticeComplex LocalFieldSquareNorm(Lattice<vobj>& F){
-  LatticeComplex Hloc(F.Grid());
+  LatticeComplex Hloc(F.Grid()), tmp(F.Grid());
+  LatticeColourMatrix Fmu(F.Grid());
   Hloc = Zero();
   for (int mu = 0; mu < Nd; mu++) {
-    auto Fmu = PeekIndex<LorentzIndex>(F, mu);
-    auto tmp = -trace(Fmu * Fmu)/HMC_MOMENTUM_DENOMINATOR;
+    Fmu = PeekIndex<LorentzIndex>(F, mu);
+    tmp = (-1.0/HMC_MOMENTUM_DENOMINATOR)*trace(Fmu * Fmu);
     Hloc = Hloc + tmp;
   }
   return Hloc;
 }
 template <class vobj> void writeField(Lattice<vobj> &F, std::string filename, bool reduce=true, bool alg=true) {
   
-  filename.erase(std::remove_if(filename.begin(), filename.end(), [](unsigned char x) { return std::isspace(x); }), filename.end());
   std::replace(filename.begin(),filename.end(), '/', '_');
+  std::replace(filename.begin(),filename.end(), '(', '_');
+  std::replace(filename.begin(),filename.end(), ')', ' '); // wanted to eliminate ')' from file name
+  filename.erase(std::remove_if(filename.begin(), filename.end(), [](unsigned char x) { return std::isspace(x); }), filename.end());
 
 #ifdef HAVE_LIME
   emptyUserRecord record;
@@ -76,11 +79,11 @@ template <class vobj> void writeField(Lattice<vobj> &F, std::string filename, bo
 
 // vobj = vLorentzColourMatrixD
 template <class vobj> void writeConfig(Lattice<vobj> &F, std::string filename){
-  
-  filename.erase(std::remove_if(filename.begin(), filename.end(), [](unsigned char x) { return std::isspace(x); }), filename.end());
+
   std::replace(filename.begin(),filename.end(), '/', '_');
   std::replace(filename.begin(),filename.end(), '(', '_');
-  std::replace(filename.begin(),filename.end(), ')', '_');
+  std::replace(filename.begin(),filename.end(), ')', ' '); // wanted to eliminate ')' from file name
+  filename.erase(std::remove_if(filename.begin(), filename.end(), [](unsigned char x) { return std::isspace(x); }), filename.end());
   
   // Use NERSC IO for consistency with our HMC runs
   // Then, GaugeStats = PeriodicGaugeStatistics <- the default
@@ -172,7 +175,7 @@ public:
   }
   virtual void deriv(ConfigurationBase<GaugeField>& U, GaugeField& dSdU)
   {
-    // For some actions, deriv is overwritten => could be better if we put writeField in update_P
+    // PRINT_SNAPSHOTS: For some actions, deriv is overridden => could be better if we put writeField in update_P
     deriv(U.get_U(is_smeared),dSdU);
 #ifdef PRINT_SNAPSHOTS
     writeField(dSdU, "F_"+action_name()+"_lat."+std::to_string(deriv_num));

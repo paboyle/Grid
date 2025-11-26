@@ -30,7 +30,7 @@ class SmearedConfigurationMasked : public SmearedConfiguration<Gimpl>
 {
 public:
   INHERIT_GIMPL_TYPES(Gimpl);
-
+  
 private:
   // These live in base class
   //  const unsigned int smearingLevels;
@@ -1742,6 +1742,7 @@ public:
     Complex result = sum(ln_det);
     return result.real();
   }
+
   
 public:
   RealD logDetJacobian(int old)

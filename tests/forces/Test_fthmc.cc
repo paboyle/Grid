@@ -61,10 +61,11 @@ void ForceTest(Action<LatticeGaugeField> &action,ConfigurationBase<LatticeGaugeF
   std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
   
   Gimpl::generate_momenta(P,sRNG,RNG4);
+  std::cout << GridLogMessage << "P mag: " << Gimpl::FieldSquareNorm(P) << std::endl;
   //  Filter.applyFilter(P);
 
   action.refresh(smU,sRNG,RNG4);
-
+  
   std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
   std::cout << GridLogMessage << " Action "<<action.action_name()<<std::endl;
   std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
@@ -84,6 +85,7 @@ void ForceTest(Action<LatticeGaugeField> &action,ConfigurationBase<LatticeGaugeF
   DumpSliceNorm("Force",UdSdU,Nd-1);
   
   Gimpl::update_field(P,U,eps);
+  std::cout << GridLogMessage << "U mag after update: " << Gimpl::FieldSquareNorm(smU.get_U(false)) << " " << Gimpl::FieldSquareNorm(smU.get_U(true))<<std::endl;
   smU.set_Field(U);
 
   std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
@@ -147,10 +149,10 @@ int main (int argc, char ** argv)
 #endif
 
   
-  WilsonGaugeActionR  PlaqAction(6.0);
-  IwasakiGaugeActionR RectAction(2.13);
-  PlaqAction.is_smeared = true;  
-  RectAction.is_smeared = true;  
+  WilsonGaugeActionR  PlaqAction(6.0); PlaqAction.reset_timer();
+  IwasakiGaugeActionR RectAction(2.13); RectAction.reset_timer();
+  PlaqAction.is_smeared = false; //true;  
+  RectAction.is_smeared = false; //true;  
 
   ////////////////////////////////////
   // Fermion Action
@@ -171,7 +173,7 @@ int main (int argc, char ** argv)
   double MaxCGIterations = 50000;
   ConjugateGradient<LatticeFermion>  CG(StoppingCondition,MaxCGIterations);
 
-  TwoFlavourRatioPseudoFermionAction<FimplD> Nf2(PVPeriodic, DdwfPeriodic,CG,CG);
+  TwoFlavourRatioPseudoFermionAction<FimplD> Nf2(PVPeriodic, DdwfPeriodic,CG,CG); Nf2.reset_timer();
   Nf2.is_smeared = true;  
   
   ////////////////////////////////////////////////
@@ -182,7 +184,7 @@ int main (int argc, char ** argv)
   SmearedConfigurationMasked<PeriodicGimplR> SmartConfig(UGrid,2*Nd,Smearer);
   SmearedConfiguration<PeriodicGimplR> StoutConfig(UGrid,1,Smearer);
 
-  JacobianAction<PeriodicGimplR> Jacobian(&SmartConfig);
+  JacobianAction<PeriodicGimplR> Jacobian(&SmartConfig); Jacobian.reset_timer();
   
   ////////////////////////////////////////////////
   // Run some tests

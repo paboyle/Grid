@@ -125,7 +125,22 @@ public:
       PokeIndex<LorentzIndex>(P, Pmu, mu);
     }
   }
-    
+
+  //#ifdef TIMom
+  static inline void generate_momenta(Field &P, GridSerialRNG & sRNG, GridParallelRNG &pRNG, LatticeComplex W)
+  {
+    LinkField Pmu(P.Grid());
+    Pmu = Zero();
+
+    for (int mu = 0; mu < Nd; mu++) {
+      Group::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
+      RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR) ;
+      Pmu = scale*W*Pmu;
+      PokeIndex<LorentzIndex>(P, Pmu, mu);
+    }
+  }
+  //#endif
+  
   static inline Field projectForce(Field &P) {
       Field ret(P.Grid());
       Group::taProj(P, ret);

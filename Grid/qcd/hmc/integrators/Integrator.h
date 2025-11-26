@@ -42,6 +42,8 @@ public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(IntegratorParameters,
 				  std::string, name,      // name of the integrator
 				  unsigned int, MDsteps,  // number of outer steps
+				  RealD, alpha,
+				  int, box_dim,
 				  RealD, trajL)           // trajectory length
 
   IntegratorParameters(int MDsteps_ = 10, RealD trajL_ = 1.0)
@@ -96,6 +98,20 @@ public:
     static MomentumFilterNone<MomentaField> filter;
     return &filter;
   }
+#ifdef TIMom
+
+  // TODO: make mask as a member; put most of the code to the constructor
+  static void scaleMom(LatticeComplex& mask, RealD alpha, int box_dim ){
+    LatticeInteger coor(mask.Grid()),tmp(mask.Grid());
+    LatticeComplex ones(mask.Grid());
+    mask = Zero(); ones = ComplexD(1.0,0.0); tmp = Zero();
+    for(int i=0; i<Nd; i++) {
+      LatticeCoordinate(coor,i);
+      tmp = tmp + mod(coor,box_dim);
+    }
+    mask =  where( tmp==Integer(0), alpha*ones, ones); // or alpha*mask + (ones - mask) if mask is precomputed
+  }
+#endif
 
   void update_P(Field& U, int level, double ep) 
   {
@@ -213,7 +229,16 @@ public:
     MomentaField MomFiltered(Mom.Grid());
     MomFiltered = Mom;
     MomFilter->applyFilter(MomFiltered);
-
+#ifdef TIMom
+    LatticeComplex W(U.Grid()); W = Zero();
+    scaleMom(W,Params.alpha*Params.alpha, Params.box_dim);
+    for (int mu = 0; mu < Nd; mu++) {
+      typename FieldImplementation::LinkField Pmu(W.Grid());
+      Pmu = PeekIndex<LorentzIndex>(MomFiltered, mu);
+      Pmu = W*Pmu;
+      PokeIndex<LorentzIndex>(MomFiltered, Pmu, mu);
+    }
+#endif
     // exponential of Mom*U in the gauge fields case
     FieldImplementation::update_field(MomFiltered, U, ep);
 #ifdef PRINT_SNAPSHOTS
@@ -414,8 +439,19 @@ public:
     std::cout << GridLogIntegrator << "Integrator refresh" << std::endl;
 
     std::cout << GridLogIntegrator << "Generating momentum" << std::endl;
+#ifndef TIMom
     FieldImplementation::generate_momenta(P, sRNG, pRNG);
+#else
+    std::cout << GridLogIntegrator << "Scale momentum" << std::endl;
 
+    LatticeComplex W(U.Grid()); W = Zero();
+    ////////////////////
+    // Setup the mask
+    ////////////////////
+    scaleMom(W,1/Params.alpha, Params.box_dim);
+    FieldImplementation::generate_momenta(P, sRNG, pRNG, W);
+#endif
+    
     // Update the smeared fields, can be implemented as observer
     // necessary to keep the fields updated even after a reject
     // of the Metropolis
