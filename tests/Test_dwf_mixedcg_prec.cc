@@ -154,7 +154,7 @@ int main (int argc, char ** argv)
   time_t start = time(NULL);
   UGrid->Broadcast(0,(void *)&start,sizeof(start));
 
-  FlightRecorder::ContinueOnFail = 0;
+  FlightRecorder::ContinueOnFail = 1;
   FlightRecorder::PrintEntireLog = 0;
   FlightRecorder::ChecksumComms  = 0;
   FlightRecorder::ChecksumCommsSend=0;
