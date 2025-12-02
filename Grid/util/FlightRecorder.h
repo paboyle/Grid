@@ -39,6 +39,7 @@ class FlightRecorder {
   static void Truncate(void);
   static void ResetCounters(void);
   static uint64_t ErrorCount(void);
+  static uint64_t CommsErrorCount(void);
   static void xmitLog(void *,uint64_t bytes);
   static void recvLog(void *,uint64_t bytes,int rank);
 };
