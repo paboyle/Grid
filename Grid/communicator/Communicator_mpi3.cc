@@ -828,6 +828,7 @@ void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsReque
 #define AUDIT_FLIGHT_RECORDER_ERRORS
 #ifdef  AUDIT_FLIGHT_RECORDER_ERRORS
   uint64_t EC = FlightRecorder::CommsErrorCount();
+  if (EC) std::cerr << " global sum error count "<<EC<<std::endl;
   this->GlobalSum(EC);
   if (EC) {
     for(int r=0;r<list.size();r++){
@@ -837,10 +838,12 @@ void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsReque
 	uint64_t rbytes_data = list[r].bytes;
 #endif
       if (list[r].PacketType == InterNodeReceiveHtoD) {
+	std::cerr << " calling xor reduce "<<std::endl;
 	uint64_t csg = gpu_xor((uint64_t*)list[r].device_buf,rbytes_data/8);
 	uint64_t csh = cpu_xor((uint64_t*)list[r].host_buf,rbytes_data/8);
 	std::cerr << " Packet "<<r<<" Receive from " <<list[r].dest<<" host csum "<<csh<<" gpu csum "<<csg<<std::endl;
       } if (list[r].PacketType == InterNodeXmitISend ) {
+	std::cerr << " calling xor reduce "<<std::endl;
 	uint64_t csg = gpu_xor((uint64_t*)list[r].device_buf,rbytes_data/8);
 	uint64_t csh = cpu_xor((uint64_t*)list[r].host_buf,rbytes_data/8);
 	std::cerr << " Packet "<<r<<" Send to " <<list[r].dest<<" host csum "<<csh<<" gpu csum "<<csg<<std::endl;

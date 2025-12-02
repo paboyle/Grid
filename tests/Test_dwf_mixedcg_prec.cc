@@ -82,6 +82,7 @@ int main (int argc, char ** argv)
   
   Grid_init(&argc,&argv);
 
+  std::cout << GridLogMessage<<" in main(): Grid is initialised"<<std::endl;
   const int Ls=12;
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexD::Nsimd()),GridDefaultMpi());
@@ -94,6 +95,7 @@ int main (int argc, char ** argv)
   GridCartesian         * FGrid_f   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid_f);
   GridRedBlackCartesian * FrbGrid_f = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid_f);
   
+  std::cout << GridLogMessage<<" in main(): making RNGs"<<std::endl;
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);

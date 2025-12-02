@@ -51,7 +51,7 @@ EOF
 CMD="mpiexec -np 384 -ppn 12  -envall --hostfile nodefile \
 	     ../gpu_tile.sh \
 	     $BINARY --mpi 4.4.4.6 --grid 64.64.64.96  \
-		--shm-mpi 0 --comms-overlap --shm 4096 --device-mem 32000 --accelerator-threads 32 --seconds 6000 --log Message "
+		--shm-mpi 0 --comms-overlap --shm 4096 --device-mem 32000 --accelerator-threads 32 --seconds 6000 --log Message --debug-stdout "
 
 echo $CMD > command-line
 env > environment
