@@ -65,6 +65,52 @@
 using namespace std;
 using namespace Grid;
 
+<<<<<<< HEAD
+namespace Grid {
+
+struct LanczosParameters: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParameters,
+		  		RealD, mass , 
+		  		RealD, mstep , 
+				Integer, Nstop,
+                                Integer, Nk,
+                                Integer, Np,
+                                Integer, ReadEvec,
+	  			RealD, resid,
+	  			RealD, ChebyLow,
+	  			RealD, ChebyHigh,
+	  			Integer, ChebyOrder)
+
+  LanczosParameters() {
+    /////////////////////////////////
+  }
+
+  template <class ReaderClass >
+  LanczosParameters(Reader<ReaderClass> & TheReader){
+    initialize(TheReader);
+  }
+
+  template < class ReaderClass > 
+  void initialize(Reader<ReaderClass> &TheReader){
+    read(TheReader, "HMC", *this);
+  }
+
+
+  void print_parameters() const {
+//    std::cout << GridLogMessage << "[HMC parameters] Trajectories            : " << Trajectories << "\n";
+//    std::cout << GridLogMessage << "[HMC parameters] Start trajectory        : " << StartTrajectory << "\n";
+//    std::cout << GridLogMessage << "[HMC parameters] Metropolis test (on/off): " << std::boolalpha << MetropolisTest << "\n";
+//    std::cout << GridLogMessage << "[HMC parameters] Thermalization trajs    : " << NoMetropolisUntil << "\n";
+//    std::cout << GridLogMessage << "[HMC parameters] Starting type           : " << StartingType << "\n";
+//    MD.print_parameters();
+  }
+  
+};
+
+}
+
+#if 0
+=======
 template <class T> void writeFile(T& in, std::string const fname){  
   #ifdef HAVE_LIME
     // Ref: https://github.com/paboyle/Grid/blob/feature/scidac-wp1/tests/debug/Test_general_coarse_hdcg_phys48.cc#L111
@@ -111,6 +157,7 @@ void writeEigensystem(KrylovSchur<Field> KS, std::string outDir) {
   // }
 }
 
+>>>>>>> 68af1bba67dd62881ead5ab1e54962a5486a0791
 // Hermitize a DWF operator by squaring it
 template<class Matrix,class Field>
 class SquaredLinearOperator : public LinearOperatorBase<Field> {
@@ -256,6 +303,111 @@ ShiftedComplexPVdagMLinearOperator(ComplexD _shift,Matrix &Mat,Matrix &PV): shif
   }
 };
 
+<<<<<<< HEAD
+template<class Fobj,class CComplex,int nbasis>
+class MGPreconditioner : public LinearFunction< Lattice<Fobj> > {
+public:
+  using LinearFunction<Lattice<Fobj> >::operator();
+
+  typedef Aggregation<Fobj,CComplex,nbasis> Aggregates;
+  typedef typename Aggregation<Fobj,CComplex,nbasis>::FineField    FineField;
+  typedef typename Aggregation<Fobj,CComplex,nbasis>::CoarseVector CoarseVector;
+  typedef typename Aggregation<Fobj,CComplex,nbasis>::CoarseMatrix CoarseMatrix;
+  typedef LinearOperatorBase<FineField>                            FineOperator;
+  typedef LinearFunction    <FineField>                            FineSmoother;
+  typedef LinearOperatorBase<CoarseVector>                         CoarseOperator;
+  typedef LinearFunction    <CoarseVector>                         CoarseSolver;
+  Aggregates     & _Aggregates;
+  FineOperator   & _FineOperator;
+  FineSmoother   & _PreSmoother;
+  FineSmoother   & _PostSmoother;
+  CoarseOperator & _CoarseOperator;
+  CoarseSolver   & _CoarseSolve;
+
+  int    level;  void Level(int lv) {level = lv; };
+
+  MGPreconditioner(Aggregates &Agg,
+		   FineOperator &Fine,
+		   FineSmoother &PreSmoother,
+		   FineSmoother &PostSmoother,
+		   CoarseOperator &CoarseOperator_,
+		   CoarseSolver &CoarseSolve_)
+    : _Aggregates(Agg),
+      _FineOperator(Fine),
+      _PreSmoother(PreSmoother),
+      _PostSmoother(PostSmoother),
+      _CoarseOperator(CoarseOperator_),
+      _CoarseSolve(CoarseSolve_),
+      level(1)  {  }
+
+  virtual void operator()(const FineField &in, FineField & out) 
+  {
+    GridBase *CoarseGrid = _Aggregates.CoarseGrid;
+    //    auto CoarseGrid = _CoarseOperator.Grid();
+    CoarseVector Csrc(CoarseGrid);
+    CoarseVector Csol(CoarseGrid);
+    FineField vec1(in.Grid());
+    FineField vec2(in.Grid());
+
+    std::cout<<GridLogMessage << "Calling PreSmoother " <<std::endl;
+
+    //    std::cout<<GridLogMessage << "Calling PreSmoother input residual "<<norm2(in) <<std::endl;
+    double t;
+    // Fine Smoother
+    //    out = in;
+    out = Zero();
+    t=-usecond();
+    _PreSmoother(in,out);
+    t+=usecond();
+
+    std::cout<<GridLogMessage << "PreSmoother took "<< t/1000.0<< "ms" <<std::endl;
+
+    // Update the residual
+    _FineOperator.Op(out,vec1);  sub(vec1, in ,vec1);   
+    //    std::cout<<GridLogMessage <<"Residual-1 now " <<norm2(vec1)<<std::endl;
+
+    // Fine to Coarse 
+    t=-usecond();
+    _Aggregates.ProjectToSubspace  (Csrc,vec1);
+    t+=usecond();
+    std::cout<<GridLogMessage << "Project to coarse took "<< t/1000.0<< "ms" <<std::endl;
+
+    // Coarse correction
+    t=-usecond();
+    Csol = Zero();
+    _CoarseSolve(Csrc,Csol);
+    //Csol=Zero();
+    t+=usecond();
+    std::cout<<GridLogMessage << "Coarse solve took "<< t/1000.0<< "ms" <<std::endl;
+
+    // Coarse to Fine
+    t=-usecond();  
+    //    _CoarseOperator.PromoteFromSubspace(_Aggregates,Csol,vec1);
+    _Aggregates.PromoteFromSubspace(Csol,vec1); 
+    add(out,out,vec1);
+    t+=usecond();
+    std::cout<<GridLogMessage << "Promote to this level took "<< t/1000.0<< "ms" <<std::endl;
+
+    // Residual
+    _FineOperator.Op(out,vec1);  sub(vec1 ,in , vec1);  
+    //    std::cout<<GridLogMessage <<"Residual-2 now " <<norm2(vec1)<<std::endl;
+
+    // Fine Smoother
+    t=-usecond();
+    //    vec2=vec1;
+    vec2=Zero();
+    _PostSmoother(vec1,vec2);
+    t+=usecond();
+    std::cout<<GridLogMessage << "PostSmoother took "<< t/1000.0<< "ms" <<std::endl;
+
+    add( out,out,vec2);
+    std::cout<<GridLogMessage << "Done " <<std::endl;
+  }
+};
+#endif
+
+=======
+>>>>>>> 68af1bba67dd62881ead5ab1e54962a5486a0791
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);

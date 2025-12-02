@@ -32,6 +32,53 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 NAMESPACE_BEGIN(Grid); 
 
+//Moved to KrylovSchur
+#if 0
+/**
+<<<<<<< HEAD
+ * Options for which Ritz values to keep in implicit restart.
+ */
+enum RitzFilter {
+  EvalNormSmall,           // Keep evals with smallest norm
+  EvalNormLarge,           // Keep evals with largest norm
+  EvalReSmall,             // Keep evals with smallest real part
+  EvalReLarge              // Keep evals with largest real part
+};
+
+// Select comparison function from RitzFilter
+struct ComplexComparator
+{
+  RitzFilter f;
+  ComplexComparator (RitzFilter _f) : f(_f) {}
+  bool operator()(std::complex<double> z1, std::complex<double> z2) { 
+    switch (f) {
+      RealD tmp1, tmp2;
+      tmp1=std::abs(std::imag(z1));
+      tmp2=std::abs(std::imag(z2));
+      case EvalNormSmall:
+        return std::abs(z1) < std::abs(z2);
+      case EvalNormLarge:
+        return std::abs(z1) > std::abs(z2);
+// Terrible hack
+//        return std::abs(std::real(z1)) < std::abs(std::real(z2));
+//	if ( std::abs(std::real(z1))  >4.) tmp1 +=1.;
+//	if ( std::abs(std::real(z2))  >4.) tmp2 +=1.;
+      case EvalReSmall:
+	  return tmp1 < tmp2;
+//        return std::abs(std::imag(z1)) < std::abs(std::imag(z2));
+      case EvalReLarge:
+	  return tmp1 > tmp2;
+//        return std::abs(std::real(z1)) > std::abs(std::real(z2));
+      default:
+        assert(0);
+    }
+  }
+};
+
+=======
+>>>>>>> 68af1bba67dd62881ead5ab1e54962a5486a0791
+#endif
+
 /**
  * Implementation of the Arnoldi algorithm.
  */
