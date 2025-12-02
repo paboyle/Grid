@@ -47,6 +47,7 @@ int32_t  FlightRecorder::CsumLoggingCounter;
 int32_t  FlightRecorder::NormLoggingCounter;
 int32_t  FlightRecorder::ReductionLoggingCounter;
 uint64_t FlightRecorder::ErrorCounter;
+uint64_t FlightRecorder::CommsErrorCounter;
 
 std::vector<double> FlightRecorder::NormLogVector;
 std::vector<double> FlightRecorder::ReductionLogVector;
@@ -117,6 +118,10 @@ void FlightRecorder::SetLoggingModeVerify(void)
   std::cout << " FlightRecorder: set to VERIFY " << NormLogVector.size()<< " log entries "<<std::endl;
   ResetCounters();
   LoggingMode = LoggingModeVerify;
+}
+uint64_t FlightRecorder::CommsErrorCount(void)
+{
+  return CommsErrorCounter;
 }
 uint64_t FlightRecorder::ErrorCount(void)
 {
@@ -312,6 +317,7 @@ void FlightRecorder::xmitLog(void *buf,uint64_t bytes)
 	if ( !ContinueOnFail ) GRID_ASSERT(0);
 
 	ErrorCounter++;
+
       } else {
 	if ( PrintEntireLog ) { 
 	  std::cerr<<"FlightRecorder::XmitLog : VALID "<< XmitLoggingCounter <<" "<< std::hexfloat << _xor << " "<<  XmitLogVector[XmitLoggingCounter] <<std::endl;
@@ -357,7 +363,9 @@ void FlightRecorder::recvLog(void *buf,uint64_t bytes,int rank)
 	
 	if ( !ContinueOnFail ) GRID_ASSERT(0);
 
+	CommsErrorCounter++;
 	ErrorCounter++;
+	
       } else {
 	if ( PrintEntireLog ) { 
 	  std::cerr<<"FlightRecorder::RecvLog : VALID "<< RecvLoggingCounter <<" "<< std::hexfloat << _xor << " "<<  RecvLogVector[RecvLoggingCounter] <<std::endl;

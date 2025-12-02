@@ -589,6 +589,7 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
       srq.PacketType = InterNodeRecv;
       srq.bytes      = rbytes;
       srq.req        = rrq;
+      srq.dest       = from;
       srq.host_buf   = host_recv;
       srq.device_buf = recv;
       srq.tag        = tag;
@@ -765,7 +766,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
       srq.host_buf   = NULL;
       srq.device_buf = xmit;
       srq.tag        = -1;
-      srq.dest       = dest;
+      srq.dest       = from;
       srq.commdir    = dir;
       list.push_back(srq);
     }
@@ -817,12 +818,37 @@ void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsReque
     int ierr = MPI_Waitall(MpiRequests.size(),&MpiRequests[0],&status[0]); // Sends are guaranteed in order. No harm in not completing.
     GRID_ASSERT(ierr==0);
   }
-  
+
   //  for(int r=0;r<nreq;r++){
   //    if ( list[r].PacketType==InterNodeRecv ) {
   //      acceleratorCopyToDeviceAsynch(list[r].host_buf,list[r].device_buf,list[r].bytes);
   //    }
   //  }
+  // Get global error count in comms receive
+#define AUDIT_FLIGHT_RECORDER_ERRORS
+#ifdef  AUDIT_FLIGHT_RECORDER_ERRORS
+  uint64_t EC = FlightRecorder::CommsErrorCount();
+  this->GlobalSum(EC);
+  if (EC) {
+    for(int r=0;r<list.size();r++){
+#ifdef GRID_CHECKSUM_COMMS
+	uint64_t rbytes_data = list[r].bytes - 8;
+#else
+	uint64_t rbytes_data = list[r].bytes;
+#endif
+      if (list[r].PacketType == InterNodeReceiveHtoD) {
+	uint64_t csg = gpu_xor((uint64_t*)list[r].device_buf,rbytes_data/8);
+	uint64_t csh = cpu_xor((uint64_t*)list[r].host_buf,rbytes_data/8);
+	std::cerr << " Packet "<<r<<" Receive from " <<list[r].dest<<" host csum "<<csh<<" gpu csum "<<csg<<std::endl;
+      } if (list[r].PacketType == InterNodeXmitISend ) {
+	uint64_t csg = gpu_xor((uint64_t*)list[r].device_buf,rbytes_data/8);
+	uint64_t csh = cpu_xor((uint64_t*)list[r].host_buf,rbytes_data/8);
+	std::cerr << " Packet "<<r<<" Send to " <<list[r].dest<<" host csum "<<csh<<" gpu csum "<<csg<<std::endl;
+      }
+    }
+  }
+#endif
+
 #ifdef GRID_CHECKSUM_COMMS
   for(int r=0;r<list.size();r++){
     if ( list[r].PacketType == InterNodeReceiveHtoD ) {

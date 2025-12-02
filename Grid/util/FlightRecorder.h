@@ -9,8 +9,8 @@ class FlightRecorder {
     LoggingModeRecord,
     LoggingModeVerify
   };
-  
   static int                   LoggingMode;
+  static uint64_t              CommsErrorCounter;
   static uint64_t              ErrorCounter;
   static const char *                StepName;
   static int32_t               StepLoggingCounter;

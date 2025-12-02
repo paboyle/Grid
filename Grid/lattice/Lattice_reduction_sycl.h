@@ -68,8 +68,7 @@ inline typename vobj::scalar_object sum_gpu_large(const vobj *lat, Integer osite
   return result;
 }
 
-
-template<class Word> Word svm_xor(Word *vec,uint64_t L)
+template<class Word> Word gpu_xor(Word *vec,uint64_t L)
 {
   Word identity;  identity=0;
   Word ret = 0;
@@ -86,6 +85,18 @@ template<class Word> Word svm_xor(Word *vec,uint64_t L)
   }
   theGridAccelerator->wait();
   return ret;
+}
+template<class Word> Word cpu_xor(Word *vec,uint64_t L)
+{
+  Word csum=0;
+  for(uint64_t w=0;w<L;w++){
+    csum = csum ^ vec[w];
+  }
+  return csum;
+}
+template<class Word> Word svm_xor(Word *vec,uint64_t L)
+{
+  gpu_xor(vec,L);
 }
 template<class Word> Word checksum_gpu(Word *vec,uint64_t L)
 {
