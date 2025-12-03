@@ -370,7 +370,7 @@ class KrylovSchur {
 	
 
         ComplexSchurDecomposition schur (Rayleigh, false, ritzFilter);
-        ComplexSchurDecomposition schurS (RayleighS, false, ritzFilter);
+        ComplexSchurDecomposition schurS (Btilde, false, ritzFilter);
         std::cout << GridLogDebug << "Schur decomp holds? " << schur.checkDecomposition() << std::endl;
 
         // Rearrange Schur matrix so wanted evals are on top left (like MATLAB's ordschur)
@@ -390,6 +390,34 @@ class KrylovSchur {
         b = Q * b;            // b^\dag = b^\dag * Q^\dag <==> b = Q*b
         // basisRotate(basis, Q, 0, Nm, 0, Nm, Nm);
         // basisRotate(evecs, Q, 0, Nm, 0, Nm, Nm);
+if(shift){
+      Field w(Grid);
+      ComplexD coeff;
+      for (int j = 0; j < Nm; j++) {
+        Linop.Op(basis[j], w);
+        // Linop.Op(basis[i], w);
+        for (int k = 0; k < Nm; k++) {
+          coeff = innerProduct(basis[k], w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
+        std::cout << GridLogMessage << " Btilde "<<k<<" "<<j<<" "<<Btilde(k,j)<<" "<<coeff << std::endl;
+//          Rayleigh(j, i) = coeff;
+//          w -= coeff * basis[j];
+        }
+        coeff = innerProduct(utilde, w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
+        std::cout << GridLogMessage << " utilde "<<j<<" "<<coeff << std::endl;
+
+      }
+        std::cout << GridLogMessage << "Shifted Schur eigenvalues" << std::endl;
+        schurS.schurReorder(_Nk);
+
+        Eigen::MatrixXcd Q_s = schurS.getMatrixQ();
+        Eigen::MatrixXcd Qt_s = Q_s.adjoint();                           // TODO should Q be real?
+        Eigen::MatrixXcd S_s = schurS.getMatrixS();
+        // std::cout << GridLogDebug << "Schur deco
+
+        std::cout << GridLogMessage << "Shifted part done " << std::endl;
+
+}
+
 
         std::vector<Field> basis2; 
         // basis2.reserve(Nm);
