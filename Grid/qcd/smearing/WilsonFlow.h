@@ -51,10 +51,16 @@ protected:
 
 public:
 
+//Define the action used to evolve the plaquettes
+//(Lüscher: https://arxiv.org/pdf/1006.4518 eq. 1.4)
+//V'(t) = -g^2 * ( d/dVt S[Vt](g) ) * Vt
+//      = -g^2 * ( d/dVt (1/g^2 * sum_p Re tr{ 1 - Vt(p) } ) ) * Vt
+//      = - d/dVt ( sum_p ( Nc - Re tr Vt(p) ) * Vt
+//      = - d/dVt ( Nc * sum_p ( 1 - Re tr Vt(p)/Nc ) ) * Vt
+//      = - d/dVt SG[Vt](Nc) * Vt
   explicit WilsonFlowBase(unsigned int meas_interval =1) {
     
-    SG = (ActionBase *) new WilsonGaugeAction<Gimpl>(3.0);
-    // WilsonGaugeAction with beta 3.0
+    SG = (ActionBase *) new WilsonGaugeAction<Gimpl>(Gimpl::num_colours);
     setDefaultMeasurements(meas_interval);
   }
 
@@ -149,9 +155,17 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 // Implementations
 ////////////////////////////////////////////////////////////////////////////////
+
+//Compute t^2 <E(t)> for time from the plaquette form
+//(Lüscher: https://arxiv.org/pdf/1006.4518 eq. 3.1)
+//E(t) = 2 * sum_p Retr{ 1 - Vt(p) } =
+//     = 2 * sum_p ( Nc - Retr Vt(p) ) =
+//     = 2 * Nc * sum_p ( 1 - Retr Vt(p)/Nc )
+//     = 2 * SG[Vt](Nc)
+//We divide by the volume to get an energy density per site, as is convention
 template <class Gimpl>
 RealD WilsonFlowBase<Gimpl>::energyDensityPlaquette(const RealD t, const GaugeField& U){
-  static WilsonGaugeAction<Gimpl> SG(3.0);
+  static WilsonGaugeAction<Gimpl> SG(Gimpl::num_colours);
   return 2.0 * t * t * SG.S(U)/U.Grid()->gSites();
 }
 

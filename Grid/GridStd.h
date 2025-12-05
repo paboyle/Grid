@@ -42,6 +42,7 @@ void GridAbort(void);
 #define ASSLOG(A) ::write(STDERR_FILENO,A,::strlen(A));
 #ifdef HAVE_EXECINFO_H
 #define GRID_ASSERT(b) if(!(b)) {					\
+    fflush(stdout); \
     ASSLOG(" GRID_ASSERT failure: ");					\
     ASSLOG(__FILE__);							\
     ASSLOG(" : ");							\

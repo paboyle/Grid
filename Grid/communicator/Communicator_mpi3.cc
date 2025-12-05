@@ -342,23 +342,22 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<MpiCommsRequest_t> &
 						int dest,
 						void *recv,
 						int from,
-						int bytes,int dir)
+						uint64_t bytes,int dir)
 {
   MPI_Request xrq;
   MPI_Request rrq;
 
   GRID_ASSERT(dest != _processor);
   GRID_ASSERT(from != _processor);
-
   int tag;
 
   tag= dir+from*32;
-  int ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,tag,communicator,&rrq);
+  int ierr=MPI_Irecv(recv,(int)( bytes/sizeof(int32_t)), MPI_INT32_T,from,tag,communicator,&rrq);
   GRID_ASSERT(ierr==0);
   list.push_back(rrq);
   
   tag= dir+_processor*32;
-  ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,tag,communicator,&xrq);
+  ierr =MPI_Isend(xmit,(int)(bytes/sizeof(int32_t)), MPI_INT32_T,dest,tag,communicator,&xrq);
   GRID_ASSERT(ierr==0);
   list.push_back(xrq);
 }
@@ -379,7 +378,7 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
 					   int dest,
 					   void *recv,
 					   int from,
-					   int bytes)
+					   uint64_t bytes)
 {
   std::vector<MpiCommsRequest_t> reqs(0);
 
@@ -392,8 +391,8 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
 
   // Give the CPU to MPI immediately; can use threads to overlap optionally
   //  printf("proc %d SendToRecvFrom %d bytes Sendrecv \n",_processor,bytes);
-  ierr=MPI_Sendrecv(xmit,bytes,MPI_CHAR,dest,myrank,
-		    recv,bytes,MPI_CHAR,from, from,
+  ierr=MPI_Sendrecv(xmit,(int)(bytes/sizeof(int32_t)),MPI_INT32_T,dest,myrank,
+		    recv,(int)(bytes/sizeof(int32_t)),MPI_INT32_T,from, from,
 		    communicator,MPI_STATUS_IGNORE);
   GRID_ASSERT(ierr==0);
 
@@ -403,7 +402,7 @@ double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
 						     int dest, int dox,
 						     void *recv,
 						     int from, int dor,
-						     int bytes,int dir)
+						     uint64_t bytes,int dir)
 {
   std::vector<CommsRequest_t> list;
   double offbytes = StencilSendToRecvFromPrepare(list,xmit,dest,dox,recv,from,dor,bytes,bytes,dir);
@@ -426,7 +425,7 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
 							   int dest,int dox,
 							   void *recv,
 							   int from,int dor,
-							   int xbytes,int rbytes,int dir)
+							   uint64_t xbytes,uint64_t rbytes,int dir)
 {
   return 0.0; // Do nothing -- no preparation required
 }
@@ -435,7 +434,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 							 int dest,int dox,
 							 void *recv,void *recv_comp,
 							 int from,int dor,
-							 int xbytes,int rbytes,int dir)
+							 uint64_t xbytes,uint64_t rbytes,int dir)
 {
   int ncomm  =communicator_halo.size();
   int commdir=dir%ncomm;
@@ -458,7 +457,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
     if ( (gfrom ==MPI_UNDEFINED) || Stencil_force_mpi ) {
       tag= dir+from*32;
       //      std::cout << " StencilSendToRecvFrom "<<dir<<" MPI_Irecv "<<std::hex<<recv<<std::dec<<std::endl;
-      ierr=MPI_Irecv(recv_comp, rbytes, MPI_CHAR,from,tag,communicator_halo[commdir],&rrq);
+      ierr=MPI_Irecv(recv_comp,(int)(rbytes/sizeof(int32_t)), MPI_INT32_T,from,tag,communicator_halo[commdir],&rrq);
       GRID_ASSERT(ierr==0);
       list.push_back(rrq);
       off_node_bytes+=rbytes;
@@ -476,7 +475,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
   if (dox) {
     if ( (gdest == MPI_UNDEFINED) || Stencil_force_mpi ) {
       tag= dir+_processor*32;
-      ierr =MPI_Isend(xmit_comp, xbytes, MPI_CHAR,dest,tag,communicator_halo[commdir],&xrq);
+      ierr =MPI_Isend(xmit_comp,(int)(xbytes/sizeof(int32_t)), MPI_INT32_T,dest,tag,communicator_halo[commdir],&xrq);
       GRID_ASSERT(ierr==0);
       list.push_back(xrq);
       off_node_bytes+=xbytes;
@@ -543,7 +542,7 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
 							   int dest,int dox,
 							   void *recv,
 							   int from,int dor,
-							   int xbytes,int rbytes,int dir)
+							   uint64_t xbytes,uint64_t rbytes,int dir)
 {
 /*
  * Bring sequence from Stencil.h down to lower level.
@@ -584,7 +583,7 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
     if ( (gfrom ==MPI_UNDEFINED) || Stencil_force_mpi ) {
       tag= dir+from*32;
       host_recv = this->HostBufferMalloc(rbytes);
-      ierr=MPI_Irecv(host_recv, rbytes, MPI_CHAR,from,tag,communicator_halo[commdir],&rrq);
+      ierr=MPI_Irecv(host_recv,(int)(rbytes/sizeof(int32_t)), MPI_INT32_T,from,tag,communicator_halo[commdir],&rrq);
       GRID_ASSERT(ierr==0);
       CommsRequest_t srq;
       srq.PacketType = InterNodeRecv;
@@ -686,7 +685,7 @@ void CartesianCommunicator::StencilSendToRecvFromPollDtoH(std::vector<CommsReque
 	if ( acceleratorEventIsComplete(list[idx].ev) ) {
 
 	  void *host_xmit = list[idx].host_buf;
-	  uint32_t xbytes = list[idx].bytes;
+	  uint64_t xbytes = list[idx].bytes;
 	  int dest        = list[idx].dest;
 	  int tag         = list[idx].tag;
 	  int commdir     = list[idx].commdir;
@@ -697,7 +696,7 @@ void CartesianCommunicator::StencilSendToRecvFromPollDtoH(std::vector<CommsReque
 	  //	  std::cout << " DtoH is complete for index "<<idx<<" calling MPI_Isend "<<std::endl;
 	  
 	  MPI_Request xrq;
-	  int ierr =MPI_Isend(host_xmit, xbytes, MPI_CHAR,dest,tag,communicator_halo[commdir],&xrq);
+	  int ierr =MPI_Isend(host_xmit, (int)(xbytes/sizeof(int32_t)), MPI_INT32_T,dest,tag,communicator_halo[commdir],&xrq);
 	  GRID_ASSERT(ierr==0);
 
 	  list[idx].req        = xrq; // Update the MPI request in the list
@@ -718,7 +717,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 							 int dest,int dox,
 							 void *recv,void *recv_comp,
 							 int from,int dor,
-							 int xbytes,int rbytes,int dir)
+							 uint64_t xbytes,uint64_t rbytes,int dir)
 {
   int ncomm  =communicator_halo.size();
   int commdir=dir%ncomm;
@@ -884,11 +883,11 @@ void CartesianCommunicator::Barrier(void)
   int ierr = MPI_Barrier(communicator);
   GRID_ASSERT(ierr==0);
 }
-void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
+void CartesianCommunicator::Broadcast(int root,void* data,uint64_t bytes)
 {
   FlightRecorder::StepLog("Broadcast");
   int ierr=MPI_Bcast(data,
-		     bytes,
+		     (int)bytes,
 		     MPI_BYTE,
 		     root,
 		     communicator);
@@ -904,11 +903,11 @@ void CartesianCommunicator::BarrierWorld(void){
   int ierr = MPI_Barrier(communicator_world);
   GRID_ASSERT(ierr==0);
 }
-void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
+void CartesianCommunicator::BroadcastWorld(int root,void* data, uint64_t bytes)
 {
   FlightRecorder::StepLog("BroadcastWorld");
   int ierr= MPI_Bcast(data,
-		      bytes,
+		      (int)bytes,
 		      MPI_BYTE,
 		      root,
 		      communicator_world);

@@ -54,7 +54,7 @@ public:
   // Usual cases are not used
   //////////////////////////////////
   virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG){ GRID_ASSERT(0);};
-  virtual RealD S(const GaugeField &U) { GRID_ASSERT(0); }
+  virtual RealD S(const GaugeField &U) { GRID_ASSERT(0); return 0; }
   virtual void deriv(const GaugeField &U, GaugeField &dSdU) { GRID_ASSERT(0);  }
 
   //////////////////////////////////

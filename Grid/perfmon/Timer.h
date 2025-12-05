@@ -60,12 +60,16 @@ inline std::ostream& operator<< (std::ostream & stream, const GridSecs & time)
 }
 inline std::ostream& operator<< (std::ostream & stream, const GridMillisecs & now)
 {
+  double secs = 1.0*now.count()*1.0e-3;
+  stream << secs<<" s";
+  /*
   GridSecs second(1);
   auto     secs       = now/second ; 
   auto     subseconds = now%second ;
   auto     fill       = stream.fill();
   stream << secs<<"."<<std::setw(3)<<std::setfill('0')<<subseconds.count()<<" s";
   stream.fill(fill);
+  */
   return stream;
 }
 inline std::ostream& operator<< (std::ostream & stream, const GridUsecs & now)

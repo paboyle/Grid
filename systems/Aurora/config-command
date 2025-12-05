@@ -25,7 +25,7 @@ export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-narrowing -Wno-
 	--disable-gparity \
 	--disable-fermion-reps \
 	--enable-shm=nvlink \
-	--enable-checksum-comms=yes \
+	--enable-checksum-comms=no \
 	--enable-log-views=yes \
 	--enable-accelerator=sycl \
 	--enable-accelerator-aware-mpi=no \

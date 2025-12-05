@@ -411,7 +411,7 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
 #undef LoopBody
 }
 
-#ifdef GRID_SYCL
+#if 0
 extern "C" {
     ulong SYCL_EXTERNAL __attribute__((overloadable)) intel_get_cycle_counter( void );
     uint  SYCL_EXTERNAL __attribute__((overloadable)) intel_get_active_channel_mask( void );
