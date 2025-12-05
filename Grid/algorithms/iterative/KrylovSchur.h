@@ -361,17 +361,39 @@ class KrylovSchur {
 
 	temp2=RayleighS.adjoint(); //(B-tI)^-1*
         Eigen::VectorXcd g  = temp2*b; //g = (B-tI)^-1* * b
+	std::cout << GridLogMessage  << " b  "<< b <<std::endl;
+	std::cout << GridLogMessage  << " g  "<< g <<std::endl;
         Eigen::MatrixXcd Btilde= Rayleigh + g*(b.adjoint());
         Field utilde(Grid);
         utilde  = u;
         for (int j = 0; j<Nm; j++){
           utilde -= basis[j]*g(j);
         }
+
+
+// Eq.(38)
+if(shift){ 
+      Field w(Grid);
+
+      ComplexD coeff;
+      for (int j = 0; j < Nm; j++) {
+        Linop.Op(basis[j], w);
+        for (int k = 0; k < Nm; k++) {
+          coeff = innerProduct(basis[k], w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
+        std::cout << GridLogMessage << " Btilde "<<k<<" "<<j<<" "<<Btilde(k,j)<<" "<<coeff << std::endl;
+//        std::cout << GridLogMessage << " JKYJKYJKY Btilde-B "<<" "<<Btilde(k,j)-Rayleigh(k,j)<<" g "<<g(k)<<" b "<<b(j) << std::endl;
+        }
+        coeff = innerProduct(utilde,w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
+        std::cout << GridLogMessage << " utilde "<<j<<" "<<coeff << " b "<< b(j) << std::endl;
+
+      }
+}
 	
 
         ComplexSchurDecomposition schur (Rayleigh, false, ritzFilter);
+        std::cout << GridLogMessage << "Schur decomp holds? " << schur.checkDecomposition() << std::endl;
         ComplexSchurDecomposition schurS (Btilde, false, ritzFilter);
-        std::cout << GridLogDebug << "Schur decomp holds? " << schur.checkDecomposition() << std::endl;
+        std::cout << GridLogMessage << "SchurS decomp holds? " << schurS.checkDecomposition() << std::endl;
 
         // Rearrange Schur matrix so wanted evals are on top left (like MATLAB's ordschur)
         std::cout << GridLogMessage << "Reordering Schur eigenvalues" << std::endl;
@@ -383,10 +405,6 @@ class KrylovSchur {
         Qt = Q.adjoint();                           // TODO should Q be real?
         Eigen::MatrixXcd S = schur.getMatrixS();
         // std::cout << GridLogDebug << "Schur decomp holds after reorder? " << schur.checkDecomposition() << std::endl;
-
-        Eigen::MatrixXcd Q_s = schurS.getMatrixQ();
-        Eigen::MatrixXcd Qt_s = Q_s.adjoint();                           // TODO should Q be real?
-        Eigen::MatrixXcd S_s = schurS.getMatrixS();
 
 if(1){ 
       Field w(Grid);
@@ -410,6 +428,11 @@ if(1){
         Rayleigh = schur.getMatrixS();
         b = Q * b;            // b^\dag = b^\dag * Q^\dag <==> b = Q*b
 
+
+        Eigen::MatrixXcd Q_s = schurS.getMatrixQ();
+        Eigen::MatrixXcd Qt_s = Q_s.adjoint();                           // TODO should Q be real?
+        Eigen::MatrixXcd S_s = schurS.getMatrixS();
+	std::cout << GridLogMessage << " Q_s*Qt_s= " << Q_s*Qt_s <<std::endl;
         Btilde = schurS.getMatrixS();
 	Eigen::VectorXcd b_s = b;
         b_s = Q_s * b_s;            // b^\dag = b^\dag * Q^\dag <==> b = Q*b
@@ -427,18 +450,19 @@ if(1){
         // for (int i = start; i < Nm; i++) {
         //   basis2.emplace_back(Grid);
         // }
-        constructUR(basis2, basis, Qt, Nm);
-        basis = basis2;
+//        constructUR(basis2, basis, Qt, Nm);
 
         std::vector<Field> basis_s; 
         constructUR(basis_s, basis, Qt_s, Nm);
 //        basis = basis2_s;
 
+//        basis = basis2;
+
 if(1){ 
       Field w(Grid);
 
       ComplexD coeff;
-      for (int j = 0; j < Nk; j++) {
+      for (int j = 0; j < Nm; j++) {
         Linop.Op(basis[j], w);
         for (int k = 0; k < Nm; k++) {
           coeff = innerProduct(basis[k], w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
@@ -454,12 +478,13 @@ if(1){
 if(shift){ 
       Field w(Grid);
 
-      ComplexD coeff;
-      for (int j = 0; j < Nk; j++) {
+      ComplexD coeff,coeff2;
+      for (int j = 0; j < Nm; j++) {
         Linop.Op(basis_s[j], w);
         for (int k = 0; k < Nm; k++) {
+          coeff2 = innerProduct(basis_s[k], basis_s[j]);     
           coeff = innerProduct(basis_s[k], w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
-        std::cout << GridLogMessage << " Btilde(Shat) "<<k<<" "<<j<<" "<<Btilde(k,j)<<" "<<coeff << std::endl;
+        std::cout << GridLogMessage << " Btilde(Shat) "<<k<<" "<<j<<" "<<Btilde(k,j)<<" "<<coeff << " <k|j> = " << coeff2 << std::endl;
         }
         coeff = innerProduct(basis_s[j], utilde);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
         std::cout << GridLogMessage << " utilde "<<j<<" "<<coeff << std::endl;
