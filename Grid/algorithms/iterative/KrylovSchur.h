@@ -388,6 +388,22 @@ class KrylovSchur {
         Eigen::MatrixXcd Qt_s = Q_s.adjoint();                           // TODO should Q be real?
         Eigen::MatrixXcd S_s = schurS.getMatrixS();
 
+if(1){ 
+      Field w(Grid);
+
+      ComplexD coeff;
+      for (int j = 0; j < Nm; j++) {
+        Linop.Op(basis[j], w);
+        for (int k = 0; k < Nm; k++) {
+          coeff = innerProduct(basis[k], w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
+        std::cout << GridLogMessage << " B "<<k<<" "<<j<<" "<<Rayleigh(k,j)<<" "<<coeff << std::endl;
+        }
+        coeff = innerProduct(basis[j], u);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
+        std::cout << GridLogMessage << " u "<<j<<" "<<coeff <<" b "<<b(j) << std::endl;
+
+      }
+}
+
         std::cout << GridLogMessage << "*** ROTATING TO SCHUR BASIS *** " << std::endl;
 
         // Rotate Krylov basis, b vector, redefine Rayleigh quotient and evecs, and truncate.
@@ -400,7 +416,9 @@ class KrylovSchur {
 
 
 
+
         std::cout << GridLogMessage << "Shifted part done " << std::endl;
+
 
 
 
@@ -415,6 +433,39 @@ class KrylovSchur {
         std::vector<Field> basis_s; 
         constructUR(basis_s, basis, Qt_s, Nm);
 //        basis = basis2_s;
+
+if(1){ 
+      Field w(Grid);
+
+      ComplexD coeff;
+      for (int j = 0; j < Nk; j++) {
+        Linop.Op(basis[j], w);
+        for (int k = 0; k < Nm; k++) {
+          coeff = innerProduct(basis[k], w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
+        std::cout << GridLogMessage << " Stilde "<<k<<" "<<j<<" "<<Rayleigh(k,j)<<" "<<coeff << std::endl;
+        }
+        coeff = innerProduct(basis[j], u);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
+        std::cout << GridLogMessage << " u "<<j<<" "<<coeff <<" b "<<b(j) << std::endl;
+
+      }
+}
+
+// Eq.(41)
+if(shift){ 
+      Field w(Grid);
+
+      ComplexD coeff;
+      for (int j = 0; j < Nk; j++) {
+        Linop.Op(basis_s[j], w);
+        for (int k = 0; k < Nm; k++) {
+          coeff = innerProduct(basis_s[k], w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
+        std::cout << GridLogMessage << " Btilde(Shat) "<<k<<" "<<j<<" "<<Btilde(k,j)<<" "<<coeff << std::endl;
+        }
+        coeff = innerProduct(basis_s[j], utilde);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
+        std::cout << GridLogMessage << " utilde "<<j<<" "<<coeff << std::endl;
+
+      }
+}
 
 
         std::cout << GridLogMessage << "*** TRUNCATING FOR RESTART *** " << std::endl;
@@ -456,9 +507,9 @@ if(shift){
       Field uhat(Grid);
       uhat=utilde;
       for (int j = 0; j<Nk; j++){
-        utilde -= basis_s[j]*ghat(j);
+        uhat -= basis_s[j]*ghat(j);
       }
-      RealD gamma = std::sqrt(norm2(utilde));         // beta_k = ||f_k|| determines convergence.
+      RealD gamma = std::sqrt(norm2(uhat));         // beta_k = ||f_k|| determines convergence.
       uhat = (1/gamma) * uhat;
 
       Eigen::MatrixXcd Bhat = S_s;
