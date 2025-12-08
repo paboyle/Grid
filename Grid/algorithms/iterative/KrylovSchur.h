@@ -289,15 +289,14 @@ class KrylovSchur {
     RitzFilter ritzFilter;                  // how to sort evals
 
   public:       
-    RealD *shift;                           // for Harmonic (shift and invert)
 
-    std::vector<Field> evecs;               // Vector of evec fields
     KrylovSchur(LinearOperatorBase<Field> &_Linop, GridBase *_Grid, RealD _Tolerance, RitzFilter filter = EvalReSmall)
       : Linop(_Linop), Grid(_Grid), Tolerance(_Tolerance), ritzFilter(filter), u(_Grid), MaxIter(-1), Nm(-1), Nk(-1), Nstop (-1),
-        evals (0), ritzEstimates (), evecs (), ssq (0.0), rtol (0.0), beta_k (0.0), approxLambdaMax (0.0),shift(NULL)
+        evals (0), ritzEstimates (), evecs (), ssq (0.0), rtol (0.0), beta_k (0.0), approxLambdaMax (0.0)
     {
       u = Zero();
     };
+    std::vector<Field> evecs;               // Vector of evec fields
 
 
     /* Getters */
@@ -317,10 +316,6 @@ class KrylovSchur {
      *   - Truncate the Krylov-Schur expansion. 
      */
     void operator()(const Field& v0, int _maxIter, int _Nm, int _Nk, int _Nstop, bool doubleOrthog = true) {
-      RealD shift_=1.;
-      shift = &shift_;
-      if (shift) 
-          std::cout << GridLogMessage << "Shift " << *shift << std::endl;
       MaxIter = _maxIter;
       Nm = _Nm; Nk = _Nk;
       Nstop = _Nstop;
@@ -352,146 +347,42 @@ class KrylovSchur {
 
         // Perform a Schur decomposition on Rayleigh
         // ComplexSchurDecomposition schur (Rayleigh, false);
-	
-        Eigen::MatrixXcd temp = Rayleigh;
-	for (int m=0;m<Nm;m++) temp(m,m) -= *shift;
-        Eigen::MatrixXcd RayleighS = temp.inverse();
-        Eigen::MatrixXcd temp2 = RayleighS*temp;
-	std::cout << GridLogMessage  << "Shift inverse check: shift= "<<*shift<<" "<< temp2 <<std::endl;
-
-	temp2=RayleighS.adjoint(); //(B-tI)^-1*
-        Eigen::VectorXcd g  = temp2*b; //g = (B-tI)^-1* * b
-	std::cout << GridLogMessage  << " b  "<< b <<std::endl;
-	std::cout << GridLogMessage  << " g  "<< g <<std::endl;
-        Eigen::MatrixXcd Btilde= Rayleigh + g*(b.adjoint());
-        Field utilde(Grid);
-        utilde  = u;
-        for (int j = 0; j<Nm; j++){
-          utilde -= basis[j]*g(j);
-        }
-
-
-// Eq.(38)
-if(shift){ 
-      Field w(Grid);
-
-      ComplexD coeff;
-      for (int j = 0; j < Nm; j++) {
-        Linop.Op(basis[j], w);
-        for (int k = 0; k < Nm; k++) {
-          coeff = innerProduct(basis[k], w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
-        std::cout << GridLogMessage << " Btilde "<<k<<" "<<j<<" "<<Btilde(k,j)<<" "<<coeff << std::endl;
-//        std::cout << GridLogMessage << " JKYJKYJKY Btilde-B "<<" "<<Btilde(k,j)-Rayleigh(k,j)<<" g "<<g(k)<<" b "<<b(j) << std::endl;
-        }
-        coeff = innerProduct(utilde,w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
-        std::cout << GridLogMessage << " utilde "<<j<<" "<<coeff << " b "<< b(j) << std::endl;
-
-      }
-}
-	
-
         ComplexSchurDecomposition schur (Rayleigh, false, ritzFilter);
-        std::cout << GridLogMessage << "Schur decomp holds? " << schur.checkDecomposition() << std::endl;
-        ComplexSchurDecomposition schurS (Btilde, false, ritzFilter);
-        std::cout << GridLogMessage << "SchurS decomp holds? " << schurS.checkDecomposition() << std::endl;
+        std::cout << GridLogDebug << "Schur decomp holds? " << schur.checkDecomposition() << std::endl;
 
         // Rearrange Schur matrix so wanted evals are on top left (like MATLAB's ordschur)
         std::cout << GridLogMessage << "Reordering Schur eigenvalues" << std::endl;
         schur.schurReorder(Nk);
-        std::cout << GridLogMessage << "Reordering Schur eigenvalues" << std::endl;
-        schurS.schurReorder(Nk);
-
         Eigen::MatrixXcd Q = schur.getMatrixQ();
         Qt = Q.adjoint();                           // TODO should Q be real?
         Eigen::MatrixXcd S = schur.getMatrixS();
         // std::cout << GridLogDebug << "Schur decomp holds after reorder? " << schur.checkDecomposition() << std::endl;
-
-if(1){ 
-      Field w(Grid);
-
-      ComplexD coeff;
-      for (int j = 0; j < Nm; j++) {
-        Linop.Op(basis[j], w);
-        for (int k = 0; k < Nm; k++) {
-          coeff = innerProduct(basis[k], w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
-        std::cout << GridLogMessage << " B "<<k<<" "<<j<<" "<<Rayleigh(k,j)<<" "<<coeff << std::endl;
-        }
-        coeff = innerProduct(basis[j], u);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
-        std::cout << GridLogMessage << " u "<<j<<" "<<coeff <<" b "<<b(j) << std::endl;
-
-      }
-}
 
         std::cout << GridLogMessage << "*** ROTATING TO SCHUR BASIS *** " << std::endl;
 
         // Rotate Krylov basis, b vector, redefine Rayleigh quotient and evecs, and truncate.
         Rayleigh = schur.getMatrixS();
         b = Q * b;            // b^\dag = b^\dag * Q^\dag <==> b = Q*b
-
-
-        Eigen::MatrixXcd Q_s = schurS.getMatrixQ();
-        Eigen::MatrixXcd Qt_s = Q_s.adjoint();                           // TODO should Q be real?
-        Eigen::MatrixXcd S_s = schurS.getMatrixS();
-	std::cout << GridLogMessage << " Q_s*Qt_s= " << Q_s*Qt_s <<std::endl;
-        Btilde = schurS.getMatrixS();
-	Eigen::VectorXcd b_s = b;
-        b_s = Q_s * b_s;            // b^\dag = b^\dag * Q^\dag <==> b = Q*b
-
-
-
-
-        std::cout << GridLogMessage << "Shifted part done " << std::endl;
-
-
-
+        // basisRotate(basis, Q, 0, Nm, 0, Nm, Nm);
+        // basisRotate(evecs, Q, 0, Nm, 0, Nm, Nm);
 
         std::vector<Field> basis2; 
         // basis2.reserve(Nm);
         // for (int i = start; i < Nm; i++) {
         //   basis2.emplace_back(Grid);
         // }
-//        constructUR(basis2, basis, Qt, Nm);
+        constructUR(basis2, basis, Qt, Nm);
+        basis = basis2;
 
-        std::vector<Field> basis_s; 
-        constructUR(basis_s, basis, Qt_s, Nm);
-//        basis = basis2_s;
+        // std::vector<Field> evecs2;
+        // constructUR(evecs2, evecs, Qt, Nm);
+        // constructRU(evecs2, evecs, Q, Nm);
+        // evecs = evecs2;
+        // littleEvecs = littleEvecs * Q.adjoint();      // TODO try this and see if it works
+        // littleEvecs = Q * littleEvecs;      // TODO try this and see if it works
+        // std::cout << GridLogDebug << "Ritz vectors rotated correctly? " << checkEvecRotation() << std::endl;
 
-//        basis = basis2;
-
-if(1){ 
-      Field w(Grid);
-
-      ComplexD coeff;
-      for (int j = 0; j < Nm; j++) {
-        Linop.Op(basis[j], w);
-        for (int k = 0; k < Nm; k++) {
-          coeff = innerProduct(basis[k], w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
-        std::cout << GridLogMessage << " Stilde "<<k<<" "<<j<<" "<<Rayleigh(k,j)<<" "<<coeff << std::endl;
-        }
-        coeff = innerProduct(basis[j], u);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
-        std::cout << GridLogMessage << " u "<<j<<" "<<coeff <<" b "<<b(j) << std::endl;
-
-      }
-}
-
-// Eq.(41)
-if(shift){ 
-      Field w(Grid);
-
-      ComplexD coeff,coeff2;
-      for (int j = 0; j < Nm; j++) {
-        Linop.Op(basis_s[j], w);
-        for (int k = 0; k < Nm; k++) {
-          coeff2 = innerProduct(basis_s[k], basis_s[j]);     
-          coeff = innerProduct(basis_s[k], w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
-        std::cout << GridLogMessage << " Btilde(Shat) "<<k<<" "<<j<<" "<<Btilde(k,j)<<" "<<coeff << " <k|j> = " << coeff2 << std::endl;
-        }
-        coeff = innerProduct(basis_s[j], utilde);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
-        std::cout << GridLogMessage << " utilde "<<j<<" "<<coeff << std::endl;
-
-      }
-}
-
+        // checkKSDecomposition();
 
         std::cout << GridLogMessage << "*** TRUNCATING FOR RESTART *** " << std::endl;
 
@@ -499,61 +390,20 @@ if(shift){
 
         Eigen::MatrixXcd RayTmp = Rayleigh(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
         Rayleigh = RayTmp;
-        RayTmp = Btilde(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
-        Btilde = RayTmp;
 
         std::vector<Field> basisTmp = std::vector<Field> (basis.begin(), basis.begin() + Nk);
         basis = basisTmp;
-        std::vector<Field> basisTmp_s = std::vector<Field> (basis_s.begin(), basis_s.begin() + Nk);
-        basis_s = basisTmp_s;
 
         Eigen::VectorXcd btmp = b.head(Nk);
         b = btmp;
-        Eigen::VectorXcd btmp_s = b_s.head(Nk);
-        b_s = btmp_s;
 
         std::cout << GridLogDebug << "Rayleigh after truncation: " << std::endl << Rayleigh << std::endl;
 
         checkKSDecomposition();
 
         // Compute eigensystem of Rayleigh. Note the eigenvectors correspond to the sorted eigenvalues.
-	
         computeEigensystem(Rayleigh);
         std::cout << GridLogMessage << "Eigenvalues (first Nk sorted): " << std::endl << evals << std::endl;
-
-        computeEigensystem(Btilde);
-        std::cout << GridLogMessage << "Shifted Eigenvalues (first Nk sorted): " << std::endl << evals << std::endl;
-
-if(shift){
-      Field w(Grid);
-
-      Eigen::MatrixXcd ghat=g;
-      ghat = - Q_s*g;
-      Field uhat(Grid);
-      uhat=utilde;
-      for (int j = 0; j<Nk; j++){
-        uhat -= basis_s[j]*ghat(j);
-      }
-      RealD gamma = std::sqrt(norm2(uhat));         // beta_k = ||f_k|| determines convergence.
-      uhat = (1/gamma) * uhat;
-
-      Eigen::MatrixXcd Bhat = S_s;
-      Eigen::MatrixXcd btemp = b;
-      Bhat += ghat*b_s.adjoint();
-
-      
-      ComplexD coeff;
-      for (int j = 0; j < Nk; j++) {
-        Linop.Op(basis_s[j], w);
-        for (int k = 0; k < Nm; k++) {
-          coeff = innerProduct(basis_s[k], w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
-        std::cout << GridLogMessage << " Bhat "<<k<<" "<<j<<" "<<Bhat(k,j)<<" "<<coeff << std::endl;
-        }
-        coeff = innerProduct(basis_s[j], uhat);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
-        std::cout << GridLogMessage << " uhat "<<j<<" "<<coeff << std::endl;
-
-      }
-}
 
         // check convergence and return if needed. 
         int Nconv = converged();
@@ -607,8 +457,8 @@ if(shift){
         basis.push_back(v0Norm * v0);                // normalized source
         // basis[0] = v0Norm * v0;                // normalized source
 
-        Rayleigh = Eigen::MatrixXcd::Zero(Nm, Nm); // CJ: B in SLEPc
-        u = Zero();                      
+        Rayleigh = Eigen::MatrixXcd::Zero(Nm, Nm);
+        u = Zero();
       } else {
         // assert( start == basis.size() );      // should be starting at the end of basis (start = Nk)
         std::cout << GridLogMessage << "Resetting Rayleigh and b" << std::endl;
