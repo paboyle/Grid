@@ -349,7 +349,7 @@ class KrylovSchur {
         startVec = u;        // original code
         start = Nk;
 	 
-        std::cout << GridLogMessage << "b after Arnoldi " << b << std::endl;
+        std::cout << GridLogDebug << "b after Arnoldi " << b << std::endl;
 
         // checkKSDecomposition();
 
@@ -381,7 +381,7 @@ if(1){
         for (int m=0;m<Nm;m++) temp(m,m) -= *shift;
         Eigen::MatrixXcd RayleighS = temp.inverse(); // (B-tI)^-1
         Eigen::MatrixXcd temp2 = RayleighS*temp;
-        std::cout << GridLogMessage  << "Shift inverse check: shift= "<<*shift<<" "<< temp2 <<std::endl;
+        std::cout << GridLogDebug  << "Shift inverse check: shift= "<<*shift<<" "<< temp2 <<std::endl;
 
         temp2=RayleighS.adjoint(); //(B-tI)^-1*
         Eigen::VectorXcd g  = temp2*b; //g = (B-tI)^-1* * b
