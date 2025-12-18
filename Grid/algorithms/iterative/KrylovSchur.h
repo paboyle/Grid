@@ -40,6 +40,7 @@ enum RitzFilter {
   EvalNormLarge,           // Keep evals with largest norm
   EvalReSmall,             // Keep evals with smallest real part
   EvalReLarge,             // Keep evals with largest real part
+  EvalReNormLarge,         // Keep evals with largest real part
   EvalImSmall,             // Keep evals with smallest imaginary part
   EvalImLarge,             // Keep evals with largest imaginary part
   EvalImNormSmall,         // Keep evals with smallest |imaginary| part
@@ -52,6 +53,7 @@ inline RitzFilter selectRitzFilter(std::string s) {
   if (s == "EvalNormLarge")   { return EvalNormLarge; }   else
   if (s == "EvalReSmall")     { return EvalReSmall; }     else
   if (s == "EvalReLarge")     { return EvalReLarge; }     else
+  if (s == "EvalReNormLarge")     { return EvalReNormLarge; }     else
   if (s == "EvalImSmall")     { return EvalImSmall; }     else
   if (s == "EvalImLarge")     { return EvalImLarge; }     else 
   if (s == "EvalImNormSmall") { return EvalImNormSmall; } else
@@ -70,6 +72,8 @@ inline std::string rfToString(RitzFilter RF) {
       return "EvalReSmall";
     case EvalReLarge:
       return "EvalReLarge";
+    case EvalReNormLarge:
+      return "EvalReNormLarge";
     case EvalImSmall:
       return "EvalImSmall";
     case EvalImLarge:
@@ -89,6 +93,10 @@ struct ComplexComparator
   RitzFilter RF;
   ComplexComparator (RitzFilter _rf) : RF(_rf) {}
   bool operator()(std::complex<double> z1, std::complex<double> z2) { 
+	  RealD tmp1=std::abs(std::imag(z1));
+	  RealD tmp2=std::abs(std::imag(z2));
+	  if ( std::abs(std::real(z1)) >4.) tmp1 += 100.;
+	  if ( std::abs(std::real(z2)) >4.) tmp2 += 100.;
     switch (RF) {
       case EvalNormSmall:
         return std::abs(z1) < std::abs(z2);
@@ -98,12 +106,15 @@ struct ComplexComparator
         return std::real(z1) < std::real(z2);     // DELETE THE ABS HERE!!!
       case EvalReLarge:
         return std::real(z1) > std::real(z2);
+      case EvalReNormLarge:
+        return std::abs(std::real(z1)) < std::abs(std::real(z2));
       case EvalImSmall:
         return std::imag(z1) < std::imag(z2);
       case EvalImLarge:
         return std::imag(z1) > std::imag(z2);
       case EvalImNormSmall:
-        return std::abs(std::imag(z1)) < std::abs(std::imag(z2));
+//        return std::abs(std::imag(z1)) < std::abs(std::imag(z2));
+          return tmp1 < tmp2 ;
       case EvalImNormLarge:
         return std::abs(std::imag(z1)) > std::abs(std::imag(z2));
       default:
@@ -224,6 +235,8 @@ class ComplexSchurDecomposition {
      */
     // void schurReorder(int Nk, std::function compare) {
     void schurReorder(int Nk) {
+     std::cout << GridLogMessage << "schurReorder start " << std::endl;
+     int nswap=0;
       for (int i = 0; i < Nk; i++) {
         for (int k = 0; k <= Nm - 2; k++) {
           int idx = Nm - 2 - k;
@@ -232,8 +245,13 @@ class ComplexSchurDecomposition {
           // if (std::real(S(idx, idx)) > std::real(S(idx+1, idx+1))) {        // sort by smallest real eigenvalue
           if ( cCompare(S(idx+1, idx+1), S(idx, idx)) ) {            // sort by largest modulus of eigenvalue
             swapEvals(idx);
+	    nswap++;
           }
         }
+      }
+     std::cout << GridLogMessage << "schurReorder end "<< nswap << std::endl;
+      for (int i = 0; i < Nk; i++) {
+      	std::cout << GridLogMessage << "schurR "<<i<<" "<<S(i,i) << std::endl;
       }
       return;
     }
@@ -361,7 +379,7 @@ class KrylovSchur {
 #if 1
 if (shift){
 
-if(1){
+if(0){
       Field w(Grid);
 
       ComplexD coeff,coeff2;
@@ -380,8 +398,10 @@ if(1){
 	Eigen::MatrixXcd temp = Rayleigh;
         for (int m=0;m<Nm;m++) temp(m,m) -= *shift;
         Eigen::MatrixXcd RayleighS = temp.inverse(); // (B-tI)^-1
-        Eigen::MatrixXcd temp2 = RayleighS*temp;
-        std::cout << GridLogDebug  << "Shift inverse check: shift= "<<*shift<<" "<< temp2 <<std::endl;
+        Eigen::MatrixXcd temp2;
+
+//        temp2	= RayleighS*temp;
+//        std::cout << GridLogDebug  << "Shift inverse check: shift= "<<*shift<<" "<< temp2 <<std::endl;
 
         temp2=RayleighS.adjoint(); //(B-tI)^-1*
         Eigen::VectorXcd g  = temp2*b; //g = (B-tI)^-1* * b
@@ -394,7 +414,7 @@ if(1){
         }
 
 	ComplexSchurDecomposition schurS (Btilde, false, ritzFilter);
-	std::cout << GridLogMessage << "Shifted Schur eigenvalues" << std::endl;
+	std::cout << GridLogMessage << "Shifted Schur eigenvalues shift = "<<*shift  << std::endl;
         schurS.schurReorder(Nk);
 
 	Eigen::MatrixXcd Q_s = schurS.getMatrixQ();
@@ -420,7 +440,6 @@ if(1){
 
         constructUR(basis2_s, basis, Qt_s, Nm);
 
-// Eq.(41)
 
 	Eigen::MatrixXcd RayTmp_s = Btilde(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
         Btilde = RayTmp_s;
@@ -448,8 +467,9 @@ if(1){
 
 	Btilde  += ghat*(b_s.adjoint());
 	b_s *=gamma;
+
 // Eq.(44)
-    if(1){
+    if(0){
           Field w(Grid);
     
           ComplexD coeff,coeff2;
@@ -470,6 +490,7 @@ if(1){
 #endif
 
 
+if (!shift){
         // Perform a Schur decomposition on Rayleigh
         ComplexSchurDecomposition schur (Rayleigh, false, ritzFilter);
         std::cout << GridLogDebug << "Schur decomp holds? " << schur.checkDecomposition() << std::endl;
@@ -487,14 +508,8 @@ if(1){
         // Rotate Krylov basis, b vector, redefine Rayleigh quotient and evecs, and truncate.
         Rayleigh = schur.getMatrixS();
         b = Q * b;            // b^\dag = b^\dag * Q^\dag <==> b = Q*b
-        // basisRotate(basis, Q, 0, Nm, 0, Nm, Nm);
-        // basisRotate(evecs, Q, 0, Nm, 0, Nm, Nm);
 
         std::vector<Field> basis2; 
-        // basis2.reserve(Nm);
-        // for (int i = start; i < Nm; i++) {
-        //   basis2.emplace_back(Grid);
-        // }
         constructUR(basis2, basis, Qt, Nm);
         basis = basis2;
 if(0){
@@ -513,10 +528,11 @@ if(0){
 
       }
 }
+}
 
 
         std::cout << GridLogMessage << "*** TRUNCATING FOR RESTART *** " << std::endl;
-
+if (!shift){
         std::cout << GridLogDebug << "Rayleigh before truncation: " << std::endl << Rayleigh << std::endl;
 
         Eigen::MatrixXcd RayTmp = Rayleigh(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
@@ -536,6 +552,7 @@ if(0){
         // Compute eigensystem of Rayleigh. Note the eigenvectors correspond to the sorted eigenvalues.
         computeEigensystem(Rayleigh);
         std::cout << GridLogMessage << "Eigenvalues (first Nk sorted): " << std::endl << evals << std::endl;
+}
 
 	if(shift){
 		Rayleigh = Btilde;
@@ -627,7 +644,7 @@ if(0){
         }
 
         if (doubleOrthog) {
-          std::cout << GridLogMessage << "Double orthogonalizing." << std::endl;
+          std::cout << GridLogDebug << "Double orthogonalizing." << std::endl;
           for (int j = 0; j < basis.size(); j++) {
             coeff = innerProduct(basis[j], w);      // see if there is any residual component in basis[j] direction
             Rayleigh(j, i) += coeff;                // if coeff is non-zero, adjust Rayleigh
@@ -775,7 +792,7 @@ if(0){
 
       }
       // Check that Ritz estimate is explicitly || D (Uy) - lambda (Uy) ||
-      // checkRitzEstimate();
+//       checkRitzEstimate();
       return Nconv;
     }
 
