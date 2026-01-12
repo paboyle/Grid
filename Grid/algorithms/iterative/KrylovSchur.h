@@ -212,16 +212,36 @@ class ComplexSchurDecomposition {
       phi  = s / std::abs(s);
       r    = std::sqrt(std::pow(std::abs(s), 2) + std::pow(std::abs(lam2 - lam1), 2));
 
-      // compute Givens rotation corresponding to these parameters
-      Givens = CMat::Identity(Nm, Nm);
-      Givens(i, i)     = std::abs(s) / r;
-      Givens(i+1, i+1) = Givens(i, i);
-      Givens(i, i+1)   = (phi / r) * std::conj(lam2 - lam1);
-      Givens(i+1, i)   = -std::conj(Givens(i, i+1));
-      
-      // rotate Schur matrix and unitary change of basis matrix Q
-      S = Givens * S * Givens.adjoint();
-      Q = Givens * Q;
+      // // Original code which performs Givens rotations by manual matrix multiplication
+      // // compute Givens rotation corresponding to these parameters
+      // Givens = CMat::Identity(Nm, Nm);
+      // Givens(i, i)     = std::abs(s) / r;
+      // Givens(i+1, i+1) = Givens(i, i);
+      // Givens(i, i+1)   = (phi / r) * std::conj(lam2 - lam1);
+      // Givens(i+1, i)   = -std::conj(Givens(i, i+1));
+      // // rotate Schur matrix and unitary change of basis matrix Q
+      // S = Givens * S * Givens.adjoint();
+      // Q = Givens * Q;
+
+      // Modified code
+      Givens = CMat::Identity(2, 2);
+      Givens(0, 0)     = std::abs(s) / r;
+      Givens(1, 1) = Givens(0, 0);
+      Givens(0, 1)   = (phi / r) * std::conj(lam2 - lam1);
+      Givens(1, 0)   = -std::conj(Givens(0, 1));
+
+      // TODO: make sure these are correct
+      Eigen::MatrixXcd tmp;
+      tmp = Givens * S.block(i, 0, 2, Nm);
+      S.block(i, 0, 2, Nm) = tmp;
+
+      // S_{:, i:i+2} = S.block<Nm, 2>(0, i);
+      tmp = S.block(0, i, Nm, 2) * Givens.adjoint();
+      S.block(0, i, Nm, 2) = tmp;
+
+      // Q_{i:i+2, :} = Q.block<2, Nm>(i, 0);
+      tmp = Givens * Q.block(i, 0, 2, Nm);
+      Q.block(i, 0, 2, Nm) = tmp;
 
       return;
     }
@@ -498,10 +518,12 @@ if (!shift){
         // Rearrange Schur matrix so wanted evals are on top left (like MATLAB's ordschur)
         std::cout << GridLogMessage << "Reordering Schur eigenvalues" << std::endl;
         schur.schurReorder(Nk);
+        std::cout << GridLogMessage << "Schur eigenvalues reordered." << std::endl;
+
         Eigen::MatrixXcd Q = schur.getMatrixQ();
         Qt = Q.adjoint();                           // TODO should Q be real?
         Eigen::MatrixXcd S = schur.getMatrixS();
-        // std::cout << GridLogDebug << "Schur decomp holds after reorder? " << schur.checkDecomposition() << std::endl;
+        // std::cout << GridLogMessage << "Schur decomp holds after reorder? " << schur.checkDecomposition() << std::endl;
 
         std::cout << GridLogMessage << "*** ROTATING TO SCHUR BASIS *** " << std::endl;
 
