@@ -113,6 +113,9 @@ struct LanczosParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParameters,
 		  		RealD, mass , 
 				RealD, resid,
+				Integer, Nstop,
+                                Integer, Nk,
+                                Integer, Np,
 	  			RealD, ChebyLow,
 	  			RealD, ChebyHigh,
 	  			Integer, ChebyOrder)
@@ -204,7 +207,6 @@ int main(int argc, char** argv) {
   int Nstop = 5;
   int Nk = 10;
   int Np = 90;
-  int Nm = Nk + Np;
   int MaxIt = 10000;
   RealD resid = 1.0e-5;
 
@@ -226,9 +228,13 @@ int main(int argc, char** argv) {
     XmlWriter HMCwr("LanParams.xml.out");
     write(HMCwr,"LanczosParameters",LanParams);
   }
-
+  Nstop=LanParams.Nstop;
+  Nk=LanParams.Nk;
+  Np=LanParams.Np;
   mass=LanParams.mass;
   resid=LanParams.resid;
+
+  int Nm = Nk + Np;
 
 
 while ( mass > - 5.0){

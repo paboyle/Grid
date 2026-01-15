@@ -32,9 +32,13 @@ directory
 using namespace std;
 using namespace Grid;
 
-//typedef WilsonFermionD FermionOp;
+#if 0
 typedef DomainWallFermionD FermionOp;
 typedef typename DomainWallFermionD::FermionField FermionField;
+#else
+typedef MobiusFermionD FermionOp;
+typedef typename MobiusFermionD::FermionField FermionField;
+#endif
 
 template <class T> void writeFile(T& in, std::string const fname){  
 #ifdef HAVE_LIME
@@ -179,12 +183,14 @@ int main(int argc, char** argv) {
   Np=LanParams.Np;
 
   int Nm = Nk + Np;
-  int MaxIt = 100;
-  RealD resid = 1.0e-4;
 
+  int MaxIt = 10000;
+  RealD resid = 1.0e-5;
+  RealD mob_b=1.5;
 
 //while ( mass > - 5.0){
-  FermionOp Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+//  FermionOp Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  FermionOp Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,mob_b,mob_b-1.);
   MdagMLinearOperator<FermionOp,FermionField> HermOp(Ddwf); /// <-----
 //  Gamma5HermitianLinearOperator <FermionOp,LatticeFermion> HermOp2(WilsonOperator); /// <-----
   Gamma5R5HermitianLinearOperator<FermionOp, LatticeFermion> G5R5Herm(Ddwf);

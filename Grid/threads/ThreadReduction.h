@@ -28,6 +28,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 /*  END LEGAL */
 #pragma once 
 
+#ifndef MIN
+#define MIN(x,y) ((x)>(y)?(y):(x))
+#endif
+
+
 // Introduce a class to gain deterministic bit reproducible reduction.
 // make static; perhaps just a namespace is required.
 NAMESPACE_BEGIN(Grid);

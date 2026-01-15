@@ -873,7 +873,7 @@ int main (int argc, char ** argv)
   int do_su4=0;
   int do_memory=1;
   int do_comms =1;
-  int do_blas  =1;
+  int do_blas  =0;
   int do_dslash=1;
 
   int sel=4;

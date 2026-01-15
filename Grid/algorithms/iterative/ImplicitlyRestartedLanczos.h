@@ -53,6 +53,18 @@ enum IRLdiagonalisation {
   IRLdiagonaliseWithEigen
 };
 
+enum IRLeigsort { 
+  IRLeigsortMax,
+  IRLeigsortSqMin
+};
+
+#if 0
+bool square_comp(RealD a, RealD b){
+	if (a*a<b*b) return true;
+	return false;
+}
+#endif
+
 template<class Field> class ImplicitlyRestartedLanczosHermOpTester  : public ImplicitlyRestartedLanczosTester<Field>
 {
  public:
@@ -119,9 +131,10 @@ class ImplicitlyRestartedLanczos {
   /////////////////////////
   // Constructor
   /////////////////////////
-  
-public:       
+ public:
+  IRLeigsort EigSort;
 
+  
   //////////////////////////////////////////////////////////////////
   // PAB:
   //////////////////////////////////////////////////////////////////
@@ -154,6 +167,7 @@ public:
     Nstop(_Nstop)  ,      Nk(_Nk),      Nm(_Nm),
     eresid(_eresid),      betastp(_betastp),
     MaxIter(_MaxIter)  ,      MinRestart(_MinRestart),
+    EigSort(IRLeigsortMax), 
     orth_period(_orth_period), diagonalisation(_diagonalisation)  { };
 
     ImplicitlyRestartedLanczos(LinearFunction<Field> & PolyOp,
@@ -170,6 +184,7 @@ public:
     Nstop(_Nstop)  ,      Nk(_Nk),      Nm(_Nm),
     eresid(_eresid),      betastp(_betastp),
     MaxIter(_MaxIter)  ,      MinRestart(_MinRestart),
+    EigSort(IRLeigsortMax), 
     orth_period(_orth_period), diagonalisation(_diagonalisation)  { };
 
   ////////////////////////////////
@@ -316,8 +331,12 @@ until convergence
       // sorting
       //////////////////////////////////
       eval2_copy = eval2;
+//      if (EigSort==IRLeigsortMax)
+//      std::partial_sort(eval2.begin(),eval2.begin()+Nm,eval2.end(),square_comp);
+//      else
       std::partial_sort(eval2.begin(),eval2.begin()+Nm,eval2.end(),std::greater<RealD>());
       std::cout<<GridLogIRL <<" evals sorted "<<std::endl;
+//      eval2_copy = eval2;
       const int chunk=8;
       for(int io=0; io<k2;io+=chunk){
 	std::cout<<GridLogIRL << "eval "<< std::setw(3) << io ;
@@ -333,6 +352,7 @@ until convergence
       //////////////////////////////////
       Qt = Eigen::MatrixXd::Identity(Nm,Nm);
       for(int ip=k2; ip<Nm; ++ip){ 
+//        std::cout<<GridLogIRL <<"QR decompose "<<eval2[ip]<<std::endl;
 	QR_decomp(eval,lme,Nm,Nm,Qt,eval2[ip],k1,Nm);
       }
       std::cout<<GridLogIRL <<"QR decomposed "<<std::endl;
@@ -375,7 +395,8 @@ until convergence
 
 	//  power of two search pattern;  not every evalue in eval2 is assessed.
 	int allconv =1;
-	for(int jj = 1; jj<=Nstop; jj*=2){
+//	for(int jj = 1; jj<=Nstop; jj*=2){
+	for(int jj = 1; jj<=Nstop; jj++){
 	  int j = Nstop-jj;
 	  RealD e = eval2_copy[j]; // Discard the evalue
 	  basisRotateJ(B,evec,Qt,j,0,Nk,Nm);	    

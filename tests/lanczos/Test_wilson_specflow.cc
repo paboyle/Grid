@@ -202,7 +202,6 @@ int main(int argc, char** argv) {
 
   std::vector<Complex> boundary = {1,1,1,-1};
 //  std::vector<Complex> boundary = {1,1,1,0};
-//  std::vector<Complex> boundary = {1,1,1,1};
   FermionOp::ImplParams Params(boundary);
 
 
