@@ -27,6 +27,7 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/Grid.h>
+#include <Grid/parallelIO/IldgIOtypes.h>
 
 using namespace std;
 using namespace Grid;
@@ -38,11 +39,32 @@ typedef typename WilsonFermionD::FermionField FermionField;
 
 RealD AllZero(RealD x) { return 0.; }
 
+template <class T> void writeFile(T& in, std::string const fname){
+#if 1
+  // Ref: https://github.com/paboyle/Grid/blob/feature/scidac-wp1/tests/debug/Test_general_coarse_hdcg_phys48.cc#L111
+  std::cout << Grid::GridLogMessage << "Writes to: " << fname << std::endl;
+  Grid::emptyUserRecord record;
+  Grid::ScidacWriter WR(in.Grid()->IsBoss());
+  WR.open(fname);
+  WR.writeScidacFieldRecord(in,record,0);
+  WR.close();
+#endif
+  // What is the appropriate way to throw error?
+}
+
+
 namespace Grid {
 
 struct LanczosParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParameters,
 		  		RealD, mass , 
+		  		RealD, mstep , 
+				Integer, Nstop,
+                                Integer, Nk,
+                                Integer, Np,
+                                Integer, ReadEvec,
+                                Integer, maxIter,
+	  			RealD, resid,
 	  			RealD, ChebyLow,
 	  			RealD, ChebyHigh,
 	  			Integer, ChebyOrder)
@@ -115,12 +137,13 @@ int main(int argc, char** argv) {
 
   LatticeGaugeField Umu(UGrid);
 //  SU<Nc>::HotConfiguration(RNG4, Umu);
+//  SU<Nc>::ColdConfiguration(Umu);
 
   FieldMetaData header;
   std::string file("./config");
 
-  int precision32 = 0;
-  int tworow      = 0;
+//  int precision32 = 0;
+//  int tworow      = 0;
 //  NerscIO::writeConfiguration(Umu,file,tworow,precision32);
   NerscIO::readConfiguration(Umu,header,file);
 
@@ -158,10 +181,33 @@ int main(int argc, char** argv) {
   }
 
   mass=LanParams.mass;
+  resid=LanParams.resid;
+  Nstop=LanParams.Nstop;
+  Nk=LanParams.Nk;
+  Np=LanParams.Np;
+  MaxIt=LanParams.maxIter;
+  Nm = Nk + Np;
+
+  FermionField src(FGrid);
+  gaussian(RNG5, src);
+  if(LanParams.ReadEvec) {
+    std::string evecs_file="evec_in";
+    std::cout << GridLogIRL<< "Reading evecs from "<<evecs_file<<std::endl;
+    emptyUserRecord record;
+    Grid::ScidacReader RD;
+    RD.open(evecs_file);
+    RD.readScidacFieldRecord(src,record);
+    RD.close();
+  }
+
+  std::vector<Complex> boundary = {1,1,1,-1};
+//  std::vector<Complex> boundary = {1,1,1,0};
+//  std::vector<Complex> boundary = {1,1,1,1};
+  FermionOp::ImplParams Params(boundary);
 
 
-while ( mass > - 5.0){
-  FermionOp WilsonOperator(Umu,*FGrid,*FrbGrid,mass);
+while ( mass > - 2.0){
+  FermionOp WilsonOperator(Umu,*FGrid,*FrbGrid,mass,Params);
   MdagMLinearOperator<FermionOp,FermionField> HermOp(WilsonOperator); /// <-----
   //SchurDiagTwoOperator<FermionOp,FermionField> HermOp(WilsonOperator);
   Gamma5HermitianLinearOperator <FermionOp,LatticeFermion> HermOp2(WilsonOperator); /// <-----
@@ -180,10 +226,9 @@ while ( mass > - 5.0){
      PlainHermOp<FermionField> Op2     (HermOp2);
 
   ImplicitlyRestartedLanczos<FermionField> IRL(OpCheby, Op2, Nstop, Nk, Nm, resid, MaxIt);
+//  SimpleLanczos<FermionField> IRL(Op,Nstop, Nk, Nm, resid, MaxIt);
 
   std::vector<RealD> eval(Nm);
-  FermionField src(FGrid);
-  gaussian(RNG5, src);
   std::vector<FermionField> evec(Nm, FGrid);
   for (int i = 0; i < 1; i++) {
     std::cout << i << " / " << Nm << " grid pointer " << evec[i].Grid()
@@ -192,19 +237,46 @@ while ( mass > - 5.0){
 
   int Nconv;
   IRL.calc(eval, evec, src, Nconv);
+//  IRL.calc(eval,  src, Nconv);
 
   std::cout << mass <<" : " << eval << std::endl;
 
   Gamma g5(Gamma::Algebra::Gamma5) ;
   ComplexD dot;
   FermionField tmp(FGrid);
+  FermionField sav(FGrid);
+  sav=evec[0];
   for (int i = 0; i < Nstop ; i++) {
     tmp = g5*evec[i];
     dot = innerProduct(tmp,evec[i]);
     std::cout << mass << " : " << eval[i]  << " " << real(dot) << " " << imag(dot)  << std::endl ;
+//    if ( i<1)
+    {
+	std::string evfile ("./evec_"+std::to_string(mass)+"_"+std::to_string(i));
+        auto evdensity = localInnerProduct(evec[i],evec[i] );
+	writeFile(evdensity,evfile);
+//  if(LanParams.ReadEvec) {
+//    std::string evecs_file="evec_in";
+  {
+    std::cout << GridLogIRL<< "Reading evecs from "<<evfile<<std::endl;
+    emptyUserRecord record;
+    Grid::ScidacReader RD;
+    RD.open(evfile);
+    RD.readScidacFieldRecord(evdensity,record);
+    RD.close();
+  }
+    }
+    if (i>0) sav += evec[i];
+  }
+  {
+	std::string evfile ("./evec_"+std::to_string(mass)+"_sum");
+//        auto evdensity = localInnerProduct(evec[i],evec[i] );
+	writeFile(sav,evfile);
   }
   src  = evec[0]+evec[1]+evec[2];
-  mass += -0.1;
+  src  += evec[3]+evec[4]+evec[5];
+  src  += evec[6]+evec[7]+evec[8];
+  mass += LanParams.mstep;
 }
 
   Grid_finalize();

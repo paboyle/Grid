@@ -126,12 +126,16 @@ public:
     assert(0);
   };
   void Op     (const Field &in, Field &out){
+    Field tmp(in.Grid());
 //    _Mat.M(in,out);
 //  RealD mass=-shift;
 //  WilsonCloverFermionD Dw(Umu, Grid, RBGrid, mass, csw_r, csw_t);
-  NonHermitianLinearOperator<Matrix,Field> HermOp(_Mat);
-  BiCGSTAB<Field> CG(_stp,10000);
-  CG(HermOp,in,out);
+//  NonHermitianLinearOperator<Matrix,Field> HermOp(_Mat);
+//  BiCGSTAB<Field> CG(_stp,10000);
+    _Mat.Mdag(in,tmp);
+    MdagMLinearOperator<Matrix,Field> HermOp(_Mat);
+    ConjugateGradient<Field> CG(_stp,10000);
+    CG(HermOp,tmp,out);
 //    out = out + shift * in;
   }
   void AdjOp     (const Field &in, Field &out){
@@ -331,7 +335,7 @@ int main (int argc, char ** argv)
 //  KrySchur(src, maxIter, Nm, Nk, Nstop);
 //  KrylovSchur KrySchur (HermOp2, UGrid, resid,EvalNormSmall);
 //  Hacked, really EvalImagSmall
-#if 0
+#if 1
     RealD shift=1.5;
     KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
     KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);
