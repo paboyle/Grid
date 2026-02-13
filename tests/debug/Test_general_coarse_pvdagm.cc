@@ -368,7 +368,7 @@ int main (int argc, char ** argv)
   TrivialPrecon<CoarseVector> simple;
   NonHermitianLinearOperator<LittleDiracOperator,CoarseVector> LinOpCoarse(LittleDiracOpPV);
   //  PrecGeneralisedConjugateResidualNonHermitian<CoarseVector>  L2PGCR(1.0e-4, 100, LinOpCoarse,simple,10,10); 
-  PrecGeneralisedConjugateResidualNonHermitian<CoarseVector>  L2PGCR(3.0e-2, 100, LinOpCoarse,simple,10,10); 
+  PrecGeneralisedConjugateResidualNonHermitian<CoarseVector>  L2PGCR(1.0e-2, 200, LinOpCoarse,simple,30,30); 
   L2PGCR.Level(3);
   c_res=Zero();
   L2PGCR(c_src,c_res);
@@ -400,7 +400,7 @@ int main (int argc, char ** argv)
 			    LinOpCoarse,
 			    L2PGCR);
   
-  PrecGeneralisedConjugateResidualNonHermitian<LatticeFermion> L1PGCR(1.0e-8,1000,PVdagM,TwoLevelPrecon,16,16);
+  PrecGeneralisedConjugateResidualNonHermitian<LatticeFermion> L1PGCR(1.0e-8,1000,PVdagM,TwoLevelPrecon,30,30);
   L1PGCR.Level(1);
 
   f_res=Zero();

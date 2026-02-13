@@ -170,11 +170,11 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu(UGrid);
 
   FieldMetaData header;
-  std::string file("ckpoint_lat.1000");
+  std::string file("ckpoint_lat");
   NerscIO::readConfiguration(Umu,header,file);
   
-  RealD csw =1.0;
-  RealD mass=-0.6222;
+  RealD csw =0.0;
+  RealD mass=-0.92;
 
   WilsonCloverFermionD Dw(Umu,*UGrid,*UrbGrid,mass,csw,csw);
 
@@ -264,7 +264,7 @@ int main (int argc, char ** argv)
   TrivialPrecon<CoarseVector> simple;
   NonHermitianLinearOperator<LittleDiracOperator,CoarseVector> LinOpCoarse(LittleDiracOp);
   //  PrecGeneralisedConjugateResidualNonHermitian<CoarseVector>  L2PGCR(1.0e-4, 100, LinOpCoarse,simple,10,10); 
-  PrecGeneralisedConjugateResidualNonHermitian<CoarseVector>  L2PGCR(3.0e-2, 100, LinOpCoarse,simple,10,10); 
+  PrecGeneralisedConjugateResidualNonHermitian<CoarseVector>  L2PGCR(1.0e-2, 100, LinOpCoarse,simple,30,30); 
   L2PGCR.Level(3);
   c_res=Zero();
   L2PGCR(c_src,c_res);
@@ -277,7 +277,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"******************* "<<std::endl;
   TrivialPrecon<LatticeFermionD> simple_fine;
 
-  PrecGeneralisedConjugateResidualNonHermitian<LatticeFermionD> SmootherGCR(0.01,1,ShiftedLinOpDw,simple_fine,16,16);
+  PrecGeneralisedConjugateResidualNonHermitian<LatticeFermionD> SmootherGCR(0.01,1,ShiftedLinOpDw,simple_fine,6,6);
   SmootherGCR.Level(2);
   
   LatticeFermionD f_src(FGrid);
@@ -296,7 +296,7 @@ int main (int argc, char ** argv)
 			    LinOpCoarse,
 			    L2PGCR);
   
-  PrecGeneralisedConjugateResidualNonHermitian<LatticeFermion> L1PGCR(1.0e-8,1000,LinOpDw,TwoLevelPrecon,16,16);
+  PrecGeneralisedConjugateResidualNonHermitian<LatticeFermion> L1PGCR(1.0e-8,1000,LinOpDw,TwoLevelPrecon,32,32);
   L1PGCR.Level(1);
 
   f_res=Zero();

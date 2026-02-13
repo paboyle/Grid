@@ -337,8 +337,8 @@ int main (int argc, char ** argv)
 			    500);
 
   // Breeds left singular vectors with call to HermOp (U)
-  //  U.CreateSubspaceChebyshev(RNG5,MdagPV,
-  U.CreateSubspaceChebyshev(RNG5,PVdagM,
+  //  U.CreateSubspaceChebyshev(RNG5,PVdagM,
+  U.CreateSubspaceChebyshev(RNG5,MdagPV,
 			    nbasis,
 			    4000.0,0.003,
 			    500);

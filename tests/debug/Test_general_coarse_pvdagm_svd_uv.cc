@@ -302,7 +302,7 @@ int main (int argc, char ** argv)
   DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   DomainWallFermionD Dpv(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,M5);
 
-  const int nbasis = 40;
+  const int nbasis = 60;
   const int cb = 0 ;
 
   NextToNearestStencilGeometry5D geom(Coarse5d);
@@ -346,7 +346,7 @@ int main (int argc, char ** argv)
   // Warning: This routine calls PVdagM.Op, not PVdagM.HermOp
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis> Subspace;
   Subspace V(Coarse5d,FGrid,cb);
-  Subspace U(Coarse5d,FGrid,cb);
+  //  Subspace U(Coarse5d,FGrid,cb);
 
   // Breeds right singular vectors with call to HermOp
   V.CreateSubspaceChebyshev(RNG5,PVdagM,
@@ -359,7 +359,7 @@ int main (int argc, char ** argv)
   //			    nbasis,
   //			    4000.0,0.003,
   //			    300);
-  U.subspace=V.subspace;
+  //  U.subspace=V.subspace;
   
   //  typedef Aggregation<vSpinColourVector,vTComplex,2*nbasis> CombinedSubspace;
   //  CombinedSubspace CombinedUV(Coarse5d,FGrid,cb);
@@ -373,7 +373,7 @@ int main (int argc, char ** argv)
   typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
   LittleDiracOperator LittleDiracOpPV(geom,FGrid,Coarse5d);
-  LittleDiracOpPV.CoarsenOperator(PVdagM,U,V);
+  LittleDiracOpPV.CoarsenOperator(PVdagM,V,V);
 
   std::cout<<GridLogMessage<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
@@ -400,7 +400,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"prom  "<<norm2(prom)<<std::endl;
 
   PVdagM.Op(prom,tmp);
-  blockProject(c_proj,tmp,U.subspace);
+  blockProject(c_proj,tmp,V.subspace);
   std::cout<<GridLogMessage<<" Called Big Dirac Op "<<norm2(tmp)<<std::endl;
 
   LittleDiracOpPV.M(c_src,c_res);
@@ -456,7 +456,7 @@ int main (int argc, char ** argv)
   typedef MGPreconditionerSVD<vSpinColourVector,  vTComplex,nbasis> TwoLevelMG;
 
   //  TwoLevelMG TwoLevelPrecon(CombinedUV,CombinedUV,
-  TwoLevelMG TwoLevelPrecon(U,V,
+  TwoLevelMG TwoLevelPrecon(V,V,
 			    PVdagM,
 			    simple_fine,
 			    SmootherGCR,

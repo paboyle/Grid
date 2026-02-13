@@ -141,6 +141,7 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
+  const int Ls=16;
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
@@ -151,8 +152,8 @@ int main (int argc, char ** argv)
   // Construct a coarsened grid
   Coordinate clatt = GridDefaultLatt();
   for(int d=0;d<clatt.size();d++){
-    //    clatt[d] = clatt[d]/2;
-    clatt[d] = clatt[d]/4;
+    clatt[d] = clatt[d]/2;
+    //    clatt[d] = clatt[d]/4;
   }
   GridCartesian *Coarse4d =  SpaceTimeGrid::makeFourDimGrid(clatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());;
 
@@ -161,23 +162,26 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG4(UGrid);   RNG4.SeedFixedIntegers(seeds4);
   GridParallelRNG          CRNG(Coarse4d);CRNG.SeedFixedIntegers(cseeds);
 
-  LatticeFermion    src(FGrid); random(RNG4,src);
+  Complex one(1.0);
+
+  LatticeFermion    src(FGrid); src=one;
   LatticeFermion result(FGrid); result=Zero();
   LatticeFermion    ref(FGrid); ref=Zero();
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
+  LatticeFermion    precsrc(FGrid);
   LatticeGaugeField Umu(UGrid);
 
   FieldMetaData header;
-  std::string file("ckpoint_lat.1000");
+  std::string file("ckpoint_lat");
   NerscIO::readConfiguration(Umu,header,file);
-  
-  RealD csw =1.0;
-  RealD mass=-0.6222;
+
+  RealD csw =0.0;
+  RealD mass=-0.92;
 
   WilsonCloverFermionD Dw(Umu,*UGrid,*UrbGrid,mass,csw,csw);
 
-  const int nbasis = 60;
+  const int nbasis = 40;
   const int cb = 0 ;
   LatticeFermion prom(FGrid);
 
@@ -195,12 +199,13 @@ int main (int argc, char ** argv)
   Subspace Aggregates(Coarse4d,FGrid,cb);
 
   NonHermitianLinearOperator<WilsonCloverFermionD,LatticeFermion> LinOpDw(Dw);
-  ShiftedNonHermitianLinearOperator<WilsonCloverFermionD,LatticeFermion> ShiftedLinOpDw(Dw,0.1);
+  ShiftedNonHermitianLinearOperator<WilsonCloverFermionD,LatticeFermion> ShiftedLinOpDw(Dw,0.01);
 
   Aggregates.CreateSubspaceGCR(RNG4,
 			       LinOpDw,
 			       nbasis);
   
+
   LittleDiracOperator LittleDiracOp(geom,FGrid,Coarse4d);
   LittleDiracOp.CoarsenOperator(LinOpDw,Aggregates);
 
@@ -216,7 +221,6 @@ int main (int argc, char ** argv)
   std::vector<LatticeFermion> subspace(nbasis,FGrid);
   subspace=Aggregates.subspace;
 
-  Complex one(1.0);
   c_src = one;  // 1 in every element for vector 1.
   blockPromote(c_src,err,subspace);
 
@@ -251,6 +255,15 @@ int main (int argc, char ** argv)
    **********
    */
 
+  // CG
+  {
+    MdagMLinearOperator<WilsonFermionD,LatticeFermion> HermOp(Dw);
+    ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
+    Dw.Mdag(src,precsrc);
+    CG(HermOp,precsrc,result);
+    result=Zero();
+  }
+ 
   ///////////////////////////////////////
   // Coarse grid solver test
   ///////////////////////////////////////
@@ -260,8 +273,12 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"******************* "<<std::endl;
   TrivialPrecon<CoarseVector> simple;
   NonHermitianLinearOperator<LittleDiracOperator,CoarseVector> LinOpCoarse(LittleDiracOp);
+  ShiftedNonHermitianLinearOperator<LittleDiracOperator,CoarseVector> ShiftedLinOpCoarse(LittleDiracOp,0.001);
+  //  ShiftedNonHermitianLinearOperator<LittleDiracOperator,CoarseVector> ShiftedLinOpCoarse(LittleDiracOp,0.01);
+  //  ShiftedNonHermitianLinearOperator<LittleDiracOperator,CoarseVector> ShiftedLinOpCoarse(LinOpCoarse,0.001);
   //  PrecGeneralisedConjugateResidualNonHermitian<CoarseVector>  L2PGCR(1.0e-4, 100, LinOpCoarse,simple,10,10); 
-  PrecGeneralisedConjugateResidualNonHermitian<CoarseVector>  L2PGCR(1.0e-2, 200, LinOpCoarse,simple,10,10); 
+  PrecGeneralisedConjugateResidualNonHermitian<CoarseVector>  L2PGCR(1.0e-1, 100, LinOpCoarse,simple,30,30); 
+  //  PrecGeneralisedConjugateResidualNonHermitian<CoarseVector>  L2PGCR(2.0e-1, 50, ShiftedLinOpCoarse,simple,50,50); 
   L2PGCR.Level(3);
   c_res=Zero();
   L2PGCR(c_src,c_res);
@@ -274,7 +291,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"******************* "<<std::endl;
   TrivialPrecon<LatticeFermionD> simple_fine;
 
-  PrecGeneralisedConjugateResidualNonHermitian<LatticeFermionD> SmootherGCR(0.01,1,ShiftedLinOpDw,simple_fine,16,16);
+  PrecGeneralisedConjugateResidualNonHermitian<LatticeFermionD> SmootherGCR(0.1,1,ShiftedLinOpDw,simple_fine,6,6);
   SmootherGCR.Level(2);
   
   LatticeFermionD f_src(FGrid);

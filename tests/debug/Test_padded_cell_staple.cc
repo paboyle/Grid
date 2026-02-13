@@ -490,7 +490,7 @@ public:
 
 	    }
 	  }
-	  GRID_ASSERT(s==nshift);
+	  assert(s==nshift);
 	  coalescedWrite(gStaple_v[ss],stencil_ss);
 	}
 	);
