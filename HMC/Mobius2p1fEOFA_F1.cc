@@ -28,7 +28,11 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Grid/Grid.h>
+
+#include "disable_examples_without_instantiations.h"
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
+#include<Grid/Grid.h>
 
 #ifdef GRID_DEFAULT_PRECISION_DOUBLE
 #define MIXED_PRECISION
@@ -442,5 +446,4 @@ int main(int argc, char **argv) {
   Grid_finalize();
 } // main
 
-
-
+#endif

@@ -26,6 +26,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+#include "disable_benchmarks_without_instantiations.h"
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
+
 #include <Grid/Grid.h>
 #include <Grid/algorithms/blas/BatchedBlas.h>
 
@@ -978,3 +982,5 @@ int main (int argc, char ** argv)
   Grid_finalize();
   fclose(FP);
 }
+
+#endif

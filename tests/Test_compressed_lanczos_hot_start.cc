@@ -30,6 +30,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
  *  Reimplement the badly named "multigrid" lanczos as compressed Lanczos using the features 
  *  in Grid that were intended to be used to support blocked Aggregates, from
  */
+#include "disable_tests_without_instantiations.h"
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
 #include <Grid/Grid.h>
 #include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
 #include <Grid/algorithms/iterative/LocalCoherenceLanczos.h>
@@ -256,3 +259,4 @@ int main (int argc, char ** argv) {
   Grid_finalize();
 }
 
+#endif

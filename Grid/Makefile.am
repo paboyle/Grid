@@ -54,22 +54,24 @@ Version.h: version-cache
 include Make.inc
 include Eigen.inc
 
-extra_sources+=$(WILS_FERMION_FILES)
-extra_sources+=$(STAG_FERMION_FILES)
+if BUILD_FERMION_INSTANTIATIONS
+  extra_sources+=$(WILS_FERMION_FILES)
+  extra_sources+=$(STAG_FERMION_FILES)
 if BUILD_ZMOBIUS
-  extra_sources+=$(ZWILS_FERMION_FILES)
+    extra_sources+=$(ZWILS_FERMION_FILES)
 endif
 if BUILD_GPARITY
-  extra_sources+=$(GP_FERMION_FILES)
+    extra_sources+=$(GP_FERMION_FILES)
 endif
 if BUILD_FERMION_REPS
-  extra_sources+=$(ADJ_FERMION_FILES)
-  extra_sources+=$(TWOIND_FERMION_FILES)
+    extra_sources+=$(ADJ_FERMION_FILES)
+    extra_sources+=$(TWOIND_FERMION_FILES)
 endif
 if BUILD_SP
     extra_sources+=$(SP_FERMION_FILES)
 if BUILD_FERMION_REPS
-    extra_sources+=$(SP_TWOIND_FERMION_FILES)
+      extra_sources+=$(SP_TWOIND_FERMION_FILES)
+endif
 endif
 endif
 

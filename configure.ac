@@ -172,6 +172,12 @@ case ${ac_TRACING} in
 esac
 
 ############### fermions
+AC_ARG_ENABLE([fermion-instantiations],
+     [AS_HELP_STRING([--enable-fermion-instantiations=yes|no],[enable fermion instantiations])],
+     [ac_FERMION_REPS=${enable_fermion_instantiations}], [ac_FERMION_INSTANTIATIONS=yes])
+
+AM_CONDITIONAL(BUILD_FERMION_INSTANTIATIONS, [ test "${ac_FERMION_INSTANTIATIONS}X" == "yesX" ])
+
 AC_ARG_ENABLE([fermion-reps],
      [AS_HELP_STRING([--enable-fermion-reps=yes|no],[enable extra fermion representation support])],
      [ac_FERMION_REPS=${enable_fermion_reps}], [ac_FERMION_REPS=yes])
