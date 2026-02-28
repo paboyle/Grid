@@ -351,7 +351,7 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 		     });						\
   });
 
-#define accelerator_barrier(dummy) { theGridAccelerator->wait(); theGridAccelerator->wait(); }
+#define accelerator_barrier(dummy) { theGridAccelerator->wait_and_throw(); theGridAccelerator->wait_and_throw(); }
 
 inline void *acceleratorAllocShared(size_t bytes){ return malloc_shared(bytes,*theGridAccelerator);};
 inline void *acceleratorAllocHost(size_t bytes)  { return malloc_host(bytes,*theGridAccelerator);};
@@ -360,7 +360,7 @@ inline void acceleratorFreeHost(void *ptr){free(ptr,*theGridAccelerator);};
 inline void acceleratorFreeShared(void *ptr){free(ptr,*theGridAccelerator);};
 inline void acceleratorFreeDevice(void *ptr){free(ptr,*theGridAccelerator);};
 
-inline void acceleratorCopySynchronise(void) {  theCopyAccelerator->wait(); theCopyAccelerator->wait(); }
+inline void acceleratorCopySynchronise(void) {  theCopyAccelerator->wait_and_throw(); theCopyAccelerator->wait_and_throw(); }
 
 
 ///////
@@ -370,7 +370,7 @@ typedef sycl::event acceleratorEvent_t;
 
 inline void acceleratorEventWait(acceleratorEvent_t ev)
 {
-  ev.wait();
+  ev.wait_and_throw();
 }
 
 inline int acceleratorEventIsComplete(acceleratorEvent_t ev)
@@ -382,9 +382,9 @@ inline acceleratorEvent_t acceleratorCopyDeviceToDeviceAsynch(void *from,void *t
 inline acceleratorEvent_t acceleratorCopyToDeviceAsynch(void *from,void *to,size_t bytes)        { return theCopyAccelerator->memcpy(to,from,bytes); }
 inline acceleratorEvent_t acceleratorCopyFromDeviceAsynch(void *from,void *to,size_t bytes)      { return theCopyAccelerator->memcpy(to,from,bytes); }
 
-inline void acceleratorCopyToDevice(const void *from,void *to,size_t bytes)  { theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait();theCopyAccelerator->wait();}
-inline void acceleratorCopyFromDevice(const void *from,void *to,size_t bytes){ theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait();theCopyAccelerator->wait();}
-inline void acceleratorMemSet(void *base,int value,size_t bytes) { theCopyAccelerator->memset(base,value,bytes); theCopyAccelerator->wait();theCopyAccelerator->wait();}
+inline void acceleratorCopyToDevice(const void *from,void *to,size_t bytes)  { theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait_and_throw();theCopyAccelerator->wait_and_throw();}
+inline void acceleratorCopyFromDevice(const void *from,void *to,size_t bytes){ theCopyAccelerator->memcpy(to,from,bytes); theCopyAccelerator->wait_and_throw();theCopyAccelerator->wait_and_throw();}
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { theCopyAccelerator->memset(base,value,bytes); theCopyAccelerator->wait_and_throw();theCopyAccelerator->wait_and_throw();}
 
 inline int  acceleratorIsCommunicable(void *ptr)
 {
