@@ -131,7 +131,10 @@ public:
     RealD scale;
 
     TrivialPrecon<FineField> simple_fine;
-    PrecGeneralisedConjugateResidualNonHermitian<FineField> GCR(0.001,10,DiracOp,simple_fine,30,30);
+    //    PrecGeneralisedConjugateResidualNonHermitian<FineField> GCR(0.001,10,DiracOp,simple_fine,30,30);
+    //    PrecGeneralisedConjugateResidualNonHermitian<FineField> GCR(0.001,10,DiracOp,simple_fine,12,12);
+    //    PrecGeneralisedConjugateResidualNonHermitian<FineField> GCR(0.001,30,DiracOp,simple_fine,12,12);
+    PrecGeneralisedConjugateResidualNonHermitian<FineField> GCR(0.001,30,DiracOp,simple_fine,10,10);
     FineField noise(FineGrid);
     FineField src(FineGrid);
     FineField guess(FineGrid);
