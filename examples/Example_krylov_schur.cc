@@ -311,7 +311,6 @@ int main (int argc, char ** argv)
   std::vector<LatticeFermion> src(Nu,FGrid); 
   for(int i=0;i<Nu;i++) random(RNG5,src[i]);
 
-#if 1
   if(LanParams.ReadEvec) {
     std::string evecs_file="evec_in";
     std::cout << GridLogIRL<< "Reading evecs from "<<evecs_file<<std::endl;
@@ -321,7 +320,6 @@ int main (int argc, char ** argv)
     RD.readScidacFieldRecord(src[0],record);
     RD.close();
   }
-#endif
 
   Coordinate origin ({0,0,0,0});
   auto tmpSrc = peekSite(src[0], origin);

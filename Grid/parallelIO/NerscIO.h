@@ -122,7 +122,7 @@ public:
     field.checksum = std::stoul(header["CHECKSUM"],0,16);
     field.ensemble_id      = header["ENSEMBLE_ID"];
     field.ensemble_label   = header["ENSEMBLE_LABEL"];
-    field.sequence_number  = std::stol(header["SEQUENCE_NUMBER"]);
+//    field.sequence_number  = std::stol(header["SEQUENCE_NUMBER"]);
     field.creator          = header["CREATOR"];
     field.creator_hardware = header["CREATOR_HARDWARE"];
     field.creation_date    = header["CREATION_DATE"];

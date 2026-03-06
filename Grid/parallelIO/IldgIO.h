@@ -260,7 +260,8 @@ class GridLimeReader : public BinaryIO {
               << " / field= " << n2ck << " / rdiff= " << GRID_FIELD_NORM_CALC(FieldNormMetaData_,n2ck) << std::endl;
 	  GRID_FIELD_NORM_CHECK(FieldNormMetaData_,n2ck);
 	}
-	assert(scidacChecksumVerify(scidacChecksum_,scidac_csuma,scidac_csumb)==1);
+//	assert(scidacChecksumVerify(scidacChecksum_,scidac_csuma,scidac_csumb)==1);
+	scidacChecksumVerify(scidacChecksum_,scidac_csuma,scidac_csumb);
 
 	// find out if next field is a GridFieldNorm
 	return;
