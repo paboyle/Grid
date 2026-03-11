@@ -200,6 +200,9 @@ AM_CONDITIONAL(BUILD_ZMOBIUS, [ test "${ac_ZMOBIUS}X" == "yesX" ])
 case ${ac_FERMION_REPS} in
    yes) AC_DEFINE([ENABLE_FERMION_REPS],[1],[non QCD fermion reps]);;
 esac
+case ${ac_FERMION_INSTANTIATIONS} in
+   yes) AC_DEFINE([ENABLE_FERMION_INSTANTIONS],[1],[enable fermions]);;
+esac
 case ${ac_GPARITY} in
    yes) AC_DEFINE([ENABLE_GPARITY],[1],[fermion actions with GPARITY BCs]);;
 esac
