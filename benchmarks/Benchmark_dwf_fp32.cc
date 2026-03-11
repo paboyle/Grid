@@ -21,6 +21,7 @@
     *************************************************************************************/
     /*  END LEGAL */
 #include "disable_benchmarks_without_instantiations.h"
+
 #ifdef ENABLE_FERMION_INSTANTIATIONS
 
 #include <Grid/Grid.h>

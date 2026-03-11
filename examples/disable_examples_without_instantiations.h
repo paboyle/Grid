@@ -1,3 +1,4 @@
+#include <Grid/Grid.h>
 #pragma once
 
 #ifndef ENABLE_FERMION_INSTANTIATIONS
