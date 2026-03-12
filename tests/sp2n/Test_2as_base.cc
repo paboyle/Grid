@@ -16,7 +16,7 @@ static void check_dimensions() {
     std::cout << GridLogMessage << "Nc = " << this_n << " algebra dimension is " << this_algebra_dim << std::endl;
     realA = Sp_TwoIndex<this_nc, AntiSymmetric>::Dimension + Sp_TwoIndex<this_nc, Symmetric>::Dimension;
     std::cout << GridLogMessage << "Checking dim(2AS) + dim(AS) + 1 = Nc * Nc " << this_algebra_dim << std::endl;
-    assert ( realA == this_nc * this_nc - 1); // Nc x Nc = dim(2indxS) + dim(2indxAS) + dim(singlet)
+    GRID_ASSERT ( realA == this_nc * this_nc - 1); // Nc x Nc = dim(2indxS) + dim(2indxAS) + dim(singlet)
 }
 
 template<int this_nc, TwoIndexSymmetry S>
@@ -35,7 +35,7 @@ static void run_symmetry_checks() {
         Sp_TwoIndex<this_nc, S>::base(a, eij_c);
         e_sum = eij_c - realS * transpose(eij_c);
         std::cout << GridLogMessage << "e_ab - (" << S << " * e_ab^T ) = " << norm2(e_sum) << std::endl;
-        assert(norm2(e_sum) < 1e-8);
+        GRID_ASSERT(norm2(e_sum) < 1e-8);
           
     }
 }
@@ -59,7 +59,7 @@ static void run_traces_checks() {
         realA = norm2(trace(Omega*eij_a));
         std::cout << GridLogMessage << "Checkig Omega-trace for e_{ab=" << a << "} " << std::endl;
         //std::cout << GridLogMessage << "Tr ( Omega e_{ab=" << a << "} ) = " << realA << std::endl;
-        assert(realA < 1e-8);
+        GRID_ASSERT(realA < 1e-8);
         for (int b=0; b < Sp_TwoIndex<this_nc, S>::Dimension; b++) {
             Sp_TwoIndex<this_nc, S>::base(b, eij_b);
             auto d_ab = TensorRemove(trace(eij_a * eij_b));
@@ -68,12 +68,12 @@ static void run_traces_checks() {
     #endif
             std::cout << GridLogMessage << "Checking orthonormality for e_{ab = " << a << "} " << std::endl;
             if (a==b) {
-                assert(real(d_ab) - realS < 1e-8);
+                GRID_ASSERT(real(d_ab) - realS < 1e-8);
             } else {
-                assert(real(d_ab) < 1e-8);
+                GRID_ASSERT(real(d_ab) < 1e-8);
             }
-            assert(imag(d_ab) < 1e-8);
-            assert(imag(d_ab) < 1e-8);
+            GRID_ASSERT(imag(d_ab) < 1e-8);
+            GRID_ASSERT(imag(d_ab) < 1e-8);
         }
     }
     
@@ -118,8 +118,8 @@ static void run_generators_checks() {
             sum_im += imag(TensorRemove(trace(tmp_l+tmp_r)));
         }
         std::cout << GridLogMessage << "re-evaluated trace of the generator " << gen_id << " is " << sum << " " << sum_im << std::endl;
-        assert ( sum < 1e-8) ;
-        assert ( sum_im < 1e-8) ;
+        GRID_ASSERT ( sum < 1e-8) ;
+        GRID_ASSERT ( sum_im < 1e-8) ;
     }
     
 }

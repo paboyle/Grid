@@ -97,7 +97,7 @@ public:
   static Lattice<covariant> CovShiftForward(const GaugeLinkField &Link, int mu,
                                             const Lattice<covariant> &field)
   {
-    assert(_conjDirs.size() == Nd);
+    GRID_ASSERT(_conjDirs.size() == Nd);
     if(_conjDirs[mu]) 
       return ConjugateBC::CovShiftForward(Link, mu, field);
     else
@@ -108,7 +108,7 @@ public:
   static Lattice<covariant> CovShiftBackward(const GaugeLinkField &Link, int mu,
                                              const Lattice<covariant> &field)
   {
-    assert(_conjDirs.size() == Nd);
+    GRID_ASSERT(_conjDirs.size() == Nd);
     if(_conjDirs[mu]) 
       return ConjugateBC::CovShiftBackward(Link, mu, field);
     else 
@@ -123,7 +123,7 @@ public:
   static inline GaugeLinkField
   CovShiftIdentityBackward(const GaugeLinkField &Link, int mu)
   {
-    assert(_conjDirs.size() == Nd);
+    GRID_ASSERT(_conjDirs.size() == Nd);
     if(_conjDirs[mu]) 
       return ConjugateBC::CovShiftIdentityBackward(Link, mu);
     else 
@@ -132,7 +132,7 @@ public:
   static inline GaugeLinkField
   CovShiftIdentityForward(const GaugeLinkField &Link, int mu)
   {
-    assert(_conjDirs.size() == Nd);
+    GRID_ASSERT(_conjDirs.size() == Nd);
     if(_conjDirs[mu]) 
       return ConjugateBC::CovShiftIdentityForward(Link,mu);
     else
@@ -148,7 +148,7 @@ public:
   //Note: While this is used for Staples it is also applicable for shifting gauge links or gauge transformation matrices
   static inline GaugeLinkField ShiftStaple(const GaugeLinkField &Link, int mu)
   {
-    assert(_conjDirs.size() == Nd);
+    GRID_ASSERT(_conjDirs.size() == Nd);
     if(_conjDirs[mu]) 
       return ConjugateBC::ShiftStaple(Link,mu);
     else     
@@ -169,7 +169,7 @@ public:
   //shift = -1
   //Out(x) = U_\mu(x-\hat\mu mod L)
   static inline GaugeLinkField CshiftLink(const GaugeLinkField &Link, int mu, int shift){
-    assert(_conjDirs.size() == Nd);
+    GRID_ASSERT(_conjDirs.size() == Nd);
     if(_conjDirs[mu]) 
       return ConjugateBC::CshiftLink(Link,mu,shift);
     else     

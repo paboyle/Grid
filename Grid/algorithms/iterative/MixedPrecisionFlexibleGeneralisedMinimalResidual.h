@@ -37,7 +37,7 @@ class MixedPrecisionFlexibleGeneralisedMinimalResidual : public OperatorFunction
 
   using OperatorFunction<FieldD>::operator();
 
-  bool ErrorOnNoConverge; // Throw an assert when MPFGMRES fails to converge,
+  bool ErrorOnNoConverge; // Throw an GRID_ASSERT when MPFGMRES fails to converge,
                           // defaults to true
 
   RealD   Tolerance;
@@ -91,7 +91,7 @@ class MixedPrecisionFlexibleGeneralisedMinimalResidual : public OperatorFunction
     conformable(psi, src);
 
     RealD guess = norm2(psi);
-    assert(std::isnan(guess) == 0);
+    GRID_ASSERT(std::isnan(guess) == 0);
 
     RealD cp;
     RealD ssq = norm2(src);
@@ -150,7 +150,7 @@ class MixedPrecisionFlexibleGeneralisedMinimalResidual : public OperatorFunction
     std::cout << GridLogMessage << "MPFGMRES did NOT converge" << std::endl;
 
     if (ErrorOnNoConverge)
-      assert(0);
+      GRID_ASSERT(0);
   }
 
   RealD outerLoopBody(LinearOperatorBase<FieldD> &LinOp, const FieldD &src, FieldD &psi, RealD rsq) {
@@ -197,7 +197,7 @@ class MixedPrecisionFlexibleGeneralisedMinimalResidual : public OperatorFunction
       }
     }
 
-    assert(0); // Never reached
+    GRID_ASSERT(0); // Never reached
     return cp;
   }
 

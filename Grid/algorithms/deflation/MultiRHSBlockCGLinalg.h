@@ -160,7 +160,7 @@ public:
     uint64_t words;
 
     nrhs = X.size();
-    assert(X.size()==Y.size());
+    GRID_ASSERT(X.size()==Y.size());
     conformable(X[0],Y[0]);
 
     grid  = X[0].Grid();
@@ -259,7 +259,7 @@ public:
     uint64_t words;
 
     nrhs = X.size();
-    assert(X.size()==Y.size());
+    GRID_ASSERT(X.size()==Y.size());
     conformable(X[0],Y[0]);
 
     grid  = X[0].Grid();
@@ -267,7 +267,7 @@ public:
     vol   = grid->oSites()/rd0;
     words = rd0*sizeof(vector_object)/sizeof(scalar);
     int64_t vw = vol * words;
-    assert(vw == grid->lSites()*sizeof(scalar_object)/sizeof(scalar));
+    GRID_ASSERT(vw == grid->lSites()*sizeof(scalar_object)/sizeof(scalar));
 
     RealD t0 = usecond();
     BLAS_X.resize(nrhs * vw); // cost free if size doesn't change

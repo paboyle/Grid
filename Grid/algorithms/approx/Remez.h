@@ -134,7 +134,7 @@ class AlgRemez
   virtual ~AlgRemez();
 
   int getDegree(void){ 
-    assert(n==d);
+    GRID_ASSERT(n==d);
     return n;
   }
   // Reset the bounds of the approximation

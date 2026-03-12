@@ -292,7 +292,7 @@ void *MemoryManager::Insert(void *ptr,size_t bytes,int type)
 void *MemoryManager::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim, uint64_t &cacheBytes) 
 {
 #ifdef GRID_OMP
-  assert(omp_in_parallel()==0);
+  GRID_ASSERT(omp_in_parallel()==0);
 #endif 
 
   if (ncache == 0) return ptr;
@@ -345,7 +345,7 @@ void *MemoryManager::Lookup(size_t bytes,int type)
 void *MemoryManager::Lookup(size_t bytes,AllocationCacheEntry *entries,int ncache,uint64_t & cacheBytes) 
 {
 #ifdef GRID_OMP
-  assert(omp_in_parallel()==0);
+  GRID_ASSERT(omp_in_parallel()==0);
 #endif 
   for(int e=0;e<ncache;e++){
     if ( entries[e].valid && ( entries[e].bytes == bytes ) ) {

@@ -24,6 +24,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
+#include "disable_tests_without_instantiations.h"
+#ifdef ENABLE_FERMION_INSTANTIATIONS
 
 #include <Grid/Grid.h>
 #include <Grid/qcd/utils/A2Autils.h>
@@ -157,3 +159,5 @@ int main(int argc, char *argv[])
   
   return EXIT_SUCCESS;
 }
+
+#endif

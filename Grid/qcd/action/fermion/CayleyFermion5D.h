@@ -126,7 +126,7 @@ public:
 
   // possible boost
   std::vector<ComplexD> qmu;
-  void set_qmu(std::vector<ComplexD> _qmu) { qmu=_qmu; assert(qmu.size()==Nd);};
+  void set_qmu(std::vector<ComplexD> _qmu) { qmu=_qmu; GRID_ASSERT(qmu.size()==Nd);};
   void addQmu(const FermionField &in, FermionField &out, int dag);
   
   // Cayley form Moebius (tanh and zolotarev)

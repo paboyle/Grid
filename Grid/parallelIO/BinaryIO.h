@@ -293,9 +293,9 @@ class BinaryIO {
     // Flatten the file
     uint64_t lsites = grid->lSites();
     if ( control & BINARYIO_MASTER_APPEND )  {
-      assert(iodata.size()==1);
+      GRID_ASSERT(iodata.size()==1);
     } else {
-      assert(lsites==iodata.size());
+      GRID_ASSERT(lsites==iodata.size());
     }
     for(int d=0;d<ndim;d++){
       gStart[d] = lLattice[d]*pcoor[d];
@@ -326,20 +326,20 @@ class BinaryIO {
     // Sobj in MPI phrasing
     //////////////////////////////////////////////////////////////////////////////
     int ierr;
-    ierr = MPI_Type_contiguous(numword,mpiword,&mpiObject);    assert(ierr==0);
+    ierr = MPI_Type_contiguous(numword,mpiword,&mpiObject);    GRID_ASSERT(ierr==0);
     ierr = MPI_Type_commit(&mpiObject);
 
     //////////////////////////////////////////////////////////////////////////////
     // File global array data type
     //////////////////////////////////////////////////////////////////////////////
-    ierr=MPI_Type_create_subarray(ndim,&gLattice[0],&lLattice[0],&gStart[0],MPI_ORDER_FORTRAN, mpiObject,&fileArray);    assert(ierr==0);
-    ierr=MPI_Type_commit(&fileArray);    assert(ierr==0);
+    ierr=MPI_Type_create_subarray(ndim,&gLattice[0],&lLattice[0],&gStart[0],MPI_ORDER_FORTRAN, mpiObject,&fileArray);    GRID_ASSERT(ierr==0);
+    ierr=MPI_Type_commit(&fileArray);    GRID_ASSERT(ierr==0);
 
     //////////////////////////////////////////////////////////////////////////////
     // local lattice array
     //////////////////////////////////////////////////////////////////////////////
-    ierr=MPI_Type_create_subarray(ndim,&lLattice[0],&lLattice[0],&lStart[0],MPI_ORDER_FORTRAN, mpiObject,&localArray);    assert(ierr==0);
-    ierr=MPI_Type_commit(&localArray);    assert(ierr==0);
+    ierr=MPI_Type_create_subarray(ndim,&lLattice[0],&lLattice[0],&lStart[0],MPI_ORDER_FORTRAN, mpiObject,&localArray);    GRID_ASSERT(ierr==0);
+    ierr=MPI_Type_commit(&localArray);    GRID_ASSERT(ierr==0);
 #endif
 
     //////////////////////////////////////////////////////////////////////////////
@@ -349,8 +349,8 @@ class BinaryIO {
     int ieee32    = (format == std::string("IEEE32"));
     int ieee64big = (format == std::string("IEEE64BIG"));
     int ieee64    = (format == std::string("IEEE64") || format == std::string("IEEE64LITTLE"));
-    assert(ieee64||ieee32|ieee64big||ieee32big);
-    assert((ieee64+ieee32+ieee64big+ieee32big)==1);
+    GRID_ASSERT(ieee64||ieee32|ieee64big||ieee32big);
+    GRID_ASSERT((ieee64+ieee32+ieee64big+ieee32big)==1);
     //////////////////////////////////////////////////////////////////////////////
     // Do the I/O
     //////////////////////////////////////////////////////////////////////////////
@@ -361,9 +361,9 @@ class BinaryIO {
       if ( (control & BINARYIO_LEXICOGRAPHIC) && (nrank > 1) ) {
 #ifdef USE_MPI_IO
 	std::cout<< GridLogMessage<<"IOobject: MPI read I/O "<< file<< std::endl;
-	ierr=MPI_File_open(grid->communicator,(char *) file.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);    assert(ierr==0);
-	ierr=MPI_File_set_view(fh, disp, mpiObject, fileArray, "native", MPI_INFO_NULL);    assert(ierr==0);
-	ierr=MPI_File_read_all(fh, &iodata[0], 1, localArray, &status);    assert(ierr==0);
+	ierr=MPI_File_open(grid->communicator,(char *) file.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);    GRID_ASSERT(ierr==0);
+	ierr=MPI_File_set_view(fh, disp, mpiObject, fileArray, "native", MPI_INFO_NULL);    GRID_ASSERT(ierr==0);
+	ierr=MPI_File_read_all(fh, &iodata[0], 1, localArray, &status);    GRID_ASSERT(ierr==0);
 	MPI_File_close(&fh);
 	MPI_Type_free(&fileArray);
 	MPI_Type_free(&localArray);
@@ -384,12 +384,13 @@ class BinaryIO {
           fin.seekg(offset + myrank * lsites * sizeof(fobj));
         }
         fin.read((char *)&iodata[0], iodata.size() * sizeof(fobj));
-        assert(fin.fail() == 0);
+        GRID_ASSERT(fin.fail() == 0);
         fin.close();
       }
-      timer.Stop();
-
+      
       grid->Barrier();
+
+	  timer.Stop();
 
       bstimer.Start();
       ScidacChecksum(grid,iodata,scidac_csuma,scidac_csumb);
@@ -435,11 +436,11 @@ class BinaryIO {
 
         std::cout << GridLogDebug << "MPI write I/O set view " << file << std::endl;
         ierr = MPI_File_set_view(fh, disp, mpiObject, fileArray, "native", MPI_INFO_NULL);
-        assert(ierr == 0);
+        GRID_ASSERT(ierr == 0);
 
         std::cout << GridLogDebug << "MPI write I/O write all " << file << std::endl;
         ierr = MPI_File_write_all(fh, &iodata[0], 1, localArray, &status);
-        assert(ierr == 0);
+        GRID_ASSERT(ierr == 0);
 
         MPI_Offset os;
         MPI_File_get_position(fh, &os);
@@ -506,6 +507,7 @@ class BinaryIO {
   offset  = fout.tellp();
 	fout.close();
       }
+      grid->Barrier();
       timer.Stop();
     }
     

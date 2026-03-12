@@ -290,7 +290,7 @@ class GridLimeReader : public BinaryIO {
 	return;
       }      
     }
-    assert(0);
+    GRID_ASSERT(0);
   }
   ////////////////////////////////////////////
   // Read a generic serialisable object
@@ -315,7 +315,7 @@ class GridLimeReader : public BinaryIO {
       }
 
     }  
-    assert(0);
+    GRID_ASSERT(0);
   }
 
   template<class serialisable_object>
@@ -349,7 +349,7 @@ class GridLimeWriter : public BinaryIO
      filename= _filename;
      if ( boss_node ) {
        File = fopen(filename.c_str(), "w");
-       LimeW = limeCreateWriter(File); assert(LimeW != NULL );
+       LimeW = limeCreateWriter(File); GRID_ASSERT(LimeW != NULL );
      }
    }
    /////////////////////////////////////////////
@@ -369,7 +369,7 @@ class GridLimeWriter : public BinaryIO
     if ( boss_node ) {
       LimeRecordHeader *h;
       h = limeCreateHeader(MB, ME, const_cast<char *>(message.c_str()), PayloadSize);
-      assert(limeWriteRecordHeader(h, LimeW) >= 0);
+      GRID_ASSERT(limeWriteRecordHeader(h, LimeW) >= 0);
       limeDestroyHeader(h);
     }
     return LIME_SUCCESS;
@@ -387,11 +387,11 @@ class GridLimeWriter : public BinaryIO
       //    std::cout << " xmlstring "<< nbytes<< " " << xmlstring <<std::endl;
       int err;
       LimeRecordHeader *h = limeCreateHeader(MB, ME,const_cast<char *>(record_name.c_str()), nbytes); 
-      assert(h!= NULL);
+      GRID_ASSERT(h!= NULL);
       
-      err=limeWriteRecordHeader(h, LimeW);                    assert(err>=0);
-      err=limeWriteRecordData(&xmlstring[0], &nbytes, LimeW); assert(err>=0);
-      err=limeWriterCloseRecord(LimeW);                       assert(err>=0);
+      err=limeWriteRecordHeader(h, LimeW);                    GRID_ASSERT(err>=0);
+      err=limeWriteRecordData(&xmlstring[0], &nbytes, LimeW); GRID_ASSERT(err>=0);
+      err=limeWriterCloseRecord(LimeW);                       GRID_ASSERT(err>=0);
       limeDestroyHeader(h);
     }
   }
@@ -432,7 +432,7 @@ class GridLimeWriter : public BinaryIO
     ////////////////////////////////////////////////////////////////////
     
     GridBase *grid = field.Grid();
-    assert(boss_node == field.Grid()->IsBoss() );
+    GRID_ASSERT(boss_node == field.Grid()->IsBoss() );
 
     FieldNormMetaData FNMD; FNMD.norm2 = norm2(field);
 
@@ -474,7 +474,7 @@ class GridLimeWriter : public BinaryIO
     if ( boss_node ) {
       fseek(File,0,SEEK_END);             
       uint64_t offset2 = ftello(File);     //    std::cout << " now at offset "<<offset2 << std::endl;
-      assert( (offset2-offset1) == PayloadSize);
+      GRID_ASSERT( (offset2-offset1) == PayloadSize);
     }
 
     /////////////////////////////////////////////////////////////
@@ -482,7 +482,7 @@ class GridLimeWriter : public BinaryIO
     /////////////////////////////////////////////////////////////
 
     if ( boss_node ) { 
-      err=limeWriterCloseRecord(LimeW);  assert(err>=0);
+      err=limeWriterCloseRecord(LimeW);  GRID_ASSERT(err>=0);
     }
     ////////////////////////////////////////
     // Write checksum element, propagaing forward from the BinaryIO
@@ -622,8 +622,8 @@ class IldgWriter : public ScidacWriter {
     uint64_t PayloadSize = LFN.size();
     int err;
     createLimeRecordHeader(ILDG_DATA_LFN, 0 , 0, PayloadSize);
-    err=limeWriteRecordData(const_cast<char*>(LFN.c_str()), &PayloadSize,LimeW); assert(err>=0);
-    err=limeWriterCloseRecord(LimeW); assert(err>=0);
+    err=limeWriteRecordData(const_cast<char*>(LFN.c_str()), &PayloadSize,LimeW); GRID_ASSERT(err>=0);
+    err=limeWriterCloseRecord(LimeW); GRID_ASSERT(err>=0);
   }
 
   ////////////////////////////////////////////////////////////////
@@ -657,7 +657,7 @@ class IldgWriter : public ScidacWriter {
     header.sequence_number = sequence;
     header.ildg_lfn = LFN;
 
-    assert ( (format == std::string("IEEE32BIG"))  
+    GRID_ASSERT ( (format == std::string("IEEE32BIG"))  
            ||(format == std::string("IEEE64BIG")) );
 
     //////////////////////////////////////////////////////
@@ -677,8 +677,8 @@ class IldgWriter : public ScidacWriter {
     ildgfmt.ly = header.dimension[1];
     ildgfmt.lz = header.dimension[2];
     ildgfmt.lt = header.dimension[3];
-    assert(header.nd==4);
-    assert(header.nd==header.dimension.size());
+    GRID_ASSERT(header.nd==4);
+    GRID_ASSERT(header.nd==header.dimension.size());
 
     //////////////////////////////////////////////////////////////////////////////
     // Field norm tests
@@ -735,7 +735,7 @@ class IldgReader : public GridLimeReader {
 
     Coordinate dims = Umu.Grid()->FullDimensions();
 
-    assert(dims.size()==4);
+    GRID_ASSERT(dims.size()==4);
 
     // Metadata holders
     ildgFormat     ildgFormat_    ;
@@ -794,10 +794,10 @@ class IldgReader : public GridLimeReader {
 	  if ( ildgFormat_.precision == 64 ) format = std::string("IEEE64BIG");
 	  if ( ildgFormat_.precision == 32 ) format = std::string("IEEE32BIG");
 
-	  assert( ildgFormat_.lx == dims[0]);
-	  assert( ildgFormat_.ly == dims[1]);
-	  assert( ildgFormat_.lz == dims[2]);
-	  assert( ildgFormat_.lt == dims[3]);
+	  GRID_ASSERT( ildgFormat_.lx == dims[0]);
+	  GRID_ASSERT( ildgFormat_.ly == dims[1]);
+	  GRID_ASSERT( ildgFormat_.lz == dims[2]);
+	  GRID_ASSERT( ildgFormat_.lt == dims[3]);
 
 	  found_ildgFormat = 1;
 	}
@@ -814,10 +814,10 @@ class IldgReader : public GridLimeReader {
 
 	  format = FieldMetaData_.floating_point;
 
-	  assert(FieldMetaData_.dimension[0] == dims[0]);
-	  assert(FieldMetaData_.dimension[1] == dims[1]);
-	  assert(FieldMetaData_.dimension[2] == dims[2]);
-	  assert(FieldMetaData_.dimension[3] == dims[3]);
+	  GRID_ASSERT(FieldMetaData_.dimension[0] == dims[0]);
+	  GRID_ASSERT(FieldMetaData_.dimension[1] == dims[1]);
+	  GRID_ASSERT(FieldMetaData_.dimension[2] == dims[2]);
+	  GRID_ASSERT(FieldMetaData_.dimension[3] == dims[3]);
 
 	  found_FieldMetaData = 1;
 	}
@@ -867,13 +867,13 @@ class IldgReader : public GridLimeReader {
     // Minimally must find binary segment and checksum
     // Since this is an ILDG reader require ILDG format
     //////////////////////////////////////////////////////
-    assert(found_ildgLFN);
-    assert(found_ildgBinary);
-    assert(found_ildgFormat);
-    assert(found_scidacChecksum);
+    GRID_ASSERT(found_ildgLFN);
+    GRID_ASSERT(found_ildgBinary);
+    GRID_ASSERT(found_ildgFormat);
+    GRID_ASSERT(found_scidacChecksum);
 
     // Must find something with the lattice dimensions
-    assert(found_FieldMetaData||found_ildgFormat);
+    GRID_ASSERT(found_FieldMetaData||found_ildgFormat);
 
     if ( found_FieldMetaData ) {
 
@@ -881,9 +881,9 @@ class IldgReader : public GridLimeReader {
 
     } else { 
 
-      assert(found_ildgFormat);
+      GRID_ASSERT(found_ildgFormat);
       const std::string stNC = std::to_string( Nc ) ;
-      assert ( ildgFormat_.field == std::string("su"+stNC+"gauge") );
+      GRID_ASSERT ( ildgFormat_.field == std::string("su"+stNC+"gauge") );
 
       ///////////////////////////////////////////////////////////////////////////////////////
       // Populate our Grid metadata as best we can
@@ -928,20 +928,20 @@ class IldgReader : public GridLimeReader {
       FieldMetaData_.scidac_checksuma = stoull(scidacChecksum_.suma,0,16);
       FieldMetaData_.scidac_checksumb = stoull(scidacChecksum_.sumb,0,16);
       scidacChecksumVerify(scidacChecksum_,scidac_csuma,scidac_csumb);
-      assert( scidac_csuma ==FieldMetaData_.scidac_checksuma);
-      assert( scidac_csumb ==FieldMetaData_.scidac_checksumb);
+      GRID_ASSERT( scidac_csuma ==FieldMetaData_.scidac_checksuma);
+      GRID_ASSERT( scidac_csumb ==FieldMetaData_.scidac_checksumb);
       std::cout << GridLogMessage<<"SciDAC checksums match " << std::endl;
     } else { 
       std::cout << GridLogWarning<<"SciDAC checksums not found. This is unsafe. " << std::endl;
-      assert(0); // Can I insist always checksum ?
+      GRID_ASSERT(0); // Can I insist always checksum ?
     }
 
     if ( found_FieldMetaData || found_usqcdInfo ) {
       FieldMetaData checker;
       stats Stats;
       Stats(Umu,checker);
-      assert(fabs(checker.plaquette  - FieldMetaData_.plaquette )<1.0e-5);
-      assert(fabs(checker.link_trace - FieldMetaData_.link_trace)<1.0e-5);
+      GRID_ASSERT(fabs(checker.plaquette  - FieldMetaData_.plaquette )<1.0e-5);
+      GRID_ASSERT(fabs(checker.link_trace - FieldMetaData_.link_trace)<1.0e-5);
       std::cout << GridLogMessage<<"Plaquette and link trace match " << std::endl;
     }
   }

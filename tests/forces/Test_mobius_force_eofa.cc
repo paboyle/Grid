@@ -111,8 +111,8 @@ int main (int argc, char** argv)
     
     std::cout << "(phi, Mphi) - (eta,eta): " << test << "  expect 0" << std::endl;
 
-    assert(test.real() < 1e-8);
-    assert(test.imag() < 1e-8);
+    GRID_ASSERT(test.real() < 1e-8);
+    GRID_ASSERT(test.imag() < 1e-8);
 
     //Another test is to use heatbath twice to apply M^{-1/2} to Phi then apply M
     // M  Phi' 
@@ -126,7 +126,7 @@ int main (int argc, char** argv)
     test2  = test2 - eta;
     RealD test2_norm = norm2(test2);
     std::cout << "|M M^{-1/2} M^{-1/2} eta - eta|^2 = " << test2_norm << " expect 0" << std::endl;
-    assert( test2_norm < 1e-8 );
+    GRID_ASSERT( test2_norm < 1e-8 );
   }
 
 
@@ -209,7 +209,7 @@ int main (int argc, char** argv)
   printf("real(dS_predict) = %1.15e\n", dSpred.real());
   printf("imag(dS_predict) = %1.15e\n\n", dSpred.imag());
 
-  assert( fabs(real(Sprime-S-dSpred)) < 1.0 ) ;
+  GRID_ASSERT( fabs(real(Sprime-S-dSpred)) < 1.0 ) ;
 
   std::cout << GridLogMessage << "Done" << std::endl;
   Grid_finalize();

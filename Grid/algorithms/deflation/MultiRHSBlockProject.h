@@ -131,12 +131,12 @@ public:
     typedef typename Field::vector_object vobj;
     //    std::cout << GridLogMessage <<" BlockProjector importing "<<nvec<< " fine grid vectors" <<std::endl;
 
-    assert(vecs[0].Grid()==fine_grid);
+    GRID_ASSERT(vecs[0].Grid()==fine_grid);
 
     subdivides(coarse_grid,fine_grid); // require they map
 
     int _ndimension = coarse_grid->_ndimension;
-    assert(block_vol == fine_grid->oSites() / coarse_grid->oSites());
+    GRID_ASSERT(block_vol == fine_grid->oSites() / coarse_grid->oSites());
     
     Coordinate  block_r      (_ndimension);
     for(int d=0 ; d<_ndimension;d++){
@@ -164,7 +164,7 @@ public:
       const int Nsimd = vobj::Nsimd();
       //      std::cout << "sz "<<sz<<std::endl;
       //      std::cout << "prod "<<Nsimd * coarse_grid->oSites() * block_vol * nvec * words<<std::endl;
-      assert(sz == Nsimd * coarse_grid->oSites() * block_vol * nvec * words);
+      GRID_ASSERT(sz == Nsimd * coarse_grid->oSites() * block_vol * nvec * words);
       uint64_t lwords= words; // local variable for copy in to GPU
       accelerator_for(sf,osites,Nsimd,{
 #ifdef GRID_SIMT
@@ -198,7 +198,7 @@ public:
    	               + v*bv
 	               + sb;
 
-	  //	  assert(site*lwords<sz);
+	  //	  GRID_ASSERT(site*lwords<sz);
 
 	  scalar_object * ptr = (scalar_object *)&blasData_p[site*lwords];
 
@@ -219,12 +219,12 @@ public:
 
     int nvec = vecs.size();
 
-    assert(vecs[0].Grid()==fine_grid);
+    GRID_ASSERT(vecs[0].Grid()==fine_grid);
 
     subdivides(coarse_grid,fine_grid); // require they map
 
     int _ndimension = coarse_grid->_ndimension;
-    assert(block_vol == fine_grid->oSites() / coarse_grid->oSites());
+    GRID_ASSERT(block_vol == fine_grid->oSites() / coarse_grid->oSites());
     
     Coordinate  block_r      (_ndimension);
     for(int d=0 ; d<_ndimension;d++){
@@ -299,7 +299,7 @@ public:
 
     //    std::cout << " BlockProjector importing "<<nvec<< " coarse grid vectors" <<std::endl;
 
-    assert(vecs[0].Grid()==coarse_grid);
+    GRID_ASSERT(vecs[0].Grid()==coarse_grid);
 
     int _ndimension = coarse_grid->_ndimension;
 
@@ -320,7 +320,7 @@ public:
       // loop over fine sites
       const int Nsimd = vobj::Nsimd();
       uint64_t cwords=sizeof(typename vobj::scalar_object)/sizeof(scalar);
-      assert(cwords==nbasis);
+      GRID_ASSERT(cwords==nbasis);
       
       accelerator_for(sc,osites,Nsimd,{
 #ifdef GRID_SIMT
@@ -353,7 +353,7 @@ public:
     typedef typename vobj::scalar_object coarse_scalar_object;
     //    std::cout << GridLogMessage<<" BlockProjector exporting "<<nvec<< " coarse grid vectors" <<std::endl;
 
-    assert(vecs[0].Grid()==coarse_grid);
+    GRID_ASSERT(vecs[0].Grid()==coarse_grid);
 
     int _ndimension = coarse_grid->_ndimension;
     
@@ -375,7 +375,7 @@ public:
       // loop over fine sites
       const int Nsimd = vobj::Nsimd();
       uint64_t cwords=sizeof(typename vobj::scalar_object)/sizeof(scalar);
-      assert(cwords==nbasis);
+      GRID_ASSERT(cwords==nbasis);
       
       accelerator_for(sc,osites,Nsimd,{
 	  // Wrap in a macro "FOR_ALL_LANES(lane,{ ... });
@@ -409,7 +409,7 @@ public:
     int nrhs=fine.size();
     int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
     //    std::cout << "blockProject nbasis " <<nbasis<<" " << _nbasis<<std::endl;
-    assert(nbasis==_nbasis);
+    GRID_ASSERT(nbasis==_nbasis);
     
     BLAS_F.resize (fine_vol * words * nrhs );
     BLAS_C.resize (coarse_vol * nbasis * nrhs );
@@ -464,7 +464,7 @@ public:
   {
     int nrhs=fine.size();
     int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
-    assert(nbasis==_nbasis);
+    GRID_ASSERT(nbasis==_nbasis);
     
     BLAS_F.resize (fine_vol * words * nrhs );
     BLAS_C.resize (coarse_vol * nbasis * nrhs );

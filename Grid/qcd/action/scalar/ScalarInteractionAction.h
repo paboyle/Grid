@@ -81,7 +81,7 @@ public:
 
   virtual RealD S(const Field &p)
   {
-    assert(p.Grid()->Nd() == Ndim);
+    GRID_ASSERT(p.Grid()->Nd() == Ndim);
     static Stencil phiStencil(p.Grid(), npoint, 0, directions, displacements);
     phiStencil.HaloExchange(p, compressor);
     Field action(p.Grid()), pshift(p.Grid()), phisquared(p.Grid());
@@ -128,7 +128,7 @@ public:
   virtual void deriv(const Field &p, Field &force)
   {
     double t0 = usecond();
-    assert(p.Grid()->Nd() == Ndim);
+    GRID_ASSERT(p.Grid()->Nd() == Ndim);
     force = (2. * Ndim + mass_square) * p - 2. * lambda * p * p * p;
     double interm_t = usecond();
 

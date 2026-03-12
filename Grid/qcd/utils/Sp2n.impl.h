@@ -209,7 +209,7 @@ static void generatorZtype(int zIndex, iGroupMatrix<cplx> &ta) {
 template <ONLY_IF_Sp>
 static accelerator_inline void su2SubGroupIndex(int &i1, int &i2, int su2_index, GroupName::Sp) {
   const int nsp=ncolour/2;
-  assert((su2_index >= 0) && (su2_index < (nsp * (nsp - 1)) / 2));
+  GRID_ASSERT((su2_index >= 0) && (su2_index < (nsp * (nsp - 1)) / 2));
 
   int spare = su2_index;
   for (i1 = 0; spare >= (nsp - 1 - i1); i1++) {
@@ -231,8 +231,8 @@ static void testGenerators(GroupName::Sp) {
       Complex tr = TensorRemove(trace(ta * tb));
       std::cout << GridLogMessage << "(" << a << "," << b << ") =  " << tr
                 << std::endl;
-      if (a == b) assert(abs(tr - Complex(0.5)) < 1.0e-6);
-      if (a != b) assert(abs(tr) < 1.0e-6);
+      if (a == b) GRID_ASSERT(abs(tr - Complex(0.5)) < 1.0e-6);
+      if (a != b) GRID_ASSERT(abs(tr) < 1.0e-6);
     }
   }
   std::cout << GridLogMessage << std::endl;
@@ -241,7 +241,7 @@ static void testGenerators(GroupName::Sp) {
   for (int a = 0; a < AlgebraDimension; a++) {
     generator(a, ta);
     std::cout << GridLogMessage << a << std::endl;
-    assert(norm2(ta - adj(ta)) < 1.0e-6);
+    GRID_ASSERT(norm2(ta - adj(ta)) < 1.0e-6);
   }
   std::cout << GridLogMessage << std::endl;
   std::cout << GridLogMessage << "Fundamental - Checking if traceless"
@@ -250,13 +250,13 @@ static void testGenerators(GroupName::Sp) {
     generator(a, ta);
     Complex tr = TensorRemove(trace(ta));
     std::cout << GridLogMessage << a << std::endl;
-    assert(abs(tr) < 1.0e-6);
+    GRID_ASSERT(abs(tr) < 1.0e-6);
   }
 }
 
-template <int N>
-static Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > >
-ProjectOnGeneralGroup(const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu, GroupName::Sp) {
+template <class vtype, int N>
+static Lattice<iScalar<iScalar<iMatrix<vtype, N> > > >
+ProjectOnGeneralGroup(const Lattice<iScalar<iScalar<iMatrix<vtype, N> > > > &Umu, GroupName::Sp) {
   return ProjectOnSpGroup(Umu);
 }
 

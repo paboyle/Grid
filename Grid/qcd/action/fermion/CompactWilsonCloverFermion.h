@@ -210,8 +210,8 @@ private:
 
   template<class Field>
   void ApplyBoundaryMask(Field& f) {
-    const MaskField* m = getCorrectMaskField(f); assert(m != nullptr);
-    assert(m != nullptr);
+    const MaskField* m = getCorrectMaskField(f); GRID_ASSERT(m != nullptr);
+    GRID_ASSERT(m != nullptr);
     CompactHelpers::ApplyBoundaryMask(f, *m);
   }
 

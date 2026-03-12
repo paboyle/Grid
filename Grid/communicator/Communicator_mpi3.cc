@@ -28,14 +28,17 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/GridCore.h>
 #include <Grid/communicator/SharedMemory.h>
 
+void GridAbort(void) { MPI_Abort(MPI_COMM_WORLD,SIGABRT); }
+extern void * Grid_backtrace_buffer[_NBACKTRACE];
+
 NAMESPACE_BEGIN(Grid);
 
 
 Grid_MPI_Comm       CartesianCommunicator::communicator_world;
 #ifdef GRID_CHECKSUM_COMMS
-extern void * Grid_backtrace_buffer[_NBACKTRACE];
 uint64_t checksum_index = 1;
 #endif
+
 
 ////////////////////////////////////////////
 // First initialise of comms system
@@ -60,11 +63,11 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
 #endif
     //If only 1 comms thread we require any threading mode other than SINGLE, but for multiple comms threads we need MULTIPLE
     if( (nCommThreads == 1) && (provided == MPI_THREAD_SINGLE) ) {
-      assert(0);
+      GRID_ASSERT(0);
     }
 
     if( (nCommThreads > 1) && (provided != MPI_THREAD_MULTIPLE) ) {
-      assert(0);
+      GRID_ASSERT(0);
     }
   }
 
@@ -85,20 +88,20 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
 void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest)
 {
   int ierr=MPI_Cart_shift(communicator,dim,shift,&source,&dest);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 int CartesianCommunicator::RankFromProcessorCoor(Coordinate &coor)
 {
   int rank;
   int ierr=MPI_Cart_rank  (communicator, &coor[0], &rank);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
   return rank;
 }
 void  CartesianCommunicator::ProcessorCoorFromRank(int rank, Coordinate &coor)
 {
   coor.resize(_ndimension);
   int ierr=MPI_Cart_coords  (communicator, rank, _ndimension,&coor[0]);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -125,8 +128,8 @@ CartesianCommunicator::CartesianCommunicator(const Coordinate &processors)
 //////////////////////////////////
 CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const CartesianCommunicator &parent,int &srank)
 {
-  _ndimension = processors.size();  assert(_ndimension>=1);
-  int parent_ndimension = parent._ndimension; assert(_ndimension >= parent._ndimension);
+  _ndimension = processors.size();  GRID_ASSERT(_ndimension>=1);
+  int parent_ndimension = parent._ndimension; GRID_ASSERT(_ndimension >= parent._ndimension);
   Coordinate parent_processor_coor(_ndimension,0);
   Coordinate parent_processors    (_ndimension,1);
   Coordinate shm_processors       (_ndimension,1);
@@ -150,7 +153,7 @@ CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const 
     childsize *= processors[d];
   }
   int Nchild = Nparent/childsize;
-  assert (childsize * Nchild == Nparent);
+  GRID_ASSERT (childsize * Nchild == Nparent);
 
   Coordinate ccoor(_ndimension); // coor within subcommunicator
   Coordinate scoor(_ndimension); // coor of split within parent
@@ -176,12 +179,12 @@ CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const 
     // Split the communicator
     ////////////////////////////////////////////////////////////////
     int ierr= MPI_Comm_split(parent.communicator,srank,crank,&comm_split);
-    assert(ierr==0);
+    GRID_ASSERT(ierr==0);
 
   } else {
     srank = 0;
     int ierr = MPI_Comm_dup (parent.communicator,&comm_split);
-    assert(ierr==0);
+    GRID_ASSERT(ierr==0);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -206,7 +209,7 @@ CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const 
     }
   }
   for(int d=0;d<processors.size();d++){
-    assert(_processor_coor[d] == ccoor[d] );
+    GRID_ASSERT(_processor_coor[d] == ccoor[d] );
   }
 }
 
@@ -248,7 +251,7 @@ void CartesianCommunicator::InitFromMPICommunicator(const Coordinate &processors
   for(int i=0;i<_ndimension*2;i++){
     MPI_Comm_dup(communicator,&communicator_halo[i]);
   }
-  assert(Size==_Nprocessors);
+  GRID_ASSERT(Size==_Nprocessors);
 }
 
 CartesianCommunicator::~CartesianCommunicator()
@@ -276,62 +279,62 @@ void CartesianCommunicator::GlobalSum(double &d)
 void CartesianCommunicator::GlobalSum(float &f){
   FlightRecorder::StepLog("AllReduce float");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&f,1,MPI_FLOAT,MPI_SUM,communicator);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 void CartesianCommunicator::GlobalSum(double &d)
 {
   FlightRecorder::StepLog("AllReduce double");
   int ierr = MPI_Allreduce(MPI_IN_PLACE,&d,1,MPI_DOUBLE,MPI_SUM,communicator);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 #endif
 void CartesianCommunicator::GlobalSum(uint32_t &u){
   FlightRecorder::StepLog("AllReduce uint32_t");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 void CartesianCommunicator::GlobalSum(uint64_t &u){
   FlightRecorder::StepLog("AllReduce uint64_t");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT64_T,MPI_SUM,communicator);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 void CartesianCommunicator::GlobalSumVector(uint64_t* u,int N){
   FlightRecorder::StepLog("AllReduceVector");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,u,N,MPI_UINT64_T,MPI_SUM,communicator);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 void CartesianCommunicator::GlobalXOR(uint32_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_BXOR,communicator);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 void CartesianCommunicator::GlobalXOR(uint64_t &u){
   FlightRecorder::StepLog("GlobalXOR");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT64_T,MPI_BXOR,communicator);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 void CartesianCommunicator::GlobalMax(float &f)
 {
   FlightRecorder::StepLog("GlobalMax");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&f,1,MPI_FLOAT,MPI_MAX,communicator);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 void CartesianCommunicator::GlobalMax(double &d)
 {
   FlightRecorder::StepLog("GlobalMax");
   int ierr = MPI_Allreduce(MPI_IN_PLACE,&d,1,MPI_DOUBLE,MPI_MAX,communicator);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 void CartesianCommunicator::GlobalSumVector(float *f,int N)
 {
   FlightRecorder::StepLog("GlobalSumVector(float *)");
   int ierr=MPI_Allreduce(MPI_IN_PLACE,f,N,MPI_FLOAT,MPI_SUM,communicator);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 void CartesianCommunicator::GlobalSumVector(double *d,int N)
 {
   FlightRecorder::StepLog("GlobalSumVector(double *)");
   int ierr = MPI_Allreduce(MPI_IN_PLACE,d,N,MPI_DOUBLE,MPI_SUM,communicator);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 
 void CartesianCommunicator::SendToRecvFromBegin(std::vector<MpiCommsRequest_t> &list,
@@ -339,24 +342,23 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<MpiCommsRequest_t> &
 						int dest,
 						void *recv,
 						int from,
-						int bytes,int dir)
+						uint64_t bytes,int dir)
 {
   MPI_Request xrq;
   MPI_Request rrq;
 
-  assert(dest != _processor);
-  assert(from != _processor);
-
+  GRID_ASSERT(dest != _processor);
+  GRID_ASSERT(from != _processor);
   int tag;
 
   tag= dir+from*32;
-  int ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,tag,communicator,&rrq);
-  assert(ierr==0);
+  int ierr=MPI_Irecv(recv,(int)( bytes/sizeof(int32_t)), MPI_INT32_T,from,tag,communicator,&rrq);
+  GRID_ASSERT(ierr==0);
   list.push_back(rrq);
   
   tag= dir+_processor*32;
-  ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,tag,communicator,&xrq);
-  assert(ierr==0);
+  ierr =MPI_Isend(xmit,(int)(bytes/sizeof(int32_t)), MPI_INT32_T,dest,tag,communicator,&xrq);
+  GRID_ASSERT(ierr==0);
   list.push_back(xrq);
 }
 void CartesianCommunicator::CommsComplete(std::vector<MpiCommsRequest_t> &list)
@@ -367,7 +369,7 @@ void CartesianCommunicator::CommsComplete(std::vector<MpiCommsRequest_t> &list)
 
   std::vector<MPI_Status> status(nreq);
   int ierr = MPI_Waitall(nreq,&list[0],&status[0]);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
   list.resize(0);
 }
 
@@ -376,7 +378,7 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
 					   int dest,
 					   void *recv,
 					   int from,
-					   int bytes)
+					   uint64_t bytes)
 {
   std::vector<MpiCommsRequest_t> reqs(0);
 
@@ -384,15 +386,15 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
   int ierr;
 
   // Enforce no UVM in comms, device or host OK
-  assert(acceleratorIsCommunicable(xmit));
-  assert(acceleratorIsCommunicable(recv));
+  GRID_ASSERT(acceleratorIsCommunicable(xmit));
+  GRID_ASSERT(acceleratorIsCommunicable(recv));
 
   // Give the CPU to MPI immediately; can use threads to overlap optionally
   //  printf("proc %d SendToRecvFrom %d bytes Sendrecv \n",_processor,bytes);
-  ierr=MPI_Sendrecv(xmit,bytes,MPI_CHAR,dest,myrank,
-		    recv,bytes,MPI_CHAR,from, from,
+  ierr=MPI_Sendrecv(xmit,(int)(bytes/sizeof(int32_t)),MPI_INT32_T,dest,myrank,
+		    recv,(int)(bytes/sizeof(int32_t)),MPI_INT32_T,from, from,
 		    communicator,MPI_STATUS_IGNORE);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 
 }
 // Basic Halo comms primitive
@@ -400,7 +402,7 @@ double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
 						     int dest, int dox,
 						     void *recv,
 						     int from, int dor,
-						     int bytes,int dir)
+						     uint64_t bytes,int dir)
 {
   std::vector<CommsRequest_t> list;
   double offbytes = StencilSendToRecvFromPrepare(list,xmit,dest,dox,recv,from,dor,bytes,bytes,dir);
@@ -423,7 +425,7 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
 							   int dest,int dox,
 							   void *recv,
 							   int from,int dor,
-							   int xbytes,int rbytes,int dir)
+							   uint64_t xbytes,uint64_t rbytes,int dir)
 {
   return 0.0; // Do nothing -- no preparation required
 }
@@ -432,7 +434,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 							 int dest,int dox,
 							 void *recv,void *recv_comp,
 							 int from,int dor,
-							 int xbytes,int rbytes,int dir)
+							 uint64_t xbytes,uint64_t rbytes,int dir)
 {
   int ncomm  =communicator_halo.size();
   int commdir=dir%ncomm;
@@ -445,9 +447,9 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
   int gfrom = ShmRanks[from];
   int gme   = ShmRanks[_processor];
 
-  assert(dest != _processor);
-  assert(from != _processor);
-  assert(gme  == ShmRank);
+  GRID_ASSERT(dest != _processor);
+  GRID_ASSERT(from != _processor);
+  GRID_ASSERT(gme  == ShmRank);
   double off_node_bytes=0.0;
   int tag;
   
@@ -455,15 +457,15 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
     if ( (gfrom ==MPI_UNDEFINED) || Stencil_force_mpi ) {
       tag= dir+from*32;
       //      std::cout << " StencilSendToRecvFrom "<<dir<<" MPI_Irecv "<<std::hex<<recv<<std::dec<<std::endl;
-      ierr=MPI_Irecv(recv_comp, rbytes, MPI_CHAR,from,tag,communicator_halo[commdir],&rrq);
-      assert(ierr==0);
+      ierr=MPI_Irecv(recv_comp,(int)(rbytes/sizeof(int32_t)), MPI_INT32_T,from,tag,communicator_halo[commdir],&rrq);
+      GRID_ASSERT(ierr==0);
       list.push_back(rrq);
       off_node_bytes+=rbytes;
     }
 #ifdef NVLINK_GET
     else { 
       void *shm = (void *) this->ShmBufferTranslate(from,xmit);
-      assert(shm!=NULL);
+      GRID_ASSERT(shm!=NULL);
       //      std::cout << " StencilSendToRecvFrom "<<dir<<" CopyDeviceToDevice recv "<<std::hex<<recv<<" remote "<<shm <<std::dec<<std::endl;
       acceleratorCopyDeviceToDeviceAsynch(shm,recv,rbytes);
     }
@@ -473,14 +475,14 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
   if (dox) {
     if ( (gdest == MPI_UNDEFINED) || Stencil_force_mpi ) {
       tag= dir+_processor*32;
-      ierr =MPI_Isend(xmit_comp, xbytes, MPI_CHAR,dest,tag,communicator_halo[commdir],&xrq);
-      assert(ierr==0);
+      ierr =MPI_Isend(xmit_comp,(int)(xbytes/sizeof(int32_t)), MPI_INT32_T,dest,tag,communicator_halo[commdir],&xrq);
+      GRID_ASSERT(ierr==0);
       list.push_back(xrq);
       off_node_bytes+=xbytes;
     } else {
 #ifndef NVLINK_GET
       void *shm = (void *) this->ShmBufferTranslate(dest,recv);
-      assert(shm!=NULL);
+      GRID_ASSERT(shm!=NULL);
       acceleratorCopyDeviceToDeviceAsynch(xmit,shm,xbytes);
 #endif
     }
@@ -497,7 +499,7 @@ void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsReque
   if (nreq==0) return;
   std::vector<MPI_Status> status(nreq);
   int ierr = MPI_Waitall(nreq,&list[0],&status[0]);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
   list.resize(0);
   this->StencilBarrier(); 
 }
@@ -540,7 +542,7 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
 							   int dest,int dox,
 							   void *recv,
 							   int from,int dor,
-							   int xbytes,int rbytes,int dir)
+							   uint64_t xbytes,uint64_t rbytes,int dir)
 {
 /*
  * Bring sequence from Stencil.h down to lower level.
@@ -557,9 +559,9 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
   int gfrom = ShmRanks[from];
   int gme   = ShmRanks[_processor];
 
-  assert(dest != _processor);
-  assert(from != _processor);
-  assert(gme  == ShmRank);
+  GRID_ASSERT(dest != _processor);
+  GRID_ASSERT(from != _processor);
+  GRID_ASSERT(gme  == ShmRank);
   double off_node_bytes=0.0;
   int tag;
 
@@ -581,8 +583,8 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
     if ( (gfrom ==MPI_UNDEFINED) || Stencil_force_mpi ) {
       tag= dir+from*32;
       host_recv = this->HostBufferMalloc(rbytes);
-      ierr=MPI_Irecv(host_recv, rbytes, MPI_CHAR,from,tag,communicator_halo[commdir],&rrq);
-      assert(ierr==0);
+      ierr=MPI_Irecv(host_recv,(int)(rbytes/sizeof(int32_t)), MPI_INT32_T,from,tag,communicator_halo[commdir],&rrq);
+      GRID_ASSERT(ierr==0);
       CommsRequest_t srq;
       srq.PacketType = InterNodeRecv;
       srq.bytes      = rbytes;
@@ -606,7 +608,7 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
 #ifdef GRID_CHECKSUM_COMMS
       uint64_t xbytes_data = xbytes - 8;
       srq.ev = acceleratorCopyFromDeviceAsynch(xmit, host_xmit,xbytes_data); // Make this Asynch
-      assert(xbytes % 8 == 0);
+      GRID_ASSERT(xbytes % 8 == 0);
       // flip one bit so that a zero buffer is not consistent
       uint64_t xsum = checksum_gpu((uint64_t*)xmit, xbytes_data / 8) ^ (checksum_index + 1 + 1000 * tag); 
       *(uint64_t*)(((char*)host_xmit) + xbytes_data) = xsum;
@@ -615,7 +617,7 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
 #endif
       
       //      ierr =MPI_Isend(host_xmit, xbytes, MPI_CHAR,dest,tag,communicator_halo[commdir],&xrq);
-      //      assert(ierr==0);
+      //      GRID_ASSERT(ierr==0);
       //      off_node_bytes+=xbytes;
 
       srq.PacketType = InterNodeXmit;
@@ -683,7 +685,7 @@ void CartesianCommunicator::StencilSendToRecvFromPollDtoH(std::vector<CommsReque
 	if ( acceleratorEventIsComplete(list[idx].ev) ) {
 
 	  void *host_xmit = list[idx].host_buf;
-	  uint32_t xbytes = list[idx].bytes;
+	  uint64_t xbytes = list[idx].bytes;
 	  int dest        = list[idx].dest;
 	  int tag         = list[idx].tag;
 	  int commdir     = list[idx].commdir;
@@ -694,8 +696,8 @@ void CartesianCommunicator::StencilSendToRecvFromPollDtoH(std::vector<CommsReque
 	  //	  std::cout << " DtoH is complete for index "<<idx<<" calling MPI_Isend "<<std::endl;
 	  
 	  MPI_Request xrq;
-	  int ierr =MPI_Isend(host_xmit, xbytes, MPI_CHAR,dest,tag,communicator_halo[commdir],&xrq);
-	  assert(ierr==0);
+	  int ierr =MPI_Isend(host_xmit, (int)(xbytes/sizeof(int32_t)), MPI_INT32_T,dest,tag,communicator_halo[commdir],&xrq);
+	  GRID_ASSERT(ierr==0);
 
 	  list[idx].req        = xrq; // Update the MPI request in the list
 
@@ -715,7 +717,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 							 int dest,int dox,
 							 void *recv,void *recv_comp,
 							 int from,int dor,
-							 int xbytes,int rbytes,int dir)
+							 uint64_t xbytes,uint64_t rbytes,int dir)
 {
   int ncomm  =communicator_halo.size();
   int commdir=dir%ncomm;
@@ -728,9 +730,9 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
   int gfrom = ShmRanks[from];
   int gme   = ShmRanks[_processor];
 
-  assert(dest != _processor);
-  assert(from != _processor);
-  assert(gme  == ShmRank);
+  GRID_ASSERT(dest != _processor);
+  GRID_ASSERT(from != _processor);
+  GRID_ASSERT(gme  == ShmRank);
   double off_node_bytes=0.0;
   int tag;
 
@@ -751,7 +753,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
     if ( ! ( (gfrom ==MPI_UNDEFINED) || Stencil_force_mpi ) ) {
       // Intranode
       void *shm = (void *) this->ShmBufferTranslate(from,xmit);
-      assert(shm!=NULL);
+      GRID_ASSERT(shm!=NULL);
 
       CommsRequest_t srq;
 
@@ -774,7 +776,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
     if ( !( (gdest == MPI_UNDEFINED) || Stencil_force_mpi ) ) {
       // Intranode
       void *shm = (void *) this->ShmBufferTranslate(dest,recv);
-      assert(shm!=NULL);
+      GRID_ASSERT(shm!=NULL);
 
       CommsRequest_t srq;
       
@@ -813,7 +815,7 @@ void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsReque
   if (nreq>0) {
     status.resize(MpiRequests.size());
     int ierr = MPI_Waitall(MpiRequests.size(),&MpiRequests[0],&status[0]); // Sends are guaranteed in order. No harm in not completing.
-    assert(ierr==0);
+    GRID_ASSERT(ierr==0);
   }
   
   //  for(int r=0;r<nreq;r++){
@@ -879,17 +881,17 @@ void CartesianCommunicator::Barrier(void)
 {
   FlightRecorder::StepLog("GridBarrier");
   int ierr = MPI_Barrier(communicator);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
-void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
+void CartesianCommunicator::Broadcast(int root,void* data,uint64_t bytes)
 {
   FlightRecorder::StepLog("Broadcast");
   int ierr=MPI_Bcast(data,
-		     bytes,
+		     (int)bytes,
 		     MPI_BYTE,
 		     root,
 		     communicator);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 int CartesianCommunicator::RankWorld(void){
   int r;
@@ -899,23 +901,23 @@ int CartesianCommunicator::RankWorld(void){
 void CartesianCommunicator::BarrierWorld(void){
   FlightRecorder::StepLog("BarrierWorld");
   int ierr = MPI_Barrier(communicator_world);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
-void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
+void CartesianCommunicator::BroadcastWorld(int root,void* data, uint64_t bytes)
 {
   FlightRecorder::StepLog("BroadcastWorld");
   int ierr= MPI_Bcast(data,
-		      bytes,
+		      (int)bytes,
 		      MPI_BYTE,
 		      root,
 		      communicator_world);
-  assert(ierr==0);
+  GRID_ASSERT(ierr==0);
 }
 
 void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,uint64_t words,uint64_t bytes)
 {
   Coordinate row(_ndimension,1);
-  assert(dim>=0 && dim<_ndimension);
+  GRID_ASSERT(dim>=0 && dim<_ndimension);
 
   //  Split the communicator
   row[dim] = _processors[dim];
@@ -936,8 +938,8 @@ void CartesianCommunicator::AllToAll(void  *in,void *out,uint64_t words,uint64_t
   int ibytes;
   iwords = words;
   ibytes = bytes;
-  assert(words == iwords); // safe to cast to int ?
-  assert(bytes == ibytes); // safe to cast to int ?
+  GRID_ASSERT(words == iwords); // safe to cast to int ?
+  GRID_ASSERT(bytes == ibytes); // safe to cast to int ?
   MPI_Type_contiguous(ibytes,MPI_BYTE,&object);
   MPI_Type_commit(&object);
   MPI_Alltoall(in,iwords,object,out,iwords,object,communicator);

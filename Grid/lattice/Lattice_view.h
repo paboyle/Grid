@@ -123,7 +123,7 @@ public:
     case AcceleratorWrite:
     case CpuRead:
     case CpuWrite:
-      ViewLogger::Log(filename, line, 1, mode, &v[0], v.size() * sizeof(v[0]));
+      ViewLogger::LogOpen(filename, line, 1, mode, &v[0], v.size() * sizeof(v[0]));
       break;
     } 
     
@@ -134,7 +134,7 @@ public:
     case AcceleratorWriteDiscard:
     case AcceleratorWrite:
     case CpuWrite:
-      ViewLogger::Log(filename, line, -1, mode, &v[0], v.size() * sizeof(v[0]));
+      ViewLogger::LogClose(filename, line, -1, mode, &v[0], v.size() * sizeof(v[0]));
       break;
     }
     

@@ -47,7 +47,7 @@ void *acceleratorAllocDevice(size_t bytes)
 {
   void *ptr=NULL;
   auto err = cudaMalloc((void **)&ptr,bytes);
-  assert(err==cudaSuccess);
+  GRID_ASSERT(err==cudaSuccess);
   return ptr;
 }
 void acceleratorFreeDevice(void *ptr){  cudaFree(ptr);}

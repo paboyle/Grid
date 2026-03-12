@@ -123,7 +123,7 @@ public:
 
     }
     GCRLogLevel<<"Variable Preconditioned GCR did not converge"<<std::endl;
-    //    assert(0);
+    //    GRID_ASSERT(0);
   }
 
   RealD GCRnStep(const Field &src, Field &psi,RealD rsq){
@@ -268,8 +268,7 @@ public:
       // we iterate backwards counting down from the current k+1 index (peri_kp) because we 
       for(int back=0;back<northog;back++){
 
-        int peri_back=(k-back)%mmax;   	  assert((k-back)>=0);
-        // std::cout << "peri_back: " << peri_back << std::endl;
+	int peri_back=(k-back)%mmax;   	  GRID_ASSERT((k-back)>=0);
 
         // b=-real(innerProduct(q[peri_back],Az))/qq[peri_back];
         b=-(innerProduct(q[peri_back],Az))/qq[peri_back];     // TODO try complex beta
@@ -300,7 +299,7 @@ public:
       }
 
     }
-    assert(0); // never reached
+    GRID_ASSERT(0); // never reached
     return cp;
   }
 };
@@ -410,7 +409,10 @@ public:
     for(int i = 0; i < k; i++) {
       polynomial[i] += a * poly_p[k-1][i];
     }
-    PF.data.push_back(polynomial);
+    {
+      std::vector<std::complex<double>> poly_stdcmplx(polynomial.begin(), polynomial.end());
+      PF.data.push_back(poly_stdcmplx);
+    }
 
     //  r_{k+1} --> r_k - a_k A p_k
     //  p_{k+1} --> r_k + \sum_{i=0}^k \beta_{ik} p_i, input betas = (\beta_{ik})_i
@@ -436,8 +438,9 @@ public:
     /** Logs all alphas and betas to complete the iterations. */
     std::cout << "PGCR::LogComplete() "<<std::endl;
     for (int i = 0; i < alphas.size(); i++) {
-      PF.alphas.push_back(alphas[i]);
-      PF.betas.push_back(betas[i]);
+      PF.alphas.push_back(std::complex<double>(alphas[i].real(), alphas[i].imag()));
+      std::vector<std::complex<double>> beta_stdcmplx(betas[i].begin(), betas[i].end());
+      PF.betas.push_back(beta_stdcmplx);
     }
   };
 

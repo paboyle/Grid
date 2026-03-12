@@ -26,6 +26,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+#include "disable_benchmarks_without_instantiations.h"
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
 #include <Grid/Grid.h>
 
 using namespace Grid;
@@ -325,7 +328,7 @@ public:
     // Set/Get the layout & grid size
     ///////////////////////////////////////////////////////
     int threads = GridThread::GetThreads();
-    Coordinate mpi = GridDefaultMpi(); assert(mpi.size()==4);
+    Coordinate mpi = GridDefaultMpi(); GRID_ASSERT(mpi.size()==4);
     Coordinate local({L,L,L,L});
     Coordinate latt4({local[0]*mpi[0],local[1]*mpi[1],local[2]*mpi[2],local[3]*mpi[3]});
 
@@ -492,7 +495,7 @@ public:
     // Set/Get the layout & grid size
     ///////////////////////////////////////////////////////
     int threads = GridThread::GetThreads();
-    Coordinate mpi = GridDefaultMpi(); assert(mpi.size()==4);
+    Coordinate mpi = GridDefaultMpi(); GRID_ASSERT(mpi.size()==4);
     Coordinate local({L,L,L,L});
     Coordinate latt4({local[0]*mpi[0],local[1]*mpi[1],local[2]*mpi[2],local[3]*mpi[3]});
     
@@ -731,3 +734,5 @@ int main (int argc, char ** argv)
 
   Grid_finalize();
 }
+
+#endif

@@ -54,7 +54,7 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  assert(argc >= 5);
+  GRID_ASSERT(argc >= 5);
   
   Coordinate latt(4,0);
   latt[0] = toint(argv[1]);

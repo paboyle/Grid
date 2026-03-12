@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
 
   if(GridCmdOptionExists(argv, argv + argc, "--inputxml")) {
     inputXml = GridCmdOptionPayload(argv, argv + argc, "--inputxml");
-    assert(inputXml.length() != 0);
+    GRID_ASSERT(inputXml.length() != 0);
   }
 
   {

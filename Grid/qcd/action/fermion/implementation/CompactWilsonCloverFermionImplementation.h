@@ -59,7 +59,7 @@ CompactWilsonCloverFermion<Impl, CloverHelpers>::CompactWilsonCloverFermion(Gaug
   , BoundaryMask(&Fgrid)
   , BoundaryMaskEven(&Hgrid), BoundaryMaskOdd(&Hgrid)
 {
-  assert(Nd == 4 && Nc == 3 && Ns == 4 && Impl::Dimension == 3);
+  GRID_ASSERT(Nd == 4 && Nc == 3 && Ns == 4 && Impl::Dimension == 3);
 
   csw_r *= 0.5;
   csw_t *= 0.5;
@@ -186,7 +186,7 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::MdirAll(const FermionField
 
 template<class Impl, class CloverHelpers>
 void CompactWilsonCloverFermion<Impl, CloverHelpers>::MDeriv(GaugeField& force, const FermionField& X, const FermionField& Y, int dag) {
-  assert(!fixedBoundaries); // TODO check for changes required for open bc
+  GRID_ASSERT(!fixedBoundaries); // TODO check for changes required for open bc
 
   // NOTE: code copied from original clover term
   conformable(X.Grid(), Y.Grid());
@@ -269,12 +269,12 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::MDeriv(GaugeField& force, 
 
 template<class Impl, class CloverHelpers>
 void CompactWilsonCloverFermion<Impl, CloverHelpers>::MooDeriv(GaugeField& mat, const FermionField& U, const FermionField& V, int dag) {
-  assert(0);
+  GRID_ASSERT(0);
 }
 
 template<class Impl, class CloverHelpers>
 void CompactWilsonCloverFermion<Impl, CloverHelpers>::MeeDeriv(GaugeField& mat, const FermionField& U, const FermionField& V, int dag) {
-  assert(0);
+  GRID_ASSERT(0);
 }
 
 template<class Impl, class CloverHelpers>
@@ -282,7 +282,7 @@ void CompactWilsonCloverFermion<Impl, CloverHelpers>::MooeeInternal(const Fermio
                     FermionField&              out,
                     const CloverDiagonalField& diagonal,
                     const CloverTriangleField& triangle) {
-  assert(in.Checkerboard() == Odd || in.Checkerboard() == Even);
+  GRID_ASSERT(in.Checkerboard() == Odd || in.Checkerboard() == Even);
   out.Checkerboard() = in.Checkerboard();
   conformable(in, out);
   conformable(in, diagonal);

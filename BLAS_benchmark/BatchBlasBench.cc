@@ -120,7 +120,7 @@ inline void acceleratorMemSet(void *base,int value,size_t bytes) { cudaMemset(ba
 	     cudaGetErrorString( err ));				\
       printf("File %s Line %d\n",__FILE__,__LINE__);			\
       fflush(stdout);							\
-      if (acceleratorAbortOnGpuError) assert(err==cudaSuccess);		\
+      if (acceleratorAbortOnGpuError) GRID_ASSERT(err==cudaSuccess);		\
     }									\
   }
 
@@ -168,7 +168,7 @@ public:
     if ( (_Tp*)ptr == (_Tp *) NULL ) {
       printf("Grid Device Allocator got NULL for %lu bytes\n",(unsigned long) bytes );
     }
-    assert( ( (_Tp*)ptr != (_Tp *)NULL ) );
+    GRID_ASSERT( ( (_Tp*)ptr != (_Tp *)NULL ) );
     return ptr;
   }
 
@@ -276,11 +276,11 @@ public:
   {
 #ifdef GRID_HIP
     auto err = hipDeviceSynchronize();
-    assert(err==hipSuccess);
+    GRID_ASSERT(err==hipSuccess);
 #endif
 #ifdef GRID_CUDA
     auto err = cudaDeviceSynchronize();
-    assert(err==cudaSuccess);
+    GRID_ASSERT(err==cudaSuccess);
 #endif
 #ifdef GRID_SYCL
     accelerator_barrier();
@@ -305,8 +305,8 @@ public:
   {
     RealD t2=usecond();
 
-    assert(OpA!=GridBLAS_OP_T); // Complex case expect no transpose
-    assert(OpB!=GridBLAS_OP_T);
+    GRID_ASSERT(OpA!=GridBLAS_OP_T); // Complex case expect no transpose
+    GRID_ASSERT(OpB!=GridBLAS_OP_T);
 
     int lda = m; // m x k column major
     int ldb = k; // k x n column major
@@ -341,7 +341,7 @@ public:
 			    (hipblasDoubleComplex *) Bkn, ldb,
 			    (hipblasDoubleComplex *) &beta_p[0],
 			    (hipblasDoubleComplex *) Cmn, ldc);
-    assert(err==HIPBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
     cublasOperation_t hOpA;
@@ -361,7 +361,7 @@ public:
 			   (cuDoubleComplex *) Bkn, ldb,
 			   (cuDoubleComplex *) &beta_p[0],
 			   (cuDoubleComplex *) Cmn, ldc);
-    assert(err==CUBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
       int64_t m64=m;
@@ -433,8 +433,8 @@ public:
   {
     RealD t2=usecond();
 
-    assert(OpA!=GridBLAS_OP_T); // Complex case expect no transpose
-    assert(OpB!=GridBLAS_OP_T);
+    GRID_ASSERT(OpA!=GridBLAS_OP_T); // Complex case expect no transpose
+    GRID_ASSERT(OpB!=GridBLAS_OP_T);
 
     int lda = m; // m x k column major
     int ldb = k; // k x n column major
@@ -469,7 +469,7 @@ public:
 			    (hipblasComplex *) Bkn, ldb,
 			    (hipblasComplex *) &beta_p[0],
 			    (hipblasComplex *) Cmn, ldc);
-    assert(err==HIPBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
     cublasOperation_t hOpA;
@@ -489,7 +489,7 @@ public:
 			   (cuComplex *) Bkn, ldb,
 			   (cuComplex *) &beta_p[0],
 			   (cuComplex *) Cmn, ldc);
-    assert(err==CUBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
       int64_t m64=m;
@@ -595,11 +595,11 @@ public:
   {
     RealD t2=usecond();
     int32_t batchCount = Amk.size();
-    assert(Bkn.size()==batchCount);
-    assert(Cmn.size()==batchCount);
+    GRID_ASSERT(Bkn.size()==batchCount);
+    GRID_ASSERT(Cmn.size()==batchCount);
 
-    assert(OpA!=GridBLAS_OP_T); // Complex case expect no transpose
-    assert(OpB!=GridBLAS_OP_T);
+    GRID_ASSERT(OpA!=GridBLAS_OP_T); // Complex case expect no transpose
+    GRID_ASSERT(OpB!=GridBLAS_OP_T);
 
     int lda = m; // m x k column major
     int ldb = k; // k x n column major
@@ -636,7 +636,7 @@ public:
 				   (hipblasDoubleComplex **)&Cmn[0], ldc,
 				   batchCount);
     //	 std::cout << " hipblas return code " <<(int)err<<std::endl;
-    assert(err==HIPBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
     cublasOperation_t hOpA;
@@ -657,7 +657,7 @@ public:
 				  (cuDoubleComplex *) &beta_p[0],
 				  (cuDoubleComplex **)&Cmn[0], ldc,
 				  batchCount);
-    assert(err==CUBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
       int64_t m64=m;
@@ -804,8 +804,8 @@ public:
     RealD t2=usecond();
     int32_t batchCount = Amk.size();
 
-    assert(OpA!=GridBLAS_OP_T); // Complex case expect no transpose
-    assert(OpB!=GridBLAS_OP_T);
+    GRID_ASSERT(OpA!=GridBLAS_OP_T); // Complex case expect no transpose
+    GRID_ASSERT(OpB!=GridBLAS_OP_T);
 
     int lda = m; // m x k column major
     int ldb = k; // k x n column major
@@ -821,8 +821,8 @@ public:
     acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(ComplexF));
     RealD t0=usecond();
 
-    assert(Bkn.size()==batchCount);
-    assert(Cmn.size()==batchCount);
+    GRID_ASSERT(Bkn.size()==batchCount);
+    GRID_ASSERT(Cmn.size()==batchCount);
 #ifdef GRID_HIP
     hipblasOperation_t hOpA;
     hipblasOperation_t hOpB;
@@ -843,7 +843,7 @@ public:
 				   (hipblasComplex **)&Cmn[0], ldc,
 				   batchCount);
 
-    assert(err==HIPBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
     cublasOperation_t hOpA;
@@ -864,7 +864,7 @@ public:
 				  (cuComplex *) &beta_p[0],
 				  (cuComplex **)&Cmn[0], ldc,
 				  batchCount);
-    assert(err==CUBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
       int64_t m64=m;

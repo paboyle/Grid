@@ -95,13 +95,13 @@ void CmdJobParams::Parse(char **argv,int argc)
   if( GridCmdOptionExists(argv,argv+argc,"--phase") ){
     arg = GridCmdOptionPayload(argv,argv+argc,"--phase");
     pfile.open(arg);
-    assert(pfile);
+    GRID_ASSERT(pfile);
     expect = 0;
     while( pfile >> vstr ) {
       if ( vstr.compare("boundary_phase") == 0 ) {
         pfile >> vstr;
         GridCmdOptionInt(vstr,idx);
-        assert(expect==idx);
+        GRID_ASSERT(expect==idx);
         pfile >> vstr;
         GridCmdOptionFloat(vstr,re);
         pfile >> vstr;
@@ -118,13 +118,13 @@ void CmdJobParams::Parse(char **argv,int argc)
   if( GridCmdOptionExists(argv,argv+argc,"--omega") ){
     arg = GridCmdOptionPayload(argv,argv+argc,"--omega");
     pfile.open(arg);
-    assert(pfile);
+    GRID_ASSERT(pfile);
     Ls = 0;
     while( pfile >> vstr ) {
       if ( vstr.compare("omega") == 0 ) {
         pfile >> vstr;
         GridCmdOptionInt(vstr,idx);
-        assert(Ls==idx);
+        GRID_ASSERT(Ls==idx);
         pfile >> vstr;
         GridCmdOptionFloat(vstr,re);
         pfile >> vstr;
@@ -324,7 +324,7 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage  << "mpi_layout= " << mpi_layout << std::endl;
     std::cout << GridLogMessage  << "mpi_split= " << mpi_split << std::endl;
     std::cout << GridLogMessage  << "mrhs= " << mrhs << std::endl;
-//    assert(JP.Nu==tmp);
+//    GRID_ASSERT(JP.Nu==tmp);
 
   /////////////////////////////////////////////
   // Split into 1^4 mpi communicators, keeping it explicitly single

@@ -572,7 +572,7 @@ int main (int argc, char ** argv)
     GaugeMat diff = staple_orig - staple_padded;
     double n = norm2(diff);
     std::cout << GridLogMessage << mu << " " << n << std::endl;
-    assert(n<1e-10);
+    GRID_ASSERT(n<1e-10);
   }
   std::cout << GridLogMessage << "RectStaple timings orig: " << torig/1000/count << "ms,  padded: " << tpadded/1000/count << "ms" << std::endl;
   

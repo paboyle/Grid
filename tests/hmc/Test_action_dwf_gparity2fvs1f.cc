@@ -54,7 +54,7 @@ void copy2fTo1fFermionField(FermionField1f &out, const FermionField2f &in, int g
   std::cout << "dim_2f " << dim_2f << std::endl;
   std::cout << "dim_1f " << dim_1f << std::endl;
   
-  assert(dim_1f[gpdir] == 2*dim_2f[gpdir]);
+  GRID_ASSERT(dim_1f[gpdir] == 2*dim_2f[gpdir]);
 
   LatticeInteger xcoor_1f(out.Grid()); //5d lattice integer
   LatticeCoordinate(xcoor_1f,gpdir);

@@ -40,7 +40,7 @@ void SaveOperator(Coarsened &Operator,std::string file)
 #ifdef HAVE_LIME
   emptyUserRecord record;
   ScidacWriter WR(Operator.Grid()->IsBoss());
-  assert(Operator._A.size()==Operator.geom.npoint);
+  GRID_ASSERT(Operator._A.size()==Operator.geom.npoint);
   WR.open(file);
   for(int p=0;p<Operator._A.size();p++){
     auto tmp = Operator.Cell.Extract(Operator._A[p]);
@@ -57,7 +57,7 @@ void LoadOperator(Coarsened &Operator,std::string file)
   emptyUserRecord record;
   Grid::ScidacReader RD ;
   RD.open(file);
-  assert(Operator._A.size()==Operator.geom.npoint);
+  GRID_ASSERT(Operator._A.size()==Operator.geom.npoint);
   for(int p=0;p<Operator.geom.npoint;p++){
     conformable(Operator._A[p].Grid(),Operator.CoarseGrid());
     //    RD.readScidacFieldRecord(Operator._A[p],record,BINARYIO_LEXICOGRAPHIC);
@@ -74,7 +74,7 @@ void ReLoadOperator(Coarsened &Operator,std::string file)
   emptyUserRecord record;
   Grid::ScidacReader RD ;
   RD.open(file);
-  assert(Operator._A.size()==Operator.geom.npoint);
+  GRID_ASSERT(Operator._A.size()==Operator.geom.npoint);
   for(int p=0;p<Operator.geom.npoint;p++){
     auto tmp=Operator.Cell.Extract(Operator._A[p]);
     RD.readScidacFieldRecord(tmp,record,0);
@@ -126,10 +126,10 @@ public:
   void Op     (const Field &in, Field &out)   { wrapped.HermOp(in,out);  }
   void HermOp(const Field &in, Field &out)    { wrapped.HermOp(in,out); }
   void AdjOp     (const Field &in, Field &out){ wrapped.HermOp(in,out);  }
-  void OpDiag (const Field &in, Field &out)                  {    assert(0);  }
-  void OpDir  (const Field &in, Field &out,int dir,int disp) {    assert(0);  }
-  void OpDirAll  (const Field &in, std::vector<Field> &out)  {    assert(0);  };
-  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){    assert(0);  }
+  void OpDiag (const Field &in, Field &out)                  {    GRID_ASSERT(0);  }
+  void OpDir  (const Field &in, Field &out,int dir,int disp) {    GRID_ASSERT(0);  }
+  void OpDirAll  (const Field &in, std::vector<Field> &out)  {    GRID_ASSERT(0);  };
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){    GRID_ASSERT(0);  }
 };
 /*
 template<class Field> class ChebyshevSmoother : public LinearFunction<Field>

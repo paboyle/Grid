@@ -30,7 +30,17 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #ifndef GRID_KRYLOVSCHUR_H
 #define GRID_KRYLOVSCHUR_H
 
-NAMESPACE_BEGIN(Grid); 
+NAMESPACE_BEGIN(Grid);
+
+#if defined(GRID_CUDA) || defined(GRID_HIP)
+using thrust::abs;
+using thrust::conj;
+inline std::complex<double> toStdCmplx(const ComplexD& c) { return {c.real(), c.imag()}; }
+#else
+using std::abs;
+using std::conj;
+inline const ComplexD& toStdCmplx(const ComplexD& c) { return c; }
+#endif
 
 /**
  * Options for which Ritz values to keep in implicit restart. TODO move this and utilities into a new file
@@ -209,8 +219,8 @@ class ComplexSchurDecomposition {
       s    = S(i, i+1);
       lam1 = S(i, i);
       lam2 = S(i+1, i+1);
-      phi  = s / std::abs(s);
-      r    = std::sqrt(std::pow(std::abs(s), 2) + std::pow(std::abs(lam2 - lam1), 2));
+      phi  = s / abs(s);
+      r    = std::sqrt(std::pow(abs(s), 2) + std::pow(abs(lam2 - lam1), 2));
 
       // // Original code which performs Givens rotations by manual matrix multiplication
       // // compute Givens rotation corresponding to these parameters
@@ -225,10 +235,10 @@ class ComplexSchurDecomposition {
 
       // Modified code
       Givens = CMat::Identity(2, 2);
-      Givens(0, 0)     = std::abs(s) / r;
+      Givens(0, 0)     = abs(s) / r;
       Givens(1, 1) = Givens(0, 0);
-      Givens(0, 1)   = (phi / r) * std::conj(lam2 - lam1);
-      Givens(1, 0)   = -std::conj(Givens(0, 1));
+      Givens(0, 1)   = (phi / r) * conj(lam2 - lam1);
+      Givens(1, 0)   = -conj(Givens(0, 1));
 
       // TODO: make sure these are correct
       Eigen::MatrixXcd tmp;
@@ -661,7 +671,7 @@ if (!shift){
         // Linop.Op(basis[i], w);
         for (int j = 0; j < basis.size(); j++) {
           coeff = innerProduct(basis[j], w);       // coeff = h_{ij}. Note that since {vi} is ONB it's OK to subtract it off after. 
-          Rayleigh(j, i) = coeff;
+          Rayleigh(j, i) = toStdCmplx(coeff);
           w -= coeff * basis[j];
         }
 
@@ -669,7 +679,7 @@ if (!shift){
           std::cout << GridLogDebug << "Double orthogonalizing." << std::endl;
           for (int j = 0; j < basis.size(); j++) {
             coeff = innerProduct(basis[j], w);      // see if there is any residual component in basis[j] direction
-            Rayleigh(j, i) += coeff;                // if coeff is non-zero, adjust Rayleigh
+            Rayleigh(j, i) += toStdCmplx(coeff);   // if coeff is non-zero, adjust Rayleigh
             w -= coeff * basis[j];
           }
         }
@@ -677,7 +687,7 @@ if (!shift){
         // add w_i to the pile
         if (i < Nm - 1) {
           coeff = std::sqrt(norm2(w));
-          Rayleigh(i+1, i) = coeff;
+          Rayleigh(i+1, i) = toStdCmplx(coeff);
           basis.push_back(
             (1.0/coeff) * w
           );

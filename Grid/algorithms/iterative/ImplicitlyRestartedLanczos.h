@@ -226,7 +226,7 @@ until convergence
   void calc(std::vector<RealD>& eval, std::vector<Field>& evec,  const Field& src, int& Nconv, bool reverse=false)
   {
     GridBase *grid = src.Grid();
-    assert(grid == evec[0].Grid());
+    GRID_ASSERT(grid == evec[0].Grid());
     
     //    GridLogIRL.TimingMode(1);
     std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
@@ -246,7 +246,7 @@ until convergence
     }
     std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
 	
-    assert(Nm <= evec.size() && Nm <= eval.size());
+    GRID_ASSERT(Nm <= evec.size() && Nm <= eval.size());
     
     // quickly get an idea of the largest eigenvalue to more properly normalize the residuum
     RealD evalMaxApprox = 0.0;
@@ -357,7 +357,7 @@ until convergence
       }
       std::cout<<GridLogIRL <<"QR decomposed "<<std::endl;
 
-      assert(k2<Nm);      assert(k2<Nm);      assert(k1>0);
+      GRID_ASSERT(k2<Nm);      GRID_ASSERT(k2<Nm);      GRID_ASSERT(k1>0);
 
       basisRotate(evec,Qt,k1-1,k2+1,0,Nm,Nm); /// big constraint on the basis
       std::cout<<GridLogIRL <<"basisRotated  by Qt *"<<k1-1<<","<<k2+1<<")"<<std::endl;
@@ -484,7 +484,7 @@ until convergence
   {
     std::cout<<GridLogDebug << "Lanczos step " <<k<<std::endl;
     const RealD tiny = 1.0e-20;
-    assert( k< Nm );
+    GRID_ASSERT( k< Nm );
 
     GridStopWatch gsw_op,gsw_o;
 
@@ -618,7 +618,7 @@ until convergence
     }  else if ( diagonalisation == IRLdiagonaliseWithEigen ) { 
       diagonalize_Eigen(lmd,lme,Nk,Nm,Qt,grid);
     } else { 
-      assert(0);
+      GRID_ASSERT(0);
     }
   }
 
@@ -708,7 +708,7 @@ void diagonalize_lapack(std::vector<RealD>& lmd,
     }
   }
 #else 
-  assert(0);
+  GRID_ASSERT(0);
 #endif
 }
 

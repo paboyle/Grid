@@ -59,7 +59,7 @@ public:
 				     FourDimGrid,
 				     FourDimRedBlackGrid,_mass,_M5,p)
   {
-    assert((this->Ls&0x1)==1); // Odd Ls required
+    GRID_ASSERT((this->Ls&0x1)==1); // Odd Ls required
 
     int nrational=this->Ls;// Odd rational order
     RealD eps = lo/hi;

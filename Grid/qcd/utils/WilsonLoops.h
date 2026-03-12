@@ -168,7 +168,7 @@ public:
   static std::vector<RealD> timesliceAvgSpatialPlaquette(const GaugeLorentz &Umu) {
     std::vector<RealD> sumplaq = timesliceSumSpatialPlaquette(Umu);
     int Lt = Umu.Grid()->FullDimensions()[Nd-1];
-    assert(sumplaq.size() == Lt);
+    GRID_ASSERT(sumplaq.size() == Lt);
     double vol = Umu.Grid()->gSites() / Lt;
     double faces = (1.0 * (Nd - 1)* (Nd - 2)) / 2.0;
     for(int t=0;t<Lt;t++)
@@ -177,25 +177,43 @@ public:
   }
 
   //////////////////////////////////////////////////
-  // average over all x,y,z the temporal loop
+  // average Polyakov loop in mu direction over all directions != mu
   //////////////////////////////////////////////////
-  static ComplexD avgPolyakovLoop(const GaugeField &Umu) {  //assume Nd=4
-    GaugeMat Ut(Umu.Grid()), P(Umu.Grid());
+  static ComplexD avgPolyakovLoop(const GaugeField &Umu, const int mu) {  //assume Nd=4
+    
+    // Protect against bad value of mu [0, 3]
+    if ((mu < 0 ) || (mu > 3)) {
+      std::cout << GridLogError << "Index is not an integer inclusively between 0 and 3." << std::endl;
+      exit(1);
+    }
+
+    // U_loop is U_{mu}
+    GaugeMat U_loop(Umu.Grid()), P(Umu.Grid());
     ComplexD out;
     int T = Umu.Grid()->GlobalDimensions()[3];
     int X = Umu.Grid()->GlobalDimensions()[0];
     int Y = Umu.Grid()->GlobalDimensions()[1];
     int Z = Umu.Grid()->GlobalDimensions()[2];
 
-    Ut = peekLorentz(Umu,3); //Select temporal direction
-    P = Ut;
-    for (int t=1;t<T;t++){ 
-      P = Gimpl::CovShiftForward(Ut,3,P);
+    // Number of sites in mu direction
+    int N_mu = Umu.Grid()->GlobalDimensions()[mu];
+
+    U_loop = peekLorentz(Umu, mu); //Select direction
+    P = U_loop;
+    for (int t=1;t<N_mu;t++){ 
+      P = Gimpl::CovShiftForward(U_loop,mu,P);
     }
    RealD norm = 1.0/(Nc*X*Y*Z*T);
    out = sum(trace(P))*norm;
    return out;   
-}
+  }  
+
+  /////////////////////////////////////////////////
+  // overload for temporal Polyakov loop
+  /////////////////////////////////////////////////
+  static ComplexD avgPolyakovLoop(const GaugeField &Umu) { 
+    return avgPolyakovLoop(Umu, 3);
+  }
 
   //////////////////////////////////////////////////
   // average over traced single links
@@ -347,7 +365,7 @@ public:
   //U: link array (Nd)
   /////////////
   static void StapleAll(std::vector<GaugeMat> &staple, const std::vector<GaugeMat> &U) {
-    assert(staple.size() == Nd); assert(U.size() == Nd);
+    GRID_ASSERT(staple.size() == Nd); GRID_ASSERT(U.size() == Nd);
     for(int mu=0;mu<Nd;mu++) Staple(staple[mu], U, mu);
   }
 
@@ -373,7 +391,7 @@ public:
   public:
     //Get the stencil. If not already generated, or if generated using a different Grid than in PaddedCell, it will be created on-the-fly
     const GeneralLocalStencil & getStencil(const PaddedCell &pcell){
-      assert(pcell.depth >= this->paddingDepth());
+      GRID_ASSERT(pcell.depth >= this->paddingDepth());
       if(!stencil || stencil->Grid() != (GridBase*)pcell.grids.back() ) generateStencil((GridBase*)pcell.grids.back());
       return *stencil;
     }
@@ -391,7 +409,7 @@ public:
     std::unique_ptr<PaddedCell> pcell;
 
     void generatePcell(GridBase* unpadded_grid){
-      assert(stencil_wk.size());
+      GRID_ASSERT(stencil_wk.size());
       int max_depth = 0;
       for(auto const &s : stencil_wk) max_depth=std::max(max_depth, s->paddingDepth());
       
@@ -402,7 +420,7 @@ public:
     //Add a stencil definition. This should be done before the first call to retrieve a stencil object.
     //Takes ownership of the pointer
     void addStencil(WilsonLoopPaddedStencilWorkspace *stencil){
-      assert(!pcell);
+      GRID_ASSERT(!pcell);
       stencil_wk.push_back(stencil);
     }
 
@@ -469,9 +487,9 @@ public:
   static void StaplePaddedAll(std::vector<GaugeMat> &staple, const std::vector<GaugeMat> &U_padded, const PaddedCell &Cell, const GeneralLocalStencil &gStencil)
   {
     double t0 = usecond();
-    assert(U_padded.size() == Nd); assert(staple.size() == Nd);
-    assert(U_padded[0].Grid() == (GridBase*)Cell.grids.back());
-    assert(Cell.depth >= 1);
+    GRID_ASSERT(U_padded.size() == Nd); GRID_ASSERT(staple.size() == Nd);
+    GRID_ASSERT(U_padded[0].Grid() == (GridBase*)Cell.grids.back());
+    GRID_ASSERT(Cell.depth >= 1);
     GridBase *ggrid = U_padded[0].Grid(); //padded cell grid
 
     int shift_mu_off = gStencil._npoints/Nd;
@@ -622,7 +640,7 @@ public:
 
   static Real TopologicalCharge(const GaugeLorentz &U){
     // 4d topological charge
-    assert(Nd==4);
+    GRID_ASSERT(Nd==4);
     // Bx = -iF(y,z), By = -iF(z,y), Bz = -iF(x,y)
     GaugeMat Bx(U.Grid()), By(U.Grid()), Bz(U.Grid());
     FieldStrength(Bx, U, Ydir, Zdir);
@@ -740,7 +758,7 @@ public:
   //cf  https://arxiv.org/pdf/hep-lat/9701012.pdf  Eq 6
   //output is the charge by timeslice: sum over timeslices to obtain the total
   static std::vector<Real> TimesliceTopologicalChargeMxN(const GaugeLorentz &U, int M, int N){
-    assert(Nd == 4);
+    GRID_ASSERT(Nd == 4);
     std::vector<std::vector<GaugeMat*> > F(Nd,std::vector<GaugeMat*>(Nd,nullptr));
     //Note F_numu = - F_munu
     //hence we only need to loop over mu,nu,rho,sigma that aren't related by permuting mu,nu  or rho,sigma
@@ -1095,7 +1113,7 @@ public:
   //U: Gauge links in each direction (Nd)
   /////////////////////////////////////////////////////
   static void RectStapleAll(std::vector<GaugeMat> &Stap, const std::vector<GaugeMat> &U){
-    assert(Stap.size() == Nd); assert(U.size() == Nd);
+    GRID_ASSERT(Stap.size() == Nd); GRID_ASSERT(U.size() == Nd);
     std::vector<GaugeMat> U2(Nd,U[0].Grid());
     for(int mu=0;mu<Nd;mu++) RectStapleDouble(U2[mu], U[mu], mu);
     for(int mu=0;mu<Nd;mu++) RectStapleOptimised(Stap[mu], U2, U, mu);
@@ -1179,9 +1197,9 @@ public:
   //gStencil: the stencil
   static void RectStaplePaddedAll(std::vector<GaugeMat> &staple, const std::vector<GaugeMat> &U_padded, const PaddedCell &Cell, const GeneralLocalStencil &gStencil) {
     double t0 = usecond();
-    assert(U_padded.size() == Nd); assert(staple.size() == Nd);
-    assert(U_padded[0].Grid() == (GridBase*)Cell.grids.back());
-    assert(Cell.depth >= 2);
+    GRID_ASSERT(U_padded.size() == Nd); GRID_ASSERT(staple.size() == Nd);
+    GRID_ASSERT(U_padded[0].Grid() == (GridBase*)Cell.grids.back());
+    GRID_ASSERT(Cell.depth >= 2);
     GridBase *ggrid = U_padded[0].Grid(); //padded cell grid
 
     size_t nshift = gStencil._npoints;

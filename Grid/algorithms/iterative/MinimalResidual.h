@@ -35,7 +35,7 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
  public:
   using OperatorFunction<Field>::operator();
 
-  bool ErrorOnNoConverge; // throw an assert when the MR fails to converge.
+  bool ErrorOnNoConverge; // throw an GRID_ASSERT when the MR fails to converge.
                           // Defaults true.
   RealD   Tolerance;
   Integer MaxIterations;
@@ -59,7 +59,7 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
 
     // Initial residual computation & set up
     RealD guess = norm2(psi);
-    assert(std::isnan(guess) == 0);
+    GRID_ASSERT(std::isnan(guess) == 0);
 
     RealD ssq = norm2(src);
     RealD rsq = Tolerance * Tolerance * ssq;
@@ -136,7 +136,7 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
         std::cout << GridLogMessage << "MR Time elapsed: Linalg  " << LinalgTimer.Elapsed() << std::endl;
 
         if (ErrorOnNoConverge)
-          assert(true_residual / Tolerance < 10000.0);
+          GRID_ASSERT(true_residual / Tolerance < 10000.0);
 
         IterationsToComplete = k;
 
@@ -148,7 +148,7 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
               << std::endl;
 
     if (ErrorOnNoConverge)
-      assert(0);
+      GRID_ASSERT(0);
 
     IterationsToComplete = k;
   }

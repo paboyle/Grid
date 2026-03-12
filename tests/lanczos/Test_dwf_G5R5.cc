@@ -392,7 +392,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  FILE *fp = fopen("lego-plot.py","w"); assert(fp!=NULL);
+  FILE *fp = fopen("lego-plot.py","w"); GRID_ASSERT(fp!=NULL);
 #define PYTHON_LINE(A)  fprintf(fp,A"\n");
   PYTHON_LINE("import matplotlib.pyplot as plt");
   PYTHON_LINE("import numpy as np");

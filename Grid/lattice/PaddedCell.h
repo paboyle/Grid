@@ -82,10 +82,10 @@ template<class vobj> inline void ScatterSlice(const deviceVector<vobj> &buf,
 
   int rNsimd = 1; for(int d=0;d<Nd;d++) rNsimd*=rsimd[d];
   int rNsimda= Nsimd/simd[dim]; // should be equal
-  assert(rNsimda==rNsimd);
+  GRID_ASSERT(rNsimda==rNsimd);
   int face_ovol=block*nblock;
 
-  //  assert(buf.size()==face_ovol*rNsimd);
+  //  GRID_ASSERT(buf.size()==face_ovol*rNsimd);
 
   /*This will work GPU ONLY unless rNsimd is put in the lexico index*/
   //Let's make it work on GPU and then make a special accelerator_for that
@@ -172,7 +172,7 @@ template<class vobj> inline void GatherSlice(deviceVector<vobj> &buf,
   
   int face_ovol=block*nblock;
 
-  //  assert(buf.size()==face_ovol*rNsimd);
+  //  GRID_ASSERT(buf.size()==face_ovol*rNsimd);
 
   /*This will work GPU ONLY unless rNsimd is put in the lexico index*/
   //Let's make it work on GPU and then make a special accelerator_for that
@@ -247,7 +247,7 @@ public:
     Coordinate local     =unpadded_grid->LocalDimensions();
     Coordinate procs     =unpadded_grid->ProcessorGrid();
     for(int d=0;d<dims;d++){
-      if ( procs[d] > 1 ) assert(local[d]>=depth);
+      if ( procs[d] > 1 ) GRID_ASSERT(local[d]>=depth);
     }
   }
   void DeleteGrids(void)
@@ -448,9 +448,9 @@ public:
     int nld   = to.Grid()->_ldimensions[dimension];
     const int Nsimd = vobj::Nsimd();
 
-    assert(depth<=lds[dimension]); // A must be on neighbouring node
-    assert(depth>0);   // A caller bug if zero
-    assert(ld+2*depth==nld);
+    GRID_ASSERT(depth<=lds[dimension]); // A must be on neighbouring node
+    GRID_ASSERT(depth>0);   // A caller bug if zero
+    GRID_ASSERT(ld+2*depth==nld);
     ////////////////////////////////////////////////////////////////////////////
     // Face size and byte calculations
     ////////////////////////////////////////////////////////////////////////////
@@ -460,7 +460,7 @@ public:
     }
     buffer_size = buffer_size  / Nsimd;
     int rNsimd = Nsimd / simd[dimension];
-    assert( buffer_size == from.Grid()->_slice_nblock[dimension]*from.Grid()->_slice_block[dimension] / simd[dimension]);
+    GRID_ASSERT( buffer_size == from.Grid()->_slice_nblock[dimension]*from.Grid()->_slice_block[dimension] / simd[dimension]);
 
     static deviceVector<vobj> send_buf; 
     static deviceVector<vobj> recv_buf;

@@ -25,6 +25,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+#include "disable_tests_without_instantiations.h"
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
 #include <Grid/Grid.h>
 
 using namespace std;
@@ -180,7 +183,7 @@ int main (int argc, char ** argv)
     std::cout << " SinglePrecision GF/s "<< flops/(t2-t1)/1000.<<std::endl;
     std::cout << " SinglePrecision error count "<< FlightRecorder::ErrorCount()<<std::endl;
 
-    assert(FlightRecorder::ErrorCount()==0);
+    GRID_ASSERT(FlightRecorder::ErrorCount()==0);
 
     std::cout << " FlightRecorder is OK! "<<std::endl;
     iter ++;
@@ -208,7 +211,7 @@ int main (int argc, char ** argv)
     std::cout << " DoublePrecision iterations/sec "<< iters/(t2-t1)*1000.*1000.<<std::endl;
     std::cout << " DoublePrecision GF/s "<< flops/(t2-t1)/1000.<<std::endl;
     std::cout << " DoublePrecision error count "<< FlightRecorder::ErrorCount()<<std::endl;
-    assert(FlightRecorder::ErrorCount()==0);
+    GRID_ASSERT(FlightRecorder::ErrorCount()==0);
     std::cout << " FlightRecorder is OK! "<<std::endl;
     now = time(NULL); UGrid->Broadcast(0,(void *)&now,sizeof(now));
     i++;
@@ -218,7 +221,9 @@ int main (int argc, char ** argv)
   RealD diff = axpy_norm(diff_o, -1.0, result_o, result_o_2);
 
   std::cout << GridLogMessage << "::::::::::::: Diff between mixed and regular CG: " << diff << std::endl;
-  assert(diff < 1e-4);
+  GRID_ASSERT(diff < 1e-4);
   
   Grid_finalize();
 }
+
+#endif

@@ -52,6 +52,10 @@ class GeneralLocalStencilView {
     return & this->_entries_p[point+this->_npoints*osite]; 
   }
   void ViewClose(void){};
+#ifdef GRID_LOG_VIEWS
+  size_t size() { return 0; };
+  uint64_t & operator[](size_t i) { static uint64_t v=0; return v; };
+#endif
 };
 ////////////////////////////////////////
 // The Stencil Class itself
@@ -114,7 +118,7 @@ public:
 	    int ld = grid->_ldimensions[d];
 	    int ly = grid->_simd_layout[d];
 
-	    assert((ly==1)||(ly==2)||(ly==grid->Nsimd()));
+	    GRID_ASSERT((ly==1)||(ly==2)||(ly==grid->Nsimd()));
 
 	    int shift = (shifts[ii][d]+fd)%fd;  // make it strictly positive 0.. L-1
 	    int x = Coor[d];                // x in [0... rd-1] as an oSite 

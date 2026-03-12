@@ -67,7 +67,7 @@ public:
   }
   virtual int CheckerBoard(const Coordinate &site){
     int linear=0;
-    assert(site.size()==_ndimension);
+    GRID_ASSERT(site.size()==_ndimension);
     for(int d=0;d<_ndimension;d++){ 
       if(_checker_dim_mask[d])
 	linear=linear+site[d];
@@ -160,11 +160,11 @@ public:
 
       _isCheckerBoarded = true;
     _checker_dim = checker_dim;
-    assert(checker_dim_mask[checker_dim] == 1);
+    GRID_ASSERT(checker_dim_mask[checker_dim] == 1);
     _ndimension = dimensions.size();
-    assert(checker_dim_mask.size() == _ndimension);
-    assert(processor_grid.size() == _ndimension);
-    assert(simd_layout.size() == _ndimension);
+    GRID_ASSERT(checker_dim_mask.size() == _ndimension);
+    GRID_ASSERT(processor_grid.size() == _ndimension);
+    GRID_ASSERT(simd_layout.size() == _ndimension);
 
     _fdimensions.resize(_ndimension);
     _gdimensions.resize(_ndimension);
@@ -190,20 +190,20 @@ public:
 
         if (d == _checker_dim)
 	  {
-	    assert((_gdimensions[d] & 0x1) == 0);
+	    GRID_ASSERT((_gdimensions[d] & 0x1) == 0);
 	    _gdimensions[d] = _gdimensions[d] / 2; // Remove a checkerboard
 	    _gsites /= 2;
 	  }
         _ldimensions[d] = _gdimensions[d] / _processors[d];
-        assert(_ldimensions[d] * _processors[d] == _gdimensions[d]);
+        GRID_ASSERT(_ldimensions[d] * _processors[d] == _gdimensions[d]);
         _lstart[d] = _processor_coor[d] * _ldimensions[d];
         _lend[d] = _processor_coor[d] * _ldimensions[d] + _ldimensions[d] - 1;
 
         // Use a reduced simd grid
         _simd_layout[d] = simd_layout[d];
         _rdimensions[d] = _ldimensions[d] / _simd_layout[d]; // this is not checking if this is integer
-        assert(_rdimensions[d] * _simd_layout[d] == _ldimensions[d]);
-        assert(_rdimensions[d] > 0);
+        GRID_ASSERT(_rdimensions[d] * _simd_layout[d] == _ldimensions[d]);
+        GRID_ASSERT(_rdimensions[d] > 0);
 
         // all elements of a simd vector must have same checkerboard.
         // If Ls vectorised, this must still be the case; e.g. dwf rb5d

@@ -51,7 +51,7 @@ public:
   void sscale(const Lattice<vobj>& in, Lattice<vobj>& out, Coeff_t* s) {
     GridBase *grid=out.Grid();
     out.Checkerboard() = in.Checkerboard();
-    assert(grid->_simd_layout[0] == 1); // should be fine for ZMobius for now
+    GRID_ASSERT(grid->_simd_layout[0] == 1); // should be fine for ZMobius for now
     int Ls = grid->_rdimensions[0];
     thread_for(ss, grid->oSites(),
     {

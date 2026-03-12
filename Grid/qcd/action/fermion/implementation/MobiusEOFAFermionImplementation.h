@@ -55,7 +55,7 @@ MobiusEOFAFermion<Impl>::MobiusEOFAFermion(
 
   RealD eps = 1.0;
   Approx::zolotarev_data *zdata = Approx::higham(eps, this->Ls);
-  assert(zdata->n == this->Ls);
+  GRID_ASSERT(zdata->n == this->Ls);
 
   std::cout << GridLogMessage << "MobiusEOFAFermion (b=" << _b <<
     ",c=" << _c << ") with Ls=" << Ls << std::endl;

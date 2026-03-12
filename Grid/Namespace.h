@@ -29,8 +29,8 @@ directory
 #pragma once
 
 #include <type_traits>
-#include <cassert>
 #include <exception>
+#include <cassert>
 
 #define NAMESPACE_BEGIN(A) namespace A {
 #define NAMESPACE_END(A)   }

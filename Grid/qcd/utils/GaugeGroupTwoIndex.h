@@ -165,7 +165,7 @@ public:
   template <class cplx>
   static void base(int Index, iGroupMatrix<cplx> &eij) {
   // returns (e)^(ij)_{kl} necessary for change of base U_F -> U_R
-    assert(Index < Dimension);
+    GRID_ASSERT(Index < Dimension);
     eij = Zero();
   // for the linearisation of the 2 indexes
     static int a[ncolour * (ncolour - 1) / 2][2];  // store the a <-> i,j
@@ -243,7 +243,7 @@ public:
     for (int a = 0; a < NumGenerators; a++) {
       generator(a, i2indTa);
       std::cout << GridLogMessage << a << std::endl;
-      assert(norm2(trace(i2indTa)) < 1.0e-6);
+      GRID_ASSERT(norm2(trace(i2indTa)) < 1.0e-6);
     }
     std::cout << GridLogMessage << std::endl;
 
@@ -252,7 +252,7 @@ public:
     for (int a = 0; a < NumGenerators; a++) {
       generator(a, i2indTa);
       std::cout << GridLogMessage << a << std::endl;
-      assert(norm2(adj(i2indTa) + i2indTa) < 1.0e-6);
+      GRID_ASSERT(norm2(adj(i2indTa) + i2indTa) < 1.0e-6);
     }
 
     std::cout << GridLogMessage << std::endl;
@@ -269,11 +269,11 @@ public:
         std::cout << GridLogMessage << "a=" << a << "b=" << b << "Tr=" << Tr
                   << std::endl;
         if (a == b) {
-          assert(real(Tr) - ((ncolour + S * 2) * 0.5) < 1e-8);
+          GRID_ASSERT(real(Tr) - ((ncolour + S * 2) * 0.5) < 1e-8);
         } else {
-          assert(real(Tr) < 1e-8);
+          GRID_ASSERT(real(Tr) < 1e-8);
         }
-        assert(imag(Tr) < 1e-8);
+        GRID_ASSERT(imag(Tr) < 1e-8);
       }
     }
     std::cout << GridLogMessage << std::endl;

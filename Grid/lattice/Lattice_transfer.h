@@ -31,15 +31,15 @@ NAMESPACE_BEGIN(Grid);
 
 inline void subdivides(GridBase *coarse,GridBase *fine)
 {
-  assert(coarse->_ndimension == fine->_ndimension);
+  GRID_ASSERT(coarse->_ndimension == fine->_ndimension);
 
   int _ndimension = coarse->_ndimension;
 
   // local and global volumes subdivide cleanly after SIMDization
   for(int d=0;d<_ndimension;d++){
-    assert(coarse->_processors[d]  == fine->_processors[d]);
-    assert(coarse->_simd_layout[d] == fine->_simd_layout[d]);
-    assert((fine->_rdimensions[d] / coarse->_rdimensions[d])* coarse->_rdimensions[d]==fine->_rdimensions[d]); 
+    GRID_ASSERT(coarse->_processors[d]  == fine->_processors[d]);
+    GRID_ASSERT(coarse->_simd_layout[d] == fine->_simd_layout[d]);
+    GRID_ASSERT((fine->_rdimensions[d] / coarse->_rdimensions[d])* coarse->_rdimensions[d]==fine->_rdimensions[d]); 
   }
 }
 
@@ -309,7 +309,7 @@ inline void batchBlockProject(std::vector<Lattice<iVector<CComplex,nbasis>>> &co
                                const VLattice &Basis)
 {
   int NBatch = fineData.size();
-  assert(coarseData.size() == NBatch);
+  GRID_ASSERT(coarseData.size() == NBatch);
 
   GridBase * fine  = fineData[0].Grid();
   GridBase * coarse= coarseData[0].Grid();
@@ -344,7 +344,7 @@ template<class vobj,class vobj2,class CComplex>
   GridBase * coarse= coarseA.Grid();
 
   fineZ.Checkerboard()=fineX.Checkerboard();
-  assert(fineX.Checkerboard()==fineY.Checkerboard());
+  GRID_ASSERT(fineX.Checkerboard()==fineY.Checkerboard());
   subdivides(coarse,fine); // require they map
   conformable(fineX,fineY);
   conformable(fineX,fineZ);
@@ -356,7 +356,7 @@ template<class vobj,class vobj2,class CComplex>
   // FIXME merge with subdivide checking routine as this is redundant
   for(int d=0 ; d<_ndimension;d++){
     block_r[d] = fine->_rdimensions[d] / coarse->_rdimensions[d];
-    assert(block_r[d]*coarse->_rdimensions[d]==fine->_rdimensions[d]);
+    GRID_ASSERT(block_r[d]*coarse->_rdimensions[d]==fine->_rdimensions[d]);
   }
 
   autoView( fineZ_  , fineZ, AcceleratorWrite);
@@ -613,7 +613,7 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
   int  _ndimension = coarse->_ndimension;
 
   // checks
-  assert( nbasis == Basis.size() );
+  GRID_ASSERT( nbasis == Basis.size() );
   subdivides(coarse,fine); 
   for(int i=0;i<nbasis;i++){
     conformable(Basis[i].Grid(),fine);
@@ -687,7 +687,7 @@ inline void batchBlockPromote(const std::vector<Lattice<iVector<CComplex,nbasis>
                                const VLattice &Basis)
 {
   int NBatch = coarseData.size();
-  assert(fineData.size() == NBatch);
+  GRID_ASSERT(fineData.size() == NBatch);
 
   GridBase * fine   = fineData[0].Grid();
   GridBase * coarse = coarseData[0].Grid();
@@ -715,12 +715,12 @@ void localConvert(const Lattice<vobj> &in,Lattice<vvobj> &out)
   int ni = ig->_ndimension;
   int no = og->_ndimension;
 
-  assert(ni == no);
+  GRID_ASSERT(ni == no);
 
   for(int d=0;d<no;d++){
-    assert(ig->_processors[d]  == og->_processors[d]);
-    assert(ig->_ldimensions[d] == og->_ldimensions[d]);
-    assert(ig->lSites() == og->lSites());
+    GRID_ASSERT(ig->_processors[d]  == og->_processors[d]);
+    GRID_ASSERT(ig->_ldimensions[d] == og->_ldimensions[d]);
+    GRID_ASSERT(ig->lSites() == og->lSites());
   }
 
   autoView(in_v,in,CpuRead);
@@ -752,16 +752,16 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
 
   GridBase *Fg = From.Grid();
   GridBase *Tg = To.Grid();
-  assert(!Fg->_isCheckerBoarded);
-  assert(!Tg->_isCheckerBoarded);
+  GRID_ASSERT(!Fg->_isCheckerBoarded);
+  GRID_ASSERT(!Tg->_isCheckerBoarded);
   int Nsimd = Fg->Nsimd();
   int nF = Fg->_ndimension;
   int nT = Tg->_ndimension;
   int nd = nF;
-  assert(nF == nT);
+  GRID_ASSERT(nF == nT);
 
   for(int d=0;d<nd;d++){
-    assert(Fg->_processors[d]  == Tg->_processors[d]);
+    GRID_ASSERT(Fg->_processors[d]  == Tg->_processors[d]);
   }
 
   ///////////////////////////////////////////////////////////
@@ -821,12 +821,12 @@ void InsertSliceFast(const Lattice<vobj> &From,Lattice<vobj> & To,int slice, int
   //////////////////////////////////////////////////////////////////////////////////////////
   GridBase *Fg = From.Grid();
   GridBase *Tg = To.Grid();
-  assert(!Fg->_isCheckerBoarded);
-  assert(!Tg->_isCheckerBoarded);
+  GRID_ASSERT(!Fg->_isCheckerBoarded);
+  GRID_ASSERT(!Tg->_isCheckerBoarded);
   int Nsimd = Fg->Nsimd();
   int nF = Fg->_ndimension;
   int nT = Tg->_ndimension;
-  assert(nF+1 == nT);
+  GRID_ASSERT(nF+1 == nT);
 
   ///////////////////////////////////////////////////////////
   // do the index calc on the GPU
@@ -890,12 +890,12 @@ void ExtractSliceFast(Lattice<vobj> &To,const Lattice<vobj> & From,int slice, in
   //////////////////////////////////////////////////////////////////////////////////////////
   GridBase *Fg = From.Grid();
   GridBase *Tg = To.Grid();
-  assert(!Fg->_isCheckerBoarded);
-  assert(!Tg->_isCheckerBoarded);
+  GRID_ASSERT(!Fg->_isCheckerBoarded);
+  GRID_ASSERT(!Tg->_isCheckerBoarded);
   int Nsimd = Fg->Nsimd();
   int nF = Fg->_ndimension;
   int nT = Tg->_ndimension;
-  assert(nT+1 == nF);
+  GRID_ASSERT(nT+1 == nF);
 
   ///////////////////////////////////////////////////////////
   // do the index calc on the GPU
@@ -955,16 +955,16 @@ void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice
   int nl = lg->_ndimension;
   int nh = hg->_ndimension;
 
-  assert(nl+1 == nh);
-  assert(orthog<nh);
-  assert(orthog>=0);
-  assert(hg->_processors[orthog]==1);
+  GRID_ASSERT(nl+1 == nh);
+  GRID_ASSERT(orthog<nh);
+  GRID_ASSERT(orthog>=0);
+  GRID_ASSERT(hg->_processors[orthog]==1);
 
   int dl; dl = 0;
   for(int d=0;d<nh;d++){
     if ( d != orthog) {
-      assert(lg->_processors[dl]  == hg->_processors[d]);
-      assert(lg->_ldimensions[dl] == hg->_ldimensions[d]);
+      GRID_ASSERT(lg->_processors[dl]  == hg->_processors[d]);
+      GRID_ASSERT(lg->_ldimensions[dl] == hg->_ldimensions[d]);
       dl++;
     }
   }
@@ -1005,17 +1005,17 @@ void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slic
   int nl = lg->_ndimension;
   int nh = hg->_ndimension;
 
-  assert(nl+1 == nh);
-  assert(orthog<nh);
-  assert(orthog>=0);
-  assert(hg->_processors[orthog]==1);
+  GRID_ASSERT(nl+1 == nh);
+  GRID_ASSERT(orthog<nh);
+  GRID_ASSERT(orthog>=0);
+  GRID_ASSERT(hg->_processors[orthog]==1);
   lowDim.Checkerboard() = higherDim.Checkerboard();
 
   int dl; dl = 0;
   for(int d=0;d<nh;d++){
     if ( d != orthog) {
-      assert(lg->_processors[dl]  == hg->_processors[d]);
-      assert(lg->_ldimensions[dl] == hg->_ldimensions[d]);
+      GRID_ASSERT(lg->_processors[dl]  == hg->_processors[d]);
+      GRID_ASSERT(lg->_ldimensions[dl] == hg->_ldimensions[d]);
       dl++;
     }
   }
@@ -1056,14 +1056,14 @@ void InsertSliceLocal(const Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int
   int nl = lg->_ndimension;
   int nh = hg->_ndimension;
 
-  assert(nl == nh);
-  assert(orthog<nh);
-  assert(orthog>=0);
+  GRID_ASSERT(nl == nh);
+  GRID_ASSERT(orthog<nh);
+  GRID_ASSERT(orthog>=0);
 
   for(int d=0;d<nh;d++){
     if ( d!=orthog ) {
-      assert(lg->_processors[d]  == hg->_processors[d]);
-      assert(lg->_ldimensions[d] == hg->_ldimensions[d]);
+      GRID_ASSERT(lg->_processors[d]  == hg->_processors[d]);
+      GRID_ASSERT(lg->_ldimensions[d] == hg->_ldimensions[d]);
     }
   }
   Coordinate sz = lg->_ldimensions;
@@ -1093,7 +1093,7 @@ void Replicate(const Lattice<vobj> &coarse,Lattice<vobj> & fine)
 
   subdivides(cg,fg); 
 
-  assert(cg->_ndimension==fg->_ndimension);
+  GRID_ASSERT(cg->_ndimension==fg->_ndimension);
 
   Coordinate ratio(cg->_ndimension);
 
@@ -1157,7 +1157,7 @@ unvectorizeToLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in)
 
       int lex;
       Lexicographic::IndexFromCoor(lcoor, lex, in_grid->_ldimensions);
-      assert(lex < out.size());
+      GRID_ASSERT(lex < out.size());
       out_ptrs[lane] = &out[lex];
     }
     
@@ -1221,7 +1221,7 @@ vectorizeFromLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
   typedef typename vobj::vector_type vtype;
   
   GridBase* grid = out.Grid();
-  assert(in.size()==grid->lSites());
+  GRID_ASSERT(in.size()==grid->lSites());
   
   const int ndim     = grid->Nd();
   constexpr int nsimd    = vtype::Nsimd();
@@ -1268,7 +1268,7 @@ vectorizeFromRevLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
   typedef typename vobj::vector_type vtype;
   
   GridBase* grid = out._grid;
-  assert(in.size()==grid->lSites());
+  GRID_ASSERT(in.size()==grid->lSites());
   
   int ndim     = grid->Nd();
   int nsimd    = vtype::Nsimd();
@@ -1329,9 +1329,9 @@ void precisionChangeFast(Lattice<VobjOut> &out, const Lattice<VobjIn> &in)
 template<class VobjOut, class VobjIn>
 void precisionChangeOrig(Lattice<VobjOut> &out, const Lattice<VobjIn> &in)
 {
-  assert(out.Grid()->Nd() == in.Grid()->Nd());
+  GRID_ASSERT(out.Grid()->Nd() == in.Grid()->Nd());
   for(int d=0;d<out.Grid()->Nd();d++){
-    assert(out.Grid()->FullDimensions()[d] == in.Grid()->FullDimensions()[d]);
+    GRID_ASSERT(out.Grid()->FullDimensions()[d] == in.Grid()->FullDimensions()[d]);
   }
   out.Checkerboard() = in.Checkerboard();
   GridBase *in_grid=in.Grid();
@@ -1382,9 +1382,9 @@ class precisionChangeWorkspace{
 public:
   precisionChangeWorkspace(GridBase *out_grid, GridBase *in_grid): _out_grid(out_grid), _in_grid(in_grid){
     //Build a map between the sites and lanes of the output field and the input field as we cannot use the Grids on the device
-    assert(out_grid->Nd() == in_grid->Nd());
+    GRID_ASSERT(out_grid->Nd() == in_grid->Nd());
     for(int d=0;d<out_grid->Nd();d++){
-      assert(out_grid->FullDimensions()[d] == in_grid->FullDimensions()[d]);
+      GRID_ASSERT(out_grid->FullDimensions()[d] == in_grid->FullDimensions()[d]);
     }
     int Nsimd_out = out_grid->Nsimd();
 
@@ -1549,7 +1549,7 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 
   int full_vecs   = full.size();
 
-  assert(full_vecs>=1);
+  GRID_ASSERT(full_vecs>=1);
 
   GridBase * full_grid = full[0].Grid();
   GridBase *split_grid = split.Grid();
@@ -1567,18 +1567,18 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
   //////////////////////////////
   // Checks
   //////////////////////////////
-  assert(full_grid->_ndimension==split_grid->_ndimension);
+  GRID_ASSERT(full_grid->_ndimension==split_grid->_ndimension);
   for(int n=0;n<full_vecs;n++){
-    assert(full[n].Checkerboard() == cb);
+    GRID_ASSERT(full[n].Checkerboard() == cb);
     for(int d=0;d<ndim;d++){
-      assert(full[n].Grid()->_gdimensions[d]==split.Grid()->_gdimensions[d]);
-      assert(full[n].Grid()->_fdimensions[d]==split.Grid()->_fdimensions[d]);
+      GRID_ASSERT(full[n].Grid()->_gdimensions[d]==split.Grid()->_gdimensions[d]);
+      GRID_ASSERT(full[n].Grid()->_fdimensions[d]==split.Grid()->_fdimensions[d]);
     }
   }
 
   int   nvector   =full_nproc/split_nproc; 
-  assert(nvector*split_nproc==full_nproc);
-  assert(nvector == full_vecs);
+  GRID_ASSERT(nvector*split_nproc==full_nproc);
+  GRID_ASSERT(nvector == full_vecs);
 
   Coordinate ratio(ndim);
   for(int d=0;d<ndim;d++){
@@ -1622,7 +1622,7 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 
       int fvol   = lsites;
       
-      int chunk  = (nvec*fvol)/sP;          assert(chunk*sP == nvec*fvol);
+      int chunk  = (nvec*fvol)/sP;          GRID_ASSERT(chunk*sP == nvec*fvol);
 
       // Loop over reordered data post A2A
       thread_for(c, chunk, {
@@ -1675,7 +1675,7 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 
   int full_vecs   = full.size();
 
-  assert(full_vecs>=1);
+  GRID_ASSERT(full_vecs>=1);
 
   GridBase * full_grid = full[0].Grid();
   GridBase *split_grid = split.Grid();
@@ -1693,18 +1693,18 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
   //////////////////////////////
   // Checks
   //////////////////////////////
-  assert(full_grid->_ndimension==split_grid->_ndimension);
+  GRID_ASSERT(full_grid->_ndimension==split_grid->_ndimension);
   for(int n=0;n<full_vecs;n++){
-    assert(full[n].Checkerboard() == cb);
+    GRID_ASSERT(full[n].Checkerboard() == cb);
     for(int d=0;d<ndim;d++){
-      assert(full[n].Grid()->_gdimensions[d]==split.Grid()->_gdimensions[d]);
-      assert(full[n].Grid()->_fdimensions[d]==split.Grid()->_fdimensions[d]);
+      GRID_ASSERT(full[n].Grid()->_gdimensions[d]==split.Grid()->_gdimensions[d]);
+      GRID_ASSERT(full[n].Grid()->_fdimensions[d]==split.Grid()->_fdimensions[d]);
     }
   }
 
   int   nvector   =full_nproc/split_nproc; 
-  assert(nvector*split_nproc==full_nproc);
-  assert(nvector == full_vecs);
+  GRID_ASSERT(nvector*split_nproc==full_nproc);
+  GRID_ASSERT(nvector == full_vecs);
 
   Coordinate ratio(ndim);
   for(int d=0;d<ndim;d++){
@@ -1740,7 +1740,7 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
       auto lsites= rsites/M;                // Decreases rsites by M
       
       int fvol   = lsites;
-      int chunk  = (nvec*fvol)/sP;          assert(chunk*sP == nvec*fvol);
+      int chunk  = (nvec*fvol)/sP;          GRID_ASSERT(chunk*sP == nvec*fvol);
 	
       {
 	// Loop over reordered data post A2A

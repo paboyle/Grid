@@ -110,10 +110,10 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "x^(1/4) : "<<ssx<<" "<<assx<<std::endl;
   std::cout<<GridLogMessage << "x^(-1/2): "<<isx<<" "<<aisx<<std::endl;
   std::cout<<GridLogMessage << "x^(-1/4): "<<issx<<" "<<aissx<<std::endl;
-  assert(fabs(sx-asx)<1.0e-6);
-  assert(fabs(ssx-assx)<1.0e-6);
-  assert(fabs(isx-aisx)<1.0e-6);
-  assert(fabs(issx-aissx)<1.0e-6);
+  GRID_ASSERT(fabs(sx-asx)<1.0e-6);
+  GRID_ASSERT(fabs(ssx-assx)<1.0e-6);
+  GRID_ASSERT(fabs(isx-aisx)<1.0e-6);
+  GRID_ASSERT(fabs(issx-aissx)<1.0e-6);
 
   Grid_finalize();
 }

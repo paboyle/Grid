@@ -65,13 +65,12 @@
 using namespace std;
 using namespace Grid;
 
-<<<<<<< HEAD
 namespace Grid {
 
 struct LanczosParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParameters,
-		  		RealD, mass , 
-		  		RealD, mstep , 
+		  		RealD, mass ,
+		  		RealD, mstep ,
 				Integer, Nstop,
                                 Integer, Nk,
                                 Integer, Np,
@@ -90,7 +89,7 @@ struct LanczosParameters: Serializable {
     initialize(TheReader);
   }
 
-  template < class ReaderClass > 
+  template < class ReaderClass >
   void initialize(Reader<ReaderClass> &TheReader){
     read(TheReader, "HMC", *this);
   }
@@ -104,38 +103,36 @@ struct LanczosParameters: Serializable {
 //    std::cout << GridLogMessage << "[HMC parameters] Starting type           : " << StartingType << "\n";
 //    MD.print_parameters();
   }
-  
+
 };
 
 }
 
-#if 0
-=======
-template <class T> void writeFile(T& in, std::string const fname){  
-  #ifdef HAVE_LIME
-    // Ref: https://github.com/paboyle/Grid/blob/feature/scidac-wp1/tests/debug/Test_general_coarse_hdcg_phys48.cc#L111
-    std::cout << Grid::GridLogMessage << "Writes to: " << fname << std::endl;
-    Grid::emptyUserRecord record;
-    Grid::ScidacWriter WR(in.Grid()->IsBoss());
-    WR.open(fname);
-    WR.writeScidacFieldRecord(in,record,0); // Lexico
-    WR.close();
-  #endif
+template <class T> void writeFile(T& in, std::string const fname){
+#ifdef HAVE_LIME
+  // Ref: https://github.com/paboyle/Grid/blob/feature/scidac-wp1/tests/debug/Test_general_coarse_hdcg_phys48.cc#L111
+  std::cout << Grid::GridLogMessage << "Writes to: " << fname << std::endl;
+  Grid::emptyUserRecord record;
+  Grid::ScidacWriter WR(in.Grid()->IsBoss());
+  WR.open(fname);
+  WR.writeScidacFieldRecord(in,record,0); // Lexico
+  WR.close();
+#endif
 }
 
 /**
- * Writes the eigensystem of a Krylov Schur object to a directory. 
- * 
+ * Writes the eigensystem of a Krylov Schur object to a directory.
+ *
  * Parameters
  * ----------
  * std::string path
- *    Directory to write to. 
+ *    Directory to write to.
  */
 template <class Field>
 void writeEigensystem(KrylovSchur<Field> KS, std::string outDir) {
   int Nk = KS.getNk();
   std::cout << GridLogMessage << "Writing output to directory: " << outDir << std::endl;
-  
+
   // Write evals
   std::string evalPath = outDir + "/evals.txt";
   std::ofstream fEval;
@@ -148,7 +145,7 @@ void writeEigensystem(KrylovSchur<Field> KS, std::string outDir) {
     if (i < Nk - 1) { fEval << "\n"; }
   }
   fEval.close();
-  
+
   // Write evecs (TODO: very heavy on storage costs! Don't write them all out)
   // std::vector<Field> evecs = KS.getEvecs();
   // for (int i = 0; i < Nk; i++) {
@@ -156,8 +153,6 @@ void writeEigensystem(KrylovSchur<Field> KS, std::string outDir) {
   //   writeFile(evecs[i], fName);     // using method from Grid/HMC/ComputeWilsonFlow.cc
   // }
 }
-
->>>>>>> 68af1bba67dd62881ead5ab1e54962a5486a0791
 // Hermitize a DWF operator by squaring it
 template<class Matrix,class Field>
 class SquaredLinearOperator : public LinearOperatorBase<Field> {

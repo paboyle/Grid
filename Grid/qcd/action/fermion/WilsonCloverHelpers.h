@@ -740,9 +740,9 @@ public:
 
   template<class MaskField>
   static void SetupMasks(MaskField& full, MaskField& even, MaskField& odd) {
-    assert(even.Grid()->_isCheckerBoarded && even.Checkerboard() == Even);
-    assert(odd.Grid()->_isCheckerBoarded  && odd.Checkerboard()  == Odd);
-    assert(!full.Grid()->_isCheckerBoarded);
+    GRID_ASSERT(even.Grid()->_isCheckerBoarded && even.Checkerboard() == Even);
+    GRID_ASSERT(odd.Grid()->_isCheckerBoarded  && odd.Checkerboard()  == Odd);
+    GRID_ASSERT(!full.Grid()->_isCheckerBoarded);
 
     GridBase* grid = full.Grid();
     int t_dir = Nd-1;

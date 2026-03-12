@@ -58,8 +58,8 @@ int                 GlobalSharedMemory::WorldNode;
 
 void GlobalSharedMemory::SharedMemoryFree(void)
 {
-  assert(_ShmAlloc);
-  assert(_ShmAllocBytes>0);
+  GRID_ASSERT(_ShmAlloc);
+  GRID_ASSERT(_ShmAllocBytes>0);
   for(int r=0;r<WorldShmSize;r++){
     munmap(WorldShmCommBufs[r],_ShmAllocBytes);
   }
@@ -80,7 +80,7 @@ void *SharedMemory::HostBufferMalloc(size_t bytes){
     std::cout<< " Current alloc is " << (bytes/(1024*1024)) <<"MB"<<std::endl;
     std::cout<< " Current bytes is " << (host_heap_bytes/(1024*1024)) <<"MB"<<std::endl;
     std::cout<< " Current heap  is " << (host_heap_size/(1024*1024)) <<"MB"<<std::endl;
-    assert(host_heap_bytes<host_heap_size);
+    GRID_ASSERT(host_heap_bytes<host_heap_size);
   }
   return ptr;
 }
@@ -100,7 +100,7 @@ void *SharedMemory::ShmBufferMalloc(size_t bytes){
     std::cout<< " Current alloc is " << (bytes/(1024*1024)) <<"MB"<<std::endl;
     std::cout<< " Current bytes is " << (heap_bytes/(1024*1024)) <<"MB"<<std::endl;
     std::cout<< " Current heap  is " << (heap_size/(1024*1024)) <<"MB"<<std::endl;
-    assert(heap_bytes<heap_size);
+    GRID_ASSERT(heap_bytes<heap_size);
   }
   //std::cerr << "ShmBufferMalloc "<<std::hex<< ptr<<" - "<<((uint64_t)ptr+bytes)<<std::dec<<std::endl;
   return ptr;
@@ -127,13 +127,13 @@ void GlobalSharedMemory::GetShmDims(const Coordinate &WorldDims,Coordinate &ShmD
   if ( str ) {
     std::vector<int> IntShmDims;
     GridCmdOptionIntVector(std::string(str),IntShmDims);
-    assert(IntShmDims.size() == WorldDims.size());
+    GRID_ASSERT(IntShmDims.size() == WorldDims.size());
     long ShmSize = 1;
     for (int dim=0;dim<WorldDims.size();dim++) {
       ShmSize *= (ShmDims[dim] = IntShmDims[dim]);
-      assert(divides(ShmDims[dim],WorldDims[dim]));
+      GRID_ASSERT(divides(ShmDims[dim],WorldDims[dim]));
     }
-    assert(ShmSize == WorldShmSize);
+    GRID_ASSERT(ShmSize == WorldShmSize);
     return;
   }
   

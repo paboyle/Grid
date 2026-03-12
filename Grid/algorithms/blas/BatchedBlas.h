@@ -28,6 +28,7 @@ Author: Peter Boyle <pboyle@bnl.gov>
 #pragma once
 
 #ifdef GRID_HIP
+#include <hip/hip_version.h>
 #include <hipblas/hipblas.h>
 #endif
 #ifdef GRID_CUDA
@@ -109,8 +110,9 @@ public:
     case GridBLAS_PRECISION_TF32:
       return CUBLAS_COMPUTE_32F_FAST_TF32;
     default:
-      assert(0);
+      GRID_ASSERT(0);
     }
+    return CUBLAS_COMPUTE_32F_FAST_16F;
   }
 #endif
   // Force construct once
@@ -134,11 +136,11 @@ public:
   {
 #ifdef GRID_HIP
     auto err = hipDeviceSynchronize();
-    assert(err==hipSuccess);
+    GRID_ASSERT(err==hipSuccess);
 #endif
 #ifdef GRID_CUDA
     auto err = cudaDeviceSynchronize();
-    assert(err==cudaSuccess);
+    GRID_ASSERT(err==cudaSuccess);
 #endif
 #ifdef GRID_SYCL
     accelerator_barrier();
@@ -156,7 +158,7 @@ public:
 		   deviceVector<ComplexD*> &Cmn,
 		   GridBLASPrecision_t precision = GridBLAS_PRECISION_DEFAULT)
   {
-    assert(precision == GridBLAS_PRECISION_DEFAULT);
+    GRID_ASSERT(precision == GridBLAS_PRECISION_DEFAULT);
     gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N,
 		m,n,k,
 		alpha,
@@ -221,11 +223,11 @@ public:
 		   deviceVector<ComplexD*> &Cmn,
 		   GridBLASPrecision_t precision = GridBLAS_PRECISION_DEFAULT)
   {
-    assert(precision == GridBLAS_PRECISION_DEFAULT);
+    GRID_ASSERT(precision == GridBLAS_PRECISION_DEFAULT);
     RealD t2=usecond();
     int32_t batchCount = Amk.size();
-    assert(Bkn.size()==batchCount);
-    assert(Cmn.size()==batchCount);
+    GRID_ASSERT(Bkn.size()==batchCount);
+    GRID_ASSERT(Cmn.size()==batchCount);
 
     //assert(OpA!=GridBLAS_OP_T); // Complex case expect no transpose
     //assert(OpB!=GridBLAS_OP_T);
@@ -254,18 +256,31 @@ public:
     if ( OpB == GridBLAS_OP_N ) hOpB = HIPBLAS_OP_N;
     if ( OpB == GridBLAS_OP_T ) hOpB = HIPBLAS_OP_T;
     if ( OpB == GridBLAS_OP_C ) hOpB = HIPBLAS_OP_C;
+#if defined(HIP_VERSION_MAJOR) && (HIP_VERSION_MAJOR >=7)
     auto err = hipblasZgemmBatched(gridblasHandle,
 				   hOpA,
 				   hOpB,
 				   m,n,k,
-				   (hipblasDoubleComplex *) &alpha_p[0],
-				   (hipblasDoubleComplex **)&Amk[0], lda,
-				   (hipblasDoubleComplex **)&Bkn[0], ldb,
-				   (hipblasDoubleComplex *) &beta_p[0],
-				   (hipblasDoubleComplex **)&Cmn[0], ldc,
+				   (hipDoubleComplex *) &alpha_p[0],
+				   (hipDoubleComplex **)&Amk[0], lda,
+				   (hipDoubleComplex **)&Bkn[0], ldb,
+				   (hipDoubleComplex *) &beta_p[0],
+				   (hipDoubleComplex **)&Cmn[0], ldc,
 				   batchCount);
+#else
+    auto err = hipblasZgemmBatched(gridblasHandle,
+                                   hOpA,
+                                   hOpB,
+                                   m,n,k,
+                                   (hipblasDoubleComplex *) &alpha_p[0],
+                                   (hipblasDoubleComplex **)&Amk[0], lda,
+                                   (hipblasDoubleComplex **)&Bkn[0], ldb,
+                                   (hipblasDoubleComplex *) &beta_p[0],
+                                   (hipblasDoubleComplex **)&Cmn[0], ldc,
+                                   batchCount);
+#endif
     //	 std::cout << " hipblas return code " <<(int)err<<std::endl;
-    assert(err==HIPBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
     cublasOperation_t hOpA;
@@ -286,7 +301,7 @@ public:
 				  (cuDoubleComplex *) &beta_p[0],
 				  (cuDoubleComplex **)&Cmn[0], ldc,
 				  batchCount);
-    assert(err==CUBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
       int64_t m64=m;
@@ -490,10 +505,10 @@ public:
     acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(ComplexF));
     RealD t0=usecond();
 
-    assert(Bkn.size()==batchCount);
-    assert(Cmn.size()==batchCount);
+    GRID_ASSERT(Bkn.size()==batchCount);
+    GRID_ASSERT(Cmn.size()==batchCount);
 #ifdef GRID_HIP
-    assert(precision == GridBLAS_PRECISION_DEFAULT);
+    GRID_ASSERT(precision == GridBLAS_PRECISION_DEFAULT);
     hipblasOperation_t hOpA;
     hipblasOperation_t hOpB;
     if ( OpA == GridBLAS_OP_N ) hOpA = HIPBLAS_OP_N;
@@ -502,18 +517,31 @@ public:
     if ( OpB == GridBLAS_OP_N ) hOpB = HIPBLAS_OP_N;
     if ( OpB == GridBLAS_OP_T ) hOpB = HIPBLAS_OP_T;
     if ( OpB == GridBLAS_OP_C ) hOpB = HIPBLAS_OP_C;
+#if defined(HIP_VERSION_MAJOR) && (HIP_VERSION_MAJOR >=7)
     auto err = hipblasCgemmBatched(gridblasHandle,
 				   hOpA,
 				   hOpB,
 				   m,n,k,
-				   (hipblasComplex *) &alpha_p[0],
-				   (hipblasComplex **)&Amk[0], lda,
-				   (hipblasComplex **)&Bkn[0], ldb,
-				   (hipblasComplex *) &beta_p[0],
-				   (hipblasComplex **)&Cmn[0], ldc,
+				   (hipComplex *) &alpha_p[0],
+				   (hipComplex **)&Amk[0], lda,
+				   (hipComplex **)&Bkn[0], ldb,
+				   (hipComplex *) &beta_p[0],
+				   (hipComplex **)&Cmn[0], ldc,
 				   batchCount);
+#else
+    auto err = hipblasCgemmBatched(gridblasHandle,
+                                   hOpA,
+                                   hOpB,
+                                   m,n,k,
+                                   (hipblasComplex *) &alpha_p[0],
+                                   (hipblasComplex **)&Amk[0], lda,
+                                   (hipblasComplex **)&Bkn[0], ldb,
+                                   (hipblasComplex *) &beta_p[0],
+                                   (hipblasComplex **)&Cmn[0], ldc,
+                                   batchCount);
 
-    assert(err==HIPBLAS_STATUS_SUCCESS);
+#endif
+    GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
     cublasOperation_t hOpA;
@@ -549,10 +577,10 @@ public:
 				(void **)&Cmn[0], CUDA_C_32F, ldc,
 				batchCount, compute_precision, CUBLAS_GEMM_DEFAULT);
     }
-    assert(err==CUBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
-    assert(precision == GridBLAS_PRECISION_DEFAULT);
+    GRID_ASSERT(precision == GridBLAS_PRECISION_DEFAULT);
     int64_t m64=m;
     int64_t n64=n;
     int64_t k64=k;
@@ -584,7 +612,7 @@ public:
     synchronise();
 #endif
 #if !defined(GRID_SYCL) && !defined(GRID_CUDA) && !defined(GRID_HIP)
-    assert(precision == GridBLAS_PRECISION_DEFAULT);
+    GRID_ASSERT(precision == GridBLAS_PRECISION_DEFAULT);
     // Need a default/reference implementation; use Eigen
       if ( (OpA == GridBLAS_OP_N ) && (OpB == GridBLAS_OP_N) ) {
 	thread_for (p, batchCount, {
@@ -681,8 +709,8 @@ public:
     RealD t2=usecond();
     int32_t batchCount = Amk.size();
 
-    assert(OpA!=GridBLAS_OP_C); // Real case no conjugate
-    assert(OpB!=GridBLAS_OP_C);
+    GRID_ASSERT(OpA!=GridBLAS_OP_C); // Real case no conjugate
+    GRID_ASSERT(OpB!=GridBLAS_OP_C);
 
     int lda = m; // m x k column major
     int ldb = k; // k x n column major
@@ -698,8 +726,8 @@ public:
     acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(RealF));
     RealD t0=usecond();
 
-    assert(Bkn.size()==batchCount);
-    assert(Cmn.size()==batchCount);
+    GRID_ASSERT(Bkn.size()==batchCount);
+    GRID_ASSERT(Cmn.size()==batchCount);
 #ifdef GRID_HIP
     hipblasOperation_t hOpA;
     hipblasOperation_t hOpB;
@@ -719,7 +747,7 @@ public:
 				   (float *) &beta_p[0],
 				   (float **)&Cmn[0], ldc,
 				   batchCount);
-    assert(err==HIPBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
     cublasOperation_t hOpA;
@@ -740,7 +768,7 @@ public:
 				  (float *) &beta_p[0],
 				  (float **)&Cmn[0], ldc,
 				  batchCount);
-    assert(err==CUBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
       int64_t m64=m;
@@ -840,8 +868,8 @@ public:
     RealD t2=usecond();
     int32_t batchCount = Amk.size();
 
-    assert(OpA!=GridBLAS_OP_C); // Real case no conjugate
-    assert(OpB!=GridBLAS_OP_C);
+    GRID_ASSERT(OpA!=GridBLAS_OP_C); // Real case no conjugate
+    GRID_ASSERT(OpB!=GridBLAS_OP_C);
 
     int lda = m; // m x k column major
     int ldb = k; // k x n column major
@@ -858,8 +886,8 @@ public:
     acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(RealD));
     RealD t0=usecond();
 
-    assert(Bkn.size()==batchCount);
-    assert(Cmn.size()==batchCount);
+    GRID_ASSERT(Bkn.size()==batchCount);
+    GRID_ASSERT(Cmn.size()==batchCount);
 #ifdef GRID_HIP
     hipblasOperation_t hOpA;
     hipblasOperation_t hOpB;
@@ -879,7 +907,7 @@ public:
 				   (double *) &beta_p[0],
 				   (double **)&Cmn[0], ldc,
 				   batchCount);
-    assert(err==HIPBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
     cublasOperation_t hOpA;
@@ -900,7 +928,7 @@ public:
 				  (double *) &beta_p[0],
 				  (double **)&Cmn[0], ldc,
 				  batchCount);
-    assert(err==CUBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
       int64_t m64=m;
@@ -1002,7 +1030,7 @@ public:
 		      deviceVector<ComplexD*> &Cnn) {
 
     int64_t batchCount = Ann.size();
-    assert(batchCount == Cnn.size());
+    GRID_ASSERT(batchCount == Cnn.size());
     thread_for(p,batchCount, {
 	Eigen::Map<Eigen::MatrixXcd> eAnn(Ann[p],n,n);
 	Eigen::Map<Eigen::MatrixXcd> eCnn(Cnn[p],n,n);
@@ -1015,7 +1043,7 @@ public:
 		      deviceVector<ComplexF*> &Cnn) {
 
     int64_t batchCount = Ann.size();
-    assert(batchCount == Cnn.size());
+    GRID_ASSERT(batchCount == Cnn.size());
     thread_for(p,batchCount, {
 	Eigen::Map<Eigen::MatrixXcf> eAnn(Ann[p],n,n);
 	Eigen::Map<Eigen::MatrixXcf> eCnn(Cnn[p],n,n);
@@ -1028,7 +1056,7 @@ public:
 			  deviceVector<ComplexD*> &C) {
 
     int64_t batchCount = Ann.size();
-    assert(batchCount == C.size());
+    GRID_ASSERT(batchCount == C.size());
     thread_for(p,batchCount, {
 	Eigen::Map<Eigen::MatrixXcd> eAnn(Ann[p],n,n);
 	*C[p] = eAnn.determinant();
@@ -1040,7 +1068,7 @@ public:
 			  deviceVector<ComplexF*> &C) {
 
     int64_t batchCount = Ann.size();
-    assert(batchCount == C.size());
+    GRID_ASSERT(batchCount == C.size());
     thread_for(p,batchCount, {
 	Eigen::Map<Eigen::MatrixXcf> eAnn(Ann[p],n,n);
 	*C[p] = eAnn.determinant();
@@ -1089,16 +1117,24 @@ public:
 		    deviceVector<int64_t> &info)
   {
     int64_t batchCount = Ann.size();
-    assert(ipiv.size()==batchCount*n);
-    assert(info.size()==batchCount);
+    GRID_ASSERT(ipiv.size()==batchCount*n);
+    GRID_ASSERT(info.size()==batchCount);
 
 #ifdef GRID_HIP
+#if defined(HIP_VERSION_MAJOR) && (HIP_VERSION_MAJOR >=7)
     auto err = hipblasZgetrfBatched(gridblasHandle,(int)n,
-				    (hipblasDoubleComplex **)&Ann[0], (int)n,
+				    (hipDoubleComplex **)&Ann[0], (int)n,
 				    (int*) &ipiv[0],
 				    (int*) &info[0],
 				    (int)batchCount);
-    assert(err==HIPBLAS_STATUS_SUCCESS);
+#else
+    auto err = hipblasZgetrfBatched(gridblasHandle,(int)n,
+                                    (hipblasDoubleComplex **)&Ann[0], (int)n,
+                                    (int*) &ipiv[0],
+                                    (int*) &info[0],
+                                    (int)batchCount);
+#endif
+    GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
     auto err = cublasZgetrfBatched(gridblasHandle, (int)n,
@@ -1106,7 +1142,7 @@ public:
 				   (int*) &ipiv[0],
 				   (int*) &info[0],
 				   (int)batchCount);
-    assert(err==CUBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
     getrfBatchedSYCL(n, Ann, ipiv, info);
@@ -1119,16 +1155,25 @@ public:
 		    deviceVector<int64_t> &info)
   {
     int64_t batchCount = Ann.size();
-    assert(ipiv.size()==batchCount*n);
-    assert(info.size()==batchCount);
+    GRID_ASSERT(ipiv.size()==batchCount*n);
+    GRID_ASSERT(info.size()==batchCount);
 
 #ifdef GRID_HIP
+#if defined(HIP_VERSION_MAJOR) && (HIP_VERSION_MAJOR >=7)
     auto err = hipblasCgetrfBatched(gridblasHandle,(int)n,
-				    (hipblasComplex **)&Ann[0], (int)n,
+				    (hipComplex **)&Ann[0], (int)n,
 				    (int*) &ipiv[0],
 				    (int*) &info[0],
 				    (int)batchCount);
-    assert(err==HIPBLAS_STATUS_SUCCESS);
+#else
+    auto err = hipblasCgetrfBatched(gridblasHandle,(int)n,
+                                    (hipblasComplex **)&Ann[0], (int)n,
+                                    (int*) &ipiv[0],
+                                    (int*) &info[0],
+                                    (int)batchCount);
+#endif
+
+    GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
     auto err = cublasCgetrfBatched(gridblasHandle, (int)n,
@@ -1136,7 +1181,7 @@ public:
 				   (int*) &ipiv[0],
 				   (int*) &info[0],
 				   (int)batchCount);
-    assert(err==CUBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
     getrfBatchedSYCL(n, Ann, ipiv, info);
@@ -1195,18 +1240,28 @@ public:
 		    deviceVector<ComplexD*> &Cnn)
   {
     int64_t batchCount = Ann.size();
-    assert(ipiv.size()==batchCount*n);
-    assert(info.size()==batchCount);
-    assert(Cnn.size()==batchCount);
+    GRID_ASSERT(ipiv.size()==batchCount*n);
+    GRID_ASSERT(info.size()==batchCount);
+    GRID_ASSERT(Cnn.size()==batchCount);
 
 #ifdef GRID_HIP
+#if defined(HIP_VERSION_MAJOR) && (HIP_VERSION_MAJOR >=7)
     auto err = hipblasZgetriBatched(gridblasHandle,(int)n,
-				    (hipblasDoubleComplex **)&Ann[0], (int)n,
+				    (hipDoubleComplex **)&Ann[0], (int)n,
 				    (int*) &ipiv[0],
-				    (hipblasDoubleComplex **)&Cnn[0], (int)n,
+				    (hipDoubleComplex **)&Cnn[0], (int)n,
 				    (int*) &info[0],
 				    (int)batchCount);
-    assert(err==HIPBLAS_STATUS_SUCCESS);
+#else
+    auto err = hipblasZgetriBatched(gridblasHandle,(int)n,
+                                    (hipblasDoubleComplex **)&Ann[0], (int)n,
+                                    (int*) &ipiv[0],
+                                    (hipblasDoubleComplex **)&Cnn[0], (int)n,
+                                    (int*) &info[0],
+                                    (int)batchCount);
+
+#endif
+    GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
     auto err = cublasZgetriBatched(gridblasHandle, (int)n,
@@ -1215,7 +1270,7 @@ public:
 				   (cuDoubleComplex **)&Cnn[0], (int)n,
 				   (int*) &info[0],
 				   (int)batchCount);
-    assert(err==CUBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
     getriBatchedSYCL(n, Ann, ipiv, info, Cnn);
@@ -1229,18 +1284,27 @@ public:
 		    deviceVector<ComplexF*> &Cnn)
   {
     int64_t batchCount = Ann.size();
-    assert(ipiv.size()==batchCount*n);
-    assert(info.size()==batchCount);
-    assert(Cnn.size()==batchCount);
+    GRID_ASSERT(ipiv.size()==batchCount*n);
+    GRID_ASSERT(info.size()==batchCount);
+    GRID_ASSERT(Cnn.size()==batchCount);
 
 #ifdef GRID_HIP
+#if defined(HIP_VERSION_MAJOR) && (HIP_VERSION_MAJOR >=7)
     auto err = hipblasCgetriBatched(gridblasHandle,(int)n,
-				    (hipblasComplex **)&Ann[0], (int)n,
+				    (hipComplex **)&Ann[0], (int)n,
 				    (int*) &ipiv[0],
-				    (hipblasComplex **)&Cnn[0], (int)n,
+				    (hipComplex **)&Cnn[0], (int)n,
 				    (int*) &info[0],
 				    (int)batchCount);
-    assert(err==HIPBLAS_STATUS_SUCCESS);
+#else
+    auto err = hipblasCgetriBatched(gridblasHandle,(int)n,
+                                    (hipblasComplex **)&Ann[0], (int)n,
+                                    (int*) &ipiv[0],
+                                    (hipblasComplex **)&Cnn[0], (int)n,
+                                    (int*) &info[0],
+                                    (int)batchCount);
+#endif
+    GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
     auto err = cublasCgetriBatched(gridblasHandle, (int)n,
@@ -1249,7 +1313,7 @@ public:
 				   (cuComplex **)&Cnn[0], (int)n,
 				   (int*) &info[0],
 				   (int)batchCount);
-    assert(err==CUBLAS_STATUS_SUCCESS);
+    GRID_ASSERT(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
     getriBatchedSYCL(n, Ann, ipiv, info, Cnn);

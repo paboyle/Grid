@@ -142,7 +142,7 @@ public:
     }
     std::cout << GridLogError << "Gauge fixing did not converge in " << maxiter << " iterations." << std::endl;
     if (err_on_no_converge)
-      assert(0 && "Gauge fixing did not converge within the specified number of iterations");
+      GRID_ASSERT(0 && "Gauge fixing did not converge within the specified number of iterations");
   };
   static Real SteepestDescentStep(std::vector<GaugeMat> &U,GaugeMat &xform, Real alpha, GaugeMat & dmuAmu,int orthog) {
     GridBase *grid = U[0].Grid();

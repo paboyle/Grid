@@ -57,7 +57,7 @@ public:
     if ( (_Tp*)ptr == (_Tp *) NULL ) {
       printf("Grid CPU Allocator got NULL for %lu bytes\n",(unsigned long) bytes );
     }
-    assert( ( (_Tp*)ptr != (_Tp *)NULL ) );
+    GRID_ASSERT( ( (_Tp*)ptr != (_Tp *)NULL ) );
     return ptr;
   }
 
@@ -106,7 +106,7 @@ public:
     if ( (_Tp*)ptr == (_Tp *) NULL ) {
       printf("Grid Shared Allocator got NULL for %lu bytes\n",(unsigned long) bytes );
     }
-    assert( ( (_Tp*)ptr != (_Tp *)NULL ) );
+    GRID_ASSERT( ( (_Tp*)ptr != (_Tp *)NULL ) );
     return ptr;
   }
 
@@ -154,7 +154,7 @@ public:
     if ( (_Tp*)ptr == (_Tp *) NULL ) {
       printf("Grid Device Allocator got NULL for %lu bytes\n",(unsigned long) bytes );
     }
-    assert( ( (_Tp*)ptr != (_Tp *)NULL ) );
+    GRID_ASSERT( ( (_Tp*)ptr != (_Tp *)NULL ) );
     return ptr;
   }
 

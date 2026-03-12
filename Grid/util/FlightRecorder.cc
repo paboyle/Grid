@@ -47,6 +47,7 @@ int32_t  FlightRecorder::CsumLoggingCounter;
 int32_t  FlightRecorder::NormLoggingCounter;
 int32_t  FlightRecorder::ReductionLoggingCounter;
 uint64_t FlightRecorder::ErrorCounter;
+
 std::vector<double> FlightRecorder::NormLogVector;
 std::vector<double> FlightRecorder::ReductionLogVector;
 std::vector<uint64_t> FlightRecorder::CsumLogVector;
@@ -89,7 +90,7 @@ void FlightRecorder::SetLoggingMode(FlightRecorder::LoggingMode_t mode)
     Truncate();
     break;
   default:
-    assert(0);
+    GRID_ASSERT(0);
   }
 }
 bool FlightRecorder::StepLog(const char *name)
@@ -260,7 +261,7 @@ void FlightRecorder::ReductionLog(double local,double global)
 		global, local, ReductionLogVector[ReductionLoggingCounter]); fflush(stderr);
 	BACKTRACEFP(stderr);
 	
-	if ( !ContinueOnFail ) assert(0);
+	if ( !ContinueOnFail ) GRID_ASSERT(0);
 
 	ErrorCounter++;
       } else {
@@ -308,7 +309,7 @@ void FlightRecorder::xmitLog(void *buf,uint64_t bytes)
 		_xor, XmitLogVector[XmitLoggingCounter]); fflush(stderr);
 	BACKTRACEFP(stderr);
 	
-	if ( !ContinueOnFail ) assert(0);
+	if ( !ContinueOnFail ) GRID_ASSERT(0);
 
 	ErrorCounter++;
       } else {
@@ -354,7 +355,7 @@ void FlightRecorder::recvLog(void *buf,uint64_t bytes,int rank)
 		_xor, RecvLogVector[RecvLoggingCounter],rank); fflush(stderr);
 	BACKTRACEFP(stderr);
 	
-	if ( !ContinueOnFail ) assert(0);
+	if ( !ContinueOnFail ) GRID_ASSERT(0);
 
 	ErrorCounter++;
       } else {
@@ -379,8 +380,12 @@ std::vector<ViewLogger::Entry_t> ViewLogger::LogVector;
 
 void ViewLogger::Begin() { Enabled = true; LogVector.resize(0); }
 void ViewLogger::End() { Enabled = false; }
-
-void ViewLogger::Log(const char* filename, int line, int index, int mode, void* data, uint64_t bytes)
+#ifdef GRID_LOG_VIEWS_FENCEPOST
+void ViewLogger::LogOpen(const char* filename, int line, int index, int mode, void* data, uint64_t bytes)
+{
+  ViewLogger::LogClose(filename,line,index,mode,data,bytes);
+}
+void ViewLogger::LogClose(const char* filename, int line, int index, int mode, void* data, uint64_t bytes)
 {
   if (!Enabled)
    return;
@@ -416,6 +421,27 @@ void ViewLogger::Log(const char* filename, int line, int index, int mode, void* 
     }
   }
 }
+#else
+void ViewLogger::LogOpen(const char* filename, int line, int index, int mode, void* data, uint64_t bytes){ }
+void ViewLogger::LogClose(const char* filename, int line, int index, int mode, void* data, uint64_t bytes)
+{
+  if (!Enabled)
+   return;
+
+  if (bytes < sizeof(uint64_t)) return;
+   
+#ifdef GRID_SYCL
+  uint64_t *u_data = (uint64_t *)data;
+  switch (mode) {
+    case AcceleratorWrite:
+    case AcceleratorWriteDiscard:
+      uint64_t csum = checksum_gpu(u_data,bytes/sizeof(uint64_t));
+      FlightRecorder::CsumLog(csum);
+      break;
+  }
+#endif
+}
+#endif
 
 #endif
 

@@ -60,7 +60,7 @@ public:
 				   FourDimGrid,
 				   FourDimRedBlackGrid,_mass,_M5,p)
   {
-    assert((this->Ls&0x1)==1); // Odd Ls required
+    GRID_ASSERT((this->Ls&0x1)==1); // Odd Ls required
     int nrational=this->Ls-1;// Even rational order
     Approx::zolotarev_data *zdata = Approx::higham(1.0,nrational);// eps is ignored for higham
     this->SetCoefficientsTanh(zdata,scale);

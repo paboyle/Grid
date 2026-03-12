@@ -98,7 +98,7 @@ NAMESPACE_BEGIN(Grid);
       std::cout << GridLogMessage << " Mixed precision CG wrapper operator() "<<std::endl;
 
       SchurOperatorD * SchurOpU = static_cast<SchurOperatorD *>(&LinOpU);
-      assert(&(SchurOpU->_Mat)==&(LinOpD._Mat));
+      GRID_ASSERT(&(SchurOpU->_Mat)==&(LinOpD._Mat));
 
       precisionChange(FermOpF.Umu, FermOpD.Umu);
 
@@ -210,14 +210,14 @@ int main (int argc, char** argv)
   
   std::cout << GridLogMessage << "Phi(double)=" << norm2(MeofaD.getPhi()) << " Phi(mixed)=" << norm2(MeofaMx.getPhi()) << " diff=" << n << std::endl;
 
-  assert(n < 1e-8);
+  GRID_ASSERT(n < 1e-8);
 
   RealD Sd = MeofaD.S(Ud);
   RealD Smx = MeofaMx.S(Ud);
 
   std::cout << GridLogMessage << "Initial action double=" << Sd << " mixed=" << Smx << " diff=" << Sd-Smx << std::endl;
 
-  assert(fabs(Sd-Smx) < 1e-6);
+  GRID_ASSERT(fabs(Sd-Smx) < 1e-6);
 
   SU<Nc>::HotConfiguration(RNG4,Ud);
   precisionChange(Uf, Ud);
@@ -227,7 +227,7 @@ int main (int argc, char** argv)
 
   std::cout << GridLogMessage << "After randomizing U, action double=" << Sd << " mixed=" << Smx << " diff=" << Sd-Smx << std::endl;
 
-  assert(fabs(Sd-Smx) < 1e-6);
+  GRID_ASSERT(fabs(Sd-Smx) < 1e-6);
 
   std::cout << GridLogMessage << "Done" << std::endl;
   Grid_finalize();

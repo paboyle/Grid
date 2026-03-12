@@ -49,7 +49,7 @@ public:
     {
       std::ifstream fin(file, std::ios::in | std::ios::binary);
       fin.read(reinterpret_cast<char*>(&header), sizeof(OpenQcdHeader));
-      assert(!fin.fail());
+      GRID_ASSERT(!fin.fail());
       field.data_start = fin.tellg();
       fin.close();
     }
@@ -57,10 +57,10 @@ public:
     header.plaq /= normalisationFactor;
 
     // sanity check (should trigger on endian issues)
-    assert(0 < header.Nt && header.Nt <= 1024);
-    assert(0 < header.Nx && header.Nx <= 1024);
-    assert(0 < header.Ny && header.Ny <= 1024);
-    assert(0 < header.Nz && header.Nz <= 1024);
+    GRID_ASSERT(0 < header.Nt && header.Nt <= 1024);
+    GRID_ASSERT(0 < header.Nx && header.Nx <= 1024);
+    GRID_ASSERT(0 < header.Ny && header.Ny <= 1024);
+    GRID_ASSERT(0 < header.Nz && header.Nz <= 1024);
 
     field.dimension[0] = header.Nx;
     field.dimension[1] = header.Ny;
@@ -71,9 +71,9 @@ public:
     std::cout << GridLogDebug << "grid dimensions: " << grid->_fdimensions << std::endl;
     std::cout << GridLogDebug << "file dimensions: " << field.dimension << std::endl;
 
-    assert(grid->_ndimension == Nd);
+    GRID_ASSERT(grid->_ndimension == Nd);
     for(int d = 0; d < Nd; d++)
-      assert(grid->_fdimensions[d] == field.dimension[d]);
+      GRID_ASSERT(grid->_fdimensions[d] == field.dimension[d]);
 
     field.plaquette = header.plaq;
 
@@ -86,10 +86,10 @@ public:
                                        std::string                           file) {
     typedef Lattice<iDoubleStoredColourMatrix<vsimd>> DoubleStoredGaugeField;
 
-    assert(Ns == 4 and Nd == 4 and Nc == 3);
+    GRID_ASSERT(Ns == 4 and Nd == 4 and Nc == 3);
 
     auto grid = dynamic_cast<GridCartesian*>(Umu.Grid());
-    assert(grid != nullptr); assert(grid->_ndimension == Nd);
+    GRID_ASSERT(grid != nullptr); GRID_ASSERT(grid->_ndimension == Nd);
 
     uint64_t offset = readHeader(file, Umu.Grid(), header);
 
@@ -171,7 +171,7 @@ public:
 
     if(plaq_diff >= tol)
       std::cout << " Plaquette mismatch (diff = " << plaq_diff << ", tol = " << tol << ")" << std::endl;
-    assert(plaq_diff < tol);
+    GRID_ASSERT(plaq_diff < tol);
 
     std::cout << GridLogMessage << "OpenQcd Configuration " << file << " and plaquette agree" << std::endl;
   }

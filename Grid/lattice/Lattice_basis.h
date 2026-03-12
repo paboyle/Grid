@@ -166,9 +166,9 @@ void basisReorderInPlace(std::vector<Field> &_v,std::vector<RealD>& sort_vals, s
 {
   int vlen = idx.size();
 
-  assert(vlen>=1);
-  assert(vlen<=sort_vals.size());
-  assert(vlen<=_v.size());
+  GRID_ASSERT(vlen>=1);
+  GRID_ASSERT(vlen<=sort_vals.size());
+  GRID_ASSERT(vlen<=_v.size());
 
   for (size_t i=0;i<vlen;i++) {
 
@@ -186,7 +186,7 @@ void basisReorderInPlace(std::vector<Field> &_v,std::vector<RealD>& sort_vals, s
 	if (idx[j]==i)
 	  break;
 
-      assert(idx[i] > i);     assert(j!=idx.size());      assert(idx[j]==i);
+      GRID_ASSERT(idx[i] > i);     GRID_ASSERT(j!=idx.size());      GRID_ASSERT(idx[j]==i);
 
       swap(_v[i],_v[idx[i]]); // should use vector move constructor, no data copy
       std::swap(sort_vals[i],sort_vals[idx[i]]);
@@ -224,7 +224,7 @@ void basisSortInPlace(std::vector<Field> & _v,std::vector<RealD>& sort_vals, boo
 template<class Field>
 void basisDeflate(const std::vector<Field> &_v,const std::vector<RealD>& eval,const Field& src_orig,Field& result) {
   result = Zero();
-  assert(_v.size()==eval.size());
+  GRID_ASSERT(_v.size()==eval.size());
   int N = (int)_v.size();
   for (int i=0;i<N;i++) {
     Field& tmp = _v[i];

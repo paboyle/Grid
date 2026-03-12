@@ -38,11 +38,11 @@ NAMESPACE_BEGIN(Grid);
     c=m.cs[0];
     std::cout << GridLogMessage << "b=" << b << ", c=" << c << std::endl;
     for (size_t i=1;i<m.bs.size();i++) {
-      assert(m.bs[i] == b);
-      assert(m.cs[i] == c);
+      GRID_ASSERT(m.bs[i] == b);
+      GRID_ASSERT(m.cs[i] == c);
     }
-    assert(b.imag() == 0.0);
-    assert(c.imag() == 0.0);
+    GRID_ASSERT(b.imag() == 0.0);
+    GRID_ASSERT(c.imag() == 0.0);
     _b = b.real();
     _c = c.real();
   }
@@ -62,7 +62,7 @@ class FourierAcceleratedPV {
   FourierAcceleratedPV(M& _dwfPV, G& _Umu, ConjugateGradient<Vi> &_cg, int _group_in_s = 2) 
    : dwfPV(_dwfPV), Umu(_Umu), cg(_cg), group_in_s(_group_in_s) 
   {
-    assert( dwfPV.FermionGrid()->_fdimensions[0] % (2*group_in_s) == 0);
+    GRID_ASSERT( dwfPV.FermionGrid()->_fdimensions[0] % (2*group_in_s) == 0);
     grid5D   = SpaceTimeGrid::makeFiveDimGrid(2*group_in_s, (GridCartesian*)Umu.Grid());
     gridRB5D = SpaceTimeGrid::makeFiveDimRedBlackGrid(2*group_in_s, (GridCartesian*)Umu.Grid());
   }

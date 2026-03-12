@@ -20,6 +20,9 @@
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+#include "disable_benchmarks_without_instantiations.h"
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
 #include <Grid/Grid.h>
 #ifdef GRID_CUDA
 #define CUDA_PROFILE
@@ -204,7 +207,7 @@ int main (int argc, char ** argv)
       Dw.Dhop(src,result,0);
       err = ref-result;
       std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-      assert (norm2(err)< 1.0e-4 );
+      GRID_ASSERT (norm2(err)< 1.0e-4 );
     }
     double t1=usecond();
     FGrid->Barrier();
@@ -244,7 +247,7 @@ int main (int argc, char ** argv)
       FGrid->Barrier();
       exit(-1);
     }
-    assert (norm2(err)< 1.0e-4 );
+    GRID_ASSERT (norm2(err)< 1.0e-4 );
   }
 
   if (1)
@@ -380,8 +383,10 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "norm diff even  "<< norm2(src_e)<<std::endl;
   std::cout<<GridLogMessage << "norm diff odd   "<< norm2(src_o)<<std::endl;
 
-  assert(norm2(src_e)<1.0e-4);
-  assert(norm2(src_o)<1.0e-4);
+  GRID_ASSERT(norm2(src_e)<1.0e-4);
+  GRID_ASSERT(norm2(src_o)<1.0e-4);
   Grid_finalize();
   exit(0);
 }
+
+#endif

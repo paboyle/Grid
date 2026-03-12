@@ -98,9 +98,9 @@ public:
     std::vector<RealD> alpha(nshift,1.0);
     std::vector<Field>   ps(nshift,grid);// Search directions
 
-    assert(psi.size()==nshift);
-    assert(mass.size()==nshift);
-    assert(mresidual.size()==nshift);
+    GRID_ASSERT(psi.size()==nshift);
+    GRID_ASSERT(mass.size()==nshift);
+    GRID_ASSERT(mresidual.size()==nshift);
   
     // remove dynamic sized arrays on stack; 2d is a pain with vector
     std::vector<RealD>  bs(nshift);
@@ -122,7 +122,7 @@ public:
   
     // Check lightest mass
     for(int s=0;s<nshift;s++){
-      assert( mass[s]>= mass[primary] );
+      GRID_ASSERT( mass[s]>= mass[primary] );
       converged[s]=0;
     }
   
@@ -338,7 +338,7 @@ public:
     }
     // ugly hack
     std::cout<<GridLogMessage<<"CG multi shift did not converge"<<std::endl;
-    //  assert(0);
+    //  GRID_ASSERT(0);
   }
 
 };

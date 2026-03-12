@@ -84,8 +84,8 @@ int main(int argc, char** argv) {
     std::cout << GridLogMessage << "Double: time_ref = " << sw_ref.Elapsed() << " time_res = " << sw_res.Elapsed() << std::endl;
     // clang-format on
 
-    assert(diff_ip_d == 0.);
-    assert(diff_norm2_d == 0.);
+    GRID_ASSERT(diff_ip_d == 0.);
+    GRID_ASSERT(diff_norm2_d == 0.);
 
     std::cout << GridLogMessage << "Double: all checks passed" << std::endl;
   }
@@ -116,8 +116,8 @@ int main(int argc, char** argv) {
     std::cout << GridLogMessage << "Single: time_ref = " << sw_ref.Elapsed() << " time_res = " << sw_res.Elapsed() << std::endl;
     // clang-format on
 
-    assert(diff_ip_f == 0.);
-    assert(diff_norm2_f == 0.);
+    GRID_ASSERT(diff_ip_f == 0.);
+    GRID_ASSERT(diff_norm2_f == 0.);
 
     std::cout << GridLogMessage << "Single: all checks passed" << std::endl;
   }

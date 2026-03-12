@@ -103,7 +103,7 @@ template<typename FieldType>
 void readFieldArray(std::vector<FieldType> &data, const std::string &file){
   typedef typename FieldType::vector_object vobj;
   typedef typename FieldType::scalar_object sobj;
-  assert(data.size() > 0);
+  GRID_ASSERT(data.size() > 0);
   GridBase* grid = data[0].Grid(); //assume all fields have the same Grid
   BinarySimpleUnmunger<sobj, sobj> munge; //straight copy
   
@@ -113,7 +113,7 @@ void readFieldArray(std::vector<FieldType> &data, const std::string &file){
   
   std::cout << "Data offset read " << offset << std::endl;  
   std::cout << "Data size read " << hdr_size << std::endl;
-  assert(data.size() == hdr_size);
+  GRID_ASSERT(data.size() == hdr_size);
 
   uint64_t field_size = uint64_t(grid->gSites()) * sizeof(sobj);
 
@@ -132,7 +132,7 @@ void readFieldArray(std::vector<FieldType> &data, const std::string &file){
   std::cout << "Read checksum " << checksum << std::endl;
     
 
-  assert( hdr_checksum == checksum );
+  GRID_ASSERT( hdr_checksum == checksum );
 }
 
 

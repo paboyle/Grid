@@ -41,7 +41,7 @@ void SimpleConjugateGradient(LinearOperatorBase<Field> &HPDop,const Field &b, Fi
         return;
       }
     }
-    assert(0);
+    GRID_ASSERT(0);
 }
 
 

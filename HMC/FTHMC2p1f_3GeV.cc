@@ -25,7 +25,11 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 
-#include <Grid/Grid.h>
+
+#include "disable_examples_without_instantiations.h"
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
+#include<Grid/Grid.h>
 
 #if Nc == 3
 #include <Grid/qcd/smearing/GaugeConfigurationMasked.h>
@@ -231,5 +235,4 @@ int main(int argc, char **argv)
 #endif
 } // main
 
-
-
+#endif

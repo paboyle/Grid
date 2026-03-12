@@ -99,7 +99,7 @@ public:
 	}
       }
     }
-    assert(nfound==geom.npoint);
+    GRID_ASSERT(nfound==geom.npoint);
     ExchangeCoarseLinks();
   }
   */
@@ -124,7 +124,7 @@ public:
   }
   void Mdag (const CoarseVector &in, CoarseVector &out)
   {
-    assert(hermitian);
+    GRID_ASSERT(hermitian);
     Mult(_A,in,out);
     //    if ( hermitian ) M(in,out);
     //    else Mult(_Adag,in,out);
@@ -619,7 +619,7 @@ public:
       //      _Adag[p]= Cell.ExchangePeriodic(_Adag[p]);
     }
   }
-  virtual  void Mdiag    (const Field &in, Field &out){ assert(0);};
+  virtual  void Mdiag    (const Field &in, Field &out){ GRID_ASSERT(0);};
   virtual  void Mdir     (const Field &in, Field &out,int dir, int disp){assert(0);};
   virtual  void MdirAll  (const Field &in, std::vector<Field> &out){assert(0);};
 };

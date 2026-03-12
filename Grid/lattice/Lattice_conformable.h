@@ -32,8 +32,8 @@ NAMESPACE_BEGIN(Grid);
 
 template<class obj1,class obj2> void conformable(const Lattice<obj1> &lhs,const Lattice<obj2> &rhs)
 {
-  assert(lhs.Grid() == rhs.Grid());
-  assert(lhs.Checkerboard() == rhs.Checkerboard());
+  GRID_ASSERT(lhs.Grid() == rhs.Grid());
+  GRID_ASSERT(lhs.Checkerboard() == rhs.Checkerboard());
 }
 
 NAMESPACE_END(Grid);

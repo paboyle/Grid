@@ -77,11 +77,11 @@ public:
 	  ComplexD ref = B[v][p*PageWords];
 	  std::cout << "Device compare "<<B[v][p*PageWords]<<std::endl;
 	  accelerator_for(ss,1,1,{
-	      assert(ref==A_v[p*PageWords]);
+	      GRID_ASSERT(ref==A_v[p*PageWords]);
 	    });
 	} else {
 	  std::cout << "Host compare "<<B[v][p*PageWords]<<std::endl;
-	  assert(B[v][p*PageWords]==A[v][p*PageWords]);
+	  GRID_ASSERT(B[v][p*PageWords]==A[v][p*PageWords]);
 	}
       }
     }
