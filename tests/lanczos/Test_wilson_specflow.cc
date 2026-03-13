@@ -224,7 +224,7 @@ while ( mass > - 2.0){
      PlainHermOp<FermionField> Op     (HermOp);
      PlainHermOp<FermionField> Op2     (HermOp2);
 
-  ImplicitlyRestartedLanczos<FermionField> IRL(OpCheby, Op2, Nstop, Nk, Nm, resid, MaxIt);
+  ImplicitlyRestartedLanczos<FermionField> IRL(OpCheby, Op, Nstop, Nk, Nm, resid, MaxIt);
 //  SimpleLanczos<FermionField> IRL(Op,Nstop, Nk, Nm, resid, MaxIt);
 
   std::vector<RealD> eval(Nm);

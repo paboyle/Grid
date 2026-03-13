@@ -2,11 +2,11 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_padded_cell.cc
+    Source file: ./tests/lanczos/Test_wilson_bilanczos.cc
 
-    Copyright (C) 2023
+    Copyright (C) 2025
 
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Chulwoo Jung <chulwoo@bnl.gov>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 
-// copied here from Test_general_coarse_pvdagm.cc
 
 #include <cstdlib>
 
@@ -322,6 +321,7 @@ int main (int argc, char ** argv)
 
   // Run KrylovSchur and Arnoldi on a Hermitian matrix
   std::cout << GridLogMessage << "Running Krylov Schur" << std::endl;
+#if 0
 #if 1
     RealD shift=1.5;
     KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
@@ -330,10 +330,15 @@ int main (int argc, char ** argv)
     KrylovSchur KrySchur (Iwilson, UGrid, resid,EvalImNormSmall);
     KrySchur(src[0], maxIter, Nm, Nk, Nstop);
 #endif
-//  std::cout << GridLogMessage << "evec.size= " << KrySchur.evecs.size()<< std::endl;
-  LanczosBidiagonalization<Field> LB(Dwilson, UGrid);
-  LB.run(src[0], Nm, tol);
+    std::cout << GridLogMessage << "evec.size= " << KrySchur.evecs.size()<< std::endl;
+#else
+  LanczosBidiagonalization<FermionField> LB(Dwilson, UGrid);
+  LB.run(src[0], Nm, resid);
+  RestartedLanczosBidiagonalization<FermionField> IRLBA(Dwilson, UGrid, Nstop, Nm, resid, maxIter,false);
+  IRLBA.run(src[0]);
+#endif
 
+#if 0
   src[0]=KrySchur.evecs[0];
   for (int i=1;i<Nstop;i++) src[0]+=KrySchur.evecs[i];
   for (int i=0;i<Nstop;i++) 
@@ -349,6 +354,7 @@ int main (int argc, char ** argv)
 //        auto evdensity = localInnerProduct(evec[i],evec[i] );
         writeFile(src[0],evfile);
   }
+#endif
 
 
   /*

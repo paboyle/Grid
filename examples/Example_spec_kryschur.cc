@@ -298,7 +298,7 @@ ShiftedComplexPVdagMLinearOperator(ComplexD _shift,Matrix &Mat,Matrix &PV): shif
   }
 };
 
-<<<<<<< HEAD
+#if 0
 template<class Fobj,class CComplex,int nbasis>
 class MGPreconditioner : public LinearFunction< Lattice<Fobj> > {
 public:
@@ -401,8 +401,7 @@ public:
 };
 #endif
 
-=======
->>>>>>> 68af1bba67dd62881ead5ab1e54962a5486a0791
+
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);

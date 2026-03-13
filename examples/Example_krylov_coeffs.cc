@@ -93,7 +93,7 @@ class SquaredLinearOperator : public LinearOperatorBase<Field> {
  * int N
  *    Dimension of the polynomial approximation (Krylov space K_{N-1} = {b, Db, D^2 b, ..., D^{N-1} b}).
  */
-void poly_coeffs(std::vector<std::complex<double>> &coeffs, LinearOperatorBase<LatticeFermion> &DiracOp, LatticeFermion src, 
+void poly_coeffs(std::vector<ComplexD> &coeffs, LinearOperatorBase<LatticeFermion> &DiracOp, LatticeFermion src,
                   LatticeFermion psiStar, GridCartesian* FGrid, int N, bool use_herm = false)
 {
   // stdBasis = {b, Db, D^2 b, ..., D^N b}, kryBasis = {k0, k1, ..., kN}
@@ -187,7 +187,7 @@ std::complex<double> poly_approx(std::complex<double> x, std::vector<std::comple
  * std::vector<std::complex<double>> coeffs
  *    Polynomial coefficients returned from the solver. 
  */
-void krylovApprox(LatticeFermion &psi, LatticeFermion src, LinearOperatorBase<LatticeFermion> &Linop, std::vector<std::complex<double>> coeffs) {
+void krylovApprox(LatticeFermion &psi, LatticeFermion src, LinearOperatorBase<LatticeFermion> &Linop, std::vector<ComplexD> coeffs) {
   psi = Zero();
   LatticeFermion tmp (psi.Grid());
   tmp = src;
@@ -263,13 +263,13 @@ int main (int argc, char ** argv)
   CGP(Dsq, src, psiCG);
 
   // Compute Krylov coeffs directly and compare
-  std::vector<std::complex<double>> cg_coeffs (N);
+  std::vector<ComplexD> cg_coeffs (N);
   poly_coeffs(cg_coeffs, Dsq, src, psiCG, FGrid, N, true);
 
   PolynomialFile PF;
 
   // Use GCR solver, also get poly coeffs
-  std::vector<std::complex<double>> gcr_sym_coeffs (N);     // Can try N --> N + 3 to test to see if the last 3 comps are 0
+  std::vector<ComplexD> gcr_sym_coeffs (N);     // Can try N --> N + 3 to test to see if the last 3 comps are 0
   PGCRPolynomial<LatticeFermionD> GCRPolySym(tol, outer_iters, Dsq, prec, N+1, N, PF);    // mmax sets the memory, note the last beta doesn't really matter for updating the polynomial
   GCRPolySym(src, psiGCR);
   // poly_coeffs(gcr_sym_coeffs, Dsq, src, psi, FGrid, N, true);
@@ -326,7 +326,7 @@ int main (int argc, char ** argv)
 
   // Compute Krylov coeffs directly and compare
   // N = 1;    // compare the N > 1 decomposition with the psi* resulting from N = 1
-  std::vector<std::complex<double>> gcr_coeffs (N);   // note N --> N + k should just give k coeffs that are 0; this works as intended
+  std::vector<ComplexD> gcr_coeffs (N);   // note N --> N + k should just give k coeffs that are 0; this works as intended
   poly_coeffs(gcr_coeffs, DLinOp, src, psiGCR, FGrid, N, false);
 
   std::cout << GridLogMessage << "******* GCR POLYNOMIAL COEFFICIENTS *******" << std::endl;
@@ -378,7 +378,7 @@ int main (int argc, char ** argv)
   krylovApprox(psiPrime, src, DLinOp, GCRPoly.polynomial);
   std::cout << "GCR with Dsq, ||psi2 - psiPrime||^2 = " << norm2(psi2 - psiPrime) << std::endl;
 
-  std::vector<std::complex<double>> psi2_coeffs (N);   // note N --> N + k should just give k coeffs that are 0; this works as intended
+  std::vector<ComplexD> psi2_coeffs (N);   // note N --> N + k should just give k coeffs that are 0; this works as intended
   poly_coeffs(psi2_coeffs, DLinOp, src, psi2, FGrid, N, false);
   krylovApprox(psiPrime, src, DLinOp, psi2_coeffs);
   std::cout << "GCR direct with Dsq, ||psi - psiPrime||^2 = " << norm2(psi2 - psiPrime) << std::endl;
