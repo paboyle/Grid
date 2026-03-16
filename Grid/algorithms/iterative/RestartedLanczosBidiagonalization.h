@@ -156,9 +156,14 @@ public:
       verify();
 
       // ----------------------------------------------------------------
-      // Step 2: SVD of the Nm x Nm matrix B (non-bidiagonal after restart)
+      // Step 2: SVD of the Nm x Nm B matrix.
+      // iter=0 (pStart==0): B is exactly bidiagonal — use buildBidiagonal.
+      // iter>0 (pStart==Nk): after a thick restart, column restart_col of
+      // U^dag A V has extra off-diagonal entries captured by fvec; use
+      // buildFullB so the Ritz values and restart vectors are computed from
+      // the exact projected matrix A V = U B_full.
       // ----------------------------------------------------------------
-      Eigen::MatrixXd B = buildFullB(Nm);
+      Eigen::MatrixXd B = (pStart == 0) ? buildBidiagonal(Nm) : buildFullB(Nm);
       Eigen::JacobiSVD<Eigen::MatrixXd> svd(B,
           Eigen::ComputeThinU | Eigen::ComputeThinV);
 
@@ -257,40 +262,69 @@ public:
    */
   void verify()
   {
-    int m = (int)alpha.size();
+    int m  = (int)alpha.size();
+    int nU = (int)U.size();
+    int nV = (int)V.size();
     if (m == 0) { std::cout << GridLogMessage << "IRLBA verify: empty basis" << std::endl; return; }
 
-    // Print B_k
-    Eigen::MatrixXd B = buildBidiagonal(m);
-    std::cout << GridLogMessage << "IRLBA verify: B_k (" << m << "x" << m << "):" << std::endl;
-    for (int i = 0; i < m; ++i) {
-      std::cout << GridLogMessage << "  row " << i << ": ";
-      for (int j = 0; j < m; ++j) std::cout << B(i,j) << " ";
-      std::cout << std::endl;
+    // Build reference matrix Bref (nU x nV):
+    //   Columns 0..m-1 : buildFullB(m)  (bidiagonal + fvec column at restart_col)
+    //   Column  m      : residual column, two cases:
+    //     (a) restart_col == m (right after implicitRestart, before extendBasis):
+    //         V[m] = sgn*V_old[Nm], so <U[i]|A|V[m]> = fvec[i] for all i
+    //     (b) otherwise (pure GK or after extendBasis):
+    //         only entry (m-1, m) = beta[m-1]  (GK recurrence residual)
+    Eigen::MatrixXd Bref = Eigen::MatrixXd::Zero(nU, nV);
+    {
+      Eigen::MatrixXd Bfull = buildFullB(m);
+      int cols = std::min(m, nV);
+      Bref.block(0, 0, m, cols) = Bfull.block(0, 0, m, cols);
+    }
+    if (nV > m && m > 0) {
+      if (restart_col == m && (int)fvec.size() == m) {
+        // Case (a): right after implicitRestart
+        for (int i = 0; i < m; ++i) Bref(i, m) = fvec[i];
+      } else if ((int)beta.size() >= m) {
+        // Case (b): standard GK residual column
+        Bref(m - 1, m) = beta[m - 1];
+      }
     }
 
-    // Compute M[i,j] = <U[i] | A | V[j]>  (should equal B[i,j])
-    std::cout << GridLogMessage << "IRLBA verify: U^dag A V (" << m << "x" << m << "):" << std::endl;
+    // Compute M[i,j] = <U[i] | A | V[j]>
+    Eigen::MatrixXd M = Eigen::MatrixXd::Zero(nU, nV);
     Field Avj(Grid);
-    Eigen::MatrixXd M = Eigen::MatrixXd::Zero(m, m);
-    for (int j = 0; j < m && j < (int)V.size(); ++j) {
+    for (int j = 0; j < nV; ++j) {
       Linop.Op(V[j], Avj);
-      for (int i = 0; i < m && i < (int)U.size(); ++i) {
+      for (int i = 0; i < nU; ++i) {
         ComplexD ip = innerProduct(U[i], Avj);
         M(i, j) = ip.real();
       }
     }
-    for (int i = 0; i < m; ++i) {
+
+    // Print Bref
+    std::cout << GridLogMessage
+              << "IRLBA verify: Bref (" << nU << "x" << nV << "):" << std::endl;
+    for (int i = 0; i < nU; ++i) {
       std::cout << GridLogMessage << "  row " << i << ": ";
-      for (int j = 0; j < m; ++j) std::cout << M(i,j) << " ";
+      for (int j = 0; j < nV; ++j) std::cout << Bref(i,j) << " ";
       std::cout << std::endl;
     }
 
-    // Print max deviation |B - U^dag A V|
-    RealD maxdev = (B - M).cwiseAbs().maxCoeff();
-    std::cout << GridLogMessage << "IRLBA verify: max|B - U^dag A V| = " << maxdev << std::endl;
+    // Print U^dag A V
+    std::cout << GridLogMessage
+              << "IRLBA verify: U^dag A V (" << nU << "x" << nV << "):" << std::endl;
+    for (int i = 0; i < nU; ++i) {
+      std::cout << GridLogMessage << "  row " << i << ": ";
+      for (int j = 0; j < nV; ++j) std::cout << M(i,j) << " ";
+      std::cout << std::endl;
+    }
 
-    // Also print beta (residual couplings)
+    // Max deviation over the full nU x nV matrix
+    RealD maxdev = (Bref - M).cwiseAbs().maxCoeff();
+    std::cout << GridLogMessage
+              << "IRLBA verify: max|Bref - U^dag A V| = " << maxdev << std::endl;
+
+    // Beta
     std::cout << GridLogMessage << "IRLBA verify: beta[0.." << (int)beta.size()-1 << "] = ";
     for (auto b : beta) std::cout << b << " ";
     std::cout << std::endl;
@@ -324,8 +358,10 @@ private:
   {
     Eigen::MatrixXd B = buildBidiagonal(m);
     if (restart_col >= 0 && restart_col < m && (int)fvec.size() > 0) {
-      for (int j = 0; j < restart_col && j < (int)fvec.size(); ++j)
+      for (int j = 0; j < restart_col && j < (int)fvec.size(); ++j){
         B(j, restart_col) = fvec[j];
+        std::cout << GridLogMessage << "buildFullB: B  " <<j<<" "<<restart_col<<B(j, restart_col);
+      }
     }
     return B;
   }

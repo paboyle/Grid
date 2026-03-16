@@ -1,15 +1,18 @@
 <?xml version="1.0"?>
 <grid>
   <LanczosParameters>
-    <mass>-1.025</mass>
+    <mass>0</mass>
     <mstep>-0.025</mstep>
     <M5>1.8</M5>
     <Ls>48</Ls>
-    <Nstop>10</Nstop>
-    <Nk>12</Nk>
-    <Np>30</Np>
-    <ChebyLow>0.1</ChebyLow>
-    <ChebyHigh>50</ChebyHigh>
+    <Nstop>5</Nstop>
+    <Nk>5</Nk>
+    <Np>5</Np>
+    <ReadEvec>0</ReadEvec>
+    <maxIter>10000</maxIter>
+    <resid>1e-10</resid>
+    <ChebyLow>1</ChebyLow>
+    <ChebyHigh>100</ChebyHigh>
     <ChebyOrder>51</ChebyOrder>
   </LanczosParameters>
 </grid>
