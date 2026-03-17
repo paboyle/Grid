@@ -492,31 +492,17 @@ public:
 
     typedef typename Field::vector_object         vobj;
     typedef decltype(innerProduct(vobj(), vobj())) inner_t;
-    typedef typename inner_t::scalar_objectD       sobj;
     typedef decltype(basis[0].View(AcceleratorRead)) View;
 
     GridBase *grid = vec.Grid();
     uint64_t oSites = grid->oSites();
     uint64_t nsimd  = grid->Nsimd();
-    uint64_t size   = oSites * nsimd;
 
-    // Reduction geometry (same logic as sumD_gpu_small)
-    int numThreads, numBlocks;
-    int size_i = (int)size;
-    getNumBlocksAndThreads(size_i, sizeof(sobj), numThreads, numBlocks);
-    int smemSize = numThreads * sizeof(sobj);
+    // all_ip[j * oSites + ss] = per-site inner product of basis[j] and vec at site ss.
+    // Layout: n contiguous blocks of oSites each.
+    deviceVector<inner_t> all_ip((uint64_t)n * oSites);
+    inner_t *all_ip_p = &all_ip[0];
 
-    // inner_tmp: reused per-site scratch for each basis vector j.
-    // Safe because the stream serializes (per_site_j → reduce_j → per_site_{j+1}):
-    // reduce_j finishes reading inner_tmp before per_site_{j+1} overwrites it.
-    deviceVector<inner_t> inner_tmp(oSites);
-    inner_t *inner_tmp_p = &inner_tmp[0];
-
-    // buffers[j*numBlocks + 0] will hold the reduction result for basis j.
-    deviceVector<sobj> buffers(n * numBlocks);
-    sobj *buf_p = &buffers[0];
-
-    // Basis views (opened once, closed at end of function)
     hostVector<View>   h_basis_v(n);
     deviceVector<View> d_basis_v(n);
     for (int j = 0; j < n; ++j) {
@@ -525,33 +511,35 @@ public:
     }
     View *basis_vp = &d_basis_v[0];
 
-    // Queue all 2n kernels to computeStream — no intermediate barriers.
-    // CUDA stream ordering guarantees reduce_j runs after per_site_j.
+    // Queue n per-site kernels to the accelerator stream — no intermediate barriers.
     autoView(vec_v, vec, AcceleratorRead);
     for (int j = 0; j < n; ++j) {
-      // Per-site inner products: inner_tmp[ss] = <basis[j][ss] | vec[ss]>
-      int jj = j;
+      int      jj      = j;
+      uint64_t oSites_ = oSites;
       accelerator_for(ss, oSites, nsimd, {
-        auto x_l = coalescedRead(basis_vp[jj][ss]);
-        auto y_l = coalescedRead(vec_v[ss]);
-        coalescedWrite(inner_tmp_p[ss], innerProduct(x_l, y_l));
+        auto x = coalescedRead(basis_vp[jj][ss]);
+        auto y = coalescedRead(vec_v[ss]);
+        coalescedWrite(all_ip_p[jj * oSites_ + ss], innerProduct(x, y));
       });
-      // Reduce inner_tmp → buf_p + j*numBlocks  (async, no barrier)
-      reduceKernel<<<numBlocks, numThreads, smemSize, computeStream>>>(
-          inner_tmp_p, buf_p + j * numBlocks, size_i);
     }
 
-    // ONE sync after all 2n kernels are queued
+    // ONE sync after all n kernels
     accelerator_barrier();
 
-    // Batch copy all n results (result for j sits at buf[j*numBlocks+0])
-    hostVector<sobj> buf_h(n * numBlocks);
-    acceleratorCopyFromDevice(buf_p, &buf_h[0], n * numBlocks * sizeof(sobj));
+    // Copy all per-site results to host
+    hostVector<inner_t> all_ip_h((uint64_t)n * oSites);
+    acceleratorCopyFromDevice(all_ip_p, &all_ip_h[0], (uint64_t)n * oSites * sizeof(inner_t));
 
-    // Convert sobj → ComplexD and do ONE batched MPI allreduce
+    // Reduce on host: sum over oSites, then collapse SIMD lanes via Reduce(TensorRemove(...))
+    // TensorRemove strips the iSinglet tensor wrapper to expose the SIMD scalar type.
+    // Reduce sums all nsimd lanes and returns a plain scalar (RealD or ComplexD).
     std::vector<ComplexD> raw(n);
-    for (int j = 0; j < n; ++j)
-      raw[j] = TensorRemove(buf_h[j * numBlocks]);
+    for (int j = 0; j < n; ++j) {
+      inner_t sum = Zero();
+      for (uint64_t ss = 0; ss < oSites; ++ss)
+        sum += all_ip_h[(uint64_t)j * oSites + ss];
+      raw[j] = ComplexD(Reduce(TensorRemove(sum)));
+    }
     grid->GlobalSumVector(&raw[0], n);
     for (int j = 0; j < n; ++j) c[j] = raw[j];
 
