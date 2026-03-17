@@ -153,7 +153,7 @@ public:
       // Step 1: extend from pStart steps to Nm steps
       // ----------------------------------------------------------------
       extendBasis(pStart, Nm, betaRestart);
-      verify();
+//      verify();
 
       // ----------------------------------------------------------------
       // Step 2: SVD of the Nm x Nm B matrix.
@@ -208,7 +208,7 @@ public:
       // Step 4: implicit restart — compress to Nk steps
       // ----------------------------------------------------------------
       implicitRestart(Nm, Nk, sigma, X, Y, order, betaK, betaRestart);
-      verify();
+//      verify();
 
       // Lucky breakdown: exact invariant subspace found; convergence is exact.
       // B_p^+ = diag(alpha[0..Nk-1]); extract directly from restart basis.
@@ -360,7 +360,7 @@ private:
     if (restart_col >= 0 && restart_col < m && (int)fvec.size() > 0) {
       for (int j = 0; j < restart_col && j < (int)fvec.size(); ++j){
         B(j, restart_col) = fvec[j];
-        std::cout << GridLogMessage << "buildFullB: B  " <<j<<" "<<restart_col<<B(j, restart_col);
+        std::cout << GridLogDebug << "buildFullB: B  " <<j<<" "<<restart_col<<B(j, restart_col)<<std::endl;
       }
     }
     return B;
@@ -464,20 +464,162 @@ private:
     }
   }
 
+public:
   // ------------------------------------------------------------------
-  // Full reorthogonalization of vec against the vectors in basis.
-  // Subtracts projections only — does NOT normalize.
+  // Block reorthogonalization helpers.
+  // Declared public because CUDA extended lambdas cannot live inside
+  // private/protected member functions.
+  //
+  // batchInnerProducts: computes c[j] = <basis[j], vec> for all j
+  //   in a single GPU pass (one accelerator_barrier instead of n).
+  //   Queues n pairs of (per-site kernel, reduceKernel) to computeStream
+  //   without intermediate CPU syncs, then syncs once at the end.
+  //
+  // batchUpdate: computes vec -= sum_j c[j]*basis[j] in one GPU kernel.
+  //
+  // reorthogonalize: two-pass Classical Gram-Schmidt (CGS2) using the
+  //   two helpers above.  Each pass costs 2 GPU syncs (1 IP + 1 update)
+  //   instead of 2n syncs per pass in the old sequential MGS.
+  // ------------------------------------------------------------------
+
+  void batchInnerProducts(const Field &vec,
+                          const std::vector<Field> &basis,
+                          std::vector<ComplexD> &c)
+  {
+    int n = (int)basis.size();
+    c.resize(n);
+    if (n == 0) return;
+
+    typedef typename Field::vector_object         vobj;
+    typedef decltype(innerProduct(vobj(), vobj())) inner_t;
+    typedef typename inner_t::scalar_objectD       sobj;
+    typedef decltype(basis[0].View(AcceleratorRead)) View;
+
+    GridBase *grid = vec.Grid();
+    uint64_t oSites = grid->oSites();
+    uint64_t nsimd  = grid->Nsimd();
+    uint64_t size   = oSites * nsimd;
+
+    // Reduction geometry (same logic as sumD_gpu_small)
+    int numThreads, numBlocks;
+    int size_i = (int)size;
+    getNumBlocksAndThreads(size_i, sizeof(sobj), numThreads, numBlocks);
+    int smemSize = numThreads * sizeof(sobj);
+
+    // inner_tmp: reused per-site scratch for each basis vector j.
+    // Safe because the stream serializes (per_site_j → reduce_j → per_site_{j+1}):
+    // reduce_j finishes reading inner_tmp before per_site_{j+1} overwrites it.
+    deviceVector<inner_t> inner_tmp(oSites);
+    inner_t *inner_tmp_p = &inner_tmp[0];
+
+    // buffers[j*numBlocks + 0] will hold the reduction result for basis j.
+    deviceVector<sobj> buffers(n * numBlocks);
+    sobj *buf_p = &buffers[0];
+
+    // Basis views (opened once, closed at end of function)
+    hostVector<View>   h_basis_v(n);
+    deviceVector<View> d_basis_v(n);
+    for (int j = 0; j < n; ++j) {
+      h_basis_v[j] = basis[j].View(AcceleratorRead);
+      acceleratorPut(d_basis_v[j], h_basis_v[j]);
+    }
+    View *basis_vp = &d_basis_v[0];
+
+    // Queue all 2n kernels to computeStream — no intermediate barriers.
+    // CUDA stream ordering guarantees reduce_j runs after per_site_j.
+    autoView(vec_v, vec, AcceleratorRead);
+    for (int j = 0; j < n; ++j) {
+      // Per-site inner products: inner_tmp[ss] = <basis[j][ss] | vec[ss]>
+      int jj = j;
+      accelerator_for(ss, oSites, nsimd, {
+        auto x_l = coalescedRead(basis_vp[jj][ss]);
+        auto y_l = coalescedRead(vec_v[ss]);
+        coalescedWrite(inner_tmp_p[ss], innerProduct(x_l, y_l));
+      });
+      // Reduce inner_tmp → buf_p + j*numBlocks  (async, no barrier)
+      reduceKernel<<<numBlocks, numThreads, smemSize, computeStream>>>(
+          inner_tmp_p, buf_p + j * numBlocks, size_i);
+    }
+
+    // ONE sync after all 2n kernels are queued
+    accelerator_barrier();
+
+    // Batch copy all n results (result for j sits at buf[j*numBlocks+0])
+    hostVector<sobj> buf_h(n * numBlocks);
+    acceleratorCopyFromDevice(buf_p, &buf_h[0], n * numBlocks * sizeof(sobj));
+
+    // Convert sobj → ComplexD and do ONE batched MPI allreduce
+    std::vector<ComplexD> raw(n);
+    for (int j = 0; j < n; ++j)
+      raw[j] = TensorRemove(buf_h[j * numBlocks]);
+    grid->GlobalSumVector(&raw[0], n);
+    for (int j = 0; j < n; ++j) c[j] = raw[j];
+
+    for (int j = 0; j < n; ++j) h_basis_v[j].ViewClose();
+  }
+
+  void batchUpdate(Field &vec,
+                   const std::vector<Field> &basis,
+                   const std::vector<ComplexD> &c)
+  {
+    int n = (int)basis.size();
+    if (n == 0) return;
+
+    typedef typename Field::vector_object vobj;
+    typedef decltype(basis[0].View(AcceleratorRead)) View;
+
+    GridBase *grid = vec.Grid();
+    uint64_t oSites = grid->oSites();
+    uint64_t nsimd  = grid->Nsimd();
+
+    // Split complex coefficients into real/imag double arrays on device.
+    // Using doubles avoids potential ComplexD-device-code compatibility issues.
+    hostVector<double>   h_re(n), h_im(n);
+    deviceVector<double> d_re(n), d_im(n);
+    for (int k = 0; k < n; ++k) {
+      h_re[k] = c[k].real();
+      h_im[k] = c[k].imag();
+    }
+    acceleratorCopyToDevice(&h_re[0], &d_re[0], n * sizeof(double));
+    acceleratorCopyToDevice(&h_im[0], &d_im[0], n * sizeof(double));
+    double *re_p = &d_re[0];
+    double *im_p = &d_im[0];
+
+    // Basis views
+    hostVector<View>   h_basis_v(n);
+    deviceVector<View> d_basis_v(n);
+    for (int k = 0; k < n; ++k) {
+      h_basis_v[k] = basis[k].View(AcceleratorRead);
+      acceleratorPut(d_basis_v[k], h_basis_v[k]);
+    }
+    View *basis_vp = &d_basis_v[0];
+
+    // Single kernel: vec[ss] -= sum_k (re[k] + i*im[k]) * basis[k][ss]
+    autoView(vec_v, vec, AcceleratorWrite);
+    accelerator_for(ss, oSites, nsimd, {
+      auto v = coalescedRead(vec_v[ss]);
+      for (int k = 0; k < n; ++k) {
+        auto b = coalescedRead(basis_vp[k][ss]);
+        v = v - re_p[k] * b - timesI(im_p[k] * b);
+      }
+      coalescedWrite(vec_v[ss], v);
+    });
+
+    for (int k = 0; k < n; ++k) h_basis_v[k].ViewClose();
+  }
+
+  // ------------------------------------------------------------------
+  // Full reorthogonalization using two-pass Classical Gram-Schmidt (CGS2).
+  // Each pass calls batchInnerProducts (1 GPU sync) + batchUpdate (1 sync),
+  // replacing the old 2n GPU syncs per pass from sequential MGS.
   // ------------------------------------------------------------------
   void reorthogonalize(Field &vec, const std::vector<Field> &basis)
   {
-    for (int j = 0; j < (int)basis.size(); ++j) {
-      ComplexD ip = innerProduct(basis[j], vec);
-      vec = vec - ip * basis[j];
-    }
-    // Second pass for numerical stability
-    for (int j = 0; j < (int)basis.size(); ++j) {
-      ComplexD ip = innerProduct(basis[j], vec);
-      vec = vec - ip * basis[j];
+    if (basis.empty()) return;
+    std::vector<ComplexD> c;
+    for (int pass = 0; pass < 2; ++pass) {
+      batchInnerProducts(vec, basis, c);
+      batchUpdate(vec, basis, c);
     }
   }
 
