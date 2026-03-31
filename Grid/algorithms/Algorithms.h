@@ -85,8 +85,12 @@ NAMESPACE_CHECK(multigrid);
 #include <Grid/algorithms/FFT.h>
 
 #include <Grid/algorithms/iterative/KrylovSchur.h>
+#include <Grid/algorithms/iterative/BlockedKrylovSchur.h>
+#include <Grid/algorithms/iterative/HarmonicBlockedKrylovSchur.h>
 #include <Grid/algorithms/iterative/Arnoldi.h>
 #include <Grid/algorithms/iterative/LanczosBidiagonalization.h>
 #include <Grid/algorithms/iterative/RestartedLanczosBidiagonalization.h>
+#include <Grid/algorithms/iterative/GCR.h>
+#include <Grid/algorithms/iterative/MultiSplittingPreconditionedCG.h>
 
 #endif

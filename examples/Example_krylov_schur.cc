@@ -52,6 +52,8 @@ struct LanczosParameters: Serializable {
                                 Integer, Np,
                                 Integer, ReadEvec,
                                 Integer, maxIter,
+                                Integer, Nblock,
+                                Integer, verify,
 	  			RealD, resid,
 	  			RealD, ChebyLow,
 	  			RealD, ChebyHigh,
@@ -333,18 +335,27 @@ int main (int argc, char ** argv)
 //  KrySchur(src, maxIter, Nm, Nk, Nstop);
 //  KrylovSchur KrySchur (HermOp2, UGrid, resid,EvalNormSmall);
 //  Hacked, really EvalImagSmall
-#if 1
     RealD shift=1.5;
+#if 0
     KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
     KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);
 #else
-    KrylovSchur KrySchur (Iwilson, UGrid, resid,EvalImNormSmall);
-    KrySchur(src[0], maxIter, Nm, Nk, Nstop);
+    int Nblock=4;
+    Nblock=LanParams.Nblock;
+    bool if_verify=false;
+    if(LanParams.verify) if_verify=true;
+//    KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
+//    KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true,true);
+//    BlockedKrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
+//    KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true,if_verify);
+    HarmonicBlockedKrylovSchur KrySchur (Dwilson, UGrid, resid,shift,EvalImNormSmall);
+    KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true);
 #endif
   std::cout << GridLogMessage << "evec.size= " << KrySchur.evecs.size()<< std::endl;
 
   src[0]=KrySchur.evecs[0];
-  for (int i=1;i<Nstop;i++) src[0]+=KrySchur.evecs[i];
+  std::cout << GridLogMessage << "KrySchur.evecs= "<< KrySchur.evecs.size() <<std::endl;
+  for (int i=1;i<Nk;i++) src[0]+=KrySchur.evecs[i];
   for (int i=0;i<Nstop;i++) 
   {
 	std::string evfile ("./evec_"+std::to_string(mass)+"_"+std::to_string(i));
