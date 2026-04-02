@@ -72,6 +72,7 @@ NAMESPACE_BEGIN(Grid);
 template<class Field>
 class BlockKrylovSchur {
 
+protected:
   //--------------------------------------------------------------------
   // Types
   //--------------------------------------------------------------------
@@ -160,6 +161,7 @@ public:
 
     assert((int)v0.size() >= Nblock);
     assert(Nk < Nm);
+    preRun();  // hook: derived classes add parameter assertions here
 
     int N = Nm * Nblock;   // total Krylov dimension
 
@@ -403,6 +405,31 @@ public:
               << "======== end verify ========" << std::endl;
   }
 
+  //--------------------------------------------------------------------
+  // Extension hooks for derived classes
+  //--------------------------------------------------------------------
+
+  /**
+   * Apply the operator (or poly-filtered operator) to the current Arnoldi
+   * block and return the results in W.
+   *
+   * Base implementation: W[t] = Linop.Op(basis[kBase + t]).
+   * Derived classes (e.g. SplitGridBlockKrylovSchur) override this to
+   * apply poly(A) via Grid_split / Grid_unsplit instead.
+   */
+  virtual void applyBlock(std::vector<Field>& W, int kBase)
+  {
+    for (int t = 0; t < Nblock; t++)
+      Linop.Op(basis[kBase + t], W[t]);
+  }
+
+  /**
+   * Called once at the start of operator(), after parameters are set.
+   * Base implementation is a no-op; derived classes override to add
+   * parameter assertions (e.g. Nblock % mrhs == 0).
+   */
+  virtual void preRun() {}
+
 private:
 
   //--------------------------------------------------------------------
@@ -498,11 +525,9 @@ private:
     int prevN  = kBase + Nblock;      // number of basis vectors so far after this step
     int N      = Nm * Nblock;
 
-    // W[t] = A * basis[kBase + t]
+    // W[t] = op(basis[kBase + t])  — dispatches to applyBlock() virtual
     std::vector<Field> W(Nblock, Field(Grid_));
-    for (int t = 0; t < Nblock; t++) {
-      Linop.Op(basis[kBase + t], W[t]);
-    }
+    applyBlock(W, kBase);
 
     // Orthogonalise W against all current basis vectors (full reorthogonalisation)
     // H[i, kBase + t] = <basis[i] | W[t]>

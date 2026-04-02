@@ -2,11 +2,13 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_padded_cell.cc
+    Source file: ./examples/Example_krylov_schur.cc
 
     Copyright (C) 2023
 
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+    Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+    Author: Patrick Oare <patrickoare@gmail.com>
+    Author: Chulwoo Jung <chulwoo@bnl.gov>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -311,7 +313,16 @@ int main (int argc, char ** argv)
   Nm = Nk + Np;
   int Nu=16;
   std::vector<LatticeFermion> src(Nu,FGrid); 
-  for(int i=0;i<Nu;i++) random(RNG5,src[i]);
+  for(int i=0;i<Nu;i++){
+     random(RNG5,src[i]);
+#if 0
+     LatticeFermion src_e(FrbGrid);
+     pickCheckerboard(Even, src_e, src[i]);
+     src_e=Zero();	
+     setCheckerboard(src[i],src_e);
+     std::cout << GridLogMessage << "src["<<i<<"] even sites zeroed " << std::endl;
+#endif
+  }
 
   if(LanParams.ReadEvec) {
     std::string evecs_file="evec_in";
@@ -336,20 +347,21 @@ int main (int argc, char ** argv)
 //  KrylovSchur KrySchur (HermOp2, UGrid, resid,EvalNormSmall);
 //  Hacked, really EvalImagSmall
     RealD shift=1.5;
-#if 0
+#if 1
     KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
-    KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);
+    KrySchur(src[0], maxIter, Nm, Nk, Nstop);
+//    KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);
 #else
     int Nblock=4;
     Nblock=LanParams.Nblock;
     bool if_verify=false;
     if(LanParams.verify) if_verify=true;
-//    KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
-//    KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true,true);
-//    BlockedKrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
+    KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
+    KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true,true);
+//    BlockKrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
 //    KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true,if_verify);
-    HarmonicBlockedKrylovSchur KrySchur (Dwilson, UGrid, resid,shift,EvalImNormSmall);
-    KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true);
+//    HarmonicBlockKrylovSchur KrySchur (Dwilson, UGrid, resid,shift,EvalImNormSmall);
+//    KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true);
 #endif
   std::cout << GridLogMessage << "evec.size= " << KrySchur.evecs.size()<< std::endl;
 
