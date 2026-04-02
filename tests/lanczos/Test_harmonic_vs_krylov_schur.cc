@@ -62,8 +62,8 @@ int main(int argc, char** argv)
   // Parameters (kept small so output is readable)
   //----------------------------------------------------------------------
   const int Nblock  = 2;
-  const int Nm      = 6;
-  const int Nk      = 3;
+  const int Nm      = 12;   // total vectors (= 6 blocks * Nblock=2)
+  const int Nk      = 6;    // total kept   (= 3 blocks * Nblock=2)
   const int Nstop   = 2;
   const int maxIter = 4;
   const RealD tol   = 1e-6;
@@ -82,12 +82,12 @@ int main(int argc, char** argv)
   std::cout << GridLogMessage
             << "\n========================================" << std::endl;
   std::cout << GridLogMessage
-            << " BlockedKrylovSchur  (Nblock=" << Nblock
+            << " BlockKrylovSchur  (Nblock=" << Nblock
             << " Nm=" << Nm << " Nk=" << Nk << ")" << std::endl;
   std::cout << GridLogMessage
             << "========================================\n" << std::endl;
 
-  BlockedKrylovSchur<Field> bks(op, grid, tol, EvalReSmall);
+  BlockKrylovSchur<Field> bks(op, grid, tol, EvalReSmall);
   bks(v0, maxIter, Nm, Nk, Nstop, Nblock,
       /*doubleOrthog=*/true, /*doVerify=*/true);
 
@@ -103,12 +103,12 @@ int main(int argc, char** argv)
   std::cout << GridLogMessage
             << "\n========================================" << std::endl;
   std::cout << GridLogMessage
-            << " HarmonicBlockedKrylovSchur  (Nblock=" << Nblock
+            << " HarmonicBlockKrylovSchur  (Nblock=" << Nblock
             << " Nm=" << Nm << " Nk=" << Nk << " shift=0)" << std::endl;
   std::cout << GridLogMessage
             << "========================================\n" << std::endl;
 
-  HarmonicBlockedKrylovSchur<Field> hbks(op, grid, tol, 0.0, EvalNormSmall);
+  HarmonicBlockKrylovSchur<Field> hbks(op, grid, tol, 0.0, EvalNormSmall);
   hbks(v0b, maxIter, Nm, Nk, Nstop, Nblock,
        /*doubleOrthog=*/true, /*doVerify=*/true);
 

@@ -44,10 +44,10 @@ NAMESPACE_BEGIN(Grid);
  *   A V_k = V_k H_k + F_k B_k^dag
  *
  * where
- *   V_k   = Nm*Nblock orthonormal basis vectors (stored flat in basis[])
- *   H_k   = (Nm*Nblock) x (Nm*Nblock) upper block-Hessenberg Rayleigh quotient
+ *   V_k   = Nm orthonormal basis vectors (stored flat in basis[])
+ *   H_k   = Nm x Nm upper block-Hessenberg Rayleigh quotient
  *   F_k   = Nblock residual vectors (the next block beyond V_k)
- *   B_k   = (Nm*Nblock) x Nblock coupling matrix (non-zero only in last Nblock rows)
+ *   B_k   = Nm x Nblock coupling matrix (non-zero only in last Nblock rows)
  *
  * Each block Arnoldi step applies A to each of the Nblock vectors in the
  * current block, orthogonalises against all previous basis vectors, and
@@ -56,15 +56,15 @@ NAMESPACE_BEGIN(Grid);
  *
  * The restart is a thick restart via the Schur decomposition of H_k:
  *   H_k = Q^dag S Q
- * The leading Nk*Nblock Schur vectors (chosen by RitzFilter) are retained,
+ * The leading Nk Schur vectors (chosen by RitzFilter) are retained,
  * the basis and Rayleigh quotient are truncated, and block Arnoldi continues
- * from the Nk-th block.
+ * from the (Nk/Nblock)-th block.
  *
  * Parameters
  * ----------
  * Nblock  : block size p
- * Nm      : number of block steps (total Krylov dimension = Nm * Nblock)
- * Nk      : number of block steps to keep after each restart (Nk < Nm)
+ * Nm      : total Krylov dimension (must be divisible by Nblock)
+ * Nk      : total vectors to keep after each restart (must be divisible by Nblock, Nk < Nm)
  * Nstop   : declare convergence when this many eigenpairs have converged
  * MaxIter : maximum number of outer (restart) iterations
  * Tolerance : relative convergence tolerance (||r|| < Tolerance * |lambda_max|)
@@ -83,8 +83,8 @@ protected:
   // Parameters (set by operator())
   //--------------------------------------------------------------------
   int   Nblock;    // block size
-  int   Nm;        // block steps (total dim = Nm * Nblock)
-  int   Nk;        // blocks retained after restart
+  int   Nm;        // total Krylov dimension (multiple of Nblock)
+  int   Nk;        // total vectors retained after restart (multiple of Nblock)
   int   Nstop;
   int   MaxIter;
   RealD Tolerance;
@@ -97,19 +97,19 @@ protected:
   RitzFilter                 ritzFilter;
 
   // Flat storage: basis[s*Nblock + t] is the t-th vector of block s
-  // After construction: basis has Nm*Nblock entries
+  // After construction: basis has Nm entries
   std::vector<Field> basis;
 
-  // Rayleigh quotient  (Nm*Nblock) x (Nm*Nblock)
+  // Rayleigh quotient  Nm x Nm
   CMat H;
 
-  // Residual block: Nblock vectors (the (Nm+1)-th block, unnormalised before
+  // Residual block: Nblock vectors (the (Nm/Nblock+1)-th block, unnormalised before
   // QR; normalised and orthogonalised as part of block Arnoldi)
   std::vector<Field> F;
 
-  // Coupling matrix B: (Nm*Nblock) x Nblock.
+  // Coupling matrix B: Nm x Nblock.
   // In exact arithmetic only the last Nblock rows are non-zero:
-  //   B(Nm*Nblock - Nblock + t, s) = H_{Nm+1, Nm}(t, s)   (the subdiagonal block)
+  //   B(Nm - Nblock + t, s) = H_{Nm/Nblock+1, Nm/Nblock}(t, s)   (the subdiagonal block)
   // We keep it as a full matrix for generality after restarts.
   CMat B;
 
@@ -118,7 +118,7 @@ protected:
 
   // Output
   CVec               evals;
-  CMat               littleEvecs;   // Nm*Nblock columns
+  CMat               littleEvecs;   // Nm columns
   std::vector<RealD> ritzEstimates;
 
 public:
@@ -144,8 +144,8 @@ public:
    * ----------
    * v0       : block of Nblock starting vectors (size >= Nblock)
    * _maxIter : maximum outer (restart) iterations
-   * _Nm      : number of block steps per cycle
-   * _Nk      : number of block steps to keep after restart  (Nk < Nm)
+   * _Nm      : total Krylov dimension (must be divisible by _Nblock)
+   * _Nk      : total vectors to keep after restart (must be divisible by _Nblock, _Nk < _Nm)
    * _Nstop   : stop after _Nstop eigenvalues converged
    * _Nblock  : block size
    */
@@ -160,10 +160,12 @@ public:
     Nblock  = _Nblock;
 
     assert((int)v0.size() >= Nblock);
+    assert(Nm % Nblock == 0);
+    assert(Nk % Nblock == 0);
     assert(Nk < Nm);
     preRun();  // hook: derived classes add parameter assertions here
 
-    int N = Nm * Nblock;   // total Krylov dimension
+    int N = Nm;   // total Krylov dimension
 
     // Approximate largest eigenvalue for tolerance normalisation
     RealD approxLambdaMax = approxMaxEval(v0[0]);
@@ -181,11 +183,11 @@ public:
     for (int iter = 0; iter < MaxIter; iter++) {
       std::cout << GridLogMessage << "BlockKrylovSchur: restart iteration " << iter << std::endl;
 
-      // ---- Block Arnoldi: extend from block start to block Nm ----
-      blockArnoldiIteration(startBlock, Nm, start, doubleOrthog);
+      // ---- Block Arnoldi: extend from block start to block Nm/Nblock ----
+      blockArnoldiIteration(startBlock, Nm/Nblock, start, doubleOrthog);
 
-      // After first full cycle start from block Nk
-      start = Nk;
+      // After first full cycle start from block Nk/Nblock
+      start = Nk/Nblock;
 
       if (doVerify) {
         std::string lbl = "iter " + std::to_string(iter) + " after Arnoldi";
@@ -196,8 +198,8 @@ public:
       ComplexSchurDecomposition schur(H, false, ritzFilter);
       std::cout << GridLogMessage << "BlockKrylovSchur: Schur decomposed." << std::endl;
 
-      // Reorder: bring wanted Nk*Nblock Schur values to top-left
-      schur.schurReorder(Nk * Nblock);
+      // Reorder: bring wanted Nk Schur values to top-left
+      schur.schurReorder(Nk);
       std::cout << GridLogMessage << "BlockKrylovSchur: Schur reordered." << std::endl;
 
       CMat Q  = schur.getMatrixQ();
@@ -212,8 +214,8 @@ public:
       B = Q * B;
       H = schur.getMatrixS();
 
-      // ---- Truncate to Nk*Nblock ----
-      int Nkeep = Nk * Nblock;
+      // ---- Truncate to Nk ----
+      int Nkeep = Nk;
 
       CMat Htmp = H(Eigen::seqN(0, Nkeep), Eigen::seqN(0, Nkeep));
       H = CMat::Zero(N, N);
@@ -449,7 +451,7 @@ private:
   void blockArnoldiIteration(std::vector<Field>& startBlock, int endBlock,
                              int startIdx, bool doubleOrthog)
   {
-    int N = Nm * Nblock;
+    int N = Nm;
 
     if (startIdx == 0) {
       basis.clear();
@@ -523,7 +525,7 @@ private:
   {
     int kBase  = k * Nblock;          // first flat index of current block
     int prevN  = kBase + Nblock;      // number of basis vectors so far after this step
-    int N      = Nm * Nblock;
+    int N      = Nm;
 
     // W[t] = op(basis[kBase + t])  — dispatches to applyBlock() virtual
     std::vector<Field> W(Nblock, Field(Grid_));
@@ -547,7 +549,7 @@ private:
     // Store residual block F
     F = W;
 
-    if (k == Nm - 1) {
+    if (k == Nm/Nblock - 1) {
       // Last block: compute coupling matrix B for KS decomp.
       //
       // blockQR modifies F in-place (F → Q orthonormal) and returns R

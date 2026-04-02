@@ -68,7 +68,7 @@ int main(int argc, char** argv)
                      int maxIter, int Nstop) {
     std::cout << GridLogMessage << "===== " << label << " =====" << std::endl;
 
-    BlockedKrylovSchur<Field> bks(op, grid, 1e-6, EvalReSmall);
+    BlockKrylovSchur<Field> bks(op, grid, 1e-6, EvalReSmall);
 
     std::vector<Field> v0(Nblock, Field(grid));
     for (int t = 0; t < Nblock; t++) random(RNG, v0[t]);
@@ -79,17 +79,17 @@ int main(int argc, char** argv)
     std::cout << GridLogMessage << label << " done." << std::endl;
   };
 
-  // Test 1: Nblock=1 — scalar case, regression
+  // Test 1: Nblock=1 — scalar case, regression (Nm,Nk now total vectors)
   runTest("Nblock=1  Nm=10 Nk=5  maxIter=3", 1, 10, 5, 3, 5);
 
   // Test 2: Nblock=2 — exercises the B^H fix for off-diagonal elements
-  runTest("Nblock=2  Nm=8  Nk=4  maxIter=3", 2, 8, 4, 3, 4);
+  runTest("Nblock=2  Nm=16 Nk=8  maxIter=3", 2, 16, 8, 3, 4);
 
   // Test 3: Nblock=3 — further stress-test the B^H fix
-  runTest("Nblock=3  Nm=9  Nk=3  maxIter=3", 3, 9, 3, 3, 3);
+  runTest("Nblock=3  Nm=27 Nk=9  maxIter=3", 3, 27, 9, 3, 3);
 
   // Test 4: Nblock=2, larger cycle — more restarts
-  runTest("Nblock=2  Nm=12 Nk=6  maxIter=5", 2, 12, 6, 5, 6);
+  runTest("Nblock=2  Nm=24 Nk=12  maxIter=5", 2, 24, 12, 5, 6);
 
   if (nFail == 0)
     std::cout << GridLogMessage << "All BlockedKrylovSchur tests completed." << std::endl;

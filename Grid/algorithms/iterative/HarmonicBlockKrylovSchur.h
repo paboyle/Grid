@@ -49,9 +49,9 @@ NAMESPACE_BEGIN(Grid);
  *
  *   A V = V H + F B^dag                                         (1)
  *
- * with V orthonormal (Nm*Nblock columns), H the (Nm*Nblock)² block
+ * with V orthonormal (Nm columns), H the Nm² block
  * upper-Hessenberg Rayleigh quotient, F the Nblock residual vectors and B
- * the (Nm*Nblock)×Nblock coupling matrix, the harmonic Rayleigh quotient
+ * the Nm×Nblock coupling matrix, the harmonic Rayleigh quotient
  * relative to shift σ is
  *
  *   Hhat = H + (H - σI)^{-H} B B^H                             (2)
@@ -94,8 +94,8 @@ NAMESPACE_BEGIN(Grid);
  * ----------
  * shift    : target shift σ (default 0.0)
  * Nblock   : block size p
- * Nm       : number of block steps (total dim = Nm * Nblock)
- * Nk       : blocks to retain after each restart (Nk < Nm)
+ * Nm       : total Krylov dimension (must be divisible by Nblock)
+ * Nk       : total vectors to retain after each restart (must be divisible by Nblock, Nk < Nm)
  * Nstop    : stop when this many eigenpairs converge
  * MaxIter  : maximum outer (restart) iterations
  * Tolerance: relative convergence tolerance
@@ -119,8 +119,8 @@ class HarmonicBlockKrylovSchur {
   // Parameters
   //--------------------------------------------------------------------
   int    Nblock;
-  int    Nm;
-  int    Nk;
+  int    Nm;        // total Krylov dimension (multiple of Nblock)
+  int    Nk;        // total vectors retained after restart (multiple of Nblock)
   int    Nstop;
   int    MaxIter;
   RealD  Tolerance;
@@ -173,9 +173,11 @@ public:
     Nblock  = _Nblock;
 
     assert((int)v0.size() >= Nblock);
+    assert(Nm % Nblock == 0);
+    assert(Nk % Nblock == 0);
     assert(Nk < Nm);
 
-    int N = Nm * Nblock;
+    int N = Nm;
 
     RealD approxLambdaMax = approxMaxEval(v0[0]);
     rtol = Tolerance * approxLambdaMax;
@@ -194,9 +196,9 @@ public:
       std::cout << GridLogMessage
                 << "HarmonicBlockKrylovSchur: restart iteration " << iter << std::endl;
 
-      // ---- Block Arnoldi: extend from block 'start' to block Nm ----
-      blockArnoldiIteration(startBlock, Nm, start, doubleOrthog);
-      start = Nk;
+      // ---- Block Arnoldi: extend from block 'start' to block Nm/Nblock ----
+      blockArnoldiIteration(startBlock, Nm/Nblock, start, doubleOrthog);
+      start = Nk/Nblock;
 
       if (doVerify) {
         std::string lbl = "iter " + std::to_string(iter) + " after Arnoldi";
@@ -209,12 +211,12 @@ public:
 
       // ---- Schur decompose Hhat ----
       ComplexSchurDecomposition schur(Hhat, false, ritzFilter);
-      schur.schurReorder(Nk * Nblock);
+      schur.schurReorder(Nk);
 
       std::cout << GridLogMessage
-                << "HarmonicBlockKrylovSchur: harmonic Ritz values (first Nk*Nblock):" << std::endl;
+                << "HarmonicBlockKrylovSchur: harmonic Ritz values (first Nk):" << std::endl;
       CMat S = schur.getMatrixS();
-      for (int i = 0; i < Nk * Nblock; i++)
+      for (int i = 0; i < Nk; i++)
         std::cout << GridLogMessage << "  [" << i << "] " << S(i, i) << std::endl;
 
       CMat Q  = schur.getMatrixQ();
@@ -229,8 +231,8 @@ public:
       H = Q * H * Qt;
       B = Q * B;
 
-      // ---- Truncate to Nk*Nblock ----
-      int Nkeep = Nk * Nblock;
+      // ---- Truncate to Nk ----
+      int Nkeep = Nk;
 
       CMat Htmp = H(Eigen::seqN(0, Nkeep), Eigen::seqN(0, Nkeep));
       H = CMat::Zero(N, N);
@@ -440,7 +442,7 @@ private:
   void blockArnoldiIteration(std::vector<Field>& startBlock, int endBlock,
                              int startIdx, bool doubleOrthog)
   {
-    int N = Nm * Nblock;
+    int N = Nm;
 
     if (startIdx == 0) {
       basis.clear();
@@ -492,7 +494,7 @@ private:
   {
     int kBase  = k * Nblock;
     int prevN  = kBase + Nblock;
-    int N      = Nm * Nblock;
+    int N      = Nm;
 
     std::vector<Field> W(Nblock, Field(Grid_));
     for (int t = 0; t < Nblock; t++)
@@ -514,7 +516,7 @@ private:
 
     F = W;
 
-    if (k == Nm - 1) {
+    if (k == Nm/Nblock - 1) {
       // Last block: record coupling in B as R^H (Hermitian conjugate of QR factor)
       // KS relation requires B[kBase+t, s] = conj(R[s,t])
       CMat R = blockQR(F);
