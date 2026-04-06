@@ -55,7 +55,7 @@ NAMESPACE_CHECK(approx);
 #include <Grid/algorithms/blas/MomentumProject.h>
 NAMESPACE_CHECK(deflation);
 #include <Grid/algorithms/iterative/ConjugateGradient.h>
-#include <Grid/algorithms/iterative/EigCG.h>
+//#include <Grid/algorithms/iterative/EigCG.h>
 NAMESPACE_CHECK(ConjGrad);
 #include <Grid/algorithms/iterative/BiCGSTAB.h>
 NAMESPACE_CHECK(BiCGSTAB);
@@ -92,7 +92,7 @@ NAMESPACE_CHECK(multigrid);
 #include <Grid/algorithms/iterative/Arnoldi.h>
 #include <Grid/algorithms/iterative/LanczosBidiagonalization.h>
 #include <Grid/algorithms/iterative/RestartedLanczosBidiagonalization.h>
-#include <Grid/algorithms/iterative/GCR.h>
-#include <Grid/algorithms/iterative/MultiSplittingPreconditionedCG.h>
+//#include <Grid/algorithms/iterative/GCR.h>
+//#include <Grid/algorithms/iterative/MultiSplittingPreconditionedCG.h>
 
 #endif

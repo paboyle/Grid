@@ -327,7 +327,7 @@ int main (int argc, char ** argv)
   if(LanParams.ReadEvec) {
     std::string evecs_file="evec_in";
     std::cout << GridLogIRL<< "Reading evecs from "<<evecs_file<<std::endl;
-    emptyUserRecord record;
+    Grid::emptyUserRecord record;
     Grid::ScidacReader RD;
     RD.open(evecs_file);
     RD.readScidacFieldRecord(src[0],record);
@@ -349,8 +349,8 @@ int main (int argc, char ** argv)
     RealD shift=1.5;
 #if 1
     KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
-    KrySchur(src[0], maxIter, Nm, Nk, Nstop);
-//    KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);
+//    KrySchur(src[0], maxIter, Nm, Nk, Nstop);
+    KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);
 #else
     int Nblock=4;
     Nblock=LanParams.Nblock;
