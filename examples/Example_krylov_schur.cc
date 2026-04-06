@@ -347,7 +347,7 @@ int main (int argc, char ** argv)
 //  KrylovSchur KrySchur (HermOp2, UGrid, resid,EvalNormSmall);
 //  Hacked, really EvalImagSmall
     RealD shift=1.5;
-#if 1
+#if 0
     KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
     KrySchur(src[0], maxIter, Nm, Nk, Nstop);
 //    KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);
@@ -356,10 +356,10 @@ int main (int argc, char ** argv)
     Nblock=LanParams.Nblock;
     bool if_verify=false;
     if(LanParams.verify) if_verify=true;
-    KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
-    KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true,true);
-//    BlockKrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
-//    KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true,if_verify);
+//    KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
+//    KrySchur(src, maxIter, Nm, Nk, Nstop,true,if_verify);
+    BlockKrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
+    KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true,if_verify);
 //    HarmonicBlockKrylovSchur KrySchur (Dwilson, UGrid, resid,shift,EvalImNormSmall);
 //    KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true);
 #endif

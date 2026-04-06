@@ -314,23 +314,28 @@ public:
       return;
     }
 
+    // Full allocated dimension of H (= Nm); may be larger than nBasis after restart+truncation
+    int Nfull = (int)H.rows();
+
     std::cout << GridLogMessage
               << "======== BlockKrylovSchur::verify [" << label << "] ========" << std::endl;
     std::cout << GridLogMessage
-              << "  nBasis = " << nBasis << "  Nblock = " << Nblock
-              << "  nF = " << nF << std::endl;
+              << "  nBasis = " << nBasis << "  Nfull = " << Nfull
+              << "  Nblock = " << Nblock << "  nF = " << nF << std::endl;
 
-    // ---- Print H ----
-    std::cout << GridLogMessage << "H (" << nBasis << " x " << nBasis << "):" << std::endl;
-    for (int i = 0; i < nBasis; i++) {
-      for (int j = 0; j < nBasis; j++)
+    // ---- Print H (full Nm x Nm matrix) ----
+    // After restart+truncation nBasis < Nfull; entries outside [0:nBasis,0:nBasis]
+    // should be ~0 — printing the full matrix makes this visible.
+    std::cout << GridLogMessage << "H (" << Nfull << " x " << Nfull << "):" << std::endl;
+    for (int i = 0; i < Nfull; i++) {
+      for (int j = 0; j < Nfull; j++)
         std::cout << "  " << std::setw(14) << H(i, j);
       std::cout << std::endl;
     }
 
-    // ---- Print B ----
-    std::cout << GridLogMessage << "B (" << nBasis << " x " << nF << "):" << std::endl;
-    for (int i = 0; i < nBasis; i++) {
+    // ---- Print B (full Nm x Nblock matrix) ----
+    std::cout << GridLogMessage << "B (" << Nfull << " x " << nF << "):" << std::endl;
+    for (int i = 0; i < Nfull; i++) {
       for (int t = 0; t < nF; t++)
         std::cout << "  " << std::setw(14) << B(i, t);
       std::cout << std::endl;
@@ -352,13 +357,29 @@ public:
       std::cout << std::endl;
     }
 
-    // ---- max |H - M| ----
+    // ---- max |H - M| (for the nBasis x nBasis Rayleigh-quotient block) ----
     RealD maxHM = 0.0;
     for (int i = 0; i < nBasis; i++)
       for (int j = 0; j < nBasis; j++)
         maxHM = std::max(maxHM, std::abs(H(i,j) - M(i,j)));
     std::cout << GridLogMessage
-              << "  max |H[i,j] - M[i,j]| = " << maxHM << std::endl;
+              << "  max |H[i,j] - M[i,j]| (i,j < nBasis) = " << maxHM << std::endl;
+
+    // ---- Check entries of H OUTSIDE the nBasis x nBasis block ----
+    // These live in rows i >= nBasis or columns j >= nBasis.
+    // They must be ~0 after restart+truncation (before the coupling rows are
+    // re-filled by the next blockArnoldiIteration call).
+    // During a full Arnoldi run (nBasis == Nfull) this loop is a no-op.
+    RealD maxOutside = 0.0;
+    for (int i = 0; i < Nfull; i++)
+      for (int j = 0; j < Nfull; j++)
+        if (i >= nBasis || j >= nBasis)
+          maxOutside = std::max(maxOutside, std::abs(H(i,j)));
+    if (Nfull > nBasis)
+      std::cout << GridLogMessage
+                << "  max |H[i,j]| outside [0:" << nBasis << ",0:" << nBasis
+                << "] block = " << maxOutside
+                << " (should be ~0 after restart+truncation)" << std::endl;
 
     // ---- Check orthonormality of basis ----
     CMat G = CMat::Zero(nBasis, nBasis);
