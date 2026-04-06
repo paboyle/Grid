@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<grid>
+  <LanczosParameters>
+    <mass>0</mass>
+    <mstep>-0.025</mstep>
+    <M5>1.8</M5>
+    <Ls>48</Ls>
+    <Nstop>80</Nstop>
+    <Nk>100</Nk>
+    <Np>100</Np>
+    <ReadEvec>0</ReadEvec>
+    <maxIter>1000</maxIter>
+    <Nblock>4</Nblock>
+    <verify>0</verify>
+    <resid>1e-10</resid>
+    <ChebyLow>1</ChebyLow>
+    <ChebyHigh>100</ChebyHigh>
+    <ChebyOrder>51</ChebyOrder>
+  </LanczosParameters>
+</grid>
