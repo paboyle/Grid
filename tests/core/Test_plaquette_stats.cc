@@ -63,7 +63,7 @@ int main(int argc, char** argv)
   // ---- Lattice geometry ----
   Coordinate latt_size   = GridDefaultLatt();
   if (latt_size.size() == 0) {
-    latt_size = {8, 8, 8, 16};
+    latt_size = Coordinate(std::vector<int>{8, 8, 8, 16});
   }
   Coordinate simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();
@@ -163,9 +163,11 @@ int main(int argc, char** argv)
         if (r < local_min) local_min = r;
       }
 
-      // Reduce across MPI ranks
+      // Reduce across MPI ranks (no GlobalMin; negate to use GlobalMax)
       grid.GlobalMax(local_max);
-      grid.GlobalMin(local_min);
+      local_min = -local_min;
+      grid.GlobalMax(local_min);
+      local_min = -local_min;
 
       std::cout << GridLogMessage
                 << std::setw(6)  << planeName(mu, nu)
@@ -194,7 +196,9 @@ int main(int argc, char** argv)
     if (r < min_all) min_all = r;
   }
   grid.GlobalMax(max_all);
-  grid.GlobalMin(min_all);
+  min_all = -min_all;
+  grid.GlobalMax(min_all);
+  min_all = -min_all;
 
   // Cross-check with built-in avgPlaquette
   RealD avg_builtin = ColourWilsonLoops::avgPlaquette(Umu);
