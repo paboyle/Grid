@@ -329,7 +329,7 @@ public:
     std::cout << GridLogMessage << "H (" << Nfull << " x " << Nfull << "):" << std::endl;
     for (int i = 0; i < Nfull; i++) {
       for (int j = 0; j < Nfull; j++)
-        std::cout << "  " << std::setw(14) << H(i, j);
+        std::cout << "  " << std::setprecision(4) << std::setw(14) << H(i, j);
       std::cout << std::endl;
     }
 
@@ -337,7 +337,7 @@ public:
     std::cout << GridLogMessage << "B (" << Nfull << " x " << nF << "):" << std::endl;
     for (int i = 0; i < Nfull; i++) {
       for (int t = 0; t < nF; t++)
-        std::cout << "  " << std::setw(14) << B(i, t);
+        std::cout << "  " << std::setprecision(4) << std::setw(14) << B(i, t);
       std::cout << std::endl;
     }
 
@@ -353,7 +353,7 @@ public:
     std::cout << GridLogMessage << "M = <V|AV> (" << nBasis << " x " << nBasis << "):" << std::endl;
     for (int i = 0; i < nBasis; i++) {
       for (int j = 0; j < nBasis; j++)
-        std::cout << "  " << std::setw(14) << M(i, j);
+        std::cout << "  " << std::setprecision(4) << std::setw(14) << M(i, j);
       std::cout << std::endl;
     }
 
