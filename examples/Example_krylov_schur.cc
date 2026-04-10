@@ -349,8 +349,8 @@ int main (int argc, char ** argv)
     RealD shift=1.5;
 #if 0
     KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
-    KrySchur(src[0], maxIter, Nm, Nk, Nstop);
-//    KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);
+//    KrySchur(src[0], maxIter, Nm, Nk, Nstop);
+    KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);
     std::cout << GridLogMessage << "KrylovSchur evec.size= " << KrySchur.evecs.size()<< std::endl;
 #else
     int Nblock=4;
@@ -360,9 +360,8 @@ int main (int argc, char ** argv)
 //    KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
 //    KrySchur(src, maxIter, Nm, Nk, Nstop,true,if_verify);
     BlockKrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
-    KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true,if_verify);
 //    HarmonicBlockKrylovSchur KrySchur (Dwilson, UGrid, resid,shift,EvalImNormSmall);
-//    KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true);
+    KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true,if_verify);
     std::cout << GridLogMessage << "BlockKrylovSchur evec.size= " << KrySchur.evecs.size()<< std::endl;
 #endif
 

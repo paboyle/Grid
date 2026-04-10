@@ -234,6 +234,41 @@ public:
       // ---- Truncate to Nk ----
       int Nkeep = Nk;
 
+      // ---- Option B: corrected restart starting block -------------------------
+      //
+      // In standard Krylov-Schur, Q diagonalises H itself, so Q H Q^H = S is
+      // upper triangular and the off-diagonal coupling block H_dk = S[Nkeep:,:Nkeep] = 0.
+      // Truncation is therefore exact.
+      //
+      // Here Q diagonalises Hhat (not H), so H_new = Q H Q^H is generally dense.
+      // The off-diagonal block
+      //
+      //   H_dk = H_new[Nkeep:, :Nkeep]   (size (N-Nkeep) x Nkeep)
+      //
+      // is non-zero, and the true KS relation after truncation is:
+      //
+      //   A V_k = V_k H_k  +  V_disc H_dk  +  F B_k^H
+      //
+      // If we restart from F only, the V_disc H_dk term is lost.
+      //
+      // Fix: include the V_disc coupling in the new starting block:
+      //
+      //   G[t] = F[t] + sum_{s=Nkeep}^{N-1} basis[s] * H(s, t),  t = 0..Nblock-1
+      //
+      // G[:,t] is the t-th column of  (V_disc H_dk + F B_k^H) restricted to the
+      // first Nblock columns of H_dk.  Since F ⊥ V_k and V_disc ⊥ V_k, G is
+      // automatically orthogonal to the retained subspace.
+      //
+      // This must be computed BEFORE basis[Nkeep:] and H[Nkeep:, :] are discarded.
+
+      std::vector<Field> G(Nblock, Field(Grid_));
+      for (int t = 0; t < Nblock; t++) {
+        G[t] = F[t];
+        for (int s = Nkeep; s < N; s++)
+          G[t] += basis[s] * H(s, t);
+      }
+      blockQR(G);   // orthonormalise within G (G is already ⊥ to basis[0:Nkeep])
+
       CMat Htmp = H(Eigen::seqN(0, Nkeep), Eigen::seqN(0, Nkeep));
       H = CMat::Zero(N, N);
       H(Eigen::seqN(0, Nkeep), Eigen::seqN(0, Nkeep)) = Htmp;
@@ -249,10 +284,10 @@ public:
       std::cout << GridLogMessage
                 << "HarmonicBlockKrylovSchur: beta_k = " << beta_k << std::endl;
 
-      // Restart from the residual block F (unchanged from last Arnoldi step).
-      // Note: for a Hermitian operator the correct H rows H[i,j] for i >= Nkeep+Nblock,
-      // j < Nkeep are filled via Hermitian symmetry inside blockArnoldiStep.
-      startBlock = F;
+      // Use corrected starting block G (not bare F).
+      // G encodes the coupling from the discarded basis vectors V_disc through
+      // H_dk[:,0:Nblock], restoring the exact KS relation to first order.
+      startBlock = G;
 
       if (doVerify) {
         std::string lbl = "iter " + std::to_string(iter) + " after restart+truncation";
@@ -454,25 +489,26 @@ private:
       blockOrthonormalise(V0);
       for (auto& v : V0) basis.push_back(v);
     } else {
-      // Append residual block (startBlock = F_old) to basis.
-      // The truncated KS relation after restart is:
+      // Append the new starting block to the retained basis.
       //
-      //   A V_k = V_k S_k + F_old B_old^dag          (*)
+      // Standard KS (startBlock = F):
+      //   The exact truncated relation is  A V_k = V_k H_k + F B_k^dag,
+      //   so the coupling rows are  H[Nkeep+t, j] = conj(B_k[j,t]).
       //
-      // where V_k = basis[0:Nkeep], S_k is stored in H[0:Nkeep,0:Nkeep],
-      // B_old = B[0:Nkeep,:], F_old = startBlock.
-      //
-      // Once F_old is appended as basis[Nkeep:Nkeep+Nblock], (*) becomes
-      // a statement about the extended H matrix:
-      //
-      //   H[Nkeep+t, j] = (B_old^dag)[t,j] = conj(B_old[j,t])
-      //                   for t=0..Nblock-1, j=0..Nkeep-1
-      //
-      // These "restart coupling rows" must be set before Arnoldi continues.
+      // Harmonic KS Option B (startBlock = G, where G = F + V_disc H_dk[:,0:Nblock]):
+      //   The exact coupling rows are  H[Nkeep+t, j] = <G[t], A V_k[:,j]>,
+      //   which differs from conj(B_k[j,t]) because G ≠ F.
+      //   For a Hermitian operator these preset rows are overwritten by the
+      //   Hermitian symmetry fill inside blockArnoldiStep (via explicit inner
+      //   products), so the approximate preset below does no harm.
+      //   For a non-Hermitian operator the preset is approximate; a more
+      //   expensive fix would compute <G[t], A V_k[:,j]> explicitly here.
       int Nkeep = startIdx * Nblock;
       for (auto& v : startBlock) basis.push_back(v);
 
-      // Fill restart coupling rows into H
+      // Fill restart coupling rows into H (exact for standard KS; approximate
+      // for harmonic KS with Option-B starting block, but overwritten by
+      // Hermitian symmetry fill for Hermitian operators).
       for (int t = 0; t < Nblock; t++)
         for (int j = 0; j < Nkeep; j++)
           H(Nkeep + t, j) = std::conj(B(j, t));
