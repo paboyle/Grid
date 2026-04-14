@@ -56,6 +56,7 @@ struct LanczosParameters: Serializable {
                                 Integer, maxIter,
                                 Integer, Nblock,
                                 Integer, verify,
+		  		RealD, shift , 
 	  			RealD, resid,
 	  			RealD, ChebyLow,
 	  			RealD, ChebyHigh,
@@ -117,12 +118,9 @@ public:
   InvertNonHermitianLinearOperator(Matrix &Mat,RealD stp=1e-8): _Mat(Mat),_stp(stp){};
   // Support for coarsening to a multigrid
   void OpDiag (const Field &in, Field &out) {
-//    _Mat.Mdiag(in,out);
-//    out = out + shift*in;
     assert(0);
   }
   void OpDir  (const Field &in, Field &out,int dir,int disp) {
-//    _Mat.Mdir(in,out,dir,disp);
     assert(0);
   }
   void OpDirAll  (const Field &in, std::vector<Field> &out){
@@ -131,11 +129,6 @@ public:
   };
   void Op     (const Field &in, Field &out){
     Field tmp(in.Grid());
-//    _Mat.M(in,out);
-//  RealD mass=-shift;
-//  WilsonCloverFermionD Dw(Umu, Grid, RBGrid, mass, csw_r, csw_t);
-//  NonHermitianLinearOperator<Matrix,Field> HermOp(_Mat);
-//  BiCGSTAB<Field> CG(_stp,10000);
     _Mat.Mdag(in,tmp);
     MdagMLinearOperator<Matrix,Field> HermOp(_Mat);
     ConjugateGradient<Field> CG(_stp,10000);
@@ -341,12 +334,7 @@ int main (int argc, char ** argv)
 
   // Run KrylovSchur and Arnoldi on a Hermitian matrix
   std::cout << GridLogMessage << "Running Krylov Schur" << std::endl;
-  // KrylovSchur KrySchur (Dsq, FGrid, 1e-8, EvalNormLarge);
-//  KrylovSchur KrySchur (Dsq, FGrid, 1e-8,EvalImNormSmall);
-//  KrySchur(src, maxIter, Nm, Nk, Nstop);
-//  KrylovSchur KrySchur (HermOp2, UGrid, resid,EvalNormSmall);
-//  Hacked, really EvalImagSmall
-    RealD shift=1.5;
+    RealD shift=LanParams.shift;
 #if 0
     KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
 //    KrySchur(src[0], maxIter, Nm, Nk, Nstop);
@@ -357,10 +345,8 @@ int main (int argc, char ** argv)
     Nblock=LanParams.Nblock;
     bool if_verify=false;
     if(LanParams.verify) if_verify=true;
-//    KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
-//    KrySchur(src, maxIter, Nm, Nk, Nstop,true,if_verify);
-    BlockKrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
-//    HarmonicBlockKrylovSchur KrySchur (Dwilson, UGrid, resid,shift,EvalImNormSmall);
+//    BlockKrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
+    HarmonicBlockKrylovSchur KrySchur (Dwilson, UGrid, resid,shift,EvalNormSmall);
     KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true,if_verify);
     std::cout << GridLogMessage << "BlockKrylovSchur evec.size= " << KrySchur.evecs.size()<< std::endl;
 #endif

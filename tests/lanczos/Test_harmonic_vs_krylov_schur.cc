@@ -61,11 +61,11 @@ int main(int argc, char** argv)
   //----------------------------------------------------------------------
   // Parameters (kept small so output is readable)
   //----------------------------------------------------------------------
-  const int Nblock  = 2;
-  const int Nm      = 12;   // total vectors (= 6 blocks * Nblock=2)
-  const int Nk      = 6;    // total kept   (= 3 blocks * Nblock=2)
-  const int Nstop   = 2;
-  const int maxIter = 4;
+  const int Nblock  = 4;
+  const int Nm      = 20;   // total vectors (= 5 blocks * Nblock=4)
+  const int Nk      = 8;    // total kept   (= 2 blocks * Nblock=4)
+  const int Nstop   = 4;
+  const int maxIter = 8;
   const RealD tol   = 1e-6;
 
   // Two identical starting blocks
@@ -73,7 +73,7 @@ int main(int argc, char** argv)
   std::vector<Field> v0b(Nblock, Field(grid));
   for (int t = 0; t < Nblock; t++) {
     random(RNG, v0[t]);
-    v0b[t] = v0[t];
+    v0b[t] = v0[t];   // identical start for fair comparison
   }
 
   //----------------------------------------------------------------------
@@ -87,7 +87,7 @@ int main(int argc, char** argv)
   std::cout << GridLogMessage
             << "========================================\n" << std::endl;
 
-  BlockKrylovSchur<Field> bks(op, grid, tol, EvalReSmall);
+  BlockKrylovSchur<Field> bks(op, grid, tol, EvalImNormSmall);
   bks(v0, maxIter, Nm, Nk, Nstop, Nblock,
       /*doubleOrthog=*/true, /*doVerify=*/true);
 
@@ -108,7 +108,7 @@ int main(int argc, char** argv)
   std::cout << GridLogMessage
             << "========================================\n" << std::endl;
 
-  HarmonicBlockKrylovSchur<Field> hbks(op, grid, tol, 0.0, EvalNormSmall);
+  HarmonicBlockKrylovSchur<Field> hbks(op, grid, tol, 0.0, EvalImNormSmall);
   hbks(v0b, maxIter, Nm, Nk, Nstop, Nblock,
        /*doubleOrthog=*/true, /*doVerify=*/true);
 
