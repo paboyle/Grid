@@ -336,8 +336,9 @@ class KrylovSchur {
 
     RitzFilter ritzFilter;                  // how to sort evals
 
-  public:       
+  public:
     RealD *shift;
+    bool doEvalCheck = false;
 
     KrylovSchur(LinearOperatorBase<Field> &_Linop, GridBase *_Grid, RealD _Tolerance, RitzFilter filter = EvalReSmall)
       : Linop(_Linop), Grid(_Grid), Tolerance(_Tolerance), ritzFilter(filter), u(_Grid), MaxIter(-1), Nm(-1), Nk(-1), Nstop (-1),
@@ -601,10 +602,24 @@ if (!shift){
         int Nconv = converged();
         std::cout << GridLogMessage << "Number of evecs converged: " << Nconv << std::endl;
         if (Nconv >= Nstop || i == MaxIter - 1) {
-          std::cout << GridLogMessage << "Converged with " << Nconv << " / " << Nstop << " eigenvectors on iteration " 
+          std::cout << GridLogMessage << "Converged with " << Nconv << " / " << Nstop << " eigenvectors on iteration "
                         << i << "." << std::endl;
           // basisRotate(evecs, Qt, 0, Nk, 0, Nk, Nm);      // Think this might have been the issue
           std::cout << GridLogMessage << "Eigenvalues: " << evals << std::endl;
+
+          if (doEvalCheck) {
+            Field w(Grid);
+            for (int k = 0; k < (int)evecs.size(); k++) {
+              Linop.Op(evecs[k], w);
+              ComplexD eval_est = toStdCmplx(innerProduct(evecs[k], w));
+              w -= eval_est * evecs[k];
+              RealD res = std::sqrt(norm2(w));
+              std::cout << GridLogMessage << "KrylovSchur: evec[" << k << "]"
+                        << "  eval_reported = " << evals[k]
+                        << "  eval_est = " << eval_est
+                        << "  || A v - eval_est * v || = " << res << std::endl;
+            }
+          }
 
           // writeEigensystem(path);
 

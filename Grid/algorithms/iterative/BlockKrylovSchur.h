@@ -123,6 +123,7 @@ protected:
 
 public:
   std::vector<Field> evecs;
+  bool doEvalCheck = false;
 
   //--------------------------------------------------------------------
   // Constructor
@@ -252,6 +253,21 @@ public:
         std::cout << GridLogMessage << "BlockKrylovSchur: done after " << iter
                   << " restarts, " << Nconv << " converged." << std::endl;
         std::cout << GridLogMessage << "Eigenvalues: " << evals.transpose() << std::endl;
+
+        if (doEvalCheck) {
+          Field w(Grid_);
+          for (int k = 0; k < (int)evecs.size(); k++) {
+            Linop.Op(evecs[k], w);
+            ComplexD eval_est = toStdCmplx(innerProduct(evecs[k], w));
+            w -= eval_est * evecs[k];
+            RealD res = std::sqrt(norm2(w));
+            std::cout << GridLogMessage << "BlockKrylovSchur: evec[" << k << "]"
+                      << "  eval_reported = " << evals[k]
+                      << "  eval_est = " << eval_est
+                      << "  || A v - eval_est * v || = " << res << std::endl;
+          }
+        }
+
         return;
       }
     }
