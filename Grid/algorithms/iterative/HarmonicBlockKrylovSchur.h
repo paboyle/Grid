@@ -34,65 +34,44 @@ See the full license in the file "LICENSE" in the top level distribution directo
 NAMESPACE_BEGIN(Grid);
 
 /**
- * Block harmonic restarted Krylov-Schur eigensolver.
+ * Block shift-targeted Krylov-Schur eigensolver.
  *
- * Harmonic Ritz values
- * --------------------
- * Standard Ritz values of A in a Krylov space K_m minimise the residual
- * in a Galerkin sense; they are good approximations to eigenvalues at the
- * *exterior* of the spectrum.  For eigenvalues *near* a target shift σ
- * (e.g. the smallest eigenvalues when σ=0) harmonic Ritz values are
- * better-suited: they are obtained by a Petrov-Galerkin condition that
- * requires the residual to be orthogonal to (A-σI)K_m instead of K_m.
- *
- * Given the block Arnoldi factorisation
+ * Algorithm
+ * ---------
+ * Uses a block Arnoldi factorisation:
  *
  *   A V = V H + F B^dag                                         (1)
  *
- * with V orthonormal (Nm columns), H the Nm² block
- * upper-Hessenberg Rayleigh quotient, F the Nblock residual vectors and B
- * the Nm×Nblock coupling matrix, the harmonic Rayleigh quotient
- * relative to shift σ is
- *
- *   Hhat = H + (H - σI)^{-H} B B^H                             (2)
- *
- * Derivation: the harmonic Ritz condition (A-σI)Vy ⊥ (A-σI)V leads to
- *
- *   [ (H-σI)^H (H-σI) + B B^H ] y = μ (H-σI)^H y
- *
- * Left-multiplying by (H-σI)^{-H} and setting θ = μ + σ gives the
- * standard eigenvalue problem  Hhat y = θ y  with Hhat as in (2).
- *
- * The harmonic Ritz values θ_j are eigenvalues of Hhat; among these,
- * the ones closest to σ (smallest |θ_j - σ|) are the best approximations
- * to the eigenvalues of A near σ.
+ * with V orthonormal (Nm columns), H the Nm×Nm block upper-Hessenberg
+ * Rayleigh quotient, F the Nblock residual vectors and B the Nm×Nblock
+ * coupling matrix.
  *
  * Thick restart
  * -------------
- * The Schur decomposition  Hhat = Q^dag S Q  is computed and the
- * leading Nk*Nblock Schur values (sorted by the RitzFilter) are kept.
- * The same unitary rotation Q is applied to both the Krylov basis and
- * to the *original* Rayleigh quotient H (not Hhat) for the restart:
+ * To target eigenvalues near shift σ, the Schur decomposition is computed
+ * for the shifted Rayleigh quotient:
  *
- *   V_new = V Q^dag [first Nk*Nblock columns]
- *   H_new = Q H Q^dag  [truncated Nk*Nblock × Nk*Nblock]
- *   B_new = Q B         [truncated Nk*Nblock × Nblock]
+ *   (H - σI) = Q^dag S Q                                        (2)
  *
- * Block Arnoldi then resumes from block Nk, restoring H to full size
- * as new columns are appended.
+ * Sorting the Schur values of (H - σI) by smallest |S(i,i)| = |λ - σ| and
+ * retaining the leading Nk is equivalent to selecting the Ritz values of H
+ * closest to σ.  Since Q diagonalises H - σI (and hence H itself), the
+ * rotated Rayleigh quotient is exactly upper triangular:
+ *
+ *   H_new = Q H Q^dag = S + σI  (upper triangular)              (3)
+ *
+ * Truncation to Nk is therefore exact: the off-diagonal coupling block
+ * H_new[Nk:, :Nk] = 0 by triangularity.  The Krylov-Schur relation after
+ * restart is exact and block Arnoldi resumes cleanly from F.
  *
  * Convergence
  * -----------
- * For a harmonic Ritz pair (θ, y) the true Ritz residual bound is
- *
- *   || (A - θI) V y || ≤ || B^H y ||
- *
- * (same as for standard Ritz, because B captures the full coupling).
- * Convergence is declared when || B^H y || < Tolerance * approxLambdaMax.
+ * Convergence is declared when || B^H y_k || < Tolerance * approxLambdaMax
+ * for each Ritz pair (λ_k, y_k) of the truncated H.
  *
  * Parameters
  * ----------
- * shift    : target shift σ (default 0.0)
+ * shift    : target shift σ (default 0.0); Schur values sorted by |λ - σ|
  * Nblock   : block size p
  * Nm       : total Krylov dimension (must be divisible by Nblock)
  * Nk       : total vectors to retain after each restart (must be divisible by Nblock, Nk < Nm)
@@ -146,6 +125,7 @@ class HarmonicBlockKrylovSchur {
 
 public:
   std::vector<Field>  evecs;
+  bool doEvalCheck = false;
 
   //--------------------------------------------------------------------
   // Constructor
@@ -205,33 +185,36 @@ public:
         verify(lbl);
       }
 
-      // ---- Form harmonic Rayleigh quotient ----
-      // Hhat = H + (H - σI)^{-H} * B * B^H
-      CMat Hhat = harmonicRayleigh(H, B, N);
-
-      // ---- Schur decompose Hhat ----
-      ComplexSchurDecomposition schur(Hhat, false, ritzFilter);
+      // ---- Schur decompose (H - σI) to select Schur vectors closest to σ ----
+      // Sorting the Schur values of (H - σI) by |S(i,i)| = |λ - σ| gives the
+      // Ritz values of H nearest the target shift without any matrix inversion.
+      // Because Q diagonalises (H - σI), it also diagonalises H:
+      //   H_new = Q H Q^dag = S + σI  (upper triangular)
+      // Truncation is therefore exact.
+      CMat Hshift = H - shift * CMat::Identity(N, N);
+      ComplexSchurDecomposition schur(Hshift, false, ritzFilter);
       schur.schurReorder(Nk);
 
       std::cout << GridLogMessage
-                << "HarmonicBlockKrylovSchur: harmonic Ritz values (first Nk):" << std::endl;
+                << "HarmonicBlockKrylovSchur: Ritz values nearest shift (first Nk):" << std::endl;
       CMat S = schur.getMatrixS();
       for (int i = 0; i < Nk; i++)
-        std::cout << GridLogMessage << "  [" << i << "] " << S(i, i) << std::endl;
+        std::cout << GridLogMessage << "  [" << i << "] " << S(i, i) + shift << std::endl;
 
       CMat Q  = schur.getMatrixQ();
       CMat Qt = Q.adjoint();
 
-      // ---- Rotate Krylov basis using Q from Hhat ----
+      // ---- Rotate Krylov basis ----
       std::vector<Field> basis2;
       constructUR(basis2, basis, Qt, N);
       basis = basis2;
 
-      // ---- Update H and B (rotate H, not Hhat) ----
-      H = Q * H * Qt;
+      // ---- Update H and B ----
+      // H_new = S + σI is upper triangular; off-diagonal block H_new[Nk:,:Nk] = 0
+      H = S + shift * CMat::Identity(N, N);
       B = Q * B;
 
-      // ---- Truncate to Nk ----
+      // ---- Truncate to Nk (exact: H upper triangular) ----
       int Nkeep = Nk;
 
       CMat Htmp = H(Eigen::seqN(0, Nkeep), Eigen::seqN(0, Nkeep));
@@ -249,9 +232,7 @@ public:
       std::cout << GridLogMessage
                 << "HarmonicBlockKrylovSchur: beta_k = " << beta_k << std::endl;
 
-      // Restart from the residual block F (unchanged from last Arnoldi step).
-      // Note: for a Hermitian operator the correct H rows H[i,j] for i >= Nkeep+Nblock,
-      // j < Nkeep are filled via Hermitian symmetry inside blockArnoldiStep.
+      // Restart from F (exact: no discarded-basis correction needed)
       startBlock = F;
 
       if (doVerify) {
@@ -273,6 +254,21 @@ public:
                   << "HarmonicBlockKrylovSchur: done after " << iter
                   << " restarts, " << Nconv << " converged." << std::endl;
         std::cout << GridLogMessage << "Eigenvalues: " << evals.transpose() << std::endl;
+
+        if (doEvalCheck) {
+          Field w(Grid_);
+          for (int k = 0; k < (int)evecs.size(); k++) {
+            Linop.Op(evecs[k], w);
+            ComplexD eval_est = toStdCmplx(innerProduct(evecs[k], w));
+            w -= eval_est * evecs[k];
+            RealD res = std::sqrt(norm2(w));
+            std::cout << GridLogMessage << "HarmonicBlockKrylovSchur: evec[" << k << "]"
+                      << "  eval_reported = " << evals[k]
+                      << "  eval_est = " << eval_est
+                      << "  || A v - eval_est * v || = " << res << std::endl;
+          }
+        }
+
         return;
       }
     }
@@ -292,8 +288,7 @@ public:
    *   A V = V H + F B^dag                                      (KS)
    *
    * by explicit operator applications.  H here is the standard Rayleigh
-   * quotient (not Hhat), so the KS relation is the same as for
-   * BlockKrylovSchur.
+   * quotient, so the KS relation is the same as for BlockKrylovSchur.
    *
    * Prints:
    *   - H (current Rayleigh quotient, nBasis × nBasis)
@@ -326,7 +321,7 @@ public:
     std::cout << GridLogMessage << "H (" << nBasis << " x " << nBasis << "):" << std::endl;
     for (int i = 0; i < nBasis; i++) {
       for (int j = 0; j < nBasis; j++)
-        std::cout << "  " << std::setw(14) << H(i, j);
+        std::cout << "  " << std::setprecision(4) << std::setw(14) << H(i, j);
       std::cout << std::endl;
     }
 
@@ -334,7 +329,7 @@ public:
     std::cout << GridLogMessage << "B (" << nBasis << " x " << nF << "):" << std::endl;
     for (int i = 0; i < nBasis; i++) {
       for (int t = 0; t < nF; t++)
-        std::cout << "  " << std::setw(14) << B(i, t);
+        std::cout << "  " << std::setprecision(4) << std::setw(14) << B(i, t);
       std::cout << std::endl;
     }
 
@@ -350,7 +345,7 @@ public:
     std::cout << GridLogMessage << "M = <V|AV> (" << nBasis << " x " << nBasis << "):" << std::endl;
     for (int i = 0; i < nBasis; i++) {
       for (int j = 0; j < nBasis; j++)
-        std::cout << "  " << std::setw(14) << M(i, j);
+        std::cout << "  " << std::setprecision(4) << std::setw(14) << M(i, j);
       std::cout << std::endl;
     }
 
@@ -411,32 +406,6 @@ public:
 private:
 
   //--------------------------------------------------------------------
-  // Harmonic Rayleigh quotient
-  //--------------------------------------------------------------------
-  /**
-   * Forms the harmonic Rayleigh quotient relative to shift σ:
-   *
-   *   Hhat = H + (H - σI)^{-H} * B * B^H
-   *
-   * where H is the N×N block-Hessenberg, B is the N×Nblock coupling matrix.
-   *
-   * The N×N solve  (H - σI)^H X = B B^H  is done via Eigen's LU
-   * factorisation.  If H - σI is (nearly) singular the result is
-   * ill-conditioned; in that case σ should be perturbed slightly.
-   */
-  CMat harmonicRayleigh(const CMat& H_, const CMat& B_, int N)
-  {
-    CMat K  = H_ - shift * CMat::Identity(N, N);
-    CMat KH = K.adjoint();                         // (H - σI)^H
-
-    // Solve KH * X = B B^H  →  X = KH^{-1} B B^H = (H-σI)^{-H} B B^H
-    CMat BBH = B_ * B_.adjoint();                  // N × N
-    CMat X   = KH.lu().solve(BBH);                 // N × N
-
-    return H_ + X;
-  }
-
-  //--------------------------------------------------------------------
   // Block Arnoldi iteration
   //--------------------------------------------------------------------
   void blockArnoldiIteration(std::vector<Field>& startBlock, int endBlock,
@@ -454,25 +423,17 @@ private:
       blockOrthonormalise(V0);
       for (auto& v : V0) basis.push_back(v);
     } else {
-      // Append residual block (startBlock = F_old) to basis.
-      // The truncated KS relation after restart is:
+      // Append the new starting block to the retained basis.
       //
-      //   A V_k = V_k S_k + F_old B_old^dag          (*)
-      //
-      // where V_k = basis[0:Nkeep], S_k is stored in H[0:Nkeep,0:Nkeep],
-      // B_old = B[0:Nkeep,:], F_old = startBlock.
-      //
-      // Once F_old is appended as basis[Nkeep:Nkeep+Nblock], (*) becomes
-      // a statement about the extended H matrix:
-      //
-      //   H[Nkeep+t, j] = (B_old^dag)[t,j] = conj(B_old[j,t])
-      //                   for t=0..Nblock-1, j=0..Nkeep-1
-      //
-      // These "restart coupling rows" must be set before Arnoldi continues.
+      // The exact truncated KS relation is  A V_k = V_k H_k + F B_k^dag,
+      // so the coupling rows are  H[Nkeep+t, j] = conj(B_k[j,t]).
+      // Since H_new = S + σI is upper triangular, the off-diagonal block
+      // H_new[Nkeep:, :Nkeep] = 0 and the restart from F is exact.
       int Nkeep = startIdx * Nblock;
       for (auto& v : startBlock) basis.push_back(v);
 
-      // Fill restart coupling rows into H
+      // Fill restart coupling rows into H (exact: H_new is upper triangular,
+      // so B encodes the only non-zero coupling to the new block).
       for (int t = 0; t < Nblock; t++)
         for (int j = 0; j < Nkeep; j++)
           H(Nkeep + t, j) = std::conj(B(j, t));
@@ -524,10 +485,6 @@ private:
         for (int s = 0; s < Nblock; s++)
           B(kBase + t, s) = std::conj(R(s, t));    // B_block = R^H
       beta_k = R.norm();
-      // Hermitian symmetry fill for last block (same as non-last path below)
-      for (int t = 0; t < Nblock; t++)
-        for (int j = 0; j < kBase; j++)
-          H(kBase + t, j) = std::conj(H(j, kBase + t));
       return;
     }
 
@@ -542,23 +499,6 @@ private:
     for (int t = 0; t < Nblock; t++)
       basis.push_back(F[t]);
 
-    // Hermitian symmetry fill: H[kBase+t, j] = conj(H[j, kBase+t]) for j < kBase.
-    //
-    // In a fresh block Arnoldi the Krylov structure forces H[kBase+t, j] = 0 for
-    // j < kBase-Nblock (sub-subdiagonal), so this is a no-op.
-    //
-    // After a non-Schur restart (e.g. harmonic restart where H_new = Q H Q^dag is
-    // a full matrix), A v_k_j for j < Nkeep has components in ALL new extended
-    // vectors, making these elements non-zero.  The Arnoldi step fills column
-    // kBase+t (H[j, kBase+t] for j < prevN) via inner products, but never fills
-    // the corresponding row.  For a Hermitian operator the two are related by
-    //   H[kBase+t, j] = <basis[kBase+t] | A basis[j]>
-    //                 = conj(<basis[j] | A basis[kBase+t]>) = conj(H[j, kBase+t])
-    // Filling these ensures H = H^dag and fixes the M != H discrepancy that
-    // corrupts subsequent Arnoldi steps after a harmonic restart.
-    for (int t = 0; t < Nblock; t++)
-      for (int j = 0; j < kBase; j++)
-        H(kBase + t, j) = std::conj(H(j, kBase + t));
   }
 
   //--------------------------------------------------------------------
