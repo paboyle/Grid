@@ -137,6 +137,137 @@ public:
     computeRitzPairs(nSteps, Nstop);
   }
 
+  /**
+   * Verify the block Lanczos decomposition after operator() has run.
+   *
+   * Checks the three-term recurrence
+   *
+   *   D_W Q_k = Q_{k-1} C_k + Q_k A_k + Q_{k+1} B_{k+1}
+   *
+   * for each completed step k=1..m, plus γ5-orthonormality and
+   * off-diagonal γ5-orthogonality between all Krylov blocks.
+   *
+   * Prints:
+   *   - T_m (block tridiagonal projected matrix, 2m × 2m)
+   *   - A_k, B_k, C_k, G_k for each step
+   *   - max |G_computed[k] - G_stored[k]|  (γ5-Gram diagonal consistency)
+   *   - max |Q_i†γ5 Q_j| for i≠j           (inter-block γ5-orthogonality)
+   *   - per-column recurrence residual || D_W q - Q_{k-1}C - Q_k A - Q_{k+1}B ||
+   */
+  void verify(const std::string& label = "")
+  {
+    int m = nSteps;
+    if (m == 0) {
+      std::cout << GridLogMessage
+                << "Gamma5BlockLanczos::verify: no steps completed." << std::endl;
+      return;
+    }
+
+    std::cout << GridLogMessage
+              << "======== Gamma5BlockLanczos::verify [" << label << "] ========" << std::endl;
+    std::cout << GridLogMessage
+              << "  m = " << m << " completed steps,  basis vectors = " << basis.size() << std::endl;
+
+    // ---- Assemble and print T_m ----
+    int dim = 2 * m;
+    CMat Tm = CMat::Zero(dim, dim);
+    for (int k = 0; k < m; k++) {
+      Tm.block(2*k, 2*k, 2, 2) = A_blocks[k];
+      if (k < m - 1) {
+        Tm.block(2*k+2, 2*k,   2, 2) = B_blocks[k];
+        Tm.block(2*k,   2*k+2, 2, 2) = C_blocks[k+1];
+      }
+    }
+    std::cout << GridLogMessage << "T_m (" << dim << " x " << dim << "):" << std::endl;
+    for (int i = 0; i < dim; i++) {
+      for (int j = 0; j < dim; j++)
+        std::cout << "  " << std::setprecision(6) << std::setw(16) << Tm(i, j);
+      std::cout << std::endl;
+    }
+
+    // ---- Print per-step coefficient blocks ----
+    for (int k = 0; k < m; k++) {
+      std::cout << GridLogMessage << "  A[" << k << "] =\n" << A_blocks[k] << std::endl;
+      std::cout << GridLogMessage << "  B[" << k << "] =\n" << B_blocks[k] << std::endl;
+      std::cout << GridLogMessage << "  C[" << k << "] =\n" << C_blocks[k] << std::endl;
+      std::cout << GridLogMessage << "  G[" << k << "] =\n" << G_blocks[k] << std::endl;
+    }
+    std::cout << GridLogMessage << "  G[" << m << "] =\n" << G_blocks[m] << std::endl;
+
+    // ---- Check γ5-Gram consistency: compare stored G_blocks[k] with recomputed Q_k†γ5Q_k ----
+    // basis[2k..2k+1] = code block k (= paper Q_{k+1}); G_blocks[k] = paper G_{k+1}.
+    RealD maxGramErr = 0.0;
+    for (int k = 0; k <= m; k++) {
+      CMat2 Gcomp = gramMatrix(basis[2*k], basis[2*k + 1]);
+      CMat2 Gerr  = Gcomp - G_blocks[k];
+      RealD err   = Gerr.cwiseAbs().maxCoeff();
+      maxGramErr  = std::max(maxGramErr, err);
+      std::cout << GridLogMessage
+                << "  |G_computed[" << k << "] - G_stored[" << k << "]|_max = " << err << std::endl;
+    }
+    std::cout << GridLogMessage
+              << "  max γ5-Gram diagonal error = " << maxGramErr << std::endl;
+
+    // ---- Check γ5-orthogonality between different blocks: Q_i†γ5 Q_j ≈ 0 for i≠j ----
+    RealD maxOffDiag = 0.0;
+    for (int i = 0; i <= m; i++) {
+      for (int j = 0; j <= m; j++) {
+        if (i == j) continue;
+        CMat2 Mij = g5InnerBlock(basis[2*i], basis[2*i+1], basis[2*j], basis[2*j+1]);
+        RealD err = Mij.cwiseAbs().maxCoeff();
+        maxOffDiag = std::max(maxOffDiag, err);
+      }
+    }
+    std::cout << GridLogMessage
+              << "  max |Q_i†γ5 Q_j| (i≠j, should be ~0) = " << maxOffDiag << std::endl;
+
+    // ---- Check three-term recurrence for each code block k=0..m-1 ----
+    // Recurrence (code indices):
+    //   D_W basis[2k..2k+1] = basis[2k..2k+1] * A_blocks[k]
+    //                       + basis[2(k-1)..] * C_blocks[k]   (k > 0; C_blocks[0] = 0)
+    //                       + basis[2(k+1)..] * B_blocks[k]
+    RealD maxRecErr = 0.0;
+    Field p1(Grid_), p2(Grid_), r1(Grid_), r2(Grid_);
+    for (int k = 0; k < m; k++) {
+      const Field& q1  = basis[2*k];
+      const Field& q2  = basis[2*k + 1];
+      const Field& qn1 = basis[2*(k+1)];
+      const Field& qn2 = basis[2*(k+1) + 1];
+
+      Linop.Op(q1, p1);
+      Linop.Op(q2, p2);
+
+      // subtract Q_k A_k
+      r1 = p1 - q1 * A_blocks[k](0,0) - q2 * A_blocks[k](1,0);
+      r2 = p2 - q1 * A_blocks[k](0,1) - q2 * A_blocks[k](1,1);
+
+      // subtract Q_{k-1} C_k  (C_blocks[0] = 0, so k=0 is automatically fine)
+      if (k > 0) {
+        const Field& qp1 = basis[2*(k-1)];
+        const Field& qp2 = basis[2*(k-1) + 1];
+        r1 -= qp1 * C_blocks[k](0,0) + qp2 * C_blocks[k](1,0);
+        r2 -= qp1 * C_blocks[k](0,1) + qp2 * C_blocks[k](1,1);
+      }
+
+      // subtract Q_{k+1} B_{k+1}  (= basis[2(k+1)..] * B_blocks[k])
+      r1 -= qn1 * B_blocks[k](0,0) + qn2 * B_blocks[k](1,0);
+      r2 -= qn1 * B_blocks[k](0,1) + qn2 * B_blocks[k](1,1);
+
+      RealD dev1 = std::sqrt(norm2(r1));
+      RealD dev2 = std::sqrt(norm2(r2));
+      std::cout << GridLogMessage
+                << "  recurrence k=" << k
+                << ":  || D_W q[2k]   - ... || = " << dev1
+                << "   || D_W q[2k+1] - ... || = " << dev2 << std::endl;
+      maxRecErr = std::max({maxRecErr, dev1, dev2});
+    }
+    std::cout << GridLogMessage
+              << "  max recurrence deviation = " << maxRecErr << std::endl;
+
+    std::cout << GridLogMessage
+              << "======== end Gamma5BlockLanczos::verify ========" << std::endl;
+  }
+
 private:
   // One Lanczos step.  On success pushes Q_{step+2} and returns true.
   bool lanczosStep(int step, bool reorthog)
