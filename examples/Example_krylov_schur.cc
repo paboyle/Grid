@@ -335,7 +335,7 @@ int main (int argc, char ** argv)
   // Run KrylovSchur and Arnoldi on a Hermitian matrix
   std::cout << GridLogMessage << "Running Krylov Schur" << std::endl;
     RealD shift=LanParams.shift;
-#if 1
+#if 0
     KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
 //    KrySchur(src[0], maxIter, Nm, Nk, Nstop);
     KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);

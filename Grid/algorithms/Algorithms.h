@@ -89,6 +89,7 @@ NAMESPACE_CHECK(multigrid);
 #include <Grid/algorithms/iterative/BlockKrylovSchur.h>
 #include <Grid/algorithms/iterative/SplitGridBlockKrylovSchur.h>
 #include <Grid/algorithms/iterative/HarmonicBlockKrylovSchur.h>
+#include <Grid/algorithms/iterative/Gamma5BlockLanczos.h>
 #include <Grid/algorithms/iterative/Arnoldi.h>
 #include <Grid/algorithms/iterative/LanczosBidiagonalization.h>
 #include <Grid/algorithms/iterative/RestartedLanczosBidiagonalization.h>
