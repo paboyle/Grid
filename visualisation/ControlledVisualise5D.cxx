@@ -43,8 +43,6 @@
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
 #include <vtkProperty2D.h>
-#include <vtkSliderWidget.h>
-#include <vtkSliderRepresentation2D.h>
 #include <vtkWindowToImageFilter.h>
 
 #define MPEG
@@ -61,7 +59,9 @@
 #include <atomic>
 #include <sstream>
 #include <iostream>
+#include <fstream>
 #include <cmath>
+#include <cstdlib>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -87,6 +87,71 @@ static std::queue<std::string> g_cmdQueue;
 static std::mutex              g_cmdMutex;
 static std::atomic<bool>       g_running{true};
 static double                  g_spinDeg = 0.0;   // degrees per poll tick; 0 = stopped
+
+// ─── MPEG recording state ─────────────────────────────────────────────────────
+static bool                        g_recording   = false;
+static vtkFFMPEGWriter*            g_mpegWriter  = nullptr;
+static vtkWindowToImageFilter*     g_imageFilter = nullptr;
+static std::string                 g_recordingFile;   // AVI filename for mux step
+
+// ─── Audio state (PCM audio track, synced to video frames) ───────────────────
+static const int    AUDIO_RATE        = 44100;
+static const double BEEP_FREQ         = 800.0;
+static const int    BEEP_SAMPLES      = AUDIO_RATE * 4 / 100;  // 40ms beep
+static std::vector<int16_t> g_audioBuffer;
+static int          g_beepRemaining   = 0;
+static double       g_beepPhase       = 0.0;
+static int          g_samplesPerFrame = AUDIO_RATE / 10; // updated at record start
+
+// Write one video frame worth of audio samples (beep or silence) to the buffer.
+static void GenerateAudioFrame()
+{
+    for (int i = 0; i < g_samplesPerFrame; i++) {
+        int16_t s = 0;
+        if (g_beepRemaining > 0) {
+            int pos = BEEP_SAMPLES - g_beepRemaining;
+            double env = 1.0;
+            int fade = AUDIO_RATE / 100;  // 10ms fade
+            if (pos   < fade) env = (double)pos   / fade;
+            if (g_beepRemaining < fade) env = (double)g_beepRemaining / fade;
+            s = (int16_t)(16000.0 * env * std::sin(2.0 * M_PI * BEEP_FREQ * g_beepPhase / AUDIO_RATE));
+            g_beepPhase += 1.0;
+            --g_beepRemaining;
+        } else {
+            g_beepPhase = 0.0;
+        }
+        g_audioBuffer.push_back(s);
+    }
+}
+
+static void TriggerBeep() { g_beepRemaining = BEEP_SAMPLES; }
+
+// Simple mono 16-bit PCM WAV writer.
+static void WriteWAV(const std::string& path, const std::vector<int16_t>& buf, int rate)
+{
+    std::ofstream f(path, std::ios::binary);
+    int dataBytes  = (int)(buf.size() * 2);
+    int chunkSize  = 36 + dataBytes;
+    int byteRate   = rate * 2;
+    f.write("RIFF", 4); f.write((char*)&chunkSize, 4);
+    f.write("WAVE", 4);
+    f.write("fmt ", 4);
+    int fmtSz = 16;       f.write((char*)&fmtSz,  4);
+    int16_t pcm = 1;      f.write((char*)&pcm,    2);
+    int16_t ch  = 1;      f.write((char*)&ch,     2);
+    f.write((char*)&rate,     4);
+    f.write((char*)&byteRate, 4);
+    int16_t blk = 2;      f.write((char*)&blk, 2);
+    int16_t bps = 16;     f.write((char*)&bps, 2);
+    f.write("data", 4);   f.write((char*)&dataBytes, 4);
+    f.write((char*)buf.data(), dataBytes);
+}
+
+// Play a short audible beep on the local machine (non-blocking).
+static void PlayBeepAudible()
+{
+    system("afplay /System/Library/Sounds/Tink.aiff -v 0.4 &");
+}
 
 // ─── Grid I/O ─────────────────────────────────────────────────────────────────
 template <class T>
@@ -295,29 +360,36 @@ private:
         const std::string& path = files[file];
         std::string tau = path.substr(path.rfind('_') + 1);
         std::stringstream ss;
-        ss << "tau = " << tau << "\nSlice " << Slice << "\nLoop " << loop_coor;
+        ss << "tau = " << tau << "\nSlice " << Slice;
         text->SetInput(ss.str().c_str());
     }
 };
 
-// ─── SliderCallback ───────────────────────────────────────────────────────────
-class SliderCallback : public vtkCommand
-{
-public:
-    static SliderCallback* New() { return new SliderCallback; }
-    virtual void Execute(vtkObject* caller, unsigned long, void*)
-    {
-        vtkSliderWidget* sw = vtkSliderWidget::SafeDownCast(caller);
-        if (sw) contour = ((vtkSliderRepresentation*)sw->GetRepresentation())->GetValue();
-        fu->posExtractor->SetValue(0,  contour * fu->rms);
-        fu->negExtractor->SetValue(0, -contour * fu->rms);
-        fu->posExtractor->Modified();
-        fu->negExtractor->Modified();
+// ─── Typewriter caption state ─────────────────────────────────────────────────
+// User caption (gold, upper line) — cleared on new user: instruction
+static std::string g_userCaptionFull;
+static size_t      g_userCaptionPos  = 0;
+// Claude caption (light blue, lower line) — cleared when user: arrives
+static std::string g_claudeCaptionFull;
+static size_t      g_claudeCaptionPos = 0;
+static int         g_captionTick = 0;
+static const int   g_captionRate = 1;   // ticks per character (1 x 100ms = 10 chars/sec)
+
+static std::string WrapText(const std::string& s, int maxCols = 45) {
+    std::istringstream words(s);
+    std::string word, line, result;
+    while (words >> word) {
+        if (!line.empty() && (int)(line.size() + 1 + word.size()) > maxCols) {
+            result += line + "\n";
+            line = word;
+        } else {
+            if (!line.empty()) line += " ";
+            line += word;
+        }
     }
-    static double  contour;
-    FrameUpdater*  fu;
-};
-double SliderCallback::contour = 1.0;
+    if (!line.empty()) result += line;
+    return result;
+}
 
 // ─── CommandHandler ───────────────────────────────────────────────────────────
 // Minimal parser for the wire protocol. Natural-language interpretation
@@ -331,15 +403,22 @@ public:
     vtkCamera*                  camera;
     vtkRenderer*                renderer;
     vtkRenderWindowInteractor*  iren;
-    vtkSliderRepresentation2D*  sliderRep;
+    vtkTextActor*               captionActor     = nullptr;  // claude (light blue, lower)
+    vtkTextActor*               userCaptionActor = nullptr;  // user  (gold,       upper)
     int    pollTimerId     = -1;
     double isosurfaceLevel = 1.0;   // in RMS units
+
+    void CaptureFrame() {
+        if (g_recording && g_mpegWriter && g_imageFilter) {
+            GenerateAudioFrame();
+            g_imageFilter->Modified();
+            g_mpegWriter->Write();
+        }
+    }
 
     void SetIsosurface(double level)
     {
         isosurfaceLevel = std::max(0.0, std::min(10.0, level));
-        sliderRep->SetValue(isosurfaceLevel);
-        SliderCallback::contour = isosurfaceLevel;
         fu->posExtractor->SetValue(0,  isosurfaceLevel * fu->rms);
         fu->negExtractor->SetValue(0, -isosurfaceLevel * fu->rms);
         fu->posExtractor->Modified();
@@ -417,6 +496,96 @@ public:
             std::cout << "[cmd] spin rate = " << g_spinDeg << " deg/tick" << std::endl;
         }
 
+        // ── caption user: <text> / caption claude: <text> / caption ─────────
+        // user:   clears both lines, types user text (gold) on upper line.
+        // claude: keeps user line, types response (light blue) on lower line.
+        // caption alone clears both immediately.
+        else if (verb == "caption") {
+            std::string rest;
+            std::getline(iss, rest);
+            if (!rest.empty() && rest[0] == ' ') rest = rest.substr(1);
+            if (rest.empty()) {
+                g_userCaptionFull = ""; g_userCaptionPos = 0;
+                g_claudeCaptionFull = ""; g_claudeCaptionPos = 0;
+                g_captionTick = 0;
+                if (userCaptionActor) userCaptionActor->SetInput("");
+                if (captionActor)     captionActor->SetInput("");
+                iren->GetRenderWindow()->Render(); CaptureFrame();
+            } else if (rest.substr(0,5) == "user:") {
+                // New instruction: clear both, start typing user text
+                g_claudeCaptionFull = ""; g_claudeCaptionPos = 0;
+                g_userCaptionFull = WrapText(rest); g_userCaptionPos = 0;
+                g_captionTick = 0;
+                if (userCaptionActor) userCaptionActor->SetInput("");
+                if (captionActor)     captionActor->SetInput("");
+                iren->GetRenderWindow()->Render(); CaptureFrame();
+            } else {
+                // claude: or unlabelled — keep user line, type below
+                g_claudeCaptionFull = WrapText(rest); g_claudeCaptionPos = 0;
+                g_captionTick = 0;
+            }
+        }
+
+        // ── record start <filename> / record stop ────────────────────────────
+        else if (verb == "record") {
+#ifdef MPEG
+            std::string sub;
+            if (!(iss >> sub)) { std::cout << "[cmd] record: expected start <file> or stop" << std::endl; return; }
+            if (sub == "stop") {
+                if (g_recording && g_mpegWriter) {
+                    g_mpegWriter->End();
+                    g_mpegWriter->Delete(); g_mpegWriter = nullptr;
+                    g_imageFilter->Delete(); g_imageFilter = nullptr;
+                    g_recording = false;
+                    std::cout << "[cmd] recording stopped: " << g_recordingFile << std::endl;
+                    // Write WAV and mux to MP4
+                    std::string wavFile = g_recordingFile + ".wav";
+                    WriteWAV(wavFile, g_audioBuffer, AUDIO_RATE);
+                    g_audioBuffer.clear();
+                    std::string mp4File = g_recordingFile;
+                    if (mp4File.size() > 4 && mp4File.substr(mp4File.size()-4) == ".avi")
+                        mp4File = mp4File.substr(0, mp4File.size()-4) + ".mp4";
+                    else
+                        mp4File += ".mp4";
+                    std::string cmd = "ffmpeg -y -i \"" + g_recordingFile + "\" -i \"" + wavFile +
+                                      "\" -c:v copy -c:a aac -shortest \"" + mp4File + "\" 2>/dev/null";
+                    int ret = system(cmd.c_str());
+                    if (ret == 0) {
+                        std::cout << "[cmd] muxed output: " << mp4File << std::endl;
+                        unlink(wavFile.c_str());  // clean up intermediate WAV
+                    } else {
+                        std::cout << "[cmd] mux failed (ffmpeg not found?). WAV kept: " << wavFile << std::endl;
+                    }
+                } else {
+                    std::cout << "[cmd] not recording" << std::endl;
+                }
+            } else if (sub == "start") {
+                std::string fname = "recording.avi";
+                iss >> fname;
+                if (g_recording) { std::cout << "[cmd] already recording" << std::endl; return; }
+                g_recordingFile    = fname;
+                g_audioBuffer.clear();
+                g_samplesPerFrame  = AUDIO_RATE / std::max(1, g_framerate);
+                g_beepRemaining    = 0;
+                g_beepPhase        = 0.0;
+                g_imageFilter = vtkWindowToImageFilter::New();
+                g_imageFilter->SetInput(iren->GetRenderWindow());
+                g_imageFilter->SetInputBufferTypeToRGB();
+                g_mpegWriter = vtkFFMPEGWriter::New();
+                g_mpegWriter->SetFileName(fname.c_str());
+                g_mpegWriter->SetRate(g_framerate);
+                g_mpegWriter->SetInputConnection(g_imageFilter->GetOutputPort());
+                g_mpegWriter->Start();
+                g_recording = true;
+                std::cout << "[cmd] recording started: " << fname << std::endl;
+            } else {
+                std::cout << "[cmd] record: unknown subcommand '" << sub << "'" << std::endl;
+            }
+#else
+            std::cout << "[cmd] record: MPEG support not compiled" << std::endl;
+#endif
+        }
+
         // ── iso <value> ──────────────────────────────────────────────────────
         else if (verb == "iso") {
             double val;
@@ -481,6 +650,37 @@ public:
         for (const auto& line : pending) {
             std::cout << "[cmd] >> " << line << std::endl;
             RunLine(line);
+            // CaptureFrame() called inside RunLine for caption; for other
+            // rendering commands capture here (duplicate Modified() is harmless)
+            CaptureFrame();
+        }
+
+        // Typewriter: advance one character every g_captionRate ticks.
+        // User line types first; claude line starts once user line is complete.
+        bool typing = (g_userCaptionPos < g_userCaptionFull.size()) ||
+                      (g_claudeCaptionPos < g_claudeCaptionFull.size());
+        if (typing) {
+            if (++g_captionTick >= g_captionRate) {
+                g_captionTick = 0;
+                bool rendered = false;
+                if (g_userCaptionPos < g_userCaptionFull.size()) {
+                    ++g_userCaptionPos;
+                    if (userCaptionActor)
+                        userCaptionActor->SetInput(g_userCaptionFull.substr(0, g_userCaptionPos).c_str());
+                    PlayBeepAudible();
+                    TriggerBeep();
+                    rendered = true;
+                } else if (g_claudeCaptionPos < g_claudeCaptionFull.size()) {
+                    ++g_claudeCaptionPos;
+                    if (captionActor)
+                        captionActor->SetInput(g_claudeCaptionFull.substr(0, g_claudeCaptionPos).c_str());
+                    rendered = true;
+                }
+                if (rendered) {
+                    iren->GetRenderWindow()->Render();
+                    CaptureFrame();
+                }
+            }
         }
 
         // Apply continuous spin (if active) at poll-timer rate
@@ -488,6 +688,7 @@ public:
             camera->Azimuth(g_spinDeg);
             renderer->ResetCameraClippingRange();
             iren->GetRenderWindow()->Render();
+            CaptureFrame();
         }
     }
 };
@@ -603,11 +804,33 @@ int main(int argc, char* argv[])
 
     vtkNew<vtkTextActor> TextT;
     TextT->SetInput("Initialising...");
-    TextT->SetPosition(0, 0.7*1025);
+    TextT->SetPosition(10, 920);
     TextT->GetTextProperty()->SetFontSize(24);
     TextT->GetTextProperty()->SetColor(colors->GetColor3d("Gold").GetData());
 
-    aRenderer->AddActor(TextT); aRenderer->AddActor(outline);
+    // Claude response caption (light blue, lower line)
+    vtkNew<vtkTextActor> CaptionT;
+    CaptionT->SetInput("");
+    CaptionT->SetPosition(512, 38);
+    CaptionT->GetTextProperty()->SetFontSize(32);
+    CaptionT->GetTextProperty()->SetColor(0.6, 0.9, 1.0);
+    CaptionT->GetTextProperty()->SetJustificationToCentered();
+    CaptionT->GetTextProperty()->SetBackgroundColor(0.0, 0.0, 0.0);
+    CaptionT->GetTextProperty()->SetBackgroundOpacity(0.6);
+    CaptionT->GetTextProperty()->BoldOn();
+
+    // User instruction caption (gold, upper line)
+    vtkNew<vtkTextActor> UserCaptionT;
+    UserCaptionT->SetInput("");
+    UserCaptionT->SetPosition(512, 82);
+    UserCaptionT->GetTextProperty()->SetFontSize(32);
+    UserCaptionT->GetTextProperty()->SetColor(1.0, 0.85, 0.0);
+    UserCaptionT->GetTextProperty()->SetJustificationToCentered();
+    UserCaptionT->GetTextProperty()->SetBackgroundColor(0.0, 0.0, 0.0);
+    UserCaptionT->GetTextProperty()->SetBackgroundOpacity(0.6);
+    UserCaptionT->GetTextProperty()->BoldOn();
+
+    aRenderer->AddActor(TextT); aRenderer->AddActor(CaptionT); aRenderer->AddActor(UserCaptionT); aRenderer->AddActor(outline);
     aRenderer->AddActor(pos);   aRenderer->AddActor(neg);
 
     vtkNew<FrameUpdater> fu;
@@ -627,34 +850,14 @@ int main(int argc, char* argv[])
     renWin->SetSize(1024,1024); renWin->SetWindowName("ControlledFieldDensity");
     renWin->Render(); iren->Initialize();
 
-    // Slider
-    vtkSmartPointer<vtkSliderRepresentation2D> sliderRep = vtkSmartPointer<vtkSliderRepresentation2D>::New();
-    sliderRep->SetMinimumValue(0.0); sliderRep->SetMaximumValue(10.0); sliderRep->SetValue(default_contour);
-    sliderRep->SetTitleText("Fraction RMS");
-    sliderRep->GetTitleProperty()->SetColor(  colors->GetColor3d("AliceBlue").GetData());
-    sliderRep->GetLabelProperty()->SetColor(  colors->GetColor3d("AliceBlue").GetData());
-    sliderRep->GetSelectedProperty()->SetColor(colors->GetColor3d("DeepPink").GetData());
-    sliderRep->GetTubeProperty()->SetColor(   colors->GetColor3d("MistyRose").GetData());
-    sliderRep->GetCapProperty()->SetColor(    colors->GetColor3d("Yellow").GetData());
-    sliderRep->SetSliderLength(0.05); sliderRep->SetSliderWidth(0.025); sliderRep->SetEndCapLength(0.02);
-    sliderRep->GetPoint1Coordinate()->SetCoordinateSystemToNormalizedDisplay(); sliderRep->GetPoint1Coordinate()->SetValue(0.1,0.1);
-    sliderRep->GetPoint2Coordinate()->SetCoordinateSystemToNormalizedDisplay(); sliderRep->GetPoint2Coordinate()->SetValue(0.9,0.1);
-
-    vtkSmartPointer<vtkSliderWidget> sliderWidget = vtkSmartPointer<vtkSliderWidget>::New();
-    sliderWidget->SetInteractor(iren); sliderWidget->SetRepresentation(sliderRep);
-    sliderWidget->SetAnimationModeToAnimate(); sliderWidget->EnabledOn();
-
-    vtkSmartPointer<SliderCallback> slidercallback = vtkSmartPointer<SliderCallback>::New();
-    slidercallback->fu = fu; SliderCallback::contour = default_contour;
-    sliderWidget->AddObserver(vtkCommand::InteractionEvent, slidercallback);
-
     // CommandHandler on fast poll timer
     vtkNew<CommandHandler> cmdHandler;
     cmdHandler->fu             = fu;
     cmdHandler->camera         = aCamera;
     cmdHandler->renderer       = aRenderer;
     cmdHandler->iren           = iren;
-    cmdHandler->sliderRep      = sliderRep;
+    cmdHandler->captionActor     = CaptionT;
+    cmdHandler->userCaptionActor = UserCaptionT;
     cmdHandler->isosurfaceLevel = default_contour;
     iren->AddObserver(vtkCommand::TimerEvent, cmdHandler);
     cmdHandler->pollTimerId = iren->CreateRepeatingTimer(100);
