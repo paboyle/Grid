@@ -10,8 +10,10 @@
     <Np>100</Np>
     <ReadEvec>0</ReadEvec>
     <maxIter>1000</maxIter>
+    <reorthog>1</reorthog>
     <Nblock>4</Nblock>
     <verify>0</verify>
+    <shift>1.5</shift>
     <resid>1e-10</resid>
     <ChebyLow>1</ChebyLow>
     <ChebyHigh>100</ChebyHigh>
