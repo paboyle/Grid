@@ -63,6 +63,8 @@ private:
   bool  useFullH_;       // true while in Krylov-Schur extension mode
   int   Ncompressed_;    // number of compressed column vectors kept after last KS step
   CMat2 Blast_;          // last normalization block from lanczosStepFull (for Ritz estimate)
+  CMat  Blink_;          // linking block B̃ = B_{m+1} * U[2m-2:2m-1, 0:Nk-1] from krylovSchurCompress
+  CMat  GramCompressed_; // Nk×Nk γ5-Gram matrix of compressed Schur basis: G_Ṽ = U_Nk† G_full U_Nk
 
   // Output
   CVec               evals_;
@@ -71,6 +73,7 @@ private:
 
 public:
   bool doEvalCheck = false;
+  bool doVerify = false;
 
   Gamma5BlockLanczos(LinearOperatorBase<Field>& op, GridBase* grid,
                      Gamma5Func g5, RealD tol = 1e-8)
@@ -92,7 +95,8 @@ public:
    * Nstop    : target converged pairs (informational; all pairs are always returned)
    * reorthog : full γ5-reorthogonalisation at each step (fixes finite-precision drift)
    */
-  void operator()(const Field& v0, int maxSteps, int Nstop, bool reorthog = false)
+  void operator()(const Field& v0, int maxSteps, int Nstop, bool reorthog = false,
+                  RitzFilter filter = EvalImNormSmall)
   {
     basis.clear();
     A_blocks.clear();
@@ -143,7 +147,7 @@ public:
     }
 
     if (nSteps == 0) return;
-    computeRitzPairs(nSteps, Nstop);
+    computeRitzPairs(nSteps, Nstop, filter);
   }
 
   /**
@@ -179,7 +183,9 @@ public:
       std::cout << GridLogMessage
                 << "Gamma5BlockLanczos: ---- restart " << iter << " ----" << std::endl;
 
-      (*this)(src, Nstep, Nstop, reorthog);
+      // Run Lanczos and compute Ritz pairs sorted by filter.
+      (*this)(src, Nstep, Nstop, reorthog, filter);
+      if(this->doVerify) verify("iter= "+std::to_string(iter));
 
       int nRitz = (int)residuals_.size();
       if (nRitz == 0) {
@@ -188,28 +194,13 @@ public:
         return;
       }
 
-      // Sort all Ritz indices by the chosen filter criterion.
-      std::vector<int> idx(nRitz);
-      std::iota(idx.begin(), idx.end(), 0);
-      switch (filter) {
-        case EvalNormSmall:
-          std::sort(idx.begin(), idx.end(), [&](int a, int b){
-            return std::abs(evals_(a)) < std::abs(evals_(b));
-          });
-          break;
-        case EvalImNormSmall:
-        default:
-          std::sort(idx.begin(), idx.end(), [&](int a, int b){
-            return std::abs(evals_(a).imag()) < std::abs(evals_(b).imag());
-          });
-          break;
-      }
-
-      // Count converged pairs within the top-Nk wanted set.
+      // evals_/evecs_/residuals_ are already sorted by filter from computeRitzPairs.
       int nKeep = std::min(Nk, nRitz);
       int nconv = 0;
-      for (int i = 0; i < nKeep; i++)
-        if (residuals_[idx[i]] < Tolerance) nconv++;
+      for (int i = 0; i < nKeep; i++) {
+        if (residuals_[i] < Tolerance) nconv++;
+        else break;
+      }
 
       std::cout << GridLogMessage
                 << "Gamma5BlockLanczos: restart " << iter
@@ -218,29 +209,63 @@ public:
                 << "  converged = " << nconv << " / " << Nstop << std::endl;
       for (int i = 0; i < nKeep; i++)
         std::cout << GridLogMessage
-                  << "    wanted[" << i << "]  lambda = " << evals_(idx[i])
-                  << "  |res| = " << residuals_[idx[i]]
-                  << (residuals_[idx[i]] < Tolerance ? "  *" : "") << std::endl;
+                  << "    wanted[" << i << "]  lambda = " << evals_(i)
+                  << "  |res| = " << residuals_[i]
+                  << (residuals_[i] < Tolerance ? "  *" : "") << std::endl;
 
       if (nconv >= Nstop) {
         std::cout << GridLogMessage
                   << "Gamma5BlockLanczos: converged after " << iter + 1
                   << " restart(s)." << std::endl;
-        reorderOutput(idx, nKeep);
         return;
       }
 
-      // Build restart seed: equal-weight sum of the top Nstop Ritz vectors
-      // (sorted by filter criterion).  Spans the best part of the wanted
-      // eigenspace and avoids locking onto a single approximate eigenvalue.
+      // Build restart seed: equal-weight sum of the top Nstop Ritz vectors.
+      // Normalise each Ritz vector in L2 before summing: the field vectors
+      // evecs_[i] = V_m y_i inherit the non-uniform L2 norms of the
+      // γ5-orthonormal basis, so an unweighted sum would be dominated by
+      // whichever direction has the largest L2 norm.
       int nSeed = std::min(Nstop, nKeep);
+      std::cout << GridLogMessage << "Gamma5BlockLanczos: Nstop nKeep nSeed " << Nstop <<" "<<nKeep<<" "<<nSeed<<std::endl;
       src = Zero();
-      for (int i = 0; i < nSeed; i++)
-        src += evecs_[idx[i]];
+      for (int i = 0; i < nSeed; i++) {
+        RealD enorm = std::sqrt(norm2(evecs_[i]));
+        std::cout << GridLogMessage
+                  << "Gamma5BlockLanczos: seed evecs_[" << i << "]"
+                  << "  ||u||_L2 = " << enorm
+                  << "  lambda = " << evals_(i) << std::endl;
+        if (enorm > 1e-14){
+		if (std::imag(evals_(i))>0.)
+		src += evecs_[i] * (1.0 / enorm);
+		else
+		src += 0.8* evecs_[i] * (1.0 / enorm);
+	}
+      }
 
       RealD nrm = std::sqrt(norm2(src));
       assert(nrm > 1e-14);
       src *= (1.0 / nrm);
+
+      // Check for near-chirality: det(G1) = a²-1 where a = src†γ5src.
+      // When |a| is large the starting block [src, γ5src] is ill-conditioned.
+      // Fix: mix in the next unused Ritz vector to break the chiral alignment.
+      {
+        Field g5src(Grid_);
+        applyGamma5(src, g5src);
+        RealD a = std::real(toStdCmplx(innerProduct(src, g5src)));
+        std::cout << GridLogMessage
+                  << "Gamma5BlockLanczos: seed chirality a = src†γ5src = " << a
+                  << "  det(G1) = " << a*a - 1.0 << std::endl;
+        if (std::abs(a) > 0.8 && nSeed < nRitz) {
+          std::cout << GridLogMessage
+                    << "Gamma5BlockLanczos: |a| > 0.8, mixing in evecs_[" << nSeed
+                    << "] to break near-chirality." << std::endl;
+          src += evecs_[nSeed];
+          nrm = std::sqrt(norm2(src));
+          assert(nrm > 1e-14);
+          src *= (1.0 / nrm);
+        }
+      }
 
       std::cout << GridLogMessage
                 << "Gamma5BlockLanczos: seed = sum of top " << nSeed
@@ -275,20 +300,43 @@ public:
    * reorthog : γ5-reorthogonalisation in the initial Nmax-step run
    * filter   : eigenvalue selection criterion (default: EvalImNormSmall)
    */
+  /**
+   * Implicitly Restarted Block Lanczos (Krylov-Schur + L2-Arnoldi extension).
+   *
+   * Initial cycle: run γ5-block Lanczos for Nmax steps → block-tridiagonal T_{Nmax}.
+   * Each restart cycle:
+   *   1. Schur-compress T (or previous Hessenberg) to Nk modes.
+   *   2. L2-QR factorize the Nk compressed field vectors → L2-orthonormal basis W.
+   *      Transform Hmat: H_L2 = R·S_Nk·R⁻¹  (preserves eigenvalues).
+   *   3. L2-orthogonalize the residual F against W to get a fresh starting vector.
+   *   4. Extend with scalar L2-Arnoldi for Np = Nmax-Nk steps from F.
+   *      Each step orthogonalises against ALL previous W+extension vectors (always
+   *      well-conditioned — no indefinite Gram matrix).
+   *   5. Eigensolve the resulting upper-Hessenberg H_comb → Ritz pairs.
+   *      Residual estimate: beta_last * |y_j[dim-1]|.
+   *
+   * This avoids the ill-conditioned G_Ṽ inversion of the split approach while
+   * retaining the γ5-block Lanczos efficiency for the initial run.
+   */
   void implicitRestart(const Field& v0, int maxIter, int Nmax, int Nk, int Nstop,
                        bool reorthog = false, RitzFilter filter = EvalImNormSmall)
   {
-    assert(Nk % 2 == 0 && Nk >= 2 && Nk < Nmax);
-    assert(Nk >= Nstop);
+    assert(Nk >= 2 && Nk < Nmax && Nk >= Nstop);
 
-    // Initial full block-Lanczos run
+    // ── Initial full block-Lanczos run ────────────────────────────────────
     (*this)(v0, Nmax, Nstop, reorthog);
+
+    // Persistent state across cycles
+    CMat  H_hess;             // current Hessenberg (Ncur × Ncur)
+    int   Ncur = 0;           // dimension of H_hess (= Nmax after first fill)
+    Field F_vec(Grid_);       // Arnoldi residual vector (seed for next extension)
+    bool  first_iter = true;
 
     for (int iter = 0; iter < maxIter; iter++) {
       std::cout << GridLogMessage
                 << "Gamma5BlockLanczos::implicitRestart ---- cycle " << iter << " ----" << std::endl;
 
-      // Sort current Ritz pairs by filter, count converged
+      // ── Convergence check ─────────────────────────────────────────────────
       int nRitz = (int)residuals_.size();
       std::vector<int> idx = sortedIdx(nRitz, filter);
       int nKeep = std::min(Nk, nRitz);
@@ -297,9 +345,8 @@ public:
         if (residuals_[idx[i]] < Tolerance) nconv++;
 
       std::cout << GridLogMessage
-                << "  nRitz=" << nRitz
-                << "  nconv=" << nconv << "/" << Nstop << std::endl;
-      for (int i = 0; i < nKeep; i++)
+                << "  nRitz=" << nRitz << "  nconv=" << nconv << "/" << Nstop << std::endl;
+      for (int i = 0; i < std::min(nKeep, Nstop + 2); i++)
         std::cout << GridLogMessage
                   << "  [" << i << "]  lambda=" << evals_(idx[i])
                   << "  |res|=" << residuals_[idx[i]]
@@ -310,40 +357,148 @@ public:
         std::cout << GridLogMessage
                   << "Gamma5BlockLanczos::implicitRestart: converged after "
                   << iter + 1 << " cycle(s)." << std::endl;
-        useFullH_ = false;
         return;
       }
 
-      // Krylov-Schur: compress T_{Nmax} to S_{Nk} (upper-triangular Nk×Nk)
-      krylovSchurCompress(Nk, filter);
+      // ── Krylov-Schur + L2-Arnoldi restart ────────────────────────────────
+      if (first_iter) {
+        // ── First restart: start from the γ5-block Lanczos result ──────────
+        // Schur-compress T_{Nmax} → S_Nk, Ṽ_Nk, Q_{m+1}, Blink_
+        krylovSchurCompress(Nk, filter);
+        // basis[0..Nk-1] = Ṽ_Nk (NOT L2-orthonormal)
+        // basis[Nk..Nk+1] = Q_{m+1}
 
-      // Extend from Nk/2 to Nmax steps via full-projection block Arnoldi
-      for (int step = nSteps; step < Nmax; step++) {
-        bool ok = lanczosStepFull(step);
-        if (!ok) break;
-        nSteps = step + 1;
-        if (Blast_.norm() < Tolerance) {
+        // L2-QR factorize Ṽ_Nk to get W (L2-orthonormal) and R (upper triangular).
+        // V_old = W · R  →  D_W W = W (R·S_Nk·R⁻¹) + Q_{m+1} (Blink_·R⁻¹)
+        CMat R_mat = l2QRFactor(0, Nk);
+        CMat R_inv = R_mat.triangularView<Eigen::Upper>().solve(CMat::Identity(Nk, Nk));
+        CMat H_L2  = R_mat * Hmat_ * R_inv;  // Nk×Nk; eigenvalues preserved
+
+        // L2-orthogonalize Q_{m+1} columns against W to obtain F_vec
+        // (prefer the column with larger residual after projection)
+        Field q0 = basis[Nk], q1 = basis[Nk + 1];
+        for (int i = 0; i < Nk; i++) {
+          q0 -= basis[i] * toStdCmplx(innerProduct(basis[i], q0));
+          q1 -= basis[i] * toStdCmplx(innerProduct(basis[i], q1));
+        }
+        // also L2-orthogonalize q1 against q0 (to break near-parallel)
+        RealD n0 = std::sqrt(norm2(q0));
+        RealD n1 = std::sqrt(norm2(q1));
+        Field F_candidate = (n0 >= n1) ? q0 * (1.0/std::max(n0, 1e-30))
+                                       : q1 * (1.0/std::max(n1, 1e-30));
+        // re-orthogonalize once more for safety
+        for (int i = 0; i < Nk; i++)
+          F_candidate -= basis[i] * toStdCmplx(innerProduct(basis[i], F_candidate));
+        RealD fn = std::sqrt(norm2(F_candidate));
+        assert(fn > 1e-14 && "Q_{m+1} collapsed into Ṽ_Nk — try a different seed");
+        F_candidate *= (1.0 / fn);
+        F_vec = F_candidate;
+
+        // Set up H_hess: Nmax × Nmax with H_L2 in top-left
+        Ncur   = Nmax;
+        H_hess = CMat::Zero(Ncur, Ncur);
+        H_hess.block(0, 0, Nk, Nk) = H_L2;
+
+        // Trim basis to Nk (Q_{m+1} replaced by F_vec below)
+        basis.resize(Nk);
+        first_iter = false;
+
+      } else {
+        // ── Subsequent restarts: Schur-compress previous H_hess ────────────
+        ComplexSchurDecomposition schur(H_hess.block(0, 0, Ncur, Ncur), false, filter);
+        schur.schurReorder(Nk);
+        CMat Qt = schur.getMatrixQ().adjoint();  // Ncur×Ncur unitary
+
+        // Rotate field basis: new_basis[j] = Σ_k basis[k] * Qt(k,j)
+        std::vector<Field> new_basis;
+        new_basis.reserve(Nk);
+        for (int j = 0; j < Nk; j++) {
+          Field col(Grid_); col = Zero();
+          int Nb = std::min((int)basis.size(), Ncur);
+          for (int k = 0; k < Nb; k++)
+            col += basis[k] * Qt(k, j);
+          new_basis.push_back(col);
+        }
+        basis = new_basis;
+
+        // Re-orthogonalize F_vec against the new (rotated) basis
+        for (int i = 0; i < Nk; i++)
+          F_vec -= basis[i] * toStdCmplx(innerProduct(basis[i], F_vec));
+        RealD fn = std::sqrt(norm2(F_vec));
+        if (fn < 1e-14) {
           std::cout << GridLogMessage
-                    << "Gamma5BlockLanczos::implicitRestart: beta < tol at full step "
-                    << step << ", stopping extension." << std::endl;
-          break;
+                    << "Gamma5BlockLanczos::implicitRestart: F_vec collapsed; using random." << std::endl;
+          // Gram-Schmidt will fix this in the next extension
+          fn = 1.0;
+        }
+        F_vec *= (1.0 / fn);
+
+        // Reset H_hess: place S_Nk in top-left
+        Ncur   = Nmax;
+        H_hess = CMat::Zero(Ncur, Ncur);
+        H_hess.block(0, 0, Nk, Nk) = schur.getMatrixS().block(0, 0, Nk, Nk);
+
+        // Trim basis back to Nk (extension will re-grow it)
+        basis.resize(Nk);
+      }
+
+      // ── L2-Arnoldi extension: add Np = Nmax-Nk vectors from F_vec ────────
+      int Np = Nmax - Nk;
+      basis.push_back(F_vec);
+
+      RealD beta_last = 0.0;
+      int Nsteps_done = 0;
+      for (int step = 0; step < Np; step++) {
+        int j = Nk + step;   // index of current vector in basis (0-based)
+
+        Field p(Grid_);
+        Linop.Op(basis[j], p);
+
+        // L2-orthogonalize against all previous vectors (Schur + extension)
+        for (int i = 0; i < j; i++) {
+          ComplexD h = toStdCmplx(innerProduct(basis[i], p));
+          H_hess(i, j) = h;
+          p -= basis[i] * h;
+        }
+
+        beta_last  = std::sqrt(norm2(p));
+        Nsteps_done = step + 1;
+
+        if (step < Np - 1) {
+          H_hess(j + 1, j) = ComplexD(beta_last, 0.0);
+          if (beta_last < Tolerance) {
+            std::cout << GridLogMessage
+                      << "Gamma5BlockLanczos::implicitRestart: Arnoldi happy breakdown at step "
+                      << step << "  beta=" << beta_last << std::endl;
+            break;
+          }
+          basis.push_back(p * (1.0 / beta_last));
+        } else {
+          // Last step: save normalised residual for next cycle
+          if (beta_last > 1e-14) F_vec = p * (1.0 / beta_last);
         }
       }
 
-      // Ritz pairs from the full projected matrix
-      computeRitzPairsFull(nSteps, Nstop);
+      int Ncur_used = Nk + Nsteps_done;
+      std::cout << GridLogMessage
+                << "Gamma5BlockLanczos::implicitRestart: Arnoldi extended to dim="
+                << Ncur_used << "  beta_last=" << beta_last << std::endl;
+
+      // ── Ritz pairs from H_hess ────────────────────────────────────────────
+      computeRitzPairsHessenberg(H_hess, Ncur_used, beta_last, filter, Nstop);
     }
 
     // maxIter exhausted
     std::cout << GridLogMessage
               << "Gamma5BlockLanczos::implicitRestart: maxIter=" << maxIter
               << " reached without full convergence." << std::endl;
-    int nRitz = (int)residuals_.size();
-    if (nRitz > 0) {
-      std::vector<int> idx = sortedIdx(nRitz, filter);
-      reorderOutput(idx, std::min(Nk, nRitz));
+    {
+      int nRitz = (int)residuals_.size();
+      if (nRitz > 0) {
+        std::vector<int> idx = sortedIdx(nRitz, filter);
+        reorderOutput(idx, std::min(Nk, nRitz));
+      }
     }
-    useFullH_ = false;
   }
 
   /**
@@ -549,6 +704,17 @@ private:
     new_basis.push_back(basis[dim]);
     new_basis.push_back(basis[dim + 1]);
 
+    // Compute GramCompressed_ = U_Nk† G_full U_Nk from the ORIGINAL G_blocks
+    // (before they are cleared below).  G_full = block-diag(G_0,...,G_{m-1}).
+    // Since each G_k = diag(±1) and U is unitary, G_Ṽ² = I → G_Ṽ^{-1} = G_Ṽ.
+    {
+      CMat G_full_mat = CMat::Zero(dim, dim);
+      for (int k = 0; k < m; k++)
+        G_full_mat.block(2*k, 2*k, 2, 2) = G_blocks[k];   // G_blocks still has ORIGINAL values here
+      CMat U_Nk = U.leftCols(Nk);
+      GramCompressed_ = U_Nk.adjoint() * G_full_mat * U_Nk;
+    }
+
     basis = new_basis;   // Nk + 2 field vectors
 
     // Recompute G_blocks for each pair of new basis vectors
@@ -558,6 +724,11 @@ private:
 
     // Compressed projected matrix = leading Nk×Nk block of S
     Hmat_ = S.block(0, 0, Nk, Nk);
+
+    // Linking block: D_W Ṽ_{Nk} = Ṽ_{Nk} S_{Nk} + Q_{m+1} B̃_link
+    // where B̃_link = B_{m+1} * (last 2 rows of U for first Nk cols).
+    // Needed to populate the (Nk+1)-th block-row of Hmat_ on the first extension step.
+    Blink_ = B_blocks[m - 1] * U.bottomRows(2).leftCols(Nk);
 
     // Clear three-term block storage (not valid after rotation)
     A_blocks.clear();
@@ -598,11 +769,44 @@ private:
     int new_dim = old_dim + 2;
     CMat Hmat_new = CMat::Zero(new_dim, new_dim);
     Hmat_new.block(0, 0, old_dim, old_dim) = Hmat_;
+    // On the first extension step after krylovSchurCompress, populate the linking
+    // block row: D_W Ṽ_{Nk} = Ṽ_{Nk} S_{Nk} + Q_{m+1} B̃_link  (Nk = Ncompressed_)
+    if (useFullH_ && old_dim == Ncompressed_ && Blink_.cols() == old_dim)
+      Hmat_new.block(old_dim, 0, 2, old_dim) = Blink_;
 
-    // Coupling to all previous blocks (classical GS: use original p1,p2)
+    // Coupling to all previous blocks.
+    // After krylovSchurCompress the first Ncompressed_ basis vectors are the
+    // compressed Schur vectors.  They are NOT mutually γ5-orthogonal, so we
+    // must use the full Gram system G_Ṽ (stored in GramCompressed_) for their
+    // block.  Since G_Ṽ² = I (G_Ṽ is an involution), G_Ṽ^{-1} = G_Ṽ exactly,
+    // so the system is solved by a matrix-vector product (no ill-conditioning).
+    //
+    // Extension vectors (j ≥ Ncompressed_/2) are built by this same routine
+    // with full γ5-projection against all predecessors, so they ARE mutually
+    // γ5-orthogonal → the diagonal-block formula suffices for them.
     Field r1(Grid_), r2(Grid_);
     r1 = p1; r2 = p2;
-    for (int j = 0; j < step; j++) {
+
+    int Nc2 = (useFullH_ ? Ncompressed_ / 2 : 0);  // number of compressed blocks
+
+    if (Nc2 > 0 && step >= Nc2) {
+      // Compressed blocks: collect coupling, solve with full Gram G_Ṽ.
+      CMat Mcol = CMat::Zero(Ncompressed_, 2);
+      for (int j = 0; j < Nc2; j++) {
+        CMat2 Mj = g5InnerBlock(basis[2*j], basis[2*j+1], p1, p2);
+        Mcol.block(2*j, 0, 2, 2) = Mj;
+      }
+      // G_Ṽ^{-1} = G_Ṽ (since G_Ṽ² = I); use LU for numerical safety
+      CMat Hcol = GramCompressed_.lu().solve(Mcol);
+      Hmat_new.block(0, old_dim, Ncompressed_, 2) = Hcol;
+      for (int k = 0; k < Ncompressed_; k++) {
+        r1 -= basis[k] * Hcol(k, 0);
+        r2 -= basis[k] * Hcol(k, 1);
+      }
+    }
+
+    // Extension blocks (j ≥ Nc2): mutually γ5-orthogonal, diagonal formula.
+    for (int j = Nc2; j < step; j++) {
       CMat2 Mj = g5InnerBlock(basis[2*j], basis[2*j+1], p1, p2);
       CMat2 Hj = invert2x2(G_blocks[j]) * Mj;
       Hmat_new.block(2*j, old_dim, 2, 2) = Hj;
@@ -623,18 +827,31 @@ private:
     Eigen::Vector2d D  = es.eigenvalues();
     CMat2           U2 = es.eigenvectors();
 
+    // Breakdown check per Eq (53)/(54) of Yamamoto 2026.
+    // Eq (53) happy breakdown: rjnrm < Tolerance  →  Krylov space invariant; stop step.
+    // Eq (54) serious breakdown: |d_j| << rjnrm²  →  neutral vector; stop step.
+    // Both cases return false so the caller terminates the Lanczos loop cleanly.
+    // Relative threshold 1e-14 (≈ machine ε) avoids spurious triggers.
+    const RealD breakdownEps = 1e-14;
     for (int j = 0; j < 2; j++) {
-      if (std::abs(D(j)) < 1e-28) {
-        Field rj = r1 * U2(0,j) + r2 * U2(1,j);
-        if (std::sqrt(norm2(rj)) < Tolerance) {
-          std::cout << GridLogMessage
-                    << "Gamma5BlockLanczos: happy breakdown (full step " << step << ")" << std::endl;
-        } else {
-          std::cout << GridLogMessage
-                    << "Gamma5BlockLanczos: serious breakdown (full step " << step
-                    << ") — stopping." << std::endl;
-          return false;
-        }
+      Field rj = r1 * U2(0,j) + r2 * U2(1,j);
+      RealD rjnrm2 = norm2(rj);
+      RealD rjnrm  = std::sqrt(rjnrm2);
+      if (rjnrm < Tolerance) {
+        std::cout << GridLogMessage
+                  << "Gamma5BlockLanczos: happy breakdown (full step " << step
+                  << " direction " << j
+                  << ")  ||R̂_k u_j||=" << rjnrm << std::endl;
+        return false;
+      } else if (std::abs(D(j)) < breakdownEps * rjnrm2) {
+        std::cout << GridLogMessage
+                  << "Gamma5BlockLanczos: SERIOUS breakdown (full step " << step
+                  << " direction " << j
+                  << ")  ||R̂_k u_j||=" << rjnrm
+                  << "  d_j=" << D(j)
+                  << "  |d_j|/||r_j||^2=" << std::abs(D(j)) / rjnrm2
+                  << "  (look-ahead not implemented; stopping)" << std::endl;
+        return false;
       }
     }
 
@@ -701,12 +918,101 @@ private:
       // Ritz estimate: || Blast_ τ_j ||  (τ_j = last 2 entries of y_j)
       Eigen::Vector2cd tau(yj(dim - 2), yj(dim - 1));
       RealD res = (Blast_ * tau).norm();
+      // Guard against NaN from degenerate eigenvectors in the non-symmetric eigensolver
+      if (!std::isfinite(res)) res = std::numeric_limits<RealD>::infinity();
       residuals_.push_back(res);
 
       std::cout << GridLogMessage
                 << "Gamma5BlockLanczos (full): Ritz[" << ji << "]"
                 << "  lambda=" << evals_(ji)
                 << "  |res|=" << res << std::endl;
+    }
+
+    if (doEvalCheck) {
+      Field w(Grid_);
+      int nCheck = std::min((int)evecs_.size(), 2 * Nstop);
+      for (int k = 0; k < nCheck; k++) {
+        Linop.Op(evecs_[k], w);
+        ComplexD eval_est = toStdCmplx(innerProduct(evecs_[k], w));
+        w -= eval_est * evecs_[k];
+        RealD res = std::sqrt(norm2(w));
+        std::cout << GridLogMessage
+                  << "Gamma5BlockLanczos: evec[" << k << "]"
+                  << "  eval_reported=" << evals_(k)
+                  << "  eval_est=" << eval_est
+                  << "  ||Av-eval*v||=" << res << std::endl;
+      }
+    }
+  }
+
+  // Ritz pairs from the block-lower-triangular combined matrix assembled by
+  // implicitRestart (split Krylov-Schur strategy).
+  //
+  // Hmat_comb  = [ S_{Nk}  |  0        ]   (dim_total × dim_total)
+  //              [ Blink_  |  T_fresh   ]
+  //
+  // basis[] contains:
+  //   [0..Nk-1]          → compressed Schur vectors Ṽ_{Nk}
+  //   [Nk..Nk+2*Nf-1]    → fresh Lanczos blocks (Q_{m+1} through Q_{m+Nf})
+  //   [Nk+2*Nf..Nk+2*Nf+1] → outer residual Q_{m+Nf+1} (not in Hmat_comb)
+  //
+  // Ritz residual for eigenpair (λ_j, y_j) of Hmat_comb:
+  //   ||D_W u_j - λ_j u_j|| ≈ ||Blink_save * y_j.head(Nk)|| + ||Blast_ * τ||
+  //   where τ = y_j.tail(2)  (last two entries, last fresh block contribution)
+  void computeRitzPairsCombined(const CMat& Hmat_comb, const CMat& Blink_save,
+                                 int Nk, int Nstop)
+  {
+    int dim_total = Hmat_comb.rows();
+    int dim_fresh = dim_total - Nk;
+
+    Eigen::ComplexEigenSolver<CMat> ces(Hmat_comb);
+    CVec lambdas = ces.eigenvalues();
+    CMat Y       = ces.eigenvectors();
+
+    // Sort by |Im(λ)| ascending (near-real physical modes first)
+    std::vector<int> idx(dim_total);
+    std::iota(idx.begin(), idx.end(), 0);
+    std::sort(idx.begin(), idx.end(), [&](int a, int b){
+      return std::abs(lambdas(a).imag()) < std::abs(lambdas(b).imag());
+    });
+
+    evals_.resize(dim_total);
+    evecs_.clear();
+    residuals_.clear();
+
+    for (int ji = 0; ji < dim_total; ji++) {
+      int  j  = idx[ji];
+      evals_(ji) = lambdas(j);
+      CVec yj = Y.col(j);
+
+      // Ritz vector: u_j = sum_{k=0}^{dim_total-1} basis[k] * y_j(k)
+      // basis[0..Nk-1]       = Schur vectors
+      // basis[Nk..dim_total-1] = fresh Lanczos vectors (Q_{m+1}..Q_{m+Nf})
+      Field uj(Grid_);
+      uj = Zero();
+      for (int k = 0; k < dim_total; k++)
+        uj += basis[k] * yj(k);
+      evecs_.push_back(uj);
+
+      // Ritz residual: two contributions
+      //   1) Schur leak:  Q_{m+1} Blink_ y_schur  (linking row)
+      //   2) Fresh tail:  Q_{m+Nf+1} Blast_ τ     (fresh outer residual)
+      CVec y_schur = yj.head(Nk);
+      Eigen::Vector2cd Blink_y = Blink_save * y_schur;
+      RealD res_schur = Blink_y.norm();
+
+      Eigen::Vector2cd tau(yj(dim_total - 2), yj(dim_total - 1));
+      RealD res_fresh = (Blast_ * tau).norm();
+
+      RealD res = res_schur + res_fresh;
+      if (!std::isfinite(res)) res = std::numeric_limits<RealD>::infinity();
+      residuals_.push_back(res);
+
+      std::cout << GridLogMessage
+                << "Gamma5BlockLanczos (combined): Ritz[" << ji << "]"
+                << "  lambda=" << evals_(ji)
+                << "  |res_schur|=" << res_schur
+                << "  |res_fresh|=" << res_fresh << std::endl;
     }
 
     if (doEvalCheck) {
@@ -754,6 +1060,82 @@ private:
     evals_     = evals_new;
     evecs_     = evecs_new;
     residuals_ = res_new;
+  }
+
+  // L2 modified Gram-Schmidt: orthonormalizes basis[start..start+count-1] in L2.
+  // Returns upper-triangular R (count×count) such that V_old = W·R.
+  CMat l2QRFactor(int start, int count)
+  {
+    CMat R = CMat::Zero(count, count);
+    for (int j = 0; j < count; j++) {
+      for (int i = 0; i < j; i++) {
+        ComplexD h = toStdCmplx(innerProduct(basis[start + i], basis[start + j]));
+        R(i, j) = h;
+        basis[start + j] -= basis[start + i] * h;
+      }
+      RealD nrm = std::sqrt(norm2(basis[start + j]));
+      R(j, j) = ComplexD(nrm, 0.0);
+      if (nrm > 1e-14) basis[start + j] *= (1.0 / nrm);
+    }
+    return R;
+  }
+
+  // Ritz pairs from the upper-Hessenberg H[0:dim,0:dim] built by L2-Arnoldi.
+  // Residual estimate: beta_last * |y_j[dim-1]|  (standard Arnoldi formula).
+  void computeRitzPairsHessenberg(const CMat& H, int dim, RealD beta_last,
+                                   RitzFilter filter, int Nstop)
+  {
+    Eigen::ComplexEigenSolver<CMat> ces(H.block(0, 0, dim, dim));
+    CVec lambdas = ces.eigenvalues();
+    CMat Y       = ces.eigenvectors();
+
+    ComplexComparator cComp(filter);
+    std::vector<int> idx(dim);
+    std::iota(idx.begin(), idx.end(), 0);
+    std::sort(idx.begin(), idx.end(), [&](int a, int b){
+      return cComp(toStdCmplx(lambdas(a)), toStdCmplx(lambdas(b)));
+    });
+
+    evals_.resize(dim);
+    evecs_.clear();
+    residuals_.clear();
+
+    for (int ji = 0; ji < dim; ji++) {
+      int  j  = idx[ji];
+      evals_(ji) = lambdas(j);
+      CVec yj = Y.col(j);
+
+      Field uj(Grid_);
+      uj = Zero();
+      for (int k = 0; k < dim && k < (int)basis.size(); k++)
+        uj += basis[k] * yj(k);
+      evecs_.push_back(uj);
+
+      RealD res = beta_last * std::abs(yj(dim - 1));
+      if (!std::isfinite(res)) res = std::numeric_limits<RealD>::infinity();
+      residuals_.push_back(res);
+
+      std::cout << GridLogMessage
+                << "Gamma5BlockLanczos (Hess): Ritz[" << ji << "]"
+                << "  lambda=" << evals_(ji)
+                << "  |res|=" << res << std::endl;
+    }
+
+    if (doEvalCheck) {
+      Field w(Grid_);
+      int nCheck = std::min((int)evecs_.size(), 2 * Nstop);
+      for (int k = 0; k < nCheck; k++) {
+        Linop.Op(evecs_[k], w);
+        ComplexD eval_est = toStdCmplx(innerProduct(evecs_[k], w));
+        w -= eval_est * evecs_[k];
+        RealD res_check = std::sqrt(norm2(w));
+        std::cout << GridLogMessage
+                  << "Gamma5BlockLanczos: evec[" << k << "]"
+                  << "  eval_reported=" << evals_(k)
+                  << "  eval_est=" << eval_est
+                  << "  ||Av-eval*v||=" << res_check << std::endl;
+      }
+    }
   }
 
   // One Lanczos step.  On success pushes Q_{step+2} and returns true.
@@ -816,23 +1198,32 @@ private:
     Eigen::Vector2d D = es.eigenvalues();
     CMat2           U = es.eigenvectors();
 
-    // Breakdown check
+    // Breakdown check per Eq (53)/(54) of Yamamoto 2026.
+    // Eq (53) happy breakdown: rjnrm < Tolerance  →  Krylov space invariant; stop step.
+    // Eq (54) serious breakdown: |d_j| << rjnrm²  →  neutral vector; stop step.
+    // Both cases return false so the outer loop terminates the Lanczos run cleanly.
+    // Relative threshold 1e-14 (≈ machine ε) avoids spurious triggers.
+    const RealD breakdownEps = 1e-14;
     for (int j = 0; j < 2; j++) {
-      if (std::abs(D(j)) < 1e-28) {
-        Field rj(Grid_);
-        rj = r1 * U(0,j) + r2 * U(1,j);
-        RealD rjnrm = std::sqrt(norm2(rj));
-        if (rjnrm < Tolerance) {
-          std::cout << GridLogMessage
-                    << "Gamma5BlockLanczos: happy breakdown at step " << step
-                    << " direction " << j << std::endl;
-        } else {
-          std::cout << GridLogMessage
-                    << "Gamma5BlockLanczos: SERIOUS breakdown at step " << step
-                    << " direction " << j
-                    << " (look-ahead not implemented; stopping)" << std::endl;
-          return false;
-        }
+      Field rj(Grid_);
+      rj = r1 * U(0,j) + r2 * U(1,j);
+      RealD rjnrm2 = norm2(rj);
+      RealD rjnrm  = std::sqrt(rjnrm2);
+      if (rjnrm < Tolerance) {
+        std::cout << GridLogMessage
+                  << "Gamma5BlockLanczos: happy breakdown at step " << step
+                  << " direction " << j
+                  << "  ||R̂_k u_j||=" << rjnrm << std::endl;
+        return false;
+      } else if (std::abs(D(j)) < breakdownEps * rjnrm2) {
+        std::cout << GridLogMessage
+                  << "Gamma5BlockLanczos: SERIOUS breakdown at step " << step
+                  << " direction " << j
+                  << "  ||R̂_k u_j||=" << rjnrm
+                  << "  d_j=" << D(j)
+                  << "  |d_j|/||r_j||^2=" << std::abs(D(j)) / rjnrm2
+                  << "  (look-ahead not implemented; stopping)" << std::endl;
+        return false;
       }
     }
 
@@ -863,7 +1254,7 @@ private:
   }
 
   // Assemble T_m and extract Ritz pairs (Algorithm 2 of the paper).
-  void computeRitzPairs(int m, int Nstop)
+  void computeRitzPairs(int m, int Nstop, RitzFilter filter = EvalImNormSmall)
   {
     int dim = 2 * m;
 
@@ -888,11 +1279,12 @@ private:
     CVec lambdas = ces.eigenvalues();
     CMat Y       = ces.eigenvectors();
 
-    // Sort by |Im(λ)| ascending (near-real = physical modes first)
+    // Sort by filter criterion (ComplexComparator applies the same penalty as schurReorder)
+    ComplexComparator cComp(filter);
     std::vector<int> idx(dim);
     std::iota(idx.begin(), idx.end(), 0);
     std::sort(idx.begin(), idx.end(), [&](int a, int b){
-      return std::abs(lambdas(a).imag()) < std::abs(lambdas(b).imag());
+      return cComp(toStdCmplx(lambdas(a)), toStdCmplx(lambdas(b)));
     });
 
     // B_{m+1} = B_blocks[m-1];  Q_{m+1} = basis[2m], basis[2m+1]
