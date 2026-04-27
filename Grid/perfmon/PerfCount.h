@@ -51,8 +51,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #endif
 #ifdef __x86_64__
 #ifdef GRID_CUDA
-accelerator_inline uint64_t __rdtsc(void) {  return 0; }
-accelerator_inline uint64_t __rdpmc(int ) {  return 0; }
+//accelerator_inline uint64_t __rdtsc(void) {  return 0; }
+//accelerator_inline uint64_t __rdpmc(int ) {  return 0; }
 #else
 #include <x86intrin.h>
 #endif
