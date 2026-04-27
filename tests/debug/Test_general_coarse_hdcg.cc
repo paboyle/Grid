@@ -128,6 +128,10 @@ int main (int argc, char ** argv)
   typedef HermOpAdaptor<LatticeFermionD> HermFineMatrix;
   HermFineMatrix FineHermOp(HermOpEO);
 
+  LatticeFermionD src(FrbGrid); 
+  src = ComplexD(1.0);
+  PowerMethod<LatticeFermionD>       PM;   PM(HermOpEO,src);
+
   ////////////////////////////////////////////////////////////
   ///////////// Coarse basis and Little Dirac Operator ///////
   ////////////////////////////////////////////////////////////
@@ -150,7 +154,7 @@ int main (int argc, char ** argv)
   std::cout << "**************************************"<<std::endl;
   std::cout << "Create Subspace"<<std::endl;
   std::cout << "**************************************"<<std::endl;
-  Aggregates.CreateSubspaceChebyshevNew(RNG5,HermOpEO,95.); 
+  Aggregates.CreateSubspaceChebyshev(RNG5,HermOpEO,nbasis,35.,0.01,500);// <== last run
 
   std::cout << "**************************************"<<std::endl;
   std::cout << "Refine Subspace"<<std::endl;
@@ -185,7 +189,7 @@ int main (int argc, char ** argv)
   std::cout << "**************************************"<<std::endl;
 
   typedef HermitianLinearOperator<MultiGeneralCoarsenedMatrix_t,CoarseVector> MrhsHermMatrix;
-  Chebyshev<CoarseVector>      IRLCheby(0.05,40.0,101);  // 1 iter
+  Chebyshev<CoarseVector>      IRLCheby(0.01,16.0,201);  // 1 iter
   MrhsHermMatrix MrhsCoarseOp     (mrhs);
 
   CoarseVector pm_src(CoarseMrhs);
@@ -193,10 +197,10 @@ int main (int argc, char ** argv)
   PowerMethod<CoarseVector>       cPM;
   cPM(MrhsCoarseOp,pm_src);
 
-  int Nk=nrhs;
-  int Nm=Nk*3;
-  //  int Nk=36;
-  //  int Nm=144;
+  //  int Nk=16;
+  //  int Nm=Nk*3;
+  int Nk=32;
+  int Nm=128;
   int Nstop=Nk;
   int Nconv_test_interval=1;
   
@@ -210,7 +214,7 @@ int main (int argc, char ** argv)
 							  nrhs,
 							  Nk,
 							  Nm,
-							  1e-4,10);
+							  1e-4,100);
 
   int Nconv;
   std::vector<RealD>            eval(Nm);
@@ -231,8 +235,6 @@ int main (int argc, char ** argv)
   std::cout << "**************************************"<<std::endl;
   std::cout << " Recompute coarse evecs  "<<std::endl;
   std::cout << "**************************************"<<std::endl;
-  evec.resize(Nm,Coarse5d);
-  eval.resize(Nm);
   for(int r=0;r<nrhs;r++){
     random(CRNG,c_src[r]);
   }
@@ -243,7 +245,7 @@ int main (int argc, char ** argv)
   // Deflation guesser object
   ///////////////////////
   std::cout << "**************************************"<<std::endl;
-  std::cout << " Reimport coarse evecs  "<<std::endl;
+  std::cout << " Reimport coarse evecs "<<evec.size()<<" "<<eval.size()<<std::endl;
   std::cout << "**************************************"<<std::endl;
   MultiRHSDeflation<CoarseVector> MrhsGuesser;
   MrhsGuesser.ImportEigenBasis(evec,eval);
@@ -252,9 +254,11 @@ int main (int argc, char ** argv)
   // Extra HDCG parameters
   //////////////////////////
   int maxit=3000;
-  ConjugateGradient<CoarseVector>  CG(2.0e-1,maxit,false);
-  RealD lo=2.0;
-  int ord = 9;
+  //  ConjugateGradient<CoarseVector>  CG(2.0e-1,maxit,false);
+  //  ConjugateGradient<CoarseVector>  CG(1.0e-2,maxit,false);
+  ConjugateGradient<CoarseVector>  CG(5.0e-2,maxit,false);
+  RealD lo=0.2;
+  int ord = 7;
 
   DoNothingGuesser<CoarseVector> DoNothing;
   HPDSolver<CoarseVector> HPDSolveMrhs(MrhsCoarseOp,CG,DoNothing);
@@ -299,6 +303,19 @@ int main (int argc, char ** argv)
 
     ConjugateGradient<LatticeFermionD>  CGfine(1.0e-8,30000,false);
     CGfine(HermOpEO, src, result);
+  }
+  {
+    std::cout << "**************************************"<<std::endl;
+    std::cout << "Calling MdagM CG"<<std::endl;
+    std::cout << "**************************************"<<std::endl;
+      
+    LatticeFermion result(FGrid); result=Zero();
+    LatticeFermion    src(FGrid); random(RNG5,src);
+    result=Zero();
+
+    MdagMLinearOperator<MobiusFermionD, LatticeFermionD> HermOp(Ddwf);
+    ConjugateGradient<LatticeFermionD>  CGfine(1.0e-8,30000,false);
+    CGfine(HermOp, src, result);
   }
 #endif  
   Grid_finalize();

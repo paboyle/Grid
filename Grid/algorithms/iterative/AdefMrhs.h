@@ -92,8 +92,8 @@ class TwoLevelCGmrhs
   // Vector case
   virtual void operator() (std::vector<Field> &src, std::vector<Field> &x)
   {
-    //    SolveSingleSystem(src,x);
-    SolvePrecBlockCG(src,x);
+    SolveSingleSystem(src,x);
+	// SolvePrecBlockCG(src,x);
   }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

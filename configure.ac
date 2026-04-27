@@ -172,6 +172,12 @@ case ${ac_TRACING} in
 esac
 
 ############### fermions
+AC_ARG_ENABLE([fermion-instantiations],
+     [AS_HELP_STRING([--enable-fermion-instantiations=yes|no],[enable fermion instantiations])],
+     [ac_FERMION_REPS=${enable_fermion_instantiations}], [ac_FERMION_INSTANTIATIONS=yes])
+
+AM_CONDITIONAL(BUILD_FERMION_INSTANTIATIONS, [ test "${ac_FERMION_INSTANTIATIONS}X" == "yesX" ])
+
 AC_ARG_ENABLE([fermion-reps],
      [AS_HELP_STRING([--enable-fermion-reps=yes|no],[enable extra fermion representation support])],
      [ac_FERMION_REPS=${enable_fermion_reps}], [ac_FERMION_REPS=yes])
@@ -193,6 +199,9 @@ AM_CONDITIONAL(BUILD_ZMOBIUS, [ test "${ac_ZMOBIUS}X" == "yesX" ])
 
 case ${ac_FERMION_REPS} in
    yes) AC_DEFINE([ENABLE_FERMION_REPS],[1],[non QCD fermion reps]);;
+esac
+case ${ac_FERMION_INSTANTIATIONS} in
+   yes) AC_DEFINE([ENABLE_FERMION_INSTANTIATIONS],[1],[enable fermions]);;
 esac
 case ${ac_GPARITY} in
    yes) AC_DEFINE([ENABLE_GPARITY],[1],[fermion actions with GPARITY BCs]);;

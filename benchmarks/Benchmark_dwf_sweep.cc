@@ -26,6 +26,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+#include "disable_benchmarks_without_instantiations.h"
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
 #include <Grid/Grid.h>
 
 using namespace std;
@@ -238,5 +241,4 @@ void benchDw(std::vector<int> & latt4, int Ls, int threads,int report )
   }
 }
 
-
-
+#endif

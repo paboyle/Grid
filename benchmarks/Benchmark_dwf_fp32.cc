@@ -20,6 +20,10 @@
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+#include "disable_benchmarks_without_instantiations.h"
+
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
 #include <Grid/Grid.h>
 #ifdef GRID_CUDA
 #define CUDA_PROFILE
@@ -439,3 +443,5 @@ void Benchmark(int Ls, Coordinate Dirichlet,bool sloppy)
   GRID_ASSERT(norm2(src_e)<1.0e-4);
   GRID_ASSERT(norm2(src_o)<1.0e-4);
 }
+
+#endif
