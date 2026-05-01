@@ -95,8 +95,8 @@ public:
    * Nstop    : target converged pairs (informational; all pairs are always returned)
    * reorthog : full γ5-reorthogonalisation at each step (fixes finite-precision drift)
    */
-  void operator()(const Field& v0, int maxSteps, int Nstop, bool reorthog = false,
-                  RitzFilter filter = EvalImNormSmall)
+  void operator()(const Field& v0, const Field& v1, int maxSteps, int Nstop,
+                  bool reorthog = false, RitzFilter filter = EvalImNormSmall)
   {
     basis.clear();
     A_blocks.clear();
@@ -105,18 +105,21 @@ public:
     G_blocks.clear();
     nSteps = 0;
 
-    // Initialise Q_1 = [v, γ5v]
-    Field v(Grid_), g5v(Grid_);
-    v = v0;
-    RealD nrm = std::sqrt(norm2(v));
-    assert(nrm > 1e-14);
-    v *= (1.0 / nrm);
-    applyGamma5(v, g5v);
-//    nrm = std::sqrt(norm2(g5v));
-//    assert(nrm > 1e-14);
-//    g5v *= (1.0 / nrm);
+    // Initialise Q_1 = [u0, u1] via L2 Gram-Schmidt on (v0, v1)
+    Field u0(Grid_), u1(Grid_);
+    u0 = v0;
+    RealD nrm = std::sqrt(norm2(u0));
+    assert(nrm > 1e-14 && "first starting vector is zero");
+    u0 *= (1.0 / nrm);
 
-    CMat2 G1 = gramMatrix(v, g5v);
+    u1 = v1;
+    ComplexD proj = innerProduct(u0, u1);
+    u1 -= u0 * proj;
+    nrm = std::sqrt(norm2(u1));
+    assert(nrm > 1e-14 && "second starting vector is linearly dependent on first");
+    u1 *= (1.0 / nrm);
+
+    CMat2 G1 = gramMatrix(u0, u1);
     ComplexD detG1 = G1(0,0)*G1(1,1) - G1(0,1)*G1(1,0);
     RealD absdetG1 = std::sqrt(detG1.real()*detG1.real() + detG1.imag()*detG1.imag());
     std::cout << GridLogMessage
@@ -125,13 +128,13 @@ public:
     if (absdetG1 < 1e-13) {
       std::cout << GridLogMessage
                 << "Gamma5BlockLanczos: abort — degenerate start "
-                << "(v is a chiral eigenstate or |det G1| < 1e-13)" << std::endl;
+                << "(starting block has |det G1| < 1e-13)" << std::endl;
       return;
     }
 
     G_blocks.push_back(G1);
-    basis.push_back(v);
-    basis.push_back(g5v);
+    basis.push_back(u0);
+    basis.push_back(u1);
 
     for (int step = 0; step < maxSteps; step++) {
       bool ok = lanczosStep(step, reorthog);
@@ -175,19 +178,20 @@ public:
    * filter      : EvalNormSmall   → sort by |λ| ascending
    *               EvalImNormSmall → sort by |Im(λ)| ascending (default)
    */
-  void restart(const Field& v0, int maxRestarts, int Nstep, int Nk, int Nstop,
+  void restart(const Field& v0, const Field& v1, int maxRestarts, int Nstep, int Nk, int Nstop,
                bool reorthog = false, RitzFilter filter = EvalImNormSmall)
   {
     assert(Nk >= Nstop);
-    Field src(Grid_);
-    src = v0;
+    Field src(Grid_), src2(Grid_);
+    src  = v0;
+    src2 = v1;
 
     for (int iter = 0; iter < maxRestarts; iter++) {
       std::cout << GridLogMessage
                 << "Gamma5BlockLanczos: ---- restart " << iter << " ----" << std::endl;
 
-      // Run Lanczos and compute Ritz pairs sorted by filter.
-      (*this)(src, Nstep, Nstop, reorthog, filter);
+      // Run Lanczos with two starting vectors; L2 GS is applied inside operator().
+      (*this)(src, src2, Nstep, Nstop, reorthog, filter);
       if(this->doVerify) verify("iter= "+std::to_string(iter));
 
       int nRitz = (int)residuals_.size();
@@ -223,56 +227,52 @@ public:
         return;
       }
 
-      // Build restart seed: equal-weight sum of the top Nstop Ritz vectors.
-      // Normalise each Ritz vector in L2 before summing: the field vectors
-      // evecs_[i] = V_m y_i inherit the non-uniform L2 norms of the
-      // γ5-orthonormal basis, so an unweighted sum would be dominated by
-      // whichever direction has the largest L2 norm.
-      int nSeed = std::min(Nstop, nKeep);
-      std::cout << GridLogMessage << "Gamma5BlockLanczos: Nstop nKeep nSeed " << Nstop <<" "<<nKeep<<" "<<nSeed<<std::endl;
-      src = Zero();
+      // Build two restart seeds from the Ritz vectors.
+      // Split the top min(Nstop,nKeep) Ritz vectors in half:
+      //   src  = normalised sum of the first half
+      //   src2 = normalised sum of the second half
+      // L2 GS inside operator() orthogonalises them.
+      int nSeed = std::min(Nstop, nKeep) / 2;
+      if (nSeed < 1) nSeed = 1;
+      std::cout << GridLogMessage << "Gamma5BlockLanczos: Nstop nKeep nSeed "
+                << Nstop << " " << nKeep << " " << nSeed << std::endl;
+
+      src = Zero(); src2 = Zero();
       for (int i = 0; i < nSeed; i++) {
         RealD enorm = std::sqrt(norm2(evecs_[i]));
         std::cout << GridLogMessage
-                  << "Gamma5BlockLanczos: seed evecs_[" << i << "]"
+                  << "Gamma5BlockLanczos: seed1 evecs_[" << i << "]"
                   << "  ||u||_L2 = " << enorm
                   << "  lambda = " << evals_(i) << std::endl;
-        if (enorm > 1e-14){
-		if (std::imag(evals_(i))>0.)
-		src += evecs_[i] * (1.0 / enorm);
-		else
-		src += 0.8* evecs_[i] * (1.0 / enorm);
-	}
+        if (enorm > 1e-14) {
+          src += evecs_[i] * (1. / enorm);
+        }
+      }
+      for (int i = nSeed; i < std::min(2*nSeed, nKeep); i++) {
+        RealD enorm = std::sqrt(norm2(evecs_[i]));
+        std::cout << GridLogMessage
+                  << "Gamma5BlockLanczos: seed2 evecs_[" << i << "]"
+                  << "  ||u||_L2 = " << enorm
+                  << "  lambda = " << evals_(i) << std::endl;
+        if (enorm > 1e-14) {
+          src2 += evecs_[i] * (1. / enorm);
+        }
       }
 
       RealD nrm = std::sqrt(norm2(src));
       assert(nrm > 1e-14);
       src *= (1.0 / nrm);
 
-      // Check for near-chirality: det(G1) = a²-1 where a = src†γ5src.
-      // When |a| is large the starting block [src, γ5src] is ill-conditioned.
-      // Fix: mix in the next unused Ritz vector to break the chiral alignment.
-      {
-        Field g5src(Grid_);
-        applyGamma5(src, g5src);
-        RealD a = std::real(toStdCmplx(innerProduct(src, g5src)));
-        std::cout << GridLogMessage
-                  << "Gamma5BlockLanczos: seed chirality a = src†γ5src = " << a
-                  << "  det(G1) = " << a*a - 1.0 << std::endl;
-        if (std::abs(a) > 0.8 && nSeed < nRitz) {
-          std::cout << GridLogMessage
-                    << "Gamma5BlockLanczos: |a| > 0.8, mixing in evecs_[" << nSeed
-                    << "] to break near-chirality." << std::endl;
-          src += evecs_[nSeed];
-          nrm = std::sqrt(norm2(src));
-          assert(nrm > 1e-14);
-          src *= (1.0 / nrm);
-        }
+      RealD nrm2 = std::sqrt(norm2(src2));
+      if (nrm2 < 1e-14) {
+        src2 = evecs_[0];
+        nrm2 = std::sqrt(norm2(src2));
       }
+      src2 *= (1.0 / nrm2);
 
       std::cout << GridLogMessage
-                << "Gamma5BlockLanczos: seed = sum of top " << nSeed
-                << " Ritz vectors  ||seed|| = " << nrm << std::endl;
+                << "Gamma5BlockLanczos: seeds built from top " << 2*nSeed
+                << " Ritz vectors" << std::endl;
     }
 
     std::cout << GridLogMessage
@@ -321,13 +321,13 @@ public:
    * This avoids the ill-conditioned G_Ṽ inversion of the split approach while
    * retaining the γ5-block Lanczos efficiency for the initial run.
    */
-  void implicitRestart(const Field& v0, int maxIter, int Nmax, int Nk, int Nstop,
+  void implicitRestart(const Field& v0, const Field& v1, int maxIter, int Nmax, int Nk, int Nstop,
                        bool reorthog = false, RitzFilter filter = EvalImNormSmall)
   {
     assert(Nk >= 2 && Nk < Nmax && Nk >= Nstop);
 
     // ── Initial full block-Lanczos run ────────────────────────────────────
-    (*this)(v0, Nmax, Nstop, reorthog);
+    (*this)(v0, v1, Nmax, Nstop, reorthog);
 
     // Persistent state across cycles
     CMat  H_hess;             // current Hessenberg (Ncur × Ncur)
