@@ -120,16 +120,18 @@ public:
     u1 *= (1.0 / nrm);
 
     CMat2 G1 = gramMatrix(u0, u1);
-    ComplexD detG1 = G1(0,0)*G1(1,1) - G1(0,1)*G1(1,0);
-    RealD absdetG1 = std::sqrt(detG1.real()*detG1.real() + detG1.imag()*detG1.imag());
-    std::cout << GridLogMessage
-              << "Gamma5BlockLanczos: G1 = \n" << G1
-              << "\n  det G1 = " << detG1 << std::endl;
-    if (absdetG1 < 1e-13) {
+    {
+      Eigen::SelfAdjointEigenSolver<CMat2> es(G1);
+      auto evals = es.eigenvalues();
       std::cout << GridLogMessage
-                << "Gamma5BlockLanczos: abort — degenerate start "
-                << "(starting block has |det G1| < 1e-13)" << std::endl;
-      return;
+                << "Gamma5BlockLanczos: G1 eigenvalues = "
+                << evals(0) << "  " << evals(1) << std::endl;
+      if (std::abs(evals(0)) < 1e-13 || std::abs(evals(1)) < 1e-13) {
+        std::cout << GridLogMessage
+                  << "Gamma5BlockLanczos: abort — degenerate start "
+                  << "(G1 has eigenvalue with |λ| < 1e-13)" << std::endl;
+        return;
+      }
     }
 
     G_blocks.push_back(G1);
@@ -141,9 +143,26 @@ public:
       if (!ok) break;
       nSteps = step + 1;
 
+      {
+        Eigen::ComplexEigenSolver<CMat2> esB(B_blocks[step]);
+        auto evB = esB.eigenvalues();
+        std::cout << GridLogMessage << "Gamma5BlockLanczos: step " << step
+                  << "  B eigenvalues = " << evB(0) << "  " << evB(1);
+        if (step < (int)C_blocks.size()) {
+          Eigen::ComplexEigenSolver<CMat2> esC(C_blocks[step]);
+          auto evC = esC.eigenvalues();
+          std::cout << "  C eigenvalues = " << evC(0) << "  " << evC(1);
+        }
+        std::cout << std::endl;
+        if (step < (int)G_blocks.size()) {
+          Eigen::SelfAdjointEigenSolver<CMat2> esG(G_blocks[step]);
+          auto evG = esG.eigenvalues();
+          std::cout << GridLogMessage << "Gamma5BlockLanczos: step " << step
+                    << "  G eigenvalues = " << evG(0) << "  " << evG(1) << std::endl;
+        }
+      }
+
       RealD beta = B_blocks[step].norm();
-      std::cout << GridLogMessage << "Gamma5BlockLanczos: step " << step
-                << "  beta = " << beta << std::endl;
       if (beta < Tolerance) {
         std::cout << GridLogMessage
                   << "Gamma5BlockLanczos: beta < tol, converged at step "
@@ -633,6 +652,33 @@ public:
     std::cout << GridLogMessage
               << "  max recurrence deviation = " << maxRecErr << std::endl;
 
+    // ---- Compare T_m (from A/B/C blocks) against directly constructed V†γ5DV ----
+    // Apply D_W to every basis vector.
+    std::vector<Field> Dv(dim, Field(Grid_));
+    for (int j = 0; j < dim; j++)
+      Linop.Op(basis[j], Dv[j]);
+
+    // T_proj[i,j] = basis[i]† γ5 D_W basis[j]  (γ5-inner product with D_W ket)
+    // G_full [i,j] = basis[i]† γ5 basis[j]
+    // Relation: T_proj = G_full * Tm  (exact if γ5-orthogonality holds)
+    CMat T_proj  = CMat::Zero(dim, dim);
+    CMat G_full  = CMat::Zero(dim, dim);
+    for (int ib = 0; ib < m; ib++) {
+      for (int kb = 0; kb < m; kb++) {
+        CMat2 tp = g5InnerBlock(basis[2*ib], basis[2*ib+1], Dv[2*kb],    Dv[2*kb+1]);
+        CMat2 gf = g5InnerBlock(basis[2*ib], basis[2*ib+1], basis[2*kb], basis[2*kb+1]);
+        T_proj.block(2*ib, 2*kb, 2, 2) = tp;
+        G_full.block(2*ib, 2*kb, 2, 2) = gf;
+      }
+    }
+
+    CMat Terr     = T_proj - G_full * Tm;
+    RealD maxTerr = Terr.cwiseAbs().maxCoeff();
+    RealD maxTnrm = (G_full * Tm).cwiseAbs().maxCoeff();
+    std::cout << GridLogMessage
+              << "  max |T_proj - G_full*T_blocks| = " << maxTerr
+              << "  (rel: " << (maxTnrm > 0 ? maxTerr/maxTnrm : 0.0) << ")" << std::endl;
+
     std::cout << GridLogMessage
               << "======== end Gamma5BlockLanczos::verify ========" << std::endl;
   }
@@ -869,6 +915,13 @@ private:
     CMat2 Bkp1;
     Bkp1.row(0) = U2.col(0).adjoint() * sqd0;
     Bkp1.row(1) = U2.col(1).adjoint() * sqd1;
+    {
+    CMat2 gamma1 = gramMatrix(r1, r2);
+    Eigen::ComplexEigenSolver<CMat2> esB(gamma1);
+    auto evB = esB.eigenvalues();
+    std::cout << GridLogMessage << "Gamma5BlockLanczos: step " << step
+    << "  gamma eigenvalues = " << evB(0) << "  " << evB(1);
+    }
 
     Field qnew1 = (r1 * U2(0,0) + r2 * U2(1,0)) * (1.0 / sqd0);
     Field qnew2 = (r1 * U2(0,1) + r2 * U2(1,1)) * (1.0 / sqd1);
