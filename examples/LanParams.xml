@@ -5,11 +5,11 @@
     <mstep>-0.025</mstep>
     <M5>1.8</M5>
     <Ls>48</Ls>
-    <Nstop>4</Nstop>
-    <Nk>16</Nk>
-    <Np>8</Np>
+    <Nstop>10</Nstop>
+    <Nk>10</Nk>
+    <Np>10</Np>
     <ReadEvec>0</ReadEvec>
-    <maxIter>20</maxIter>
+    <maxIter>1000</maxIter>
     <reorthog>1</reorthog>
     <Nblock>4</Nblock>
     <verify>1</verify>

@@ -112,6 +112,9 @@ public:
     assert(nrm > 1e-14);
     v *= (1.0 / nrm);
     applyGamma5(v, g5v);
+//    nrm = std::sqrt(norm2(g5v));
+//    assert(nrm > 1e-14);
+//    g5v *= (1.0 / nrm);
 
     CMat2 G1 = gramMatrix(v, g5v);
     ComplexD detG1 = G1(0,0)*G1(1,1) - G1(0,1)*G1(1,0);
@@ -400,7 +403,9 @@ public:
         H_hess.block(0, 0, Nk, Nk) = H_L2;
 
         // Trim basis to Nk (Q_{m+1} replaced by F_vec below)
-        basis.resize(Nk);
+        // Use erase instead of resize: resize instantiates _M_default_append
+        // which requires Lattice's default ctor (nonexistent).
+        basis.erase(basis.begin() + Nk, basis.end());
         first_iter = false;
 
       } else {
@@ -439,7 +444,7 @@ public:
         H_hess.block(0, 0, Nk, Nk) = schur.getMatrixS().block(0, 0, Nk, Nk);
 
         // Trim basis back to Nk (extension will re-grow it)
-        basis.resize(Nk);
+        basis.erase(basis.begin() + Nk, basis.end());
       }
 
       // ── L2-Arnoldi extension: add Np = Nmax-Nk vectors from F_vec ────────
@@ -1164,6 +1169,11 @@ private:
       CMat2 Bk   = B_blocks[step - 1];
       Ck = invert2x2(Gkm1) * Bk.adjoint() * Gk;
     }
+
+    ComplexD detG1 = Ck(0,0)*Ck(1,1) - Ck(0,1)*Ck(1,0);
+    std::cout << GridLogMessage
+              << "Gamma5BlockLanczos: C "<<step<<"= \n" << Ck 
+              << "\n  det = " << detG1 << std::endl;
     C_blocks.push_back(Ck);
 
     // (v) Residual R̂_k = P_k - Q_k A_k - Q_{k-1} C_k
@@ -1245,8 +1255,24 @@ private:
     qnew1 = (r1 * U(0,0) + r2 * U(1,0)) * (1.0 / sqd0);
     qnew2 = (r1 * U(0,1) + r2 * U(1,1)) * (1.0 / sqd1);
 
+    detG1 = Gkp1(0,0)*Gkp1(1,1) - Gkp1(0,1)*Gkp1(1,0);
+    std::cout << GridLogMessage
+              << "Gamma5BlockLanczos: G "<<step<<"= \n" << Gkp1
+              << "\n  det G = " << detG1 << std::endl;
+
     G_blocks.push_back(Gkp1);
+    detG1 = Bkp1(0,0)*Bkp1(1,1) - Bkp1(0,1)*Bkp1(1,0);
+    std::cout << GridLogMessage
+              << "Gamma5BlockLanczos: B "<<step<<"= \n" << Bkp1 
+              << "\n  det B = " << detG1 << std::endl;
     B_blocks.push_back(Bkp1);
+
+    CMat2 G1 = gramMatrix(basis[0], basis[1],qnew1,qnew2);
+    detG1 = G1(0,0)*G1(1,1) - G1(0,1)*G1(1,0);
+    RealD absdetG1 = std::sqrt(detG1.real()*detG1.real() + detG1.imag()*detG1.imag());
+    std::cout << GridLogMessage
+              << "Gamma5BlockLanczos: eta "<<step<<" = \n" << G1
+              << "\n  det = " << detG1 << std::endl;
     basis.push_back(qnew1);
     basis.push_back(qnew2);
 
@@ -1348,6 +1374,20 @@ private:
     G(0,1) = toStdCmplx(innerProduct(q1, g5q2));
     G(1,0) = toStdCmplx(innerProduct(q2, g5q1));
     G(1,1) = toStdCmplx(innerProduct(q2, g5q2));
+    return G;
+  }
+
+  // γ5-Gram matrix of block [q1, q2]:  G[i,j] = q^(i)† γ5 q^(j)
+  CMat2 gramMatrix(const Field& q11, const Field& q12, const Field& q21, const Field& q22)
+  {
+    Field g5q21(Grid_), g5q22(Grid_);
+    applyGamma5(q21, g5q21);
+    applyGamma5(q22, g5q22);
+    CMat2 G;
+    G(0,0) = toStdCmplx(innerProduct(q11, g5q21));
+    G(0,1) = toStdCmplx(innerProduct(q11, g5q22));
+    G(1,0) = toStdCmplx(innerProduct(q12, g5q21));
+    G(1,1) = toStdCmplx(innerProduct(q12, g5q22));
     return G;
   }
 
