@@ -432,22 +432,20 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   {									\
-    typedef uint64_t Iterator;						\
-    auto lambda = [=] accelerator					\
-      (Iterator iter1,Iterator iter2,Iterator lane ) mutable {		\
-      { __VA_ARGS__;}							\
-    };									\
-    int nt=acceleratorThreads();					\
-    dim3 hip_threads(nsimd, nt, 1);					 \
-    dim3 hip_blocks ((num1+nt-1)/nt,num2,1); \
-    if(hip_threads.x * hip_threads.y * hip_threads.z <= 64){ \
-      hipLaunchKernelGGL(LambdaApply64,hip_blocks,hip_threads,		\
-   	                 0,computeStream,						\
-			 num1,num2,nsimd, lambda);			\
-    } else { \
-      hipLaunchKernelGGL(LambdaApply,hip_blocks,hip_threads,		\
-			 0,computeStream,				\
-			 num1,num2,nsimd, lambda);			\
+    if (num1*num2) { \
+      typedef uint64_t Iterator;						\
+      auto lambda = [=] accelerator					\
+        (Iterator iter1,Iterator iter2,Iterator lane ) mutable {		\
+        { __VA_ARGS__;}							\
+      };									\
+      int nt=acceleratorThreads();					\
+      dim3 hip_threads(nsimd, nt, 1);					 \
+      dim3 hip_blocks ((num1+nt-1)/nt,num2,1); \
+      if(hip_threads.x * hip_threads.y * hip_threads.z <= 64){ \
+        LambdaApply64<<<hip_blocks,hip_threads,0,computeStream>>>(num1,num2,nsimd,lambda);			\
+      } else { \
+        LambdaApply<<<hip_blocks,hip_threads,0,computeStream>>>(num1,num2,nsimd,lambda);			\
+      } \
     } \
   }
 
