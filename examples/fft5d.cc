@@ -237,36 +237,39 @@ static void trajFFT(const std::vector<LatticeComplexD>& in,
     GridBase* g   = in[0].Grid();
     long   lsites = g->lSites();
 
-    // Pack: buf[traj * lsites + lsite]  (traj varies slowly, site varies fast)
-    std::vector<fftw_complex> ibuf((long)Ntraj * lsites);
+    // fftw_complex is double[2] — std::vector<double[2]> is not supported by nvcc.
+    // Use std::vector<double> with 2x size and reinterpret_cast.
+    std::vector<double> ibuf((long)Ntraj * lsites * 2, 0.0);
     for (int n = 0; n < Ntraj; n++) {
         std::vector<ComplexD> lc;
         unvectorizeToLexOrdArray(lc, in[n]);
         for (long s = 0; s < lsites; s++) {
-            ibuf[(long)n*lsites + s][0] = lc[s].real();
-            ibuf[(long)n*lsites + s][1] = lc[s].imag();
+            ibuf[((long)n*lsites + s)*2 + 0] = lc[s].real();
+            ibuf[((long)n*lsites + s)*2 + 1] = lc[s].imag();
         }
     }
 
     // lsites transforms of length Ntraj, stride=lsites, dist=1
-    std::vector<fftw_complex> obuf((long)Ntraj * lsites);
+    std::vector<double> obuf((long)Ntraj * lsites * 2, 0.0);
+    fftw_complex* iptr = reinterpret_cast<fftw_complex*>(ibuf.data());
+    fftw_complex* optr = reinterpret_cast<fftw_complex*>(obuf.data());
     int n1[1] = {Ntraj};
     fftw_plan p = fftw_plan_many_dft(
         1, n1, (int)lsites,
-        ibuf.data(), nullptr, (int)lsites, 1,
-        obuf.data(), nullptr, (int)lsites, 1,
+        iptr, nullptr, (int)lsites, 1,
+        optr, nullptr, (int)lsites, 1,
         FFTW_FORWARD, FFTW_ESTIMATE);
     fftw_execute(p);
     fftw_destroy_plan(p);
 
     // vector::assign triggers _M_fill_assign which needs a default constructor;
-    // Lattice has none.  Use explicit push_back instead.
+    // Lattice has none.  Use explicit emplace_back instead.
     out.clear(); out.reserve(Ntraj);
     for (int k = 0; k < Ntraj; k++) out.emplace_back(g);
     for (int k = 0; k < Ntraj; k++) {
         std::vector<ComplexD> lc(lsites);
         for (long s = 0; s < lsites; s++)
-            lc[s] = ComplexD(obuf[(long)k*lsites+s][0], obuf[(long)k*lsites+s][1]);
+            lc[s] = ComplexD(obuf[((long)k*lsites+s)*2], obuf[((long)k*lsites+s)*2+1]);
         vectorizeFromLexOrdArray(lc, out[k]);
     }
 }
@@ -311,10 +314,11 @@ static void analyzeTraj(const std::vector<LatticeComplexD>& traj,
     }
 
     // Autocorrelation via IFFT of the power spectrum
-    std::vector<fftw_complex> Pc(Nf);
-    for (int k = 0; k < Nf; k++) { Pc[k][0] = Pavg[k]; Pc[k][1] = 0.0; }
+    std::vector<double> Pc_buf(Nf * 2, 0.0);
+    for (int k = 0; k < Nf; k++) { Pc_buf[k*2] = Pavg[k]; Pc_buf[k*2+1] = 0.0; }
+    fftw_complex* Pc = reinterpret_cast<fftw_complex*>(Pc_buf.data());
     std::vector<double> acorr(Ntraj, 0.0);
-    fftw_plan ip = fftw_plan_dft_c2r(1, &Ntraj, Pc.data(), acorr.data(), FFTW_ESTIMATE);
+    fftw_plan ip = fftw_plan_dft_c2r(1, &Ntraj, Pc, acorr.data(), FFTW_ESTIMATE);
     fftw_execute(ip); fftw_destroy_plan(ip);
     double c0 = acorr[0] / Ntraj;
     {
