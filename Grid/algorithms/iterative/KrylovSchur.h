@@ -106,8 +106,8 @@ struct ComplexComparator
   bool operator()(std::complex<double> z1, std::complex<double> z2) { 
 	  RealD tmp1=std::abs(std::imag(z1));
 	  RealD tmp2=std::abs(std::imag(z2));
-	  if ( std::abs(std::real(z1)) >4.) tmp1 += 100.;
-	  if ( std::abs(std::real(z2)) >4.) tmp2 += 100.;
+	  if ( std::abs(std::real(z1)) >2.) tmp1 += 100.;
+	  if ( std::abs(std::real(z2)) >2.) tmp2 += 100.;
     switch (RF) {
       case EvalNormSmall:
         return std::abs(z1) < std::abs(z2);
@@ -739,35 +739,36 @@ if (!shift){
     {
       std::cout << GridLogMessage << "Computing eigenvalues." << std::endl;
 
-      // evals = S.diagonal();
-      int n = evals.size();       // should be regular Nm
-
       evecs.clear();
-      // evecs.assign(n, Field(Grid));
-
-      // TODO: is there a faster way to get the eigenvectors of a triangular matrix?
-      // Rayleigh.triangularView<Eigen::Upper> tri;
 
       Eigen::ComplexEigenSolver<Eigen::MatrixXcd> es;
-      // es.compute(Rayleigh);
       es.compute(S);
-      evals = es.eigenvalues();
-      littleEvecs = es.eigenvectors();
 
-      // std::cout << GridLogDebug << "Little evecs: " << littleEvecs << std::endl;
-      // std::cout << "Rayleigh diag: " << S.diagonal() << std::endl;
-      // std::cout << "Rayleigh evals: " << evals << std::endl;
+      // Sort eigenvalues/evecs to match the schurReorder ordering.
+      int n = es.eigenvalues().size();
+      ComplexComparator cComp(ritzFilter);
+      std::vector<int> idx(n);
+      std::iota(idx.begin(), idx.end(), 0);
+      std::sort(idx.begin(), idx.end(), [&](int a, int b){
+        return cComp(toStdCmplx(es.eigenvalues()(a)), toStdCmplx(es.eigenvalues()(b)));
+      });
+
+      evals.resize(n);
+      littleEvecs.resize(n, n);
+      for (int k = 0; k < n; k++) {
+        evals(k)          = es.eigenvalues()(idx[k]);
+        littleEvecs.col(k) = es.eigenvectors().col(idx[k]);
+      }
 
       // Convert evecs to lattice fields
       for (int k = 0; k < n; k++) {
         Eigen::VectorXcd vec = littleEvecs.col(k);
         Field tmp (basis[0].Grid());
         tmp = Zero();
-        for (int j = 0; j < basis.size(); j++) {
+        for (int j = 0; j < (int)basis.size(); j++) {
           tmp = tmp + vec[j] * basis[j];
         }
         evecs.push_back(tmp);
-        // evecs[k] = tmp;
       }
     }
 
@@ -832,12 +833,12 @@ if (!shift){
         Eigen::VectorXcd evec_k = littleEvecs.col(k);
         RealD ritzEstimate = std::abs(b.dot(evec_k));           // b^\dagger s
         ritzEstimates.push_back(ritzEstimate);
-        // ritzEstimates[k] = ritzEstimate;
         std::cout << GridLogMessage << "Ritz estimate for evec " << k << " = " << ritzEstimate << std::endl;
         if (ritzEstimate < rtol) {
           Nconv++;
+        } else {
+          break;
         }
-
       }
       // Check that Ritz estimate is explicitly || D (Uy) - lambda (Uy) ||
 //       checkRitzEstimate();

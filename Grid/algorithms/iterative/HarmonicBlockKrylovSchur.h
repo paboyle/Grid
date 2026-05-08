@@ -30,6 +30,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define GRID_HARMONIC_BLOCKED_KRYLOV_SCHUR_H
 
 #include <iomanip>
+#include <numeric>
 
 NAMESPACE_BEGIN(Grid);
 
@@ -574,8 +575,22 @@ private:
   {
     Eigen::ComplexEigenSolver<CMat> es;
     es.compute(Hk);
-    evals       = es.eigenvalues();
-    littleEvecs = es.eigenvectors();
+
+    // Sort to match schurReorder ordering.
+    int n = es.eigenvalues().size();
+    ComplexComparator cComp(ritzFilter);
+    std::vector<int> idx(n);
+    std::iota(idx.begin(), idx.end(), 0);
+    std::sort(idx.begin(), idx.end(), [&](int a, int b){
+      return cComp(toStdCmplx(es.eigenvalues()(a)), toStdCmplx(es.eigenvalues()(b)));
+    });
+
+    evals.resize(n);
+    littleEvecs.resize(n, n);
+    for (int k = 0; k < n; k++) {
+      evals(k)           = es.eigenvalues()(idx[k]);
+      littleEvecs.col(k) = es.eigenvectors().col(idx[k]);
+    }
 
     evecs.clear();
     for (int k = 0; k < Nkeep; k++) {
@@ -612,6 +627,7 @@ private:
                 << "HarmonicBlockKrylovSchur: Ritz estimate[" << k
                 << "] = " << res << "  eval = " << evals[k] << std::endl;
       if (res < rtol) Nconv++;
+      else break;
     }
     return Nconv;
   }

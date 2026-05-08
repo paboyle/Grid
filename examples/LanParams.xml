@@ -5,14 +5,16 @@
     <mstep>-0.025</mstep>
     <M5>1.8</M5>
     <Ls>48</Ls>
-    <Nstop>80</Nstop>
-    <Nk>100</Nk>
+    <Nstop>800</Nstop>
+    <Nk>800</Nk>
     <Np>100</Np>
     <ReadEvec>0</ReadEvec>
     <maxIter>1000</maxIter>
+    <reorthog>1</reorthog>
     <Nblock>4</Nblock>
-    <verify>0</verify>
-    <resid>1e-10</resid>
+    <verify>1</verify>
+    <shift>1.5</shift>
+    <resid>1e-8</resid>
     <ChebyLow>1</ChebyLow>
     <ChebyHigh>100</ChebyHigh>
     <ChebyOrder>51</ChebyOrder>

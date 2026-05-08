@@ -338,6 +338,7 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage << "Running Krylov Schur" << std::endl;
     KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
 //    KrySchur(src[0], maxIter, Nm, Nk, Nstop);
+    KrySchur.doEvalCheck=true;
     KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);
     std::cout << GridLogMessage << "KrylovSchur evec.size= " << KrySchur.evecs.size()<< std::endl;
 #else
@@ -346,8 +347,9 @@ int main (int argc, char ** argv)
     Nblock=LanParams.Nblock;
     bool if_verify=false;
     if(LanParams.verify) if_verify=true;
-//    BlockKrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
-    HarmonicBlockKrylovSchur KrySchur (Dwilson, UGrid, resid,shift,EvalNormSmall);
+    BlockKrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
+//    HarmonicBlockKrylovSchur KrySchur (Dwilson, UGrid, resid,shift,EvalNormSmall);
+    KrySchur.doEvalCheck=true;
     KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true,if_verify);
     std::cout << GridLogMessage << "BlockKrylovSchur evec.size= " << KrySchur.evecs.size()<< std::endl;
 #endif
