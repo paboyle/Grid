@@ -112,19 +112,26 @@ public:
     assert(nrm > 1e-14 && "first starting vector is zero");
     u0 *= (1.0 / nrm);
 
+#if 0
+//HACK
+    applyGamma5(u0,u1);
+#else
     u1 = v1;
     ComplexD proj = innerProduct(u0, u1);
     u1 -= u0 * proj;
     nrm = std::sqrt(norm2(u1));
     assert(nrm > 1e-14 && "second starting vector is linearly dependent on first");
     u1 *= (1.0 / nrm);
+#endif
 
     CMat2 G1 = gramMatrix(u0, u1);
     {
       Eigen::SelfAdjointEigenSolver<CMat2> es(G1);
       auto evals = es.eigenvalues();
       std::cout << GridLogMessage
-                << "Gamma5BlockLanczos: G1 eigenvalues = "
+                << "Gamma5BlockLanczos: G1 = " <<G1 <<std::endl;
+      std::cout << GridLogMessage
+                << "Gamma5BlockLanczos: eigenvalues = "
                 << evals(0) << "  " << evals(1) << std::endl;
       if (std::abs(evals(0)) < 1e-13 || std::abs(evals(1)) < 1e-13) {
         std::cout << GridLogMessage
@@ -211,7 +218,7 @@ public:
 
       // Run Lanczos with two starting vectors; L2 GS is applied inside operator().
       (*this)(src, src2, Nstep, Nstop, reorthog, filter);
-      if(this->doVerify) verify("iter= "+std::to_string(iter));
+      if(this->doVerify){ verify("iter= "+std::to_string(iter)); exit(-42);}
 
       int nRitz = (int)residuals_.size();
       if (nRitz == 0) {
@@ -1307,6 +1314,15 @@ private:
     Field qnew1(Grid_), qnew2(Grid_);
     qnew1 = (r1 * U(0,0) + r2 * U(1,0)) * (1.0 / sqd0);
     qnew2 = (r1 * U(0,1) + r2 * U(1,1)) * (1.0 / sqd1);
+
+    {
+    CMat2 gamma1 = gramMatrix(r1, r2);
+    Eigen::ComplexEigenSolver<CMat2> esB(gamma1);
+    auto evB = esB.eigenvalues();
+    std::cout << GridLogMessage
+              << "Gamma5BlockLanczos: gamma "<<step<<"= \n" << gamma1 <<std::endl
+    << "  gamma eigenvalues = " << evB(0) << "  " << evB(1)<<std::endl;
+    }
 
     detG1 = Gkp1(0,0)*Gkp1(1,1) - Gkp1(0,1)*Gkp1(1,0);
     std::cout << GridLogMessage
