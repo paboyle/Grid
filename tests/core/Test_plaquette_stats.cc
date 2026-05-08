@@ -34,14 +34,17 @@ See the full license in the file "LICENSE" in the top level distribution directo
  *
  * Usage:
  *   ./Test_plaquette_stats [Grid options] [--file <nersc_config>] [--hot]
+ *                          [--threshold <val>]
  *
- *   --file <path>  Read gauge field from NERSC-format file
- *   --hot          Use random (hot) SU(3) start (default: cold/unit start)
+ *   --file <path>       Read gauge field from NERSC-format file
+ *   --hot               Use random (hot) SU(3) start (default: cold/unit start)
+ *   --threshold <val>   Print coordinates of every plaquette with Re Tr/Nc < val
  *
  * Grid size defaults to 8^3 x 16; override with --grid (e.g. --grid 4.4.4.8).
  */
 
 #include <Grid/Grid.h>
+#include <limits>
 
 using namespace std;
 using namespace Grid;
@@ -89,6 +92,16 @@ int main(int argc, char** argv)
   bool doHot = false;
   for (int i = 1; i < argc; i++) {
     if (std::string(argv[i]) == "--hot") { doHot = true; break; }
+  }
+
+  double threshold = std::numeric_limits<double>::quiet_NaN();
+  bool   doThresh  = false;
+  for (int i = 1; i < argc - 1; i++) {
+    if (std::string(argv[i]) == "--threshold") {
+      threshold = std::stod(argv[i+1]);
+      doThresh  = true;
+      break;
+    }
   }
 
   if (!config_file.empty()) {
@@ -175,6 +188,21 @@ int main(int argc, char** argv)
                 << std::setw(20) << std::setprecision(10) << local_min
                 << std::setw(20) << std::setprecision(10) << avg
                 << std::endl;
+
+      if (doThresh) {
+        for (int s = 0; s < (int)sv.size(); s++) {
+          RealD val = TensorRemove(sv[s]).real() / Nc;
+          if (val < threshold) {
+            Coordinate lc(Nd), gc(Nd);
+            Lexicographic::CoorFromIndex(lc, s, grid._ldimensions);
+            for (int d = 0; d < Nd; d++)
+              gc[d] = grid._processor_coor[d] * grid._ldimensions[d] + lc[d];
+            std::cout << "BELOW_THRESHOLD  plane=" << planeName(mu, nu)
+                      << "  site=(" << gc[0] << "," << gc[1] << "," << gc[2] << "," << gc[3] << ")"
+                      << "  P=" << std::setprecision(10) << val << std::endl;
+          }
+        }
+      }
     }
   }
 
