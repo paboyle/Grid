@@ -11,7 +11,7 @@ NAMESPACE_BEGIN(Grid);
       PowerMethod<Field> power_method;
       auto lambda_max = power_method(HermOp,Phi);
       std::cout << GridLogMessage << "Pseudofermion action lamda_max "<<lambda_max<<"( bound "<<hi<<")"<<std::endl;
-      assert( (lambda_max < hi) && " High Bounds Check on operator failed" );
+      GRID_ASSERT( (lambda_max < hi) && " High Bounds Check on operator failed" );
     }
 
      template<class Field> void ChebyBoundsCheck(LinearOperatorBase<Field> &HermOp,
@@ -36,7 +36,7 @@ NAMESPACE_BEGIN(Grid);
       std::cout << " Cheb x noise             = "<<Nz<<std::endl;
       std::cout << " Ratio                    = "<<Nz/Nx<<std::endl;
       std::cout << "************************* "<<std::endl;
-      assert( ((Nz/Nx)<1.0) && " ChebyBoundsCheck ");
+      GRID_ASSERT( ((Nz/Nx)<1.0) && " ChebyBoundsCheck ");
     }
       
     template<class Field> void InverseSqrtBoundsCheck(int MaxIter,double tol,
@@ -71,7 +71,7 @@ NAMESPACE_BEGIN(Grid);
       std::cout << " | noise - MdagM (MdagM^-1/2)^2  noise |^2  = "<<Nd<<std::endl;
       std::cout << " | noise - MdagM (MdagM^-1/2)^2  noise|/|noise| = " << std::sqrt(Nd/Nx) << std::endl;
       std::cout << "************************* "<<std::endl;
-      assert( (std::sqrt(Nd/Nx)<tol) && " InverseSqrtBoundsCheck ");
+      GRID_ASSERT( (std::sqrt(Nd/Nx)<tol) && " InverseSqrtBoundsCheck ");
     }
 
     /* For a HermOp = M^dag M, check the approximation of  HermOp^{-1/inv_pow}
@@ -122,7 +122,7 @@ NAMESPACE_BEGIN(Grid);
       std::cout << " | noise - MdagM (MdagM^-1/" << inv_pow << ")^" << inv_pow << " noise |^2  = "<<Nd<<std::endl;
       std::cout << " | noise - MdagM (MdagM^-1/" << inv_pow << ")^" << inv_pow << " noise |/| noise |  = "<<std::sqrt(Nd/Nx)<<std::endl;
       std::cout << "************************* "<<std::endl;
-      assert( (std::sqrt(Nd/Nx)<tol) && " InversePowerBoundsCheck ");
+      GRID_ASSERT( (std::sqrt(Nd/Nx)<tol) && " InversePowerBoundsCheck ");
     }
 
 NAMESPACE_END(Grid);

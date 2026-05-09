@@ -175,7 +175,7 @@ public:
       eresid(_eresid),  MaxIter(_MaxIter),
       diagonalisation(_diagonalisation),split_test(0),
       Nevec_acc(_Nu)
-  { assert( (Nk%Nu==0) && (Nm%Nu==0) ); };
+  { GRID_ASSERT( (Nk%Nu==0) && (Nm%Nu==0) ); };
 
   ////////////////////////////////
   // Helpers
@@ -206,7 +206,7 @@ public:
           Glog<<"orthogonalize after: "<<j<<" of "<<k<<" "<< ip <<std::endl;
       }
     }
-    assert(normalize(w,if_print) != 0);
+    GRID_ASSERT(normalize(w,if_print) != 0);
   }
   void reorthogonalize(Field& w, std::vector<Field>& evec, int k)
   {
@@ -225,7 +225,7 @@ public:
       w[i] = w[i] - ip * evec[j];
     }}
     for(int i=0; i<_Nu; ++i)
-    assert(normalize(w[i],if_print) !=0);
+    GRID_ASSERT(normalize(w[i],if_print) !=0);
   }
 
 
@@ -244,7 +244,7 @@ public:
     const uint64_t sites = grid->lSites();
 
     int Nbatch = R/Nevec_acc;
-    assert( R%Nevec_acc == 0 );
+    GRID_ASSERT( R%Nevec_acc == 0 );
 //    Glog << "nBatch, Nevec_acc, R, Nu = " 
 //         << Nbatch << "," << Nevec_acc << "," << R << "," << Nu << std::endl;
     
@@ -302,7 +302,7 @@ public:
       }
     }
     for (int i=0; i<Nu; ++i) {
-      assert(normalize(w[i],do_print)!=0);
+      GRID_ASSERT(normalize(w[i],do_print)!=0);
     }
     
     Glog << "cuBLAS Zgemm done"<< std::endl;
@@ -374,8 +374,8 @@ cudaStat = cudaMallocManaged((void **)&evec_acc, Nevec_acc*sites*12*sizeof(CUDA_
   {
     std::string fname = std::string(cname+"::calc_irbl()"); 
     GridBase *grid = evec[0].Grid();
-    assert(grid == src[0].Grid());
-    assert( Nu = src.size() );
+    GRID_ASSERT(grid == src[0].Grid());
+    GRID_ASSERT( Nu = src.size() );
     
     Glog << std::string(74,'*') << std::endl;
     Glog << fname + " starting iteration 0 /  "<< MaxIter<< std::endl;
@@ -396,7 +396,7 @@ cudaStat = cudaMallocManaged((void **)&evec_acc, Nevec_acc*sites*12*sizeof(CUDA_
     }
     Glog << std::string(74,'*') << std::endl;
     
-    assert(Nm == evec.size() && Nm == eval.size());
+    GRID_ASSERT(Nm == evec.size() && Nm == eval.size());
 
     std::vector<std::vector<ComplexD>> lmd(Nu,std::vector<ComplexD>(Nm,0.0));  
     std::vector<std::vector<ComplexD>> lme(Nu,std::vector<ComplexD>(Nm,0.0));  
@@ -579,8 +579,8 @@ cudaStat = cudaMallocManaged((void **)&evec_acc, Nevec_acc*sites*12*sizeof(CUDA_
   {
     std::string fname = std::string(cname+"::calc_rbl()"); 
     GridBase *grid = evec[0].Grid();
-    assert(grid == src[0].Grid());
-    assert( Nu = src.size() );
+    GRID_ASSERT(grid == src[0].Grid());
+    GRID_ASSERT( Nu = src.size() );
 
     int Np = (Nm-Nk);
     if (Np > 0 && MaxIter > 1) Np /= MaxIter;
@@ -607,7 +607,7 @@ cudaStat = cudaMallocManaged((void **)&evec_acc, Nevec_acc*sites*12*sizeof(CUDA_
     }
     Glog << std::string(74,'*') << std::endl;
     
-    assert(Nm == evec.size() && Nm == eval.size());
+    GRID_ASSERT(Nm == evec.size() && Nm == eval.size());
 	
     std::vector<std::vector<ComplexD>> lmd(Nu,std::vector<ComplexD>(Nm,0.0));  
     std::vector<std::vector<ComplexD>> lme(Nu,std::vector<ComplexD>(Nm,0.0));  
@@ -785,7 +785,7 @@ private:
     
     int Nu = w.size();
     int Nm = evec.size();
-    assert( b < Nm/Nu );
+    GRID_ASSERT( b < Nm/Nu );
 //    GridCartesian *grid = evec[0]._grid;
     
     // converts block index to full indicies for an interval [L,R)
@@ -796,7 +796,7 @@ private:
 
     Glog << "Using split grid"<< std::endl;
 //   LatticeGaugeField s_Umu(SGrid);
-   assert((Nu%mrhs)==0);
+   GRID_ASSERT((Nu%mrhs)==0);
    std::vector<Field>   in(mrhs,f_grid);
      
     Field s_in(sf_grid);
@@ -906,7 +906,7 @@ if(split_test){
     
     for (int u=0; u<Nu; ++u) {
 //      Glog << "norm2(w[" << u << "])= "<< norm2(w[u]) << std::endl;
-      assert (!isnan(norm2(w[u])));
+      GRID_ASSERT (!isnan(norm2(w[u])));
       for (int k=L+u; k<R; ++k) {
         Glog <<" In block "<< b << "," <<" beta[" << u << "," << k-L << "] = " << lme[u][k] << std::endl;
       }
@@ -929,8 +929,8 @@ if(split_test){
 			 Eigen::MatrixXcd & Qt, // Nm x Nm
 			 GridBase *grid)
   {
-    assert( Nk%Nu == 0 && Nm%Nu == 0 );
-    assert( Nk <= Nm );
+    GRID_ASSERT( Nk%Nu == 0 && Nm%Nu == 0 );
+    GRID_ASSERT( Nk <= Nm );
     Eigen::MatrixXcd BlockTriDiag = Eigen::MatrixXcd::Zero(Nk,Nk);
     
     for ( int u=0; u<Nu; ++u ) {
@@ -970,8 +970,8 @@ if(split_test){
 			 GridBase *grid)
   {
     Glog << "diagonalize_lapack: Nu= "<<Nu<<" Nk= "<<Nk<<" Nm= "<<std::endl;
-    assert( Nk%Nu == 0 && Nm%Nu == 0 );
-    assert( Nk <= Nm );
+    GRID_ASSERT( Nk%Nu == 0 && Nm%Nu == 0 );
+    GRID_ASSERT( Nk <= Nm );
     Eigen::MatrixXcd BlockTriDiag = Eigen::MatrixXcd::Zero(Nk,Nk);
     
     for ( int u=0; u<Nu; ++u ) {
@@ -1119,7 +1119,7 @@ if (1){
       diagonalize_lapack(eval,lmd,lme,Nu,Nk,Nm,Qt,grid);
 #endif
     } else { 
-      assert(0);
+      GRID_ASSERT(0);
     }
   }
   
@@ -1131,8 +1131,8 @@ if (1){
          Eigen::MatrixXcd& M)
   {
     //Glog << "unpackHermitBlockTriDiagMatToEigen() begin" << '\n'; 
-    assert( Nk%Nu == 0 && Nm%Nu == 0 );
-    assert( Nk <= Nm );
+    GRID_ASSERT( Nk%Nu == 0 && Nm%Nu == 0 );
+    GRID_ASSERT( Nk <= Nm );
     M = Eigen::MatrixXcd::Zero(Nk,Nk);
     
     // rearrange 
@@ -1159,8 +1159,8 @@ if (1){
          Eigen::MatrixXcd& M)
   {
     //Glog << "packHermitBlockTriDiagMatfromEigen() begin" << '\n'; 
-    assert( Nk%Nu == 0 && Nm%Nu == 0 );
-    assert( Nk <= Nm );
+    GRID_ASSERT( Nk%Nu == 0 && Nm%Nu == 0 );
+    GRID_ASSERT( Nk <= Nm );
     
     // rearrange 
     for ( int u=0; u<Nu; ++u ) {

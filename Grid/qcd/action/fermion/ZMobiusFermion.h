@@ -57,7 +57,7 @@ public:
 
   {
     //    RealD eps = 1.0;
-    //std::cout<<GridLogMessage << "ZMobiusFermion (b="<<b<<",c="<<c<<") with Ls= "<<this->Ls<<" gamma passed in"<<std::endl;
+    //    std::cout<<GridLogMessage << "ZMobiusFermion (b="<<b<<",c="<<c<<") with Ls= "<<this->Ls<<" gamma passed in"<<std::endl;
     std::vector<Coeff_t> zgamma(this->Ls);
     for(int s=0;s<this->Ls;s++){
       zgamma[s] = gamma[s];

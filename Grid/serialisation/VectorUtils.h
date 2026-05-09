@@ -447,9 +447,9 @@ namespace Grid {
     using Traits = GridTypeMapper<typename is_flattenable<W>::grid_type>;
     const int gridRank{Traits::Rank};
     const int dimRank{static_cast<int>(dim_.size())};
-    assert(dimRank >= gridRank && "Tensor rank too low for Grid tensor");
+    GRID_ASSERT(dimRank >= gridRank && "Tensor rank too low for Grid tensor");
     for (int i=0; i<gridRank; ++i) {
-      assert(dim_[dimRank - gridRank + i] == Traits::Dimension(i) && "Tensor dimension doesn't match Grid tensor");
+      GRID_ASSERT(dim_[dimRank - gridRank + i] == Traits::Dimension(i) && "Tensor dimension doesn't match Grid tensor");
     }
     dim_.resize(dimRank - gridRank);
   }
@@ -461,7 +461,7 @@ namespace Grid {
   , dim_(dim)
   {
     checkInnermost(vector_);
-    assert(dim_.size() == is_flattenable<V>::vecRank && "Tensor rank doesn't match nested std::vector rank");
+    GRID_ASSERT(dim_.size() == is_flattenable<V>::vecRank && "Tensor rank doesn't match nested std::vector rank");
     resize(vector_, 0);
     fill(vector_);
   }
@@ -512,14 +512,14 @@ namespace Grid {
   {
     if( bFirst)
     {
-      assert( Dims.size() == Depth     && "Bug: Delete this message after testing" );
+      GRID_ASSERT( Dims.size() == Depth     && "Bug: Delete this message after testing" );
       Dims.push_back(v[0].size());
       if (!Dims[Depth])
         return false;
     }
     else
     {
-      assert( Dims.size() >= Depth + 1 && "Bug: Delete this message after testing" );
+      GRID_ASSERT( Dims.size() >= Depth + 1 && "Bug: Delete this message after testing" );
     }
     for (std::size_t i = 0; i < v.size(); ++i)
     {

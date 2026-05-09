@@ -54,7 +54,7 @@ WilsonCloverFermion<Impl, CloverHelpers>::WilsonCloverFermion(GaugeField&       
   , CloverTermDagOdd(&Hgrid)
   , CloverTermInvDagEven(&Hgrid)
   , CloverTermInvDagOdd(&Hgrid) {
-  assert(Nd == 4); // require 4 dimensions
+  GRID_ASSERT(Nd == 4); // require 4 dimensions
 
   if(clover_anisotropy.isAnisotropic) {
     csw_r     = _csw_r * 0.5 / clover_anisotropy.xi_0;
@@ -189,7 +189,7 @@ void WilsonCloverFermion<Impl, CloverHelpers>::MooeeInternal(const FermionField 
 {
   out.Checkerboard() = in.Checkerboard();
   CloverField *Clover;
-  assert(in.Checkerboard() == Odd || in.Checkerboard() == Even);
+  GRID_ASSERT(in.Checkerboard() == Odd || in.Checkerboard() == Even);
 
   if (dag)
   {
@@ -323,14 +323,14 @@ void WilsonCloverFermion<Impl, CloverHelpers>::MDeriv(GaugeField &force, const F
 template<class Impl, class CloverHelpers>
 void WilsonCloverFermion<Impl, CloverHelpers>::MooDeriv(GaugeField &mat, const FermionField &X, const FermionField &Y, int dag)
 {
-  assert(0);
+  GRID_ASSERT(0);
 }
 
 // Derivative parts
 template<class Impl, class CloverHelpers>
 void WilsonCloverFermion<Impl, CloverHelpers>::MeeDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag)
 {
-  assert(0); // not implemented yet
+  GRID_ASSERT(0); // not implemented yet
 }
 
 NAMESPACE_END(Grid);

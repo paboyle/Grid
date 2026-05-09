@@ -77,7 +77,7 @@ public:
   ImplParams Params;
 
   WilsonImpl(const ImplParams &p = ImplParams()) : Params(p){
-    assert(Params.boundary_phases.size() == Nd);
+    GRID_ASSERT(Params.boundary_phases.size() == Nd);
   };
 
   template<class _Spinor>

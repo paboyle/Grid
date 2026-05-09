@@ -19,9 +19,9 @@ bool has_correct_group_block_structure(const T& U) {
       auto Ww = conjugate(Wstar);
       auto amizero = sum(W - Ww);
       auto amizeroo = TensorRemove(amizero);
-      assert(amizeroo.real() < 10e-6);
+      GRID_ASSERT(amizeroo.real() < 10e-6);
       amizeroo *= i;
-      assert(amizeroo.real() < 10e-6);
+      GRID_ASSERT(amizeroo.real() < 10e-6);
     }
   }
 
@@ -32,9 +32,9 @@ bool has_correct_group_block_structure(const T& U) {
       auto minusXx = conjugate(minusXstar);
       auto amizero = sum(X + minusXx);
       auto amizeroo = TensorRemove(amizero);
-      assert(amizeroo.real() < 10e-6);
+      GRID_ASSERT(amizeroo.real() < 10e-6);
       amizeroo *= i;
-      assert(amizeroo.real() < 10e-6);
+      GRID_ASSERT(amizeroo.real() < 10e-6);
     }
   }
   return true;
@@ -49,22 +49,22 @@ bool is_element_of_sp2n_group(const T& U) {
   Sp<Nc>::Omega(Omega);
 
   std::cout << GridLogMessage << "Check matrix is non-zero " << std::endl;
-  assert(norm2(U) > 1e-8);
+  GRID_ASSERT(norm2(U) > 1e-8);
 
   std::cout << GridLogMessage << "Unitary check" << std::endl;
   aux = U * adj(U) - identity;
   std::cout << GridLogMessage << "U adjU - 1 = " << norm2(aux) << std::endl;
-  assert(norm2(aux) < 1e-8);
+  GRID_ASSERT(norm2(aux) < 1e-8);
 
   aux = Omega - (U * Omega * transpose(U));
   std::cout << GridLogMessage << "Omega - U Omega transpose(U) = " << norm2(aux)
             << std::endl;
-  assert(norm2(aux) < 1e-8);
+  GRID_ASSERT(norm2(aux) < 1e-8);
 
   std::cout << GridLogMessage
             << "|Det| = " << norm2(Determinant(U)) / U.Grid()->gSites()
             << std::endl;
-  assert(norm2(Determinant(U)) / U.Grid()->gSites() - 1 < 1e-8);
+  GRID_ASSERT(norm2(Determinant(U)) / U.Grid()->gSites() - 1 < 1e-8);
 
   return has_correct_group_block_structure(U);
 }
@@ -86,7 +86,7 @@ void test_group_projections(T U) {
 
   U = U + Delta * identity;
   U = ProjectOnSpGroup(U);
-  assert(is_element_of_sp2n_group(U));
+  GRID_ASSERT(is_element_of_sp2n_group(U));
 
   name = "ProjectOnGeneralGroup";
   std::cout << GridLogMessage << "Testing " << name << std::endl;
@@ -94,7 +94,7 @@ void test_group_projections(T U) {
 
   U = U + Delta * identity;
   U = Sp<Nc>::ProjectOnGeneralGroup(U);
-  assert(is_element_of_sp2n_group(U));
+  GRID_ASSERT(is_element_of_sp2n_group(U));
 
   name = "ProjectOnSpecialGroup";
   std::cout << GridLogMessage << "Testing " << name << std::endl;
@@ -102,7 +102,7 @@ void test_group_projections(T U) {
 
   U = U + Delta * identity;
   Sp<Nc>::ProjectOnSpecialGroup(U);
-  assert(is_element_of_sp2n_group(U));
+  GRID_ASSERT(is_element_of_sp2n_group(U));
 
   name = "ProjectSpn";
   std::cout << GridLogMessage << "Testing " << name << std::endl;
@@ -110,7 +110,7 @@ void test_group_projections(T U) {
 
   U = U + Delta * identity;
   ProjectSpn(U);
-  assert(is_element_of_sp2n_group(U));
+  GRID_ASSERT(is_element_of_sp2n_group(U));
 }
 
 template <typename T>
@@ -129,9 +129,9 @@ bool has_correct_algebra_block_structure(const T& U) {
       auto Ww = conjugate(Wstar);
       auto amizero = sum(W - Ww);
       auto amizeroo = TensorRemove(amizero);
-      assert(amizeroo.real() < 10e-6);
+      GRID_ASSERT(amizeroo.real() < 10e-6);
       amizeroo *= i;
-      assert(amizeroo.real() < 10e-6);
+      GRID_ASSERT(amizeroo.real() < 10e-6);
     }
   }
   for (int c1 = 0; c1 < nsp; c1++) {
@@ -141,9 +141,9 @@ bool has_correct_algebra_block_structure(const T& U) {
       auto minusXx = conjugate(minusXstar);
       auto amizero = sum(X + minusXx);
       auto amizeroo = TensorRemove(amizero);
-      assert(amizeroo.real() < 10e-6);
+      GRID_ASSERT(amizeroo.real() < 10e-6);
       amizeroo *= i;
-      assert(amizeroo.real() < 10e-6);
+      GRID_ASSERT(amizeroo.real() < 10e-6);
     }
   }
 
@@ -159,7 +159,7 @@ bool is_element_of_sp2n_algebra(const T& U) {
   Sp<Nc>::Omega(Omega);
 
   std::cout << GridLogMessage << "Check matrix is non-zero " << std::endl;
-  assert(norm2(U) > 1e-8);
+  GRID_ASSERT(norm2(U) > 1e-8);
 
   aux = U - adj(U);
   std::cout << GridLogMessage << "T - Tda = " << norm2(aux)
@@ -168,12 +168,12 @@ bool is_element_of_sp2n_algebra(const T& U) {
   aux = U + adj(U);
   std::cout << GridLogMessage << "T + Tda = " << norm2(aux)
             << " (supposed to vanish)" << std::endl;
-  assert(norm2(aux) - 1 < 1e-8);
+  GRID_ASSERT(norm2(aux) - 1 < 1e-8);
 
   std::cout << GridLogMessage << "Check that Omega T Omega + conj(T) = 0 "
             << std::endl;
   aux = Omega * U * Omega + conjugate(U);
-  assert(norm2(aux) < 1e-8);
+  GRID_ASSERT(norm2(aux) < 1e-8);
 
   return has_correct_algebra_block_structure(U);
 }
@@ -196,7 +196,7 @@ void test_algebra_projections(T U) {
 
   U = U + Delta * identity;
   U = SpTa(U);
-  assert(is_element_of_sp2n_algebra(U));
+  GRID_ASSERT(is_element_of_sp2n_algebra(U));
 
   name = "TaProj";
   std::cout << GridLogMessage << "Testing " << name << std::endl;
@@ -205,7 +205,7 @@ void test_algebra_projections(T U) {
   U = U + Delta * identity;
   Sp<Nc>::taProj(U, tmp);
   U = tmp;
-  assert(is_element_of_sp2n_algebra(U));
+  GRID_ASSERT(is_element_of_sp2n_algebra(U));
 }
 
 int main(int argc, char** argv) {

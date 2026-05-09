@@ -26,6 +26,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+#include "disable_benchmarks_without_instantiations.h"
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
 #include <Grid/Grid.h>
 
 using namespace std;
@@ -253,8 +256,10 @@ int main (int argc, char ** argv)
 
   // guard
   double err1 = norm2(err);
-  assert(fabs(err0) < 1.0e-3);
-  assert(fabs(err1) < 1.0e-3);
+  GRID_ASSERT(fabs(err0) < 1.0e-3);
+  GRID_ASSERT(fabs(err1) < 1.0e-3);
 
   Grid_finalize();
 }
+
+#endif

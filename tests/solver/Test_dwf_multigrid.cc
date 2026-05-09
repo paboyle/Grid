@@ -85,13 +85,13 @@ public:
   PVdagMLinearOperator(Matrix &Mat,Matrix &PV): _Mat(Mat),_PV(PV){};
 
   void OpDiag (const Field &in, Field &out) {
-    assert(0);
+    GRID_ASSERT(0);
   }
   void OpDir  (const Field &in, Field &out,int dir,int disp) {
-    assert(0);
+    GRID_ASSERT(0);
   }
   void OpDirAll  (const Field &in, std::vector<Field> &out){
-    assert(0);
+    GRID_ASSERT(0);
   };
   void Op     (const Field &in, Field &out){
     Field tmp(in.Grid());
@@ -104,10 +104,10 @@ public:
     _Mat.Mdag(in,tmp);
   }
   void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
-    assert(0);
+    GRID_ASSERT(0);
   }
   void HermOp(const Field &in, Field &out){
-    assert(0);
+    GRID_ASSERT(0);
   }
 };
 
@@ -411,7 +411,7 @@ int main (int argc, char ** argv)
 
   Subspace Aggregates(Coarse5d,FGrid,0);
 
-  assert ( (nbasis & 0x1)==0);
+  GRID_ASSERT ( (nbasis & 0x1)==0);
   {
     int nb=nbasis/2;
     Aggregates.CreateSubspaceChebyshev(RNG5,HermDefOp,nb,60.0,0.02,500,100,100,0.0);

@@ -175,7 +175,7 @@ void Tester(const functor &func)
   } else {
     std::cout<<GridLogMessage << " wrong!" <<std::endl;
   }
-  assert(ok==0);
+  GRID_ASSERT(ok==0);
 }
 
 template<class functor>
@@ -234,7 +234,7 @@ void IntTester(const functor &func)
   } else {
     std::cout<<GridLogMessage << " wrong!" <<std::endl;
   }
-  assert(ok==0);
+  GRID_ASSERT(ok==0);
 }
 
 
@@ -285,7 +285,7 @@ void ReductionTester(const functor &func)
   } else {
     std::cout<<GridLogMessage << " wrong!" <<std::endl;
   }
-  assert(ok==0);
+  GRID_ASSERT(ok==0);
 }
 
 
@@ -332,7 +332,7 @@ void IntReductionTester(const functor &func)
   } else {
     std::cout<<GridLogMessage << " wrong!" <<std::endl;
   }
-  assert(ok==0);
+  GRID_ASSERT(ok==0);
 }
 
 
@@ -456,7 +456,7 @@ void PermTester(const functor &func)
   } else {
     std::cout<<GridLogMessage << " wrong!" <<std::endl;
   }
-  assert(ok==0);
+  GRID_ASSERT(ok==0);
 }
 
 
@@ -520,8 +520,8 @@ void ExchangeTester(const functor &func)
 	//	std::cout << " i "<<i<<" j "<<j<<" "<<reference1[j]<<" "<<result1[i]<<std::endl;
       }
     }
-    //    assert(found==1);
-    assert(found==1||found==0);
+    //    GRID_ASSERT(found==1);
+    GRID_ASSERT(found==1||found==0);
   }
   for(int i=0;i<Nsimd;i++){
     int found=0;
@@ -531,8 +531,8 @@ void ExchangeTester(const functor &func)
 	//	std::cout << " i "<<i<<" j "<<j<<" "<<reference2[j]<<" "<<result2[i]<<std::endl;
       }
     }
-    //    assert(found==1);
-    assert(found==1||found==0);
+    //    GRID_ASSERT(found==1);
+    GRID_ASSERT(found==1||found==0);
   }
 
   /*
@@ -547,8 +547,8 @@ void ExchangeTester(const functor &func)
   }
   */
   for(int i=0;i<Nsimd;i++){
-    assert(test1[i]==input1[i]);
-    assert(test2[i]==input2[i]);
+    GRID_ASSERT(test1[i]==input1[i]);
+    GRID_ASSERT(test2[i]==input2[i]);
   }
 }
 
@@ -789,7 +789,7 @@ int main (int argc, char ** argv)
       nrm = innerProduct(DD[i],DD[i]);
       auto tmp = Reduce(nrm);
       //      std::cout << tmp << std::endl;
-      assert( tmp < 1.0e-14 );
+      GRID_ASSERT( tmp < 1.0e-14 );
     }
     std::cout <<" OK ! "<<std::endl;
 
@@ -805,7 +805,7 @@ int main (int argc, char ** argv)
       nrm = innerProduct(DD[i],DD[i]);
       auto tmp = Reduce(nrm);
       //      std::cout << tmp << std::endl;
-      assert( tmp < 1.0e-3 );
+      GRID_ASSERT( tmp < 1.0e-3 );
     }
     std::cout <<" OK ! "<<std::endl;
 
@@ -820,7 +820,7 @@ int main (int argc, char ** argv)
       nrm = innerProduct(FF[i],FF[i]);
       auto tmp = Reduce(nrm);
       //      std::cout << tmp << std::endl;
-      assert( tmp < 1.0e-3 );
+      GRID_ASSERT( tmp < 1.0e-3 );
     }
     std::cout <<" OK ! "<<std::endl;
 #endif

@@ -33,7 +33,7 @@ NAMESPACE_BEGIN(Grid);
 ///////////////////////////////////////////////////
 
 // It is useful to NOT have any constructors
-// so that these classes assert "is_pod<class> == true"
+// so that these classes GRID_ASSERT "is_pod<class> == true"
 // because then the standard C++ valarray container eliminates fill overhead on
 // new allocation and
 // non-move copying.

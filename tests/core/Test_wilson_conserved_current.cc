@@ -198,8 +198,8 @@ void  TestConserved(Action & Dw,
   std::cout<<GridLogMessage<<"Vector Ward identity by timeslice (~ 0)"<<std::endl;
   for(int t=0;t<Nt;t++){
     std::cout<<GridLogMessage <<" t "<<t<<" SV "<<real(TensorRemove(sumSV[t]))<<" VV "<<real(TensorRemove(sumVV[t]))<<std::endl;
-    assert(abs(real(TensorRemove(sumSV[t]))) < 1e-10);
-    assert(abs(real(TensorRemove(sumVV[t]))) < 1e-2);
+    GRID_ASSERT(abs(real(TensorRemove(sumSV[t]))) < 1e-10);
+    GRID_ASSERT(abs(real(TensorRemove(sumVV[t]))) < 1e-2);
   }
 
   ///////////////////////////////
@@ -245,9 +245,9 @@ void  TestConserved(Action & Dw,
 
     std::cout<<GridLogMessage << "Consistency check for sequential conserved " <<std::endl;
     std::cout<<GridLogMessage << "Diff S  = " << abs(check_S) << std::endl;
-    assert(abs(check_S) < 1e-8);
+    GRID_ASSERT(abs(check_S) < 1e-8);
     std::cout<<GridLogMessage << "Diff V  = " << abs(check_V) << std::endl;
-    assert(abs(check_V) < 1e-8);
+    GRID_ASSERT(abs(check_V) < 1e-8);
   }
 
 }

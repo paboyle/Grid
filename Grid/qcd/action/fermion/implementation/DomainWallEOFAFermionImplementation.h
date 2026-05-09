@@ -53,7 +53,7 @@ DomainWallEOFAFermion<Impl>::DomainWallEOFAFermion(
 {
   RealD eps = 1.0;
   Approx::zolotarev_data *zdata = Approx::higham(eps,this->Ls);
-  assert(zdata->n == this->Ls);
+  GRID_ASSERT(zdata->n == this->Ls);
 
   std::cout << GridLogMessage << "DomainWallEOFAFermion with Ls=" << this->Ls << std::endl;
   this->SetCoefficientsTanh(zdata, 1.0, 0.0);

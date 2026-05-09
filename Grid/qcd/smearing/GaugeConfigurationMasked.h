@@ -819,13 +819,13 @@ public:
     }  // if smearingLevels = 0 do nothing
   }
 
-private:
 public:
   //====================================================================
   // Override base clas here to mask it
   virtual void fill_smearedSet(GaugeField &U)
   {
     this->ThinLinks = &U;  // attach the smearing routine to the field U
+    std::cout << GridLogMessage << " fill_smearedSet " << WilsonLoops<PeriodicGimplR>::avgPlaquette(U) << std::endl;
 
     // check the pointer is not null
     if (this->ThinLinks == NULL)
@@ -847,6 +847,8 @@ public:
 	ApplyMask(smeared_A,smearLvl);
 	smeared_B = previous_u;
 	ApplyMask(smeared_B,smearLvl);
+	std::cout << GridLogMessage << " smeared_A " << norm2(smeared_A) << std::endl;
+	std::cout << GridLogMessage << " smeared_B " << norm2(smeared_B) << std::endl;
 	// Replace only the masked portion
 	this->SmearedSet[smearLvl] = previous_u-smeared_B + smeared_A;
         previous_u = this->SmearedSet[smearLvl];

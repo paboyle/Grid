@@ -52,9 +52,9 @@ void sliceInnerProductMesonField(std::vector< std::vector<ComplexD> > &mat,
   const int Nsimd = grid->Nsimd();
   int Nt     = grid->GlobalDimensions()[orthogdim];
 
-  assert(mat.size()==Lblock*Rblock);
+  GRID_ASSERT(mat.size()==Lblock*Rblock);
   for(int t=0;t<mat.size();t++){
-    assert(mat[t].size()==Nt);
+    GRID_ASSERT(mat[t].size()==Nt);
   }
 
   int fd=grid->_fdimensions[orthogdim];
@@ -181,9 +181,9 @@ void sliceInnerProductMesonFieldGamma(std::vector< std::vector<ComplexD> > &mat,
   int Nt     = grid->GlobalDimensions()[orthogdim];
   int Ngamma = gammas.size();
 
-  assert(mat.size()==Lblock*Rblock*Ngamma);
+  GRID_ASSERT(mat.size()==Lblock*Rblock*Ngamma);
   for(int t=0;t<mat.size();t++){
-    assert(mat[t].size()==Nt);
+    GRID_ASSERT(mat[t].size()==Nt);
   }
 
   int fd=grid->_fdimensions[orthogdim];
@@ -329,9 +329,9 @@ void sliceInnerProductMesonFieldGamma1(std::vector< std::vector<ComplexD> > &mat
   int Nt     = grid->GlobalDimensions()[orthogdim];
   int Ngamma = gammas.size();
 
-  assert(mat.size()==Lblock*Rblock*Ngamma);
+  GRID_ASSERT(mat.size()==Lblock*Rblock*Ngamma);
   for(int t=0;t<mat.size();t++){
-    assert(mat[t].size()==Nt);
+    GRID_ASSERT(mat[t].size()==Nt);
   }
 
   int fd=grid->_fdimensions[orthogdim];
@@ -472,9 +472,9 @@ void sliceInnerProductMesonFieldGammaMom(std::vector< std::vector<ComplexD> > &m
   int Ngamma = gammas.size();
   int Nmom   = mom.size();
 
-  assert(mat.size()==Lblock*Rblock*Ngamma*Nmom);
+  GRID_ASSERT(mat.size()==Lblock*Rblock*Ngamma*Nmom);
   for(int t=0;t<mat.size();t++){
-    assert(mat[t].size()==Nt);
+    GRID_ASSERT(mat[t].size()==Nt);
   }
 
   int fd=grid->_fdimensions[orthogdim];

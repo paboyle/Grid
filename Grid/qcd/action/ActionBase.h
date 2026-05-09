@@ -136,9 +136,9 @@ class EmptyAction : public Action <GaugeField>
   using Action<GaugeField>::Sinitial;
   using Action<GaugeField>::deriv;
 
-  virtual void refresh(const GaugeField& U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) { assert(0);}; // refresh pseudofermions
+  virtual void refresh(const GaugeField& U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) { GRID_ASSERT(0);}; // refresh pseudofermions
   virtual RealD S(const GaugeField& U) { return 0.0;};                             // evaluate the action
-  virtual void deriv(const GaugeField& U, GaugeField& dSdU) { assert(0); };        // evaluate the action derivative
+  virtual void deriv(const GaugeField& U, GaugeField& dSdU) { GRID_ASSERT(0); };        // evaluate the action derivative
 
   ///////////////////////////////
   // Logging

@@ -108,38 +108,36 @@ public:
 };
 
 #ifdef GRID_LOG_VIEWS
-
 // Little autoscope assister
 template<class View> 
 class ViewCloser
 {
   View v;  // Take a copy of view and call view close when I go out of scope automatically
   const char* filename; int line, mode;
- public:
+public:
   ViewCloser(View &_v, const char* _filename, int _line, int _mode) :
     v(_v), filename(_filename), line(_line), mode(_mode) {
-
+    
     switch (mode){
     case AcceleratorRead:
     case AcceleratorWrite:
     case CpuRead:
     case CpuWrite:
-      ViewLogger::Log(filename, line, 1, mode, &v[0], v.size() * sizeof(v[0]));
+      ViewLogger::LogOpen(filename, line, 1, mode, &v[0], v.size() * sizeof(v[0]));
       break;
     } 
-
+    
   };
   ~ViewCloser() {
-
+    
     switch (mode) {
-    case AcceleratorWrite:
     case AcceleratorWriteDiscard:
+    case AcceleratorWrite:
     case CpuWrite:
-    // case CpuWriteDiscard: <- this is a duplicate of CpuWrite (does not make sense to differentiate)
-      ViewLogger::Log(filename, line, -1, mode, &v[0], v.size() * sizeof(v[0]));
+      ViewLogger::LogClose(filename, line, -1, mode, &v[0], v.size() * sizeof(v[0]));
       break;
     }
-      
+    
     v.ViewClose();
   }
 };
@@ -149,8 +147,6 @@ class ViewCloser
 	  ViewCloser<decltype(l_v)> _autoView##l_v(l_v,__FILE__,__LINE__,mode);
 
 #else
-
-
 // Little autoscope assister
 template<class View> 
 class ViewCloser

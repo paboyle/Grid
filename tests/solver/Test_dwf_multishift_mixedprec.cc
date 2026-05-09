@@ -69,7 +69,7 @@ void run_test(int argc, char ** argv, const typename SpeciesD::ImplParams &param
   bool cfg_loaded=false;
   for(int i=1;i<argc;i++){
     if(std::string(argv[i]) == "--load_config"){
-      assert(i != argc-1);
+      GRID_ASSERT(i != argc-1);
       std::string file = argv[i+1];
       NerscIO io;
       FieldMetaData metadata;
@@ -158,9 +158,9 @@ int main (int argc, char ** argv)
   for(int i=1;i<argc;i++){
     std::string arg(argv[i]);
     if(arg == "--Gparity"){
-      assert(i!=argc-1);
+      GRID_ASSERT(i!=argc-1);
       gpdir = std::stoi(argv[i+1]);
-      assert(gpdir >= 0 && gpdir <= 2); //spatial!
+      GRID_ASSERT(gpdir >= 0 && gpdir <= 2); //spatial!
       gparity = true;
     }
   }

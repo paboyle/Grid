@@ -85,6 +85,8 @@ feenableexcept (unsigned int excepts)
 #define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
 #endif
 
+void * Grid_backtrace_buffer[_NBACKTRACE];
+
 NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////////////
@@ -118,7 +120,7 @@ const Coordinate GridDefaultSimd(int dims,int nsimd)
       layout[d]=1;
     }
   }
-  assert(nn==1);
+  GRID_ASSERT(nn==1);
   return layout;
 }
 
@@ -213,14 +215,14 @@ void GridParseLayout(char **argv,int argc,
 #endif
     arg= GridCmdOptionPayload(argv,argv+argc,"--threads");
     GridCmdOptionIntVector(arg,ompthreads);
-    assert(ompthreads.size()==1);
+    GRID_ASSERT(ompthreads.size()==1);
     GridThread::SetThreads(ompthreads[0]);
   }
   if( GridCmdOptionExists(argv,argv+argc,"--accelerator-threads") ){
     std::vector<int> gputhreads(0);
     arg= GridCmdOptionPayload(argv,argv+argc,"--accelerator-threads");
     GridCmdOptionIntVector(arg,gputhreads);
-    assert(gputhreads.size()==1);
+    GRID_ASSERT(gputhreads.size()==1);
     acceleratorThreads(gputhreads[0]);
   }
 
@@ -232,7 +234,7 @@ void GridParseLayout(char **argv,int argc,
   }
   // Copy back into coordinate format
   int nd = mpi.size();
-  assert(latt.size()==nd);
+  GRID_ASSERT(latt.size()==nd);
   latt_c.resize(nd);
    mpi_c.resize(nd);
   for(int d=0;d<nd;d++){
@@ -315,8 +317,8 @@ std::vector<dlRegion> dlMap;
 
 void Grid_init(int *argc,char ***argv)
 {
-
-  assert(Grid_is_initialised == 0);
+  
+  GRID_ASSERT(Grid_is_initialised == 0);
 
   GridLogger::GlobalStopWatch.Start();
 
@@ -361,24 +363,6 @@ void Grid_init(int *argc,char ***argv)
     GlobalSharedMemory::Hugepages = 1;
   }
 
-
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-signals") ){
-    Grid_debug_handler_init();
-  }
-  // Sleep n-seconds at end of handler
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--signal-delay") ){
-    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--signal-delay");
-    GridCmdOptionInt(arg,signal_delay);
-  }
-  // periodic wakeup with stack trace printed
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-heartbeat") ){
-    Grid_debug_heartbeat();
-  }
-  // periodic wakeup with empty handler (interrupts some system calls)
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--heartbeat") ){
-    Grid_heartbeat();
-  }
-
 #if defined(A64FX)
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-overlap") ){
     std::cout << "Option --comms-overlap currently not supported on QPACE4. Exiting." << std::endl;
@@ -414,27 +398,44 @@ void Grid_init(int *argc,char ***argv)
   if( !GridCmdOptionExists(*argv,*argv+*argc,"--debug-stdout") ){
     Grid_quiesce_nodes();
   } else {
-    char* root = getenv("GRID_STDOUT_ROOT");
     FILE *fp;
     std::ostringstream fname;
-    if (root)
-      fname << root << "/";
+
+    int rank = CartesianCommunicator::RankWorld();
+    int radix=32;
+    char* root = getenv("GRID_STDOUT_ROOT");
+    if (root) {
+      fname << root ;
+      mkdir(fname.str().c_str(), S_IRWXU );
+      fname << "/";
+    }
+    fname << (rank/radix)*radix ;
+    mkdir(fname.str().c_str(), S_IRWXU );
+    fname << "/";
+
     fname<<"Grid.stdout.";
     fname<<CartesianCommunicator::RankWorld();
+
+    std::cout << " Reconnecting stdout to "<<fname.str()<<std::endl;
+    
     fp=freopen(fname.str().c_str(),"w",stdout);
-    assert(fp!=(FILE *)NULL);
+    GRID_ASSERT(fp!=(FILE *)NULL);
 
     std::ostringstream ename;
-    if (root)
+    if (root){
       ename << root << "/";
+    }
+    ename << (rank/radix)*radix << "/";
     ename<<"Grid.stderr.";
     ename<<CartesianCommunicator::RankWorld();
+    std::cout << " Reconnecting stderr to "<<ename.str()<<std::endl;
     fp=freopen(ename.str().c_str(),"w",stderr);
-    assert(fp!=(FILE *)NULL);
+    GRID_ASSERT(fp!=(FILE *)NULL);
   }
   fileno_stdout = fileno(stdout);
   fileno_stderr = fileno(stderr) ;
-    
+  dup2(fileno_stdout, STDOUT_FILENO);
+  dup2(fileno_stderr, STDERR_FILENO);
   ////////////////////////////////////////////////////
   // OK to use GridLogMessage etc from here on
   ////////////////////////////////////////////////////
@@ -567,7 +568,7 @@ void Grid_init(int *argc,char ***argv)
   }
 
   ////////////////////////////////////
-  // Debug and performance options
+  // Performance options
   ////////////////////////////////////
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-unroll") ){
@@ -590,6 +591,10 @@ void Grid_init(int *argc,char ***argv)
     StaggeredKernelsStatic::Comms = StaggeredKernelsStatic::CommsThenCompute;
   }
 
+  ////////////////////////////////
+  // Timestamping or not
+  ////////////////////////////////
+
   CartesianCommunicator::nCommThreads = 1;
   if( GridCmdOptionExists(*argv,*argv+*argc,"--notimestamp") ){
     GridLogTimestamp(0);
@@ -597,18 +602,13 @@ void Grid_init(int *argc,char ***argv)
     GridLogTimestamp(1);
   }
 
+  ////////////////////////////////
+  // Default layout
+  ////////////////////////////////
   GridParseLayout(*argv,*argc,
 		  Grid_default_latt,
 		  Grid_default_mpi);
 
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--flightrecorder") ){
-    std::cout << GridLogMessage <<" Enabling flight recorder " <<std::endl;
-    FlightRecorder::SetLoggingMode(FlightRecorder::LoggingModeRecord);
-    FlightRecorder::PrintEntireLog = 1;
-    FlightRecorder::ChecksumComms  = 1;
-    FlightRecorder::ChecksumCommsSend=1;
-  }
-  
   if( GridCmdOptionExists(*argv,*argv+*argc,"--decomposition") ){
     std::cout<<GridLogMessage<<"Grid Default Decomposition patterns\n";
     std::cout<<GridLogMessage<<"\tOpenMP threads : "<<GridThread::GetThreads()<<std::endl;
@@ -618,6 +618,36 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"\tvComplexF      : "<<sizeof(vComplexF)*8 <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vComplexF::Nsimd()))<<std::endl;
     std::cout<<GridLogMessage<<"\tvComplexD      : "<<sizeof(vComplexD)*8 <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vComplexD::Nsimd()))<<std::endl;
   }
+
+  ////////////////////////////////////
+  // Debug options
+  ////////////////////////////////////
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-signals") ){
+    Grid_debug_handler_init();
+  }
+  // Sleep n-seconds at end of handler
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--signal-delay") ){
+    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--signal-delay");
+    GridCmdOptionInt(arg,signal_delay);
+  }
+  // periodic wakeup with stack trace printed
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-heartbeat") ){
+    Grid_debug_heartbeat();
+  }
+  // periodic wakeup with empty handler (interrupts some system calls)
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--heartbeat") ){
+    Grid_heartbeat();
+  }
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--flightrecorder") ){
+    std::cout << GridLogMessage <<" Enabling flight recorder " <<std::endl;
+    FlightRecorder::SetLoggingMode(FlightRecorder::LoggingModeRecord);
+    FlightRecorder::PrintEntireLog = 1;
+    FlightRecorder::ChecksumComms  = 1;
+    FlightRecorder::ChecksumCommsSend=1;
+  }
+  
   Grid_is_initialised = 1;
 }
 
@@ -646,7 +676,6 @@ void GridLogLayout() {
   std::cout << GridLogMessage << "\tMPI tasks            : "<< GridCmdVectorIntToString(GridDefaultMpi()) << std::endl;
 }
 
-void * Grid_backtrace_buffer[_NBACKTRACE];
 #define SIGLOG(A) ::write(fileno_stderr,A,strlen(A));
 
 void sig_print_dig(uint32_t dig)
@@ -830,8 +859,8 @@ void Grid_heartbeat(void)
 
   // repeating 10s heartbeat
   struct itimerval it_val;
-  it_val.it_value.tv_sec = 10;
-  it_val.it_value.tv_usec = 1000;
+  it_val.it_value.tv_sec = 0;
+  it_val.it_value.tv_usec = 10000;
   it_val.it_interval = it_val.it_value;
   setitimer(ITIMER_REAL, &it_val, NULL);
 }
@@ -848,6 +877,7 @@ void Grid_debug_handler_init(void)
   sa.sa_flags    = SA_SIGINFO;
   sigaction(SIGTRAP,&sa,NULL);
   sigaction(SIGILL,&sa,NULL);
+  sigaction(SIGABRT,&sa,NULL); // SigABRT backtrace
 #ifndef GRID_SYCL
   sigaction(SIGSEGV,&sa,NULL); // SYCL is using SIGSEGV
   sigaction(SIGBUS,&sa,NULL);

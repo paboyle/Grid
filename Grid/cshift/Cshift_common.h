@@ -240,9 +240,9 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
 
     // Case of SIMD split AND checker dim cannot currently be hit, except in 
     // Test_cshift_red_black code.
-    std::cout << "Scatter_plane merge assert(0); think this is buggy FIXME "<< std::endl;// think this is buggy FIXME
+    std::cout << "Scatter_plane merge GRID_ASSERT(0); think this is buggy FIXME "<< std::endl;// think this is buggy FIXME
     std::cout<<" Unthreaded warning -- buffer is not densely packed ??"<<std::endl;
-    assert(0); // This will fail if hit on GPU
+    GRID_ASSERT(0); // This will fail if hit on GPU
     autoView( rhs_v, rhs, CpuWrite);
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){

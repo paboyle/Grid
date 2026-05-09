@@ -596,16 +596,32 @@ template<int Index,class vobj> inline vobj transposeColour(const vobj &lhs){
 //////////////////////////////////////////
 // Trace lattice and non-lattice
 //////////////////////////////////////////
+#define GRID_UNOP(name)   name
+#define GRID_DEF_UNOP(op, name)						\
+  template <typename T1, typename std::enable_if<is_lattice<T1>::value||is_lattice_expr<T1>::value,T1>::type * = nullptr> \
+  inline auto op(const T1 &arg) ->decltype(LatticeUnaryExpression<GRID_UNOP(name),T1>(GRID_UNOP(name)(), arg)) \
+  {									\
+    return     LatticeUnaryExpression<GRID_UNOP(name),T1>(GRID_UNOP(name)(), arg); \
+  }
+
 template<int Index,class vobj>
 inline auto traceSpin(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<SpinIndex>(vobj()))>
 {
   return traceIndex<SpinIndex>(lhs);
 }
+
+GridUnopClass(UnaryTraceSpin, traceIndex<SpinIndex>(a));
+GRID_DEF_UNOP(traceSpin, UnaryTraceSpin);
+
 template<int Index,class vobj>
 inline auto traceColour(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<ColourIndex>(vobj()))>
 {
   return traceIndex<ColourIndex>(lhs);
 }
+
+GridUnopClass(UnaryTraceColour, traceIndex<ColourIndex>(a));
+GRID_DEF_UNOP(traceColour, UnaryTraceColour);
+
 template<int Index,class vobj>
 inline auto traceSpin(const vobj &lhs) -> Lattice<decltype(traceIndex<SpinIndex>(lhs))>
 {
@@ -617,6 +633,8 @@ inline auto traceColour(const vobj &lhs) -> Lattice<decltype(traceIndex<ColourIn
   return traceIndex<ColourIndex>(lhs);
 }
 
+#undef GRID_UNOP
+#undef GRID_DEF_UNOP
 //////////////////////////////////////////
 // Current types
 //////////////////////////////////////////

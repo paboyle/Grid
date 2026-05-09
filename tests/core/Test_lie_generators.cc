@@ -171,7 +171,7 @@ int main(int argc, char** argv) {
     Complex tr2 = TRa()()(b,c) * Complex(0,1);
     std::cout << " 2 Tr( Tc[Ta,Tb]) " << 2.0*tr1<<std::endl;
     std::cout << " - TRa_bc " << tr2<<std::endl;
-    assert(abs( (2.0*tr1-tr2) ) < 1.0e-7);
+    GRID_ASSERT(abs( (2.0*tr1-tr2) ) < 1.0e-7);
     std::cout << "------------------"<<std::endl;
   }}}
 #endif

@@ -165,7 +165,7 @@ public:
     //
     if ( _simd_layout[dimension] > 2 ) { 
       for(int d=0;d<_ndimension;d++){
-	if ( d != dimension ) assert ( (_simd_layout[d]==1)  );
+	if ( d != dimension ) GRID_ASSERT ( (_simd_layout[d]==1)  );
       }
       permute_type = RotateBit; // How to specify distance; this is not just direction.
       return permute_type;
@@ -187,7 +187,7 @@ public:
   inline int64_t gSites(void) const { return (int64_t)_isites*(int64_t)_osites*(int64_t)_Nprocessors; }; 
   inline int Nd    (void) const { return _ndimension;};
 
-  inline const Coordinate LocalStarts(void)             { return _lstart;    };
+  inline const Coordinate &LocalStarts(void)            { return _lstart;    };
   inline const Coordinate &FullDimensions(void)         { return _fdimensions;};
   inline const Coordinate &GlobalDimensions(void)       { return _gdimensions;};
   inline const Coordinate &LocalDimensions(void)        { return _ldimensions;};
@@ -216,11 +216,11 @@ public:
   // Global addressing
   ////////////////////////////////////////////////////////////////
   void GlobalIndexToGlobalCoor(int64_t gidx,Coordinate &gcoor){
-    assert(gidx< gSites());
+    GRID_ASSERT(gidx< gSites());
     Lexicographic::CoorFromIndex(gcoor,gidx,_gdimensions);
   }
   void LocalIndexToLocalCoor(int lidx,Coordinate &lcoor){
-    assert(lidx<lSites());
+    GRID_ASSERT(lidx<lSites());
     Lexicographic::CoorFromIndex(lcoor,lidx,_ldimensions);
   }
   void GlobalCoorToGlobalIndex(const Coordinate & gcoor,int64_t & gidx){

@@ -51,6 +51,9 @@ typedef IwasakiGaugeAction<PeriodicGimplD>         IwasakiGaugeActionD;
 typedef SymanzikGaugeAction<PeriodicGimplR>        SymanzikGaugeActionR;
 typedef SymanzikGaugeAction<PeriodicGimplF>        SymanzikGaugeActionF;
 typedef SymanzikGaugeAction<PeriodicGimplD>        SymanzikGaugeActionD;
+typedef DBW2GaugeAction<PeriodicGimplR>            DBW2GaugeActionR;
+typedef DBW2GaugeAction<PeriodicGimplF>            DBW2GaugeActionF;
+typedef DBW2GaugeAction<PeriodicGimplD>            DBW2GaugeActionD;
 
 
 typedef WilsonGaugeAction<ConjugateGimplR>          ConjugateWilsonGaugeActionR;

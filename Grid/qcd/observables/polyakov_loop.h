@@ -2,11 +2,12 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./lib/qcd/modules/polyakov_line.h
+Source file: ./Grid/qcd/observables/polyakov_loop.h
 
-Copyright (C) 2017
+Copyright (C) 2025
 
 Author: David Preti <david.preti@csic.es>
+Author: Alexis Verney-Provatas <2414441@swansea.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -55,6 +56,45 @@ class PolyakovLogger : public HmcObservable<typename Impl::Field> {
         << std::setprecision(std::numeric_limits<Real>::digits10 + 1)
         << "Polyakov Loop: [ " << traj << " ] "<< polyakov << std::endl;
 
+    std::cout.precision(def_prec);
+
+  }
+};
+
+template <class Impl>
+class SpatialPolyakovLogger : public HmcObservable<typename Impl::Field> {
+ public:
+    // here forces the Impl to be of gauge fields
+    // if not the compiler will complain
+    INHERIT_GIMPL_TYPES(Impl);
+
+     // necessary for HmcObservable compatibility
+    typedef typename Impl::Field Field;
+
+    void TrajectoryComplete(int traj,
+                            Field &U,
+                            GridSerialRNG &sRNG,
+                            GridParallelRNG &pRNG) {
+
+    // Save current numerical output precision
+    int def_prec = std::cout.precision();
+
+    // Assume that the dimensions are D=3+1
+    int Ndim = 3;
+    ComplexD polyakov;
+   
+    // Iterate over the spatial directions and print the average spatial polyakov loop
+    // over them 
+    for (int idx=0; idx<Ndim; idx++) {
+        polyakov = WilsonLoops<Impl>::avgPolyakovLoop(U, idx);
+    
+        std::cout << GridLogMessage
+            << std::setprecision(std::numeric_limits<Real>::digits10 + 1)
+            << "Polyakov Loop in the " << idx << " spatial direction : [ " << traj << " ] "<< polyakov << std::endl;
+
+    }
+
+    // Return to original output precision
     std::cout.precision(def_prec);
 
   }

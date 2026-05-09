@@ -49,7 +49,7 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi_i, const FermionFi
   autoView( phi , phi_i, AcceleratorRead);
   autoView( psi , psi_i, AcceleratorRead);
   autoView( chi , chi_i, AcceleratorWrite);
-  assert(phi.Checkerboard() == psi.Checkerboard());
+  GRID_ASSERT(phi.Checkerboard() == psi.Checkerboard());
 
   auto pdiag  = &this->d_diag[0];
   auto pupper = &this->d_upper[0];
@@ -88,7 +88,7 @@ void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi_i, const Fermio
   autoView( psi , psi_i, AcceleratorRead);
   autoView( phi , phi_i, AcceleratorRead);
   autoView( chi , chi_i, AcceleratorWrite);
-  assert(phi.Checkerboard() == psi.Checkerboard());
+  GRID_ASSERT(phi.Checkerboard() == psi.Checkerboard());
   
   auto pdiag  = &this->d_diag[0];
   auto pupper = &this->d_upper[0];
@@ -190,7 +190,7 @@ void DomainWallEOFAFermion<Impl>::MooeeInvDag(const FermionField& psi_i, Fermion
   auto pleem = & this->leem[0];
   auto pueem = & this->ueem[0];
 
-  assert(psi.Checkerboard() == psi.Checkerboard());
+  GRID_ASSERT(psi.Checkerboard() == psi.Checkerboard());
 
   auto nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{

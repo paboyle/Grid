@@ -62,7 +62,7 @@ public:
     : swap(false)
     , grid(gridPtr) {
     err = MPI_File_open(comm, const_cast<char*>(filename.c_str()), MPI_MODE_RDONLY, MPI_INFO_NULL, &fp);
-    assert(err == MPI_SUCCESS);
+    GRID_ASSERT(err == MPI_SUCCESS);
   }
 
   virtual ~ParRdr() { MPI_File_close(&fp); }
@@ -76,8 +76,8 @@ public:
   }
 
   int readHeader(FieldMetaData& field) {
-    assert((grid->_ndimension == Nd) && (Nd == 4));
-    assert(Nc == 3);
+    GRID_ASSERT((grid->_ndimension == Nd) && (Nd == 4));
+    GRID_ASSERT(Nc == 3);
 
     OpenQcdHeader header;
 
@@ -86,10 +86,10 @@ public:
     header.plaq /= 3.; // TODO change this into normalizationfactor
 
     // sanity check (should trigger on endian issues) TODO remove?
-    assert(0 < header.Nt && header.Nt <= 1024);
-    assert(0 < header.Nx && header.Nx <= 1024);
-    assert(0 < header.Ny && header.Ny <= 1024);
-    assert(0 < header.Nz && header.Nz <= 1024);
+    GRID_ASSERT(0 < header.Nt && header.Nt <= 1024);
+    GRID_ASSERT(0 < header.Nx && header.Nx <= 1024);
+    GRID_ASSERT(0 < header.Ny && header.Ny <= 1024);
+    GRID_ASSERT(0 < header.Nz && header.Nz <= 1024);
 
     field.dimension[0] = header.Nx;
     field.dimension[1] = header.Ny;
@@ -97,7 +97,7 @@ public:
     field.dimension[3] = header.Nt;
 
     for(int d = 0; d < Nd; d++)
-      assert(grid->FullDimensions()[d] == field.dimension[d]);
+      GRID_ASSERT(grid->FullDimensions()[d] == field.dimension[d]);
 
     field.plaquette = header.plaq;
 
@@ -114,15 +114,15 @@ public:
     int read = -1;
     MPI_Get_count(&status, datatype, &read);
     // CHECK_VAR(read)
-    assert(nbytes == (uint64_t)read);
-    assert(err == MPI_SUCCESS);
+    GRID_ASSERT(nbytes == (uint64_t)read);
+    GRID_ASSERT(err == MPI_SUCCESS);
   }
 
   void createTypes() {
     constexpr int elem_size = Nd * 2 * 2 * Nc * Nc * sizeof(double); // 2_complex 2_fwdbwd
 
-    err = MPI_Type_contiguous(elem_size, MPI_BYTE, &oddSiteType); assert(err == MPI_SUCCESS);
-    err = MPI_Type_commit(&oddSiteType); assert(err == MPI_SUCCESS);
+    err = MPI_Type_contiguous(elem_size, MPI_BYTE, &oddSiteType); GRID_ASSERT(err == MPI_SUCCESS);
+    err = MPI_Type_commit(&oddSiteType); GRID_ASSERT(err == MPI_SUCCESS);
 
     Coordinate const L = grid->GlobalDimensions();
     Coordinate const l = grid->LocalDimensions();
@@ -132,20 +132,20 @@ public:
     Coordinate subsizes({l[2] / 2, l[1], l[0], l[3]});
     Coordinate starts({i[2] * l[2] / 2, i[1] * l[1], i[0] * l[0], i[3] * l[3]});
 
-    err = MPI_Type_create_subarray(grid->_ndimension, &sizes[0], &subsizes[0], &starts[0], MPI_ORDER_FORTRAN, oddSiteType, &fileViewType); assert(err == MPI_SUCCESS);
-    err = MPI_Type_commit(&fileViewType); assert(err == MPI_SUCCESS);
+    err = MPI_Type_create_subarray(grid->_ndimension, &sizes[0], &subsizes[0], &starts[0], MPI_ORDER_FORTRAN, oddSiteType, &fileViewType); GRID_ASSERT(err == MPI_SUCCESS);
+    err = MPI_Type_commit(&fileViewType); GRID_ASSERT(err == MPI_SUCCESS);
   }
 
   void freeTypes() {
-    err = MPI_Type_free(&fileViewType); assert(err == MPI_SUCCESS);
-    err = MPI_Type_free(&oddSiteType); assert(err == MPI_SUCCESS);
+    err = MPI_Type_free(&fileViewType); GRID_ASSERT(err == MPI_SUCCESS);
+    err = MPI_Type_free(&oddSiteType); GRID_ASSERT(err == MPI_SUCCESS);
   }
 
   bool readGauge(std::vector<ColourMatrixD>& domain_buff, FieldMetaData& meta) {
     auto hdr_offset = readHeader(meta);
     CHECK
     createTypes();
-    err = MPI_File_set_view(fp, hdr_offset, oddSiteType, fileViewType, "native", MPI_INFO_NULL); errInfo(err, "MPI_File_set_view0"); assert(err == MPI_SUCCESS);
+    err = MPI_File_set_view(fp, hdr_offset, oddSiteType, fileViewType, "native", MPI_INFO_NULL); errInfo(err, "MPI_File_set_view0"); GRID_ASSERT(err == MPI_SUCCESS);
     CHECK
     int const domainSites = grid->lSites();
     domain_buff.resize(Nd * domainSites); // 2_fwdbwd * 4_Nd * domainSites / 2_onlyodd
@@ -166,7 +166,7 @@ public:
     CHECK
     err = MPI_File_set_view(fp, 0, MPI_BYTE, MPI_BYTE, "native", MPI_INFO_NULL);
   errInfo(err, "MPI_File_set_view1");
-    assert(err == MPI_SUCCESS);
+    GRID_ASSERT(err == MPI_SUCCESS);
     freeTypes();
 
     std::cout << GridLogMessage << "read sum: " << n_os * os_size << " bytes" << std::endl;
@@ -182,7 +182,7 @@ public:
                                        std::string                           file) {
     typedef Lattice<iDoubleStoredColourMatrix<vsimd>> DoubledGaugeField;
 
-    assert(Ns == 4 and Nd == 4 and Nc == 3);
+    GRID_ASSERT(Ns == 4 and Nd == 4 and Nc == 3);
 
     auto grid = Umu.Grid();
 
@@ -225,7 +225,7 @@ public:
 
     if(plaq_diff >= tol)
       std::cout << " Plaquette mismatch (diff = " << plaq_diff << ", tol = " << tol << ")" << std::endl;
-    assert(plaq_diff < tol);
+    GRID_ASSERT(plaq_diff < tol);
 
     std::cout << GridLogMessage << "OpenQcd Configuration " << file << " and plaquette agree" << std::endl;
   }
@@ -246,7 +246,7 @@ private:
   static inline void copyToLatticeObject(std::vector<DoubleStoredColourMatrix>& u_fb,
                                          std::vector<ColourMatrixD> const&      node_buff,
                                          GridBase*                              grid) {
-    assert(node_buff.size() == Nd * grid->lSites());
+    GRID_ASSERT(node_buff.size() == Nd * grid->lSites());
 
     Coordinate const& l = grid->LocalDimensions();
 
@@ -274,7 +274,7 @@ private:
             buff_idx += 2 * Nd;
           }
 
-    assert(node_buff.size() == buff_idx);
+    GRID_ASSERT(node_buff.size() == buff_idx);
   }
 };
 

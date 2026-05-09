@@ -177,7 +177,7 @@ int main (int argc, char ** argv)
     GaugeLorentz diff = derivOrig - derivNew;
     double n = norm2(diff);
     std::cout << GridLogMessage << "Difference " << n << " (expect 0)" << std::endl;
-    assert(n<1e-10);
+    GRID_ASSERT(n<1e-10);
 
     std::cout << GridLogMessage << "Timings orig: " << (t1-t0)/1000 << "ms,  new: " << (t2-t1)/1000 << "ms" << std::endl;
     torig += (t1-t0)/1000; tnew += (t2-t1)/1000;

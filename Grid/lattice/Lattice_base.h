@@ -120,12 +120,12 @@ public:
     GRID_TRACE("ExpressionTemplateEval");
     GridBase *egrid(nullptr);
     GridFromExpression(egrid,expr);
-    assert(egrid!=nullptr);
+    GRID_ASSERT(egrid!=nullptr);
     conformable(this->_grid,egrid);
 
     int cb=-1;
     CBFromExpression(cb,expr);
-    assert( (cb==Odd) || (cb==Even));
+    GRID_ASSERT( (cb==Odd) || (cb==Even));
     this->checkerboard=cb;
     
     auto exprCopy = expr;
@@ -144,12 +144,12 @@ public:
     GRID_TRACE("ExpressionTemplateEval");
     GridBase *egrid(nullptr);
     GridFromExpression(egrid,expr);
-    assert(egrid!=nullptr);
+    GRID_ASSERT(egrid!=nullptr);
     conformable(this->_grid,egrid);
 
     int cb=-1;
     CBFromExpression(cb,expr);
-    assert( (cb==Odd) || (cb==Even));
+    GRID_ASSERT( (cb==Odd) || (cb==Even));
     this->checkerboard=cb;
 
     auto exprCopy = expr;
@@ -168,12 +168,12 @@ public:
     GRID_TRACE("ExpressionTemplateEval");
     GridBase *egrid(nullptr);
     GridFromExpression(egrid,expr);
-    assert(egrid!=nullptr);
+    GRID_ASSERT(egrid!=nullptr);
     conformable(this->_grid,egrid);
 
     int cb=-1;
     CBFromExpression(cb,expr);
-    assert( (cb==Odd) || (cb==Even));
+    GRID_ASSERT( (cb==Odd) || (cb==Even));
     this->checkerboard=cb;
     auto exprCopy = expr;
     ExpressionViewOpen(exprCopy);
@@ -191,11 +191,11 @@ public:
   Lattice(const LatticeUnaryExpression<Op,T1> & expr) {
     this->_grid = nullptr;
     GridFromExpression(this->_grid,expr);
-    assert(this->_grid!=nullptr);
+    GRID_ASSERT(this->_grid!=nullptr);
 
     int cb=-1;
     CBFromExpression(cb,expr);
-    assert( (cb==Odd) || (cb==Even));
+    GRID_ASSERT( (cb==Odd) || (cb==Even));
     this->checkerboard=cb;
 
     resize(this->_grid->oSites());
@@ -206,11 +206,11 @@ public:
   Lattice(const LatticeBinaryExpression<Op,T1,T2> & expr) {
     this->_grid = nullptr;
     GridFromExpression(this->_grid,expr);
-    assert(this->_grid!=nullptr);
+    GRID_ASSERT(this->_grid!=nullptr);
 
     int cb=-1;
     CBFromExpression(cb,expr);
-    assert( (cb==Odd) || (cb==Even));
+    GRID_ASSERT( (cb==Odd) || (cb==Even));
     this->checkerboard=cb;
 
     resize(this->_grid->oSites());
@@ -221,11 +221,11 @@ public:
   Lattice(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr) {
     this->_grid = nullptr;
     GridFromExpression(this->_grid,expr);
-    assert(this->_grid!=nullptr);
+    GRID_ASSERT(this->_grid!=nullptr);
 
     int cb=-1;
     CBFromExpression(cb,expr);
-    assert( (cb==Odd) || (cb==Even));
+    GRID_ASSERT( (cb==Odd) || (cb==Even));
     this->checkerboard=cb;
 
     resize(this->_grid->oSites());
@@ -264,7 +264,7 @@ public:
   Lattice(GridBase *grid,ViewMode mode=AcceleratorWriteDiscard) { 
     this->_grid = grid;
     resize(this->_grid->oSites());
-    assert((((uint64_t)&this->_odata[0])&0xF) ==0);
+    GRID_ASSERT((((uint64_t)&this->_odata[0])&0xF) ==0);
     this->checkerboard=0;
     SetViewMode(mode);
   }

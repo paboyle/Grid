@@ -103,6 +103,18 @@ class PolyakovMod: public ObservableModule<PolyakovLogger<Impl>, NoParameters>{
   PolyakovMod(): ObsBase(NoParameters()){}
 };
 
+template < class Impl >
+class SpatialPolyakovMod: public ObservableModule<SpatialPolyakovLogger<Impl>, NoParameters>{
+  typedef ObservableModule<SpatialPolyakovLogger<Impl>, NoParameters> ObsBase;
+  using ObsBase::ObsBase; // for constructors
+
+  // acquire resource
+  virtual void initialize(){
+    this->ObservablePtr.reset(new SpatialPolyakovLogger<Impl>());
+  }
+  public:
+  SpatialPolyakovMod(): ObsBase(NoParameters()){}
+};
 
 template < class Impl >
 class TopologicalChargeMod: public ObservableModule<TopologicalCharge<Impl>, TopologyObsParameters>{

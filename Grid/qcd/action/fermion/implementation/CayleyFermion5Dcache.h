@@ -52,8 +52,8 @@ CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
   GridBase *grid=psi_i.Grid();
   autoView(psi , psi_i,AcceleratorRead);
   autoView(phi , phi_i,AcceleratorRead);
-  autoView(chi , chi_i,AcceleratorWriteDiscard);
-  assert(phi.Checkerboard() == psi.Checkerboard());
+  autoView(chi , chi_i,AcceleratorWrite);
+  GRID_ASSERT(phi.Checkerboard() == psi.Checkerboard());
 
   int Ls =this->Ls;
 
@@ -94,8 +94,8 @@ CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
   GridBase *grid=psi_i.Grid();
   autoView(psi , psi_i,AcceleratorRead);
   autoView(phi , phi_i,AcceleratorRead);
-  autoView(chi , chi_i,AcceleratorWriteDiscard);
-  assert(phi.Checkerboard() == psi.Checkerboard());
+  autoView(chi , chi_i,AcceleratorWrite);
+  GRID_ASSERT(phi.Checkerboard() == psi.Checkerboard());
 
   int Ls=this->Ls;
 
@@ -208,7 +208,7 @@ CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi_i, FermionField &chi
   auto pleem = & d_leem[0];
   auto pueem = & d_ueem[0];
 
-  assert(psi.Checkerboard() == psi.Checkerboard());
+  GRID_ASSERT(psi.Checkerboard() == psi.Checkerboard());
 
   uint64_t nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{

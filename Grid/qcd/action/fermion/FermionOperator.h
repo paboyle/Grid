@@ -49,7 +49,7 @@ public:
 
   virtual FermionField &tmp(void) = 0;
 
-  virtual void DirichletBlock(const Coordinate & _Block) { assert(0); };
+  virtual void DirichletBlock(const Coordinate & _Block) { GRID_ASSERT(0); };
   
   GridBase * Grid(void)   { return FermionGrid(); };   // this is all the linalg routines need to know
   GridBase * RedBlackGrid(void) { return FermionRedBlackGrid(); };
@@ -93,7 +93,7 @@ public:
   virtual void  MdirAll(const FermionField &in, std::vector<FermionField> &out)=0;   // case by case Wilson, Clover, Cayley, ContFrac, PartFrac
 
 
-  virtual void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m,std::vector<double> twist) { assert(0);};
+  virtual void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m,std::vector<double> twist) { GRID_ASSERT(0);};
 
   virtual void  FreePropagator(const FermionField &in,FermionField &out,RealD mass,std::vector<Complex> boundary,std::vector<double> twist) 
       {

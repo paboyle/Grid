@@ -79,7 +79,7 @@ class QuasiMinimalResidual : public OperatorFunction<Field> {
 
     LinOp.Op(x,r); r = b - r;
 
-    assert(normb> 0.0);
+    GRID_ASSERT(normb> 0.0);
 
     resid = norm2(r)/normb;
     if (resid <= Tolerance) {
@@ -105,8 +105,8 @@ class QuasiMinimalResidual : public OperatorFunction<Field> {
     for (int i = 1; i <= MaxIterations; i++) {
 
       // Breakdown tests
-      assert( rho != 0.0);
-      assert( xi  != 0.0);
+      GRID_ASSERT( rho != 0.0);
+      GRID_ASSERT( xi  != 0.0);
 
       v = (1. / rho) * v_tld;
       y = (1. / rho) * y;
@@ -134,10 +134,10 @@ class QuasiMinimalResidual : public OperatorFunction<Field> {
       ep=Zep.real();
       std::cout << "Zep "<<Zep <<std::endl;
       // Complex Audit
-      assert(abs(ep)>0);
+      GRID_ASSERT(abs(ep)>0);
 
       beta = ep / delta;
-      assert(abs(beta)>0);
+      GRID_ASSERT(abs(beta)>0);
 
       v_tld = p_tld - beta * v;
       y = v_tld;
@@ -158,7 +158,7 @@ class QuasiMinimalResidual : public OperatorFunction<Field> {
       std::cout << "theta "<<theta<<std::endl;
       std::cout << "gamma "<<gamma<<std::endl;
 
-      assert(abs(gamma)> 0.0);
+      GRID_ASSERT(abs(gamma)> 0.0);
 
       eta = -eta * rho_1 * gamma* gamma / (beta * gamma_1 * gamma_1);
 
@@ -178,7 +178,7 @@ class QuasiMinimalResidual : public OperatorFunction<Field> {
       }
       std::cout << "Iteration "<<i<<" resid " << resid<<std::endl;
     }
-    assert(0);
+    GRID_ASSERT(0);
     return;                            // no convergence
   }
 #else

@@ -241,7 +241,7 @@ void ImprovedStaggeredFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGauge
 						   GaugeField & mat,
 						   const FermionField &A, const FermionField &B, int dag) 
 {
-  assert((dag == DaggerNo) || (dag == DaggerYes));
+  GRID_ASSERT((dag == DaggerNo) || (dag == DaggerYes));
 
   Compressor compressor;
 
@@ -284,7 +284,7 @@ void ImprovedStaggeredFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGauge
     // mat+= outer ( AU, UUB) <-- and then use covariant cshift?
     // mat+= outer ( AUU, UB) <-- Returned from call to DhopDir
 
-    assert(0);// need to figure out the force interface with a blasted three link term.
+    GRID_ASSERT(0);// need to figure out the force interface with a blasted three link term.
     
   }
 }
@@ -308,8 +308,8 @@ void ImprovedStaggeredFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionF
   conformable(U.Grid(), V.Grid());
   conformable(U.Grid(), mat.Grid());
 
-  assert(V.Checkerboard() == Even);
-  assert(U.Checkerboard() == Odd);
+  GRID_ASSERT(V.Checkerboard() == Even);
+  GRID_ASSERT(U.Checkerboard() == Odd);
   mat.Checkerboard() = Odd;
 
   DerivInternal(StencilEven, UmuOdd, UUUmuOdd, mat, U, V, dag);
@@ -322,8 +322,8 @@ void ImprovedStaggeredFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionF
   conformable(U.Grid(), V.Grid());
   conformable(U.Grid(), mat.Grid());
 
-  assert(V.Checkerboard() == Odd);
-  assert(U.Checkerboard() == Even);
+  GRID_ASSERT(V.Checkerboard() == Odd);
+  GRID_ASSERT(U.Checkerboard() == Even);
   mat.Checkerboard() = Even;
 
   DerivInternal(StencilOdd, UmuEven, UUUmuEven, mat, U, V, dag);
@@ -346,7 +346,7 @@ void ImprovedStaggeredFermion<Impl>::DhopOE(const FermionField &in, FermionField
   conformable(in.Grid(), _cbgrid);    // verifies half grid
   conformable(in.Grid(), out.Grid());  // drops the cb check
 
-  assert(in.Checkerboard() == Even);
+  GRID_ASSERT(in.Checkerboard() == Even);
   out.Checkerboard() = Odd;
 
   DhopInternal(StencilEven, UmuOdd, UUUmuOdd, in, out, dag);
@@ -358,7 +358,7 @@ void ImprovedStaggeredFermion<Impl>::DhopEO(const FermionField &in, FermionField
   conformable(in.Grid(), _cbgrid);    // verifies half grid
   conformable(in.Grid(), out.Grid());  // drops the cb check
 
-  assert(in.Checkerboard() == Odd);
+  GRID_ASSERT(in.Checkerboard() == Odd);
   out.Checkerboard() = Even;
 
   DhopInternal(StencilOdd, UmuEven, UUUmuEven, in, out, dag);
@@ -372,7 +372,7 @@ void ImprovedStaggeredFermion<Impl>::Mdir(const FermionField &in, FermionField &
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::MdirAll(const FermionField &in, std::vector<FermionField> &out) 
 {
-  assert(0); // Not implemented yet
+  GRID_ASSERT(0); // Not implemented yet
 }
 
 template <class Impl>
@@ -450,7 +450,7 @@ void ImprovedStaggeredFermion<Impl>::DhopInternalSerialComms(StencilImpl &st,
 							     const FermionField &in,
 							     FermionField &out, int dag) 
 {
-  assert((dag == DaggerNo) || (dag == DaggerYes));
+  GRID_ASSERT((dag == DaggerNo) || (dag == DaggerYes));
 
   Compressor compressor;
   st.HaloExchange(in, compressor);
@@ -473,7 +473,7 @@ void ImprovedStaggeredFermion<Impl>::ContractConservedCurrent(PropagatorField &q
 							      Current curr_type,
 							      unsigned int mu)
 {
-  assert(0);
+  GRID_ASSERT(0);
 }
 
 template <class Impl>
@@ -486,7 +486,7 @@ void ImprovedStaggeredFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                               unsigned int tmax,
 					      ComplexField &lattice_cmplx)
 {
-  assert(0);
+  GRID_ASSERT(0);
 
 }
 

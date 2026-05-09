@@ -145,7 +145,7 @@ namespace Grid
       write("dim", d);
       count *= d;
     }
-    assert( count == NumElements && "XmlIO : element count doesn't match dimensions" );
+    GRID_ASSERT( count == NumElements && "XmlIO : element count doesn't match dimensions" );
     static const char sName[] = "tensor";
     for( int i = 0 ; i < Rank ; i++ ) {
       MyIndex[i] = 0;

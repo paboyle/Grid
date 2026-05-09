@@ -1,5 +1,6 @@
 #!/bin/bash
-#SBATCH -A m3886_g
+#SBATCH -A m5294_g
+#m3886_g
 #SBATCH -C gpu
 #SBATCH -q debug
 #SBATCH -t 0:20:00
@@ -19,9 +20,21 @@ export MPICH_GPU_EAGER_REGISTER_HOST_MEM=0
 export MPICH_GPU_NO_ASYNC_MEMCPY=0
 #export MPICH_SMP_SINGLE_COPY_MODE=CMA
 
-OPT="--comms-sequential --shm-mpi 1"
-VOL=64.64.64.64
-srun ./benchmarks/Benchmark_dwf_fp32 --mpi 2.2.1.1 --grid $VOL --accelerator-threads 8 --shm 2048 $OPT
-#srun ./benchmarks/Benchmark_dwf_fp32 --mpi 2.1.1.4 --grid $VOL --accelerator-threads 8 --shm 2048 $OPT
-#srun ./benchmarks/Benchmark_dwf_fp32 --mpi 1.1.1.8 --grid $VOL --accelerator-threads 8 --shm 2048 $OPT
+cat << EOF > select_gpu
+#!/bin/bash
+export GPU_MAP=(0 1 2 3)
+export NUMA_MAP=( 0 1 2 3 )
+export GPU=\$SLURM_LOCALID
+export NUMA=\$SLURM_LOCALID
+export CUDA_VISIBLE_DEVICES=\$GPU
+exec numactl -m \$NUMA -N \$NUMA \$*
+EOF
+
+chmod +x ./select_gpu
+
+OPT="--comms-sequential --shm-mpi 0"
+VOL=64.64.32.32
+srun ./select_gpu ./benchmarks/Benchmark_dwf_fp32 --mpi 2.2.1.1 --grid $VOL --device-mem 16000 --accelerator-threads 8 --shm 2048 $OPT
+OPT="--comms-overlap --shm-mpi 0"
+srun ./select_gpu ./benchmarks/Benchmark_dwf_fp32 --mpi 2.2.1.1 --grid $VOL --device-mem 16000 --accelerator-threads 8 --shm 2048 $OPT
 

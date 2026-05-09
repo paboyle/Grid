@@ -233,7 +233,7 @@ template <class Impl>
 void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
                                         GaugeField &mat, const FermionField &A,
                                         const FermionField &B, int dag) {
-  assert((dag == DaggerNo) || (dag == DaggerYes));
+  GRID_ASSERT((dag == DaggerNo) || (dag == DaggerYes));
 
   Compressor compressor(dag);
 
@@ -280,8 +280,8 @@ void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, co
   //conformable(U.Grid(), mat.Grid()); not general, leaving as a comment (Guido)
   // Motivation: look at the SchurDiff operator
 
-  assert(V.Checkerboard() == Even);
-  assert(U.Checkerboard() == Odd);
+  GRID_ASSERT(V.Checkerboard() == Even);
+  GRID_ASSERT(U.Checkerboard() == Odd);
   mat.Checkerboard() = Odd;
 
   DerivInternal(StencilEven, UmuOdd, mat, U, V, dag);
@@ -294,8 +294,8 @@ void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, co
   conformable(U.Grid(), V.Grid());
   //conformable(U.Grid(), mat.Grid());
 
-  assert(V.Checkerboard() == Odd);
-  assert(U.Checkerboard() == Even);
+  GRID_ASSERT(V.Checkerboard() == Odd);
+  GRID_ASSERT(U.Checkerboard() == Even);
   mat.Checkerboard() = Even;
 
   DerivInternal(StencilOdd, UmuEven, mat, U, V, dag);
@@ -318,7 +318,7 @@ void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int 
   conformable(in.Grid(), _cbgrid);    // verifies half grid
   conformable(in.Grid(), out.Grid());  // drops the cb check
 
-  assert(in.Checkerboard() == Even);
+  GRID_ASSERT(in.Checkerboard() == Even);
   out.Checkerboard() = Odd;
 
   DhopInternal(StencilEven, UmuOdd, in, out, dag);
@@ -330,7 +330,7 @@ void WilsonFermion<Impl>::DhopEO(const FermionField &in, FermionField &out,int d
   conformable(in.Grid(), _cbgrid);    // verifies half grid
   conformable(in.Grid(), out.Grid());  // drops the cb check
 
-  assert(in.Checkerboard() == Odd);
+  GRID_ASSERT(in.Checkerboard() == Odd);
   out.Checkerboard() = Even;
 
   DhopInternal(StencilOdd, UmuEven, in, out, dag);
@@ -365,7 +365,7 @@ void WilsonFermion<Impl>::DhopDirAll(const FermionField &in, std::vector<Fermion
   Compressor compressor(DaggerNo);
   Stencil.HaloExchange(in, compressor);
 
-  assert((out.size()==8)||(out.size()==9));
+  GRID_ASSERT((out.size()==8)||(out.size()==9));
   for(int dir=0;dir<Nd;dir++){
     for(int disp=-1;disp<=1;disp+=2){
 
@@ -406,7 +406,7 @@ void WilsonFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st,
 						      FermionField &out, int dag)
 {
   GRID_TRACE("DhopOverlapped");
-  assert((dag == DaggerNo) || (dag == DaggerYes));
+  GRID_ASSERT((dag == DaggerNo) || (dag == DaggerYes));
 
   Compressor compressor(dag);
   int len =  U.Grid()->oSites();
@@ -475,7 +475,7 @@ void WilsonFermion<Impl>::DhopInternalSerial(StencilImpl &st,
 					     FermionField &out, int dag)
 {
   GRID_TRACE("DhopSerial");
-  assert((dag == DaggerNo) || (dag == DaggerYes));
+  GRID_ASSERT((dag == DaggerNo) || (dag == DaggerYes));
   Compressor compressor(dag);
   {
     GRID_TRACE("HaloExchange");

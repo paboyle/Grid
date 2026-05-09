@@ -49,7 +49,7 @@ void ContinuedFractionFermion5D<Impl>::SetCoefficientsZolotarev(RealD zolo_hi,Ap
   std::cout<<GridLogMessage << zdata->dd << " -dd"<<std::endl;
   int Ls = this->Ls;
   std::cout<<GridLogMessage << Ls << " Ls"<<std::endl;
-  assert(zdata->db==Ls);// Beta has Ls coeffs
+  GRID_ASSERT(zdata->db==Ls);// Beta has Ls coeffs
 
   R=(1+this->mass)/(1-this->mass);
 
@@ -311,7 +311,7 @@ ContinuedFractionFermion5D<Impl>::ContinuedFractionFermion5D(
   mass(_mass)
 {
   int Ls = this->Ls;
-  assert((Ls&0x1)==1); // Odd Ls required
+  GRID_ASSERT((Ls&0x1)==1); // Odd Ls required
 }
 
     template<class Impl>

@@ -146,7 +146,7 @@ public:
 			     const ImplParams &p= ImplParams());
     
     // DoubleStore gauge field in operator
-    void ImportGauge      (const GaugeField &_Uthin ) { assert(0); }
+    void ImportGauge      (const GaugeField &_Uthin ) { GRID_ASSERT(0); }
   void ImportGauge(const GaugeField &_Uthin,const GaugeField &_Ufat);
     void ImportGaugeSimple(const GaugeField &_UUU,const GaugeField &_U);
     void ImportGaugeSimple(const DoubledGaugeField &_UUU,const DoubledGaugeField &_U);

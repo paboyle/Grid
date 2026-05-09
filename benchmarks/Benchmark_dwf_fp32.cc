@@ -20,6 +20,10 @@
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+#include "disable_benchmarks_without_instantiations.h"
+
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
 #include <Grid/Grid.h>
 #ifdef GRID_CUDA
 #define CUDA_PROFILE
@@ -312,7 +316,7 @@ void Benchmark(int Ls, Coordinate Dirichlet,bool sloppy)
       FGrid->Barrier();
       exit(-1);
     }
-    assert (n2e< 1.0e-4 );
+    GRID_ASSERT (n2e< 1.0e-4 );
   }
 
   if (1)
@@ -370,7 +374,7 @@ void Benchmark(int Ls, Coordinate Dirichlet,bool sloppy)
   n2e= norm2(err);
   std::cout<<GridLogMessage << "norm dag diff   "<< n2e<< "  Line "<<__LINE__ <<std::endl;
 
-  assert((n2e)<1.0e-4);
+  GRID_ASSERT((n2e)<1.0e-4);
   
   FermionField src_e (FrbGrid);
   FermionField src_o (FrbGrid);
@@ -429,13 +433,15 @@ void Benchmark(int Ls, Coordinate Dirichlet,bool sloppy)
   err = r_eo-result;
   n2e= norm2(err);
   std::cout<<GridLogMessage << "norm diff   "<< n2e<<std::endl;
-  assert(n2e<1.0e-4);
+  GRID_ASSERT(n2e<1.0e-4);
 
   pickCheckerboard(Even,src_e,err);
   pickCheckerboard(Odd,src_o,err);
   std::cout<<GridLogMessage << "norm diff even  "<< norm2(src_e)<<std::endl;
   std::cout<<GridLogMessage << "norm diff odd   "<< norm2(src_o)<<std::endl;
 
-  assert(norm2(src_e)<1.0e-4);
-  assert(norm2(src_o)<1.0e-4);
+  GRID_ASSERT(norm2(src_e)<1.0e-4);
+  GRID_ASSERT(norm2(src_o)<1.0e-4);
 }
+
+#endif

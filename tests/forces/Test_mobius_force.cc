@@ -230,7 +230,7 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "dS - dt^2 term "<< Hmomprime - Hmom + Sprime - S - dSm2 <<std::endl;
 
-  assert( fabs(real(Sprime-S-dSpred)) < 1.0 ) ;
+  GRID_ASSERT( fabs(real(Sprime-S-dSpred)) < 1.0 ) ;
 
 
   

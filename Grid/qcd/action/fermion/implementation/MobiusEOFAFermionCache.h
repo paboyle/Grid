@@ -48,7 +48,7 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi_i, const FermionField 
   autoView(phi , phi_i, AcceleratorRead);
   autoView(chi , chi_i, AcceleratorWrite);
 
-  assert(phi.Checkerboard() == psi.Checkerboard());
+  GRID_ASSERT(phi.Checkerboard() == psi.Checkerboard());
 
   auto pdiag  = &this->d_diag[0];
   auto pupper = &this->d_upper[0];
@@ -91,7 +91,7 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi_i, const Fermion
   auto pm  = this->pm;
   int shift_s = (pm == 1) ? (Ls-1) : 0; // s-component modified by shift operator
   
-  assert(phi.Checkerboard() == psi.Checkerboard());
+  GRID_ASSERT(phi.Checkerboard() == psi.Checkerboard());
 
   auto pdiag  = &this->d_diag[0];
   auto pupper = &this->d_upper[0];
@@ -137,7 +137,7 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField &psi_i, const FermionFie
   autoView(phi , phi_i, AcceleratorRead);
   autoView(chi , chi_i, AcceleratorWrite);
 
-  assert(phi.Checkerboard() == psi.Checkerboard());
+  GRID_ASSERT(phi.Checkerboard() == psi.Checkerboard());
   
   auto pdiag  = &this->d_diag[0];
   auto pupper = &this->d_upper[0];
@@ -178,7 +178,7 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField &psi_i, const Ferm
   autoView(phi , phi_i, AcceleratorRead);
   autoView(chi , chi_i, AcceleratorWrite);
 
-  assert(phi.Checkerboard() == psi.Checkerboard());
+  GRID_ASSERT(phi.Checkerboard() == psi.Checkerboard());
 
   auto pdiag  = &this->d_diag[0];
   auto pupper = &this->d_upper[0];

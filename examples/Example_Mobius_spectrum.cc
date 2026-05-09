@@ -3,6 +3,9 @@
  * without regression / tests being applied
  */
 
+#include "disable_examples_without_instantiations.h"
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
 #include <Grid/Grid.h>
 
 using namespace std;
@@ -115,8 +118,8 @@ void GaussianWallSource(GridParallelRNG &RNG,int tslice,LatticeGaugeField &U,Lat
 }
 void SequentialSource(int tslice,Coordinate &mom,LatticePropagator &spectator,LatticePropagator &source)
 {
-  assert(mom.size()==Nd);
-  assert(mom[Tdir] == 0);
+  GRID_ASSERT(mom.size()==Nd);
+  GRID_ASSERT(mom[Tdir] == 0);
 
   GridBase * grid = spectator.Grid();
 
@@ -310,5 +313,4 @@ int main (int argc, char ** argv)
   Grid_finalize();
 }
 
-
-
+#endif

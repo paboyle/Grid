@@ -37,21 +37,38 @@ class WilsonFlowBase: public Smear<Gimpl>{
 public:
   //Store generic measurements to take during smearing process using std::function
   typedef std::function<void(int, RealD, const typename Gimpl::GaugeField &)> FunctionType;  //int: step,  RealD: flow time,  GaugeField : the gauge field
+   
+  INHERIT_GIMPL_TYPES(Gimpl);
+
+  typedef Action<typename Gimpl::GaugeField> ActionBase;
 
 protected:
+
   std::vector< std::pair<int, FunctionType> > functions; //The int maps to the measurement frequency
 
-  mutable WilsonGaugeAction<Gimpl> SG;
-   
-public:
-  INHERIT_GIMPL_TYPES(Gimpl)
+  
+  ActionBase *SG;
 
-  explicit WilsonFlowBase(unsigned int meas_interval =1):
-    SG(WilsonGaugeAction<Gimpl>(3.0)) {
-    // WilsonGaugeAction with beta 3.0
+public:
+
+//Define the action used to evolve the plaquettes
+//(Lüscher: https://arxiv.org/pdf/1006.4518 eq. 1.4)
+//V'(t) = -g^2 * ( d/dVt S[Vt](g) ) * Vt
+//      = -g^2 * ( d/dVt (1/g^2 * sum_p Re tr{ 1 - Vt(p) } ) ) * Vt
+//      = - d/dVt ( sum_p ( Nc - Re tr Vt(p) ) * Vt
+//      = - d/dVt ( Nc * sum_p ( 1 - Re tr Vt(p)/Nc ) ) * Vt
+//      = - d/dVt SG[Vt](Nc) * Vt
+  explicit WilsonFlowBase(unsigned int meas_interval =1) {
+    
+    SG = (ActionBase *) new WilsonGaugeAction<Gimpl>(Gimpl::num_colours);
     setDefaultMeasurements(meas_interval);
   }
-    
+
+  void setGaugeAction(ActionBase *TheAction)
+  {
+    SG = TheAction;
+  }
+  
   void resetActions(){ functions.clear(); }
 
   void addMeasurement(int meas_interval, FunctionType meas){ functions.push_back({meas_interval, meas}); }
@@ -63,7 +80,7 @@ public:
   void setDefaultMeasurements(int topq_meas_interval = 1);
 
   void derivative(GaugeField&, const GaugeField&, const GaugeField&) const override{
-    assert(0);
+    GRID_ASSERT(0);
     // undefined for WilsonFlow
   }
 
@@ -138,9 +155,17 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 // Implementations
 ////////////////////////////////////////////////////////////////////////////////
+
+//Compute t^2 <E(t)> for time from the plaquette form
+//(Lüscher: https://arxiv.org/pdf/1006.4518 eq. 3.1)
+//E(t) = 2 * sum_p Retr{ 1 - Vt(p) } =
+//     = 2 * sum_p ( Nc - Retr Vt(p) ) =
+//     = 2 * Nc * sum_p ( 1 - Retr Vt(p)/Nc )
+//     = 2 * SG[Vt](Nc)
+//We divide by the volume to get an energy density per site, as is convention
 template <class Gimpl>
 RealD WilsonFlowBase<Gimpl>::energyDensityPlaquette(const RealD t, const GaugeField& U){
-  static WilsonGaugeAction<Gimpl> SG(3.0);
+  static WilsonGaugeAction<Gimpl> SG(Gimpl::num_colours);
   return 2.0 * t * t * SG.S(U)/U.Grid()->gSites();
 }
 
@@ -150,7 +175,7 @@ RealD WilsonFlowBase<Gimpl>::energyDensityCloverleaf(const RealD t, const GaugeF
   typedef typename Gimpl::GaugeLinkField GaugeMat;
   typedef typename Gimpl::GaugeField GaugeLorentz;
 
-  assert(Nd == 4);
+  GRID_ASSERT(Nd == 4);
   //E = 1/2 tr( F_munu F_munu )
   //However as  F_numu = -F_munu, only need to sum the trace of the squares of the following 6 field strengths:
   //F_01 F_02 F_03   F_12 F_13  F_23
@@ -225,17 +250,17 @@ template <class Gimpl>
 void WilsonFlow<Gimpl>::evolve_step(typename Gimpl::GaugeField &U, RealD &tau) const{
   GaugeField Z(U.Grid());
   GaugeField tmp(U.Grid());
-  this->SG.deriv(U, Z);
+  this->SG->deriv(U, Z);
   Z *= 0.25;                                  // Z0 = 1/4 * F(U)
   Gimpl::update_field(Z, U, -2.0*epsilon);    // U = W1 = exp(ep*Z0)*W0
 
   Z *= -17.0/8.0;
-  this->SG.deriv(U, tmp); Z += tmp;                 // -17/32*Z0 +Z1
+  this->SG->deriv(U, tmp); Z += tmp;                 // -17/32*Z0 +Z1
   Z *= 8.0/9.0;                               // Z = -17/36*Z0 +8/9*Z1
   Gimpl::update_field(Z, U, -2.0*epsilon);    // U_= W2 = exp(ep*Z)*W1
 
   Z *= -4.0/3.0;
-  this->SG.deriv(U, tmp); Z += tmp;                 // 4/3*(17/36*Z0 -8/9*Z1) +Z2
+  this->SG->deriv(U, tmp); Z += tmp;                 // 4/3*(17/36*Z0 -8/9*Z1) +Z2
   Z *= 3.0/4.0;                               // Z = 17/36*Z0 -8/9*Z1 +3/4*Z2
   Gimpl::update_field(Z, U, -2.0*epsilon);    // V(t+e) = exp(ep*Z)*W2
   tau += epsilon;
@@ -285,20 +310,20 @@ int WilsonFlowAdaptive<Gimpl>::evolve_step_adaptive(typename Gimpl::GaugeField &
   Uprime = U;
   Usave = U;
 
-  this->SG.deriv(U, Z);
+  this->SG->deriv(U, Z);
   Zprime = -Z;
   Z *= 0.25;                                  // Z0 = 1/4 * F(U)
   Gimpl::update_field(Z, U, -2.0*eps);    // U = W1 = exp(ep*Z0)*W0
 
   Z *= -17.0/8.0;
-  this->SG.deriv(U, tmp); Z += tmp;                 // -17/32*Z0 +Z1
+  this->SG->deriv(U, tmp); Z += tmp;                 // -17/32*Z0 +Z1
   Zprime += 2.0*tmp;
   Z *= 8.0/9.0;                               // Z = -17/36*Z0 +8/9*Z1
   Gimpl::update_field(Z, U, -2.0*eps);    // U_= W2 = exp(ep*Z)*W1
     
 
   Z *= -4.0/3.0;
-  this->SG.deriv(U, tmp); Z += tmp;                 // 4/3*(17/36*Z0 -8/9*Z1) +Z2
+  this->SG->deriv(U, tmp); Z += tmp;                 // 4/3*(17/36*Z0 -8/9*Z1) +Z2
   Z *= 3.0/4.0;                               // Z = 17/36*Z0 -8/9*Z1 +3/4*Z2
   Gimpl::update_field(Z, U, -2.0*eps);    // V(t+e) = exp(ep*Z)*W2
 

@@ -159,7 +159,7 @@ public:
   void calcFine(RealD alpha, RealD beta,int Npoly,int Nm,RealD resid, 
 		RealD MaxIt, RealD betastp, int MinRes)
   {
-    assert(nbasis<=Nm);
+    GRID_ASSERT(nbasis<=Nm);
     Chebyshev<FineField>      Cheby(alpha,beta,Npoly);
     FunctionHermOp<FineField> ChebyOp(Cheby,_FineOp);
     PlainHermOp<FineField>    Op(_FineOp);
@@ -269,19 +269,19 @@ int main (int argc, char ** argv) {
 
   Coordinate fineLatt     = GridDefaultLatt();
   int dims=fineLatt.size();
-  assert(blockSize.size()==dims+1);
+  GRID_ASSERT(blockSize.size()==dims+1);
   Coordinate coarseLatt(dims);
   Coordinate coarseLatt5d ;
 
   for (int d=0;d<coarseLatt.size();d++){
-    coarseLatt[d] = fineLatt[d]/blockSize[d];    assert(coarseLatt[d]*blockSize[d]==fineLatt[d]);
+    coarseLatt[d] = fineLatt[d]/blockSize[d];    GRID_ASSERT(coarseLatt[d]*blockSize[d]==fineLatt[d]);
   }
 
   std::cout << GridLogMessage<< " 5d coarse lattice is ";
   for (int i=0;i<coarseLatt.size();i++){
     std::cout << coarseLatt[i]<<"x";
   } 
-  int cLs = Ls/blockSize[dims]; assert(cLs*blockSize[dims]==Ls);
+  int cLs = Ls/blockSize[dims]; GRID_ASSERT(cLs*blockSize[dims]==Ls);
   std::cout << cLs<<std::endl;
   
   GridCartesian         * CoarseGrid4    = SpaceTimeGrid::makeFourDimGrid(coarseLatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
@@ -312,7 +312,7 @@ int main (int argc, char ** argv) {
 
   std::cout << GridLogMessage << "Keep " << fine.Nk   << " full vectors" << std::endl;
   std::cout << GridLogMessage << "Keep " << coarse.Nk << " total vectors" << std::endl;
-  assert(Nm2 >= Nm1);
+  GRID_ASSERT(Nm2 >= Nm1);
 
   const int nbasis= 32;
   CoarseFineIRL<vSpinColourVector,vTComplex,nbasis> IRL(FrbGrid,CoarseGrid5rb,HermOp,Odd);

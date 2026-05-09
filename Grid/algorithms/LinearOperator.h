@@ -64,7 +64,7 @@ public:
 //
 // I'm not entirely happy with implementation; to share the Schur code between herm and non-herm
 // while still having a "OpAndNorm" in the abstract base I had to implement it in both cases
-// with an assert trap in the non-herm. This isn't right; there must be a better C++ way to
+// with an GRID_ASSERT trap in the non-herm. This isn't right; there must be a better C++ way to
 // do it, but I fear it required multiple inheritance and mixed in abstract base classes
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -148,22 +148,22 @@ public:
   // Support for coarsening to a multigrid
   void OpDiag (const Field &in, Field &out) {
     _Mat.Mdiag(in,out);
-    assert(0);
+    GRID_ASSERT(0);
   }
   void OpDir  (const Field &in, Field &out,int dir,int disp) {
     _Mat.Mdir(in,out,dir,disp);
-    assert(0);
+    GRID_ASSERT(0);
   }
   void OpDirAll  (const Field &in, std::vector<Field> &out){
-    assert(0);
+    GRID_ASSERT(0);
   };
   void Op     (const Field &in, Field &out){
     _Mat.M(in,out);
-    assert(0);
+    GRID_ASSERT(0);
   }
   void AdjOp     (const Field &in, Field &out){
     _Mat.Mdag(in,out);
-    assert(0);
+    GRID_ASSERT(0);
   }
   void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
     HermOp(in,out);
@@ -188,13 +188,13 @@ public:
   ShiftedHermOpLinearOperator(LinearOperatorBase<Field> &Mat,RealD shift): _Mat(Mat), _shift(shift){};
   // Support for coarsening to a multigrid
   void OpDiag (const Field &in, Field &out) {
-    assert(0);
+    GRID_ASSERT(0);
   }
   void OpDir  (const Field &in, Field &out,int dir,int disp) {
-    assert(0);
+    GRID_ASSERT(0);
   }
   void OpDirAll  (const Field &in, std::vector<Field> &out){
-    assert(0);
+    GRID_ASSERT(0);
   };
   void Op     (const Field &in, Field &out){
     HermOp(in,out);
@@ -271,10 +271,10 @@ public:
     _Mat.Mdag(in,out);
   }
   void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
-    assert(0);
+    GRID_ASSERT(0);
   }
   void HermOp(const Field &in, Field &out){
-    assert(0);
+    GRID_ASSERT(0);
   }
 };
 template<class Matrix,class Field>
@@ -303,10 +303,10 @@ public:
     out = out + shift * in;
   }
   void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
-    assert(0);
+    GRID_ASSERT(0);
   }
   void HermOp(const Field &in, Field &out){
-    assert(0);
+    GRID_ASSERT(0);
   }
 };
 
@@ -345,13 +345,13 @@ class SchurOperatorBase :  public LinearOperatorBase<Field> {
   }
   // Support for coarsening to a multigrid
   void OpDiag (const Field &in, Field &out) {
-    assert(0); // must coarsen the unpreconditioned system
+    GRID_ASSERT(0); // must coarsen the unpreconditioned system
   }
   void OpDir  (const Field &in, Field &out,int dir,int disp) {
-    assert(0);
+    GRID_ASSERT(0);
   }
   void OpDirAll  (const Field &in, std::vector<Field> &out){
-    assert(0);
+    GRID_ASSERT(0);
   };
 };
 template<class Matrix,class Field>
@@ -447,10 +447,10 @@ class NonHermitianSchurOperatorBase :  public LinearOperatorBase<Field>
     MpcDag(tmp,out);
   }
   virtual void HermOpAndNorm(const Field& in, Field& out, RealD& n1, RealD& n2) {
-    assert(0);
+    GRID_ASSERT(0);
   }
   virtual void HermOp(const Field& in, Field& out) {
-    assert(0);
+    GRID_ASSERT(0);
   }
   void Op(const Field& in, Field& out) {
     Mpc(in, out);
@@ -460,13 +460,13 @@ class NonHermitianSchurOperatorBase :  public LinearOperatorBase<Field>
   }
   // Support for coarsening to a multigrid
   void OpDiag(const Field& in, Field& out) {
-    assert(0); // must coarsen the unpreconditioned system
+    GRID_ASSERT(0); // must coarsen the unpreconditioned system
   }
   void OpDir(const Field& in, Field& out, int dir, int disp) {
-    assert(0);
+    GRID_ASSERT(0);
   }
   void OpDirAll(const Field& in, std::vector<Field>& out){
-    assert(0);
+    GRID_ASSERT(0);
   };
 };
 
@@ -580,7 +580,7 @@ class SchurStaggeredOperator :  public SchurOperatorBase<Field> {
  public:
   SchurStaggeredOperator (Matrix &Mat): _Mat(Mat), tmp(_Mat.RedBlackGrid()) 
   { 
-    assert( _Mat.isTrivialEE() );
+    GRID_ASSERT( _Mat.isTrivialEE() );
     mass = _Mat.Mass();
   }
   virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
@@ -611,7 +611,7 @@ class SchurStaggeredOperator :  public SchurOperatorBase<Field> {
     Mpc(in,out);
   }
   virtual void MpcDagMpc(const Field &in, Field &out) {
-    assert(0);// Never need with staggered
+    GRID_ASSERT(0);// Never need with staggered
   }
 };
 template<class Matrix,class Field> using SchurStagOperator = SchurStaggeredOperator<Matrix,Field>;
@@ -623,7 +623,7 @@ template<class Field> class OperatorFunction {
 public:
   virtual void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) = 0;
   virtual void operator() (LinearOperatorBase<Field> &Linop, const std::vector<Field> &in,std::vector<Field> &out) {
-    assert(in.size()==out.size());
+    GRID_ASSERT(in.size()==out.size());
     for(int k=0;k<in.size();k++){
       (*this)(Linop,in[k],out[k]);
     }
@@ -637,7 +637,7 @@ public:
 
   virtual void operator() (const std::vector<Field> &in, std::vector<Field> &out)
   {
-    assert(in.size() == out.size());
+    GRID_ASSERT(in.size() == out.size());
 
     for (unsigned int i = 0; i < in.size(); ++i)
     {

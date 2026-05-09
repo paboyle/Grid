@@ -309,7 +309,7 @@ public:
     if ((out.size()!=ndir)&&(out.size()!=ndir+1)) { 
       std::cout <<"MdirAll out size "<< out.size()<<std::endl;
       std::cout <<"MdirAll ndir "<< ndir<<std::endl;
-      assert(0);
+      GRID_ASSERT(0);
     }
     for(int p=0;p<ndir;p++){
       MdirCalc(in,out[p],p);
@@ -373,7 +373,7 @@ public:
     conformable(in.Grid(), _cbgrid);    // verifies half grid
     conformable(in.Grid(), out.Grid()); // drops the cb check
 
-    assert(in.Checkerboard() == Even);
+    GRID_ASSERT(in.Checkerboard() == Even);
     out.Checkerboard() = Odd;
 
     DhopInternal(StencilEven, Aodd, in, out, dag);
@@ -383,7 +383,7 @@ public:
     conformable(in.Grid(), _cbgrid);    // verifies half grid
     conformable(in.Grid(), out.Grid()); // drops the cb check
 
-    assert(in.Checkerboard() == Odd);
+    GRID_ASSERT(in.Checkerboard() == Odd);
     out.Checkerboard() = Even;
 
     DhopInternal(StencilOdd, Aeven, in, out, dag);
@@ -391,7 +391,7 @@ public:
 
   void MooeeInternal(const CoarseVector &in, CoarseVector &out, int dag, int inv) {
     out.Checkerboard() = in.Checkerboard();
-    assert(in.Checkerboard() == Odd || in.Checkerboard() == Even);
+    GRID_ASSERT(in.Checkerboard() == Odd || in.Checkerboard() == Even);
 
     CoarseMatrix *Aself = nullptr;
     if(in.Grid()->_isCheckerBoarded) {
@@ -406,7 +406,7 @@ public:
       Aself = (inv) ? &AselfInv : &A[geom.npoint-1];
       DselfInternal(Stencil, *Aself, in, out, dag);
     }
-    assert(Aself != nullptr);
+    GRID_ASSERT(Aself != nullptr);
   }
 
   void DselfInternal(CartesianStencil<siteVector,siteVector,DefaultImplParams> &st, CoarseMatrix &a,
@@ -697,7 +697,7 @@ public:
     evenmask = where(mod(bcb,2)==(Integer)0,one,zero);
     oddmask  = one-evenmask;
 
-    assert(self_stencil!=-1);
+    GRID_ASSERT(self_stencil!=-1);
 
     for(int i=0;i<nbasis;i++){
 

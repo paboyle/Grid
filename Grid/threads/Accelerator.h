@@ -210,7 +210,7 @@ void Lambda6Apply(uint64_t num1, uint64_t num2, uint64_t num3,
 	     cudaGetErrorString( err ));				\
       printf("File %s Line %d\n",__FILE__,__LINE__);			\
       fflush(stdout);							\
-      if (acceleratorAbortOnGpuError) assert(err==cudaSuccess);		\
+      if (acceleratorAbortOnGpuError) GRID_ASSERT(err==cudaSuccess);		\
     }									\
   }
 
@@ -221,7 +221,7 @@ inline void *acceleratorAllocHost(size_t bytes)
   if( err != cudaSuccess ) {
     ptr = (void *) NULL;
     printf(" cudaMallocHost failed for %zu %s \n",bytes,cudaGetErrorString(err));
-    assert(0);
+    GRID_ASSERT(0);
   }
   return ptr;
 }
@@ -232,7 +232,7 @@ inline void *acceleratorAllocShared(size_t bytes)
   if( err != cudaSuccess ) {
     ptr = (void *) NULL;
     printf(" cudaMallocManaged failed for %zu %s \n",bytes,cudaGetErrorString(err));
-    assert(0);
+    GRID_ASSERT(0);
   }
   return ptr;
 };
@@ -281,7 +281,7 @@ inline int  acceleratorIsCommunicable(void *ptr)
   //  int uvm=0;
   //  auto 
   //  cuerr = cuPointerGetAttribute( &uvm, CU_POINTER_ATTRIBUTE_IS_MANAGED, (CUdeviceptr) ptr);
-  //  assert(cuerr == cudaSuccess );
+  //  GRID_ASSERT(cuerr == cudaSuccess );
   //  if(uvm) return 0;
   //  else    return 1;
     return 1;
@@ -437,22 +437,20 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   {									\
-    typedef uint64_t Iterator;						\
-    auto lambda = [=] accelerator					\
-      (Iterator iter1,Iterator iter2,Iterator lane ) mutable {		\
-      { __VA_ARGS__;}							\
-    };									\
-    int nt=acceleratorThreads();					\
-    dim3 hip_threads(nsimd, nt, 1);					 \
-    dim3 hip_blocks ((num1+nt-1)/nt,num2,1); \
-    if(hip_threads.x * hip_threads.y * hip_threads.z <= 64){ \
-      hipLaunchKernelGGL(LambdaApply64,hip_blocks,hip_threads,		\
-   	                 0,computeStream,						\
-			 num1,num2,nsimd, lambda);			\
-    } else { \
-      hipLaunchKernelGGL(LambdaApply,hip_blocks,hip_threads,		\
-			 0,computeStream,				\
-			 num1,num2,nsimd, lambda);			\
+    if (num1*num2) { \
+      typedef uint64_t Iterator;						\
+      auto lambda = [=] accelerator					\
+        (Iterator iter1,Iterator iter2,Iterator lane ) mutable {		\
+        { __VA_ARGS__;}							\
+      };									\
+      int nt=acceleratorThreads();					\
+      dim3 hip_threads(nsimd, nt, 1);					 \
+      dim3 hip_blocks ((num1+nt-1)/nt,num2,1); \
+      if(hip_threads.x * hip_threads.y * hip_threads.z <= 64){ \
+        LambdaApply64<<<hip_blocks,hip_threads,0,computeStream>>>(num1,num2,nsimd,lambda);			\
+      } else { \
+        LambdaApply<<<hip_blocks,hip_threads,0,computeStream>>>(num1,num2,nsimd,lambda);			\
+      } \
     } \
   }
 

@@ -36,7 +36,7 @@ class FlexibleCommunicationAvoidingGeneralisedMinimalResidual : public OperatorF
  public:
   using OperatorFunction<Field>::operator();
 
-  bool ErrorOnNoConverge; // Throw an assert when FCAGMRES fails to converge,
+  bool ErrorOnNoConverge; // Throw an GRID_ASSERT when FCAGMRES fails to converge,
                           // defaults to true
 
   RealD   Tolerance;
@@ -87,7 +87,7 @@ class FlexibleCommunicationAvoidingGeneralisedMinimalResidual : public OperatorF
     conformable(psi, src);
 
     RealD guess = norm2(psi);
-    assert(std::isnan(guess) == 0);
+    GRID_ASSERT(std::isnan(guess) == 0);
 
     RealD cp;
     RealD ssq = norm2(src);
@@ -144,7 +144,7 @@ class FlexibleCommunicationAvoidingGeneralisedMinimalResidual : public OperatorF
     std::cout << GridLogMessage << "FlexibleCommunicationAvoidingGeneralisedMinimalResidual did NOT converge" << std::endl;
 
     if (ErrorOnNoConverge)
-      assert(0);
+      GRID_ASSERT(0);
   }
 
   RealD outerLoopBody(LinearOperatorBase<Field> &LinOp, const Field &src, Field &psi, RealD rsq) {
@@ -191,7 +191,7 @@ class FlexibleCommunicationAvoidingGeneralisedMinimalResidual : public OperatorF
       }
     }
 
-    assert(0); // Never reached
+    GRID_ASSERT(0); // Never reached
     return cp;
   }
 

@@ -80,7 +80,7 @@ public:
   ProjectedHermOp(LinearOperatorBase<FineField>& linop, std::vector<FineField> & _subspace) : 
     _Linop(linop), subspace(_subspace)
   {  
-    assert(subspace.size() >0);
+    GRID_ASSERT(subspace.size() >0);
   };
 
   void operator()(const CoarseField& in, CoarseField& out) {
@@ -346,12 +346,12 @@ public:
 
   void testFine(RealD resid) 
   {
-    assert(evals_fine.size() == nbasis);
-    assert(subspace.size() == nbasis);
+    GRID_ASSERT(evals_fine.size() == nbasis);
+    GRID_ASSERT(subspace.size() == nbasis);
     PlainHermOp<FineField>    Op(_FineOp);
     ImplicitlyRestartedLanczosHermOpTester<FineField> SimpleTester(Op);
     for(int k=0;k<nbasis;k++){
-      assert(SimpleTester.ReconstructEval(k,resid,subspace[k],evals_fine[k],1.0)==1);
+      GRID_ASSERT(SimpleTester.ReconstructEval(k,resid,subspace[k],evals_fine[k],1.0)==1);
     }
   }
 
@@ -359,8 +359,8 @@ public:
   //hence the smoother can be tuned after running the coarse Lanczos by using a different smoother here
   void testCoarse(RealD resid,ChebyParams cheby_smooth,RealD relax) 
   {
-    assert(evals_fine.size() == nbasis);
-    assert(subspace.size() == nbasis);
+    GRID_ASSERT(evals_fine.size() == nbasis);
+    GRID_ASSERT(subspace.size() == nbasis);
     //////////////////////////////////////////////////////////////////////////////////////////////////
     // create a smoother and see if we can get a cheap convergence test and smooth inside the IRL
     //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -380,7 +380,7 @@ public:
   void calcFine(ChebyParams cheby_parms,int Nstop,int Nk,int Nm,RealD resid, 
 		RealD MaxIt, RealD betastp, int MinRes)
   {
-    assert(nbasis<=Nm);
+    GRID_ASSERT(nbasis<=Nm);
     Chebyshev<FineField>      Cheby(cheby_parms);
     FunctionHermOp<FineField> ChebyOp(Cheby,_FineOp);
     PlainHermOp<FineField>    Op(_FineOp);
@@ -400,8 +400,8 @@ public:
     IRL.calc(evals_fine,subspace,src,Nconv,false);
     
     // Shrink down to number saved
-    assert(Nstop>=nbasis);
-    assert(Nconv>=nbasis);
+    GRID_ASSERT(Nstop>=nbasis);
+    GRID_ASSERT(Nconv>=nbasis);
     evals_fine.resize(nbasis);
     subspace.resize(nbasis,_FineGrid);
   }
@@ -433,7 +433,7 @@ public:
     ImplicitlyRestartedLanczos<CoarseField> IRL(ChebyOp,ChebyOp,ChebySmoothTester,Nstop,Nk,Nm,resid,MaxIt,betastp,MinRes);
     int Nconv=0;
     IRL.calc(evals_coarse,evec_coarse,src,Nconv,false);
-    assert(Nconv>=Nstop);
+    GRID_ASSERT(Nconv>=Nstop);
     evals_coarse.resize(Nstop);
     evec_coarse.resize (Nstop,_CoarseGrid);
     for (int i=0;i<Nstop;i++){

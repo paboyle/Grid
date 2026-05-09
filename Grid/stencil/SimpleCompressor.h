@@ -39,7 +39,7 @@ public:
 				    std::vector<cobj *> pointers,int dimension,int plane,int cbmask,
 				    compressor &compress,int type,int partial)
   {
-    assert( (table.size()&0x1)==0);
+    GRID_ASSERT( (table.size()&0x1)==0);
     int num=table.size()/2;
     int so  = plane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane
     

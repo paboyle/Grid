@@ -77,7 +77,7 @@ public:
   }
 
   void operator() (const std::vector<FieldD> &src_d_in, std::vector<FieldD> &sol_d){
-    assert(src_d_in.size() == sol_d.size());
+    GRID_ASSERT(src_d_in.size() == sol_d.size());
     int NBatch = src_d_in.size();
 
     std::cout << GridLogMessage << "NBatch = " << NBatch << std::endl;

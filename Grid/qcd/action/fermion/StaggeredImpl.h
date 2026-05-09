@@ -168,7 +168,7 @@ public:
   }   
       
   inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu){
-    assert (0); 
+    GRID_ASSERT (0); 
     // Must never hit
   }
 };

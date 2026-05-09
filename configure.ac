@@ -172,6 +172,12 @@ case ${ac_TRACING} in
 esac
 
 ############### fermions
+AC_ARG_ENABLE([fermion-instantiations],
+     [AS_HELP_STRING([--enable-fermion-instantiations=yes|no],[enable fermion instantiations])],
+     [ac_FERMION_REPS=${enable_fermion_instantiations}], [ac_FERMION_INSTANTIATIONS=yes])
+
+AM_CONDITIONAL(BUILD_FERMION_INSTANTIATIONS, [ test "${ac_FERMION_INSTANTIATIONS}X" == "yesX" ])
+
 AC_ARG_ENABLE([fermion-reps],
      [AS_HELP_STRING([--enable-fermion-reps=yes|no],[enable extra fermion representation support])],
      [ac_FERMION_REPS=${enable_fermion_reps}], [ac_FERMION_REPS=yes])
@@ -193,6 +199,9 @@ AM_CONDITIONAL(BUILD_ZMOBIUS, [ test "${ac_ZMOBIUS}X" == "yesX" ])
 
 case ${ac_FERMION_REPS} in
    yes) AC_DEFINE([ENABLE_FERMION_REPS],[1],[non QCD fermion reps]);;
+esac
+case ${ac_FERMION_INSTANTIATIONS} in
+   yes) AC_DEFINE([ENABLE_FERMION_INSTANTIATIONS],[1],[enable fermions]);;
 esac
 case ${ac_GPARITY} in
    yes) AC_DEFINE([ENABLE_GPARITY],[1],[fermion actions with GPARITY BCs]);;
@@ -266,7 +275,7 @@ esac
 ############### CHECKSUM COMMS
 AC_ARG_ENABLE([checksum-comms],
     [AS_HELP_STRING([--enable-checksum-comms=yes|no],[checksum all communication])],
-    [ac_CHECKSUM_COMMS=${enable_checksum_comms}], [ac_CHECKSUM_COMMS=no])
+    [ac_CHECKSUM_COMMS=${enable_checksum_comms}], [ac_CHECKSUM_COMMS=yes])
 
 case ${ac_CHECKSUM_COMMS} in
     yes)
@@ -303,13 +312,14 @@ AC_ARG_ENABLE([accelerator],
 case ${ac_ACCELERATOR} in
     cuda)
       echo CUDA acceleration
-      LIBS="${LIBS} -lcuda"
+      LIBS="${LIBS} -lcuda -lcublas -lcufft"
       AC_DEFINE([GRID_CUDA],[1],[Use CUDA offload]);;
     sycl)
       echo SYCL acceleration
       AC_DEFINE([GRID_SYCL],[1],[Use SYCL offload]);;
     hip)
       echo HIP acceleration
+      LIBS="${LIBS} -lhipblas -lrocblas -lhipfft"
       AC_DEFINE([GRID_HIP],[1],[Use HIP offload]);;
     none)
       echo NO acceleration    ;;

@@ -208,7 +208,7 @@ inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osi
 
   Integer numThreads, numBlocks;
   int ok = getNumBlocksAndThreads(size, sizeof(sobj), numThreads, numBlocks);
-  assert(ok);
+  GRID_ASSERT(ok);
 
   Integer smemSize = numThreads * sizeof(sobj);
   // Move out of UVM

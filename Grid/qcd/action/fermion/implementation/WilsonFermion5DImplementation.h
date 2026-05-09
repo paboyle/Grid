@@ -62,33 +62,33 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   _tmp(&FiveDimRedBlackGrid),
   Dirichlet(0)
 {
-  // some assertions
-  assert(FiveDimGrid._ndimension==5);
-  assert(FourDimGrid._ndimension==4);
-  assert(FourDimRedBlackGrid._ndimension==4);
-  assert(FiveDimRedBlackGrid._ndimension==5);
-  assert(FiveDimRedBlackGrid._checker_dim==1); // Don't checker the s direction
+  // some GRID_ASSERTions
+  GRID_ASSERT(FiveDimGrid._ndimension==5);
+  GRID_ASSERT(FourDimGrid._ndimension==4);
+  GRID_ASSERT(FourDimRedBlackGrid._ndimension==4);
+  GRID_ASSERT(FiveDimRedBlackGrid._ndimension==5);
+  GRID_ASSERT(FiveDimRedBlackGrid._checker_dim==1); // Don't checker the s direction
 
   // extent of fifth dim and not spread out
   Ls=FiveDimGrid._fdimensions[0];
-  assert(FiveDimRedBlackGrid._fdimensions[0]==Ls);
-  assert(FiveDimGrid._processors[0]         ==1);
-  assert(FiveDimRedBlackGrid._processors[0] ==1);
+  GRID_ASSERT(FiveDimRedBlackGrid._fdimensions[0]==Ls);
+  GRID_ASSERT(FiveDimGrid._processors[0]         ==1);
+  GRID_ASSERT(FiveDimRedBlackGrid._processors[0] ==1);
 
   // Other dimensions must match the decomposition of the four-D fields 
   for(int d=0;d<4;d++){
 
-    assert(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
-    assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
-    assert(FourDimRedBlackGrid._processors[d]   ==FourDimGrid._processors[d]);
+    GRID_ASSERT(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
+    GRID_ASSERT(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
+    GRID_ASSERT(FourDimRedBlackGrid._processors[d]   ==FourDimGrid._processors[d]);
 
-    assert(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
-    assert(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
-    assert(FourDimRedBlackGrid._fdimensions[d]  ==FourDimGrid._fdimensions[d]);
+    GRID_ASSERT(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
+    GRID_ASSERT(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
+    GRID_ASSERT(FourDimRedBlackGrid._fdimensions[d]  ==FourDimGrid._fdimensions[d]);
 
-    assert(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
-    assert(FiveDimRedBlackGrid._simd_layout[d+1]==FourDimGrid._simd_layout[d]);
-    assert(FourDimRedBlackGrid._simd_layout[d]  ==FourDimGrid._simd_layout[d]);
+    GRID_ASSERT(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
+    GRID_ASSERT(FiveDimRedBlackGrid._simd_layout[d+1]==FourDimGrid._simd_layout[d]);
+    GRID_ASSERT(FourDimRedBlackGrid._simd_layout[d]  ==FourDimGrid._simd_layout[d]);
   }
 
   if ( p.dirichlet.size() == Nd+1) {
@@ -109,20 +109,20 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
     int nsimd = Simd::Nsimd();
     
     // Dimension zero of the five-d is the Ls direction
-    assert(FiveDimGrid._simd_layout[0]        ==nsimd);
-    assert(FiveDimRedBlackGrid._simd_layout[0]==nsimd);
+    GRID_ASSERT(FiveDimGrid._simd_layout[0]        ==nsimd);
+    GRID_ASSERT(FiveDimRedBlackGrid._simd_layout[0]==nsimd);
 
     for(int d=0;d<4;d++){
-      assert(FourDimGrid._simd_layout[d]==1);
-      assert(FourDimRedBlackGrid._simd_layout[d]==1);
-      assert(FiveDimRedBlackGrid._simd_layout[d+1]==1);
+      GRID_ASSERT(FourDimGrid._simd_layout[d]==1);
+      GRID_ASSERT(FourDimRedBlackGrid._simd_layout[d]==1);
+      GRID_ASSERT(FiveDimRedBlackGrid._simd_layout[d+1]==1);
     }
 
   } else {
     
     // Dimension zero of the five-d is the Ls direction
-    assert(FiveDimRedBlackGrid._simd_layout[0]==1);
-    assert(FiveDimGrid._simd_layout[0]        ==1);
+    GRID_ASSERT(FiveDimRedBlackGrid._simd_layout[0]==1);
+    GRID_ASSERT(FiveDimGrid._simd_layout[0]        ==1);
 
   }
     
@@ -157,7 +157,7 @@ void WilsonFermion5D<Impl>::ImportGauge(const GaugeField &_Umu)
     for(int d=0;d<Nd;d++) {
       int GaugeBlock = Block[d+1];
       int ldim=GaugeGrid()->LocalDimensions()[d];
-      if (GaugeBlock) assert( (GaugeBlock%ldim)==0);
+      if (GaugeBlock) GRID_ASSERT( (GaugeBlock%ldim)==0);
     }
 
     if (!this->Params.partialDirichlet) {
@@ -179,8 +179,8 @@ void WilsonFermion5D<Impl>::DhopDir(const FermionField &in, FermionField &out,in
 {
   int dir = dir5-1; // Maps to the ordering above in "directions" that is passed to stencil
                     // we drop off the innermost fifth dimension
-  //  assert( (disp==1)||(disp==-1) );
-  //  assert( (dir>=0)&&(dir<4) ); //must do x,y,z or t;
+  //  GRID_ASSERT( (disp==1)||(disp==-1) );
+  //  GRID_ASSERT( (dir>=0)&&(dir<4) ); //must do x,y,z or t;
 
   int skip = (disp==1) ? 0 : 1;
   int dirdisp = dir+skip*4;
@@ -211,7 +211,7 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
 					  const FermionField &B,
 					  int dag)
 {
-  assert((dag==DaggerNo) ||(dag==DaggerYes));
+  GRID_ASSERT((dag==DaggerNo) ||(dag==DaggerYes));
 
   conformable(st.Grid(),A.Grid());
   conformable(st.Grid(),B.Grid());
@@ -275,8 +275,8 @@ void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
   conformable(A.Grid(),FermionRedBlackGrid());
   conformable(A.Grid(),B.Grid());
 
-  assert(B.Checkerboard()==Odd);
-  assert(A.Checkerboard()==Even);
+  GRID_ASSERT(B.Checkerboard()==Odd);
+  GRID_ASSERT(A.Checkerboard()==Even);
   mat.Checkerboard() = Even;
 
   DerivInternal(StencilOdd,UmuEven,mat,A,B,dag);
@@ -292,8 +292,8 @@ void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
   conformable(A.Grid(),FermionRedBlackGrid());
   conformable(A.Grid(),B.Grid());
 
-  assert(B.Checkerboard()==Even);
-  assert(A.Checkerboard()==Odd);
+  GRID_ASSERT(B.Checkerboard()==Even);
+  GRID_ASSERT(A.Checkerboard()==Odd);
   mat.Checkerboard() = Odd;
 
   DerivInternal(StencilEven,UmuOdd,mat,A,B,dag);
@@ -429,7 +429,7 @@ void WilsonFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int
   conformable(in.Grid(),FermionRedBlackGrid());    // verifies half grid
   conformable(in.Grid(),out.Grid()); // drops the cb check
 
-  assert(in.Checkerboard()==Even);
+  GRID_ASSERT(in.Checkerboard()==Even);
   out.Checkerboard() = Odd;
 
   DhopInternal(StencilEven,UmuOdd,in,out,dag);
@@ -440,7 +440,7 @@ void WilsonFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int
   conformable(in.Grid(),FermionRedBlackGrid());    // verifies half grid
   conformable(in.Grid(),out.Grid()); // drops the cb check
 
-  assert(in.Checkerboard()==Odd);
+  GRID_ASSERT(in.Checkerboard()==Odd);
   out.Checkerboard() = Even;
 
   DhopInternal(StencilOdd,UmuEven,in,out,dag);

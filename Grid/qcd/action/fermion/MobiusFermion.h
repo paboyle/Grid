@@ -61,7 +61,7 @@ public:
 
     //    std::cout<<GridLogMessage << "MobiusFermion (b="<<b<<",c="<<c<<") with Ls= "<<this->Ls<<" Tanh approx"<<std::endl;
     Approx::zolotarev_data *zdata = Approx::higham(eps,this->Ls);// eps is ignored for higham
-    assert(zdata->n==this->Ls);
+    GRID_ASSERT(zdata->n==this->Ls);
 	
     // Call base setter
     this->SetCoefficientsTanh(zdata,b,c);

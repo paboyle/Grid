@@ -50,12 +50,12 @@ int   MemoryManager::EntryPresent(uint64_t CpuPtr)
 {
   if(AccViewTable.empty()) return 0;
 
-  auto count = AccViewTable.count(CpuPtr);  assert((count==0)||(count==1));
+  auto count = AccViewTable.count(CpuPtr);  GRID_ASSERT((count==0)||(count==1));
   return count;
 }
 void  MemoryManager::EntryCreate(uint64_t CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint)
 {
-  assert(!EntryPresent(CpuPtr));
+  GRID_ASSERT(!EntryPresent(CpuPtr));
   AcceleratorViewEntry AccCache;
   AccCache.CpuPtr = CpuPtr;
   AccCache.AccPtr = (uint64_t)NULL;
@@ -69,9 +69,9 @@ void  MemoryManager::EntryCreate(uint64_t CpuPtr,size_t bytes,ViewMode mode,View
 }
 MemoryManager::AccViewTableIterator MemoryManager::EntryLookup(uint64_t CpuPtr)
 {
-  assert(EntryPresent(CpuPtr));
+  GRID_ASSERT(EntryPresent(CpuPtr));
   auto AccCacheIterator = AccViewTable.find(CpuPtr);
-  assert(AccCacheIterator!=AccViewTable.end());
+  GRID_ASSERT(AccCacheIterator!=AccViewTable.end());
   return AccCacheIterator;
 }
 void MemoryManager::EntryErase(uint64_t CpuPtr)
@@ -81,7 +81,7 @@ void MemoryManager::EntryErase(uint64_t CpuPtr)
 }
 void  MemoryManager::LRUinsert(AcceleratorViewEntry &AccCache)
 {
-  assert(AccCache.LRU_valid==0);
+  GRID_ASSERT(AccCache.LRU_valid==0);
   if (AccCache.transient) { 
     LRU.push_back(AccCache.CpuPtr);
     AccCache.LRU_entry = --LRU.end();
@@ -94,7 +94,7 @@ void  MemoryManager::LRUinsert(AcceleratorViewEntry &AccCache)
 }
 void  MemoryManager::LRUremove(AcceleratorViewEntry &AccCache)
 {
-  assert(AccCache.LRU_valid==1);
+  GRID_ASSERT(AccCache.LRU_valid==1);
   LRU.erase(AccCache.LRU_entry);
   AccCache.LRU_valid = 0;
   DeviceLRUBytes-=AccCache.bytes;
@@ -108,12 +108,12 @@ void MemoryManager::AccDiscard(AcceleratorViewEntry &AccCache)
   // Remove from Accelerator, remove entry, without flush
   // Cannot be locked. If allocated Must be in LRU pool.
   ///////////////////////////////////////////////////////////
-  assert(AccCache.state!=Empty);
+  GRID_ASSERT(AccCache.state!=Empty);
   
   dprintf("MemoryManager: Discard(%lx) %lx",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
-  assert(AccCache.accLock==0);
-  assert(AccCache.cpuLock==0);
-  assert(AccCache.CpuPtr!=(uint64_t)NULL);
+  GRID_ASSERT(AccCache.accLock==0);
+  GRID_ASSERT(AccCache.cpuLock==0);
+  GRID_ASSERT(AccCache.CpuPtr!=(uint64_t)NULL);
   if(AccCache.AccPtr) {
     AcceleratorFree((void *)AccCache.AccPtr,AccCache.bytes);
     DeviceDestroy++;
@@ -138,7 +138,7 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
   //                          Take these OUT LRU queue when CPU locked?
   //                          Cannot take out the table as cpuLock data is important.
   ///////////////////////////////////////////////////////////////////////////
-  assert(AccCache.state!=Empty);
+  GRID_ASSERT(AccCache.state!=Empty);
   
   mprintf("MemoryManager: Evict CpuPtr %lx AccPtr %lx cpuLock %ld accLock %ld",
 	  (uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr,
@@ -162,11 +162,11 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
 }
 void MemoryManager::Flush(AcceleratorViewEntry &AccCache)
 {
-  assert(AccCache.state==AccDirty);
-  assert(AccCache.cpuLock==0);
-  assert(AccCache.accLock==0);
-  assert(AccCache.AccPtr!=(uint64_t)NULL);
-  assert(AccCache.CpuPtr!=(uint64_t)NULL);
+  GRID_ASSERT(AccCache.state==AccDirty);
+  GRID_ASSERT(AccCache.cpuLock==0);
+  GRID_ASSERT(AccCache.accLock==0);
+  GRID_ASSERT(AccCache.AccPtr!=(uint64_t)NULL);
+  GRID_ASSERT(AccCache.CpuPtr!=(uint64_t)NULL);
   acceleratorCopyFromDevice((void *)AccCache.AccPtr,(void *)AccCache.CpuPtr,AccCache.bytes);
   mprintf("MemoryManager: acceleratorCopyFromDevice Flush size %ld AccPtr %lx -> CpuPtr %lx",(uint64_t)AccCache.bytes,(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   DeviceToHostBytes+=AccCache.bytes;
@@ -175,10 +175,10 @@ void MemoryManager::Flush(AcceleratorViewEntry &AccCache)
 }
 void MemoryManager::Clone(AcceleratorViewEntry &AccCache)
 {
-  assert(AccCache.state==CpuDirty);
-  assert(AccCache.cpuLock==0);
-  assert(AccCache.accLock==0);
-  assert(AccCache.CpuPtr!=(uint64_t)NULL);
+  GRID_ASSERT(AccCache.state==CpuDirty);
+  GRID_ASSERT(AccCache.cpuLock==0);
+  GRID_ASSERT(AccCache.accLock==0);
+  GRID_ASSERT(AccCache.CpuPtr!=(uint64_t)NULL);
   if(AccCache.AccPtr==(uint64_t)NULL){
     AccCache.AccPtr=(uint64_t)AcceleratorAllocate(AccCache.bytes);
     DeviceBytes+=AccCache.bytes;
@@ -194,10 +194,10 @@ void MemoryManager::Clone(AcceleratorViewEntry &AccCache)
 
 void MemoryManager::CpuDiscard(AcceleratorViewEntry &AccCache)
 {
-  assert(AccCache.state!=Empty);
-  assert(AccCache.cpuLock==0);
-  assert(AccCache.accLock==0);
-  assert(AccCache.CpuPtr!=(uint64_t)NULL);
+  GRID_ASSERT(AccCache.state!=Empty);
+  GRID_ASSERT(AccCache.cpuLock==0);
+  GRID_ASSERT(AccCache.accLock==0);
+  GRID_ASSERT(AccCache.CpuPtr!=(uint64_t)NULL);
   if(AccCache.AccPtr==(uint64_t)NULL){
     AccCache.AccPtr=(uint64_t)AcceleratorAllocate(AccCache.bytes);
     DeviceBytes+=AccCache.bytes;
@@ -216,7 +216,7 @@ void MemoryManager::ViewClose(void* Ptr,ViewMode mode)
   } else if( (mode==CpuRead)||(mode==CpuWrite)){
     CpuViewClose((uint64_t)Ptr);
   } else { 
-    assert(0);
+    GRID_ASSERT(0);
   }
 }
 void *MemoryManager::ViewOpen(void* _CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint)
@@ -228,7 +228,7 @@ void *MemoryManager::ViewOpen(void* _CpuPtr,size_t bytes,ViewMode mode,ViewAdvis
   } else if( (mode==CpuRead)||(mode==CpuWrite)){
     return (void *)CpuViewOpen(CpuPtr,bytes,mode,hint);
   } else { 
-    assert(0);
+    GRID_ASSERT(0);
     return NULL;
   }
 }
@@ -237,10 +237,10 @@ void  MemoryManager::EvictVictims(uint64_t bytes)
   if(bytes>=DeviceMaxBytes) {
     printf("EvictVictims bytes %ld DeviceMaxBytes %ld\n",bytes,DeviceMaxBytes);
   }
-  assert(bytes<DeviceMaxBytes);
+  GRID_ASSERT(bytes<DeviceMaxBytes);
   while(bytes+DeviceLRUBytes > DeviceMaxBytes){
     if ( DeviceLRUBytes > 0){
-      assert(LRU.size()>0);
+      GRID_ASSERT(LRU.size()>0);
       uint64_t victim = LRU.back(); // From the LRU
       auto AccCacheIterator = EntryLookup(victim);
       auto & AccCache = AccCacheIterator->second;
@@ -264,9 +264,9 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
   if (!AccCache.AccPtr) {
     EvictVictims(bytes); 
   } 
-  assert((mode==AcceleratorRead)||(mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard));
+  GRID_ASSERT((mode==AcceleratorRead)||(mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard));
 
-  assert(AccCache.cpuLock==0);  // Programming error
+  GRID_ASSERT(AccCache.cpuLock==0);  // Programming error
 
   if(AccCache.state!=Empty) {
     dprintf("ViewOpen found entry %lx %lx : sizes %ld %ld accLock %ld",
@@ -275,8 +275,8 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
 		    (uint64_t)AccCache.bytes,
 	            (uint64_t)bytes,
 		    (uint64_t)AccCache.accLock);
-    assert(AccCache.CpuPtr == CpuPtr);
-    assert(AccCache.bytes  ==bytes);
+    GRID_ASSERT(AccCache.CpuPtr == CpuPtr);
+    GRID_ASSERT(AccCache.bytes  ==bytes);
   }
 /*
  *  State transitions and actions
@@ -293,7 +293,7 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
  *  AccWrite AccDirty   AccDirty       -        - 
  */
   if(AccCache.state==Empty) {
-    assert(AccCache.LRU_valid==0);
+    GRID_ASSERT(AccCache.LRU_valid==0);
     AccCache.CpuPtr = CpuPtr;
     AccCache.AccPtr = (uint64_t)NULL;
     AccCache.bytes  = bytes;
@@ -338,10 +338,10 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
     AccCache.accLock++;
     dprintf("AccDirty entry ++accLock= %d",AccCache.accLock);
   } else {
-    assert(0);
+    GRID_ASSERT(0);
   }
 
-  assert(AccCache.accLock>0);
+  GRID_ASSERT(AccCache.accLock>0);
   // If view is opened on device must remove from LRU
   if(AccCache.LRU_valid==1){
     // must possibly remove from LRU as now locked on GPU
@@ -362,8 +362,8 @@ void MemoryManager::AcceleratorViewClose(uint64_t CpuPtr)
   auto AccCacheIterator = EntryLookup(CpuPtr);
   auto & AccCache = AccCacheIterator->second;
 
-  assert(AccCache.cpuLock==0);
-  assert(AccCache.accLock>0);
+  GRID_ASSERT(AccCache.cpuLock==0);
+  GRID_ASSERT(AccCache.accLock>0);
 
   AccCache.accLock--;
   // Move to LRU queue if not locked and close on device
@@ -379,8 +379,8 @@ void MemoryManager::CpuViewClose(uint64_t CpuPtr)
   auto AccCacheIterator = EntryLookup(CpuPtr);
   auto & AccCache = AccCacheIterator->second;
 
-  assert(AccCache.cpuLock>0);
-  assert(AccCache.accLock==0);
+  GRID_ASSERT(AccCache.cpuLock>0);
+  GRID_ASSERT(AccCache.accLock==0);
 
   AccCache.cpuLock--;
 }
@@ -413,12 +413,12 @@ uint64_t MemoryManager::CpuViewOpen(uint64_t CpuPtr,size_t bytes,ViewMode mode,V
   //    EvictVictims(bytes);
   //  }
 
-  assert((mode==CpuRead)||(mode==CpuWrite));
-  assert(AccCache.accLock==0);  // Programming error
+  GRID_ASSERT((mode==CpuRead)||(mode==CpuWrite));
+  GRID_ASSERT(AccCache.accLock==0);  // Programming error
 
   if(AccCache.state!=Empty) {
-    assert(AccCache.CpuPtr == CpuPtr);
-    assert(AccCache.bytes==bytes);
+    GRID_ASSERT(AccCache.CpuPtr == CpuPtr);
+    GRID_ASSERT(AccCache.bytes==bytes);
   }
 
   if(AccCache.state==Empty) {
@@ -433,20 +433,20 @@ uint64_t MemoryManager::CpuViewOpen(uint64_t CpuPtr,size_t bytes,ViewMode mode,V
     AccCache.state = CpuDirty; // CpuDirty +CpuRead/CpuWrite => CpuDirty
     AccCache.cpuLock++;
   } else if(AccCache.state==Consistent) {
-    assert(AccCache.AccPtr != (uint64_t)NULL);
+    GRID_ASSERT(AccCache.AccPtr != (uint64_t)NULL);
     if(mode==CpuWrite)
       AccCache.state = CpuDirty;   // Consistent +CpuWrite => CpuDirty
     else 
       AccCache.state = Consistent; // Consistent +CpuRead  => Consistent
     AccCache.cpuLock++;
   } else if(AccCache.state==AccDirty) {
-    assert(AccCache.AccPtr != (uint64_t)NULL);
+    GRID_ASSERT(AccCache.AccPtr != (uint64_t)NULL);
     Flush(AccCache);
     if(mode==CpuWrite) AccCache.state = CpuDirty;   // AccDirty +CpuWrite => CpuDirty, Flush
     else            AccCache.state = Consistent; // AccDirty +CpuRead  => Consistent, Flush
     AccCache.cpuLock++;
   } else {
-    assert(0); // should be unreachable
+    GRID_ASSERT(0); // should be unreachable
   }
 
   AccCache.transient= transient? EvictNext : 0;
@@ -528,12 +528,12 @@ void MemoryManager::Audit(std::string s)
   std::cout << " Memory Manager::Audit() from "<<s<<std::endl;
   for(auto it=LRU.begin();it!=LRU.end();it++){
     uint64_t cpuPtr = *it;
-    assert(EntryPresent(cpuPtr));
+    GRID_ASSERT(EntryPresent(cpuPtr));
     auto AccCacheIterator = EntryLookup(cpuPtr);
     auto & AccCache = AccCacheIterator->second;
     LruBytes2+=AccCache.bytes;
-    assert(AccCache.LRU_valid==1);
-    assert(AccCache.LRU_entry==it);
+    GRID_ASSERT(AccCache.LRU_valid==1);
+    GRID_ASSERT(AccCache.LRU_entry==it);
   }
   std::cout << " Memory Manager::Audit() LRU queue matches table entries "<<std::endl;
 
@@ -552,7 +552,7 @@ void MemoryManager::Audit(std::string s)
     if( AccCache.LRU_valid ) LruCnt++;
     
     if ( AccCache.cpuLock || AccCache.accLock ) {
-      assert(AccCache.LRU_valid==0);
+      GRID_ASSERT(AccCache.LRU_valid==0);
 
       std::cout << GridLogError << s<< "\n\t 0x"<<std::hex<<AccCache.CpuPtr<<std::dec
 		<< "\t0x"<<std::hex<<AccCache.AccPtr<<std::dec<<"\t" <<str
@@ -561,16 +561,16 @@ void MemoryManager::Audit(std::string s)
 		<< "\t LRUvalid " << AccCache.LRU_valid<<std::endl;
     }
 
-    assert( AccCache.cpuLock== 0 ) ;
-    assert( AccCache.accLock== 0 ) ;
+    GRID_ASSERT( AccCache.cpuLock== 0 ) ;
+    GRID_ASSERT( AccCache.accLock== 0 ) ;
   }
   std::cout << " Memory Manager::Audit() no locked table entries "<<std::endl;
-  assert(LruBytes1==LruBytes2);
-  assert(LruBytes1==DeviceLRUBytes);
+  GRID_ASSERT(LruBytes1==LruBytes2);
+  GRID_ASSERT(LruBytes1==DeviceLRUBytes);
   std::cout << " Memory Manager::Audit() evictable bytes matches sum over table "<<std::endl;
-  assert(AccBytes==DeviceBytes);
+  GRID_ASSERT(AccBytes==DeviceBytes);
   std::cout << " Memory Manager::Audit() device bytes matches sum over table "<<std::endl;
-  assert(LruCnt == LRU.size());
+  GRID_ASSERT(LruCnt == LRU.size());
   std::cout << " Memory Manager::Audit() LRU entry count matches "<<std::endl;
 
 }

@@ -28,11 +28,11 @@ void AlgRemezGeneral::setupPolyProperties(int num_degree, int den_degree, PolyTy
   pow_n = num_degree;
   pow_d = den_degree;
 
-  if(pow_n % 2 == 0 && num_type_in == PolyType::Odd) assert(0);
-  if(pow_n % 2 == 1 && num_type_in == PolyType::Even) assert(0);
+  if(pow_n % 2 == 0 && num_type_in == PolyType::Odd) GRID_ASSERT(0);
+  if(pow_n % 2 == 1 && num_type_in == PolyType::Even) GRID_ASSERT(0);
 
-  if(pow_d % 2 == 0 && den_type_in == PolyType::Odd) assert(0);
-  if(pow_d % 2 == 1 && den_type_in == PolyType::Even) assert(0);
+  if(pow_d % 2 == 0 && den_type_in == PolyType::Odd) GRID_ASSERT(0);
+  if(pow_d % 2 == 1 && den_type_in == PolyType::Even) GRID_ASSERT(0);
 
   num_type = num_type_in;
   den_type = den_type_in;
@@ -112,9 +112,9 @@ double AlgRemezGeneral::generateApprox(const int num_degree, const int den_degre
     equations();
     if (delta < tolerance) {
       std::cout<<"Iteration " << iter-1 << " delta too small (" << delta << "<" << tolerance << "), try increasing precision\n";
-      assert(0);
+      GRID_ASSERT(0);
     };    
-    assert( delta>= tolerance );
+    GRID_ASSERT( delta>= tolerance );
 
     search();
   }
@@ -278,7 +278,7 @@ void AlgRemezGeneral::equations(){
       if(num_pows[j] != -1){ *aa++ = z; t++; }
       z *= x;
     }
-    assert(t == n+1);
+    GRID_ASSERT(t == n+1);
 
     z = (bigfloat)1l;
     t = 0;
@@ -286,7 +286,7 @@ void AlgRemezGeneral::equations(){
       if(den_pows[j] != -1){ *aa++ = -y * z; t++; }
       z *= x;
     }
-    assert(t == d);
+    GRID_ASSERT(t == d);
 
     B[i] = y * z;		// Right hand side vector
   }

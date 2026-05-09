@@ -103,7 +103,7 @@ NAMESPACE_BEGIN(Grid);
     uint64_t tmp = 1;
     for( auto i = 0 ; i < rank ; i++ )
       tmp *= Dimensions[i];
-    assert( tmp == NumElements && "Dimensions don't match size of data being written" );
+    GRID_ASSERT( tmp == NumElements && "Dimensions don't match size of data being written" );
     // Total number of elements
     write("", tmp);
     // Number of dimensions
@@ -158,7 +158,7 @@ NAMESPACE_BEGIN(Grid);
       dim[i] = tmp;
       count *= tmp;
     }
-    assert( count == NumElements && "Dimensions don't match size of data being read" );
+    GRID_ASSERT( count == NumElements && "Dimensions don't match size of data being read" );
     buf.resize(count);
     for( auto i = 0; i < count; ++i)
       read("", buf[i]);

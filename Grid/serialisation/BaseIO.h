@@ -307,14 +307,14 @@ namespace Grid {
     constexpr unsigned int ContainerRank{Traits::Rank}; // Only non-zero for containers
     constexpr unsigned int TotalRank{TensorRank + ContainerRank};
     const Index NumElements{output.size()};
-    assert( NumElements > 0 );
+    GRID_ASSERT( NumElements > 0 );
 
     // Get the dimensionality of the tensor
     std::vector<std::size_t>  TotalDims(TotalRank);
     for(auto i = 0; i < TensorRank; i++ ) {
       auto dim = output.dimension(i);
       TotalDims[i] = static_cast<size_t>(dim);
-      assert( TotalDims[i] == dim ); // check we didn't lose anything in the conversion
+      GRID_ASSERT( TotalDims[i] == dim ); // check we didn't lose anything in the conversion
     }
     for(auto i = 0; i < ContainerRank; i++ )
       TotalDims[TensorRank + i] = Traits::Dimension(i);
@@ -452,7 +452,7 @@ namespace Grid {
     std::vector<std::size_t> dimData;
     std::vector<Scalar> buf;
     upcast->readMultiDim( s, buf, dimData );
-    assert(dimData.size() == TotalRank && "EigenIO: Tensor rank mismatch" );
+    GRID_ASSERT(dimData.size() == TotalRank && "EigenIO: Tensor rank mismatch" );
     // Make sure that the number of elements read matches dimensions read
     std::size_t NumContainers = 1;
     for( auto i = 0 ; i < TensorRank ; i++ )
@@ -460,10 +460,10 @@ namespace Grid {
     // If our scalar object is a Container, make sure it's dimensions match what we read back
     std::size_t ElementsPerContainer = 1;
     for( auto i = 0 ; i < ContainerRank ; i++ ) {
-      assert( dimData[TensorRank+i] == Traits::Dimension(i) && "Tensor Container dimensions don't match data" );
+      GRID_ASSERT( dimData[TensorRank+i] == Traits::Dimension(i) && "Tensor Container dimensions don't match data" );
       ElementsPerContainer *= dimData[TensorRank+i];
     }
-    assert( NumContainers * ElementsPerContainer == buf.size() && "EigenIO: Number of elements != product of dimensions" );
+    GRID_ASSERT( NumContainers * ElementsPerContainer == buf.size() && "EigenIO: Number of elements != product of dimensions" );
     // Now see whether the tensor is the right shape, or can be made to be
     const auto & dims = output.dimensions();
     bool bShapeOK = (output.data() != nullptr);
@@ -487,7 +487,7 @@ namespace Grid {
       for( int i = TensorRank - 1; i != -1 && ++MyIndex[i] == dims[i]; i-- )
         MyIndex[i] = 0;
     }
-    assert( pSource == &buf[NumContainers * ElementsPerContainer] );
+    GRID_ASSERT( pSource == &buf[NumContainers * ElementsPerContainer] );
   }
 
   template <typename T>
@@ -495,7 +495,7 @@ namespace Grid {
   typename std::enable_if<EigenIO::is_tensor_fixed<ETensor>::value, void>::type
   Reader<T>::Reshape(ETensor &t, const std::array<typename ETensor::Index, ETensor::NumDimensions> &dims )
   {
-    assert( 0 && "EigenIO: Fixed tensor dimensions can't be changed" );
+    GRID_ASSERT( 0 && "EigenIO: Fixed tensor dimensions can't be changed" );
   }
 
   template <typename T>
@@ -505,7 +505,7 @@ namespace Grid {
   {
 #ifdef GRID_OMP
     // The memory counter is the reason this must be done from the primary thread
-    assert(omp_in_parallel()==0 && "Deserialisation which resizes Eigen tensor must happen from primary thread");
+    GRID_ASSERT(omp_in_parallel()==0 && "Deserialisation which resizes Eigen tensor must happen from primary thread");
 #endif
     EigenIO::EigenResizeCounter -= static_cast<uint64_t>(t.size()) * sizeof(typename ETensor::Scalar);
     //t.reshape( dims );
@@ -561,7 +561,7 @@ namespace Grid {
     template <typename T1, typename T2>
     static inline typename std::enable_if<EigenIO::is_tensor<T1>::value && EigenIO::is_tensor<T2>::value, bool>::type
     CompareMember(const T1 &lhs, const T2 &rhs) {
-      // First check whether dimensions match (Eigen tensor library will assert if they don't match)
+      // First check whether dimensions match (Eigen tensor library will GRID_ASSERT if they don't match)
       bool bReturnValue = (T1::NumIndices == T2::NumIndices);
       for( auto i = 0 ; bReturnValue && i < T1::NumIndices ; i++ )
           bReturnValue = ( lhs.dimension(i) == rhs.dimension(i) );
@@ -593,7 +593,7 @@ namespace Grid {
     WriteMember(std::ostream &os, const T &object) {
       using Index = typename T::Index;
       const Index NumElements{object.size()};
-      assert( NumElements > 0 );
+      GRID_ASSERT( NumElements > 0 );
       Index count = 1;
       os << "T<";
       for( int i = 0; i < T::NumIndices; i++ ) {
@@ -603,7 +603,7 @@ namespace Grid {
           os << ",";
         os << dim;
       }
-      assert( count == NumElements && "Number of elements doesn't match tensor dimensions" );
+      GRID_ASSERT( count == NumElements && "Number of elements doesn't match tensor dimensions" );
       os << ">{";
       const typename T::Scalar * p = object.data();
       for( Index i = 0; i < count; i++ ) {

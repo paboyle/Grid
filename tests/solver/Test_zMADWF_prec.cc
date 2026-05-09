@@ -176,7 +176,7 @@ void run(const TestParams &params){
     NerscIO::readConfiguration(Umu, header, params.config_file);
 
     for(int i=0;i<Nd;i++){
-      assert(header.dimension[i] == GridDefaultLatt()[i]);
+      GRID_ASSERT(header.dimension[i] == GridDefaultLatt()[i]);
     }
   }else{    
     SU<Nc>::HotConfiguration(RNG4, Umu);
@@ -297,7 +297,7 @@ int main(int argc, char** argv) {
     run<RunParamsPrecStd, RunParamsPrecDiagTwo>(params);
   }else if(params.outer_precon == "DiagTwo" && params.inner_precon == "DiagTwo"){
     run<RunParamsPrecDiagTwo, RunParamsPrecDiagTwo>(params);
-  }else assert(0);
+  }else GRID_ASSERT(0);
 
   Grid_finalize();
 }
