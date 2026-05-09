@@ -198,7 +198,6 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
   static hostVector<vobj> hsend_buf; hsend_buf.resize(buffer_size+pad);
   static hostVector<vobj> hrecv_buf; hrecv_buf.resize(buffer_size+pad);
 #endif
-#endif
 
   int cb= (cbmask==0x2)? Odd : Even;
   int sshift= rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,cb);

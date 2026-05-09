@@ -183,6 +183,7 @@ public:
 		      int recv_from_rank,
 		      uint64_t bytes);
   
+  int IsOffNode(int rank);
   double StencilSendToRecvFrom(void *xmit,
 			       int xmit_to_rank,int do_xmit,
 			       void *recv,
@@ -201,9 +202,9 @@ public:
   void StencilSendToRecvFromPollIRecv(std::vector<CommsRequest_t> &list);
 
   double StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
-				    void *xmit,
+				    void *xmit,void *xmit_comp,
 				    int xmit_to_rank,int do_xmit,
-				    void *recv,
+				    void *recv,void *recv_comp,
 				    int recv_from_rank,int do_recv,
 				    uint64_t xbytes,uint64_t rbytes,int dir);
   
@@ -243,12 +244,7 @@ public:
     Broadcast(root,(void *)&data,sizeof(data));
   }
 
-#ifdef GRID_CHECKSUM_COMMS
-  uint64_t checksumIndex;
-
-  uint64_t incrementChecksumIndex() { return checksumIndex++; };
-#endif
-};
+}; 
 
 NAMESPACE_END(Grid);
 
