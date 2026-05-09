@@ -120,7 +120,6 @@ protected:
   }
 public:
   /*! @brief Returns smeared configuration at level 'Level' */
-public:
   const GaugeField &get_smeared_conf(int Level) const
   {
     return SmearedSet[Level];

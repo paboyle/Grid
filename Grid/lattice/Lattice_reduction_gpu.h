@@ -52,7 +52,7 @@ int getNumBlocksAndThreads(const Iterator n, const size_t sizeofsobj, Iterator &
   // let the number of threads in a block be a multiple of 2, starting from warpSize
   threads = warpSize;
   if ( threads*sizeofsobj > sharedMemPerBlock ) {
-    //std::cout << GridLogError << "The object is too large for the shared memory." << std::endl;
+    std::cout << GridLogError << "The object is too large for the shared memory." << std::endl;
     return 0;
   }
   while( 2*threads*sizeofsobj < sharedMemPerBlock && 2*threads <= maxThreadsPerBlock ) threads *= 2;

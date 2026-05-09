@@ -216,7 +216,8 @@ int main(int argc, char **argv) {
   int t=WFPar.maxTau;
   WF.smear(Uflow, Umu);
   //  NerscIO::writeConfiguration(Uflow,filesmr);
-
+  
+  
   RealD WFlow_plaq = WilsonLoops<PeriodicGimplR>::avgPlaquette(Uflow);
   RealD WFlow_TC   = WilsonLoops<PeriodicGimplR>::TopologicalCharge(Uflow);
   RealD WFlow_TC5Li   = WilsonLoops<PeriodicGimplR>::TopologicalCharge5Li(Uflow);

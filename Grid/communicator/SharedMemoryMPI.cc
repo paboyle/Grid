@@ -540,49 +540,21 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifndef ACCELERATOR_AWARE_MPI
   // printf("Host buffer allocate for GPU non-aware MPI\n");
-#if 0
-  HostCommBuf= acceleratorAllocHost(bytes);
-#else 
   HostCommBuf= malloc(bytes); /// CHANGE THIS TO malloc_host
-#if 0
-  #warning "Moving host buffers to specific NUMA domain"
-  int numa;
-  char *numa_name=(char *)getenv("MPI_BUF_NUMA");
-  if(numa_name) {
-    unsigned long page_size = sysconf(_SC_PAGESIZE);
-    numa = atoi(numa_name);
-    unsigned long page_count = bytes/page_size;
-    std::vector<void *> pages(page_count);
-    std::vector<int>    nodes(page_count,numa);
-    std::vector<int>    status(page_count,-1);
-    for(unsigned long p=0;p<page_count;p++){
-      pages[p] =(void *) ((uint64_t) HostCommBuf + p*page_size);
-    }
-    int ret = move_pages(0,
-			 page_count,
-			 &pages[0],
-			 &nodes[0],
-			 &status[0],
-			 MPOL_MF_MOVE);
-    printf("Host buffer move to numa domain %d : move_pages returned %d\n",numa,ret);
-    if (ret) perror(" move_pages failed for reason:");
-  }
-#endif  
-  acceleratorPin(HostCommBuf,bytes);
-#endif  
-
 #endif  
   ShmCommBuf = acceleratorAllocDevice(bytes);
   if (ShmCommBuf == (void *)NULL ) {
-    std::cerr << " SharedMemoryMPI.cc acceleratorAllocDevice failed NULL pointer for " << bytes<<" bytes " << std::endl;
+    std::cerr << "SharedMemoryMPI.cc acceleratorAllocDevice failed NULL pointer for " << bytes<<" bytes " << std::endl;
     exit(EXIT_FAILURE);  
   }
   if ( WorldRank == 0 ){
-    std::cout << WorldRank << Mheader " SharedMemoryMPI.cc acceleratorAllocDevice "<< bytes 
+    std::cout << Mheader " acceleratorAllocDevice "<< bytes 
 	      << "bytes at "<< std::hex<< ShmCommBuf << " - "<<(bytes-1+(uint64_t)ShmCommBuf) <<std::dec<<" for comms buffers " <<std::endl;
   }
   SharedMemoryZero(ShmCommBuf,bytes);
-  std::cout<< "Setting up IPC"<<std::endl;
+  if ( WorldRank == 0 ){
+    std::cout<< Mheader "Setting up IPC"<<std::endl;
+  }
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Loop over ranks/gpu's on our node
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -613,8 +585,6 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
       if ( err != ZE_RESULT_SUCCESS ) {
 	std::cerr << "SharedMemoryMPI.cc zeMemGetIpcHandle failed for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl;
 	exit(EXIT_FAILURE);
-      } else {
-	std::cout << "SharedMemoryMPI.cc zeMemGetIpcHandle succeeded for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl;
       }
       memcpy((void *)&handle.fd,(void *)&ihandle,sizeof(int));
       handle.pid = getpid();
@@ -673,12 +643,12 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 #ifdef SHM_SOCKETS
       myfd=UnixSockets::RecvFileDescriptor();
 #else
-      std::cout<<"mapping seeking remote pid/fd "
-	       <<handle.pid<<"/"
-	       <<handle.fd<<std::endl;
+      //      std::cout<<"mapping seeking remote pid/fd "
+      //	       <<handle.pid<<"/"
+      //	       <<handle.fd<<std::endl;
 
       int pidfd = syscall(SYS_pidfd_open,handle.pid,0);
-      std::cout<<"Using IpcHandle pidfd "<<pidfd<<"\n";
+      //      std::cout<<"Using IpcHandle pidfd "<<pidfd<<"\n";
       //      int myfd  = syscall(SYS_pidfd_getfd,pidfd,handle.fd,0);
       myfd  = syscall(438,pidfd,handle.fd,0);
       int err_t = errno;
@@ -688,7 +658,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 	assert(0);
       }
 #endif
-      std::cout<<"Using IpcHandle mapped remote pid "<<handle.pid <<" FD "<<handle.fd <<" to myfd "<<myfd<<"\n";
+      //      std::cout<<"Using IpcHandle mapped remote pid "<<handle.pid <<" FD "<<handle.fd <<" to myfd "<<myfd<<"\n";
       memcpy((void *)&ihandle,(void *)&handle.ze,sizeof(ihandle));
       memcpy((void *)&ihandle,(void *)&myfd,sizeof(int));
 
@@ -697,9 +667,6 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 	std::cerr << "SharedMemoryMPI.cc "<<zeContext<<" "<<zeDevice<<std::endl;
 	std::cerr << "SharedMemoryMPI.cc zeMemOpenIpcHandle failed for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl; 
 	exit(EXIT_FAILURE);
-      } else {
-	std::cout << "SharedMemoryMPI.cc zeMemOpenIpcHandle succeeded for rank "<<r<<std::endl;
-	std::cout << "SharedMemoryMPI.cc zeMemOpenIpcHandle pointer is "<<std::hex<<thisBuf<<std::dec<<std::endl;
       }
       GRID_ASSERT(thisBuf!=nullptr);
     }
@@ -780,6 +747,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     WorldShmCommBufs[r] =ptr;
     //    std::cout << Mheader "Set WorldShmCommBufs["<<r<<"]="<<ptr<< "("<< bytes<< "bytes)"<<std::endl;
   }
+  std::cout<< Mheader " Intra-node IPC setup is complete "<<std::endl;
   _ShmAlloc=1;
   _ShmAllocBytes  = bytes;
 };
@@ -1042,6 +1010,7 @@ void *SharedMemory::ShmBufferTranslate(int rank,void * local_p)
   } else { 
     uint64_t offset = (uint64_t)local_p - (uint64_t)ShmCommBufs[ShmRank];
     uint64_t remote = (uint64_t)ShmCommBufs[gpeer]+offset;
+    //    std::cout << "ShmBufferTranslate : local,offset,remote "<<std::hex<<local_p<<" "<<offset<<" "<<remote<<std::dec<<std::endl;
     return (void *) remote;
   }
 }

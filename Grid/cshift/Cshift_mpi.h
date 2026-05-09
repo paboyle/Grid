@@ -192,13 +192,12 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
   int buffer_size = rhs.Grid()->_slice_nblock[dimension]*rhs.Grid()->_slice_block[dimension];
   static deviceVector<vobj> send_buf; send_buf.resize(buffer_size);
   static deviceVector<vobj> recv_buf; recv_buf.resize(buffer_size);
-
 #ifndef ACCELERATOR_AWARE_MPI
   int pad = (8 + sizeof(vobj) - 1) / sizeof(vobj);
   static hostVector<vobj> hsend_buf; hsend_buf.resize(buffer_size+pad);
   static hostVector<vobj> hrecv_buf; hrecv_buf.resize(buffer_size+pad);
 #endif
-
+  
   int cb= (cbmask==0x2)? Odd : Even;
   int sshift= rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,cb);
   RealD tcopy=0.0;
@@ -351,7 +350,6 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
     send_buf_extract[s].resize(buffer_size);
     recv_buf_extract[s].resize(buffer_size);
   }
-
 #ifndef ACCELERATOR_AWARE_MPI
 #ifdef GRID_CHECKSUM_COMMS
   buffer_size += (8 + sizeof(vobj) - 1) / sizeof(vobj);

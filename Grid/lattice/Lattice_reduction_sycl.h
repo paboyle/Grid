@@ -96,11 +96,11 @@ template<class Word> Word checksum_gpu(Word *vec,uint64_t L)
     theGridAccelerator->submit([&](sycl::handler &cgh) {
       auto Reduction = sycl::reduction(abuff,cgh,identity,std::bit_xor<>());
       cgh.parallel_for(sycl::range<1>{L},
-                      Reduction,
-                      [=] (sycl::id<1> index, auto &sum) {
-			auto l = index % 61;
-                        sum ^= vec[index]<<l | vec[index]>>(64-l);
-                      });
+                       Reduction,
+                       [=] (sycl::id<1> index, auto &sum) {
+			 auto l = index % 61;
+                         sum ^= vec[index]<<l | vec[index]>>(64-l);
+                       });
     });
   }
   theGridAccelerator->wait();

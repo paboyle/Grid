@@ -397,7 +397,7 @@ void Grid_init(int *argc,char ***argv)
   /////////////////////////////////////////////////////////////////
   if( !GridCmdOptionExists(*argv,*argv+*argc,"--debug-stdout") ){
     Grid_quiesce_nodes();
-  } else {
+  } else { 
     FILE *fp;
     std::ostringstream fname;
 
@@ -412,7 +412,6 @@ void Grid_init(int *argc,char ***argv)
     fname << (rank/radix)*radix ;
     mkdir(fname.str().c_str(), S_IRWXU );
     fname << "/";
-
     fname<<"Grid.stdout.";
     fname<<CartesianCommunicator::RankWorld();
 

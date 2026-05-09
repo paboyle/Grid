@@ -87,14 +87,14 @@ public:
   /////////////////////////////////////////////////////
   // Instantiate different versions depending on Impl
   /////////////////////////////////////////////////////
-  virtual void M5D(const FermionField &psi,
+  void M5D(const FermionField &psi,
 	   const FermionField &phi,
 	   FermionField &chi,
 	   std::vector<Coeff_t> &lower,
 	   std::vector<Coeff_t> &diag,
 	   std::vector<Coeff_t> &upper);
 
-  virtual void M5Ddag(const FermionField &psi,
+  void M5Ddag(const FermionField &psi,
 	      const FermionField &phi,
 	      FermionField &chi,
 	      std::vector<Coeff_t> &lower,

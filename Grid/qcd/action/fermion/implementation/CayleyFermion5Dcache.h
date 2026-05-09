@@ -130,7 +130,7 @@ CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi_i, FermionField &chi
   GridBase *grid=psi_i.Grid();
 
   autoView(psi , psi_i,AcceleratorRead);
-  autoView(chi , chi_i,AcceleratorWriteDiscard);
+  autoView(chi , chi_i,AcceleratorWrite);
 
   int Ls=this->Ls;
 
@@ -194,7 +194,7 @@ CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi_i, FermionField &chi
   int Ls=this->Ls;
 
   autoView(psi , psi_i,AcceleratorRead);
-  autoView(chi , chi_i,AcceleratorWriteDiscard);
+  autoView(chi , chi_i,AcceleratorWrite);
 
   acceleratorCopyToDevice(&lee[0],&d_lee[0],Ls*sizeof(Coeff_t));
   acceleratorCopyToDevice(&dee[0],&d_dee[0],Ls*sizeof(Coeff_t));

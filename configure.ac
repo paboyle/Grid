@@ -275,7 +275,7 @@ esac
 ############### CHECKSUM COMMS
 AC_ARG_ENABLE([checksum-comms],
     [AS_HELP_STRING([--enable-checksum-comms=yes|no],[checksum all communication])],
-    [ac_CHECKSUM_COMMS=${enable_checksum_comms}], [ac_CHECKSUM_COMMS=yes])
+    [ac_CHECKSUM_COMMS=${enable_checksum_comms}], [ac_CHECKSUM_COMMS=no])
 
 case ${ac_CHECKSUM_COMMS} in
     yes)
