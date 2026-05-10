@@ -166,7 +166,7 @@ int main (int argc, char ** argv)
   }  
 
 
-
+#ifdef GRID_OMP
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking sequential STENCIL halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
@@ -249,7 +249,7 @@ int main (int argc, char ** argv)
  
     }
   }    
-
+#endif
 
 #ifdef GRID_OMP
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;

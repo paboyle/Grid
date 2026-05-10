@@ -62,7 +62,7 @@ static int su2subgroups(GroupName::SU) { return (ncolour * (ncolour - 1)) / 2; }
 //
 ////////////////////////////////////////////////////////////////////////
 template <class cplx, ONLY_IF_SU>
-static void generator(int lieIndex, iGroupMatrix<cplx> &ta, GroupName::SU) {
+static accelerator_inline void generator(int lieIndex, iGroupMatrix<cplx> &ta, GroupName::SU) {
   // map lie index to which type of generator
   int diagIndex;
   int su2Index;
@@ -82,7 +82,7 @@ static void generator(int lieIndex, iGroupMatrix<cplx> &ta, GroupName::SU) {
 }
 
 template <class cplx, ONLY_IF_SU>
-static void generatorSigmaY(int su2Index, iGroupMatrix<cplx> &ta) {
+static accelerator_inline void generatorSigmaY(int su2Index, iGroupMatrix<cplx> &ta) {
   ta = Zero();
   int i1, i2;
   su2SubGroupIndex(i1, i2, su2Index);
@@ -92,9 +92,9 @@ static void generatorSigmaY(int su2Index, iGroupMatrix<cplx> &ta) {
 }
 
 template <class cplx, ONLY_IF_SU>
-static void generatorSigmaX(int su2Index, iGroupMatrix<cplx> &ta) {
+static accelerator_inline void generatorSigmaX(int su2Index, iGroupMatrix<cplx> &ta) {
   ta = Zero();
-  cplx i(0.0, 1.0);
+  cplx i(Complex(0.0, 1.0));
   int i1, i2;
   su2SubGroupIndex(i1, i2, su2Index);
   ta()()(i1, i2) = i;
@@ -103,7 +103,7 @@ static void generatorSigmaX(int su2Index, iGroupMatrix<cplx> &ta) {
 }
 
 template <class cplx, ONLY_IF_SU>
-static void generatorDiagonal(int diagIndex, iGroupMatrix<cplx> &ta) {
+static accelerator_inline void generatorDiagonal(int diagIndex, iGroupMatrix<cplx> &ta) {
   // diag ({1, 1, ..., 1}(k-times), -k, 0, 0, ...)
   ta = Zero();
   int k = diagIndex + 1;                  // diagIndex starts from 0

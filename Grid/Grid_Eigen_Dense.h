@@ -39,6 +39,7 @@
 #endif
 
 /* HIP save and restore compile environment*/
+
 #ifdef GRID_HIP
 #pragma push
 #pragma push_macro("__HIP_DEVICE_COMPILE__")
@@ -63,11 +64,12 @@
 #endif
 
 /*HIP restore*/
+/*
 #ifdef __HIP__REDEFINE__
 #pragma pop_macro("__HIP_DEVICE_COMPILE__")
 #pragma pop
 #endif
-
+*/
 #if defined __GNUC__
 #pragma GCC diagnostic pop
 #endif

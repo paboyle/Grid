@@ -560,8 +560,11 @@ class BinaryIO {
     std::vector<sobj> scalardata(lsites); 
     std::vector<fobj>     iodata(lsites); // Munge, checksum, byte order in here
     
+    FlightRecorder::StepLog("readLatticeObject BEGIN");
+    grid->Barrier();
     IOobject(w,grid,iodata,file,offset,format,BINARYIO_READ|control,
 	     nersc_csum,scidac_csuma,scidac_csumb);
+    FlightRecorder::StepLog("readLatticeObject END");
 
     GridStopWatch timer; 
     timer.Start();
@@ -611,9 +614,12 @@ class BinaryIO {
     timer.Stop();
     while (attemptsLeft >= 0)
     {
+      FlightRecorder::StepLog("writeLatticeObject BEGIN");
       grid->Barrier();
       IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|control,
 	             nersc_csum,scidac_csuma,scidac_csumb);
+      FlightRecorder::StepLog("writeLatticeObject END");
+      grid->Barrier();
       if (checkWrite)
       {
         std::vector<fobj> ckiodata(lsites);

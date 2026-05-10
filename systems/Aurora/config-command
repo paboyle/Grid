@@ -1,8 +1,23 @@
-export MPFR=`spack find --paths mpfr    | grep ^mpfr  | awk '{print $2}' `
-export GMP=`spack find --paths gmp   | grep ^gmp  | awk '{print $2}' `
-export CLIME=`spack find --paths c-lime  | grep ^c-lime  | awk '{print $2}' `
-export UNWIND=`spack find --paths libunwind  | grep ^libunwind  | awk '{print $2}' `
-export HDF5=/opt/cray/pe/hdf5/1.12.2.3/gnu/9.1
+#Ahead of time compile for PVC
+
+export LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel -fsycl-targets=spir64 -Xs -device -Xs pvc -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel  -fsycl  -lsycl -lnuma -L/opt/aurora/24.180.3/spack/unified/0.8.0/install/linux-sles15-x86_64/oneapi-2024.07.30.002/numactl-2.0.14-7v6edad/lib -fPIC -fsycl-max-parallel-link-jobs=16 -fno-sycl-rdc" 
+export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-narrowing -Wno-tautological-compare -qmkl=parallel  -fsycl -fno-exceptions -I/opt/aurora/24.180.3/spack/unified/0.8.0/install/linux-sles15-x86_64/oneapi-2024.07.30.002/numactl-2.0.14-7v6edad/include/ -fPIC "
+
+### Original
+#export LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel -fsycl-targets=spir64_gen -Xs -device -Xs pvc -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel  -fsycl  -lsycl -lnuma -L/opt/aurora/24.180.3/spack/unified/0.8.0/install/linux-sles15-x86_64/oneapi-2024.07.30.002/numactl-2.0.14-7v6edad/lib -fPIC -fsycl-max-parallel-link-jobs=16 -fno-sycl-rdc" 
+#export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-narrowing -Wno-tautological-compare -qmkl=parallel  -fsycl -fno-exceptions -I/opt/aurora/24.180.3/spack/unified/0.8.0/install/linux-sles15-x86_64/oneapi-2024.07.30.002/numactl-2.0.14-7v6edad/include/ -fPIC"
+
+### JIT compile 
+#export LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel  -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel  -fsycl  -lsycl " 
+#export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-tautological-compare -qmkl=parallel  -fsycl -fno-exceptions "
+
+### upstream
+#export MPFR=`spack find --paths mpfr    | grep ^mpfr  | awk '{print $2}' `
+#export GMP=`spack find --paths gmp   | grep ^gmp  | awk '{print $2}' `
+#export CLIME=`spack find --paths c-lime  | grep ^c-lime  | awk '{print $2}' `
+#export UNWIND=`spack find --paths libunwind  | grep ^libunwind  | awk '{print $2}' `
+#export HDF5=/opt/cray/pe/hdf5/1.12.2.3/gnu/9.1
+
 ../../configure \
 	--enable-simd=GPU \
 	--enable-gen-simd-width=64 \
@@ -16,14 +31,14 @@ export HDF5=/opt/cray/pe/hdf5/1.12.2.3/gnu/9.1
 	--enable-accelerator-aware-mpi=no \
 	--enable-unified=no \
 	--with-lime=$CLIME \
-	--with-hdf5=${HDF5} \
 	--with-gmp=$GMP \
 	--with-mpfr=$MPFR \
-	--with-unwind=$UNWIND \
 	MPICXX=mpicxx \
 	CXX=icpx \
 	LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel -lsycl -fsycl-max-parallel-link-jobs=16 -fno-sycl-rdc -lnuma" \
 	CXXFLAGS="-fPIC -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-tautological-compare -qmkl=parallel"
 
 
-
+#	--with-unwind=$UNWIND \
+#	--prefix $HOME/gpt-install \
+#	--enable-debug \

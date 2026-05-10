@@ -52,6 +52,7 @@ inline std::pair<int,int> *MapCshiftTable(void)
 template<class vobj> void 
 Gather_plane_simple (const Lattice<vobj> &rhs,deviceVector<vobj> &buffer,int dimension,int plane,int cbmask, int off=0)
 {
+  GRID_TRACE("Gather_plane_simple");
   int rd = rhs.Grid()->_rdimensions[dimension];
 
   if ( !rhs.Grid()->CheckerBoarded(dimension) ) {
@@ -105,6 +106,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,
 		     ExtractPointerArray<typename vobj::scalar_object> pointers,
 		     int dimension,int plane,int cbmask)
 {
+  GRID_TRACE("Gather_plane_extract");
   int rd = rhs.Grid()->_rdimensions[dimension];
 
   if ( !rhs.Grid()->CheckerBoarded(dimension) ) {
@@ -160,6 +162,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,
 //////////////////////////////////////////////////////
 template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,deviceVector<vobj> &buffer, int dimension,int plane,int cbmask)
 {
+  GRID_TRACE("Scatter_plane_simple");
   int rd = rhs.Grid()->_rdimensions[dimension];
 
   if ( !rhs.Grid()->CheckerBoarded(dimension) ) {
@@ -214,6 +217,7 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,deviceVector<
 //////////////////////////////////////////////////////
 template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerArray<typename vobj::scalar_object> pointers,int dimension,int plane,int cbmask)
 {
+  GRID_TRACE("Scatter_plane_merge");
   int rd = rhs.Grid()->_rdimensions[dimension];
 
   if ( !rhs.Grid()->CheckerBoarded(dimension) ) {
@@ -263,6 +267,7 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
 
 template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask)
 {
+  GRID_TRACE("Copy_plane");
   int rd = rhs.Grid()->_rdimensions[dimension];
 
   if ( !rhs.Grid()->CheckerBoarded(dimension) ) {
@@ -311,6 +316,7 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
 
 template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask,int permute_type)
 {
+  GRID_TRACE("Copy_plane_permute");
   int rd = rhs.Grid()->_rdimensions[dimension];
 
   if ( !rhs.Grid()->CheckerBoarded(dimension) ) {
@@ -358,6 +364,7 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
 //////////////////////////////////////////////////////
 template<class vobj> void Cshift_local(Lattice<vobj>& ret,const Lattice<vobj> &rhs,int dimension,int shift)
 {
+  GRID_TRACE("Cshift_local");
   int sshift[2];
 
   sshift[0] = rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Even);

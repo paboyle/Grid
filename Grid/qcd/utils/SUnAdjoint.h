@@ -22,6 +22,7 @@
 //
 ////////////////////////////////////////////////////////////////////////
 
+
 NAMESPACE_BEGIN(Grid);
 
 template <int ncolour>
@@ -58,23 +59,21 @@ public:
   typedef Lattice<iScalar<iScalar<iVector<vComplex, Dimension> > > >  LatticeAdjVector;
 
   template <class cplx>
-  static void generator(int Index, iSUnAdjointMatrix<cplx> &iAdjTa) {
+  static accelerator_inline void generator(int Index, iSUnAdjointMatrix<cplx> &iAdjTa) {
     // returns i(T_Adj)^index necessary for the projectors
     // see definitions above
     iAdjTa = Zero();
-    iSUnMatrix<cplx> ta[ncolour * ncolour - 1];
+    iVector<iSUnMatrix<cplx>,Dimension> ta;
     iSUnMatrix<cplx> tmp;
 
     // FIXME not very efficient to get all the generators everytime
-    for (int a = 0; a < Dimension; a++) SU<ncolour>::generator(a, ta[a]);
+    for (int a = 0; a < Dimension; a++) SU<ncolour>::generator(a, ta(a));
 
     for (int a = 0; a < Dimension; a++) {
-      tmp = ta[a] * ta[Index] - ta[Index] * ta[a];
-      for (int b = 0; b < (ncolour * ncolour - 1); b++) {
-        iSUnMatrix<cplx> tmp1 = 2.0 * tmp * ta[b];  // 2.0 from the normalization
-        Complex iTr = TensorRemove(timesI(trace(tmp1)));
-        //iAdjTa()()(b, a) = iTr;
-        iAdjTa()()(a, b) = iTr;
+      tmp = ta(a) * ta(Index) - ta(Index) * ta(a);
+      for (int b = 0; b < Dimension; b++) {
+        iSUnMatrix<cplx> tmp1 = 2.0 * tmp * ta(b);  // 2.0 from the normalization
+        iAdjTa()()(a, b) = TensorRemove(timesI(trace(tmp1)));
       }
     }
   }
@@ -161,7 +160,65 @@ public:
     }
   }
 
+  // Turn complex 3x3 Lie algebra elem into its real 8x8 adj rep
+  static void make_adjoint_rep(LatticeAdjMatrix &out, const typename SU<ncolour>::LatticeMatrix &in) {
+    // Use real and totally anti-symmetric matrices as adjoint rep
+    //  => basis matrices for su(N) are anti-hermitian
+    // Take: T^a = i t^a where t^a: basis elem in Grid's convention; T^a satisfies Luscher's normalization convention -2tr[T^a,T^b] = \delta_{ab}
+    // Recall: adj rep generated above, iAdjTa, is multiplied by i
+    //   This makes adj rep here is consistent with the one written in terms of T^a
+    // So for adj rep, we follow Luscher's convention
+    
+    // in: traceless-anti-hermitian
 
+    GridBase *grid = out.Grid();
+      
+    autoView(out_v,out,AcceleratorWrite);
+    autoView(in_v,in,AcceleratorRead);
+    int N = ncolour;
+    int NNm1 = N * (N - 1);
+    int hNNm1= NNm1/2;
+    const int nsimd = vAMatrix::Nsimd();
+    accelerator_for(ss,grid->oSites(),nsimd,{
+	typedef decltype(coalescedRead(out_v[0])) adj_mat;
+	typedef decltype(coalescedRead(vTComplex())) computeComplex;
+	
+	adj_mat iTa, Tadj=Zero();
+	computeComplex c;
+	
+        for(int su2Index=0;su2Index<hNNm1;su2Index++){
+          int i1, i2;
+          SU<ncolour>::su2SubGroupIndex(i1, i2, su2Index);
+          int ax = su2Index*2;
+          int ay = su2Index*2+1;
+
+	  // multiply t^a by -i
+	  // cplx = -2.0*trace(ci*tb*Zx);
+	  // ZxAd = ZxAd + cplx * TRb;
+	  generator(ax,iTa);
+	  c()()() = 2.0*real(in_v(ss)()()(i2,i1));
+	  Tadj = Tadj + c*iTa;
+	  generator(ay,iTa);
+          c()()() = 2.0*imag(in_v(ss)()()(i1,i2));
+	  Tadj = Tadj + c*iTa;
+        }
+        for(int diagIndex=0;diagIndex<N-1;diagIndex++){
+          int k = diagIndex + 1; // diagIndex starts from 0
+          int a = NNm1+diagIndex;
+          RealD scale = 1.0/sqrt(2.0*k*(k+1));
+
+	  generator(a,iTa);
+          auto tmp = in_v(ss)()()(0,0);
+          for(int i=1;i<k;i++){
+            tmp=tmp+in_v(ss)()()(i,i);
+          }
+          tmp = tmp - in_v(ss)()()(k,k)*((RealD) k);
+	  c()()() = 2.0 * scale * imag(tmp);
+          Tadj = Tadj + c*iTa;
+        }
+	coalescedWrite(out_v[ss],Tadj);
+      });
+  }
 };
 
 

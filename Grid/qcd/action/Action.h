@@ -33,6 +33,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_QCD_ACTION_H
 #define GRID_QCD_ACTION_H
 
+
 ////////////////////////////////////////////
 // Abstract base interface
 ////////////////////////////////////////////

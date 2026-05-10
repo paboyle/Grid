@@ -46,7 +46,19 @@ directory
                           std::is_same<dummy_name, group_name>::value && \
                       is_sp<dummy_name>::value >
 
+
 NAMESPACE_BEGIN(Grid);
+
+namespace CplxMultExt {
+  template< typename T, typename SCALAR > inline
+  typename std::enable_if< std::is_integral<SCALAR>::value, std::complex<T> >::type
+  operator* ( const std::complex<T>& c, SCALAR n ) { return c * static_cast<T>(n) ; }
+
+  template< typename T, typename SCALAR > inline
+  typename std::enable_if< std::is_integral<SCALAR>::value, std::complex<T> >::type
+  operator* ( SCALAR n, const std::complex<T>& c ) { return static_cast<T>(n) * c ; }
+}
+
 namespace GroupName {
 class SU {};
 class Sp {};
@@ -135,7 +147,11 @@ class GaugeGroup {
   typedef Lattice<vAlgebraVector> LatticeAlgebraVector;
   typedef Lattice<vAlgebraVectorF> LatticeAlgebraVectorF;
   typedef Lattice<vAlgebraVectorD> LatticeAlgebraVectorD;
-   
+
+  typedef iSUnAlgebraMatrix<Complex>  AlgebraMatrix;
+  typedef iSUnAlgebraMatrix<ComplexF> AlgebraMatrixF;
+  typedef iSUnAlgebraMatrix<ComplexD> AlgebraMatrixD;
+  
   typedef iSUnAlgebraMatrix<vComplex>  vAlgebraMatrix;
   typedef iSUnAlgebraMatrix<vComplexF> vAlgebraMatrixF;
   typedef iSUnAlgebraMatrix<vComplexD> vAlgebraMatrixD;
@@ -168,7 +184,7 @@ class GaugeGroup {
 
  public:
   template <class cplx>
-  static void generator(int lieIndex, iGroupMatrix<cplx> &ta) {
+  static accelerator_inline void generator(int lieIndex, iGroupMatrix<cplx> &ta) {
     return generator(lieIndex, ta, group_name());
   }
 
@@ -401,52 +417,355 @@ class GaugeGroup {
     }
   }
 
-// Ta are hermitian (?)
-// Anti herm is i Ta basis
-static void LieAlgebraProject(LatticeAlgebraMatrix &out,const LatticeMatrix &in, int b)
-{
-  conformable(in, out);
-  GridBase *grid = out.Grid();
-  LatticeComplex tmp(grid);
-  Matrix ta;
-  // Using Luchang's projection convention
-  //  2 Tr{Ta Tb} A_b= 2/2 delta ab A_b = A_a
-  autoView(out_v,out,AcceleratorWrite);
-  autoView(in_v,in,AcceleratorRead);
-  int N = ncolour;
-  int NNm1 = N * (N - 1);
-  int hNNm1= NNm1/2;
-  RealD sqrt_2 = sqrt(2.0);
-  Complex ci(0.0,1.0);
-  for(int su2Index=0;su2Index<hNNm1;su2Index++){
-    int i1, i2;
-    su2SubGroupIndex(i1, i2, su2Index);
-    int ax = su2Index*2;
-    int ay = su2Index*2+1;
-    accelerator_for(ss,grid->oSites(),1,{
-	// in is traceless ANTI-hermitian whereas Grid generators are Hermitian.
-	// trace( Ta x Ci in)
-	// Bet I need to move to real part with mult by -i
-	out_v[ss]()()(ax,b) = 0.5*(real(in_v[ss]()()(i2,i1)) - real(in_v[ss]()()(i1,i2)));
-	out_v[ss]()()(ay,b) = 0.5*(imag(in_v[ss]()()(i1,i2)) + imag(in_v[ss]()()(i2,i1)));
+  // Site-local operation
+  // Work with traceless anti-hermitian matrices for Lie algebra elements with Luscher's normalization convention
+  // Explicitly, T^a = -i t^a where t^a is hermitian generators in Grid convention, c.f., Compute_MpInvJx_dNxxdSy
+  //  in GaugeConfigurationMasked.h
+  // Used only in old implementation left for debugging purposes; to be deleted
+  template<typename T_out, typename T_in>
+  static accelerator_inline void LieAlgebraProject(T_out &out_v,const T_in &in_v, int b)
+  {
+    int N = ncolour;
+    int NNm1 = N * (N - 1);
+    int hNNm1= NNm1/2;
+    
+    for(int su2Index=0;su2Index<hNNm1;su2Index++){
+      int i1, i2;
+      su2SubGroupIndex(i1, i2, su2Index);
+      int ax = su2Index*2;
+      int ay = su2Index*2+1;
+      // in is traceless ANTI-hermitian
+      out_v()()(ax,b)=real(in_v()()(i2,i1));
+      out_v()()(ay,b)=imag(in_v()()(i1,i2));
+    }
+    for(int diagIndex=0;diagIndex<N-1;diagIndex++){
+      int k = diagIndex + 1; // diagIndex starts from 0
+      int a = NNm1+diagIndex;
+      RealD scale = 1.0/sqrt(2.0*k*(k+1));
+      auto tmp = in_v()()(0,0);
+      for(int i=1;i<k;i++){
+	tmp=tmp+in_v()()(i,i);
+      }
+      tmp = tmp - in_v()()(k,k)*((RealD) k);
+      out_v()()(a,b)=imag(tmp) * scale;
+    }
+  }
+  
+  // Lattice-wide operator
+  // Used only in old implementation left for debugging purposes; to be deleted
+  static void LieAlgebraProject(LatticeAlgebraMatrix &out,const LatticeMatrix &in, int b)
+  {
+    conformable(in, out);
+    GridBase *grid = out.Grid();
+    LatticeComplex tmp(grid);
+    Matrix ta;
+    
+    // for convention for algebra basis, see the comments in the LieAlgebraProject below.
+    autoView(out_v,out,AcceleratorWrite);
+    autoView(in_v,in,AcceleratorRead);
+    int N = ncolour;
+    int NNm1 = N * (N - 1);
+    int hNNm1= NNm1/2;
+    RealD sqrt_2 = sqrt(2.0);
+    Complex ci(0.0,1.0);
+    
+    const int nsimd = vMatrix::Nsimd();
+    accelerator_for(ss,grid->oSites(),nsimd,{
+	for(int su2Index=0;su2Index<hNNm1;su2Index++){
+	  int i1, i2;
+	  su2SubGroupIndex(i1, i2, su2Index);
+	  int ax = su2Index*2;
+	  int ay = su2Index*2+1;
+	  // in is traceless ANTI-hermitian
+	  coalescedWrite(out_v[ss]()()(ax,b),real(in_v(ss)()()(i2,i1)));
+	  coalescedWrite(out_v[ss]()()(ay,b),imag(in_v(ss)()()(i1,i2)));  
+	}
+	for(int diagIndex=0;diagIndex<N-1;diagIndex++){
+	  int k = diagIndex + 1; // diagIndex starts from 0
+	  int a = NNm1+diagIndex;
+	  RealD scale = 1.0/sqrt(2.0*k*(k+1));
+	  auto tmp = in_v(ss)()()(0,0);
+	  for(int i=1;i<k;i++){
+	    tmp=tmp+in_v(ss)()()(i,i);
+	  }
+	  tmp = tmp - in_v(ss)()()(k,k)*((RealD) k);
+	  coalescedWrite(out_v[ss]()()(a,b),imag(tmp) * scale);
+	}
       });
   }
-  for(int diagIndex=0;diagIndex<N-1;diagIndex++){
-    int k = diagIndex + 1; // diagIndex starts from 0
-    int a = NNm1+diagIndex;
-    RealD scale = 1.0/sqrt(2.0*k*(k+1));
-    accelerator_for(ss,grid->oSites(),vComplex::Nsimd(),{
-	auto tmp = in_v[ss]()()(0,0);
-	for(int i=1;i<k;i++){
-	  tmp=tmp+in_v[ss]()()(i,i);
-	}
-	tmp = tmp - in_v[ss]()()(k,k)*k;
-	out_v[ss]()()(a,b) =imag(tmp) * scale;
-      });
-    }
-}
 
-  
+  // Site-local operation
+  // Work with traceless anti-hermitian matrices for Lie algebra elements with Luscher's normalization convention
+  // Explicitly, T^a = -i t^a where t^a is hermitian generators in Grid convention, c.f., Compute_MpInvJx_dNxxdSy
+  //  in GaugeConfigurationMasked.h
+  template<typename T_out, typename T_in>
+  static accelerator_inline void LieAlgebraProject(T_out &out_v,const T_in &in_v){
+    int N = ncolour;
+    int NNm1 = N * (N - 1);
+    int hNNm1= NNm1/2;
+
+#if 1
+    using namespace CplxMultExt;
+
+    // Compute N_{ab}
+    for(int su2Index_b=0;su2Index_b<hNNm1;su2Index_b++){
+      int ib1, ib2;
+      su2SubGroupIndex(ib1, ib2, su2Index_b);
+      int bx = su2Index_b*2;
+      int by = su2Index_b*2+1;
+      for(int su2Index=0;su2Index<hNNm1;su2Index++){
+        int i1, i2;
+        su2SubGroupIndex(i1, i2, su2Index); //i1<i2
+        int ax = su2Index*2;
+        int ay = su2Index*2+1;
+        // Compute: tr(T^a P) where P is traceless anti-hermitian
+        // Here, P = Ta(M) where M is defined below
+        // Note: T^b appearing in M (c.f. below) is 2it^b where t^b in Grid's convention, c.f. original def UtaU in the earlier version
+	
+        // real( 0.5*[M - M^\dag]_(i2, i1) )=real( 0.5*[T^b*in + in^\dag*T^b]_(i2, i1) ) <- M = T^b*in <- T^b: suN matrix in Luchang's convention; in: input matrix
+        //    sign flip of the complex part of the 2nd term is neglected, as real is taken
+        out_v()()(ax,bx) = 0.5*real( !(ib2^i2)*in_v()()(ib1,i1)-!(ib1^i2)*in_v()()(ib2,i1)
+                                    +!(ib1^i1)*in_v()()(ib2,i2)-!(ib2^i1)*in_v()()(ib1,i2) );
+        // imag( 0.5*[M - M^\dag]_(i1, i2) )
+        //    sign flip of the complex part of the 2nd term due to dagger
+        out_v()()(ay,bx) = 0.5*imag( !(ib2^i1)*in_v()()(ib1,i2)-!(ib1^i1)*in_v()()(ib2,i2)
+                                    -!(ib1^i2)*in_v()()(ib2,i1)+!(ib2^i2)*in_v()()(ib1,i1) );
+	
+	//    sign flip of the complex part of the 2nd term due to dagger <- imag turns into real due to i from T^b
+        out_v()()(ax,by) = -0.5*imag(  !(ib2^i2)*in_v()()(ib1,i1)+!(ib1^i2)*in_v()()(ib2,i1)
+                                      -!(ib1^i1)*in_v()()(ib2,i2)-!(ib2^i1)*in_v()()(ib1,i2) );
+
+        out_v()()(ay,by) = 0.5*real(  !(ib2^i1)*in_v()()(ib1,i2)+!(ib1^i1)*in_v()()(ib2,i2)
+                                     +!(ib1^i2)*in_v()()(ib2,i1)+!(ib2^i2)*in_v()()(ib1,i1) );
+      }
+      for(int diagIndex=0;diagIndex<N-1;diagIndex++){
+        int k = diagIndex + 1; // diagIndex starts from 0
+        int a = NNm1+diagIndex;
+        RealD scale = 1.0/sqrt(2.0*k*(k+1));
+        out_v()()(a,bx) = scale*imag(-((ib1<k)-k*(ib1==k))*in_v()()(ib2,ib1) + ((ib2<k)-k*(ib2==k))*in_v()()(ib1,ib2) );
+        out_v()()(a,by) = scale*real( ((ib1<k)-k*(ib1==k))*in_v()()(ib2,ib1) + ((ib2<k)-k*(ib2==k))*in_v()()(ib1,ib2) );
+      }
+    }
+    for(int diagIndex_b=0;diagIndex_b<N-1;diagIndex_b++){
+      int k_b = diagIndex_b + 1; // diagIndex starts from 0
+      int b = NNm1+diagIndex_b;
+      RealD scale_b = 2.0/sqrt(2.0*k_b*(k_b+1));
+      for(int su2Index=0;su2Index<hNNm1;su2Index++){
+        int i1, i2;
+        su2SubGroupIndex(i1, i2, su2Index);
+        int ax = su2Index*2;
+        int ay = su2Index*2+1;
+        out_v()()(ax,b)=-0.5*scale_b*imag( ((i2<k_b)-k_b*(i2==k_b))*in_v()()(i2,i1) - ((i1<k_b)-k_b*(i1==k_b))*in_v()()(i1,i2) );
+        out_v()()(ay,b)= 0.5*scale_b*real( ((i1<k_b)-k_b*(i1==k_b))*in_v()()(i1,i2) + ((i2<k_b)-k_b*(i2==k_b))*in_v()()(i2,i1) );
+      }
+      for(int diagIndex=0;diagIndex<N-1;diagIndex++){
+        int k = diagIndex + 1; // diagIndex starts from 0
+        int a = NNm1+diagIndex;
+        RealD scale = 1.0/sqrt(2.0*k*(k+1));
+        auto tmp = in_v()()(0,0);
+        int k_min = (k < k_b)? k:k_b;
+        for(int i=1;i<k_min;i++){
+          tmp=tmp+in_v()()(i,i);
+        }
+        int c = (k==k_b)? -k:1;
+        tmp = tmp - in_v()()(k_min,k_min)*k_min*c;
+        out_v()()(a,b)=real(tmp) * scale * scale_b;
+      }
+    }
+#else
+    // Compute N_{ab}
+    for(int su2Index_b=0;su2Index_b<hNNm1;su2Index_b++){
+      int ib1, ib2;
+      su2SubGroupIndex(ib1, ib2, su2Index_b);
+      int bx = su2Index_b*2;
+      int by = su2Index_b*2+1;
+      for(int su2Index=0;su2Index<hNNm1;su2Index++){
+	int i1, i2;
+	su2SubGroupIndex(i1, i2, su2Index); //i1<i2
+	int ax = su2Index*2;
+	int ay = su2Index*2+1;
+	// Compute: tr(T^a P) where P is traceless anti-hermitian
+	// Here, P = Ta(M) where M is defined below
+	// Note: T^b appearing in M (c.f. below) is 2it^b where t^b in Grid's convention, c.f. original def UtaU in the earlier version
+	
+	// real( 0.5*[M - M^\dag]_(i2, i1) )=real( 0.5*[T^b*in + in^\dag*T^b]_(i2, i1) ) <- M = T^b*in <- T^b: suN matrix in Luchang's convention; in: input matrix
+	//    sign flip of the complex part of the 2nd term is neglected, as real is taken
+	out_v()()(ax,bx) = 0.5*( !(ib2^i2)*real(in_v()()(ib1,i1))-!(ib1^i2)*real(in_v()()(ib2,i1))
+				 +!(ib1^i1)*real(in_v()()(ib2,i2))-!(ib2^i1)*real(in_v()()(ib1,i2)) );
+	// imag( 0.5*[M - M^\dag]_(i1, i2) )
+	//    sign flip of the complex part of the 2nd term due to dagger
+	out_v()()(ay,bx) = 0.5*( !(ib2^i1)*imag(in_v()()(ib1,i2))-!(ib1^i1)*imag(in_v()()(ib2,i2))
+				 -!(ib1^i2)*imag(in_v()()(ib2,i1))+!(ib2^i2)*imag(in_v()()(ib1,i1)) );
+	
+	//    sign flip of the complex part of the 2nd term due to dagger <- imag turns into real due to i from T^b
+	out_v()()(ax,by) = -0.5*(  !(ib2^i2)*imag(in_v()()(ib1,i1))+!(ib1^i2)*imag(in_v()()(ib2,i1))
+				   -!(ib1^i1)*imag(in_v()()(ib2,i2))-!(ib2^i1)*imag(in_v()()(ib1,i2)) );
+	
+	out_v()()(ay,by) = 0.5*(  !(ib2^i1)*real(in_v()()(ib1,i2))+!(ib1^i1)*real(in_v()()(ib2,i2))
+				  +!(ib1^i2)*real(in_v()()(ib2,i1))+!(ib2^i2)*real(in_v()()(ib1,i1)) );  
+      }
+      for(int diagIndex=0;diagIndex<N-1;diagIndex++){
+	int k = diagIndex + 1; // diagIndex starts from 0
+	int a = NNm1+diagIndex;
+	RealD scale = 1.0/sqrt(2.0*k*(k+1));
+	out_v()()(a,bx) = scale*(-((ib1<k)-k*(ib1==k))*imag(in_v()()(ib2,ib1)) + ((ib2<k)-k*(ib2==k))*imag(in_v()()(ib1,ib2)) );
+	out_v()()(a,by) = scale*( ((ib1<k)-k*(ib1==k))*real(in_v()()(ib2,ib1)) + ((ib2<k)-k*(ib2==k))*real(in_v()()(ib1,ib2)) );
+      }
+    }
+    for(int diagIndex_b=0;diagIndex_b<N-1;diagIndex_b++){
+      int k_b = diagIndex_b + 1; // diagIndex starts from 0
+      int b = NNm1+diagIndex_b;
+      RealD scale_b = 2.0/sqrt(2.0*k_b*(k_b+1));
+      for(int su2Index=0;su2Index<hNNm1;su2Index++){
+	int i1, i2;
+	su2SubGroupIndex(i1, i2, su2Index);
+	int ax = su2Index*2;
+	int ay = su2Index*2+1;
+	out_v()()(ax,b)=-0.5*scale_b*( ((i2<k_b)-k_b*(i2==k_b))*imag(in_v()()(i2,i1)) - ((i1<k_b)-k_b*(i1==k_b))*imag(in_v()()(i1,i2)) );
+	out_v()()(ay,b)= 0.5*scale_b*( ((i1<k_b)-k_b*(i1==k_b))*real(in_v()()(i1,i2)) + ((i2<k_b)-k_b*(i2==k_b))*real(in_v()()(i2,i1)) );
+      }
+      for(int diagIndex=0;diagIndex<N-1;diagIndex++){
+	int k = diagIndex + 1; // diagIndex starts from 0
+	int a = NNm1+diagIndex;
+	RealD scale = 1.0/sqrt(2.0*k*(k+1));
+	auto tmp = in_v()()(0,0);
+	int k_min = (k < k_b)? k:k_b;
+	for(int i=1;i<k_min;i++){
+	  tmp=tmp+in_v()()(i,i);
+	}
+	int c = (k==k_b)? -k:1;
+	tmp = tmp - in_v()()(k_min,k_min)*((RealD) k_min*c);
+	out_v()()(a,b)=real(tmp) * scale * scale_b;
+      }
+    }
+#endif
+  }
+
+#if 0
+  // Lattice-wide operator
+  // Work with traceless anti-hermitian matrices for Lie algebra elements with Luscher's normalization convention
+  // Explicitly, T^a = -i t^a where t^a is hermitian generators in Grid convention, c.f., Compute_MpInvJx_dNxxdSy
+  //  in GaugeConfigurationMasked.h
+  // not used any more; to be removed
+  static void LieAlgebraProject(LatticeAlgebraMatrix &out,const LatticeMatrix &in)
+  {
+    conformable(in, out);
+    GridBase *grid = out.Grid();
+    autoView(out_v,out,AcceleratorWrite);
+    autoView(in_v,in,AcceleratorRead);
+    const int nsimd = vMatrix::Nsimd();
+    accelerator_for(ss,grid->oSites(),nsimd,{
+	typedef decltype(coalescedRead(out_v[0])) adj_mat;
+	adj_mat out;
+	LieAlgebraProject(out,in_v(ss));
+	coalescedWrite(out_v[ss],out);
+      });
+  }
+  #endif
+
+  // Site-local operation
+  // Work with traceless anti-hermitian matrices for Lie algebra elements with Luscher's normalization convention
+  // Explicitly, T^a = -i t^a where t^a is hermitian generators in Grid convention, c.f., Compute_MpInvJx_dNxxdSy
+  //  in GaugeConfigurationMasked.h
+  // To be used in ComputeNxy
+  template<typename T_out, typename T_in>
+  static accelerator_inline void LieAlgebraProject(T_out &out_v,const T_in &inL_v,const T_in &inR_v){
+    int N = ncolour;
+    int NNm1 = N * (N - 1);
+    int hNNm1= NNm1/2;
+
+    //    using namespace CplxMultExt;
+    
+    // Compute N_{ab} = tr(T^a P^b) where P^b is traceless anti-hermitian
+    // Here, P^b = Ta(M^b) where M^b = adj(inL_v) * T'^b * inR_v => P^b = 0.5*( adj(inL_v(ss))*T'^b*inR_v(ss) + adj(inR_v(ss))*T'^b*inL_v(ss) )
+    // Note: 
+    //     * -tr(*)/2N part does not contribute and thus neglected
+    //     * T'^b appearing in M (c.f. below) is 2i t^b where t^b in Grid's convention, c.f. original def UtaU in the earlier version, diff from normalization of T^a
+    for(int su2Index_b=0;su2Index_b<hNNm1;su2Index_b++){
+      int ib1, ib2;
+      su2SubGroupIndex(ib1, ib2, su2Index_b);
+      int bx = su2Index_b*2;
+      int by = su2Index_b*2+1;
+      for(int su2Index=0;su2Index<hNNm1;su2Index++){
+	int i1, i2;
+	su2SubGroupIndex(i1, i2, su2Index); //i1<i2
+	int ax = su2Index*2;
+	int ay = su2Index*2+1;
+	// real( P^b[i2,i1])
+	out_v()()(ax,bx)=0.5*real( adj(inL_v()()(ib2,i2))*inR_v()()(ib1,i1) - adj(inL_v()()(ib1,i2))*inR_v()()(ib2,i1)
+				  +adj(inR_v()()(ib2,i2))*inL_v()()(ib1,i1) - adj(inR_v()()(ib1,i2))*inL_v()()(ib2,i1));
+	// imag( P^b[i1,i2])
+	out_v()()(ay,bx)=0.5*imag( adj(inL_v()()(ib2,i1))*inR_v()()(ib1,i2) - adj(inL_v()()(ib1,i1))*inR_v()()(ib2,i2)
+				  +adj(inR_v()()(ib2,i1))*inL_v()()(ib1,i2) - adj(inR_v()()(ib1,i1))*inL_v()()(ib2,i2));
+	// real( P^b[i2,i1])
+	out_v()()(ax,by)=-0.5*imag( adj(inL_v()()(ib2,i2))*inR_v()()(ib1,i1) + adj(inL_v()()(ib1,i2))*inR_v()()(ib2,i1)
+				   +adj(inR_v()()(ib2,i2))*inL_v()()(ib1,i1) + adj(inR_v()()(ib1,i2))*inL_v()()(ib2,i1));
+	// imag( P^b[i1,i2])) 	
+	out_v()()(ay,by)= 0.5*real( adj(inL_v()()(ib2,i1))*inR_v()()(ib1,i2) + adj(inL_v()()(ib1,i1))*inR_v()()(ib2,i2)
+				   +adj(inR_v()()(ib2,i1))*inL_v()()(ib1,i2) + adj(inR_v()()(ib1,i1))*inL_v()()(ib2,i2));
+      }
+      for(int diagIndex=0;diagIndex<N-1;diagIndex++){
+	int k = diagIndex + 1; // diagIndex starts from 0
+	int a = NNm1+diagIndex;
+	RealD scale = 1.0/sqrt(2.0*k*(k+1));
+	auto tmpx = imag( adj(inL_v()()(ib2,0))*inR_v()()(ib1,0) - adj(inL_v()()(ib1,0))*inR_v()()(ib2,0));
+	auto tmpy = real( adj(inL_v()()(ib2,0))*inR_v()()(ib1,0) + adj(inL_v()()(ib1,0))*inR_v()()(ib2,0));
+	for(int i=1;i<k;i++){
+	  tmpx = tmpx + imag( adj(inL_v()()(ib2,i))*inR_v()()(ib1,i) - adj(inL_v()()(ib1,i))*inR_v()()(ib2,i));
+	  tmpy = tmpy + real( adj(inL_v()()(ib2,i))*inR_v()()(ib1,i) + adj(inL_v()()(ib1,i))*inR_v()()(ib2,i));
+        }
+	tmpx = tmpx - k*imag( adj(inL_v()()(ib2,k))*inR_v()()(ib1,k) - adj(inL_v()()(ib1,k))*inR_v()()(ib2,k));
+	tmpy = tmpy - k*real( adj(inL_v()()(ib2,k))*inR_v()()(ib1,k) + adj(inL_v()()(ib1,k))*inR_v()()(ib2,k));
+	out_v()()(a,bx)= scale*tmpx;
+	out_v()()(a,by)= scale*tmpy;
+      }
+    }
+    for(int diagIndex_b=0;diagIndex_b<N-1;diagIndex_b++){
+      int k_b = diagIndex_b + 1; // diagIndex starts from 0
+      int b = NNm1+diagIndex_b;
+      RealD scale_b = 1.0/sqrt(2.0*k_b*(k_b+1));
+      
+      for(int su2Index=0;su2Index<hNNm1;su2Index++){
+	int i1, i2;
+	su2SubGroupIndex(i1, i2, su2Index);
+	int ax = su2Index*2;
+	int ay = su2Index*2+1;
+	
+	auto tmpx = adj(inL_v()()(0,i2))*inR_v()()(0,i1) + adj(inR_v()()(0,i2))*inL_v()()(0,i1);
+	auto tmpy = adj(inL_v()()(0,i1))*inR_v()()(0,i2) + adj(inR_v()()(0,i1))*inL_v()()(0,i2);
+	for(int i=1;i<k_b;i++){
+	  tmpx = tmpx + adj(inL_v()()(i,i2))*inR_v()()(i,i1) + adj(inR_v()()(i,i2))*inL_v()()(i,i1);
+	  tmpy = tmpy + adj(inL_v()()(i,i1))*inR_v()()(i,i2) + adj(inR_v()()(i,i1))*inL_v()()(i,i2);
+	}
+	//	tmpx = tmpx - ((RealD) k_b)*(adj(inL_v()()(k_b,i2))*inR_v()()(k_b,i1) + adj(inR_v()()(k_b,i2))*inL_v()()(k_b,i1));
+	//	tmpy = tmpy - ((RealD) k_b)*(adj(inL_v()()(k_b,i1))*inR_v()()(k_b,i2) + adj(inR_v()()(k_b,i1))*inL_v()()(k_b,i2));
+	tmpx = tmpx - ((RealD) k_b)*(adj(inL_v()()(k_b,i2))*inR_v()()(k_b,i1) + adj(inR_v()()(k_b,i2))*inL_v()()(k_b,i1));
+	tmpy = tmpy - ((RealD) k_b)*(adj(inL_v()()(k_b,i1))*inR_v()()(k_b,i2) + adj(inR_v()()(k_b,i1))*inL_v()()(k_b,i2));
+	
+	out_v()()(ax,b)=-scale_b*imag(tmpx);
+	out_v()()(ay,b)= scale_b*real(tmpy);
+      }
+      for(int diagIndex=0;diagIndex<N-1;diagIndex++){
+	int k = diagIndex + 1; // diagIndex starts from 0
+	int a = NNm1+diagIndex;
+	RealD scale = 1.0/sqrt(2.0*k*(k+1));
+	
+	auto tmp = -k_b*real(adj(inL_v()()(k_b,k))*inR_v()()(k_b,k));
+	for(int i=0;i<k_b;i++){
+	  tmp = tmp + real( adj(inL_v()()(i,k))*inR_v()()(i,k));
+	}
+	tmp = -k*tmp;
+
+	for(int i=0;i<k;i++){
+	  for(int j=0;j<k_b;j++){
+	    tmp=tmp+real(adj(inL_v()()(j,i))*inR_v()()(j,i));
+	  }
+	  tmp=tmp-k_b*real(adj(inL_v()()(k_b,i))*inR_v()()(k_b,i));
+	}
+	out_v()()(a,b)=2.0 * tmp * scale * scale_b;
+      }
+    }
+  }
 };
     
 template <int ncolour>

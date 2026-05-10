@@ -71,6 +71,7 @@ namespace Grid{
 template <class T> void writeFile(T& in, std::string const fname){  
 #ifdef HAVE_LIME
   // Ref: https://github.com/paboyle/Grid/blob/feature/scidac-wp1/tests/debug/Test_general_coarse_hdcg_phys48.cc#L111
+  // the same function also in ActionBase.h
   std::cout << Grid::GridLogMessage << "Writes to: " << fname << std::endl;
   Grid::emptyUserRecord record;
   Grid::ScidacWriter WR(in.Grid()->IsBoss());
@@ -91,7 +92,7 @@ int main(int argc, char **argv) {
   auto latt_size   = GridDefaultLatt();
   auto simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
   auto mpi_layout  = GridDefaultMpi();
-  GridCartesian               Grid(latt_size, simd_layout, mpi_layout);
+  GridCartesian Grid(latt_size, simd_layout, mpi_layout);
   
   std::vector<int> seeds({1, 2, 3, 4, 5});
   GridSerialRNG sRNG;
@@ -153,7 +154,6 @@ int main(int argc, char **argv) {
     //However as  F_numu = -F_munu, only need to sum the trace of the squares of the following 6 field strengths:
     //F_01 F_02 F_03   F_12 F_13  F_23
     GaugeMat F(U.Grid());
-    //LatticeComplexD R(U.Grid());
     ComplexField R(U.Grid());
     R = Zero();
   
@@ -186,17 +186,13 @@ int main(int argc, char **argv) {
     //double coeff = 2.0 / (1.0 * Nd * (Nd - 1)) / 3.0;
     //Plq = coeff * Plq;
 
-
-    RealD WFlow_TC5Li   = WilsonLoops<PeriodicGimplR>::TopologicalCharge5Li(U);
-
+    RealD WFlow_TC5Li = WilsonLoops<PeriodicGimplR>::TopologicalCharge5Li(U);
+    
     int tau = std::round(t);
-
     std::string efile = file_pre + "E_dnsty_" + std::to_string(tau) + "_" + file_post;
-    //    writeFile(R,efile);
-
+    writeFile(R,efile);
     std::string tfile = file_pre + "Top_dnsty_" + std::to_string(tau) + "_" + file_post;
-    //    writeFile(qfield,tfile);
-
+    writeFile(qfield,tfile);
     std::string ufile = file_pre + "U_" + std::to_string(tau) + "_" + file_post;
     {
       //      PeriodicGimplR::GaugeField Ucopy = U;
@@ -209,7 +205,7 @@ int main(int argc, char **argv) {
     RealD E0 = real(peekSite(R,scoor));
     RealD T0 = real(peekSite(qfield,scoor));
     std::cout << GridLogMessage << "[WilsonFlow] Saved energy density (clover) & topo. charge density: "  << conf << " " << step << "  " << tau << "  "
-	      << "(E_avg,T_sum) " << E << " " << T << " (E, T at origin) " << E0 << " " << T0 << " Q5Li "<< WFlow_TC5Li << std::endl;
+	      << "(E_avg,T_sum) " << E << " " << T << " (E, T at origin) " << E0 << " " << T0 << " TC5Li " <<  WFlow_TC5Li << std::endl;
     
   });
   

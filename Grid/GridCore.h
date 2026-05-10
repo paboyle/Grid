@@ -42,12 +42,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/DisableWarnings.h>
 #include <Grid/Namespace.h>
 #include <Grid/GridStd.h>
-#include <Grid/threads/Pragmas.h>
 #include <Grid/perfmon/Timer.h>
-//#include <Grid/perfmon/PerfCount.h>
-#include <Grid/util/Util.h>
 #include <Grid/log/Log.h>
 #include <Grid/perfmon/Tracing.h>
+#include <Grid/threads/Pragmas.h>
+//#include <Grid/perfmon/PerfCount.h>
+#include <Grid/util/Util.h>
 #include <Grid/allocator/Allocator.h>
 #include <Grid/simd/Simd.h>
 #include <Grid/threads/ThreadReduction.h>

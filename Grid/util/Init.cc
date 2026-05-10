@@ -863,6 +863,15 @@ void Grid_heartbeat(void)
   it_val.it_interval = it_val.it_value;
   setitimer(ITIMER_REAL, &it_val, NULL);
 }
+void Grid_heartbeat_off(void)
+{
+  struct itimerval it_val;
+  it_val.it_value.tv_sec = 0;
+  it_val.it_value.tv_usec = 0;
+  it_val.it_interval = it_val.it_value;
+  setitimer(ITIMER_REAL, &it_val, NULL);
+}
+
 void Grid_exit_handler(void)
 {
   BACKTRACEFP(stdout);

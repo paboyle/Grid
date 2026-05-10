@@ -49,7 +49,8 @@ template<class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::Tens
 accelerator_inline iScalar<vtype> Determinant(const iMatrix<vtype,N> &arg)
 {
   iMatrix<vtype,N> ret(arg);
-  iScalar<vtype> det = vtype(1.0);
+  iScalar<vtype> det;
+  det._internal = vtype(1.0);
   /* Conversion of matrix to upper triangular */
   for(int i = 0; i < N; i++){
     for(int j = 0; j < N; j++){
@@ -63,7 +64,7 @@ accelerator_inline iScalar<vtype> Determinant(const iMatrix<vtype,N> &arg)
   }      
 
   for(int i = 0; i < N; i++)
-    det *= ret._internal[i][i];   
+    det._internal *= ret._internal[i][i];   
 
   return det;
 }

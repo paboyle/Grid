@@ -27,8 +27,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-			   /*  END LEGAL */
-			   //--------------------------------------------------------------------
+                             /*  END LEGAL */
+//--------------------------------------------------------------------
+
 #ifndef INTEGRATOR_INCLUDED
 #define INTEGRATOR_INCLUDED
 
@@ -41,6 +42,8 @@ public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(IntegratorParameters,
 				  std::string, name,      // name of the integrator
 				  unsigned int, MDsteps,  // number of outer steps
+				  RealD, alpha,
+				  int, box_dim,
 				  RealD, trajL)           // trajectory length
 
   IntegratorParameters(int MDsteps_ = 10, RealD trajL_ = 1.0)
@@ -61,6 +64,7 @@ public:
     std::cout << GridLogMessage << "[Integrator] Step size          : " << trajL/MDsteps << std::endl;
   }
 };
+
 
 /*! @brief Class for Molecular Dynamics management */
 template <class FieldImplementation_, class SmearingPolicy, class RepresentationPolicy>
@@ -94,11 +98,30 @@ public:
     static MomentumFilterNone<MomentaField> filter;
     return &filter;
   }
+#ifdef TIMom
+
+  // TODO: make mask as a member; put most of the code to the constructor
+  static void scaleMom(LatticeComplex& mask, RealD alpha, int box_dim ){
+    LatticeInteger coor(mask.Grid()),tmp(mask.Grid());
+    LatticeComplex ones(mask.Grid());
+    mask = Zero(); ones = ComplexD(1.0,0.0); tmp = Zero();
+    for(int i=0; i<Nd; i++) {
+      LatticeCoordinate(coor,i);
+      tmp = tmp + mod(coor,box_dim);
+    }
+    mask =  where( tmp==Integer(0), alpha*ones, ones); // or alpha*mask + (ones - mask) if mask is precomputed
+  }
+#endif
 
   void update_P(Field& U, int level, double ep) 
   {
     t_P[level] += ep;
     update_P(P, U, level, ep);
+#ifdef PRINT_SNAPSHOTS
+    std::cout << GridLogMessage << " Half Mom Squared: " << level << " "<< t_P[level] << " "
+	      << - FieldImplementation::FieldSquareNorm(P)/HMC_MOMENTUM_DENOMINATOR << std::endl;
+    //writeField(P,"Mom_Field_"+std::to_string(t_P[level]));
+#endif
     std::cout << GridLogIntegrator << "[" << level << "] P " << " dt " << ep << " : t_P " << t_P[level] << std::endl;
   }
 
@@ -206,15 +229,29 @@ public:
     MomentaField MomFiltered(Mom.Grid());
     MomFiltered = Mom;
     MomFilter->applyFilter(MomFiltered);
-
+#ifdef TIMom
+    LatticeComplex W(U.Grid()); W = Zero();
+    scaleMom(W,Params.alpha*Params.alpha, Params.box_dim);
+    for (int mu = 0; mu < Nd; mu++) {
+      typename FieldImplementation::LinkField Pmu(W.Grid());
+      Pmu = PeekIndex<LorentzIndex>(MomFiltered, mu);
+      Pmu = W*Pmu;
+      PokeIndex<LorentzIndex>(MomFiltered, Pmu, mu);
+    }
+#endif
     // exponential of Mom*U in the gauge fields case
     FieldImplementation::update_field(MomFiltered, U, ep);
-
+#ifdef PRINT_SNAPSHOTS
+    writeConfig(U,"U_lat_"+std::to_string(t_U+ep));
+#endif
     // Update the smeared fields, can be implemented as observer
     Smearer.set_Field(U);
 
     // Update the higher representations fields
     Representations.update(U);  // void functions if fundamental representation
+#ifdef PRINT_SNAPSHOTS
+    writeConfig(Smearer.get_SmearedU(),"U_smr_"+std::to_string(t_U+ep));
+#endif
   }
 
   virtual void step(Field& U, int level, int first, int last) = 0;
@@ -402,8 +439,19 @@ public:
     std::cout << GridLogIntegrator << "Integrator refresh" << std::endl;
 
     std::cout << GridLogIntegrator << "Generating momentum" << std::endl;
+#ifndef TIMom
     FieldImplementation::generate_momenta(P, sRNG, pRNG);
+#else
+    std::cout << GridLogIntegrator << "Scale momentum" << std::endl;
 
+    LatticeComplex W(U.Grid()); W = Zero();
+    ////////////////////
+    // Setup the mask
+    ////////////////////
+    scaleMom(W,1/Params.alpha, Params.box_dim);
+    FieldImplementation::generate_momenta(P, sRNG, pRNG, W);
+#endif
+    
     // Update the smeared fields, can be implemented as observer
     // necessary to keep the fields updated even after a reject
     // of the Metropolis
@@ -459,7 +507,10 @@ public:
     std::cout << GridLogIntegrator << "Integrator action\n";
 
     RealD H = - FieldImplementation::FieldSquareNorm(P)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
-
+#ifdef PRINT_SNAPSHOTS
+    std::cout << GridLogMessage << "Final Half Mom Squared: " << H << std::endl;
+#endif
+    
     RealD Hterm;
 
     // Actions
@@ -505,7 +556,10 @@ public:
     std::cout << GridLogIntegrator << "Integrator initial action\n";
 
     RealD H = - FieldImplementation::FieldSquareNorm(P)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
-
+#ifdef PRINT_SNAPSHOTS
+    std::cout << GridLogMessage << "Initial Half Mom Squared: " << H << std::endl;
+#endif
+    
     RealD Hterm;
 
     // Actions

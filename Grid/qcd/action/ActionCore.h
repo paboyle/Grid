@@ -30,7 +30,24 @@ directory
 #ifndef QCD_ACTION_CORE
 #define QCD_ACTION_CORE
 
-#include <Grid/qcd/action/gauge/GaugeImplementations.h>
+
+#include <Grid/qcd/action/gauge/GaugeImplementations.h> 
+
+////////////////////////////////////////////
+// I/O Interfaces for Action and HMC
+////////////////////////////////////////////
+#include <Grid/qcd/utils/WilsonLoops.h>    // also included from Grid/qcd/action/gauge/Gauge.h
+#include <Grid/parallelIO/MetaData.h>      // moved from Grid.h
+// moved from HMC_aggregate.h to allow IO op's in action
+// Action.h preceeds HMC_aggregate.h in Grid.h => safe to move here from HMC_aggregate.h
+#include <Grid/parallelIO/IldgIOtypes.h>
+#include <Grid/parallelIO/IldgIO.h>
+#include <Grid/parallelIO/NerscIO.h>
+#include <Grid/parallelIO/OpenQcdIO.h>
+#if !defined(GRID_COMMS_NONE)
+#include <Grid/parallelIO/OpenQcdIOChromaReference.h>
+#endif
+NAMESPACE_CHECK(Ildg);
 
 #include <Grid/qcd/action/ActionBase.h>
 NAMESPACE_CHECK(ActionBase);

@@ -60,6 +60,7 @@ public:
   //  int              _checker_dim;
   std::vector<int> _checker_board;
 
+  virtual int CheckerDim(void){ return _checker_dim; };
   virtual int isCheckerBoarded(void) const { return 1; };
   virtual int CheckerBoarded(int dim){
     if( dim==_checker_dim) return 1;

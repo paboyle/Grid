@@ -144,7 +144,7 @@ public:
 
 #define autoView(l_v,l,mode)				\
 	  auto l_v = l.View(mode);			\
-	  ViewCloser<decltype(l_v)> _autoView##l_v(l_v,__FILE__,__LINE__,mode);
+	  ViewCloser<decltype(l_v)> _autoView##l_v(l_v,(const char *)__FILE__,(int)__LINE__,(int)mode);
 
 #else
 // Little autoscope assister

@@ -324,6 +324,8 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
  return 0;
 #endif
 } // SYCL specific
+//  printf("accelerator_for\n");					\
+  BACKTRACEFP(stdout); fflush(stdout);					\
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   theGridAccelerator->submit([&](sycl::handler &cgh) {		\
@@ -523,10 +525,11 @@ inline void *acceleratorAllocDevice(size_t bytes)
 inline void acceleratorFreeHost(void *ptr){ auto discard=hipFree(ptr);};
 inline void acceleratorFreeShared(void *ptr){ auto discard=hipFree(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ auto discard=hipFree(ptr);};
-inline void acceleratorCopyToDevice(const void *from,void *to,size_t bytes)  { auto discard=hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
-inline void acceleratorCopyFromDevice(const void *from,void *to,size_t bytes){ auto discard=hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
+inline void acceleratorCopyToDevice(const void *from,void *to,size_t bytes)  { GRID_TRACE("acceleratorCopyToDevice"); auto discard=hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
+inline void acceleratorCopyFromDevice(const void *from,void *to,size_t bytes){ GRID_TRACE("acceleratorCopyFromDevice"); auto discard=hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { GRID_TRACE("acceleratorMemset"); auto discard=hipMemset(base,value,bytes);}
 
-inline void acceleratorMemSet(void *base,int value,size_t bytes) { auto discard=hipMemset(base,value,bytes);}
+inline void acceleratorCopyDeviceToDeviceAsynch(const void *from,void *to,size_t bytes) // Asynch
 
 typedef int acceleratorEvent_t;
 

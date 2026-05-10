@@ -38,6 +38,7 @@ extern uint64_t checksum_index;
 const int Cshift_verbose=0;
 template<class vobj> Lattice<vobj> Cshift(const Lattice<vobj> &rhs,int dimension,int shift)
 {
+  GRID_TRACE("Cshift");
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
 
@@ -138,6 +139,7 @@ template<class vobj> void Cshift_simple(Lattice<vobj>& ret,const Lattice<vobj> &
 }
 template<class vobj> void Cshift_comms(Lattice<vobj>& ret,const Lattice<vobj> &rhs,int dimension,int shift)
 {
+  GRID_TRACE("Cshift_comms");
   int sshift[2];
 
   sshift[0] = rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Even);
@@ -156,6 +158,7 @@ template<class vobj> void Cshift_comms(Lattice<vobj>& ret,const Lattice<vobj> &r
 
 template<class vobj> void Cshift_comms_simd(Lattice<vobj>& ret,const Lattice<vobj> &rhs,int dimension,int shift)
 {
+  GRID_TRACE("Cshift_comms_simd");
   int sshift[2];
 
   sshift[0] = rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Even);
@@ -173,6 +176,7 @@ template<class vobj> void Cshift_comms_simd(Lattice<vobj>& ret,const Lattice<vob
 }
 template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
 {
+  GRID_TRACE("Cshift_comms_cb");
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
 
@@ -305,6 +309,7 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
 
 template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
 {
+  GRID_TRACE("Cshift_comms_simd_cb");
   GridBase *grid=rhs.Grid();
   const int Nsimd = grid->Nsimd();
   typedef typename vobj::vector_type vector_type;

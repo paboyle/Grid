@@ -35,16 +35,6 @@ directory
 #include <Grid/qcd/observables/hmc_observable.h>
 #include <Grid/qcd/hmc/HMC.h>
 
-// annoying location; should move this ?
-#include <Grid/parallelIO/IldgIOtypes.h>
-#include <Grid/parallelIO/IldgIO.h>
-#include <Grid/parallelIO/NerscIO.h>
-#include <Grid/parallelIO/OpenQcdIO.h>
-#if !defined(GRID_COMMS_NONE)
-#include <Grid/parallelIO/OpenQcdIOChromaReference.h>
-#endif
-NAMESPACE_CHECK(Ildg);
-
 #include <Grid/qcd/hmc/checkpointers/CheckPointers.h>
 #include <Grid/qcd/hmc/HMCModules.h>
 #include <Grid/qcd/modules/mods.h>

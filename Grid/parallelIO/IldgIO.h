@@ -24,7 +24,8 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
-#pragma once
+#ifndef GRID_ILDG_IO_H
+#define GRID_ILDG_IO_H
 
 #ifdef HAVE_LIME
 #include <algorithm>
@@ -951,4 +952,4 @@ NAMESPACE_END(Grid);
 
 //HAVE_LIME
 #endif
-
+#endif

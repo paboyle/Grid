@@ -27,6 +27,9 @@
 *************************************************************************************/
 /*  END LEGAL */
 
+#ifndef GRID_METADATA_IO_H
+#define GRID_METADATA_IO_H
+
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
@@ -35,6 +38,7 @@
 #include <unistd.h>
 #include <sys/utsname.h>
 #include <pwd.h>
+
 
 NAMESPACE_BEGIN(Grid);
 
@@ -343,3 +347,4 @@ struct Gauge3x2unmunger{
 
 NAMESPACE_END(Grid);
 
+#endif

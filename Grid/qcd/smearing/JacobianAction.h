@@ -78,10 +78,12 @@ public:
   {
     GRID_ASSERT( &U == smearer );
     smearer->logDetJacobianForce(dSdU);
+#ifdef PRINT_SNAPSHOTS
+    writeField(dSdU, "F_"+action_name()+"_smr."+std::to_string(this->deriv_num));
+#endif
   }
 
 private:
- };
+};
 
 NAMESPACE_END(Grid);
-
