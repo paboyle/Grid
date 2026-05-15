@@ -6,7 +6,7 @@ NAMESPACE_BEGIN(Grid);
 
 
 template <class vobj>
-inline typename vobj::scalar_objectD sumD_gpu_tensor(const vobj *lat, Integer osites) 
+inline typename vobj::scalar_objectD sumD_gpu_tensor_old(const vobj *lat, Integer osites)
 {
   typedef typename vobj::scalar_object sobj;
   typedef typename vobj::scalar_objectD sobjD;
@@ -31,40 +31,40 @@ inline typename vobj::scalar_objectD sumD_gpu_tensor(const vobj *lat, Integer os
 }
 
 template <class vobj>
-inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osites)
+inline typename vobj::scalar_objectD sumD_gpu_large_old(const vobj *lat, Integer osites)
 {
-  return sumD_gpu_tensor(lat,osites);
+  return sumD_gpu_tensor_old(lat,osites);
 }
 template <class vobj>
-inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osites)
+inline typename vobj::scalar_objectD sumD_gpu_small_old(const vobj *lat, Integer osites)
 {
-  return sumD_gpu_large(lat,osites);
+  return sumD_gpu_large_old(lat,osites);
 }
 
 template <class vobj>
-inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites)
+inline typename vobj::scalar_objectD sumD_gpu_old(const vobj *lat, Integer osites)
 {
-  return sumD_gpu_large(lat,osites);
+  return sumD_gpu_large_old(lat,osites);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Return as same precision as input performing reduction in double precision though
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <class vobj>
-inline typename vobj::scalar_object sum_gpu(const vobj *lat, Integer osites) 
+inline typename vobj::scalar_object sum_gpu_old(const vobj *lat, Integer osites)
 {
   typedef typename vobj::scalar_object sobj;
   sobj result;
-  result = sumD_gpu(lat,osites);
+  result = sumD_gpu_old(lat,osites);
   return result;
 }
 
 template <class vobj>
-inline typename vobj::scalar_object sum_gpu_large(const vobj *lat, Integer osites)
+inline typename vobj::scalar_object sum_gpu_large_old(const vobj *lat, Integer osites)
 {
   typedef typename vobj::scalar_object sobj;
   sobj result;
-  result = sumD_gpu_large(lat,osites);
+  result = sumD_gpu_large_old(lat,osites);
   return result;
 }
 
