@@ -279,7 +279,7 @@ public:
                                    (hipblasDoubleComplex **)&Cmn[0], ldc,
                                    batchCount);
 #endif
-    //	 std::cout << " hipblas return code " <<(int)err<<std::endl;
+    //    std::cout << " hipblas return code " <<(int)err<<" "<<__LINE__<<std::endl;
     GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
@@ -541,6 +541,7 @@ public:
                                    batchCount);
 
 #endif
+    //    std::cout << " hipblas return code " <<(int)err<<" "<<__LINE__<<std::endl;
     GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
@@ -577,6 +578,7 @@ public:
 				(void **)&Cmn[0], CUDA_C_32F, ldc,
 				batchCount, compute_precision, CUBLAS_GEMM_DEFAULT);
     }
+    //    std::cout << " hipblas return code " <<(int)err<<" "<<__LINE__<<std::endl;
     GRID_ASSERT(err==CUBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_SYCL
@@ -747,6 +749,7 @@ public:
 				   (float *) &beta_p[0],
 				   (float **)&Cmn[0], ldc,
 				   batchCount);
+    //    std::cout << " hipblas return code " <<(int)err<<" "<<__LINE__<<std::endl;
     GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
@@ -907,6 +910,7 @@ public:
 				   (double *) &beta_p[0],
 				   (double **)&Cmn[0], ldc,
 				   batchCount);
+    //    std::cout << " hipblas return code " <<(int)err<<" "<<__LINE__<<std::endl;
     GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
@@ -1134,6 +1138,7 @@ public:
                                     (int*) &info[0],
                                     (int)batchCount);
 #endif
+    //    std::cout << " hipblas return code " <<(int)err<<" "<<__LINE__<<std::endl;
     GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
@@ -1173,6 +1178,7 @@ public:
                                     (int)batchCount);
 #endif
 
+    //    std::cout << " hipblas return code " <<(int)err<<" "<<__LINE__<<std::endl;
     GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
@@ -1261,6 +1267,7 @@ public:
                                     (int)batchCount);
 
 #endif
+    //    std::cout << " hipblas return code " <<(int)err<<" "<<__LINE__<<std::endl;
     GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
@@ -1304,6 +1311,7 @@ public:
                                     (int*) &info[0],
                                     (int)batchCount);
 #endif
+    //    std::cout << " hipblas return code " <<(int)err<<" "<<__LINE__<<std::endl;
     GRID_ASSERT(err==HIPBLAS_STATUS_SUCCESS);
 #endif
 #ifdef GRID_CUDA
