@@ -143,7 +143,7 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
   R4 *buf_p = &buf[0];
 
   R4 zero4;
-  zero4.w[0] = zero4.w[1] = zero4.w[2] = zero4.w[3] = Zero();
+  zero4.w[0] = zero4.w[1] = zero4.w[2] = zero4.w[3] = scalarD(0);
 
   R4 *d_out = static_cast<R4 *>(acceleratorAllocDevice(sizeof(R4)));
   void  *d_temp = nullptr;
@@ -192,7 +192,7 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
     int base = 4 * nfull;
     accelerator_for(ss, osites, 1, {
       R4 r4;
-      r4.w[0] = r4.w[1] = r4.w[2] = r4.w[3] = Zero();
+      r4.w[0] = r4.w[1] = r4.w[2] = r4.w[3] = scalarD(0);
       for (int k = 0; k < rem; k++)
         r4.w[k] = TensorRemove(Reduce(idat[ss * words + base + k]));
       buf_p[ss] = r4;
