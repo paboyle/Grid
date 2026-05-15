@@ -198,7 +198,7 @@ __global__ void reduceKernel(const vobj *lat, sobj *buffer, Iterator n) {
 // Possibly promote to double and sum
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <class vobj>
-inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osites) 
+inline typename vobj::scalar_objectD sumD_gpu_small_old(const vobj *lat, Integer osites)
 {
   typedef typename vobj::scalar_objectD sobj;
   typedef decltype(lat) Iterator;
@@ -224,7 +224,7 @@ inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osi
 }
 
 template <class vobj>
-inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osites)
+inline typename vobj::scalar_objectD sumD_gpu_large_old(const vobj *lat, Integer osites)
 {
   typedef typename vobj::vector_type  vector;
   typedef typename vobj::scalar_typeD scalarD;
@@ -244,13 +244,13 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
 	buf[ss] = dat[ss*words+w];
       });
       
-    ret_p[w] = sumD_gpu_small(tbuf,osites);
+    ret_p[w] = sumD_gpu_small_old(tbuf,osites);
   }
   return ret;
 }
 
 template <class vobj>
-inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites)
+inline typename vobj::scalar_objectD sumD_gpu_old(const vobj *lat, Integer osites)
 {
   typedef typename vobj::scalar_objectD sobj;
   sobj ret;
@@ -261,9 +261,9 @@ inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites)
   int ok = getNumBlocksAndThreads(size, sizeof(sobj), numThreads, numBlocks);
   
   if ( ok ) {
-    ret = sumD_gpu_small(lat,osites);
+    ret = sumD_gpu_small_old(lat,osites);
   } else {
-    ret = sumD_gpu_large(lat,osites);
+    ret = sumD_gpu_large_old(lat,osites);
   }
   return ret;
 }
@@ -272,20 +272,20 @@ inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites)
 // Return as same precision as input performing reduction in double precision though
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <class vobj>
-inline typename vobj::scalar_object sum_gpu(const vobj *lat, Integer osites) 
+inline typename vobj::scalar_object sum_gpu_old(const vobj *lat, Integer osites)
 {
   typedef typename vobj::scalar_object sobj;
   sobj result;
-  result = sumD_gpu(lat,osites);
+  result = sumD_gpu_old(lat,osites);
   return result;
 }
 
 template <class vobj>
-inline typename vobj::scalar_object sum_gpu_large(const vobj *lat, Integer osites)
+inline typename vobj::scalar_object sum_gpu_large_old(const vobj *lat, Integer osites)
 {
   typedef typename vobj::scalar_object sobj;
   sobj result;
-  result = sumD_gpu_large(lat,osites);
+  result = sumD_gpu_large_old(lat,osites);
   return result;
 }
 
