@@ -43,13 +43,13 @@ static void check(bool ok, const std::string &msg)
   }
 }
 
-// Frobenius-like norm squared of any Grid scalar tensor object.
-// For iScalar chains:  real(conj(a)*a)
-// For iMatrix<T,N>:    sum_{i,j} real(conj(a_ij)*a_ij)  (all elements)
-// Both old and new paths promote to double before accumulating, so the result
-// is always exact enough for the tolerances used here.
+// Squared magnitude of a Grid scalar tensor aggregate: innerProduct(a,a).
+// For iScalar:      real(conj(a)*a)
+// For iMatrix<T,N>: sum_{i,j} real(conj(a_ij)*a_ij)  (Frobenius)
+// Named squaredSum to make clear the squaring is applied to the aggregate
+// (the sum), not to individual site values before summing.
 template<class T>
-RealD scalarNorm2(const T &a)
+RealD squaredSum(const T &a)
 {
   return (RealD)real(TensorRemove(innerProduct(a, a)));
 }
@@ -86,8 +86,8 @@ void testReduction(GridCartesian *grid, GridParallelRNG &rng,
     sobj old_result = sum_gpu_old(&v[0], osites);
 
     sobj  diff  = new_result - old_result;
-    RealD diffn = scalarNorm2(diff);
-    RealD refn  = scalarNorm2(old_result);
+    RealD diffn = squaredSum(diff);
+    RealD refn  = squaredSum(old_result);
     RealD reldiff = (refn > 0.0) ? std::sqrt(diffn / refn) : std::sqrt(diffn);
 
     // Float fields: both paths cast from double to float, expect O(eps_float).
@@ -118,7 +118,7 @@ void testReduction(GridCartesian *grid, GridParallelRNG &rng,
     field = 1.0;
     sobj sum_result = sum(field);   // uses new GPU path + GlobalSum
 
-    RealD got      = scalarNorm2(sum_result);
+    RealD got      = squaredSum(sum_result);
     RealD expected = (RealD)Ncomp * (RealD)V * (RealD)V;
     RealD reldiff  = std::abs(got - expected) / expected;
 
