@@ -135,22 +135,25 @@ int main(int argc, char **argv)
   Grid_init(&argc, &argv);
 
   Coordinate latt = GridDefaultLatt();
-  Coordinate simd = GridDefaultSimd(Nd, vComplexD::Nsimd());
   Coordinate mpi  = GridDefaultMpi();
 
-  GridCartesian *grid = SpaceTimeGrid::makeFourDimGrid(latt, simd, mpi);
-  GridParallelRNG rng(grid);
+  GridCartesian *UGrid   = SpaceTimeGrid::makeFourDimGrid(latt, GridDefaultSimd(Nd, vComplexD::Nsimd()), mpi);
+  GridCartesian *UGrid_f = SpaceTimeGrid::makeFourDimGrid(latt, GridDefaultSimd(Nd, vComplexF::Nsimd()), mpi);
+
+  GridParallelRNG rng(UGrid);
   rng.SeedFixedIntegers({1, 2, 3, 4});
+  GridParallelRNG rng_f(UGrid_f);
+  rng_f.SeedFixedIntegers({1, 2, 3, 4});
 
   std::cout << GridLogMessage << "Lattice : " << latt << std::endl;
-  std::cout << GridLogMessage << "Volume  : " << grid->_gsites << std::endl;
+  std::cout << GridLogMessage << "Volume  : " << UGrid->_gsites << std::endl;
 
-  testReduction<LatticeComplexF>      (grid, rng, "LatticeComplexF",      1      );
-  testReduction<LatticeComplexD>      (grid, rng, "LatticeComplexD",      1      );
-  testReduction<LatticeColourMatrixF> (grid, rng, "LatticeColourMatrixF", Nc     );
-  testReduction<LatticeColourMatrixD> (grid, rng, "LatticeColourMatrixD", Nc     );
-  testReduction<LatticePropagatorF>   (grid, rng, "LatticePropagatorF",   Ns*Nc  );
-  testReduction<LatticePropagatorD>   (grid, rng, "LatticePropagatorD",   Ns*Nc  );
+  testReduction<LatticeComplexF>      (UGrid_f, rng_f, "LatticeComplexF",      1      );
+  testReduction<LatticeComplexD>      (UGrid,   rng,   "LatticeComplexD",      1      );
+  testReduction<LatticeColourMatrixF> (UGrid_f, rng_f, "LatticeColourMatrixF", Nc     );
+  testReduction<LatticeColourMatrixD> (UGrid,   rng,   "LatticeColourMatrixD", Nc     );
+  testReduction<LatticePropagatorF>   (UGrid_f, rng_f, "LatticePropagatorF",   Ns*Nc  );
+  testReduction<LatticePropagatorD>   (UGrid,   rng,   "LatticePropagatorD",   Ns*Nc  );
 
   std::cout << GridLogMessage << "==============================" << std::endl;
   std::cout << GridLogMessage << passed << " PASSED   " << failed << " FAILED" << std::endl;
