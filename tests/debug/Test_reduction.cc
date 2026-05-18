@@ -101,7 +101,50 @@ void testReduction(GridCartesian *grid, GridParallelRNG &rng,
 #endif
 
   //--------------------------------------------------------------------
-  // b) Constant field via field = 1.0.
+  // b) Timing: new (CUB/sycl::reduction) vs old (hand-rolled) path.
+  //    Warmup first, then Niter timed calls; report us/call and GB/s.
+  //--------------------------------------------------------------------
+#if defined(GRID_CUDA) || defined(GRID_HIP) || defined(GRID_SYCL)
+  {
+    const int Nwarm = 5;
+    const int Niter = 100;
+
+    gaussian(rng, field);
+
+    {
+      autoView(v, field, AcceleratorRead);
+      for (int i = 0; i < Nwarm; i++) sum_gpu    (&v[0], osites);
+      for (int i = 0; i < Nwarm; i++) sum_gpu_old(&v[0], osites);
+    }
+
+    RealD t_new, t_old;
+    {
+      autoView(v, field, AcceleratorRead);
+      t_new = -usecond();
+      for (int i = 0; i < Niter; i++) sum_gpu(&v[0], osites);
+      t_new += usecond();
+    }
+    {
+      autoView(v, field, AcceleratorRead);
+      t_old = -usecond();
+      for (int i = 0; i < Niter; i++) sum_gpu_old(&v[0], osites);
+      t_old += usecond();
+    }
+
+    RealD bytes   = (RealD)osites * sizeof(vobj);
+    RealD GBs_new = bytes / (t_new / Niter) * 1e-3;
+    RealD GBs_old = bytes / (t_old / Niter) * 1e-3;
+
+    std::cout << GridLogMessage << name << " timing (" << Niter << " calls):" << std::endl;
+    std::cout << GridLogMessage
+              << "  sum_gpu     " << t_new/Niter << " us   " << GBs_new << " GB/s" << std::endl;
+    std::cout << GridLogMessage
+              << "  sum_gpu_old " << t_old/Niter << " us   " << GBs_old << " GB/s" << std::endl;
+  }
+#endif
+
+  //--------------------------------------------------------------------
+  // d) Constant field via field = 1.0.
   //
   //    Grid's iMatrix::operator=(scalar) sets only the diagonal, so:
   //      LatticeComplex       -> scalar 1.0        (Ncomp = 1  nonzero per site)
