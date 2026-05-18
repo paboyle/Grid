@@ -63,16 +63,21 @@ inline typename vobj::scalar_objectD sumD_gpu_direct(const vobj *lat, Integer os
   typedef typename vobj::scalar_object  sobj;
   typedef typename vobj::scalar_objectD sobjD;
 
-  deviceVector<sobjD> per_site(osites);
-  sobjD *per_site_p = &per_site[0];
+  const Integer nsimd    = vobj::Nsimd();
+  const Integer nlanes   = osites * nsimd;
+
+  deviceVector<sobjD> per_lane(nlanes);
+  sobjD *per_lane_p = &per_lane[0];
 
 #ifdef GRID_REDUCTION_TIMING
   RealD t_for = -usecond();
 #endif
-  accelerator_for(ss, osites, 1, {
-    sobj tmp = Reduce(lat[ss]);
+  accelerator_for(idx, nlanes, 1, {
+    Integer ss   = idx / nsimd;
+    Integer lane = idx % nsimd;
+    sobj tmp = extractLane(lane, lat[ss]);
     sobjD tmpD; tmpD = tmp;
-    per_site_p[ss] = tmpD;
+    per_lane_p[idx] = tmpD;
   });
 #ifdef GRID_REDUCTION_TIMING
   accelerator_barrier();
@@ -85,8 +90,8 @@ inline typename vobj::scalar_objectD sumD_gpu_direct(const vobj *lat, Integer os
   size_t temp_bytes = 0;
 
   gpuError_t gpuErr;
-  gpuErr = gpucub::DeviceReduce::Reduce(d_temp, temp_bytes, per_site_p, d_out,
-                                        (int)osites, gpucub::Sum(), zero, computeStream);
+  gpuErr = gpucub::DeviceReduce::Reduce(d_temp, temp_bytes, per_lane_p, d_out,
+                                        (int)nlanes, gpucub::Sum(), zero, computeStream);
   if (gpuErr != gpuSuccess) {
     std::cout << GridLogError << "sumD_gpu_direct: DeviceReduce size query failed: "
               << gpuErr << std::endl;
@@ -98,8 +103,8 @@ inline typename vobj::scalar_objectD sumD_gpu_direct(const vobj *lat, Integer os
 #ifdef GRID_REDUCTION_TIMING
   RealD t_cub = -usecond();
 #endif
-  gpuErr = gpucub::DeviceReduce::Reduce(d_temp, temp_bytes, per_site_p, d_out,
-                                        (int)osites, gpucub::Sum(), zero, computeStream);
+  gpuErr = gpucub::DeviceReduce::Reduce(d_temp, temp_bytes, per_lane_p, d_out,
+                                        (int)nlanes, gpucub::Sum(), zero, computeStream);
   if (gpuErr != gpuSuccess) {
     std::cout << GridLogError << "sumD_gpu_direct: DeviceReduce failed: "
               << gpuErr << std::endl;
