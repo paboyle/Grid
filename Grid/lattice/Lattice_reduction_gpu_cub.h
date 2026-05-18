@@ -64,11 +64,18 @@ inline typename vobj::scalar_objectD sumD_gpu_direct(const vobj *lat, Integer os
   deviceVector<sobjD> per_site(osites);
   sobjD *per_site_p = &per_site[0];
 
+#ifdef GRID_REDUCTION_TIMING
+  RealD t_for = -usecond();
+#endif
   accelerator_for(ss, osites, 1, {
     sobj tmp = Reduce(lat[ss]);
     sobjD tmpD; tmpD = tmp;
     per_site_p[ss] = tmpD;
   });
+#ifdef GRID_REDUCTION_TIMING
+  accelerator_barrier();
+  t_for += usecond();
+#endif
 
   sobjD zero; zeroit(zero);
   sobjD *d_out = static_cast<sobjD *>(acceleratorAllocDevice(sizeof(sobjD)));
@@ -86,6 +93,9 @@ inline typename vobj::scalar_objectD sumD_gpu_direct(const vobj *lat, Integer os
 
   d_temp = acceleratorAllocDevice(temp_bytes);
 
+#ifdef GRID_REDUCTION_TIMING
+  RealD t_cub = -usecond();
+#endif
   gpuErr = gpucub::DeviceReduce::Reduce(d_temp, temp_bytes, per_site_p, d_out,
                                         (int)osites, gpucub::Sum(), zero, computeStream);
   if (gpuErr != gpuSuccess) {
@@ -95,6 +105,13 @@ inline typename vobj::scalar_objectD sumD_gpu_direct(const vobj *lat, Integer os
   }
 
   accelerator_barrier();
+#ifdef GRID_REDUCTION_TIMING
+  t_cub += usecond();
+  std::cout << GridLogMessage << "sumD_gpu_direct"
+            << " sizeof(sobjD)=" << sizeof(sobjD)
+            << " accelerator_for=" << t_for << " us"
+            << " CUB_reduce="     << t_cub  << " us" << std::endl;
+#endif
 
   sobjD result;
   acceleratorCopyFromDevice(d_out, &result, sizeof(sobjD));
@@ -147,9 +164,16 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
   }
   d_temp = acceleratorAllocDevice(temp_bytes);
 
+#ifdef GRID_REDUCTION_TIMING
+  RealD t_for_large = 0.0, t_cub_large = 0.0;
+#endif
+
   // Full groups of 4 words.
   for (int g = 0; g < nfull; g++) {
     int base = 4 * g;
+#ifdef GRID_REDUCTION_TIMING
+    t_for_large -= usecond();
+#endif
     accelerator_for(ss, osites, 1, {
       R4 r4;
       r4._internal[0] = TensorRemove(Reduce(idat[ss * words + base    ]));
@@ -158,6 +182,11 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
       r4._internal[3] = TensorRemove(Reduce(idat[ss * words + base + 3]));
       buf_p[ss] = r4;
     });
+#ifdef GRID_REDUCTION_TIMING
+    accelerator_barrier();
+    t_for_large += usecond();
+    t_cub_large -= usecond();
+#endif
     gpuErr = gpucub::DeviceReduce::Reduce(d_temp, temp_bytes, buf_p, d_out,
                                           (int)osites, gpucub::Sum(), zero4, computeStream);
     if (gpuErr != gpuSuccess) {
@@ -166,6 +195,9 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
       exit(EXIT_FAILURE);
     }
     accelerator_barrier();
+#ifdef GRID_REDUCTION_TIMING
+    t_cub_large += usecond();
+#endif
     R4 group_result;
     acceleratorCopyFromDevice(d_out, &group_result, sizeof(R4));
     ret_p[base    ] = TensorRemove(group_result._internal[0]);
@@ -177,12 +209,20 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
   // Partial last group: zero-pad unused slots so they contribute nothing to the sum.
   if (rem > 0) {
     int base = 4 * nfull;
+#ifdef GRID_REDUCTION_TIMING
+    t_for_large -= usecond();
+#endif
     accelerator_for(ss, osites, 1, {
       R4 r4; zeroit(r4);
       for (int k = 0; k < rem; k++)
         r4._internal[k] = TensorRemove(Reduce(idat[ss * words + base + k]));
       buf_p[ss] = r4;
     });
+#ifdef GRID_REDUCTION_TIMING
+    accelerator_barrier();
+    t_for_large += usecond();
+    t_cub_large -= usecond();
+#endif
     gpuErr = gpucub::DeviceReduce::Reduce(d_temp, temp_bytes, buf_p, d_out,
                                           (int)osites, gpucub::Sum(), zero4, computeStream);
     if (gpuErr != gpuSuccess) {
@@ -191,11 +231,22 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
       exit(EXIT_FAILURE);
     }
     accelerator_barrier();
+#ifdef GRID_REDUCTION_TIMING
+    t_cub_large += usecond();
+#endif
     R4 partial_result;
     acceleratorCopyFromDevice(d_out, &partial_result, sizeof(R4));
     for (int k = 0; k < rem; k++)
       ret_p[4 * nfull + k] = TensorRemove(partial_result._internal[k]);
   }
+
+#ifdef GRID_REDUCTION_TIMING
+  std::cout << GridLogMessage << "sumD_gpu_large"
+            << " sizeof(sobjD)=" << sizeof(sobjD)
+            << " words=" << words << " nfull=" << nfull << " rem=" << rem
+            << " accelerator_for=" << t_for_large << " us"
+            << " CUB_reduce="     << t_cub_large  << " us" << std::endl;
+#endif
 
   acceleratorFreeDevice(d_temp);
   acceleratorFreeDevice(d_out);
