@@ -44,29 +44,13 @@ NAMESPACE_BEGIN(Grid);
 // LatticePropagator (sobjD = 2304 bytes, 64*2304 = 147 KB) exceed this budget.
 //
 // For those types sumD_gpu_large groups the vobj's vector_type words in bundles of 4,
-// reducing each bundle as a WordBundle4<scalarD> (64 bytes, 64*64 = 4 KB — always safe).
+// reducing each bundle as an iVector<iScalar<scalarD>,4> (64 bytes, 64*64 = 4 KB — always safe).
 // Words that do not fill a complete bundle are zero-padded.
 //
 // SYCL: sycl::reduction handles any type size through the runtime, so one path suffices.
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if defined(GRID_CUDA) || defined(GRID_HIP)
-
-// Bundles 4 scalar_typeD values for the radix-4 large-type reduction path.
-// sizeof = 4 * sizeof(scalarD) <= 64 bytes; 64 * 64 = 4096 bytes, safely within
-// rocPRIM's shared-memory budget on all supported devices.
-template<class scalarD>
-struct WordBundle4 {
-  scalarD w[4];
-  accelerator_inline WordBundle4 operator+(const WordBundle4 &rhs) const {
-    WordBundle4 r;
-    r.w[0] = w[0] + rhs.w[0];
-    r.w[1] = w[1] + rhs.w[1];
-    r.w[2] = w[2] + rhs.w[2];
-    r.w[3] = w[3] + rhs.w[3];
-    return r;
-  }
-};
 
 // Direct CUB reduction on the full scalar_objectD.
 // Only safe when sizeof(sobjD)*64 <= device sharedMemPerBlock.
@@ -121,15 +105,19 @@ inline typename vobj::scalar_objectD sumD_gpu_direct(const vobj *lat, Integer os
 
 // Radix-4 word-bundle path for types too large for the direct CUB path.
 // Treats vobj as words of vector_type; groups them in bundles of 4 and reduces
-// each bundle as a WordBundle4<scalarD>.  If words % 4 != 0, the final partial
-// bundle is zero-padded so all unused slots contribute zero to the sum.
+// each bundle as an iVector<iScalar<scalarD>,4> — reusing Grid's existing tensor
+// type which already has accelerator_inline operator+ and zeroit().
+// sizeof = 4 * sizeof(scalarD) <= 64 bytes; 64 * 64 = 4096 bytes, safely within
+// rocPRIM's shared-memory budget on all supported devices.
+// If words % 4 != 0, the final partial bundle is zero-padded so all unused
+// slots contribute zero to the sum.
 template<class vobj>
 inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osites)
 {
   typedef typename vobj::vector_type    vector;
   typedef typename vobj::scalar_typeD   scalarD;
   typedef typename vobj::scalar_objectD sobjD;
-  using R4 = WordBundle4<scalarD>;
+  using R4 = iVector<iScalar<scalarD>, 4>;
 
   const int words = sizeof(vobj) / sizeof(vector);
   const int nfull = words / 4;
@@ -142,8 +130,7 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
   deviceVector<R4> buf(osites);
   R4 *buf_p = &buf[0];
 
-  R4 zero4;
-  zero4.w[0] = zero4.w[1] = zero4.w[2] = zero4.w[3] = scalarD(0);
+  R4 zero4; zeroit(zero4);
 
   R4 *d_out = static_cast<R4 *>(acceleratorAllocDevice(sizeof(R4)));
   void  *d_temp = nullptr;
@@ -165,10 +152,10 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
     int base = 4 * g;
     accelerator_for(ss, osites, 1, {
       R4 r4;
-      r4.w[0] = TensorRemove(Reduce(idat[ss * words + base    ]));
-      r4.w[1] = TensorRemove(Reduce(idat[ss * words + base + 1]));
-      r4.w[2] = TensorRemove(Reduce(idat[ss * words + base + 2]));
-      r4.w[3] = TensorRemove(Reduce(idat[ss * words + base + 3]));
+      r4._internal[0] = TensorRemove(Reduce(idat[ss * words + base    ]));
+      r4._internal[1] = TensorRemove(Reduce(idat[ss * words + base + 1]));
+      r4._internal[2] = TensorRemove(Reduce(idat[ss * words + base + 2]));
+      r4._internal[3] = TensorRemove(Reduce(idat[ss * words + base + 3]));
       buf_p[ss] = r4;
     });
     gpuErr = gpucub::DeviceReduce::Reduce(d_temp, temp_bytes, buf_p, d_out,
@@ -181,20 +168,19 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
     accelerator_barrier();
     R4 group_result;
     acceleratorCopyFromDevice(d_out, &group_result, sizeof(R4));
-    ret_p[base    ] = group_result.w[0];
-    ret_p[base + 1] = group_result.w[1];
-    ret_p[base + 2] = group_result.w[2];
-    ret_p[base + 3] = group_result.w[3];
+    ret_p[base    ] = TensorRemove(group_result._internal[0]);
+    ret_p[base + 1] = TensorRemove(group_result._internal[1]);
+    ret_p[base + 2] = TensorRemove(group_result._internal[2]);
+    ret_p[base + 3] = TensorRemove(group_result._internal[3]);
   }
 
   // Partial last group: zero-pad unused slots so they contribute nothing to the sum.
   if (rem > 0) {
     int base = 4 * nfull;
     accelerator_for(ss, osites, 1, {
-      R4 r4;
-      r4.w[0] = r4.w[1] = r4.w[2] = r4.w[3] = scalarD(0);
+      R4 r4; zeroit(r4);
       for (int k = 0; k < rem; k++)
-        r4.w[k] = TensorRemove(Reduce(idat[ss * words + base + k]));
+        r4._internal[k] = TensorRemove(Reduce(idat[ss * words + base + k]));
       buf_p[ss] = r4;
     });
     gpuErr = gpucub::DeviceReduce::Reduce(d_temp, temp_bytes, buf_p, d_out,
@@ -208,7 +194,7 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
     R4 partial_result;
     acceleratorCopyFromDevice(d_out, &partial_result, sizeof(R4));
     for (int k = 0; k < rem; k++)
-      ret_p[4 * nfull + k] = partial_result.w[k];
+      ret_p[4 * nfull + k] = TensorRemove(partial_result._internal[k]);
   }
 
   acceleratorFreeDevice(d_temp);
