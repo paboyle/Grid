@@ -52,6 +52,8 @@ NAMESPACE_BEGIN(Grid);
 
 #if defined(GRID_CUDA) || defined(GRID_HIP)
 
+#define GRID_REDUCTION_TIMING
+
 // Direct CUB reduction on the full scalar_objectD.
 // Only safe when sizeof(sobjD)*64 <= device sharedMemPerBlock.
 // Do not call directly for large composite types (e.g. LatticePropagator).
