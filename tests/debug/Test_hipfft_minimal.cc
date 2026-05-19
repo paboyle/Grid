@@ -35,59 +35,77 @@ static const char *hipfftResultString(hipfftResult r) {
   }
 }
 
-// Try both hipfftPlanMany and hipfftCreate+hipfftMakePlanMany for given G and howmany.
-static void tryPlans(int G, int howmany) {
+// Plan creation + execution for (G, howmany) using hipfftCreate+hipfftMakePlanMany.
+// This is the path Grid's FFT.h now uses.
+static void tryPlanAndExec(int G, long howmany) {
   int n[] = {G};
+  long nelems = (long)G * howmany;
 
-  printf("--- G=%-4d  howmany=%-6d ---\n", G, howmany);
+  printf("--- G=%-4d  howmany=%-10ld  total_elems=%-12ld ---\n",
+         G, howmany, nelems);
 
-  // 1. hipfftPlanMany (one-step)
+  // Allocate device buffer (hipfftDoubleComplex = 16 bytes each)
+  hipfftDoubleComplex *dbuf = nullptr;
+  hipError_t herr = hipMalloc(&dbuf, nelems * sizeof(hipfftDoubleComplex));
+  if (herr != hipSuccess) {
+    printf("  hipMalloc failed (%d) for %ld elems — skipping\n\n", (int)herr, nelems);
+    return;
+  }
+  hipMemset(dbuf, 0, nelems * sizeof(hipfftDoubleComplex));
+
+  // 1. hipfftPlanMany (one-step, nullptr embed) — current Grid path
   {
     hipfftHandle p;
     hipfftResult rv = hipfftPlanMany(&p, 1, n,
                                      nullptr, 1, G,
                                      nullptr, 1, G,
-                                     HIPFFT_Z2Z, howmany);
-    printf("  hipfftPlanMany          : %d (%s)\n", (int)rv, hipfftResultString(rv));
-    if (rv == HIPFFT_SUCCESS) hipfftDestroy(p);
-  }
-
-  // 2. hipfftPlanMany with inembed=n (old Grid behaviour)
-  {
-    hipfftHandle p;
-    hipfftResult rv = hipfftPlanMany(&p, 1, n,
-                                     n, 1, G,
-                                     n, 1, G,
-                                     HIPFFT_Z2Z, howmany);
-    printf("  hipfftPlanMany(inembed=n): %d (%s)\n", (int)rv, hipfftResultString(rv));
-    if (rv == HIPFFT_SUCCESS) hipfftDestroy(p);
-  }
-
-  // 3. hipfftCreate + hipfftMakePlanMany (two-step, nullptr embed)
-  {
-    hipfftHandle p;
-    size_t workSize = 0;
-    hipfftResult rc = hipfftCreate(&p);
-    printf("  hipfftCreate            : %d (%s)\n", (int)rc, hipfftResultString(rc));
-    if (rc == HIPFFT_SUCCESS) {
-      hipfftResult rv = hipfftMakePlanMany(p, 1, n,
-                                           nullptr, 1, G,
-                                           nullptr, 1, G,
-                                           HIPFFT_Z2Z, howmany, &workSize);
-      printf("  hipfftMakePlanMany      : %d (%s)  workSize=%zu\n",
-             (int)rv, hipfftResultString(rv), workSize);
+                                     HIPFFT_Z2Z, (int)howmany);
+    printf("  hipfftPlanMany   create : %d (%s)\n", (int)rv, hipfftResultString(rv));
+    if (rv == HIPFFT_SUCCESS) {
+      rv = hipfftExecZ2Z(p, dbuf, dbuf, HIPFFT_FORWARD);
+      hipDeviceSynchronize();
+      printf("  hipfftPlanMany   execFwd: %d (%s)\n", (int)rv, hipfftResultString(rv));
       hipfftDestroy(p);
     }
   }
 
-  // 4. hipfftPlan1d (simplest API)
+  // 2. hipfftCreate + hipfftMakePlanMany (two-step) — also current Grid path
   {
     hipfftHandle p;
-    hipfftResult rv = hipfftPlan1d(&p, G, HIPFFT_Z2Z, howmany);
-    printf("  hipfftPlan1d            : %d (%s)\n", (int)rv, hipfftResultString(rv));
-    if (rv == HIPFFT_SUCCESS) hipfftDestroy(p);
+    size_t workSize = 0;
+    hipfftResult rc = hipfftCreate(&p);
+    if (rc == HIPFFT_SUCCESS) {
+      hipfftResult rv = hipfftMakePlanMany(p, 1, n,
+                                           nullptr, 1, G,
+                                           nullptr, 1, G,
+                                           HIPFFT_Z2Z, (int)howmany, &workSize);
+      printf("  hipfftMakePlanMany      : %d (%s)  workSize=%zu\n",
+             (int)rv, hipfftResultString(rv), workSize);
+      if (rv == HIPFFT_SUCCESS) {
+        rv = hipfftExecZ2Z(p, dbuf, dbuf, HIPFFT_FORWARD);
+        hipDeviceSynchronize();
+        printf("  hipfftMakePlanMany exec : %d (%s)\n", (int)rv, hipfftResultString(rv));
+      }
+      hipfftDestroy(p);
+    } else {
+      printf("  hipfftCreate            : %d (%s)\n", (int)rc, hipfftResultString(rc));
+    }
   }
 
+  // 3. hipfftPlan1d (simplest API, batch = howmany)
+  {
+    hipfftHandle p;
+    hipfftResult rv = hipfftPlan1d(&p, G, HIPFFT_Z2Z, (int)howmany);
+    printf("  hipfftPlan1d     create : %d (%s)\n", (int)rv, hipfftResultString(rv));
+    if (rv == HIPFFT_SUCCESS) {
+      rv = hipfftExecZ2Z(p, dbuf, dbuf, HIPFFT_FORWARD);
+      hipDeviceSynchronize();
+      printf("  hipfftPlan1d     execFwd: %d (%s)\n", (int)rv, hipfftResultString(rv));
+      hipfftDestroy(p);
+    }
+  }
+
+  hipFree(dbuf);
   printf("\n");
 }
 
@@ -99,24 +117,42 @@ int main(void) {
   hipGetDeviceProperties(&prop, device);
   printf("Device %d: %s  warpSize=%d\n\n", device, prop.name, prop.warpSize);
 
-  // Print hipFFT version if available
 #ifdef hipfftVersionMinor
   printf("hipFFT version: %d.%d.%d\n\n",
          hipfftVersionMajor, hipfftVersionMinor, hipfftVersionPatch);
 #endif
 
-  // Sweep over transform sizes G with a fixed representative howmany
-  // (512 = typical Nperp*Ncomp for a small lattice)
-  const int howmany = 512;
-  for (int G : {4, 8, 12, 16, 24, 32, 48, 64}) {
-    tryPlans(G, howmany);
-  }
+  // Original sweep with small howmany (these passed first time)
+  printf("=== Small howmany (original sweep) ===\n\n");
+  for (int G : {4, 8, 12, 16, 24, 32, 48, 64})
+    tryPlanAndExec(G, 512);
 
-  // Also try the exact parameters from the failing Grid FFT
-  printf("=== Grid-specific parameters ===\n\n");
-  tryPlans(8,  512);   // Ls=8,  small 4D lattice
-  tryPlans(16, 512);   // 16^4
-  tryPlans(32, 512);   // 32^4 (known to work)
+  // Grid-realistic howmany values derived from actual lattice geometries.
+  // howmany = Ncomp * product(ldimensions[d] for d != dim)
+  // For LatticeComplexD: Ncomp=1.
+  printf("=== Grid-realistic parameters ===\n\n");
+
+  // --grid 16.16.16.16  4D FFT  (KNOWN TO FAIL in Grid)
+  // Each dim: G=16, Nperp=16^3=4096
+  tryPlanAndExec(16, 4096);
+
+  // --grid 32.32.32.32  4D FFT  (KNOWN TO SUCCEED in Grid)
+  // Each dim: G=32, Nperp=32^3=32768
+  tryPlanAndExec(32, 32768);
+
+  // --grid 32.32.32.32 Ls=8  5D DWF FFT  (KNOWN TO FAIL on dim 0 in Grid)
+  // dim 0: G=8,  Nperp=32^4=1048576
+  tryPlanAndExec(8, 1048576);
+  // dim 1-4: G=32, Nperp=8*32^3=262144
+  tryPlanAndExec(32, 262144);
+
+  // Extra intermediate cases to bracket the failure
+  tryPlanAndExec(16, 1024);
+  tryPlanAndExec(16, 2048);
+  tryPlanAndExec(16, 8192);
+  tryPlanAndExec(8,  4096);
+  tryPlanAndExec(8,  65536);
+  tryPlanAndExec(8,  262144);
 
   return 0;
 }
