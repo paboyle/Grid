@@ -3,7 +3,7 @@
 NAMESPACE_BEGIN(Grid);
 int      world_rank; // Use to control world rank for print guarding
 int      acceleratorAbortOnGpuError=1;
-uint32_t accelerator_threads=16;
+uint32_t accelerator_threads=8;
 uint32_t acceleratorThreads(void)       {return accelerator_threads;};
 void     acceleratorThreads(uint32_t t) {accelerator_threads = t;};
 
