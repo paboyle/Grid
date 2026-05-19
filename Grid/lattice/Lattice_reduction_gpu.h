@@ -198,8 +198,7 @@ __global__ void reduceKernel(const vobj *lat, sobj *buffer, Iterator n) {
 // Possibly promote to double and sum
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Uncomment to print per-phase timing for every sumD_gpu_small and sumD_gpu_large call.
-// #define GRID_REDUCTION_TIMING
+#define GRID_REDUCTION_TIMING
 
 template <class vobj>
 inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osites)
