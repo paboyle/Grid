@@ -1,7 +1,6 @@
 #pragma once
 
 #if defined(GRID_CUDA)
-
 #include <cub/cub.cuh>
 #define gpucub cub
 #define gpuError_t cudaError_t
@@ -57,8 +56,13 @@ inline void sliceSumReduction_cub_small(const vobj *Data,
   //copy offsets to device
   acceleratorCopyToDeviceAsynch(&offsets[0],d_offsets,sizeof(int)*(rd+1),computeStream);
   
+#if defined(__CUDACC__) && (__CUDACC_VER_MAJOR__ >= 13)
+  #define GRID_CUB_SUM_OP ::cuda::std::plus<>{}
+#else
+  #define GRID_CUB_SUM_OP ::cub::Sum()
+#endif
   
-  gpuError_t gpuErr = gpucub::DeviceSegmentedReduce::Reduce(temp_storage_array, temp_storage_bytes, rb_p,d_out, rd, d_offsets, d_offsets+1, ::gpucub::Sum(), zero_init, computeStream);
+  gpuError_t gpuErr = gpucub::DeviceSegmentedReduce::Reduce(temp_storage_array, temp_storage_bytes, rb_p,d_out, rd, d_offsets, d_offsets+1, GRID_CUB_SUM_OP, zero_init, computeStream);
   if (gpuErr!=gpuSuccess) {
     std::cout << GridLogError << "Lattice_slicesum_gpu.h: Encountered error during gpucub::DeviceSegmentedReduce::Reduce (setup)! Error: " << gpuErr <<std::endl;
     exit(EXIT_FAILURE);
@@ -82,11 +86,13 @@ inline void sliceSumReduction_cub_small(const vobj *Data,
   });
   
   //issue segmented reductions in computeStream
-  gpuErr = gpucub::DeviceSegmentedReduce::Reduce(temp_storage_array, temp_storage_bytes, rb_p, d_out, rd, d_offsets, d_offsets+1,::gpucub::Sum(), zero_init, computeStream);
+  gpuErr = gpucub::DeviceSegmentedReduce::Reduce(temp_storage_array, temp_storage_bytes, rb_p, d_out, rd, d_offsets, d_offsets+1, GRID_CUB_SUM_OP, zero_init, computeStream);
   if (gpuErr!=gpuSuccess) {
     std::cout << GridLogError << "Lattice_slicesum_gpu.h: Encountered error during gpucub::DeviceSegmentedReduce::Reduce! Error: " << gpuErr <<std::endl;
     exit(EXIT_FAILURE);
   }
+
+#undef GRID_CUB_SUM_OP
   
   acceleratorCopyFromDeviceAsynch(d_out,&lvSum[0],rd*sizeof(vobj),computeStream);
   
