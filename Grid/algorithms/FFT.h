@@ -74,11 +74,14 @@ public:
 				      FFTW_scalar *out, int *onembed,
 				      int ostride, int odist,
 				      int sign, unsigned flags) {
+    // hipfftPlanMany (one-step) triggers HIPFFT_PARSE_ERROR (12) on some
+    // ROCm versions.  The two-step hipfftCreate + hipfftMakePlanMany is
+    // more robust across ROCm releases.
     FFTW_plan p;
-    // Pass nullptr for inembed/onembed: contiguous layout is the default and
-    // avoids HIPFFT_PARSE_ERROR (12) triggered by some rocFFT versions when
-    // inembed==n (non-null, no-padding case).
-    auto rv = hipfftPlanMany(&p,rank,n,nullptr,istride,idist,nullptr,ostride,odist,HIPFFT_Z2Z,howmany);
+    size_t workSize;
+    auto rc = hipfftCreate(&p);
+    GRID_ASSERT(rc==HIPFFT_SUCCESS);
+    auto rv = hipfftMakePlanMany(p,rank,n,nullptr,istride,idist,nullptr,ostride,odist,HIPFFT_Z2Z,howmany,&workSize);
     GRID_ASSERT(rv==HIPFFT_SUCCESS);
     return p;
   }
@@ -104,7 +107,10 @@ public:
 				      int ostride, int odist,
 				      int sign, unsigned flags) {
     FFTW_plan p;
-    auto rv = hipfftPlanMany(&p,rank,n,nullptr,istride,idist,nullptr,ostride,odist,HIPFFT_C2C,howmany);
+    size_t workSize;
+    auto rc = hipfftCreate(&p);
+    GRID_ASSERT(rc==HIPFFT_SUCCESS);
+    auto rv = hipfftMakePlanMany(p,rank,n,nullptr,istride,idist,nullptr,ostride,odist,HIPFFT_C2C,howmany,&workSize);
     GRID_ASSERT(rv==HIPFFT_SUCCESS);
     return p;
   }
