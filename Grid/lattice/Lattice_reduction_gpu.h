@@ -239,41 +239,136 @@ inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osi
   return result;
 }
 
-// Pack R consecutive vector_type words of lat[0..osites-1] starting at word
-// 'base' into a Bundle = iVector<iScalar<vector>,R> per site, then reduce
-// with sumD_gpu_small.  Bundle::Nsimd() == vector::Nsimd(), so the existing
-// shared-memory kernel handles SIMD-lane extraction and double-promotion
-// correctly.  sizeof(Bundle::scalar_objectD) = R*sizeof(scalarD) <= 192 B
-// for R<=12, safely within sharedMemPerBlock on all supported devices.
+// Fused pack+reduce: reads R words of each vobj at word offset 'base',
+// accumulates directly into iVector<iScalar<scalarD>,R> without staging
+// through an intermediate bundle buffer.  One HBM pass instead of three.
+template <int R, class vobj, class sobj, class Iterator>
+__device__ void packReduceBlocks(
+    const iScalar<typename vobj::vector_type> *idat,
+    sobj *g_odata, Iterator osites, int base, int words)
+{
+  constexpr Iterator nsimd = vobj::Nsimd();
+  Iterator blockSize = blockDim.x;
+
+  extern __shared__ __align__(COALESCE_GRANULARITY) unsigned char shmem_pointer[];
+  sobj *sdata = (sobj *)shmem_pointer;
+
+  Iterator tid      = threadIdx.x;
+  Iterator i        = blockIdx.x * (blockSize * 2) + threadIdx.x;
+  Iterator gridSize = blockSize * 2 * gridDim.x;
+  sobj mySum = Zero();
+
+  while (i < osites * nsimd) {
+    Iterator lane = i % nsimd;
+    Iterator ss   = i / nsimd;
+    sobj tmpD; zeroit(tmpD);
+    for (int k = 0; k < R; k++) {
+      auto w = extractLane(lane, idat[ss * words + base + k]);
+      iScalar<typename vobj::scalar_typeD> wd; wd = w;
+      tmpD._internal[k] = wd;
+    }
+    mySum += tmpD;
+
+    if (i + blockSize < osites * nsimd) {
+      lane = (i + blockSize) % nsimd;
+      ss   = (i + blockSize) / nsimd;
+      sobj tmpD2; zeroit(tmpD2);
+      for (int k = 0; k < R; k++) {
+        auto w = extractLane(lane, idat[ss * words + base + k]);
+        iScalar<typename vobj::scalar_typeD> wd; wd = w;
+        tmpD2._internal[k] = wd;
+      }
+      mySum += tmpD2;
+    }
+    i += gridSize;
+  }
+
+  reduceBlock(sdata, mySum, tid);
+  if (tid == 0) g_odata[blockIdx.x] = sdata[0];
+}
+
+template <int R, class vobj, class sobj, class Iterator>
+__global__ void packReduceKernel(
+    const iScalar<typename vobj::vector_type> *idat,
+    sobj *buffer, Iterator osites, int base, int words)
+{
+  Iterator blockSize = blockDim.x;
+
+  packReduceBlocks<R, vobj, sobj>(idat, buffer, osites, base, words);
+
+  if (gridDim.x > 1) {
+    const Iterator tid = threadIdx.x;
+    __shared__ bool amLast;
+    extern __shared__ __align__(COALESCE_GRANULARITY) unsigned char shmem_pointer[];
+    sobj *smem = (sobj *)shmem_pointer;
+
+    acceleratorFence();
+
+    if (tid == 0) {
+      unsigned int ticket = atomicInc(&retirementCount, gridDim.x);
+      amLast = (ticket == gridDim.x - 1);
+    }
+    acceleratorSynchroniseAll();
+
+    if (amLast) {
+      Iterator i = tid;
+      sobj mySum = Zero();
+      while (i < (Iterator)gridDim.x) {
+        mySum += buffer[i];
+        i += blockSize;
+      }
+      reduceBlock(smem, mySum, tid);
+      if (tid == 0) {
+        buffer[0] = smem[0];
+        retirementCount = 0;
+      }
+    }
+  }
+}
+
 template<int R, class vobj>
 inline void sumD_gpu_reduce_words(const vobj *lat, Integer osites,
                                    typename vobj::scalar_typeD *ret_p, int base)
 {
-  typedef typename vobj::vector_type vector;
-  using Bundle = iVector<iScalar<vector>, R>;
+  typedef typename vobj::vector_type  vector;
+  typedef typename vobj::scalar_typeD scalarD;
+  using BundleScalarD = iVector<iScalar<scalarD>, R>;
 
-  const int words = sizeof(vobj) / sizeof(vector);
-  iScalar<vector> *idat = (iScalar<vector> *)lat;
-
-  deviceVector<Bundle> buf(osites);
-  Bundle *buf_p = &buf[0];
-
-#ifdef GRID_REDUCTION_TIMING
-  RealD t_pack = -usecond();
-#endif
   constexpr int Nsimd = vobj::Nsimd();
-  accelerator_for2d(k, R, ss, osites, Nsimd, {
-    coalescedWrite(buf_p[ss]._internal[k], coalescedRead(idat[ss * words + base + k]));
-  });
+  const int words = sizeof(vobj) / sizeof(vector);
+  const iScalar<vector> *idat = (const iScalar<vector> *)lat;
+
+  Integer size = (Integer)osites * Nsimd;
+  Integer numThreads, numBlocks;
+  int ok = getNumBlocksAndThreads(size, sizeof(BundleScalarD), numThreads, numBlocks);
+  GRID_ASSERT(ok);
+
+  Integer smemSize = numThreads * sizeof(BundleScalarD);
+  deviceVector<BundleScalarD> buffer(numBlocks);
+  BundleScalarD *buffer_v = &buffer[0];
+  BundleScalarD result;
+
 #ifdef GRID_REDUCTION_TIMING
-  t_pack += usecond();
+  RealD t_kernel = -usecond();
+#endif
+  packReduceKernel<R, vobj, BundleScalarD, Integer>
+    <<<numBlocks, numThreads, smemSize, computeStream>>>
+    (idat, buffer_v, osites, base, words);
+  accelerator_barrier();
+#ifdef GRID_REDUCTION_TIMING
+  t_kernel += usecond();
+  RealD t_d2h = -usecond();
+#endif
+  acceleratorCopyFromDevice(buffer_v, &result, sizeof(result));
+#ifdef GRID_REDUCTION_TIMING
+  t_d2h += usecond();
   std::cout << GridLogMessage << " sumD_gpu_reduce_words R=" << R
-            << " base=" << base << " pack=" << t_pack << " us" << std::endl;
+            << " base=" << base
+            << " kernel=" << t_kernel << " D2H=" << t_d2h << " us" << std::endl;
 #endif
 
-  auto sum_bundle = sumD_gpu_small(buf_p, osites);
   for (int k = 0; k < R; k++)
-    ret_p[base + k] = TensorRemove(sum_bundle._internal[k]);
+    ret_p[base + k] = TensorRemove(result._internal[k]);
 }
 
 template <class vobj>
