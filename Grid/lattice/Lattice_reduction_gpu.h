@@ -223,29 +223,53 @@ inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osi
   return result;
 }
 
+// Pack R consecutive vector_type words of lat[0..osites-1] starting at word
+// 'base' into a Bundle = iVector<iScalar<vector>,R> per site, then reduce
+// with sumD_gpu_small.  Bundle::Nsimd() == vector::Nsimd(), so the existing
+// shared-memory kernel handles SIMD-lane extraction and double-promotion
+// correctly.  sizeof(Bundle::scalar_objectD) = R*sizeof(scalarD) <= 192 B
+// for R<=12, safely within sharedMemPerBlock on all supported devices.
+template<int R, class vobj>
+inline void sumD_gpu_reduce_words(const vobj *lat, Integer osites,
+                                   typename vobj::scalar_typeD *ret_p, int base)
+{
+  typedef typename vobj::vector_type vector;
+  using Bundle = iVector<iScalar<vector>, R>;
+
+  const int words = sizeof(vobj) / sizeof(vector);
+  iScalar<vector> *idat = (iScalar<vector> *)lat;
+
+  deviceVector<Bundle> buf(osites);
+  Bundle *buf_p = &buf[0];
+
+  accelerator_for(ss, osites, 1, {
+    Bundle b;
+    for (int k = 0; k < R; k++)
+      b._internal[k] = idat[ss * words + base + k];
+    buf_p[ss] = b;
+  });
+
+  auto sum_bundle = sumD_gpu_small(buf_p, osites);
+  for (int k = 0; k < R; k++)
+    ret_p[base + k] = TensorRemove(sum_bundle._internal[k]);
+}
+
 template <class vobj>
 inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osites)
 {
-  typedef typename vobj::vector_type  vector;
-  typedef typename vobj::scalar_typeD scalarD;
-  typedef typename vobj::scalar_objectD sobj;
-  sobj ret;
+  typedef typename vobj::vector_type    vector;
+  typedef typename vobj::scalar_typeD   scalarD;
+  typedef typename vobj::scalar_objectD sobjD;
+
+  const int words = sizeof(vobj) / sizeof(vector);
+  sobjD ret; zeroit(ret);
   scalarD *ret_p = (scalarD *)&ret;
-  
-  const int words = sizeof(vobj)/sizeof(vector);
 
-  deviceVector<vector> buffer(osites);
-  vector *dat = (vector *)lat;
-  vector *buf = &buffer[0];
-  iScalar<vector> *tbuf =(iScalar<vector> *)  &buffer[0];
-  for(int w=0;w<words;w++) {
+  int w = 0;
+  while (w + 12 <= words) { sumD_gpu_reduce_words<12>(lat, osites, ret_p, w); w += 12; }
+  while (w +  4 <= words) { sumD_gpu_reduce_words< 4>(lat, osites, ret_p, w); w +=  4; }
+  while (w      <  words) { sumD_gpu_reduce_words< 1>(lat, osites, ret_p, w); w +=  1; }
 
-    accelerator_for(ss,osites,1,{
-	buf[ss] = dat[ss*words+w];
-      });
-      
-    ret_p[w] = sumD_gpu_small(tbuf,osites);
-  }
   return ret;
 }
 
