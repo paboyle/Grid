@@ -261,11 +261,9 @@ inline void sumD_gpu_reduce_words(const vobj *lat, Integer osites,
 #ifdef GRID_REDUCTION_TIMING
   RealD t_pack = -usecond();
 #endif
-  accelerator_for(ss, osites, 1, {
-    Bundle b;
-    for (int k = 0; k < R; k++)
-      b._internal[k] = idat[ss * words + base + k];
-    buf_p[ss] = b;
+  constexpr int Nsimd = vobj::Nsimd();
+  accelerator_for2d(k, R, ss, osites, Nsimd, {
+    coalescedWrite(buf_p[ss]._internal[k], coalescedRead(idat[ss * words + base + k]));
   });
 #ifdef GRID_REDUCTION_TIMING
   t_pack += usecond();
