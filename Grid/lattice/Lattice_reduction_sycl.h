@@ -6,28 +6,27 @@ NAMESPACE_BEGIN(Grid);
 
 
 template <class vobj>
-inline typename vobj::scalar_objectD sumD_gpu_tensor(const vobj *lat, Integer osites) 
+inline typename vobj::scalar_objectD sumD_gpu_tensor(const vobj *lat, Integer osites)
 {
-  typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::scalar_object  sobj;
   typedef typename vobj::scalar_objectD sobjD;
 
-  sobj identity; zeroit(identity);
-  sobj ret; zeroit(ret);
-  Integer nsimd= vobj::Nsimd();
-  { 
-    sycl::buffer<sobj, 1> abuff(&ret, {1});
+  sobjD identity; zeroit(identity);
+  sobjD ret;      zeroit(ret);
+  {
+    sycl::buffer<sobjD, 1> abuff(&ret, {1});
     theGridAccelerator->submit([&](sycl::handler &cgh) {
-      auto Reduction = sycl::reduction(abuff,cgh,identity,std::plus<>());
-      cgh.parallel_for(sycl::range<1>{osites},
-                      Reduction,
-                      [=] (sycl::id<1> item, auto &sum) {
-                        auto osite   = item[0];
-                        sum +=Reduce(lat[osite]);
-                      });
+      auto Reduction = sycl::reduction(abuff, cgh, identity, std::plus<>());
+      cgh.parallel_for(sycl::range<1>{(size_t)osites},
+                       Reduction,
+                       [=](sycl::id<1> item, auto &sum) {
+                         sobj s = Reduce(lat[item[0]]);
+                         sobjD sd; sd = s;
+                         sum += sd;
+                       });
     });
   }
-  sobjD dret; convertType(dret,ret);
-  return dret;
+  return ret;
 }
 
 template <class vobj>
