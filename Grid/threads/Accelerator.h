@@ -96,7 +96,9 @@ void     acceleratorInit(void);
 
 #ifdef GRID_CUDA
 
+NAMESPACE_END(Grid);
 #include <cuda.h>
+NAMESPACE_BEGIN(Grid);
 
 #ifdef __CUDA_ARCH__
 #define GRID_SIMT
