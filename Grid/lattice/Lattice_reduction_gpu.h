@@ -197,12 +197,16 @@ __global__ void reduceKernel(const vobj *lat, sobj *buffer, Iterator n) {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Possibly promote to double and sum
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Uncomment to print per-phase timing for every sumD_gpu_small and sumD_gpu_large call.
+// #define GRID_REDUCTION_TIMING
+
 template <class vobj>
-inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osites) 
+inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osites)
 {
   typedef typename vobj::scalar_objectD sobj;
   typedef decltype(lat) Iterator;
-  
+
   Integer nsimd= vobj::Nsimd();
   Integer size = osites*nsimd;
 
@@ -211,15 +215,28 @@ inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osi
   GRID_ASSERT(ok);
 
   Integer smemSize = numThreads * sizeof(sobj);
-  // Move out of UVM
-  // Turns out I had messed up the synchronise after move to compute stream
-  // as running this on the default stream fools the synchronise
   deviceVector<sobj> buffer(numBlocks);
   sobj *buffer_v = &buffer[0];
   sobj result;
+
+#ifdef GRID_REDUCTION_TIMING
+  RealD t_kernel = -usecond();
+#endif
   reduceKernel<<< numBlocks, numThreads, smemSize, computeStream >>>(lat, buffer_v, size);
   accelerator_barrier();
+#ifdef GRID_REDUCTION_TIMING
+  t_kernel += usecond();
+  RealD t_d2h = -usecond();
+#endif
   acceleratorCopyFromDevice(buffer_v,&result,sizeof(result));
+#ifdef GRID_REDUCTION_TIMING
+  t_d2h += usecond();
+  std::cout << GridLogMessage << "  sumD_gpu_small"
+            << " sizeof(sobj)=" << sizeof(sobj)
+            << " blocks=" << numBlocks << " threads=" << numThreads
+            << " kernel+barrier=" << t_kernel << " us"
+            << " D2H=" << t_d2h << " us" << std::endl;
+#endif
   return result;
 }
 
@@ -242,12 +259,20 @@ inline void sumD_gpu_reduce_words(const vobj *lat, Integer osites,
   deviceVector<Bundle> buf(osites);
   Bundle *buf_p = &buf[0];
 
+#ifdef GRID_REDUCTION_TIMING
+  RealD t_pack = -usecond();
+#endif
   accelerator_for(ss, osites, 1, {
     Bundle b;
     for (int k = 0; k < R; k++)
       b._internal[k] = idat[ss * words + base + k];
     buf_p[ss] = b;
   });
+#ifdef GRID_REDUCTION_TIMING
+  t_pack += usecond();
+  std::cout << GridLogMessage << " sumD_gpu_reduce_words R=" << R
+            << " base=" << base << " pack=" << t_pack << " us" << std::endl;
+#endif
 
   auto sum_bundle = sumD_gpu_small(buf_p, osites);
   for (int k = 0; k < R; k++)
@@ -265,10 +290,19 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
   sobjD ret; zeroit(ret);
   scalarD *ret_p = (scalarD *)&ret;
 
+#ifdef GRID_REDUCTION_TIMING
+  RealD t_large = -usecond();
+#endif
   int w = 0;
   while (w + 12 <= words) { sumD_gpu_reduce_words<12>(lat, osites, ret_p, w); w += 12; }
   while (w +  4 <= words) { sumD_gpu_reduce_words< 4>(lat, osites, ret_p, w); w +=  4; }
   while (w      <  words) { sumD_gpu_reduce_words< 1>(lat, osites, ret_p, w); w +=  1; }
+#ifdef GRID_REDUCTION_TIMING
+  t_large += usecond();
+  std::cout << GridLogMessage << "sumD_gpu_large"
+            << " sizeof(sobjD)=" << sizeof(sobjD)
+            << " words=" << words << " total=" << t_large << " us" << std::endl;
+#endif
 
   return ret;
 }
