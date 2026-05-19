@@ -75,7 +75,10 @@ public:
 				      int ostride, int odist,
 				      int sign, unsigned flags) {
     FFTW_plan p;
-    auto rv = hipfftPlanMany(&p,rank,n,n,istride,idist,n,ostride,odist,HIPFFT_Z2Z,howmany);
+    // Pass nullptr for inembed/onembed: contiguous layout is the default and
+    // avoids HIPFFT_PARSE_ERROR (12) triggered by some rocFFT versions when
+    // inembed==n (non-null, no-padding case).
+    auto rv = hipfftPlanMany(&p,rank,n,nullptr,istride,idist,nullptr,ostride,odist,HIPFFT_Z2Z,howmany);
     GRID_ASSERT(rv==HIPFFT_SUCCESS);
     return p;
   }
@@ -101,7 +104,7 @@ public:
 				      int ostride, int odist,
 				      int sign, unsigned flags) {
     FFTW_plan p;
-    auto rv = hipfftPlanMany(&p,rank,n,n,istride,idist,n,ostride,odist,HIPFFT_C2C,howmany);
+    auto rv = hipfftPlanMany(&p,rank,n,nullptr,istride,idist,nullptr,ostride,odist,HIPFFT_C2C,howmany);
     GRID_ASSERT(rv==HIPFFT_SUCCESS);
     return p;
   }
