@@ -31,9 +31,6 @@ Author: Christoph Lehner <christoph@lhnr.de>
 #if defined(GRID_SYCL)
 #include <Grid/lattice/Lattice_reduction_sycl.h>
 #endif
-#if defined(GRID_CUDA)||defined(GRID_HIP)||defined(GRID_SYCL)
-#include <Grid/lattice/Lattice_reduction_gpu_cub.h>
-#endif
 #include <Grid/lattice/Lattice_slicesum_core.h>
 
 NAMESPACE_BEGIN(Grid);
