@@ -275,8 +275,10 @@ public:
 
       // GPU backends (cuFFT/hipFFT) ignore the buffer pointer at plan creation.
       // CPU FFTW with FFTW_ESTIMATE inspects only alignment and never touches data.
-      deviceVector<scalar> dummy(2);
-      FFTW_scalar *buf = (FFTW_scalar *)&dummy[0];
+      // Use a host stack buffer: a device allocation here triggers a rocFFT RTC
+      // bug on ROCm 7 that causes plan creation to fail for small transform sizes.
+      scalar stack_dummy[2] = {};
+      FFTW_scalar *buf = (FFTW_scalar *)stack_dummy;
 
       {
         FFTW_plan p = FFTW<scalar>::fftw_plan_many_dft(
