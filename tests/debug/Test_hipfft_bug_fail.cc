@@ -45,7 +45,7 @@ int main(void) {
          hipfftVersionMajor, hipfftVersionMinor, hipfftVersionPatch);
 #endif
 
-  for (int G : {8, 16, 32}) {
+  for (int G : {4, 8, 16, 32}) {
     int howmany = 512;
     long nelems = (long)G * howmany;
     hipfftDoubleComplex *buf = nullptr;
