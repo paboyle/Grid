@@ -28,10 +28,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef _GRID_FFT_H_
 #define _GRID_FFT_H_
 
-#include <any>
-#include <functional>
-#include <typeindex>
-
 #ifdef GRID_CUDA
 #include <cufft.h>
 #endif
@@ -74,14 +70,8 @@ public:
 				      FFTW_scalar *out, int *onembed,
 				      int ostride, int odist,
 				      int sign, unsigned flags) {
-    // hipfftPlanMany (one-step) triggers HIPFFT_PARSE_ERROR (12) on some
-    // ROCm versions.  The two-step hipfftCreate + hipfftMakePlanMany is
-    // more robust across ROCm releases.
     FFTW_plan p;
-    size_t workSize;
-    auto rc = hipfftCreate(&p);
-    GRID_ASSERT(rc==HIPFFT_SUCCESS);
-    auto rv = hipfftMakePlanMany(p,rank,n,nullptr,istride,idist,nullptr,ostride,odist,HIPFFT_Z2Z,howmany,&workSize);
+    auto rv = hipfftPlanMany(&p,rank,n,n,istride,idist,n,ostride,odist,HIPFFT_Z2Z,howmany);
     GRID_ASSERT(rv==HIPFFT_SUCCESS);
     return p;
   }
@@ -107,10 +97,7 @@ public:
 				      int ostride, int odist,
 				      int sign, unsigned flags) {
     FFTW_plan p;
-    size_t workSize;
-    auto rc = hipfftCreate(&p);
-    GRID_ASSERT(rc==HIPFFT_SUCCESS);
-    auto rv = hipfftMakePlanMany(p,rank,n,nullptr,istride,idist,nullptr,ostride,odist,HIPFFT_C2C,howmany,&workSize);
+    auto rv = hipfftPlanMany(&p,rank,n,n,istride,idist,n,ostride,odist,HIPFFT_C2C,howmany);
     GRID_ASSERT(rv==HIPFFT_SUCCESS);
     return p;
   }
@@ -213,27 +200,11 @@ public:
 #endif
 #endif
 
-class FFT {
-private:
-
-  double   flops;
-  double   flops_call;
-  uint64_t usec;
+struct FFTbase {
+  double        flops;
+  double        flops_call;
+  uint64_t      usec;
   GridCartesian *_grid;
-
-  // Type-erased plan entry.  The handle is recovered via
-  // std::any_cast<FFTW<scalar>::FFTW_plan> inside FFT_dim, which knows the
-  // scalar type at compile time.
-  struct PlanEntry {
-    std::any              handle;
-    std::function<void()> destroy;
-  };
-
-  std::vector<PlanEntry> forward_plans;   // size Nd when populated, 0 otherwise
-  std::vector<PlanEntry> backward_plans;
-  std::type_index        _plan_type { typeid(void) }; // vobj type plans were built for
-
-public:
 
   static const int forward  = FFTW_FORWARD;
   static const int backward = FFTW_BACKWARD;
@@ -242,70 +213,166 @@ public:
   double MFlops(void) { return flops / usec; }
   double USec(void)   { return (double)usec; }
 
-  FFT(GridCartesian *grid) : _grid(grid), flops(0), usec(0) {}
+  FFTbase(GridCartesian *grid) : _grid(grid), flops(0), flops_call(0), usec(0) {}
+};
 
-  ~FFT() {
-    if (forward_plans.size() > 0) PlanDestroy();
-  }
+// Barrel-shift gather, FFT execute, and insert. Called by both FFT and PlannedFFT.
+// The caller is responsible for plan acquisition and destruction.
+template<class vobj>
+static void FFT_dim_execute(
+    Lattice<vobj>       &result,
+    const Lattice<vobj> &source,
+    int dim, int sign,
+    typename FFTW<typename vobj::scalar_type>::FFTW_plan p,
+    GridCartesian *grid,
+    double &flops, double &flops_call, uint64_t &usec)
+{
+  typedef typename vobj::scalar_type   scalar;
+  typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::scalar_type   scalar_type;
+  typedef typename vobj::vector_type   vector_type;
+  typedef typename FFTW<scalar>::FFTW_scalar FFTW_scalar;
 
-  // Explicitly pre-create and cache plans for all Nd dimensions.
-  // Optional: FFT_dim will call this lazily on first use if not called.
-  // Asserts that no plans already exist; call PlanDestroy first to re-create.
-  template<class vobj>
-  void PlanCreate() {
-    GRID_ASSERT(forward_plans.size() == 0);
+  const int Ndim = grid->Nd();
+  int L = grid->_ldimensions[dim];
+  int G = grid->_fdimensions[dim];
+  int Ncomp = sizeof(sobj) / sizeof(scalar);
+  int64_t Nlow = 1, Nhigh = 1;
+  for (int d = 0; d < dim;      d++) Nlow  *= grid->_ldimensions[d];
+  for (int d = dim+1; d < Ndim; d++) Nhigh *= grid->_ldimensions[d];
+  int64_t Nperp = Nlow * Nhigh;
 
-    typedef typename vobj::scalar_type   scalar;
-    typedef typename vobj::scalar_object sobj;
-    typedef typename FFTW<scalar>::FFTW_scalar FFTW_scalar;
-    typedef typename FFTW<scalar>::FFTW_plan   FFTW_plan;
+  deviceVector<scalar> pgbuf(Nperp * Ncomp * G);
+  scalar *pgbuf_v = &pgbuf[0];
+  int howmany = Ncomp * Nperp;
 
-    const int Ndim = _grid->Nd();
-    forward_plans.resize(Ndim);
-    backward_plans.resize(Ndim);
+  scalar div;
+  if      (sign == FFTW_BACKWARD) div = 1.0 / G;
+  else if (sign == FFTW_FORWARD)  div = 1.0;
+  else GRID_ASSERT(0);
 
-    for (int d = 0; d < Ndim; d++) {
-      int G     = _grid->_fdimensions[d];
-      int Ncomp = sizeof(sobj) / sizeof(scalar);
-      int64_t Nperp = 1;
-      for (int dd = 0; dd < Ndim; dd++)
-        if (dd != d) Nperp *= _grid->_ldimensions[dd];
-      int howmany = Ncomp * (int)Nperp;
-      int n[] = {G};
+  double t_pencil = 0, t_fft = 0, t_copy = 0, t_shift = 0;
+  double t_total  = -usecond();
 
-      // GPU backends (cuFFT/hipFFT) ignore the buffer pointer at plan creation.
-      // CPU FFTW with FFTW_ESTIMATE inspects only alignment and never touches data.
-      // Use a host stack buffer: a device allocation here triggers a rocFFT RTC
-      // bug on ROCm 7 that causes plan creation to fail for small transform sizes.
-      scalar stack_dummy[2] = {};
-      FFTW_scalar *buf = (FFTW_scalar *)stack_dummy;
+  result = source;
+  int pc = grid->_processor_coor[dim];
 
-      {
-        FFTW_plan p = FFTW<scalar>::fftw_plan_many_dft(
-            1, n, howmany, buf, n, 1, G, buf, n, 1, G, FFTW_FORWARD, FFTW_ESTIMATE);
-        forward_plans[d] = { p, [p](){ FFTW<scalar>::fftw_destroy_plan(p); } };
+  const Coordinate ldims      = grid->_ldimensions;
+  const Coordinate rdims      = grid->_rdimensions;
+  const Coordinate sdims      = grid->_simd_layout;
+  const Coordinate processors = grid->_processors;
+
+  Coordinate pgdims(Ndim);
+  pgdims[0] = G;
+  for (int d = 0, dd = 1; d < Ndim; d++)
+    if (d != dim) pgdims[dd++] = ldims[d];
+  int64_t pgvol = 1;
+  for (int d = 0; d < Ndim; d++) pgvol *= pgdims[d];
+
+  const int Nsimd = vobj::Nsimd();
+  t_pencil = -usecond();
+  for (int p_idx = 0; p_idx < processors[dim]; p_idx++) {
+    t_copy -= usecond();
+    autoView(r_v, result, AcceleratorRead);
+    accelerator_for(idx, grid->oSites(), vobj::Nsimd(), {
+#ifdef GRID_SIMT
+    {
+      int lane = acceleratorSIMTlane(Nsimd);
+#else
+    for (int lane = 0; lane < Nsimd; lane++) {
+#endif
+      Coordinate icoor, ocoor, pgcoor;
+      Lexicographic::CoorFromIndex(icoor, lane, sdims);
+      Lexicographic::CoorFromIndex(ocoor, idx,  rdims);
+      pgcoor[0] = ocoor[dim] + icoor[dim]*rdims[dim] + ((pc+p_idx)%processors[dim])*L;
+      for (int d = 0, dd = 1; d < Ndim; d++)
+        if (d != dim) { pgcoor[dd] = ocoor[d] + icoor[d]*rdims[d]; dd++; }
+      int64_t pgidx;
+      Lexicographic::IndexFromCoor(pgcoor, pgidx, pgdims);
+      vector_type *from = (vector_type *)&r_v[idx];
+      scalar_type  stmp;
+      for (int w = 0; w < Ncomp; w++) {
+        stmp = getlane(from[w], lane);
+        pgbuf_v[pgidx + w*pgvol] = stmp;
       }
-      {
-        FFTW_plan p = FFTW<scalar>::fftw_plan_many_dft(
-            1, n, howmany, buf, n, 1, G, buf, n, 1, G, FFTW_BACKWARD, FFTW_ESTIMATE);
-        backward_plans[d] = { p, [p](){ FFTW<scalar>::fftw_destroy_plan(p); } };
-      }
+#ifdef GRID_SIMT
     }
-
-    _plan_type = std::type_index(typeid(vobj));
+#else
+    }
+#endif
+    });
+    t_copy += usecond();
+    if (p_idx != processors[dim] - 1) {
+      Lattice<vobj> temp(grid);
+      t_shift -= usecond();
+      temp = Cshift(result, dim, L); result = temp;
+      t_shift += usecond();
+    }
   }
+  t_pencil += usecond();
 
-  void PlanDestroy() {
-    for (auto &e : forward_plans)  e.destroy();
-    for (auto &e : backward_plans) e.destroy();
-    forward_plans.resize(0);
-    backward_plans.resize(0);
-    _plan_type = std::type_index(typeid(void));
+  FFTW_scalar *in  = (FFTW_scalar *)pgbuf_v;
+  FFTW_scalar *out = (FFTW_scalar *)pgbuf_v;
+  t_fft = -usecond();
+  FFTW<scalar>::fftw_execute_dft(p, in, out, sign);
+  t_fft += usecond();
+
+  flops_call = 5.0 * howmany * G * log2(G);
+  usec  = t_fft;
+  flops = flops_call;
+
+  result = Zero();
+  double t_insert = -usecond();
+  {
+    autoView(r_v, result, AcceleratorWrite);
+    accelerator_for(idx, grid->oSites(), Nsimd, {
+#ifdef GRID_SIMT
+    {
+      int lane = acceleratorSIMTlane(Nsimd);
+#else
+    for (int lane = 0; lane < Nsimd; lane++) {
+#endif
+      Coordinate icoor(Ndim), ocoor(Ndim), pgcoor(Ndim);
+      Lexicographic::CoorFromIndex(icoor, lane, sdims);
+      Lexicographic::CoorFromIndex(ocoor, idx,  rdims);
+      pgcoor[0] = ocoor[dim] + icoor[dim]*rdims[dim] + pc*L;
+      for (int d = 0, dd = 1; d < Ndim; d++)
+        if (d != dim) { pgcoor[dd] = ocoor[d] + icoor[d]*rdims[d]; dd++; }
+      int64_t pgidx;
+      Lexicographic::IndexFromCoor(pgcoor, pgidx, pgdims);
+      vector_type *to  = (vector_type *)&r_v[idx];
+      scalar_type  stmp;
+      for (int w = 0; w < Ncomp; w++) {
+        stmp = pgbuf_v[pgidx + w*pgvol];
+        putlane(to[w], stmp, lane);
+      }
+#ifdef GRID_SIMT
+    }
+#else
+    }
+#endif
+    });
   }
+  result = result * div;
+  t_insert += usecond();
+  t_total  += usecond();
+
+  std::cout << GridLogPerformance << " FFT took   " << t_total/1.0e6  << " s" << std::endl;
+  std::cout << GridLogPerformance << " FFT pencil " << t_pencil/1.0e6 << " s" << std::endl;
+  std::cout << GridLogPerformance << "  of which copy " << t_copy/1.0e6  << " s" << std::endl;
+  std::cout << GridLogPerformance << "  of which shift" << t_shift/1.0e6 << " s" << std::endl;
+  std::cout << GridLogPerformance << " FFT kernels " << t_fft/1.0e6    << " s" << std::endl;
+  std::cout << GridLogPerformance << " FFT insert  " << t_insert/1.0e6 << " s" << std::endl;
+}
+
+class FFT : public FFTbase {
+public:
+  FFT(GridCartesian *grid) : FFTbase(grid) {}
+  ~FFT() {}
 
   template<class vobj>
   void FFT_dim_mask(Lattice<vobj> &result, const Lattice<vobj> &source, Coordinate mask, int sign) {
-    const int Ndim = source.Grid()->Nd();
+    const int Ndim = _grid->Nd();
     Lattice<vobj> tmp = source;
     for (int d = 0; d < Ndim; d++) {
       if (mask[d]) {
@@ -317,180 +384,109 @@ public:
 
   template<class vobj>
   void FFT_all_dim(Lattice<vobj> &result, const Lattice<vobj> &source, int sign) {
-    const int Ndim = source.Grid()->Nd();
-    Coordinate mask(Ndim, 1);
+    Coordinate mask(_grid->Nd(), 1);
     FFT_dim_mask(result, source, mask, sign);
   }
 
   template<class vobj>
   void FFT_dim(Lattice<vobj> &result, const Lattice<vobj> &source, int dim, int sign) {
-    const int Ndim = source.Grid()->Nd();
-    GridBase *grid = source.Grid();
+    GRID_ASSERT(source.Grid() == _grid);
+    GRID_ASSERT(result.Grid() == _grid);
     conformable(result.Grid(), source.Grid());
 
-    int L = grid->_ldimensions[dim];
-    int G = grid->_fdimensions[dim];
-
+    typedef typename vobj::scalar_type   scalar;
     typedef typename vobj::scalar_object sobj;
-    typedef typename vobj::scalar_type   scalar_type;
-    typedef typename vobj::vector_type   vector_type;
+    typedef typename FFTW<scalar>::FFTW_scalar FFTW_scalar;
+    typedef typename FFTW<scalar>::FFTW_plan   FFTW_plan;
 
-    typedef typename FFTW<scalar_type>::FFTW_scalar FFTW_scalar;
-    typedef typename FFTW<scalar_type>::FFTW_plan   FFTW_plan;
-
-    int     Ncomp  = sizeof(sobj) / sizeof(scalar_type);
-    int64_t Nlow   = 1;
-    int64_t Nhigh  = 1;
-    for (int d = 0; d < dim;   d++) Nlow  *= grid->_ldimensions[d];
-    for (int d = dim+1; d < Ndim; d++) Nhigh *= grid->_ldimensions[d];
-    int64_t Nperp = Nlow * Nhigh;
-
-    deviceVector<scalar_type> pgbuf(Nperp * Ncomp * G); // [perp][component][dim]
-    scalar_type *pgbuf_v = &pgbuf[0];
-
-    int rank    = 1;
+    const int Ndim = _grid->Nd();
+    int G     = _grid->_fdimensions[dim];
+    int Ncomp = sizeof(sobj) / sizeof(scalar);
+    int64_t Nperp = 1;
+    for (int d = 0; d < Ndim; d++)
+      if (d != dim) Nperp *= _grid->_ldimensions[d];
     int n[]     = {G};
     int howmany = Ncomp * Nperp;
-    int idist = G, odist = G, istride = 1, ostride = 1;
-    int *inembed = n, *onembed = n;
 
-    scalar_type div;
-    if      (sign == backward) div = 1.0 / G;
-    else if (sign == forward)  div = 1.0;
-    else GRID_ASSERT(0);
+    deviceVector<scalar> dummy(2);
+    FFTW_scalar *buf = (FFTW_scalar *)&dummy[0];
+    FFTW_plan p = FFTW<scalar>::fftw_plan_many_dft(1, n, howmany,
+                                                    buf, n, 1, G,
+                                                    buf, n, 1, G,
+                                                    sign, FFTW_ESTIMATE);
+    FFT_dim_execute(result, source, dim, sign, p, _grid, flops, flops_call, usec);
+    FFTW<scalar>::fftw_destroy_plan(p);
+  }
+};
 
-    // Populate cache on first call; subsequent calls check type consistency.
-    if (forward_plans.size() == 0) PlanCreate<vobj>();
-    GRID_ASSERT(forward_plans.size() == (size_t)Ndim);
-    GRID_ASSERT(std::type_index(typeid(vobj)) == _plan_type);
+template<class vobj>
+class PlannedFFT : public FFTbase {
+private:
+  typedef typename vobj::scalar_type   scalar;
+  typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::vector_type   vector_type;
+  typedef typename FFTW<scalar>::FFTW_scalar FFTW_scalar;
+  typedef typename FFTW<scalar>::FFTW_plan   FFTW_plan;
 
-    auto &plans = (sign == forward) ? forward_plans : backward_plans;
-    FFTW_plan p = std::any_cast<FFTW_plan>(plans[dim].handle);
+  std::vector<FFTW_plan> forward_plans;
+  std::vector<FFTW_plan> backward_plans;
 
-    double t_pencil = 0;
-    double t_fft    = 0;
-    double t_copy   = 0;
-    double t_shift  = 0;
-    double t_total  = -usecond();
+  void PlanCreate() {
+    const int Ndim = _grid->Nd();
+    forward_plans.resize(Ndim);
+    backward_plans.resize(Ndim);
 
-    // Barrel-shift gather: accumulate global pencil into pgbuf
-    result = source;
-    int pc = grid->_processor_coor[dim];
+    for (int d = 0; d < Ndim; d++) {
+      int G       = _grid->_fdimensions[d];
+      int Ncomp   = sizeof(sobj) / sizeof(scalar);
+      int64_t Nperp = 1;
+      for (int dd = 0; dd < Ndim; dd++)
+        if (dd != d) Nperp *= _grid->_ldimensions[dd];
+      int howmany = Ncomp * (int)Nperp;
+      int n[]     = {G};
 
-    const Coordinate ldims = grid->_ldimensions;
-    const Coordinate rdims = grid->_rdimensions;
-    const Coordinate sdims = grid->_simd_layout;
-    Coordinate processors  = grid->_processors;
+      deviceVector<scalar> dummy(2);
+      FFTW_scalar *buf = (FFTW_scalar *)&dummy[0];
 
-    Coordinate pgdims(Ndim);
-    pgdims[0] = G;
-    for (int d = 0, dd = 1; d < Ndim; d++)
-      if (d != dim) pgdims[dd++] = ldims[d];
-    int64_t pgvol = 1;
-    for (int d = 0; d < Ndim; d++) pgvol *= pgdims[d];
+      forward_plans[d]  = FFTW<scalar>::fftw_plan_many_dft(1, n, howmany, buf, n, 1, G, buf, n, 1, G, FFTW_FORWARD,  FFTW_ESTIMATE);
+      backward_plans[d] = FFTW<scalar>::fftw_plan_many_dft(1, n, howmany, buf, n, 1, G, buf, n, 1, G, FFTW_BACKWARD, FFTW_ESTIMATE);
+    }
+  }
 
-    const int Nsimd = vobj::Nsimd();
-    t_pencil = -usecond();
-    for (int p_idx = 0; p_idx < processors[dim]; p_idx++) {
-      t_copy -= usecond();
-      autoView(r_v, result, AcceleratorRead);
-      accelerator_for(idx, grid->oSites(), vobj::Nsimd(), {
-#ifdef GRID_SIMT
-        {
-          int lane = acceleratorSIMTlane(Nsimd);
-#else
-        for (int lane = 0; lane < Nsimd; lane++) {
-#endif
-          Coordinate icoor, ocoor, pgcoor;
-          Lexicographic::CoorFromIndex(icoor, lane, sdims);
-          Lexicographic::CoorFromIndex(ocoor, idx,  rdims);
+  void PlanDestroy() {
+    for (auto p : forward_plans)  FFTW<scalar>::fftw_destroy_plan(p);
+    for (auto p : backward_plans) FFTW<scalar>::fftw_destroy_plan(p);
+    forward_plans.clear();
+    backward_plans.clear();
+  }
 
-          pgcoor[0] = ocoor[dim] + icoor[dim]*rdims[dim] + ((pc+p_idx)%processors[dim])*L;
-          for (int d = 0, dd = 1; d < Ndim; d++) {
-            if (d != dim) { pgcoor[dd] = ocoor[d] + icoor[d]*rdims[d]; dd++; }
-          }
-          int64_t pgidx;
-          Lexicographic::IndexFromCoor(pgcoor, pgidx, pgdims);
+public:
+  PlannedFFT(GridCartesian *grid) : FFTbase(grid) { PlanCreate(); }
+  ~PlannedFFT() { PlanDestroy(); }
 
-          vector_type   *from = (vector_type *)&r_v[idx];
-          scalar_type    stmp;
-          for (int w = 0; w < Ncomp; w++) {
-            stmp = getlane(from[w], lane);
-            pgbuf_v[pgidx + w*pgvol] = stmp;
-          }
-#ifdef GRID_SIMT
-        }
-#else
-        }
-#endif
-      });
-      t_copy += usecond();
-
-      if (p_idx != processors[dim] - 1) {
-        Lattice<vobj> temp(grid);
-        t_shift -= usecond();
-        temp = Cshift(result, dim, L); result = temp;
-        t_shift += usecond();
+  void FFT_dim_mask(Lattice<vobj> &result, const Lattice<vobj> &source, Coordinate mask, int sign) {
+    const int Ndim = _grid->Nd();
+    Lattice<vobj> tmp = source;
+    for (int d = 0; d < Ndim; d++) {
+      if (mask[d]) {
+        FFT_dim(result, tmp, d, sign);
+        tmp = result;
       }
     }
-    t_pencil += usecond();
+  }
 
-    FFTW_scalar *in  = (FFTW_scalar *)pgbuf_v;
-    FFTW_scalar *out = (FFTW_scalar *)pgbuf_v;
-    t_fft = -usecond();
-    FFTW<scalar_type>::fftw_execute_dft(p, in, out, sign);
-    t_fft += usecond();
+  void FFT_all_dim(Lattice<vobj> &result, const Lattice<vobj> &source, int sign) {
+    Coordinate mask(_grid->Nd(), 1);
+    FFT_dim_mask(result, source, mask, sign);
+  }
 
-    flops_call = 5.0 * howmany * G * log2(G);
-    usec  = t_fft;
-    flops = flops_call;
-
-    result = Zero();
-    double t_insert = -usecond();
-    {
-      autoView(r_v, result, AcceleratorWrite);
-      accelerator_for(idx, grid->oSites(), Nsimd, {
-#ifdef GRID_SIMT
-        {
-          int lane = acceleratorSIMTlane(Nsimd);
-#else
-        for (int lane = 0; lane < Nsimd; lane++) {
-#endif
-          Coordinate icoor(Ndim), ocoor(Ndim), pgcoor(Ndim);
-          Lexicographic::CoorFromIndex(icoor, lane, sdims);
-          Lexicographic::CoorFromIndex(ocoor, idx,  rdims);
-
-          pgcoor[0] = ocoor[dim] + icoor[dim]*rdims[dim] + pc*L;
-          for (int d = 0, dd = 1; d < Ndim; d++) {
-            if (d != dim) { pgcoor[dd] = ocoor[d] + icoor[d]*rdims[d]; dd++; }
-          }
-          int64_t pgidx;
-          Lexicographic::IndexFromCoor(pgcoor, pgidx, pgdims);
-
-          vector_type *to   = (vector_type *)&r_v[idx];
-          scalar_type  stmp;
-          for (int w = 0; w < Ncomp; w++) {
-            stmp = pgbuf_v[pgidx + w*pgvol];
-            putlane(to[w], stmp, lane);
-          }
-#ifdef GRID_SIMT
-        }
-#else
-        }
-#endif
-      });
-    }
-
-    result   = result * div;
-    t_insert += usecond();
-    t_total  += usecond();
-
-    std::cout << GridLogPerformance << " FFT took    " << t_total/1.0e6  << " s" << std::endl;
-    std::cout << GridLogPerformance << " FFT pencil  " << t_pencil/1.0e6 << " s" << std::endl;
-    std::cout << GridLogPerformance << "  of which copy  " << t_copy/1.0e6  << " s" << std::endl;
-    std::cout << GridLogPerformance << "  of which shift " << t_shift/1.0e6 << " s" << std::endl;
-    std::cout << GridLogPerformance << " FFT kernels " << t_fft/1.0e6    << " s" << std::endl;
-    std::cout << GridLogPerformance << " FFT insert  " << t_insert/1.0e6 << " s" << std::endl;
+  void FFT_dim(Lattice<vobj> &result, const Lattice<vobj> &source, int dim, int sign) {
+    GRID_ASSERT(source.Grid() == _grid);
+    GRID_ASSERT(result.Grid() == _grid);
+    GRID_ASSERT((int)forward_plans.size() == _grid->Nd());
+    conformable(result.Grid(), source.Grid());
+    FFTW_plan p = (sign == forward ? forward_plans : backward_plans)[dim];
+    FFT_dim_execute(result, source, dim, sign, p, _grid, flops, flops_call, usec);
   }
 };
 
