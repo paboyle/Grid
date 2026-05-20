@@ -1,23 +1,40 @@
 /*
- * Minimal program demonstrating hipfft HIPFFT_PARSE_ERROR on ROCm 7 / hipFFT 1.0.20.
+ * Isolating the hipfft HIPFFT_PARSE_ERROR on ROCm 7 / hipFFT 1.0.20.
  *
- * Bug: hipfftMakePlanMany returns HIPFFT_PARSE_ERROR (12) for transform sizes
- * smaller than 32 when a hipMalloc is issued before plan creation.
+ * Tests three orderings with an empty rocFFT cache to find which GPU
+ * operation before plan creation triggers the failure:
+ *   A) hipMalloc only            — hypothesis: passes (no async GPU work)
+ *   B) hipMalloc + hipMemset     — hypothesis: fails  (async GPU work in flight)
+ *   C) hipMalloc + hipMemset     — hypothesis: passes (work completed before plan)
+ *      + hipDeviceSynchronize
  *
  * Compile:
  *   hipcc -o Test_hipfft_bug_fail Test_hipfft_bug_fail.cc -lhipfft
  *
- * Run with empty rocFFT cache:
- *   rm -rf ~/.cache/rocfft
+ * Run with empty cache:
+ *   rm -rf ~/.cache/
  *   ./Test_hipfft_bug_fail
- *
- * Expected (broken): hipfftMakePlanMany returns 12 (HIPFFT_PARSE_ERROR) for G < 32.
- * See Test_hipfft_bug_pass.cc for the workaround.
  */
 
 #include <cstdio>
 #include <hipfft/hipfft.h>
 #include <hip/hip_runtime.h>
+
+static const char *res(hipfftResult rv) {
+  return rv == HIPFFT_SUCCESS ? "SUCCESS" : "PARSE_ERROR";
+}
+
+static hipfftResult makePlan(int G, int howmany) {
+  int n[] = {G};
+  hipfftHandle p;
+  size_t workSize = 0;
+  hipfftCreate(&p);
+  hipfftResult rv = hipfftMakePlanMany(p, 1, n,
+                                       nullptr, 1, G, nullptr, 1, G,
+                                       HIPFFT_Z2Z, howmany, &workSize);
+  hipfftDestroy(p);
+  return rv;
+}
 
 int main(void) {
   hipDeviceProp_t prop;
@@ -30,22 +47,25 @@ int main(void) {
 
   for (int G : {8, 16, 32}) {
     int howmany = 512;
-    int n[] = {G};
     long nelems = (long)G * howmany;
-
-    // hipMalloc BEFORE plan creation — triggers HIPFFT_PARSE_ERROR for G < 32
     hipfftDoubleComplex *buf = nullptr;
     hipMalloc(&buf, nelems * sizeof(hipfftDoubleComplex));
 
-    hipfftHandle p;
-    size_t workSize = 0;
-    hipfftCreate(&p);
-    hipfftResult rv = hipfftMakePlanMany(p, 1, n,
-                                         nullptr, 1, G, nullptr, 1, G,
-                                         HIPFFT_Z2Z, howmany, &workSize);
-    printf("G=%-4d  hipMalloc-then-plan: %d (%s)\n",
-           G, (int)rv, rv == HIPFFT_SUCCESS ? "HIPFFT_SUCCESS" : "HIPFFT_PARSE_ERROR");
-    hipfftDestroy(p);
+    // A: hipMalloc only, no GPU work
+    hipfftResult rvA = makePlan(G, howmany);
+    printf("G=%-4d  A) hipMalloc only             : %s\n", G, res(rvA));
+
+    // B: hipMalloc + hipMemset (async GPU work in flight)
+    hipMemset(buf, 0, nelems * sizeof(hipfftDoubleComplex));
+    hipfftResult rvB = makePlan(G, howmany);
+    printf("G=%-4d  B) hipMalloc + hipMemset       : %s\n", G, res(rvB));
+
+    // C: hipMalloc + hipMemset + sync before plan
+    hipMemset(buf, 0, nelems * sizeof(hipfftDoubleComplex));
+    hipDeviceSynchronize();
+    hipfftResult rvC = makePlan(G, howmany);
+    printf("G=%-4d  C) hipMalloc + hipMemset + sync: %s\n\n", G, res(rvC));
+
     hipFree(buf);
   }
 
