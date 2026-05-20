@@ -35,8 +35,11 @@ static const char *hipfftResultString(hipfftResult r) {
   }
 }
 
-// Plan creation + execution for (G, howmany) using hipfftCreate+hipfftMakePlanMany.
-// This is the path Grid's FFT.h now uses.
+// Plan creation + execution for (G, howmany).
+// Tests two orderings to isolate whether a prior hipMalloc poisons hipfft
+// plan creation for small G on ROCm 7:
+//   A) plan BEFORE hipMalloc  — hypothesis: succeeds
+//   B) hipMalloc BEFORE plan  — hypothesis: fails for G < 32
 static void tryPlanAndExec(int G, long howmany) {
   int n[] = {G};
   long nelems = (long)G * howmany;
@@ -44,68 +47,49 @@ static void tryPlanAndExec(int G, long howmany) {
   printf("--- G=%-4d  howmany=%-10ld  total_elems=%-12ld ---\n",
          G, howmany, nelems);
 
-  // Allocate device buffer (hipfftDoubleComplex = 16 bytes each)
-  hipfftDoubleComplex *dbuf = nullptr;
-  hipError_t herr = hipMalloc(&dbuf, nelems * sizeof(hipfftDoubleComplex));
-  if (herr != hipSuccess) {
-    printf("  hipMalloc failed (%d) for %ld elems — skipping\n\n", (int)herr, nelems);
-    return;
-  }
-  hipMemset(dbuf, 0, nelems * sizeof(hipfftDoubleComplex));
-
-  // 1. hipfftPlanMany (one-step, nullptr embed) — current Grid path
-  {
-    hipfftHandle p;
-    hipfftResult rv = hipfftPlanMany(&p, 1, n,
-                                     nullptr, 1, G,
-                                     nullptr, 1, G,
-                                     HIPFFT_Z2Z, (int)howmany);
-    printf("  hipfftPlanMany   create : %d (%s)\n", (int)rv, hipfftResultString(rv));
-    if (rv == HIPFFT_SUCCESS) {
-      rv = hipfftExecZ2Z(p, dbuf, dbuf, HIPFFT_FORWARD);
-      hipDeviceSynchronize();
-      printf("  hipfftPlanMany   execFwd: %d (%s)\n", (int)rv, hipfftResultString(rv));
-      hipfftDestroy(p);
-    }
-  }
-
-  // 2. hipfftCreate + hipfftMakePlanMany (two-step) — also current Grid path
+  // --- A: create plan first, allocate buffer afterwards ---
   {
     hipfftHandle p;
     size_t workSize = 0;
-    hipfftResult rc = hipfftCreate(&p);
-    if (rc == HIPFFT_SUCCESS) {
-      hipfftResult rv = hipfftMakePlanMany(p, 1, n,
-                                           nullptr, 1, G,
-                                           nullptr, 1, G,
-                                           HIPFFT_Z2Z, (int)howmany, &workSize);
-      printf("  hipfftMakePlanMany      : %d (%s)  workSize=%zu\n",
-             (int)rv, hipfftResultString(rv), workSize);
-      if (rv == HIPFFT_SUCCESS) {
-        rv = hipfftExecZ2Z(p, dbuf, dbuf, HIPFFT_FORWARD);
-        hipDeviceSynchronize();
-        printf("  hipfftMakePlanMany exec : %d (%s)\n", (int)rv, hipfftResultString(rv));
-      }
-      hipfftDestroy(p);
-    } else {
-      printf("  hipfftCreate            : %d (%s)\n", (int)rc, hipfftResultString(rc));
-    }
-  }
-
-  // 3. hipfftPlan1d (simplest API, batch = howmany)
-  {
-    hipfftHandle p;
-    hipfftResult rv = hipfftPlan1d(&p, G, HIPFFT_Z2Z, (int)howmany);
-    printf("  hipfftPlan1d     create : %d (%s)\n", (int)rv, hipfftResultString(rv));
+    hipfftCreate(&p);
+    hipfftResult rv = hipfftMakePlanMany(p, 1, n,
+                                         nullptr, 1, G, nullptr, 1, G,
+                                         HIPFFT_Z2Z, (int)howmany, &workSize);
+    printf("  plan-first  create : %d (%s)\n", (int)rv, hipfftResultString(rv));
     if (rv == HIPFFT_SUCCESS) {
-      rv = hipfftExecZ2Z(p, dbuf, dbuf, HIPFFT_FORWARD);
+      hipfftDoubleComplex *buf = nullptr;
+      hipMalloc(&buf, nelems * sizeof(hipfftDoubleComplex));
+      hipMemset(buf, 0, nelems * sizeof(hipfftDoubleComplex));
+      rv = hipfftExecZ2Z(p, buf, buf, HIPFFT_FORWARD);
       hipDeviceSynchronize();
-      printf("  hipfftPlan1d     execFwd: %d (%s)\n", (int)rv, hipfftResultString(rv));
-      hipfftDestroy(p);
+      printf("  plan-first  execFwd: %d (%s)\n", (int)rv, hipfftResultString(rv));
+      hipFree(buf);
     }
+    hipfftDestroy(p);
   }
 
-  hipFree(dbuf);
+  // --- B: hipMalloc first, create plan afterwards ---
+  {
+    hipfftDoubleComplex *buf = nullptr;
+    hipMalloc(&buf, nelems * sizeof(hipfftDoubleComplex));
+    hipMemset(buf, 0, nelems * sizeof(hipfftDoubleComplex));
+
+    hipfftHandle p;
+    size_t workSize = 0;
+    hipfftCreate(&p);
+    hipfftResult rv = hipfftMakePlanMany(p, 1, n,
+                                         nullptr, 1, G, nullptr, 1, G,
+                                         HIPFFT_Z2Z, (int)howmany, &workSize);
+    printf("  malloc-first create : %d (%s)\n", (int)rv, hipfftResultString(rv));
+    if (rv == HIPFFT_SUCCESS) {
+      rv = hipfftExecZ2Z(p, buf, buf, HIPFFT_FORWARD);
+      hipDeviceSynchronize();
+      printf("  malloc-first execFwd: %d (%s)\n", (int)rv, hipfftResultString(rv));
+    }
+    hipfftDestroy(p);
+    hipFree(buf);
+  }
+
   printf("\n");
 }
 
