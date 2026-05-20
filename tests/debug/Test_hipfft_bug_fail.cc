@@ -51,20 +51,23 @@ int main(void) {
     hipfftDoubleComplex *buf = nullptr;
     hipMalloc(&buf, nelems * sizeof(hipfftDoubleComplex));
 
-    // A: hipMalloc only, no GPU work
-    hipfftResult rvA = makePlan(G, howmany);
-    printf("G=%-4d  A) hipMalloc only             : %s\n", G, res(rvA));
+    // Tests ordered so each runs before a prior success can populate the cache.
 
-    // B: hipMalloc + hipMemset (async GPU work in flight)
+    // B first: hipMalloc + hipMemset (async GPU work in flight)
+    // If this fails, A (no hipMemset) will pass, confirming hipMemset is the trigger.
     hipMemset(buf, 0, nelems * sizeof(hipfftDoubleComplex));
     hipfftResult rvB = makePlan(G, howmany);
     printf("G=%-4d  B) hipMalloc + hipMemset       : %s\n", G, res(rvB));
 
-    // C: hipMalloc + hipMemset + sync before plan
+    // C: hipMalloc + hipMemset + sync — does syncing before plan creation fix it?
     hipMemset(buf, 0, nelems * sizeof(hipfftDoubleComplex));
     hipDeviceSynchronize();
     hipfftResult rvC = makePlan(G, howmany);
-    printf("G=%-4d  C) hipMalloc + hipMemset + sync: %s\n\n", G, res(rvC));
+    printf("G=%-4d  C) hipMalloc + hipMemset + sync: %s\n", G, res(rvC));
+
+    // A last: hipMalloc only, no async GPU work — should always pass
+    hipfftResult rvA = makePlan(G, howmany);
+    printf("G=%-4d  A) hipMalloc only             : %s\n\n", G, res(rvA));
 
     hipFree(buf);
   }
