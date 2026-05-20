@@ -113,7 +113,6 @@ int main (int argc, char ** argv)
   Cref= Cref - C;
   std::cout << " invertible check " << norm2(Cref)<<std::endl;
 
-  theFFT.PlanDestroy();
   Stilde=S;
   std::cout<<" Benchmarking FFT of LatticeSpinMatrix  "<<std::endl;
   theFFT.FFT_dim(Stilde,Stilde,0,FFT::forward); std::cout << theFFT.MFlops()<<" mflops "<<std::endl;
