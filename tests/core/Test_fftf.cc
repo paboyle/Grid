@@ -95,7 +95,6 @@ int main (int argc, char ** argv)
   C=C-Ctilde;
   std::cout << "diff scalar "<<norm2(C) << std::endl;
 
-  theFFT.PlanDestroy();
   Stilde = S;
   theFFT.FFT_dim(Stilde,Stilde,0,FFT::forward); std::cout << theFFT.MFlops()<< " "<<theFFT.USec() <<std::endl;
   theFFT.FFT_dim(Stilde,Stilde,1,FFT::forward); std::cout << theFFT.MFlops()<< " "<<theFFT.USec() <<std::endl;
