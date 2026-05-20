@@ -78,9 +78,9 @@ int main (int argc, char ** argv)
   S=Zero();
   S = S+C;
 
-  // PlannedFFT creates all plans at construction; separate instances per vobj type.
-  PlannedFFT<LatticeComplexD>    theFFT(&GRID);
-  PlannedFFT<LatticeSpinMatrixD> theFFT_spin(&GRID);
+  // PlannedFFT is templated on the lattice element type (vector_object), not the Lattice<> itself.
+  PlannedFFT<LatticeComplexD::vector_object>    theFFT(&GRID);
+  PlannedFFT<LatticeSpinMatrixD::vector_object> theFFT_spin(&GRID);
 
   Ctilde=C;
   std::cout<<" Benchmarking PlannedFFT of LatticeComplex  "<<std::endl;
@@ -184,7 +184,7 @@ int main (int argc, char ** argv)
     Ddwf.M(src5,tmp5);
     ref5 = tmp5;
 
-    PlannedFFT<LatticeFermionD> theFFT5(FGrid);
+    PlannedFFT<LatticeFermionD::vector_object> theFFT5(FGrid);
 
     theFFT5.FFT_dim(result5,tmp5,1,FFTbase::forward); tmp5 = result5;
     std::cout<<"Fourier xformed Ddwf 1 "<<norm2(result5)<<std::endl;
