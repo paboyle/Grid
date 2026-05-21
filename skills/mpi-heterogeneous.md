@@ -1,6 +1,6 @@
 ---
 name: mpi-heterogeneous
-description: Diagnose and work around MPI correctness bugs on heterogeneous (CPU+GPU) systems — device buffer aliasing in MPI_Sendrecv, AARCH64 PLT corruption from libfabric, topology-dependent allreduce hangs, and deterministic point-to-point reduction trees as a replacement for MPI_Allreduce.
+description: Diagnose and work around MPI correctness bugs on heterogeneous (CPU+GPU) systems — device buffer aliasing in MPI_Sendrecv, AARCH64 PLT corruption from libfabric, topology-dependent allreduce hangs, mixed-ABI HIP runtime from wrong GTL library (Frontier/ROCm), and deterministic point-to-point reduction trees as a replacement for MPI_Allreduce.
 user-invocable: true
 allowed-tools:
   - Read
@@ -109,6 +109,51 @@ void GlobalSumP2P(double *data, int count, MPI_Comm comm) {
 ```
 
 Grid reference: `USE_GRID_REDUCTION` macro in `Grid/communicator/Communicator_mpi3.cc`.
+
+## Bug Class 4: Mixed HIP ABI from Wrong GTL Library (Frontier / ROCm)
+
+**Symptom**: `HIPFFT_PARSE_ERROR` (error code 12) returned by `hipfftPlanMany` / `hipfftMakePlanMany` / `hipfftPlan1d` for FFT sizes G < 32, but G ≥ 32 succeeds. The failure only occurs with an empty rocFFT kernel cache (`~/.cache/rocfft`); a warm cache may mask it. Host-side operations and GPU kernels that do not invoke rocFFT JIT work correctly.
+
+**Root cause — mixed HIP ABI**: rocFFT uses JIT compilation (via `libamd_comgr`) for small transforms (G < 32); for G ≥ 32 it uses pre-compiled device code bundled in the library, so the JIT path is never exercised. When two HIP runtime versions are loaded in the same process — e.g. `libamdhip64.so.7` (ROCm 7) and `libamdhip64.so.6` (ROCm 6) — the rocFFT JIT cannot complete successfully.
+
+The hidden source of the old library is the Cray MPI GPU Transport Layer. On Frontier, `cray-mpich`'s `libmpi_gtl_hsa.so` may be compiled against `libamdhip64.so.6` (ROCm 6 ABI) even when the loaded ROCm module is 7.0.2. Because `LD_LIBRARY_PATH` picks up the GTL directory before the ROCm 7 library directory, `libamdhip64.so.6` is pulled in first, and both ABI versions end up resident in the process.
+
+**Diagnosis**:
+```bash
+# Check which libamdhip64 versions are actually linked into your binary at runtime
+ldd --verbose ./your_binary 2>&1 | grep amdhip
+# Bad output — two different .so versions:
+#   libamdhip64.so.6 => /opt/rocm-6.4.2/lib/libamdhip64.so.6
+#   libamdhip64.so.7 => /opt/rocm-7.0.2/lib/libamdhip64.so.7
+# Good output — only one:
+#   libamdhip64.so.7 => /opt/rocm-7.0.2/lib/libamdhip64.so.7
+```
+
+If two versions appear, the problem is the GTL/LD_LIBRARY_PATH ordering.
+
+**Fix — correct module stack and LD_LIBRARY_PATH ordering (Frontier)**:
+```bash
+module load cce/21.0.0
+module load cpe/26.03
+module load rocm/7.0.2
+# Prepend CRAY_LD_LIBRARY_PATH so the ROCm-7-aware GTL is found first
+export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+# Ensure ROCm 7 LLVM libs (needed by libamd_comgr JIT) are on the path
+export LD_LIBRARY_PATH=/opt/rocm-7.0.2/lib/llvm/lib/:$LD_LIBRARY_PATH
+```
+
+The critical step is prepending `CRAY_LD_LIBRARY_PATH`: this ensures the GTL library built against the ROCm 7 ABI is resolved before any older version that may appear further down `LD_LIBRARY_PATH`. Without this step, a stale symlink or directory ordering can silently load the wrong `libmpi_gtl_hsa.so`.
+
+**Reproducer**: `tests/debug/Test_hipfft_repro.cc` — standalone hipFFT test (no Grid headers) that sweeps G and howmany values matching realistic Grid lattice geometries. Compile with:
+```bash
+hipcc -o Test_hipfft_repro Test_hipfft_repro.cc -lhipfft
+rm -rf ~/.cache/rocfft   # empty cache required to trigger JIT path
+./Test_hipfft_repro
+```
+
+**Reference**: `systems/WorkArounds.txt`, Frontier section — GPU mapping, XPMEM, and `FI_MR_CACHE_MONITOR=disabled` settings for Frontier are documented there.
+
+**Systems affected**: Frontier (ORNL, MI250X). Likely applies to any Cray PE system where the loaded `cray-mpich` GTL was compiled against an older ROCm ABI than the runtime ROCm module. LumiG (CSC, MI250X) uses the same Cray PE and may exhibit the same issue.
 
 ## Compile-Time Guard Structure
 

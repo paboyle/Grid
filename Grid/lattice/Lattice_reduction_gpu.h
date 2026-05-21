@@ -198,7 +198,7 @@ __global__ void reduceKernel(const vobj *lat, sobj *buffer, Iterator n) {
 // Possibly promote to double and sum
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define GRID_REDUCTION_TIMING
+#undef GRID_REDUCTION_TIMING
 
 template <class vobj>
 inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osites)
@@ -230,7 +230,7 @@ inline typename vobj::scalar_objectD sumD_gpu_small(const vobj *lat, Integer osi
   acceleratorCopyFromDevice(buffer_v,&result,sizeof(result));
 #ifdef GRID_REDUCTION_TIMING
   t_d2h += usecond();
-  std::cout << GridLogMessage << "  sumD_gpu_small"
+  std::cout << GridLogDebug << "  sumD_gpu_small"
             << " sizeof(sobj)=" << sizeof(sobj)
             << " blocks=" << numBlocks << " threads=" << numThreads
             << " kernel+barrier=" << t_kernel << " us"
@@ -362,7 +362,7 @@ inline void sumD_gpu_reduce_words(const vobj *lat, Integer osites,
   acceleratorCopyFromDevice(buffer_v, &result, sizeof(result));
 #ifdef GRID_REDUCTION_TIMING
   t_d2h += usecond();
-  std::cout << GridLogMessage << " sumD_gpu_reduce_words R=" << R
+  std::cout << GridLogDebug << " sumD_gpu_reduce_words R=" << R
             << " base=" << base
             << " kernel=" << t_kernel << " D2H=" << t_d2h << " us" << std::endl;
 #endif
@@ -391,7 +391,7 @@ inline typename vobj::scalar_objectD sumD_gpu_large(const vobj *lat, Integer osi
   while (w      <  words) { sumD_gpu_reduce_words< 1>(lat, osites, ret_p, w); w +=  1; }
 #ifdef GRID_REDUCTION_TIMING
   t_large += usecond();
-  std::cout << GridLogMessage << "sumD_gpu_large"
+  std::cout << GridLogDebug << "sumD_gpu_large"
             << " sizeof(sobjD)=" << sizeof(sobjD)
             << " words=" << words << " total=" << t_large << " us" << std::endl;
 #endif
