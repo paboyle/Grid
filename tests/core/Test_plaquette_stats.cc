@@ -197,7 +197,9 @@ int main(int argc, char** argv)
             Lexicographic::CoorFromIndex(lc, s, grid._ldimensions);
             for (int d = 0; d < Nd; d++)
               gc[d] = grid._processor_coor[d] * grid._ldimensions[d] + lc[d];
-            std::cout << "BELOW_THRESHOLD  plane=" << planeName(mu, nu)
+            std::cerr << "BELOW_THRESHOLD  plane=" << planeName(mu, nu)
+                      << "  global=(" << grid._processor_coor[0] << "," << grid._processor_coor[1] << "," << grid._processor_coor[2] << "," << grid._processor_coor[3] << ")"
+                      << "  dim=(" << grid._ldimensions[0] << "," << grid._ldimensions[1] << "," << grid._ldimensions[2] << "," << grid._ldimensions[3] << ")"
                       << "  site=(" << gc[0] << "," << gc[1] << "," << gc[2] << "," << gc[3] << ")"
                       << "  P=" << std::setprecision(10) << val << std::endl;
           }
