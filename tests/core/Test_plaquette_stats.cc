@@ -49,6 +49,19 @@ See the full license in the file "LICENSE" in the top level distribution directo
 using namespace std;
 using namespace Grid;
 
+template<class T>
+static void writeFile(T& in, const std::string& fname)
+{
+#ifdef HAVE_LIME
+  std::cout << GridLogMessage << "Writing: " << fname << std::endl;
+  Grid::emptyUserRecord record;
+  Grid::ScidacWriter WR(in.Grid()->IsBoss());
+  WR.open(fname);
+  WR.writeScidacFieldRecord(in, record, 0);
+  WR.close();
+#endif
+}
+
 // Return the plane label string for output
 static std::string planeName(int mu, int nu)
 {
@@ -141,6 +154,10 @@ int main(int argc, char** argv)
   plaq_all = Zero();
   int Nplanes = 0;
 
+  // Per-site running sum over planes (Re Tr/Nc, normalised per plane)
+  LatticeRealD plaq_sum(&grid);
+  plaq_sum = Zero();
+
   std::cout << GridLogMessage
             << "======== Per-plane plaquette statistics ========" << std::endl;
   std::cout << GridLogMessage
@@ -190,6 +207,7 @@ int main(int argc, char** argv)
                 << std::endl;
 
       if (doThresh) {
+        std::vector<RealD> vr(sv.size(), 0.0);
         for (int s = 0; s < (int)sv.size(); s++) {
           RealD val = TensorRemove(sv[s]).real() / Nc;
           if (val < threshold) {
@@ -200,11 +218,19 @@ int main(int argc, char** argv)
             std::cout << "BELOW_THRESHOLD  plane=" << planeName(mu, nu)
                       << "  site=(" << gc[0] << "," << gc[1] << "," << gc[2] << "," << gc[3] << ")"
                       << "  P=" << std::setprecision(10) << val << std::endl;
+            vr[s] = val;
           }
         }
+        LatticeRealD plaqRe(&grid);
+        vectorizeFromLexOrdArray(vr, plaqRe);
+        plaq_sum = plaq_sum + plaqRe;
       }
     }
   }
+
+  // Write per-site sum of below-threshold plaquette values over all planes
+  if (doThresh)
+    writeFile(plaq_sum, "./plaq_sum");
 
   // ---- Overall (averaged over all planes) statistics ----
   // plaq_all = sum of Tr[...] over all 6 (mu,nu) planes
