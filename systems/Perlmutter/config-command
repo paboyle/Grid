@@ -1,12 +1,12 @@
 DIR=`pwd`
-PREFIX=$HOME/DDHMC/Grid/systems/Prerequisites/install/
+
 ../../configure \
     --enable-comms=mpi \
     --enable-simd=GPU \
     --enable-shm=nvlink \
     --enable-gen-simd-width=64 \
-    --with-gmp=$PREFIX \
-    --with-mpfr=$PREFIX \
+    --with-gmp=$GMP \
+    --with-mpfr=$MPFR \
     --enable-accelerator=cuda \
     --disable-fermion-reps \
     --disable-unified \
