@@ -53,6 +53,7 @@ NAMESPACE_CHECK(approx);
 #include <Grid/algorithms/deflation/MultiRHSBlockCGLinalg.h>
 // Not really deflation, but useful
 #include <Grid/algorithms/blas/MomentumProject.h>
+#include <Grid/algorithms/blas/A2ASpatialSum.h>
 NAMESPACE_CHECK(deflation);
 #include <Grid/algorithms/iterative/ConjugateGradient.h>
 NAMESPACE_CHECK(ConjGrad);
