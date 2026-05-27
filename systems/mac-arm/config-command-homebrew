@@ -7,7 +7,6 @@
 CXX=mpicxx ../../configure \
     --enable-simd=GEN \
     --enable-comms=mpi-auto \
-    --enable-Sp=yes \
     --enable-unified=yes \
     --prefix="${HOME}/Grid-install" \
     --with-lime="${CLIME}" \
@@ -15,4 +14,7 @@ CXX=mpicxx ../../configure \
     --with-gmp="${GMP}" \
     --with-mpfr="${MPFR}" \
     --with-fftw="${FFTW}" \
+    --disable-Sp \
+    --disable-fermion-reps \
+    --disable-gparity \
     --disable-debug
