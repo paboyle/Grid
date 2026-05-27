@@ -30,6 +30,9 @@ Key configure options:
 | `--enable-Nc=` | `3` (default), `2`, `4`, `5` |
 | `--with-gmp=`, `--with-mpfr=`, `--with-fftw=`, `--with-lime=` | paths to libs |
 | `--enable-hdf5`, `--enable-mkl`, `--enable-lapack` | optional features |
+| `--enable-debug=yes` | adds `-g`, removes `-O3` |
+
+Use `make V=1` for verbose compiler output (shows full flags; required for bug reports).
 
 Platform recipes from `README.md`:
 - **KNL**: `--enable-simd=KNL --enable-comms=mpi3-auto --enable-mkl`
@@ -96,3 +99,17 @@ GPU support is injected via macros (`accelerator_for`, `accelerator_for2dNB`). T
 - The `RealD`/`RealF`/`ComplexD`/`ComplexF` typedefs are used everywhere; avoid raw `double`/`float`.
 - Logging uses `Grid_log`, `Grid_error` macros (from `Grid/log/`); performance-critical paths use the `GRID_TRACE` / timer macros from `Grid/perfmon/`.
 - Reductions across MPI ranks go through `GridBase::GlobalSum` / `GlobalMax`; never reduce with bare MPI calls inside library code.
+
+## Skills
+
+`skills/` contains seven user-invocable Claude Code skills encoding deep domain knowledge for HPC work in this repo. Invoke with `/skill-name` or ask Claude to use them by name:
+
+| Skill | When to use |
+|-------|-------------|
+| `gpu-memory-performance` | Bandwidth/occupancy problems — `acceleratorThreads()` pitfalls, `coalescedRead/Write`, fused vs staged HBM patterns |
+| `gpu-runtime-correctness` | Wrong answers, non-deterministic results, premature `q.wait()` returns |
+| `communication-overlap` | Designing GPU+MPI overlap pipelines; replacing broken accelerator-aware MPI paths with host-staged 7-phase pipeline |
+| `mpi-heterogeneous` | Collective hangs, buffer aliasing in `MPI_Sendrecv`, heterogeneous topology bugs |
+| `hang-diagnosis` | Distinguishing ioctl hangs, infinite poll loops, collective deadlocks, and silent wrong-answer races |
+| `correctness-verification` | Reproducibility checksums, double-wait testing, bisecting non-deterministic failures |
+| `compiler-validation` | Confirming compiler/optimisation flags are safe before production runs |

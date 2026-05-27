@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Configure Grid from a build directory two levels below the source root,
+# e.g.: mkdir -p systems/mac-arm/build && cd systems/mac-arm/build && bash ../config-command-homebrew
+#
+# Prerequisites: source sourceme-homebrew.sh first.
+
+CXX=mpicxx ../../configure \
+    --enable-simd=GEN \
+    --enable-comms=mpi-auto \
+    --enable-Sp=yes \
+    --enable-unified=yes \
+    --prefix="${HOME}/Grid-install" \
+    --with-lime="${CLIME}" \
+    --with-openssl="${OPENSSL}" \
+    --with-gmp="${GMP}" \
+    --with-mpfr="${MPFR}" \
+    --with-fftw="${FFTW}" \
+    --disable-debug
