@@ -113,6 +113,14 @@ accelerator_inline RealD    adj(const RealD  & r){ return r; }
 accelerator_inline ComplexD adj(const ComplexD& r){ return(conjugate(r)); }
 accelerator_inline ComplexF adj(const ComplexF& r ){ return(conjugate(r)); }
 
+#if defined(GRID_CUDA) || defined(GRID_HIP)
+//Provide for convenience
+accelerator_inline std::complex<double> conjugate(const std::complex<double>& r){ return(conj(r)); }
+accelerator_inline std::complex<float>  conjugate(const std::complex<float>& r) { return(conj(r)); }
+accelerator_inline std::complex<double> adj(const std::complex<double>& r)      { return(conj(r)); }
+accelerator_inline std::complex<float>  adj(const std::complex<float>& r)       { return(conj(r)); }
+#endif
+
 accelerator_inline RealF real(const RealF  & r){ return r; }
 accelerator_inline RealD real(const RealD  & r){ return r; }
 accelerator_inline RealF real(const ComplexF  & r){ return r.real(); }
