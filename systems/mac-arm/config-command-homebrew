@@ -14,7 +14,7 @@ CXX=mpicxx ../../configure \
     --with-gmp="${GMP}" \
     --with-mpfr="${MPFR}" \
     --with-fftw="${FFTW}" \
-    --disable-Sp \
+    --enable-Sp=no \
     --disable-fermion-reps \
     --disable-gparity \
     --disable-debug
