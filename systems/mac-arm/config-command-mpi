@@ -3,12 +3,14 @@
 CXX=mpicxx ../../configure \
 	   --enable-simd=GEN \
 	   --enable-comms=mpi-auto \
-	   --enable-Sp=yes \
 	   --enable-unified=yes \
-	   --prefix /Users/peterboyle/QCD/vtk/Grid/install \
+	   --disable-fermion-reps \
+	   --disable-gparity \
+	   --prefix /Users/peterboyle/QCD/Grid-install \
 	   --with-lime=$CLIME \
 	   --with-openssl=$OPENSSL \
 	   --with-gmp=$GMP \
 	   --with-mpfr=$MPFR \
-	   --disable-debug 
+	   --with-fftw=$FFTW \
+	   --disable-debug
 
