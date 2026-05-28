@@ -1,11 +1,21 @@
 /*
- * Minimal reproducer for hipfftMakePlanMany / hipfftPlanMany failures.
+ * Reproducer for HIPFFT_PARSE_ERROR (error 12) from hipfftMakePlanMany on
+ * ROCm 7 / hipFFT 1.0.20 (Frontier, MI210 login and MI250X compute nodes).
+ *
+ * Observed failure: G < 32 returns HIPFFT_PARSE_ERROR from all three plan
+ * creation APIs (hipfftPlanMany, hipfftMakePlanMany, hipfftPlan1d) when a
+ * device buffer is allocated and zeroed with hipMalloc+hipMemset before the
+ * plan creation call.  G >= 32 succeeds.
+ *
+ * Contrast with Test_hipfft_minimal.cc (plan-first ordering) which passes
+ * for all G even with an empty rocFFT cache.
  *
  * Compile on Frontier (no Grid headers needed):
- *   hipcc -o Test_hipfft_minimal Test_hipfft_minimal.cc -lhipfft
+ *   hipcc -o Test_hipfft_repro Test_hipfft_repro.cc -lhipfft
  *
- * Run:
- *   ./Test_hipfft_minimal
+ * Run with empty cache to reproduce the failure:
+ *   rm -rf ~/.cache/rocfft
+ *   ./Test_hipfft_repro
  */
 
 #include <cstdio>
@@ -35,11 +45,8 @@ static const char *hipfftResultString(hipfftResult r) {
   }
 }
 
-// Plan creation + execution for (G, howmany).
-// Tests two orderings to isolate whether a prior hipMalloc poisons hipfft
-// plan creation for small G on ROCm 7:
-//   A) plan BEFORE hipMalloc  — hypothesis: succeeds
-//   B) hipMalloc BEFORE plan  — hypothesis: fails for G < 32
+// Plan creation + execution for (G, howmany) using hipfftCreate+hipfftMakePlanMany.
+// This is the path Grid's FFT.h now uses.
 static void tryPlanAndExec(int G, long howmany) {
   int n[] = {G};
   long nelems = (long)G * howmany;
