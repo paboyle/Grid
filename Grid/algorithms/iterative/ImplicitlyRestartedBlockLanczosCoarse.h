@@ -288,17 +288,21 @@ public:
       
       //----------------------------------------------------------------------
       if ( Nm>Nk ) {
-	//        Glog <<" #Apply shifted QR transformations "<<std::endl;
-        //int k2 = Nk+Nu;
+        Glog <<" #Ritz values of poly(A) before shift ["<<Nm<<" values]:"<<std::endl;
+        for(int i=0; i<Nm; ++i){
+          std::cout.precision(8);
+          std::cout << "[" << std::setw(4)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
+          std::cout << "Rval = "<<std::setw(16)<< std::setiosflags(std::ios_base::left)<< eval2[i] << std::endl;
+        }
+
         int k2 = Nk;
-      
+
         Eigen::MatrixXcd BTDM = Eigen::MatrixXcd::Identity(Nm,Nm);
         Q = Eigen::MatrixXcd::Identity(Nm,Nm);
-        
+
         unpackHermitBlockTriDiagMatToEigen(lmd,lme,Nu,Nblock_m,Nm,Nm,BTDM);
 
         for(int ip=Nk; ip<Nm; ++ip){
-	  Glog << " ip "<<ip<<" / "<<Nm<<std::endl;
           shiftedQRDecompEigen(BTDM,Nu,Nm,eval2[ip],Q);
         }
         
@@ -326,11 +330,11 @@ public:
         Qt = Eigen::MatrixXcd::Identity(Nm,Nm);
         diagonalize(eval2,lmd2,lme2,Nu,Nk,Nm,Qt,grid);
         _sort.push(eval2,Nk);
-	//	Glog << "#Ritz value after shift: "<< std::endl;
+        Glog << "#Ritz values of poly(A) after shift ["<<Nk<<" values]:"<<std::endl;
         for(int i=0; i<Nk; ++i){
-	  //	  std::cout.precision(13);
-	  //	  std::cout << "[" << std::setw(4)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
-	  //	  std::cout << "Rval = "<<std::setw(20)<< std::setiosflags(std::ios_base::left)<< eval2[i] << std::endl;
+          std::cout.precision(8);
+          std::cout << "[" << std::setw(4)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
+          std::cout << "Rval = "<<std::setw(16)<< std::setiosflags(std::ios_base::left)<< eval2[i] << std::endl;
         }
       }
       //----------------------------------------------------------------------
@@ -710,11 +714,17 @@ private:
     //lme[0][L] = beta;
     
     for (int u=0; u<Nu; ++u) {
-      //      Glog << "norm2(w[" << u << "])= "<< norm2(w[u]) << std::endl;
       GRID_ASSERT (!isnan(norm2(w[u])));
-      for (int k=L+u; k<R; ++k) {
-	//        Glog <<" In block "<< b << "," <<" beta[" << u << "," << k-L << "] = " << lme[u][k] << std::endl;
-      }
+    }
+    // Diagnostic: print alpha (lmd) and beta (lme) block diagonals for this step
+    {
+      Glog << " blk b="<<std::setw(3)<<b<<"  alpha:";
+      for (int u=0; u<Nu; ++u)
+        std::cout << " " << std::setw(10) << std::setprecision(6) << real(lmd[u][L+u]);
+      std::cout << "   |beta|:";
+      for (int u=0; u<Nu; ++u)
+        std::cout << " " << std::setw(10) << std::setprecision(6) << abs(lme[u][L+u]);
+      std::cout << std::endl;
     }
     //    Glog << "LinAlg done "<< std::endl;
 

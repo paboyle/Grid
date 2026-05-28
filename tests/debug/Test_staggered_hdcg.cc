@@ -202,12 +202,43 @@ int main(int argc, char **argv)
   CoarseVector pm_src(CoarseMrhs); pm_src = ComplexD(1.0);
   PowerMethod<CoarseVector> cPM;
   RealD lambda_max = cPM(MrhsCoarseOp, pm_src);
-  RealD lambda_lo  = mass * mass * 0.5;
+  // Chebyshev filter window [lo, hi]:
+  //   lo must sit in the spectral gap between the Nstop-th and (Nstop+1)-th
+  //   coarse eigenvalues so that only the target modes receive cosh amplification.
+  //
+  // From a pilot run (16^4 fine, 4^4 coarse, mass=0.05, hot config):
+  //   Group 1 (near-null, 24 modes): lambda in [0.002647, 0.002746]  ~= mass^2
+  //   Spectral gap: factor 60 (lambda_24/lambda_23 = 0.165/0.00275)
+  //   Group 2 (second group): lambda in [0.165, 0.179]
+  //
+  // lo = 0.02 sits in the spectral gap (factor 7x above lambda_23=0.00275,
+  // factor 8x below lambda_24=0.165).
+  //   hi = lambda_max_coarse * 1.1 ~= 2.121
+  //   y(lambda_0=0.002647)  ~ -1.016 -> T_70 ~ 1.7e5  (cosh(70*0.182))
+  //   y(lambda_23=0.002746) ~ -1.015 -> T_70 ~ 1.6e5
+  //   Relative spread across near-null cluster: ~4.3%
+  //   y(lambda_24=0.165)    ~ -0.862 -> inside [lo,hi] -> |T_70| <= 1
+  //
+  // order=71 (degree 70) is needed to give ~4% relative spread across the
+  // near-null cluster of 24 nearly-degenerate eigenvalues; order=31 (tried)
+  // gave only ~1.7% spread, insufficient for Nk=24/Nm=48 to converge.
+  // Absolute amplification ~1e5; what matters for IRL convergence is the
+  // relative spread, not the absolute value.
+  // lo=0.005 failed (T_70~53, 0/24 modes in 10 restarts).
+  // lo=0.01 worked but needed 2 restarts (13/24 then 24/24); lo=0.02 converges in 1.
+  RealD lambda_lo  = 0.02;
+
+  std::cout << GridLogMessage << "Chebyshev filter: lo=" << lambda_lo
+            << " hi=" << lambda_max*1.1 << " order=71" << std::endl;
 
   Chebyshev<CoarseVector> IRLCheby(lambda_lo, lambda_max * 1.1, 71);
 
-  int Nk    = 48;
-  int Nm    = 96;
+  // 24 near-null modes (eigenvalues ~mass^2) converge to resid^2~1e-28
+  // in the first Lanczos restart.  The remaining modes (~0.165) are a
+  // second spectral group that needs more Krylov vectors; handle them
+  // separately once the basic HDCG solve is validated.
+  int Nk    = 24;
+  int Nm    = 48;
   int Nstop = Nk;
 
   GridParallelRNG CRNG(Coarse4d); CRNG.SeedFixedIntegers({13,14,15,16});
@@ -238,9 +269,39 @@ int main(int argc, char **argv)
   DoNothingGuesser<CoarseVector>  DoNothing;
   HPDSolver<CoarseVector> HPDSolve(MrhsCoarseOp, CoarseCG, DoNothing);
 
-  // Shifted smoother: CG on (HermOp + shift) damps low modes efficiently.
-  // Shift ~ m^2 sits just above the spectral gap.
-  RealD smootherShift = mass * mass;
+  // Spectral radius of the fine operator, needed for the smoother shift.
+  // Use a random checkerboard vector (UrbGrid) as starting guess for PowerMethod.
+  LatticeStaggeredFermionD fine_pm_src(UrbGrid);
+  random(RNGrb, fine_pm_src);
+  PowerMethod<LatticeStaggeredFermionD> finePM;
+  RealD fine_lambda_max = finePM(HermOp, fine_pm_src);
+
+  // Shifted smoother: CG on (HermOp + shift*I) with shift = lambda_max / 100.
+  //
+  // The O(8) CG polynomial has 8 roots. With this shift all 8 roots lie in the
+  // interval [shift, lambda_max + shift] ~ [0.046, 4.65], so the polynomial
+  // focuses entirely on the HIGH-frequency part of the spectrum and leaves
+  // near-null modes (lambda << shift) essentially untouched (polynomial ~ 1 there).
+  //
+  // This is the right target because the coarse-grid correction always introduces
+  // high-frequency spectral leakage: the blocked coarse-grid degrees of freedom
+  // are piecewise constant across coarse cells and therefore have sharp edges at
+  // cell boundaries (like lego-block edges). Smoothness is measured by the
+  // covariant Dirac derivative, so promoting the coarse solution back to the
+  // fine grid inevitably excites high-frequency components — just as a step
+  // function always carries high-frequency Fourier content.  The smoother must
+  // repair exactly these high modes.
+  //
+  // The smoother and the coarse-grid correction are applied alternately: together
+  // they both lift the low eigenvalues and pull down the upper eigenvalues of the
+  // composite preconditioned operator, reducing the condition number seen by the
+  // outer HDCG iterations.
+  //
+  // DWF HDCG convention; using mass^2 = 0.0025 was far too small: it scattered
+  // the 8 roots over [0.005, 4.6] and diluted their effect on the high modes.
+  RealD smootherShift = fine_lambda_max / 200.0;
+  std::cout << GridLogMessage << "Smoother shift: lambda_max_fine/200 = "
+            << fine_lambda_max << "/200 = " << smootherShift << std::endl;
   ShiftedHermOpLinearOperator<LatticeStaggeredFermionD> ShiftedOp(HermOp, smootherShift);
   CGSmoother<LatticeStaggeredFermionD> smoother(8, ShiftedOp);
 
@@ -266,6 +327,34 @@ int main(int argc, char **argv)
     sol[r] = Zero();
   }
 
+  //--------------------------------------------------------------------
+  // Baseline: standard single-RHS CG on HermOp (no preconditioning)
+  // Run before HDCG to establish the unpreconditioned iteration count
+  // and wall-clock time for direct comparison.
+  //--------------------------------------------------------------------
+  {
+    ConjugateGradient<LatticeStaggeredFermionD> CG(1.0e-8, 50000, false);
+    std::vector<LatticeStaggeredFermionD> cg_sol(nrhs, UrbGrid);
+    for (int r = 0; r < nrhs; r++) cg_sol[r] = Zero();
+
+    RealD t0 = usecond();
+    int total_iters = 0;
+    for (int r = 0; r < nrhs; r++) {
+      std::cout << GridLogMessage << "====== CG baseline RHS " << r
+                << " ======" << std::endl;
+      CG(HermOp, src[r], cg_sol[r]);
+      total_iters += CG.IterationsToComplete;
+    }
+    RealD t1 = usecond();
+    std::cout << GridLogMessage << "CG baseline: " << nrhs << " RHS, "
+              << total_iters << " total iterations, "
+              << (t1 - t0) / 1.0e6 << " s total, "
+              << (t1 - t0) / 1.0e6 / nrhs << " s/RHS" << std::endl;
+  }
+
+  //--------------------------------------------------------------------
+  // HDCG solve
+  //--------------------------------------------------------------------
   HDCG(src, sol);
 
   Grid_finalize();
