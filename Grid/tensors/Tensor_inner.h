@@ -32,6 +32,33 @@ Author: Christoph Lehner <christoph@lhnr.de>
 
 NAMESPACE_BEGIN(Grid);
 
+//////////////////////////////////////
+// innerProductD scalar overloads must be visible before norm2 is defined
+//////////////////////////////////////
+accelerator_inline ComplexD innerProductD(const ComplexF &l,const ComplexF &r){  return innerProduct(l,r); }
+accelerator_inline ComplexD innerProductD(const ComplexD &l,const ComplexD &r){  return innerProduct(l,r); }
+accelerator_inline RealD    innerProductD(const RealD    &l,const RealD    &r){  return innerProduct(l,r); }
+accelerator_inline RealD    innerProductD(const RealF    &l,const RealF    &r){  return innerProduct(l,r); }
+
+accelerator_inline vComplexD innerProductD(const vComplexD &l,const vComplexD &r){  return innerProduct(l,r); }
+accelerator_inline vRealD    innerProductD(const vRealD    &l,const vRealD    &r){  return innerProduct(l,r); }
+accelerator_inline vComplexD innerProductD(const vComplexF &l,const vComplexF &r)
+{
+  vComplexD la,lb;
+  vComplexD ra,rb;
+  Optimization::PrecisionChange::StoD(l.v,la.v,lb.v);
+  Optimization::PrecisionChange::StoD(r.v,ra.v,rb.v);
+  return innerProduct(la,ra) + innerProduct(lb,rb);
+}
+accelerator_inline vRealD innerProductD(const vRealF &l,const vRealF &r)
+{
+  vRealD la,lb;
+  vRealD ra,rb;
+  Optimization::PrecisionChange::StoD(l.v,la.v,lb.v);
+  Optimization::PrecisionChange::StoD(r.v,ra.v,rb.v);
+  return innerProduct(la,ra) + innerProduct(lb,rb);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////
 // innerProduct Scalar x Scalar -> Scalar
 // innerProduct Vector x Vector -> Scalar
@@ -138,30 +165,8 @@ auto Reduce (const iScalar<l>& lhs) -> iScalar<decltype(Reduce(lhs._internal))>
 
 //////////////////////////////////////
 // innerProductD : if single promote to double and evaluate with sum 2x
+// (scalar/vector overloads are declared above norm2 for ADL visibility)
 //////////////////////////////////////
-accelerator_inline ComplexD innerProductD(const ComplexF &l,const ComplexF &r){  return innerProduct(l,r); }
-accelerator_inline ComplexD innerProductD(const ComplexD &l,const ComplexD &r){  return innerProduct(l,r); }
-accelerator_inline RealD    innerProductD(const RealD    &l,const RealD    &r){  return innerProduct(l,r); }
-accelerator_inline RealD    innerProductD(const RealF    &l,const RealF    &r){  return innerProduct(l,r); }
-
-accelerator_inline vComplexD innerProductD(const vComplexD &l,const vComplexD &r){  return innerProduct(l,r); }
-accelerator_inline vRealD    innerProductD(const vRealD    &l,const vRealD    &r){  return innerProduct(l,r); }
-accelerator_inline vComplexD innerProductD(const vComplexF &l,const vComplexF &r)
-{  
-  vComplexD la,lb;
-  vComplexD ra,rb;
-  Optimization::PrecisionChange::StoD(l.v,la.v,lb.v);
-  Optimization::PrecisionChange::StoD(r.v,ra.v,rb.v);
-  return innerProduct(la,ra) + innerProduct(lb,rb); 
-}
-accelerator_inline vRealD innerProductD(const vRealF &l,const vRealF &r)
-{  
-  vRealD la,lb;
-  vRealD ra,rb;
-  Optimization::PrecisionChange::StoD(l.v,la.v,lb.v);
-  Optimization::PrecisionChange::StoD(r.v,ra.v,rb.v);
-  return innerProduct(la,ra) + innerProduct(lb,rb); 
-}
 
 // Now do it for vector, matrix, scalar
 template<class l,class r,int N> accelerator_inline
