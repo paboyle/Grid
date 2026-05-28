@@ -387,9 +387,34 @@ void A2ALoopPropagator(PropagatorField &loop,
                        const std::vector<FermionField> &loop1,
                        const std::vector<FermionField> &loop2)
 {
-  loop = Zero();
-  for (unsigned int k = 0; k < loop1.size(); ++k)
-    loop += outerProduct(loop1[k], loop2[k]);
+  int Nk      = (int)loop1.size();
+  uint64_t oSites = loop.Grid()->oSites();
+  int Nsimd   = SpinColourVector_v::Nsimd();
+
+  typedef decltype(loop1[0].View(AcceleratorRead)) View;
+  std::vector<View> v1, v2;
+  v1.reserve(Nk); v2.reserve(Nk);
+  for (int k = 0; k < Nk; k++) {
+    v1.push_back(loop1[k].View(AcceleratorRead));
+    v2.push_back(loop2[k].View(AcceleratorRead));
+  }
+
+  deviceVector<SpinColourVector_v *> l1p(Nk), l2p(Nk);
+  for (int k = 0; k < Nk; k++) {
+    acceleratorPut(l1p[k], &v1[k][0]);
+    acceleratorPut(l2p[k], &v2[k][0]);
+  }
+
+  autoView(loopv, loop, AcceleratorWrite);
+  SpinColourVector_v **l1 = &l1p[0];
+  SpinColourVector_v **l2 = &l2p[0];
+  int lNk = Nk;
+  accelerator_for(ss, oSites, Nsimd, {
+    auto result = outerProduct(coalescedRead(l1[0][ss]), coalescedRead(l2[0][ss]));
+    for (int k = 1; k < lNk; k++)
+      result = result + outerProduct(coalescedRead(l1[k][ss]), coalescedRead(l2[k][ss]));
+    coalescedWrite(loopv[ss], result);
+  });
 }
 
 void A2APackLeftConjugated(FermionField &out, const FermionField &in)
