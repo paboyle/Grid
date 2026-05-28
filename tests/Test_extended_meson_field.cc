@@ -481,14 +481,16 @@ void A2ALoopLeftContractionType3(PropagatorField &tloop, const PropagatorField &
   uint64_t Osites = loop.Grid()->oSites();
   int Nsimd = SpinColourMatrix_v::Nsimd();
   accelerator_for(ss, Osites, Nsimd, {
+    typedef decltype(coalescedRead(loopv[0])) calcSCMatrix;
+    typedef iSpinMatrix<typename calcSCMatrix::vector_type> calcSpinMatrix;
     auto l = loopv(ss);
-    SpinMatrix_v spinLoop; spinLoop = Zero();
+    calcSpinMatrix spinLoop; spinLoop = Zero();
     for (int s1 = 0; s1 < Ns; ++s1)
     for (int s2 = 0; s2 < Ns; ++s2)
       spinLoop()(s1,s2)() = l()(s1,s2)(0,0) + l()(s1,s2)(1,1) + l()(s1,s2)(2,2);
     auto tmp = l; tmp = Zero();
     for (int mu = 0; mu < ng; ++mu) {
-      SpinMatrix_v tmp2 = Gamma(g1[mu]) * spinLoop * Gamma(g2[mu]);
+      calcSpinMatrix tmp2 = Gamma(g1[mu]) * spinLoop * Gamma(g2[mu]);
       for (int s1 = 0; s1 < Ns; ++s1)
       for (int s2 = 0; s2 < Ns; ++s2)
         tmp()(s1,s2)(0,0) = tmp()(s1,s2)(0,0) + tmp2()(s1,s2)();
@@ -514,13 +516,16 @@ void A2ALoopRightContractionType0(FermionField &loopRight,
   uint64_t Osites = right.Grid()->oSites();
   int Nsimd = SpinColourVector_v::Nsimd();
   accelerator_for(ss, Osites, Nsimd, {
+    typedef decltype(coalescedRead(rv[0]))  calcSCVector;
+    typedef decltype(coalescedRead(tlv[0])) calcSCMatrix;
+    typedef iSpinMatrix<typename calcSCMatrix::vector_type> calcSpinMatrix;
     auto loopm  = tlv(ss);
     auto rightv = rv(ss);
-    SpinMatrix_v spinLoop; spinLoop = Zero();
+    calcSpinMatrix spinLoop; spinLoop = Zero();
     for (int s1 = 0; s1 < Ns; ++s1)
     for (int s2 = 0; s2 < Ns; ++s2)
       spinLoop()(s1,s2)() = loopm()(s1,s2)(0,0);
-    SpinColourVector_v lR; lR = Zero();
+    calcSCVector lR; lR = Zero();
     for (int mu = 0; mu < ng; ++mu) {
       auto GLoop   = Gamma(g2[mu]) * spinLoop;
       auto trGLoop = GLoop()(0,0)() + GLoop()(1,1)() + GLoop()(2,2)() + GLoop()(3,3)();
@@ -562,9 +567,10 @@ void A2ALoopRightContractionType2(FermionField &loopRight,
   uint64_t Osites = right.Grid()->oSites();
   int Nsimd = SpinColourVector_v::Nsimd();
   accelerator_for(ss, Osites, Nsimd, {
+    typedef decltype(coalescedRead(rv[0])) calcSCVector;
     auto loopm  = tlv(ss);
     auto rightv = rv(ss);
-    SpinColourVector_v lR; lR = Zero();
+    calcSCVector lR; lR = Zero();
     for (int mu = 0; mu < ng; ++mu) {
       int s1 = mu / Ns;
       int s2 = mu % Ns;
@@ -591,9 +597,10 @@ void A2ALoopRightContractionType3(FermionField &loopRight,
   uint64_t Osites = right.Grid()->oSites();
   int Nsimd = SpinColourVector_v::Nsimd();
   accelerator_for(ss, Osites, Nsimd, {
+    typedef decltype(coalescedRead(rv[0])) calcSCVector;
     auto loopm  = tlv(ss);
     auto rightv = rv(ss);
-    SpinColourVector_v lR; lR = Zero();
+    calcSCVector lR; lR = Zero();
     for (int s = 0; s < Ns; ++s)
     for (int c = 0; c < Nc; ++c)
       lR()(s)(c) = loopm()(s,0)(0,0) * rightv()(0)(c)
