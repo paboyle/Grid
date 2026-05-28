@@ -29,6 +29,7 @@
 *************************************************************************************/
 #include <Grid/Grid.h>
 #include <Grid/algorithms/iterative/AdefMrhs.h>
+#include <Grid/algorithms/iterative/ImplicitlyRestartedBlockLanczos.h>
 #include <Grid/algorithms/iterative/ImplicitlyRestartedBlockLanczosCoarse.h>
 
 using namespace Grid;
