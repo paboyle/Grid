@@ -710,6 +710,11 @@ int main(int argc, char *argv[])
   int N_j   = 8;
   int Nloop = 4;
 
+  if (GridCmdOptionExists(argv, argv+argc, "--Ni"))
+    N_i = std::stoi(GridCmdOptionPayload(argv, argv+argc, "--Ni"));
+  if (GridCmdOptionExists(argv, argv+argc, "--Nj"))
+    N_j = std::stoi(GridCmdOptionPayload(argv, argv+argc, "--Nj"));
+
   GridParallelRNG pRNG(&grid);
   pRNG.SeedFixedIntegers({1, 2, 3, 4});
 
