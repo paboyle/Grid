@@ -665,9 +665,18 @@ public:
     Vector<Gamma::Algebra> gamma2(gamma2_in.begin(), gamma2_in.end());
 
     t0 = usecond();
+    for (auto &f : loop1) { autoView(v, f, AcceleratorRead); }
+    for (auto &f : loop2) { autoView(v, f, AcceleratorRead); }
+    std::cout << GridLogMessage << tag << " view_open_loop:  " << Tms(usecond()-t0) << " ms\n";
+
+    t0 = usecond();
     PropagatorField loop(grid);
     A2ALoopPropagator(loop, loop1, loop2);
     std::cout << GridLogMessage << tag << " loop_build:      " << Tms(usecond()-t0) << " ms\n";
+
+    t0 = usecond();
+    for (int i = 0; i < N_i; i++) { autoView(v, left[i], AcceleratorRead); }
+    std::cout << GridLogMessage << tag << " view_open_left:  " << Tms(usecond()-t0) << " ms\n";
 
     t0 = usecond();
     std::vector<FermionField> leftv(N_i, grid);
@@ -685,6 +694,11 @@ public:
     case 3: A2ALoopLeftContractionType3(tloop, loop, gamma1, gamma2); break;
     }
     std::cout << GridLogMessage << tag << " tloop:           " << Tms(usecond()-t0) << " ms\n";
+
+    t0 = usecond();
+    { autoView(tlv, tloop, AcceleratorRead); }
+    for (int j = 0; j < N_j; j++) { autoView(rv, right[j], AcceleratorRead); }
+    std::cout << GridLogMessage << tag << " view_open_right: " << Tms(usecond()-t0) << " ms\n";
 
     t0 = usecond();
     std::vector<FermionField> loopRight(N_j, grid);
