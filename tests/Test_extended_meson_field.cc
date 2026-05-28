@@ -753,13 +753,13 @@ int main(int argc, char *argv[])
     for (int t  = 0; t  < Nt;  t++)
     for (int ii = 0; ii < N_i; ii++)
     for (int jj = 0; jj < N_j; jj++) {
-      norm2_ref  += std::norm(result_ref(t, ii, jj));
-      norm2_blas += std::norm(result_blas(t, ii, jj));
-      norm2_gpu  += std::norm(result_gpu(t, ii, jj));
+      norm2_ref  += norm2(result_ref(t, ii, jj));
+      norm2_blas += norm2(result_blas(t, ii, jj));
+      norm2_gpu  += norm2(result_gpu(t, ii, jj));
       ComplexD diff_blas = result_ref(t, ii, jj) - result_blas(t, ii, jj);
       ComplexD diff_gpu  = result_ref(t, ii, jj) - result_gpu(t, ii, jj);
-      norm2_diff_blas += std::norm(diff_blas);
-      norm2_diff_gpu  += std::norm(diff_gpu);
+      norm2_diff_blas += norm2(diff_blas);
+      norm2_diff_gpu  += norm2(diff_gpu);
     }
 
     double rel_blas = (norm2_ref > 0) ? std::sqrt(norm2_diff_blas / norm2_ref) : 0.0;
