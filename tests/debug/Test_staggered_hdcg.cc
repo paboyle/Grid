@@ -53,7 +53,9 @@ public:
 
 int main(int argc, char **argv)
 {
+  fprintf(stderr, "TRACE: entering main\n"); fflush(stderr);
   Grid_init(&argc, &argv);
+  fprintf(stderr, "TRACE: Grid_init done\n"); fflush(stderr);
 
   //--------------------------------------------------------------------
   // Parameters — tune for production
@@ -77,52 +79,55 @@ int main(int argc, char **argv)
   // Recommended: GridDefaultLatt() >= 16^4, Block = {4,4,4,4}
   // NaiveStaggeredFermion works with any Block >= {2,2,2,2}
   //--------------------------------------------------------------------
+  fprintf(stderr, "TRACE: making UGrid\n"); fflush(stderr);
   GridCartesian *UGrid = SpaceTimeGrid::makeFourDimGrid(
       GridDefaultLatt(), GridDefaultSimd(Nd, vComplex::Nsimd()), GridDefaultMpi());
+  fprintf(stderr, "TRACE: making UrbGrid\n"); fflush(stderr);
   GridRedBlackCartesian *UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
 
   Coordinate Block({4, 4, 4, 4});
   Coordinate clatt = GridDefaultLatt();
   for (int d = 0; d < clatt.size(); d++) clatt[d] /= Block[d];
+  Coordinate csimd = GridDefaultSimd(Nd, vComplex::Nsimd());
+  Coordinate cmpi  = GridDefaultMpi();
+  fprintf(stderr, "TRACE: making Coarse4d clatt=%d %d %d %d simd=%d %d %d %d mpi=%d %d %d %d Nsimd=%d\n",
+          clatt[0],clatt[1],clatt[2],clatt[3],
+          csimd[0],csimd[1],csimd[2],csimd[3],
+          cmpi[0],cmpi[1],cmpi[2],cmpi[3],
+          (int)vComplex::Nsimd()); fflush(stderr);
 
-  GridCartesian *Coarse4d = SpaceTimeGrid::makeFourDimGrid(
-      clatt, GridDefaultSimd(Nd, vComplex::Nsimd()), GridDefaultMpi());
+  GridCartesian *Coarse4d = SpaceTimeGrid::makeFourDimGrid(clatt, csimd, cmpi);
+  fprintf(stderr, "TRACE: Coarse4d made\n"); fflush(stderr);
 
   //--------------------------------------------------------------------
   // RNG + gauge field
   //--------------------------------------------------------------------
+  fprintf(stderr, "TRACE: RNG4\n"); fflush(stderr);
   GridParallelRNG RNG4(UGrid);    RNG4.SeedFixedIntegers({1,2,3,4});
-  GridParallelRNG RNGrb(UrbGrid); RNGrb.SeedFixedIntegers({5,6,7,8});
-
+  fprintf(stderr, "TRACE: RNGrb\n"); fflush(stderr);
+  GridParallelRNG RNGrb(UGrid); RNGrb.SeedFixedIntegers({5,6,7,8}); // must use full grid, not UrbGrid
+  fprintf(stderr, "TRACE: Umu\n"); fflush(stderr);
   LatticeGaugeField Umu(UGrid);
-  // Hot gauge start for testing; replace with NerscIO::readConfiguration for production
+  fprintf(stderr, "TRACE: HotConfig\n"); fflush(stderr);
   SU<Nc>::HotConfiguration(RNG4, Umu);
-
-  //--------------------------------------------------------------------
-  // Naive staggered fermion + Schur hermitian operator
-  //
-  // NaiveStaggeredFermion: nearest-neighbour hops only, no Naik term.
-  // SchurStaggeredOperator::Op = HermOp = Mpc = m^2 - D_oe * D_eo
-  // Positive-definite hermitian; CG and HDCG apply directly.
-  // No HermOpAdaptor wrapper needed (Op == HermOp for SchurStaggeredOperator).
-  //--------------------------------------------------------------------
+  fprintf(stderr, "TRACE: NaiveStaggeredFermionD\n"); fflush(stderr);
   NaiveStaggeredFermionD Ds(Umu, *UGrid, *UrbGrid, mass, c1, u0);
+  fprintf(stderr, "TRACE: SchurStaggeredOperator\n"); fflush(stderr);
   SchurStaggeredOperator<NaiveStaggeredFermionD, LatticeStaggeredFermionD> HermOp(Ds);
+  fprintf(stderr, "TRACE: HermOp done\n"); fflush(stderr);
 
   //--------------------------------------------------------------------
-  // Subspace: Chebyshev-filtered near-null vectors
+  // Subspace: inverse-iteration near-null vectors
   //
-  // hi = spectral upper bound of HermOp = m^2 + lambda_max(D_oe*D_eo).
-  // For naive staggered (c1=1), lambda_max(SchurStaggeredOperator) ~ 4.6.
-  // Use 5.0 to give a small margin; refine with PowerMethod for each config.
-  // PowerMethod for production.  Progressive Chebyshev filtering
-  // (ChebyshevNew) uses two-pass polynomial filter.
+  // CreateSubspace applies CG (4 solves, tol=1e-4) to random noise vectors,
+  // converging naturally to the low modes of HermOp without needing spectral
+  // bound tuning.  Switch to CreateSubspaceChebyshevNew once the spectrum is
+  // well characterised (hi ~ 5.0 for naive staggered SchurStaggeredOperator).
   //--------------------------------------------------------------------
   typedef Aggregation<vColourVector, vTComplex, nbasis> Subspace;
   Subspace Aggregates(Coarse4d, UrbGrid, cb);
 
-  RealD hi = 5.0;
-  Aggregates.CreateSubspaceChebyshevNew(RNGrb, HermOp, hi);
+  Aggregates.CreateSubspace(RNGrb, HermOp);
   Aggregates.Orthogonalise();
 
   //--------------------------------------------------------------------
@@ -205,7 +210,7 @@ int main(int argc, char **argv)
   int Nm    = 96;
   int Nstop = Nk;
 
-  GridParallelRNG CRNG(CoarseMrhs); CRNG.SeedFixedIntegers({13,14,15,16});
+  GridParallelRNG CRNG(Coarse4d); CRNG.SeedFixedIntegers({13,14,15,16});
 
   ImplicitlyRestartedBlockLanczosCoarse<CoarseVector>
     IRL(MrhsCoarseOp, Coarse4d, CoarseMrhs, nrhs, IRLCheby,
@@ -213,8 +218,8 @@ int main(int argc, char **argv)
 
   int Nconv;
   std::vector<RealD>        eval(Nm);
-  std::vector<CoarseVector> evec(Nm, Coarse4d);
-  std::vector<CoarseVector> c_srcs(nrhs, CoarseMrhs);
+  std::vector<CoarseVector> evec(Nm,   Coarse4d);  // evec on f_grid (single-RHS coarse)
+  std::vector<CoarseVector> c_srcs(nrhs, Coarse4d); // src on same grid as evec
   for (int r = 0; r < nrhs; r++) random(CRNG, c_srcs[r]);
   IRL.calc(eval, evec, c_srcs, Nconv, LanczosType::irbl);
 
@@ -255,7 +260,7 @@ int main(int argc, char **argv)
   std::vector<LatticeStaggeredFermionD> src(nrhs, UrbGrid);
   std::vector<LatticeStaggeredFermionD> sol(nrhs, UrbGrid);
 
-  GridParallelRNG RNGrb2(UrbGrid); RNGrb2.SeedFixedIntegers({17,18,19,20});
+  GridParallelRNG RNGrb2(UGrid); RNGrb2.SeedFixedIntegers({17,18,19,20}); // must use full grid, not UrbGrid
   for (int r = 0; r < nrhs; r++) {
     random(RNGrb2, src[r]);
     sol[r] = Zero();
