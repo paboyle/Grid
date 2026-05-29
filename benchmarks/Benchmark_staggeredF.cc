@@ -102,7 +102,7 @@ int main (int argc, char ** argv)
   FermionField src_o(&RBGrid); pickCheckerboard(Odd,  src_o, src);
   FermionField res_e(&RBGrid); res_e = Zero();
 
-  int ncall=1000;
+  int ncall=10000;
 
   // ImprovedStaggered Dhop
   for(int i=0;i<ncall;i++) Ds.Dhop(src,result,0);

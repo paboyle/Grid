@@ -102,7 +102,7 @@ int main (int argc, char ** argv)
   FermionField src_o(&RBGrid); pickCheckerboard(Odd,  src_o, src);
   FermionField res_e(&RBGrid); res_e = Zero();
 
-  int ncall=100;
+  int ncall=1000;
 
   // ImprovedStaggered Dhop
   for(int i=0;i<ncall;i++) Ds.Dhop(src,result,0);
@@ -110,6 +110,7 @@ int main (int argc, char ** argv)
   for(int i=0;i<ncall;i++) Ds.Dhop(src,result,0);
   double t1=usecond();
   double flops=(16*(3*(6+8+8)) + 15*3*2)*volume*ncall; // 1146 flops/site
+  std::cout<<GridLogMessage << ncall << " ImprovedStaggered Dhop calls in "<< (t1-t0)<<" us"<<std::endl;
   std::cout<<GridLogMessage << "ImprovedStaggered Dhop   mflop/s =   "<< flops/(t1-t0)<<std::endl;
 
   // ImprovedStaggered DhopEO
@@ -118,6 +119,7 @@ int main (int argc, char ** argv)
   for(int i=0;i<ncall;i++) Ds.DhopEO(src_o,res_e,0);
   t1=usecond();
   flops=(16*(3*(6+8+8)) + 15*3*2)*(volume/2)*ncall;
+  std::cout<<GridLogMessage << ncall << " ImprovedStaggered DhopEO calls in "<< (t1-t0)<<" us"<<std::endl;
   std::cout<<GridLogMessage << "ImprovedStaggered DhopEO mflop/s =   "<< flops/(t1-t0)<<std::endl;
 
   // NaiveStaggered Dhop
@@ -126,6 +128,7 @@ int main (int argc, char ** argv)
   for(int i=0;i<ncall;i++) Dn.Dhop(src,result,0);
   t1=usecond();
   flops=(8*(3*(6+8+8)) + 7*3*2)*volume*ncall;
+  std::cout<<GridLogMessage << ncall << " NaiveStaggered Dhop calls in "<< (t1-t0)<<" us"<<std::endl;
   std::cout<<GridLogMessage << "NaiveStaggered    Dhop   mflop/s =   "<< flops/(t1-t0)<<std::endl;
 
   // NaiveStaggered DhopEO
@@ -134,6 +137,7 @@ int main (int argc, char ** argv)
   for(int i=0;i<ncall;i++) Dn.DhopEO(src_o,res_e,0);
   t1=usecond();
   flops=(8*(3*(6+8+8)) + 7*3*2)*(volume/2)*ncall;
+  std::cout<<GridLogMessage << ncall << " NaiveStaggered DhopEO calls in "<< (t1-t0)<<" us"<<std::endl;
   std::cout<<GridLogMessage << "NaiveStaggered    DhopEO mflop/s =   "<< flops/(t1-t0)<<std::endl;
 
   Grid_finalize();
