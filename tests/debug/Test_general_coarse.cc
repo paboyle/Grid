@@ -36,8 +36,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 using namespace std;
 using namespace Grid;
 
-gridblasHandle_t GridBLAS::gridblasHandle;
-int            GridBLAS::gridblasInit;
+//gridblasHandle_t GridBLAS::gridblasHandle;
+//int            GridBLAS::gridblasInit;
 
 ///////////////////////
 // Tells little dirac op to use MdagM as the .Op()

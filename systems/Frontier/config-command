@@ -1,4 +1,3 @@
-CLIME=`spack find --paths c-lime@2-3-9 | grep c-lime| cut -c 15-`
 ../../configure --enable-comms=mpi-auto \
 --with-lime=$CLIME \
 --enable-unified=no \
@@ -9,12 +8,13 @@ CLIME=`spack find --paths c-lime@2-3-9 | grep c-lime| cut -c 15-`
 --disable-gparity \
 --disable-fermion-reps \
 --enable-simd=GPU \
---with-gmp=$OLCF_GMP_ROOT \
---with-mpfr=/opt/cray/pe/gcc/mpfr/3.1.4/ \
+--with-gmp=$GMP \
+--with-mpfr=$MPFR \
+--with-openssl=$OPENSSL \
 --disable-fermion-reps \
 CXX=hipcc MPICXX=mpicxx \
-CXXFLAGS="-fPIC -I${ROCM_PATH}/include/ -I${MPICH_DIR}/include -L/lib64 " \
- LDFLAGS="-L/lib64 -L${ROCM_PATH}/lib -L${MPICH_DIR}/lib -lmpi -L${CRAY_MPICH_ROOTDIR}/gtl/lib -lmpi_gtl_hsa -lhipblas -lrocblas -lhipfft"
+CXXFLAGS="-fPIC -I${ROCM_PATH}/include/ -I${MPICH_DIR}/include " \
+ LDFLAGS="-L${ROCM_PATH}/lib -L${MPICH_DIR}/lib -lmpi -lmpi_gtl_hsa -lhipblas -lrocblas -lhipfft -lamdhip64"
 
 
 

@@ -1,16 +1,14 @@
 
 echo spack
-. /autofs/nccs-svm1_home1/paboyle/Crusher/Grid/spack/share/spack/setup-env.sh
+. /autofs/nccs-svm1_home1/paboyle/spack/share/spack/setup-env.sh
 
-module load amd/7.0.2
-module load cray-fftw
-module load craype-accel-amd-gfx90a
-mkdir $HOME/LD_PATH
-ln -s /opt/rocm-6.4.2/lib/libamdhip* $HOME/LD_PATH
+export CLIME=`spack find --paths c-lime | grep ^c-lime | awk '{print $2}' `
+export MPFR=`spack find --paths mpfr    | grep ^mpfr  | awk '{print $2}' `
+export OPENSSL=`spack find --paths openssl | grep openssl | awk  '{print $2}' `
+export GMP=`spack find --paths gmp      | grep ^gmp | awk '{print $2}' `
 
-#Ugly hacks to get down level software working on current system
-export LD_LIBRARY_PATH=/opt/cray/libfabric/1.20.1/lib64/:$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=/opt/gcc/mpfr/3.1.4/lib:$LD_LIBRARY_PATH
-#export LD_LIBRARY_PATH=`pwd`/:$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/LD_PATH/
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/rocm-7.0.2/lib
+module load cce/21.0.0
+module load cpe/26.03
+module load rocm/7.0.2
+export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/opt/rocm-7.0.2/lib/llvm/lib/:$LD_LIBRARY_PATH

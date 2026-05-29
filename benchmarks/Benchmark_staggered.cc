@@ -33,7 +33,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
 int main (int argc, char ** argv)
 {
@@ -97,20 +96,38 @@ int main (int argc, char ** argv)
   RealD c2=-1.0/24.0;
   RealD u0=1.0;
   ImprovedStaggeredFermionD Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0,params);
+  NaiveStaggeredFermionD Dn(Umu,Grid,RBGrid,mass,c1,u0,params);
   
   std::cout<<GridLogMessage << "Calling Ds"<<std::endl;
-  int ncall=1000;
+  int ncall=100;
+  // warm perf only
+  for(int i=0;i<ncall;i++){
+    Ds.Dhop(src,result,0);
+  }
   double t0=usecond();
   for(int i=0;i<ncall;i++){
     Ds.Dhop(src,result,0);
   }
   double t1=usecond();
-  double flops=(16*(3*(6+8+8)) + 15*3*2)*volume*ncall; // == 66*16 +  == 1146
-  
+  double flops=(16*(3*(6+8+8)) + 15*3*2)*volume*ncall; // == 66*16 + 90 == 1146
   std::cout<<GridLogMessage << "Called Ds"<<std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
   std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
 
+  // Warm perf only
+  for(int i=0;i<ncall;i++){
+    Dn.Dhop(src,result,0);
+  }
+  t0=usecond();
+  for(int i=0;i<ncall;i++){
+    Ds.Dhop(src,result,0);
+  }
+  t1=usecond();
+  flops=(8*(3*(6+8+8)) + 7*3*2)*volume*ncall; 
+  std::cout<<GridLogMessage << "Called Dn"<<std::endl;
+  std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
+  std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
+  
   Grid_finalize();
 }
 

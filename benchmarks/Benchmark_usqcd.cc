@@ -716,6 +716,161 @@ public:
     return mflops_best;
   }
 
+  static double NaiveStaggered(int L)
+  {
+    double mflops;
+    double mflops_best = 0;
+    double mflops_worst= 0;
+    std::vector<double> mflops_all;
+
+    ///////////////////////////////////////////////////////
+    // Set/Get the layout & grid size
+    ///////////////////////////////////////////////////////
+    int threads = GridThread::GetThreads();
+    Coordinate mpi = GridDefaultMpi(); GRID_ASSERT(mpi.size()==4);
+    Coordinate local({L,L,L,L});
+    Coordinate latt4({local[0]*mpi[0],local[1]*mpi[1],local[2]*mpi[2],local[3]*mpi[3]});
+    
+    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(latt4,
+								       GridDefaultSimd(Nd,vComplex::Nsimd()),
+								       GridDefaultMpi());
+    uint64_t NP = TmpGrid->RankCount();
+    uint64_t NN = TmpGrid->NodeCount();
+    NN_global=NN;
+    uint64_t SHM=NP/NN;
+
+
+    ///////// Welcome message ////////////
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    std::cout<<GridLogMessage << "Benchmark NaiveStaggered on "<<L<<"^4 local volume "<<std::endl;
+    std::cout<<GridLogMessage << "* Global volume  : "<<GridCmdVectorIntToString(latt4)<<std::endl;
+    std::cout<<GridLogMessage << "* ranks          : "<<NP  <<std::endl;
+    std::cout<<GridLogMessage << "* nodes          : "<<NN  <<std::endl;
+    std::cout<<GridLogMessage << "* ranks/node     : "<<SHM <<std::endl;
+    std::cout<<GridLogMessage << "* ranks geom     : "<<GridCmdVectorIntToString(mpi)<<std::endl;
+    std::cout<<GridLogMessage << "* Using "<<threads<<" threads"<<std::endl;
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+
+    ///////// Lattice Init ////////////
+    GridCartesian         * FGrid   = SpaceTimeGrid::makeFourDimGrid(latt4, GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
+    GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(FGrid);
+    
+    ///////// RNG Init ////////////
+    std::vector<int> seeds4({1,2,3,4});
+    GridParallelRNG          RNG4(FGrid);  RNG4.SeedFixedIntegers(seeds4);
+    std::cout << GridLogMessage << "Initialised RNGs" << std::endl;
+
+    RealD mass=0.1;
+    RealD c1=9.0/8.0;
+    RealD c2=-1.0/24.0;
+    RealD u0=1.0;
+
+    typedef NaiveStaggeredFermionF Action;
+    typedef typename Action::FermionField Fermion; 
+    typedef LatticeGaugeFieldF Gauge;
+    
+    Gauge Umu(FGrid);  SU<Nc>::HotConfiguration(RNG4,Umu); 
+
+    typename Action::ImplParams params;
+    Action Ds(Umu,*FGrid,*FrbGrid,mass,c1,u0,params);
+
+    ///////// Source preparation ////////////
+    Fermion src   (FGrid); random(RNG4,src);
+    Fermion src_e (FrbGrid);
+    Fermion src_o (FrbGrid);
+    Fermion r_e   (FrbGrid);
+    Fermion r_o   (FrbGrid);
+    Fermion r_eo  (FGrid);
+  
+    {
+
+      pickCheckerboard(Even,src_e,src);
+      pickCheckerboard(Odd,src_o,src);
+    
+      const int num_cases = 2;
+      std::string fmt("G/S/C ; G/O/C ; G/S/S ; G/O/S ");
+      
+      controls Cases [] = {
+	{  StaggeredKernelsStatic::OptGeneric   ,  StaggeredKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicyConcurrent  },
+	{  StaggeredKernelsStatic::OptHandUnroll,  StaggeredKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicyConcurrent  },
+	{  StaggeredKernelsStatic::OptInlineAsm ,  StaggeredKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicyConcurrent  }
+      }; 
+
+      for(int c=0;c<num_cases;c++) {
+	
+	StaggeredKernelsStatic::Comms = Cases[c].CommsOverlap;
+	StaggeredKernelsStatic::Opt   = Cases[c].Opt;
+	CartesianCommunicator::SetCommunicatorPolicy(Cases[c].CommsAsynch);
+      
+	std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+	if ( StaggeredKernelsStatic::Opt == StaggeredKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc StaggeredKernels" <<std::endl;
+	std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
+	std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+	
+	int nwarm = 10;
+	double t0=usecond();
+	FGrid->Barrier();
+	for(int i=0;i<nwarm;i++){
+	  Ds.DhopEO(src_o,r_e,DaggerNo);
+	}
+	FGrid->Barrier();
+	double t1=usecond();
+
+	uint64_t no    = 50;
+	uint64_t ni    = 100;
+
+	//	std::cout << GridLogMessage << " Estimate " << ncall << " calls per second"<<std::endl;
+
+	time_statistics timestat;
+	std::vector<double> t_time(no);
+	for(uint64_t i=0;i<no;i++){
+	  t0=usecond();
+	  for(uint64_t j=0;j<ni;j++){
+	    Ds.DhopEO(src_o,r_e,DaggerNo);
+	  }
+	  t1=usecond();
+	  t_time[i] = t1-t0;
+	}
+	FGrid->Barrier();
+	
+	double volume=1;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
+	double flops=((8*(3*(6+8+8)) + 7*3*2)*1.0*volume)/2;
+	double mf_hi, mf_lo, mf_err;
+	
+	timestat.statistics(t_time);
+	mf_hi = flops/timestat.min*ni;
+	mf_lo = flops/timestat.max*ni;
+	mf_err= flops/timestat.min * timestat.err/timestat.mean;
+
+	mflops = flops/timestat.mean*ni;
+	mflops_all.push_back(mflops);
+	if ( mflops_best == 0   ) mflops_best = mflops;
+	if ( mflops_worst== 0   ) mflops_worst= mflops;
+	if ( mflops>mflops_best ) mflops_best = mflops;
+	if ( mflops<mflops_worst) mflops_worst= mflops;
+	
+	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s =   "<< mflops << " ("<<mf_err<<") " << mf_lo<<"-"<<mf_hi <<std::endl;
+	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s per rank   "<< mflops/NP<<std::endl;
+	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s per node   "<< mflops/NN<<std::endl;
+	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo us per call   "<< timestat.mean/ni<<std::endl;
+      
+      }
+
+      std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+      std::cout<<GridLogMessage << L<<"^4  Deo Best  mflop/s        =   "<< mflops_best << " ; " << mflops_best/NN<<" per node " <<std::endl;
+      std::cout<<GridLogMessage << L<<"^4  Deo Worst mflop/s        =   "<< mflops_worst<< " ; " << mflops_worst/NN<<" per node " <<std::endl;
+      std::cout<<GridLogMessage <<fmt << std::endl;
+      std::cout<<GridLogMessage ;
+
+      for(int i=0;i<mflops_all.size();i++){
+	std::cout<<mflops_all[i]/NN<<" ; " ;
+      }
+      std::cout<<std::endl;
+    }
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    return mflops_best;
+  }
+  
   static double Clover(int L)
   {
     double mflops;
@@ -887,6 +1042,7 @@ int main (int argc, char ** argv)
   std::vector<double> clover;
   std::vector<double> dwf4;
   std::vector<double> staggered;
+  std::vector<double> naive_staggered;
 
   int Ls=1;
   if (do_dslash){
@@ -914,13 +1070,21 @@ int main (int argc, char ** argv)
     staggered.push_back(result);
   }
 
+  std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << " Naive Staggered dslash 4D vectorised" <<std::endl;
+  std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+  for(int l=0;l<L_list.size();l++){
+    double result = Benchmark::NaiveStaggered(L_list[l]) ;
+    naive_staggered.push_back(result);
+  }
+
 
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Summary table Ls="<<Ls <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "L \t\t Clover \t\t DWF4 \t\t Staggered" <<std::endl;
+  std::cout<<GridLogMessage << "L \t\t Clover \t\t DWF4 \t\t Staggered \t\t Naive Staggered" <<std::endl;
   for(int l=0;l<L_list.size();l++){
-    std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< clover[l]<<" \t\t "<<dwf4[l] << " \t\t "<< staggered[l]<<std::endl;
+    std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< clover[l]<<" \t\t "<<dwf4[l] << " \t\t "<< staggered[l]<<" \t\t "<<naive_staggered[l]<<std::endl;
   }
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   }
@@ -930,14 +1094,14 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << " Per Node Summary table Ls="<<Ls <<std::endl;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << " L \t\t Clover\t\t DWF4\t\t Staggered (GF/s per node)" <<std::endl;
+    std::cout<<GridLogMessage << " L \t\t Clover\t\t DWF4\t\t Staggered \t\t NaiveStag \t|\t (GF/s per node)" <<std::endl;
     fprintf(FP,"Per node summary table\n");
     fprintf(FP,"\n");
-    fprintf(FP,"L , Wilson, DWF4, Staggered, GF/s per node\n");
+    fprintf(FP,"L , Wilson, DWF4, Staggered, NaiveStag\n");
     fprintf(FP,"\n");
     for(int l=0;l<L_list.size();l++){
-      std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< clover[l]/NN<<" \t "<<dwf4[l]/NN<< " \t "<<staggered[l]/NN<<std::endl;
-      fprintf(FP,"%d , %.0f, %.0f, %.0f\n",L_list[l],clover[l]/NN/1000.,dwf4[l]/NN/1000.,staggered[l]/NN/1000.);
+      std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< clover[l]/NN<<" \t "<<dwf4[l]/NN<< " \t "<<staggered[l]/NN<<" \t " <<naive_staggered[l]/NN<<std::endl;
+      fprintf(FP,"%d , %.0f, %.0f, %.0f, %.0f\n",L_list[l],clover[l]/NN/1000.,dwf4[l]/NN/1000.,staggered[l]/NN/1000.,naive_staggered[l]/NN/1000.);
     }
     fprintf(FP,"\n");
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
