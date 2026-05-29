@@ -96,22 +96,45 @@ int main (int argc, char ** argv)
   RealD c2=-1.0/24.0;
   RealD u0=1.0;
   ImprovedStaggeredFermionF Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0,params);
-  
-  std::cout<<GridLogMessage << "Calling Ds"<<std::endl;
+  NaiveStaggeredFermionF    Dn(Umu,Grid,RBGrid,mass,c1,u0,params);
+
+  FermionField src_e(&RBGrid); pickCheckerboard(Even, src_e, src);
+  FermionField src_o(&RBGrid); pickCheckerboard(Odd,  src_o, src);
+  FermionField res_e(&RBGrid); res_e = Zero();
+
   int ncall=1000;
-  for(int i=0;i<ncall;i++){
-    Ds.Dhop(src,result,0);
-  }
+
+  // ImprovedStaggered Dhop
+  for(int i=0;i<ncall;i++) Ds.Dhop(src,result,0);
   double t0=usecond();
-  for(int i=0;i<ncall;i++){
-    Ds.Dhop(src,result,0);
-  }
+  for(int i=0;i<ncall;i++) Ds.Dhop(src,result,0);
   double t1=usecond();
-  double flops=(16*(3*(6+8+8)) + 15*3*2)*volume*ncall; // == 66*16 +  == 1146
-  
-  std::cout<<GridLogMessage << "Called Ds"<<std::endl;
-  std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
-  std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
+  double flops=(16*(3*(6+8+8)) + 15*3*2)*volume*ncall; // 1146 flops/site
+  std::cout<<GridLogMessage << "ImprovedStaggered Dhop   mflop/s =   "<< flops/(t1-t0)<<std::endl;
+
+  // ImprovedStaggered DhopEO
+  for(int i=0;i<ncall;i++) Ds.DhopEO(src_o,res_e,0);
+  t0=usecond();
+  for(int i=0;i<ncall;i++) Ds.DhopEO(src_o,res_e,0);
+  t1=usecond();
+  flops=(16*(3*(6+8+8)) + 15*3*2)*(volume/2)*ncall;
+  std::cout<<GridLogMessage << "ImprovedStaggered DhopEO mflop/s =   "<< flops/(t1-t0)<<std::endl;
+
+  // NaiveStaggered Dhop
+  for(int i=0;i<ncall;i++) Dn.Dhop(src,result,0);
+  t0=usecond();
+  for(int i=0;i<ncall;i++) Dn.Dhop(src,result,0);
+  t1=usecond();
+  flops=(8*(3*(6+8+8)) + 7*3*2)*volume*ncall;
+  std::cout<<GridLogMessage << "NaiveStaggered    Dhop   mflop/s =   "<< flops/(t1-t0)<<std::endl;
+
+  // NaiveStaggered DhopEO
+  for(int i=0;i<ncall;i++) Dn.DhopEO(src_o,res_e,0);
+  t0=usecond();
+  for(int i=0;i<ncall;i++) Dn.DhopEO(src_o,res_e,0);
+  t1=usecond();
+  flops=(8*(3*(6+8+8)) + 7*3*2)*(volume/2)*ncall;
+  std::cout<<GridLogMessage << "NaiveStaggered    DhopEO mflop/s =   "<< flops/(t1-t0)<<std::endl;
 
   Grid_finalize();
 }
