@@ -289,7 +289,7 @@ public:
   ///////////////////////////////////////////
   // move constructor
   ///////////////////////////////////////////
-  Lattice(Lattice && r){ 
+  Lattice(Lattice && r) noexcept { 
     this->_grid = r.Grid();
     this->_odata      = r._odata;
     this->_odata_size = r._odata_size;
