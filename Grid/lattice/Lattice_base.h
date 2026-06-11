@@ -330,7 +330,7 @@ public:
   ///////////////////////////////////////////
   // Move assignment possible if same type
   ///////////////////////////////////////////
-  inline Lattice<vobj> & operator = (Lattice<vobj> && r){
+  inline Lattice<vobj> & operator = (Lattice<vobj> && r) noexcept {
 
     resize(0); // deletes if appropriate
     this->_grid       = r.Grid();
