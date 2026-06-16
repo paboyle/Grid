@@ -126,7 +126,10 @@ class HarmonicBlockKrylovSchur {
 
 public:
   std::vector<Field>  evecs;
-  bool doEvalCheck = false;
+  bool doEvalCheck  = false;
+  bool useParityFlip = false;
+  bool useGamma5     = false;
+  std::function<void(const Field&, Field&)> gamma5Func;
 
   //--------------------------------------------------------------------
   // Constructor
@@ -153,10 +156,16 @@ public:
     Nstop   = _Nstop;
     Nblock  = _Nblock;
 
-    assert((int)v0.size() >= Nblock);
+    {
+      int divisor = 1;
+      if (useParityFlip) divisor *= 2;
+      if (useGamma5)     divisor *= 2;
+      assert(Nblock % divisor == 0 && (int)v0.size() >= Nblock / divisor);
+    }
     assert(Nm % Nblock == 0);
     assert(Nk % Nblock == 0);
     assert(Nk < Nm);
+    if (useGamma5) assert(gamma5Func && "useGamma5: gamma5Func must be set");
 
     int N = Nm;
 
@@ -170,8 +179,31 @@ public:
     H = CMat::Zero(N, N);
     B = CMat::Zero(N, Nblock);
 
+    int divisor = (useParityFlip ? 2 : 1) * (useGamma5 ? 2 : 1);
     int start = 0;
-    std::vector<Field> startBlock(v0.begin(), v0.begin() + Nblock);
+    std::vector<Field> startBlock;
+    startBlock.reserve(Nblock);
+    for (int i = 0; i < Nblock / divisor; i++) {
+      std::vector<Field> group;
+      group.push_back(v0[i]);
+      if (useParityFlip) {
+        int n = (int)group.size();
+        for (int j = 0; j < n; j++) {
+          Field fp(Grid_);
+          parityFlippedField(group[j], fp);
+          group.push_back(std::move(fp));
+        }
+      }
+      if (useGamma5) {
+        int n = (int)group.size();
+        for (int j = 0; j < n; j++) {
+          Field g5v(Grid_);
+          gamma5Func(group[j], g5v);
+          group.push_back(std::move(g5v));
+        }
+      }
+      for (auto& f : group) startBlock.push_back(std::move(f));
+    }
 
     for (int iter = 0; iter < MaxIter; iter++) {
       std::cout << GridLogMessage
@@ -279,6 +311,18 @@ public:
   std::vector<Field>  getEvecs()         { return evecs;         }
   CVec                getEvals()         { return evals;         }
   std::vector<RealD>  getRitzEstimates() { return ritzEstimates; }
+
+  static void parityFlippedField(const Field& v, Field& out) {
+    GridCartesian* cgrid = dynamic_cast<GridCartesian*>(v.Grid());
+    assert(cgrid != nullptr);
+    GridRedBlackCartesian rbgrid(cgrid);
+    Field veven(&rbgrid), vodd(&rbgrid);
+    pickCheckerboard(Even, veven, v);
+    pickCheckerboard(Odd,  vodd,  v);
+    vodd = -vodd;
+    setCheckerboard(out, veven);
+    setCheckerboard(out, vodd);
+  }
 
   //--------------------------------------------------------------------
   // Verification: check A V = V H + F B^dag explicitly

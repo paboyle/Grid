@@ -124,7 +124,17 @@ protected:
 
 public:
   std::vector<Field> evecs;
-  bool doEvalCheck = false;
+  bool doEvalCheck  = false;
+  // When true (and Nblock even), only Nblock/2 starting vectors are required.
+  // The remaining Nblock/2 slots are filled by pairing each supplied vector
+  // with its parity-flipped partner (sign negated on odd checkerboard sites).
+  bool useParityFlip = false;
+  // Same pairing behaviour but the partner is produced by gamma5Func(v).
+  // gamma5Func must be set by the caller before operator() is called.
+  // It is a std::function so that BlockKrylovSchur.h does not need to know
+  // about the Grid QCD Gamma class (which is defined at a later include layer).
+  bool useGamma5     = false;
+  std::function<void(const Field&, Field&)> gamma5Func;
 
   //--------------------------------------------------------------------
   // Constructor
@@ -161,10 +171,17 @@ public:
     Nstop   = _Nstop;
     Nblock  = _Nblock;
 
-    assert((int)v0.size() >= Nblock);
+    {
+      int divisor = 1;
+      if (useParityFlip) divisor *= 2;
+      if (useGamma5)     divisor *= 2;
+      assert(Nblock % divisor == 0 && (int)v0.size() >= Nblock / divisor);
+       std::cout << GridLogMessage << "BlockKrylovSchur: divisor = " <<divisor << std::endl;
+    }
     assert(Nm % Nblock == 0);
     assert(Nk % Nblock == 0);
     assert(Nk < Nm);
+    if (useGamma5) assert(gamma5Func && "useGamma5: gamma5Func must be set");
     preRun();  // hook: derived classes add parameter assertions here
 
     int N = Nm;   // total Krylov dimension
@@ -179,8 +196,35 @@ public:
     H = CMat::Zero(N, N);
     B = CMat::Zero(N, Nblock);
 
+    // Build the starting block by expanding each seed with the requested
+    // symmetry partners.  Order: {v, flip(v)} then doubled by {·, g5(·)}
+    // giving {v, flip(v), g5(v), g5(flip(v))} when both flags are set.
+    int divisor = (useParityFlip ? 2 : 1) * (useGamma5 ? 2 : 1);
+    std::cout << GridLogMessage << "BlockKrylovSchur: divisor = " <<divisor << std::endl;
     int start = 0;
-    std::vector<Field> startBlock(v0.begin(), v0.begin() + Nblock);
+    std::vector<Field> startBlock;
+    startBlock.reserve(Nblock);
+    for (int i = 0; i < Nblock / divisor; i++) {
+      std::vector<Field> group;
+      group.push_back(v0[i]);
+      if (useParityFlip) {
+        int n = (int)group.size();
+        for (int j = 0; j < n; j++) {
+          Field fp(Grid_);
+          parityFlippedField(group[j], fp);
+          group.push_back(std::move(fp));
+        }
+      }
+      if (useGamma5) {
+        int n = (int)group.size();
+        for (int j = 0; j < n; j++) {
+          Field g5v(Grid_);
+          gamma5Func(group[j], g5v);
+          group.push_back(std::move(g5v));
+        }
+      }
+      for (auto& f : group) startBlock.push_back(std::move(f));
+    }
 
     for (int iter = 0; iter < MaxIter; iter++) {
       std::cout << GridLogMessage << "BlockKrylovSchur: restart iteration " << iter << std::endl;
@@ -253,7 +297,7 @@ public:
       if (Nconv >= Nstop || iter == MaxIter - 1) {
         std::cout << GridLogMessage << "BlockKrylovSchur: done after " << iter
                   << " restarts, " << Nconv << " converged." << std::endl;
-        std::cout << GridLogMessage << "Eigenvalues: " << evals.transpose() << std::endl;
+        std::cout << GridLogMessage << "Eigenvalues: " << evals << std::endl;
 
         if (doEvalCheck) {
           Field w(Grid_);
@@ -278,6 +322,21 @@ public:
   std::vector<Field>  getEvecs()         { return evecs;         }
   CVec                getEvals()         { return evals;         }
   std::vector<RealD>  getRitzEstimates() { return ritzEstimates; }
+
+  // Negate the field on all odd-parity (checkerboard) sites.
+  // Uses pickCheckerboard/setCheckerboard so the SIMD layout is handled
+  // correctly and the negation runs in parallel.
+  static void parityFlippedField(const Field& v, Field& out) {
+    GridCartesian* cgrid = dynamic_cast<GridCartesian*>(v.Grid());
+    assert(cgrid != nullptr);
+    GridRedBlackCartesian rbgrid(cgrid);
+    Field veven(&rbgrid), vodd(&rbgrid);
+    pickCheckerboard(Even, veven, v);
+    pickCheckerboard(Odd,  vodd,  v);
+    vodd = -vodd;
+    setCheckerboard(out, veven);
+    setCheckerboard(out, vodd);
+  }
 
   //--------------------------------------------------------------------
   // Verification: print H and B, check A V = V H + F B^dag explicitly

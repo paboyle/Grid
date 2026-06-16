@@ -334,12 +334,13 @@ int main (int argc, char ** argv)
 
   // Run KrylovSchur and Arnoldi on a Hermitian matrix
     RealD shift=LanParams.shift;
-#if 1
+#if 0
     std::cout << GridLogMessage << "Running Krylov Schur" << std::endl;
     KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
 //    KrySchur(src[0], maxIter, Nm, Nk, Nstop);
     KrySchur.doEvalCheck=true;
-    KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);
+//    KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);
+    KrySchur(src[0], maxIter, Nm, Nk, Nstop);
     std::cout << GridLogMessage << "KrylovSchur evec.size= " << KrySchur.evecs.size()<< std::endl;
 #else
     std::cout << GridLogMessage << "Running BlockKrylovSchur" << std::endl;
@@ -347,9 +348,16 @@ int main (int argc, char ** argv)
     Nblock=LanParams.Nblock;
     bool if_verify=false;
     if(LanParams.verify) if_verify=true;
-    BlockKrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
-//    HarmonicBlockKrylovSchur KrySchur (Dwilson, UGrid, resid,shift,EvalNormSmall);
+//    BlockKrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
+    HarmonicBlockKrylovSchur KrySchur (Dwilson, UGrid, resid,shift,EvalNormSmall);
     KrySchur.doEvalCheck=true;
+    KrySchur.useParityFlip=true; std::cout << GridLogMessage << "useParityFlip= " <<KrySchur.useParityFlip<< std::endl;
+    KrySchur.useGamma5=true; std::cout << GridLogMessage << "useGamma5= " <<KrySchur.useGamma5<< std::endl;
+    KrySchur.gamma5Func = [](const FermionField& v, FermionField& out) {
+      Gamma g5(Gamma::Algebra::Gamma5);
+      out = g5 * v;
+    };
+
     KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true,if_verify);
     std::cout << GridLogMessage << "BlockKrylovSchur evec.size= " << KrySchur.evecs.size()<< std::endl;
 #endif
