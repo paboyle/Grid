@@ -63,12 +63,10 @@ void MemoryManager::PrintBytes(void)
   std::cout << " MemoryManager : "<<(total_device>>20)<<" accelerator Mbytes "<<std::endl;
   std::cout << " MemoryManager : "<<(total_host>>20)  <<" cpu         Mbytes "<<std::endl;
   uint64_t cacheBytes;
-  cacheBytes = CacheBytes[Cpu];
-  std::cout << " MemoryManager : "<<(cacheBytes>>20) <<" cpu cache Mbytes "<<std::endl;
-  cacheBytes = CacheBytes[Acc];
-  std::cout << " MemoryManager : "<<(cacheBytes>>20) <<" acc cache Mbytes "<<std::endl;
-  cacheBytes = CacheBytes[Shared];
-  std::cout << " MemoryManager : "<<(cacheBytes>>20) <<" shared cache Mbytes "<<std::endl;
+  cacheBytes = HostCacheBytes();
+  std::cout << " MemoryManager : "<<(cacheBytes>>20) <<" cpu alloc cache Mbytes "<<std::endl;
+  cacheBytes = DeviceCacheBytes();
+  std::cout << " MemoryManager : "<<(cacheBytes>>20) <<" acc alloc cache Mbytes "<<std::endl;
   
 #ifdef GRID_CUDA
   cuda_mem();
