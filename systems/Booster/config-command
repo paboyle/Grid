@@ -8,7 +8,6 @@ LIME=/p/home/jusers/boyle2/juwels/gm2dwf/boyle/
     --disable-gparity \
     --disable-fermion-reps \
     --with-lime=$LIME \
-    --enable-accelerator-cshift \
     --disable-unified \
     CXX=nvcc \
     LDFLAGS="-cudart shared " \
