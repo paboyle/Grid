@@ -438,5 +438,11 @@ inline typename vobj::scalar_object sum_gpu_large(const vobj *lat, Integer osite
   result = sumD_gpu_large(lat,osites);
   return result;
 }
+template<class Word> Word checksum_gpu(Word *vec,uint64_t L)
+{
+  Word w;
+  bzero(&w,sizeof(w));
+  return w;
+}
 
 NAMESPACE_END(Grid);
