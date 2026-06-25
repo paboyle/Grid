@@ -49,12 +49,13 @@ template <class vobj> LatticeComplex LocalFieldSquareNorm(Lattice<vobj>& F){
   Hloc = Zero();
   for (int mu = 0; mu < Nd; mu++) {
     Fmu = PeekIndex<LorentzIndex>(F, mu);
-    tmp = (-1.0/HMC_MOMENTUM_DENOMINATOR)*trace(Fmu * Fmu);
+    //tmp = (-1.0*HMC_MOMENTUM_DENOMINATOR)*trace(Fmu * Fmu);
+    tmp = (-1.0)*trace(Fmu * Fmu);
     Hloc = Hloc + tmp;
   }
   return Hloc;
 }
-template <class vobj> void writeField(Lattice<vobj> &F, std::string filename, bool reduce=true, bool alg=true) {
+template <class vobj> void writeField(Lattice<vobj> &F, std::string filename, bool reduce=true, bool alg=true, double fac=1.0) {
   
   std::replace(filename.begin(),filename.end(), '/', '_');
   std::replace(filename.begin(),filename.end(), '(', '_');
@@ -65,9 +66,22 @@ template <class vobj> void writeField(Lattice<vobj> &F, std::string filename, bo
   emptyUserRecord record;
   ScidacWriter WR(F.Grid()->IsBoss());
   WR.open(filename);
+#if 1
+  Lattice<vobj> F_0(F.Grid()), F_1(F.Grid()); F_0 = fac*F; F_1 = fac*Ta(F);
+#endif
+  F = fac*Ta(F);
   if (reduce) {
-    auto F_reduced=alg? LocalFieldSquareNorm(F) : localNorm2(F);
+    //auto F_reduced=alg? LocalFieldSquareNorm(F) : localNorm2(F);
+    auto F_reduced = localNorm2(F); 
     WR.writeScidacFieldRecord(F_reduced,record,0);
+#if 1
+    auto F_0_r = LocalFieldSquareNorm(F_0);
+    auto F_1_r = LocalFieldSquareNorm(F_1);
+    std::cout << GridLogMessage << filename << " DEBUG: su(3) norm comparison: w/t Ta "
+	      << norm2(F_0_r - F_reduced) << " w/ Ta " << norm2(F_1_r - F_reduced) << " "
+	      << norm2(F_0_r + F_reduced) << " w/ Ta " << norm2(F_1_r + F_reduced) << std::endl;
+#endif
+
   }
   else
     WR.writeScidacFieldRecord(F,record,0);
@@ -91,6 +105,7 @@ template <class vobj> void writeConfig(Lattice<vobj> &F, std::string filename){
   int tworow = 0;
   NerscIO::writeConfiguration(F, filename, tworow, precision32); 
 }
+
 #endif
 
 ///////////////////////////////////
@@ -178,13 +193,16 @@ public:
     // PRINT_SNAPSHOTS: For some actions, deriv is overridden => could be better if we put writeField in update_P
     deriv(U.get_U(is_smeared),dSdU);
 #ifdef PRINT_SNAPSHOTS
-    writeField(dSdU, "F_"+action_name()+"_lat."+std::to_string(deriv_num));
+    // the snapshot indicates the input dSdU initially contains non-zero part not traceless anti-hermitian
+    // The additional contribution is added after Ta operation
+    writeField(dSdU, "F_"+action_name()+"_smr."+std::to_string(deriv_num));
 #endif
     
     if ( is_smeared ) {
       U.smeared_force(dSdU);
 #ifdef PRINT_SNAPSHOTS
-      writeField(dSdU, "F_"+action_name()+"_smr."+std::to_string(deriv_num));
+      // the snapshot has positive real site local values when LocalFieldSquareNorm used which assumes the input is Ta-applied
+      writeField(dSdU, "F_"+action_name()+"_lat."+std::to_string(deriv_num));
 #endif
     }
   }

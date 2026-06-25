@@ -104,7 +104,7 @@ public:
   static void scaleMom(LatticeComplex& mask, RealD alpha, int box_dim ){
     LatticeInteger coor(mask.Grid()),tmp(mask.Grid());
     LatticeComplex ones(mask.Grid());
-    mask = Zero(); ones = ComplexD(1.0,0.0); tmp = Zero();
+    ones = ComplexD(1.0,0.0); tmp = Zero();
     for(int i=0; i<Nd; i++) {
       LatticeCoordinate(coor,i);
       tmp = tmp + mod(coor,box_dim);
@@ -170,7 +170,12 @@ public:
 
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
       double end_force = usecond();
-      
+
+#ifdef PRINT_SNAPSHOTS
+    writeField(force, "F_"+name+"_lat."+std::to_string(t_P[level]));
+    if (t_P[level] > 3.0 && std::lrint((t_P[level] - 3.0)/0.02)%4==0)
+      writeField(force, "F_"+name+"_lat_full."+std::to_string(t_P[level]), false);
+#endif
       MomFilter->applyFilter(force);
 
       std::cout << GridLogIntegrator << " update_P : Level [" << level <<"]["<<a <<"] "<<name<<" dt "<<ep<<  std::endl;
@@ -231,7 +236,7 @@ public:
     MomFilter->applyFilter(MomFiltered);
 #ifdef TIMom
     LatticeComplex W(U.Grid()); W = Zero();
-    scaleMom(W,Params.alpha*Params.alpha, Params.box_dim);
+    scaleMom(W,1/Params.alpha*Params.alpha, Params.box_dim);
     for (int mu = 0; mu < Nd; mu++) {
       typename FieldImplementation::LinkField Pmu(W.Grid());
       Pmu = PeekIndex<LorentzIndex>(MomFiltered, mu);
@@ -442,13 +447,13 @@ public:
 #ifndef TIMom
     FieldImplementation::generate_momenta(P, sRNG, pRNG);
 #else
-    std::cout << GridLogIntegrator << "Scale momentum" << std::endl;
+    std::cout << GridLogIntegrator << "Scale momentum: " << Params.alpha<<" "<< Params.box_dim<<std::endl;
 
     LatticeComplex W(U.Grid()); W = Zero();
     ////////////////////
     // Setup the mask
     ////////////////////
-    scaleMom(W,1/Params.alpha, Params.box_dim);
+    scaleMom(W,Params.alpha, Params.box_dim);
     FieldImplementation::generate_momenta(P, sRNG, pRNG, W);
 #endif
     
