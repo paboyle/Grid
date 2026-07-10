@@ -332,52 +332,68 @@ int main (int argc, char ** argv)
   std::cout << "[DEBUG] Source at origin = " <<  tmpSrc << std::endl;
   LatticeFermion src2 = src[0];
 
-  // Run KrylovSchur and Arnoldi on a Hermitian matrix
+  // Run KrylovSchur / BlockKrylovSchur / TrueHarmonicBlockKrylovSchur on a Hermitian matrix
     RealD shift=LanParams.shift;
-#if 1
-    std::cout << GridLogMessage << "Running Krylov Schur" << std::endl;
-    KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
-//    KrySchur(src[0], maxIter, Nm, Nk, Nstop);
-    KrySchur.doEvalCheck=true;
-    KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);
-//    KrySchur(src[0], maxIter, Nm, Nk, Nstop);
-    std::cout << GridLogMessage << "KrylovSchur evec.size= " << KrySchur.evecs.size()<< std::endl;
-#else
-    std::cout << GridLogMessage << "Running BlockKrylovSchur" << std::endl;
-    int Nblock=4;
-    Nblock=LanParams.Nblock;
-    bool if_verify=false;
-    if(LanParams.verify) if_verify=true;
-//    BlockKrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
-    bool useTrueHarmonic = GridCmdOptionExists(argv, argv+argc, std::string("--true-harmonic"));
-    HarmonicBlockKrylovSchur<FermionField>     KrySchurShift (Dwilson, UGrid, resid,shift,EvalImNormSmall);
-    TrueHarmonicBlockKrylovSchur<FermionField> KrySchurTrue  (Dwilson, UGrid, resid,shift,EvalImNormSmall);
-    HarmonicBlockKrylovSchur<FermionField>& KrySchur = useTrueHarmonic
-      ? static_cast<HarmonicBlockKrylovSchur<FermionField>&>(KrySchurTrue)
-      : KrySchurShift;
-    std::cout << GridLogMessage
-              << (useTrueHarmonic ? "Using TrueHarmonicBlockKrylovSchur (harmonic Ritz)"
-                                  : "Using HarmonicBlockKrylovSchur (shift-sorted Ritz)")
-              << std::endl;
-    KrySchur.doEvalCheck=true;
-//    KrySchur.useParityFlip=true; std::cout << GridLogMessage << "useParityFlip= " <<KrySchur.useParityFlip<< std::endl;
-//    KrySchur.useGamma5=true; std::cout << GridLogMessage << "useGamma5= " <<KrySchur.useGamma5<< std::endl;
-    KrySchur.gamma5Func = [](const FermionField& v, FermionField& out) {
-      Gamma g5(Gamma::Algebra::Gamma5);
-      out = g5 * v;
-    };
 
-    KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true,if_verify);
-    std::cout << GridLogMessage << "BlockKrylovSchur evec.size= " << KrySchur.evecs.size()<< std::endl;
-#endif
+    // --use-blockKS : off -> plain (non-block) KrylovSchur
+    //                 on  -> block family (BlockKrylovSchur / TrueHarmonicBlockKrylovSchur)
+    // --use-harmonic: off -> no shift/harmonic Ritz extraction
+    //                 on, without --use-blockKS -> plain KrylovSchur with shifted (harmonic) Schur extraction
+    //                 on, with --use-blockKS    -> TrueHarmonicBlockKrylovSchur (true harmonic Ritz)
+    bool useBlockKS  = GridCmdOptionExists(argv, argv+argc, std::string("--use-blockKS"));
+    bool useHarmonic = GridCmdOptionExists(argv, argv+argc, std::string("--use-harmonic"));
 
-  src[0]=KrySchur.evecs[0];
-  std::cout << GridLogMessage << "KrySchur.evecs= "<< KrySchur.evecs.size() <<std::endl;
-  for (int i=1;i<Nk;i++) src[0]+=KrySchur.evecs[i];
-  for (int i=0;i<Nstop;i++) 
+    std::vector<LatticeFermion> finalEvecs;
+
+    if (!useBlockKS) {
+      KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
+      KrySchur.doEvalCheck=true;
+      if (useHarmonic) {
+        std::cout << GridLogMessage << "Running KrylovSchur (shifted/harmonic Ritz)" << std::endl;
+        KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);
+      } else {
+        std::cout << GridLogMessage << "Running KrylovSchur" << std::endl;
+        KrySchur(src[0], maxIter, Nm, Nk, Nstop);
+      }
+      std::cout << GridLogMessage << "KrylovSchur evec.size= " << KrySchur.evecs.size()<< std::endl;
+      finalEvecs = KrySchur.evecs;
+    } else {
+      int Nblock=4;
+      Nblock=LanParams.Nblock;
+      bool if_verify=false;
+      if(LanParams.verify) if_verify=true;
+
+      auto gamma5Lambda = [](const FermionField& v, FermionField& out) {
+        Gamma g5(Gamma::Algebra::Gamma5);
+        out = g5 * v;
+      };
+
+      if (useHarmonic) {
+        std::cout << GridLogMessage << "Running TrueHarmonicBlockKrylovSchur" << std::endl;
+        TrueHarmonicBlockKrylovSchur<FermionField> KrySchur (Dwilson, UGrid, resid,shift,EvalImNormSmall);
+        KrySchur.doEvalCheck=true;
+        KrySchur.gamma5Func = gamma5Lambda;
+        KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true,if_verify);
+        std::cout << GridLogMessage << "TrueHarmonicBlockKrylovSchur evec.size= " << KrySchur.evecs.size()<< std::endl;
+        finalEvecs = KrySchur.evecs;
+      } else {
+        std::cout << GridLogMessage << "Running BlockKrylovSchur" << std::endl;
+        BlockKrylovSchur<FermionField> KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
+        KrySchur.doEvalCheck=true;
+        KrySchur.gamma5Func = gamma5Lambda;
+        KrySchur(src, maxIter, Nm, Nk, Nstop,Nblock,true,if_verify);
+        std::cout << GridLogMessage << "BlockKrylovSchur evec.size= " << KrySchur.evecs.size()<< std::endl;
+        finalEvecs = KrySchur.evecs;
+      }
+    }
+
+  src[0]=finalEvecs[0];
+  std::cout << GridLogMessage << "finalEvecs= "<< finalEvecs.size() <<std::endl;
+  for (int i=1;i<Nk;i++) src[0]+=finalEvecs[i];
+  for (int i=0;i<Nstop;i++)
   {
 	std::string evfile ("./evec_"+std::to_string(mass)+"_"+std::to_string(i));
-        auto evdensity = localInnerProduct(KrySchur.evecs[i],KrySchur.evecs[i] );
+        auto evdensity = localInnerProduct(finalEvecs[i],finalEvecs[i] );
         writeFile(evdensity,evfile);
 
   }
