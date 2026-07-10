@@ -334,13 +334,13 @@ int main (int argc, char ** argv)
 
   // Run KrylovSchur and Arnoldi on a Hermitian matrix
     RealD shift=LanParams.shift;
-#if 0
+#if 1
     std::cout << GridLogMessage << "Running Krylov Schur" << std::endl;
     KrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
 //    KrySchur(src[0], maxIter, Nm, Nk, Nstop);
     KrySchur.doEvalCheck=true;
-//    KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);
-    KrySchur(src[0], maxIter, Nm, Nk, Nstop);
+    KrySchur(src[0], maxIter, Nm, Nk, Nstop,&shift);
+//    KrySchur(src[0], maxIter, Nm, Nk, Nstop);
     std::cout << GridLogMessage << "KrylovSchur evec.size= " << KrySchur.evecs.size()<< std::endl;
 #else
     std::cout << GridLogMessage << "Running BlockKrylovSchur" << std::endl;
@@ -349,10 +349,19 @@ int main (int argc, char ** argv)
     bool if_verify=false;
     if(LanParams.verify) if_verify=true;
 //    BlockKrylovSchur KrySchur (Dwilson, UGrid, resid,EvalImNormSmall);
-    HarmonicBlockKrylovSchur KrySchur (Dwilson, UGrid, resid,shift,EvalNormSmall);
+    bool useTrueHarmonic = GridCmdOptionExists(argv, argv+argc, std::string("--true-harmonic"));
+    HarmonicBlockKrylovSchur<FermionField>     KrySchurShift (Dwilson, UGrid, resid,shift,EvalImNormSmall);
+    TrueHarmonicBlockKrylovSchur<FermionField> KrySchurTrue  (Dwilson, UGrid, resid,shift,EvalImNormSmall);
+    HarmonicBlockKrylovSchur<FermionField>& KrySchur = useTrueHarmonic
+      ? static_cast<HarmonicBlockKrylovSchur<FermionField>&>(KrySchurTrue)
+      : KrySchurShift;
+    std::cout << GridLogMessage
+              << (useTrueHarmonic ? "Using TrueHarmonicBlockKrylovSchur (harmonic Ritz)"
+                                  : "Using HarmonicBlockKrylovSchur (shift-sorted Ritz)")
+              << std::endl;
     KrySchur.doEvalCheck=true;
-    KrySchur.useParityFlip=true; std::cout << GridLogMessage << "useParityFlip= " <<KrySchur.useParityFlip<< std::endl;
-    KrySchur.useGamma5=true; std::cout << GridLogMessage << "useGamma5= " <<KrySchur.useGamma5<< std::endl;
+//    KrySchur.useParityFlip=true; std::cout << GridLogMessage << "useParityFlip= " <<KrySchur.useParityFlip<< std::endl;
+//    KrySchur.useGamma5=true; std::cout << GridLogMessage << "useGamma5= " <<KrySchur.useGamma5<< std::endl;
     KrySchur.gamma5Func = [](const FermionField& v, FermionField& out) {
       Gamma g5(Gamma::Algebra::Gamma5);
       out = g5 * v;

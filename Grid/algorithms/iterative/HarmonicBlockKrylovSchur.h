@@ -92,6 +92,7 @@ NAMESPACE_BEGIN(Grid);
 template<class Field>
 class HarmonicBlockKrylovSchur {
 
+protected:
   typedef Eigen::MatrixXcd CMat;
   typedef Eigen::VectorXcd CVec;
 
@@ -143,12 +144,14 @@ public:
       beta_k(0.0), rtol(0.0)
   {}
 
+  virtual ~HarmonicBlockKrylovSchur() = default;
+
   //--------------------------------------------------------------------
   // Main entry point
   //--------------------------------------------------------------------
-  void operator()(const std::vector<Field>& v0, int _maxIter, int _Nm, int _Nk,
-                  int _Nstop, int _Nblock = 1, bool doubleOrthog = true,
-                  bool doVerify = false)
+  virtual void operator()(const std::vector<Field>& v0, int _maxIter, int _Nm, int _Nk,
+                          int _Nstop, int _Nblock = 1, bool doubleOrthog = true,
+                          bool doVerify = false)
   {
     MaxIter = _maxIter;
     Nm      = _Nm;
@@ -161,6 +164,8 @@ public:
       if (useParityFlip) divisor *= 2;
       if (useGamma5)     divisor *= 2;
       assert(Nblock % divisor == 0 && (int)v0.size() >= Nblock / divisor);
+    std::cout << GridLogMessage << "divisor= " << divisor << std::endl;
+
     }
     assert(Nm % Nblock == 0);
     assert(Nk % Nblock == 0);
@@ -179,31 +184,8 @@ public:
     H = CMat::Zero(N, N);
     B = CMat::Zero(N, Nblock);
 
-    int divisor = (useParityFlip ? 2 : 1) * (useGamma5 ? 2 : 1);
     int start = 0;
-    std::vector<Field> startBlock;
-    startBlock.reserve(Nblock);
-    for (int i = 0; i < Nblock / divisor; i++) {
-      std::vector<Field> group;
-      group.push_back(v0[i]);
-      if (useParityFlip) {
-        int n = (int)group.size();
-        for (int j = 0; j < n; j++) {
-          Field fp(Grid_);
-          parityFlippedField(group[j], fp);
-          group.push_back(std::move(fp));
-        }
-      }
-      if (useGamma5) {
-        int n = (int)group.size();
-        for (int j = 0; j < n; j++) {
-          Field g5v(Grid_);
-          gamma5Func(group[j], g5v);
-          group.push_back(std::move(g5v));
-        }
-      }
-      for (auto& f : group) startBlock.push_back(std::move(f));
-    }
+    std::vector<Field> startBlock = expandStartBlock(v0);
 
     for (int iter = 0; iter < MaxIter; iter++) {
       std::cout << GridLogMessage
@@ -448,7 +430,42 @@ public:
               << "======== end verify ========" << std::endl;
   }
 
-private:
+protected:
+
+  //--------------------------------------------------------------------
+  // Starting-block expansion (parity flip / gamma5 partners)
+  //--------------------------------------------------------------------
+  // Expands Nblock/divisor seed vectors into the full Nblock starting
+  // block, pairing each seed with its parity-flipped and/or gamma5
+  // partners.  Requires Nblock, Grid_ and the flags to be set.
+  std::vector<Field> expandStartBlock(const std::vector<Field>& v0)
+  {
+    int divisor = (useParityFlip ? 2 : 1) * (useGamma5 ? 2 : 1);
+    std::vector<Field> startBlock;
+    startBlock.reserve(Nblock);
+    for (int i = 0; i < Nblock / divisor; i++) {
+      std::vector<Field> group;
+      group.push_back(v0[i]);
+      if (useParityFlip) {
+        int n = (int)group.size();
+        for (int j = 0; j < n; j++) {
+          Field fp(Grid_);
+          parityFlippedField(group[j], fp);
+          group.push_back(std::move(fp));
+        }
+      }
+      if (useGamma5) {
+        int n = (int)group.size();
+        for (int j = 0; j < n; j++) {
+          Field g5v(Grid_);
+          gamma5Func(group[j], g5v);
+          group.push_back(std::move(g5v));
+        }
+      }
+      for (auto& f : group) startBlock.push_back(std::move(f));
+    }
+    return startBlock;
+  }
 
   //--------------------------------------------------------------------
   // Block Arnoldi iteration

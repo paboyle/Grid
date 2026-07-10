@@ -451,18 +451,6 @@ if(0){
 
 	Eigen::MatrixXcd Q_s = schurS.getMatrixQ();
         Eigen::MatrixXcd Qt_s = Q_s.adjoint();                           // TODO should Q be real?
-#if 0
-	std::cout << GridLogMessage << "Q_s" << Q_s <<std::endl;
-	std::cout << GridLogMessage << "Qt_s" << Qt_s <<std::endl;
-	Eigen::MatrixXcd temp4= Q_s*Qt_s;
-	std::cout << GridLogMessage << "Q_s*Qt_s" << temp4 << std::endl;
-	temp4 = Btilde;
-	std::cout << GridLogMessage << "Btilde" << temp4<< std::endl;
-	temp4 = temp4*Qt_s;
-	std::cout << GridLogMessage << "Btilde*Qt_s" << temp4<< std::endl;
-	temp4 = Q_s*temp4;
-	std::cout << GridLogMessage << "Q_s*Btilde*Qt_s" << temp4<< std::endl;
-#endif
 
         Eigen::MatrixXcd S_s = schurS.getMatrixS();
 
@@ -470,7 +458,9 @@ if(0){
         b_s= b;
         b_s=Q_s*b; // Q is Qt in SlepC, b_s=bhat
 
-        constructUR(basis2_s, basis, Qt_s, Nm);
+        std::cout << GridLogMessage << " constructUR "<< std::endl;
+        constructUR(basis2_s, basis, Qt_s, Nm,Nk);
+        std::cout << GridLogMessage << " constructUR "<< std::endl;
 
 
 	Eigen::MatrixXcd RayTmp_s = Btilde(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
@@ -544,7 +534,7 @@ if (!shift){
         b = Q * b;            // b^\dag = b^\dag * Q^\dag <==> b = Q*b
 
         std::vector<Field> basis2; 
-        constructUR(basis2, basis, Qt, Nm);
+        constructUR(basis2, basis, Qt, Nm,Nm);
         basis = basis2;
 if(0){
       Field w(Grid);
@@ -861,7 +851,7 @@ if (!shift){
       // std::cout << GridLogDebug << "Rayleigh in KSDecomposition: " << std::endl << Rayleigh << std::endl;
 
       std::vector<Field> rotated = basis;
-      constructUR(rotated, basis, Rayleigh, k);             // manually rotate
+      constructUR(rotated, basis, Rayleigh, k,k);             // manually rotate
       // Eigen::MatrixXcd Rt = Rayleigh.adjoint();
       // basisRotate(rotated, Rt, 0, k, 0, k, k);           // UR
 
@@ -957,7 +947,7 @@ if (!shift){
      * Note that I believe this is equivalent to basisRotate(U, R.adjoint(), 0, N, 0, N, N), but I'm 
      * not 100% sure (this will be slower and unoptimized though).
      */
-    void constructUR(std::vector<Field>& UR, std::vector<Field> &U, Eigen::MatrixXcd& R, int N) {
+    void constructUR(std::vector<Field>& UR, std::vector<Field> &U, Eigen::MatrixXcd& R, int N, int N2) {
       Field tmp (Grid);
 
       UR.clear();
@@ -967,6 +957,7 @@ if (!shift){
 
       for (int i = 0; i < N; i++) {
         tmp = Zero();
+	if (i < N2) 
         for (int j = 0; j < N; j++) {
           std::cout << GridLogDebug << "Adding R("<<j<<", "<<i<<") = " << R(j, i) << " to rotated" << std::endl;
           std::cout << GridLogDebug << "Norm of U[j] is " << norm2(U[j]) << " to rotated" << std::endl;
