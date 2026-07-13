@@ -44,6 +44,19 @@ inline const ComplexD& toStdCmplx(const ComplexD& c) { return c; }
 #endif
 
 /**
+ * Small dense coefficient matrix of ComplexD (thrust::complex on GPU builds)
+ * for passing to basisRotate, whose device kernel cannot multiply Grid tensors
+ * by std::complex. Must be namespace-scope: nvcc rejects function-local types
+ * as template arguments to functions containing extended device lambdas.
+ */
+struct KSCoeffMat {
+  std::vector<ComplexD> a; int n;
+  KSCoeffMat(int _n) : a(_n*_n), n(_n) {}
+  ComplexD&       operator()(int i, int j)       { return a[i*n+j]; }
+  const ComplexD& operator()(int i, int j) const { return a[i*n+j]; }
+};
+
+/**
  * Options for which Ritz values to keep in implicit restart. TODO move this and utilities into a new file
  */
 enum RitzFilter {
@@ -392,7 +405,45 @@ class KrylovSchur {
 
         std::cout << GridLogDebug << "b after Arnoldi " << b << std::endl;
 
-        nonHarmonicRestart();
+        // --- Restart: Schur-decompose Rayleigh, reorder by ritzFilter, rotate
+        //     the basis into the Schur vectors, and truncate to the leading Nk.
+        ComplexSchurDecomposition schur (Rayleigh, false, ritzFilter);
+        std::cout << GridLogDebug << "Schur decomp holds? " << schur.checkDecomposition() << std::endl;
+
+        // Rearrange Schur matrix so wanted evals are on top left (like MATLAB's ordschur)
+        std::cout << GridLogMessage << "Reordering Schur eigenvalues" << std::endl;
+        schur.schurReorder(Nk);
+        std::cout << GridLogMessage << "Schur eigenvalues reordered." << std::endl;
+
+        Eigen::MatrixXcd Q = schur.getMatrixQ();
+        Qt = Q.adjoint();                           // TODO should Q be real?
+
+        std::cout << GridLogMessage << "*** ROTATING TO SCHUR BASIS *** " << std::endl;
+
+        // Rotate Krylov basis, b vector, redefine Rayleigh quotient and evecs, and truncate.
+        Rayleigh = schur.getMatrixS();
+        b = Q * b;            // b^\dag = b^\dag * Q^\dag <==> b = Q*b
+
+        std::vector<Field> basis2;
+        constructUR(basis2, basis, Qt, Nm,Nk);
+
+        std::cout << GridLogMessage << "*** TRUNCATING FOR RESTART *** " << std::endl;
+        std::cout << GridLogDebug << "Rayleigh before truncation: " << std::endl << Rayleigh << std::endl;
+
+        Eigen::MatrixXcd RayTmp = Rayleigh(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
+        Rayleigh = RayTmp;
+
+        basis = std::vector<Field> (basis2.begin(), basis2.begin() + Nk);
+
+        b = b.head(Nk).eval();
+
+        std::cout << GridLogDebug << "Rayleigh after truncation: " << std::endl << Rayleigh << std::endl;
+
+        checkKSDecomposition();
+
+        // Compute eigensystem of Rayleigh. Note the eigenvectors correspond to the sorted eigenvalues.
+        computeEigensystem(Rayleigh);
+        std::cout << GridLogMessage << "Eigenvalues (first Nk sorted): " << std::endl << evals << std::endl;
 
         if (checkConvergedAndReport(i)) return;
       }
@@ -433,130 +484,73 @@ class KrylovSchur {
 
         std::cout << GridLogDebug << "b after Arnoldi " << b << std::endl;
 
-        harmonicRestart(shiftVal);
+        // --- Harmonic restart: Schur-decompose the shift-augmented Rayleigh
+        //     quotient so Ritz values close to shiftVal are reordered to the
+        //     top, then rotate and truncate as in the non-harmonic case.
+        Eigen::MatrixXcd temp = Rayleigh;
+        for (int m=0;m<Nm;m++) temp(m,m) -= shiftVal;
+        Eigen::MatrixXcd RayleighS = temp.inverse(); // (B-tI)^-1
+        Eigen::MatrixXcd temp2 = RayleighS.adjoint(); //(B-tI)^-1*
+        Eigen::VectorXcd g  = temp2*b; //g = (B-tI)^-1* * b
+        Eigen::MatrixXcd Btilde = Rayleigh + g*(b.adjoint());
+
+        Field utilde(Grid);
+        utilde  = u;
+        for (int j = 0; j<Nm; j++){
+          utilde -= basis[j]*g(j);
+        }
+
+        ComplexSchurDecomposition schurS (Btilde, false, ritzFilter);
+        std::cout << GridLogMessage << "Shifted Schur eigenvalues shift = "<<shiftVal  << std::endl;
+        schurS.schurReorder(Nk);
+
+        Eigen::MatrixXcd Q_s = schurS.getMatrixQ();
+        Eigen::MatrixXcd Qt_s = Q_s.adjoint();                           // TODO should Q be real?
+
+        Btilde=schurS.getMatrixS();
+        Eigen::VectorXcd b_s = Q_s*b; // Q is Qt in SlepC, b_s=bhat
+
+        std::vector<Field> basis2_s;
+        constructUR(basis2_s, basis, Qt_s, Nm,Nk);
+
+        Eigen::MatrixXcd RayTmp_s = Btilde(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
+        Btilde = RayTmp_s;
+
+        basis2_s = std::vector<Field> (basis2_s.begin(), basis2_s.begin() + Nk);
+
+        b_s = b_s.head(Nk).eval();
+
+        Eigen::VectorXcd ghat = -Q_s * g;
+        ghat = ghat.head(Nk).eval();
+
+        Field uhat(Grid);
+        uhat  = utilde;
+        for (int j = 0; j<Nk; j++){
+          uhat -= basis2_s[j]*ghat(j);
+        }
+
+        RealD gamma = std::sqrt(norm2(uhat));
+        uhat *= 1.0/gamma;
+        std::cout << GridLogMessage << " gamma "<<gamma << std::endl;
+
+        Btilde  += ghat*(b_s.adjoint());
+        b_s *=gamma;
+
+        Rayleigh = Btilde;
+        basis= basis2_s;
+        b  = b_s;
+        beta_k = gamma;
+        u= uhat;
+
+        checkKSDecomposition();
+        computeEigensystem(Rayleigh);
+        std::cout << GridLogMessage << "Eigenvalues (first Nk sorted): " << std::endl << evals << std::endl;
 
         if (checkConvergedAndReport(i)) return;
       }
     }
 
   private:
-
-    /**
-     * Non-harmonic restart step: Schur-decompose Rayleigh, reorder by ritzFilter,
-     * rotate the basis into the Schur vectors, and truncate to the leading Nk.
-     */
-    void nonHarmonicRestart() {
-      // Perform a Schur decomposition on Rayleigh
-      ComplexSchurDecomposition schur (Rayleigh, false, ritzFilter);
-      std::cout << GridLogDebug << "Schur decomp holds? " << schur.checkDecomposition() << std::endl;
-
-      // Rearrange Schur matrix so wanted evals are on top left (like MATLAB's ordschur)
-      std::cout << GridLogMessage << "Reordering Schur eigenvalues" << std::endl;
-      schur.schurReorder(Nk);
-      std::cout << GridLogMessage << "Schur eigenvalues reordered." << std::endl;
-
-      Eigen::MatrixXcd Q = schur.getMatrixQ();
-      Qt = Q.adjoint();                           // TODO should Q be real?
-
-      std::cout << GridLogMessage << "*** ROTATING TO SCHUR BASIS *** " << std::endl;
-
-      // Rotate Krylov basis, b vector, redefine Rayleigh quotient and evecs, and truncate.
-      Rayleigh = schur.getMatrixS();
-      b = Q * b;            // b^\dag = b^\dag * Q^\dag <==> b = Q*b
-
-      std::vector<Field> basis2;
-      constructUR(basis2, basis, Qt, Nm,Nk);
-//      basis = basis2;
-
-      std::cout << GridLogMessage << "*** TRUNCATING FOR RESTART *** " << std::endl;
-      std::cout << GridLogDebug << "Rayleigh before truncation: " << std::endl << Rayleigh << std::endl;
-
-      Eigen::MatrixXcd RayTmp = Rayleigh(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
-      Rayleigh = RayTmp;
-
-      std::vector<Field> basisTmp = std::vector<Field> (basis2.begin(), basis2.begin() + Nk);
-      basis = basisTmp;
-
-      Eigen::VectorXcd btmp = b.head(Nk);
-      b = btmp;
-
-      std::cout << GridLogDebug << "Rayleigh after truncation: " << std::endl << Rayleigh << std::endl;
-
-      checkKSDecomposition();
-
-      // Compute eigensystem of Rayleigh. Note the eigenvectors correspond to the sorted eigenvalues.
-      computeEigensystem(Rayleigh);
-      std::cout << GridLogMessage << "Eigenvalues (first Nk sorted): " << std::endl << evals << std::endl;
-    }
-
-    /**
-     * Harmonic restart step: Schur-decompose the shift-augmented Rayleigh quotient
-     * so Ritz values close to `shiftVal` are reordered to the top, then rotate and
-     * truncate exactly as in the non-harmonic case.
-     */
-    void harmonicRestart(RealD shiftVal) {
-      Eigen::MatrixXcd temp = Rayleigh;
-      for (int m=0;m<Nm;m++) temp(m,m) -= shiftVal;
-      Eigen::MatrixXcd RayleighS = temp.inverse(); // (B-tI)^-1
-      Eigen::MatrixXcd temp2 = RayleighS.adjoint(); //(B-tI)^-1*
-      Eigen::VectorXcd g  = temp2*b; //g = (B-tI)^-1* * b
-      Eigen::MatrixXcd Btilde = Rayleigh + g*(b.adjoint());
-
-      Field utilde(Grid);
-      utilde  = u;
-      for (int j = 0; j<Nm; j++){
-        utilde -= basis[j]*g(j);
-      }
-
-      ComplexSchurDecomposition schurS (Btilde, false, ritzFilter);
-      std::cout << GridLogMessage << "Shifted Schur eigenvalues shift = "<<shiftVal  << std::endl;
-      schurS.schurReorder(Nk);
-
-      Eigen::MatrixXcd Q_s = schurS.getMatrixQ();
-      Eigen::MatrixXcd Qt_s = Q_s.adjoint();                           // TODO should Q be real?
-
-      Btilde=schurS.getMatrixS();
-      Eigen::VectorXcd b_s = Q_s*b; // Q is Qt in SlepC, b_s=bhat
-
-      std::vector<Field> basis2_s;
-      constructUR(basis2_s, basis, Qt_s, Nm,Nk);
-
-      Eigen::MatrixXcd RayTmp_s = Btilde(Eigen::seqN(0, Nk), Eigen::seqN(0, Nk));
-      Btilde = RayTmp_s;
-
-      std::vector<Field> basisTmp_s = std::vector<Field> (basis2_s.begin(), basis2_s.begin() + Nk);
-      basis2_s = basisTmp_s;
-
-      Eigen::VectorXcd btmp_s = b_s.head(Nk);
-      b_s = btmp_s;
-
-      Eigen::VectorXcd ghat = -Q_s * g;
-      Eigen::VectorXcd gtmp_s = ghat.head(Nk);
-      ghat = gtmp_s;
-
-      Field uhat(Grid);
-      uhat  = utilde;
-      for (int j = 0; j<Nk; j++){
-        uhat -= basis2_s[j]*ghat(j);
-      }
-
-      RealD gamma = std::sqrt(norm2(uhat));
-      uhat *= 1.0/gamma;
-      std::cout << GridLogMessage << " gamma "<<gamma << std::endl;
-
-      Btilde  += ghat*(b_s.adjoint());
-      b_s *=gamma;
-
-      Rayleigh = Btilde;
-      basis= basis2_s;
-      b  = b_s;
-      beta_k = gamma;
-      u= uhat;
-
-      checkKSDecomposition();
-      computeEigensystem(Rayleigh);
-      std::cout << GridLogMessage << "Eigenvalues (first Nk sorted): " << std::endl << evals << std::endl;
-    }
 
     /**
      * Shared post-restart convergence check. On convergence (or the final
@@ -913,32 +907,24 @@ class KrylovSchur {
     }
 
     /**
-     * Given a vector of fields U (equivalently, a LxN matrix, where L is the number of degrees of 
-     * freedom on the lattice field) and an NxN matrix R, forms the product UR. 
-     * 
-     * Note that I believe this is equivalent to basisRotate(U, R.adjoint(), 0, N, 0, N, N), but I'm 
-     * not 100% sure (this will be slower and unoptimized though).
+     * Given a vector of fields U (equivalently, a LxN matrix, where L is the number of degrees of
+     * freedom on the lattice field) and an NxN matrix R, forms the product UR.
+     * Only the first N2 output columns are computed; columns [N2, N) are Zero.
+     *
+     * Implemented with the accelerator basisRotate kernel, which computes
+     * basis[j] <- sum_k Qt(j,k) basis[k] in place, so we copy U into UR and
+     * pass R^T. The coefficients are staged as ComplexD (thrust::complex on
+     * GPU builds) since std::complex has no device arithmetic with Grid tensors.
      */
     void constructUR(std::vector<Field>& UR, std::vector<Field> &U, Eigen::MatrixXcd& R, int N, int N2) {
-      Field tmp (Grid);
+      KSCoeffMat Rt(N);
+      for (int i = 0; i < N; i++)
+        for (int j = 0; j < N; j++)
+          Rt(i, j) = ComplexD(R(j, i).real(), R(j, i).imag());
 
-      UR.clear();
-      // UR.resize(N);
-
-      std::cout << GridLogDebug << "R to rotate by (should be Rayleigh): " << R << std::endl;
-
-      for (int i = 0; i < N; i++) {
-        tmp = Zero();
-	if (i < N2) 
-        for (int j = 0; j < N; j++) {
-          std::cout << GridLogDebug << "Adding R("<<j<<", "<<i<<") = " << R(j, i) << " to rotated" << std::endl;
-          std::cout << GridLogDebug << "Norm of U[j] is " << norm2(U[j]) << " to rotated" << std::endl;
-          tmp = tmp + U[j] * R(j, i);
-        }
-        std::cout << GridLogDebug << "rotated norm at i = " << i << " is: " << norm2(tmp) << std::endl;
-        UR.push_back(tmp);
-        // UR[i] = tmp;
-      }
+      UR = U;
+      basisRotate(UR, Rt, 0, N2, 0, N, N);
+      for (int i = N2; i < N; i++) UR[i] = Zero();
       return;
     }
 

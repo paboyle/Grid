@@ -97,6 +97,10 @@ protected:
   GridBase*                  Grid_;
   RitzFilter                 ritzFilter;
 
+  // Prefix used in log messages; derived classes override in their constructor
+  // (e.g. "HarmonicBlockKrylovSchur") so the shared code reports the right name.
+  std::string className = "BlockKrylovSchur";
+
   // Flat storage: basis[s*Nblock + t] is the t-th vector of block s
   // After construction: basis has Nm entries
   std::vector<Field> basis;
@@ -146,6 +150,8 @@ public:
       beta_k(0.0), rtol(0.0)
   {}
 
+  virtual ~BlockKrylovSchur() = default;
+
   //--------------------------------------------------------------------
   // Main entry point
   //--------------------------------------------------------------------
@@ -161,9 +167,9 @@ public:
    * _Nstop   : stop after _Nstop eigenvalues converged
    * _Nblock  : block size
    */
-  void operator()(const std::vector<Field>& v0, int _maxIter, int _Nm, int _Nk,
-                  int _Nstop, int _Nblock = 1, bool doubleOrthog = true,
-                  bool doVerify = false)
+  virtual void operator()(const std::vector<Field>& v0, int _maxIter, int _Nm, int _Nk,
+                          int _Nstop, int _Nblock = 1, bool doubleOrthog = true,
+                          bool doVerify = false)
   {
     MaxIter = _maxIter;
     Nm      = _Nm;
@@ -176,7 +182,7 @@ public:
       if (useParityFlip) divisor *= 2;
       if (useGamma5)     divisor *= 2;
       assert(Nblock % divisor == 0 && (int)v0.size() >= Nblock / divisor);
-       std::cout << GridLogMessage << "BlockKrylovSchur: divisor = " <<divisor << std::endl;
+      std::cout << GridLogMessage << className << ": divisor = " << divisor << std::endl;
     }
     assert(Nm % Nblock == 0);
     assert(Nk % Nblock == 0);
@@ -189,45 +195,18 @@ public:
     // Approximate largest eigenvalue for tolerance normalisation
     RealD approxLambdaMax = approxMaxEval(v0[0]);
     rtol = Tolerance * approxLambdaMax;
-    std::cout << GridLogMessage << "BlockKrylovSchur: approx max eval = "
+    std::cout << GridLogMessage << className << ": approx max eval = "
               << approxLambdaMax << ", rtol = " << rtol << std::endl;
 
     // Initialise
     H = CMat::Zero(N, N);
     B = CMat::Zero(N, Nblock);
 
-    // Build the starting block by expanding each seed with the requested
-    // symmetry partners.  Order: {v, flip(v)} then doubled by {·, g5(·)}
-    // giving {v, flip(v), g5(v), g5(flip(v))} when both flags are set.
-    int divisor = (useParityFlip ? 2 : 1) * (useGamma5 ? 2 : 1);
-    std::cout << GridLogMessage << "BlockKrylovSchur: divisor = " <<divisor << std::endl;
     int start = 0;
-    std::vector<Field> startBlock;
-    startBlock.reserve(Nblock);
-    for (int i = 0; i < Nblock / divisor; i++) {
-      std::vector<Field> group;
-      group.push_back(v0[i]);
-      if (useParityFlip) {
-        int n = (int)group.size();
-        for (int j = 0; j < n; j++) {
-          Field fp(Grid_);
-          parityFlippedField(group[j], fp);
-          group.push_back(std::move(fp));
-        }
-      }
-      if (useGamma5) {
-        int n = (int)group.size();
-        for (int j = 0; j < n; j++) {
-          Field g5v(Grid_);
-          gamma5Func(group[j], g5v);
-          group.push_back(std::move(g5v));
-        }
-      }
-      for (auto& f : group) startBlock.push_back(std::move(f));
-    }
+    std::vector<Field> startBlock = expandStartBlock(v0);
 
     for (int iter = 0; iter < MaxIter; iter++) {
-      std::cout << GridLogMessage << "BlockKrylovSchur: restart iteration " << iter << std::endl;
+      std::cout << GridLogMessage << className << ": restart iteration " << iter << std::endl;
 
       // ---- Block Arnoldi: extend from block start to block Nm/Nblock ----
       blockArnoldiIteration(startBlock, Nm/Nblock, start, doubleOrthog);
@@ -240,15 +219,12 @@ public:
         verify(lbl);
       }
 
-      // ---- Schur decompose H ----
-      ComplexSchurDecomposition schur(H, false, ritzFilter);
-      std::cout << GridLogMessage << "BlockKrylovSchur: Schur decomposed." << std::endl;
-
-      // Reorder: bring wanted Nk Schur values to top-left
-      schur.schurReorder(Nk);
-      std::cout << GridLogMessage << "BlockKrylovSchur: Schur reordered." << std::endl;
-
-      CMat Q  = schur.getMatrixQ();
+      // ---- Restart rotation: compute Q and the rotated+reordered Rayleigh
+      //      quotient Hnew.  Base class uses the plain Schur decomposition of
+      //      H; derived classes (e.g. HarmonicBlockKrylovSchur) override this
+      //      to target a shift.
+      CMat Q, Hnew;
+      restartRotation(Q, Hnew);
       CMat Qt = Q.adjoint();
 
       // Rotate Krylov basis: basis_new[i] = sum_j basis[j] * Qt(j,i)
@@ -256,9 +232,9 @@ public:
       constructUR(basis2, basis, Qt, N);
       basis = basis2;
 
-      // Update b and H
+      // Update B and H
       B = Q * B;
-      H = schur.getMatrixS();
+      H = Hnew;
 
       // ---- Truncate to Nk ----
       int Nkeep = Nk;
@@ -276,7 +252,7 @@ public:
 
       // beta_k = Frobenius norm of the effective coupling
       beta_k = Btmp.norm();
-      std::cout << GridLogMessage << "BlockKrylovSchur: beta_k = " << beta_k << std::endl;
+      std::cout << GridLogMessage << className << ": beta_k = " << beta_k << std::endl;
 
       // Restart: the new starting block is F (the residual block from Arnoldi)
       startBlock = F;
@@ -291,11 +267,11 @@ public:
       computeEigensystem(Hk, Nkeep);
 
       int Nconv = converged(Nkeep);
-      std::cout << GridLogMessage << "BlockKrylovSchur: converged " << Nconv
+      std::cout << GridLogMessage << className << ": converged " << Nconv
                 << " / " << Nstop << std::endl;
 
       if (Nconv >= Nstop || iter == MaxIter - 1) {
-        std::cout << GridLogMessage << "BlockKrylovSchur: done after " << iter
+        std::cout << GridLogMessage << className << ": done after " << iter
                   << " restarts, " << Nconv << " converged." << std::endl;
         std::cout << GridLogMessage << "Eigenvalues: " << evals << std::endl;
 
@@ -306,7 +282,7 @@ public:
             ComplexD eval_est = toStdCmplx(innerProduct(evecs[k], w));
             w -= eval_est * evecs[k];
             RealD res = std::sqrt(norm2(w));
-            std::cout << GridLogMessage << "BlockKrylovSchur: evec[" << k << "]"
+            std::cout << GridLogMessage << className << ": evec[" << k << "]"
                       << "  eval_reported = " << evals[k]
                       << "  eval_est = " << eval_est
                       << "  || A v - eval_est * v || = " << res << std::endl;
@@ -385,7 +361,7 @@ public:
 
     if (nBasis == 0) {
       std::cout << GridLogMessage
-                << "BlockKrylovSchur::verify [" << label
+                << className << "::verify [" << label
                 << "]: basis is empty." << std::endl;
       return;
     }
@@ -394,7 +370,7 @@ public:
     int Nfull = (int)H.rows();
 
     std::cout << GridLogMessage
-              << "======== BlockKrylovSchur::verify [" << label << "] ========" << std::endl;
+              << "======== " << className << "::verify [" << label << "] ========" << std::endl;
     std::cout << GridLogMessage
               << "  nBasis = " << nBasis << "  Nfull = " << Nfull
               << "  Nblock = " << Nblock << "  nF = " << nF << std::endl;
@@ -529,7 +505,69 @@ public:
    */
   virtual void preRun() {}
 
-private:
+  /**
+   * Compute the restart rotation for the current Rayleigh quotient H.
+   *
+   * Returns Q (unitary) and Hnew = Q H Q^dag reordered so that the wanted
+   * Nk eigenvalues occupy the leading block, ready for truncation.
+   *
+   * Base implementation: the plain Schur decomposition of H, reordered by
+   * ritzFilter.  HarmonicBlockKrylovSchur overrides this to Schur-decompose
+   * the shifted quotient (H - sigma I) so that eigenvalues nearest sigma are
+   * selected.
+   */
+  virtual void restartRotation(CMat& Q, CMat& Hnew)
+  {
+    ComplexSchurDecomposition schur(H, false, ritzFilter);
+    std::cout << GridLogMessage << className << ": Schur decomposed." << std::endl;
+    schur.schurReorder(Nk);
+    std::cout << GridLogMessage << className << ": Schur reordered." << std::endl;
+    Q    = schur.getMatrixQ();
+    Hnew = schur.getMatrixS();
+  }
+
+protected:
+
+  //--------------------------------------------------------------------
+  // Starting-block expansion (parity flip / gamma5 partners)
+  //--------------------------------------------------------------------
+  /**
+   * Expand Nblock/divisor seed vectors into the full Nblock starting block by
+   * pairing each seed with its parity-flipped and/or gamma5 partners.  Order:
+   * {v, flip(v)} then doubled by {., g5(.)} giving {v, flip(v), g5(v),
+   * g5(flip(v))} when both flags are set.  Requires Nblock, Grid_ and the
+   * flags to be set.
+   */
+  std::vector<Field> expandStartBlock(const std::vector<Field>& v0)
+  {
+    int divisor = (useParityFlip ? 2 : 1) * (useGamma5 ? 2 : 1);
+    std::vector<Field> startBlock;
+    startBlock.reserve(Nblock);
+    for (int i = 0; i < Nblock / divisor; i++) {
+      std::vector<Field> group;
+      group.push_back(v0[i]);
+      if (useParityFlip) {
+        int n = (int)group.size();
+        for (int j = 0; j < n; j++) {
+          Field fp(Grid_);
+          parityFlippedField(group[j], fp);
+          group.push_back(std::move(fp));
+        }
+      }
+      if (useGamma5) {
+        int n = (int)group.size();
+        for (int j = 0; j < n; j++) {
+          Field g5v(Grid_);
+          gamma5Func(group[j], g5v);
+          group.push_back(std::move(g5v));
+        }
+      }
+      for (auto& f : group) startBlock.push_back(std::move(f));
+    }
+    return startBlock;
+  }
+
+protected:
 
   //--------------------------------------------------------------------
   // Block Arnoldi iteration
@@ -711,7 +749,7 @@ private:
         // deflation: zero this vector
         W[j] = Zero();
         std::cout << GridLogMessage
-                  << "BlockKrylovSchur: deflation at block column " << j
+                  << className << ": deflation at block column " << j
                   << " (norm = " << nrm << ")" << std::endl;
       }
     }
@@ -806,7 +844,7 @@ private:
       CVec Bty  = Bk.adjoint() * yk;                // Nblock-vector
       RealD res = Bty.norm();
       ritzEstimates.push_back(res);
-      std::cout << GridLogMessage << "BlockKrylovSchur: Ritz estimate[" << k
+      std::cout << GridLogMessage << className << ": Ritz estimate[" << k
                 << "] = " << res << "  eval = " << evals[k] << std::endl;
       if (res < rtol) Nconv++;
       else break;
