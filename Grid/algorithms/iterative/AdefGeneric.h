@@ -53,7 +53,22 @@ class TwoLevelCG : public LinearFunction<Field>
   // Fine operator, Smoother, CoarseSolver
   LinearOperatorBase<Field>   &_FineLinop;
   LinearFunction<Field>   &_Smoother;
-  
+
+  GridStopWatch ProjectTimer;
+  GridStopWatch PromoteTimer;
+  GridStopWatch CoarseTimer;
+  GridStopWatch SmoothTimer;
+  GridStopWatch MatrixTimer;
+  GridStopWatch M3Timer;
+  GridStopWatch LinalgTimer;
+
+  int64_t M3Calls;
+  int64_t SmoothCalls;
+  int64_t MatrixCalls;
+  int64_t ProjectCalls;
+  int64_t CoarseCalls;
+  int64_t PromoteCalls;
+
   // more most opertor functions
   TwoLevelCG(RealD tol,
 	     Integer maxit,
@@ -103,12 +118,20 @@ class TwoLevelCG : public LinearFunction<Field>
     RealD tn;
     
     GridStopWatch HDCGTimer;
+    ProjectTimer.Reset();
+    PromoteTimer.Reset();
+    CoarseTimer.Reset();
+    SmoothTimer.Reset();
+    MatrixTimer.Reset();
+    M3Timer.Reset();
+    LinalgTimer.Reset();
+    M3Calls = SmoothCalls = MatrixCalls = ProjectCalls = CoarseCalls = PromoteCalls = 0;
     HDCGTimer.Start();
     //////////////////////////
     // x0 = Vstart -- possibly modify guess
     //////////////////////////
     Vstart(x,src);
-    
+
     // r0 = b -A x0
     _FineLinop.HermOp(x,mmp[0]);
     axpy (r, -1.0,mmp[0], src);    // Recomputes r=src-Ax0
@@ -145,33 +168,40 @@ class TwoLevelCG : public LinearFunction<Field>
       int peri_kp = (k+1) % mmax;
 
       rtz=rtzp;
+      M3Timer.Start();
       d= PcgM3(p[peri_k],mmp[peri_k]);
+      M3Timer.Stop();
+      M3Calls++;
       a = rtz/d;
-    
+
       // Memorise this
       pAp[peri_k] = d;
-      
+
+      LinalgTimer.Start();
       axpy(x,a,p[peri_k],x);
       RealD rn = axpy_norm(r,-a,mmp[peri_k],r);
+      LinalgTimer.Stop();
 
       // Compute z = M x
       PcgM1(r,z);
-      
+
       {
 	RealD n1,n2;
 	n1=norm2(r);
 	n2=norm2(z);
 	std::cout << GridLogMessage<<"HDCG::fPcg iteration "<<k<<" : vector r,z "<<n1<<" "<<n2<<"\n";
       }
+      LinalgTimer.Start();
       rtzp =real(innerProduct(r,z));
+      LinalgTimer.Stop();
       std::cout << GridLogMessage<<"HDCG::fPcg iteration "<<k<<" : inner rtzp "<<rtzp<<"\n";
 
       //    PcgM2(z,p[0]);
       PcgM2(z,mu); // ADEF-2 this is identity. Axpy possible to eliminate
-      
+
       p[peri_kp]=mu;
 
-      // Standard search direction  p -> z + b p    
+      // Standard search direction  p -> z + b p
       b = (rtzp)/rtz;
       
       int northog;
@@ -202,8 +232,25 @@ class TwoLevelCG : public LinearFunction<Field>
       if ( rn <= rsq ) { 
 
 	HDCGTimer.Stop();
-	std::cout<<GridLogMessage<<"HDCG: fPcg converged in "<<k<<" iterations and "<<HDCGTimer.Elapsed()<<std::endl;;
-	
+	std::cout<<GridLogMessage<<"HDCG: fPcg converged in "<<k<<" iterations and "<<HDCGTimer.Elapsed()<<std::endl;
+	std::cout<<GridLogMessage<<"HDCG: fPcg breakdown"<<std::endl;
+	auto mspc = [](GridStopWatch &sw, int64_t n) -> double {
+	  return (n > 0) ? sw.useconds() * 1e-3 / n : 0.0;
+	};
+	std::cout<<GridLogMessage<<"HDCG: fPcg M3 (fine MVM)  "<<M3Timer.Elapsed()
+		 <<"  "<<M3Calls<<" calls  "<<mspc(M3Timer,M3Calls)<<" ms/call"<<std::endl;
+	std::cout<<GridLogMessage<<"HDCG: fPcg linalg         "<<LinalgTimer.Elapsed()<<std::endl;
+	std::cout<<GridLogMessage<<"HDCG: fPcg smoother       "<<SmoothTimer.Elapsed()
+		 <<"  "<<SmoothCalls<<" calls  "<<mspc(SmoothTimer,SmoothCalls)<<" ms/call"<<std::endl;
+	std::cout<<GridLogMessage<<"HDCG: fPcg matrix (in M1) "<<MatrixTimer.Elapsed()
+		 <<"  "<<MatrixCalls<<" calls  "<<mspc(MatrixTimer,MatrixCalls)<<" ms/call"<<std::endl;
+	std::cout<<GridLogMessage<<"HDCG: fPcg project        "<<ProjectTimer.Elapsed()
+		 <<"  "<<ProjectCalls<<" calls  "<<mspc(ProjectTimer,ProjectCalls)<<" ms/call"<<std::endl;
+	std::cout<<GridLogMessage<<"HDCG: fPcg coarse         "<<CoarseTimer.Elapsed()
+		 <<"  "<<CoarseCalls<<" calls  "<<mspc(CoarseTimer,CoarseCalls)<<" ms/call"<<std::endl;
+	std::cout<<GridLogMessage<<"HDCG: fPcg promote        "<<PromoteTimer.Elapsed()
+		 <<"  "<<PromoteCalls<<" calls  "<<mspc(PromoteTimer,PromoteCalls)<<" ms/call"<<std::endl;
+
 	_FineLinop.HermOp(x,mmp[0]);			  
 	axpy(tmp,-1.0,src,mmp[0]);
 	
@@ -475,35 +522,29 @@ class TwoLevelADEF2 : public TwoLevelCG<Field>
     CoarseField PleftProj(this->coarsegrid);
     CoarseField PleftMss_proj(this->coarsegrid);
 
-    GridStopWatch SmootherTimer;
-    GridStopWatch MatrixTimer;
-    SmootherTimer.Start();
+    this->SmoothTimer.Start();
     this->_Smoother(in,Min);
-    SmootherTimer.Stop();
+    this->SmoothTimer.Stop();
+    this->SmoothCalls++;
 
-    MatrixTimer.Start();
+    this->MatrixTimer.Start();
     this->_FineLinop.HermOp(Min,out);
-    MatrixTimer.Stop();
+    this->MatrixTimer.Stop();
+    this->MatrixCalls++;
     axpy(tmp,-1.0,out,in);          // tmp  = in - A Min
 
-    GridStopWatch ProjTimer;
-    GridStopWatch CoarseTimer;
-    GridStopWatch PromTimer;
-    ProjTimer.Start();
-    this->_Aggregates.ProjectToSubspace(PleftProj,tmp);     
-    ProjTimer.Stop();
-    CoarseTimer.Start();
+    this->ProjectTimer.Start();
+    this->_Aggregates.ProjectToSubspace(PleftProj,tmp);
+    this->ProjectTimer.Stop();
+    this->ProjectCalls++;
+    this->CoarseTimer.Start();
     this->_CoarseSolver(PleftProj,PleftMss_proj); // Ass^{-1} [in - A Min]_s
-    CoarseTimer.Stop();
-    PromTimer.Start();
-    this->_Aggregates.PromoteFromSubspace(PleftMss_proj,tmp);// tmp = Q[in - A Min]  
-    PromTimer.Stop();
-    std::cout << GridLogPerformance << "PcgM1 breakdown "<<std::endl;
-    std::cout << GridLogPerformance << "\tSmoother   " << SmootherTimer.Elapsed() <<std::endl;
-    std::cout << GridLogPerformance << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
-    std::cout << GridLogPerformance << "\tProj       " << ProjTimer.Elapsed() <<std::endl;
-    std::cout << GridLogPerformance << "\tCoarse     " << CoarseTimer.Elapsed() <<std::endl;
-    std::cout << GridLogPerformance << "\tProm       " << PromTimer.Elapsed() <<std::endl;
+    this->CoarseTimer.Stop();
+    this->CoarseCalls++;
+    this->PromoteTimer.Start();
+    this->_Aggregates.PromoteFromSubspace(PleftMss_proj,tmp);// tmp = Q[in - A Min]
+    this->PromoteTimer.Stop();
+    this->PromoteCalls++;
 
     axpy(out,1.0,Min,tmp); // Min+tmp
   }
