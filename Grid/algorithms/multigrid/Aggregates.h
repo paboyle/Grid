@@ -66,7 +66,21 @@ public:
   {
   };
   
-  
+  void GlobalOrthonormalise(void)
+  {
+    // Normalise all vectors
+    for(int i=0;i<nbasis; i++){
+      RealD scale = std::pow(norm2(subspace[i]),-0.5); 
+      subspace[i] = subspace[i]*scale;
+    }
+    for(int i=0;i<nbasis; i++){
+      for(int j=0;j<i; j++){
+	basisOrthogonalize(subspace,subspace[i],j);
+      }
+      RealD scale = std::pow(norm2(subspace[i]),-0.5); 
+      subspace[i] = subspace[i]*scale;
+    }
+  }  
   void Orthogonalise(void){
     CoarseScalar InnerProd(CoarseGrid); 
     //    std::cout << GridLogMessage <<" Block Gramm-Schmidt pass 1"<<std::endl;
@@ -110,14 +124,16 @@ public:
       
       hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<b<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
 
-      for(int i=0;i<4;i++){
+      for(int i=0;i<2;i++){
 
 	CG(hermop,noise,subspace[b]);
 
 	noise = subspace[b];
 	scale = std::pow(norm2(noise),-0.5); 
 	noise=noise*scale;
-
+	
+	hermop.Op(noise,Mn); std::cout<<GridLogMessage << "intermediate["<<i<<"] <i|MdagM|i> "<<norm2(Mn)<<std::endl;
+	
       }
 
       hermop.Op(noise,Mn); std::cout<<GridLogMessage << "filtered["<<b<<"] <f|MdagM|f> "<<norm2(Mn)<<std::endl;
@@ -134,7 +150,8 @@ public:
     //    PrecGeneralisedConjugateResidualNonHermitian<FineField> GCR(0.001,10,DiracOp,simple_fine,30,30);
     //    PrecGeneralisedConjugateResidualNonHermitian<FineField> GCR(0.001,10,DiracOp,simple_fine,12,12);
     //    PrecGeneralisedConjugateResidualNonHermitian<FineField> GCR(0.001,30,DiracOp,simple_fine,12,12);
-    PrecGeneralisedConjugateResidualNonHermitian<FineField> GCR(0.001,30,DiracOp,simple_fine,10,10);
+    //    PrecGeneralisedConjugateResidualNonHermitian<FineField> GCR(0.0005,30,DiracOp,simple_fine,20,20);
+    PrecGeneralisedConjugateResidualNonHermitian<FineField> GCR(0.0005,30,DiracOp,simple_fine,10,10);
     FineField noise(FineGrid);
     FineField src(FineGrid);
     FineField guess(FineGrid);
@@ -167,6 +184,8 @@ public:
 	noise = subspace[b];
 	scale = std::pow(norm2(noise),-0.5); 
 	noise=noise*scale;
+	
+	DiracOp.Op(noise,Mn); std::cout<<GridLogMessage << "intermediate["<<i<<"] <f|Op|f> "<<innerProduct(noise,Mn)<<" <f|OpDagOp|f>"<<norm2(Mn)<<std::endl;
 
       }
 
@@ -174,6 +193,7 @@ public:
       subspace[b]   = noise;
 
     }
+    GlobalOrthonormalise();
   }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////
