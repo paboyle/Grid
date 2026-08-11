@@ -38,13 +38,14 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 NAMESPACE_BEGIN(Grid);
 
-#define GCRLogLevel std::cout << GridLogMessage <<std::string(level,'\t')<< " Level "<<level<<" " 
+#define GCRLogLevel std::cout << GridLogMessage <<std::string(level,'\t')<< name<<" "
 
 template<class Field>
 class PrecGeneralisedConjugateResidualNonHermitian : public LinearFunction<Field> {
 public:                                                
   using LinearFunction<Field>::operator();
   RealD   Tolerance;
+  RealD   SSQ;
   Integer MaxIterations;
   int verbose;
   int mmax;
@@ -54,11 +55,18 @@ public:
   GridStopWatch PrecTimer;
   GridStopWatch MatTimer;
   GridStopWatch LinalgTimer;
+  std::string name;
+  int ZeroGuess  = 0;  // caller contract: guess is always zero => first-cycle r0 = src, skip the apply
+  int FirstCycle = 0;
 
   LinearFunction<Field>     &Preconditioner;
   LinearOperatorBase<Field> &Linop;
 
-  void Level(int lv) { level=lv; };
+  void Name(std::string _name) { name = _name; };
+
+  void Level(int n) { Name("Level " + std::to_string(n)); level = n; }
+
+  void SetZeroGuess(int z) { ZeroGuess = z; };
 
   PrecGeneralisedConjugateResidualNonHermitian(RealD tol,Integer maxit,LinearOperatorBase<Field> &_Linop,LinearFunction<Field> &Prec,int _mmax,int _nstep) : 
     Tolerance(tol), 
@@ -67,8 +75,8 @@ public:
     Preconditioner(Prec),
     mmax(_mmax),
     nstep(_nstep)
-  { 
-    level=1;
+  {
+    Level(1);
     verbose=1;
   };
 
@@ -77,6 +85,7 @@ public:
     //    psi=Zero();
     RealD cp, ssq,rsq;
     ssq=norm2(src);
+    SSQ=ssq;
     rsq=Tolerance*Tolerance*ssq;
       
     Field r(src.Grid());
@@ -89,11 +98,12 @@ public:
     SolverTimer.Start();
 
     steps=0;
+    FirstCycle=1;
     for(int k=0;k<MaxIterations;k++){
 
       cp=GCRnStep(src,psi,rsq);
 
-      GCRLogLevel <<"PGCR("<<mmax<<","<<nstep<<") "<< steps <<" steps cp = "<<cp<<" target "<<rsq <<std::endl;
+      GCRLogLevel <<"PGCR("<<mmax<<","<<nstep<<") "<< steps <<" steps cp = "<<sqrt(cp/ssq)<<" target "<<sqrt(rsq/ssq) <<std::endl;
 
       if(cp<rsq) {
 
@@ -142,21 +152,25 @@ public:
     GCRLogLevel<< "PGCR nStep("<<nstep<<")"<<std::endl;
 
     //////////////////////////////////
-    // initial guess x0 is taken as nonzero.
-    // r0=src-A x0 = src
+    // r0 = src - A x0.  ZeroGuess: on the first cycle x0==0 by caller
+    // contract (enforced here), so r0 = src exactly; skip the apply.
+    // Restart cycles (psi!=0) always do the full computation.
     //////////////////////////////////
-    MatTimer.Start();
-    Linop.Op(psi,Az);
-    //    zAz = innerProduct(Az,psi);
-    zAAz= norm2(Az);
-    MatTimer.Stop();
-    
+    if (ZeroGuess && FirstCycle) {
+      psi = Zero();
+      LinalgTimer.Start();
+      r = src;
+      LinalgTimer.Stop();
+    } else {
+      MatTimer.Start();
+      Linop.Op(psi,Az);
+      MatTimer.Stop();
+      LinalgTimer.Start();
+      r=src-Az;
+      LinalgTimer.Stop();
+    }
+    FirstCycle=0;
 
-    LinalgTimer.Start();
-    r=src-Az;
-    LinalgTimer.Stop();
-    GCRLogLevel<< "PGCR true residual r = src - A psi   "<<norm2(r) <<std::endl;
-    
     /////////////////////
     // p = Prec(r)
     /////////////////////
@@ -181,6 +195,7 @@ public:
     
     cp =norm2(r);
     LinalgTimer.Stop();
+    GCRLogLevel<< "PGCR true residual "<< sqrt(cp/SSQ)     <<std::endl;
 
     for(int k=0;k<nstep;k++){
 
@@ -199,12 +214,11 @@ public:
       cp = axpy_norm(r,-a,q[peri_k],r);
       LinalgTimer.Stop();
 
-      GCRLogLevel<< "PGCR step["<<steps<<"]  resid " << cp << " target " <<rsq<<std::endl; 
+      GCRLogLevel<< "PGCR step["<<steps<<"]  resid " << sqrt(cp/SSQ)<<std::endl;
 
       if((k==nstep-1)||(cp<rsq)){
 	return cp;
       }
-
 
       PrecTimer.Start();
       Preconditioner(r,z);// solve Az = r
@@ -239,4 +253,6 @@ public:
   }
 };
 NAMESPACE_END(Grid);
+
+#undef GCRLogLevel
 #endif

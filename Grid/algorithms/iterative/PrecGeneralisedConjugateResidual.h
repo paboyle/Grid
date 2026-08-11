@@ -236,4 +236,5 @@ public:
   }
 };
 NAMESPACE_END(Grid);
+#undef GCRLogLevel
 #endif
