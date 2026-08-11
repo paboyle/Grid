@@ -39,16 +39,38 @@ Platform recipes from `README.md`:
 
 Required external libs: GMP, MPFR, OpenSSL, zlib.
 
-## Running Tests
+### Use `systems/` for real machines
+
+`systems/<machine>/` holds the known-good build for each production platform (`Frontier`, `Aurora`, `Perlmutter`, `Summit`, `Tursa`, `Lumi`, `Booster`, `Crusher`, `SDCC-*`, `mac-arm`, …). Each contains a `config-command` (the exact `../../configure` invocation) and a `sourceme.sh` (module loads and env). **Prefer copying/adapting these over hand-rolling configure flags** — they encode compiler workarounds, `LDFLAGS`, and shared-memory settings that are easy to get wrong. `systems/WorkArounds.txt` records known vendor bugs.
+
+Note the GPU builds use `--enable-simd=GPU --enable-gen-simd-width=64`, so `Nsimd` is *not* 1 on device (it is `64/sizeof(scalar)`).
+
+### Regenerating `Make.inc` — required after adding or deleting source files
+
+`Make.inc` files are generated, not tracked in git (`.gitignore`d). `scripts/filelist` walks `Grid/`, `tests/*`, `benchmarks/`, `examples/`, and `HMC/` and writes the file lists and per-test `bin_PROGRAMS` rules. Every new `.cc`/`.h` in `Grid/`, and every new `Test_*.cc` / `Benchmark_*.cc` / `Example_*.cc`, is invisible to the build until you run:
+
+```bash
+./scripts/filelist    # from the source root, then re-run configure/make
+```
+
+`bootstrap.sh` runs it for you on the first setup.
+
+## Running Tests and Benchmarks
 
 ```bash
 # From build directory
-make check                          # root-level tests (Test_simd, Test_cshift, etc.)
-make -C tests/<subdir> tests        # build tests in a subdirectory
+make check                          # runs only Test_simd, Test_cshift, Test_stencil, Test_dwf_mixedcg_prec
+make -C tests/<subdir> tests        # build (not run) the tests in a subdirectory
+make bench                          # build benchmarks
 ./tests/core/Test_simd              # run a single test binary directly
+mpirun -n 4 ./tests/core/Test_cshift --grid 16.16.16.16 --mpi 1.1.1.4
 ```
 
+`make check` is a thin smoke test — building a subdirectory with `make -C tests/<subdir> tests` and running the relevant binaries directly is the normal development loop. Test binaries take Grid's standard command-line arguments (`--grid`, `--mpi`, `--accelerator-threads`, `--threads`, `--debug-signals`, `--log`); see `Grid/util/Init.cc`.
+
 Test subdirectories and their focus: `core` (SIMD, stencil, comms), `solver` (CG, GMRES, eigensolvers), `hmc` (MD integrators), `forces` (fermion forces), `lanczos`, `IO`, `smearing`, `sp2n`, `debug`.
+
+Tests and benchmarks that need optional fermion representations are guarded by `disable_tests_without_instantiations.h` / `disable_benchmarks_without_instantiations.h`, so a `--disable-fermion-reps --disable-gparity` build silently compiles them to no-ops.
 
 ## Architecture
 
@@ -75,9 +97,35 @@ Test subdirectories and their focus: `core` (SIMD, stencil, comms), `solver` (CG
 - `smearing/` — APE, Stout, HEX, gradient flow
 - `observables/` — Polyakov loop, plaquette, topological charge
 
-### GPU acceleration
+### GPU acceleration and the view/memory-manager discipline
 
-GPU support is injected via macros (`accelerator_for`, `accelerator_for2dNB`). The `Grid/simd/` SIMD types map to scalar on GPU device code; host code paths remain vectorised. Unified virtual memory is on by default (`--enable-unified=yes`); device-aware MPI (`--enable-accelerator-aware-mpi`) avoids device→host copies on transfers.
+GPU support is injected via macros in `Grid/threads/Accelerator.h` — `accelerator_for(i, n, nsimd, {...})`, `accelerator_forNB` (non-blocking, must be followed by `accelerator_barrier()`), `accelerator_for2dNB`, and `accelerator_inline`. On a CPU build these degrade to `thread_for` (OpenMP). Unified virtual memory is on by default (`--enable-unified=yes`); device-aware MPI (`--enable-accelerator-aware-mpi`) avoids device→host copies on transfers.
+
+Lattice data is **not** directly addressable inside a kernel. You must open a view with the correct access mode so `Grid/allocator/MemoryManager.h` can move/mark the data:
+
+```cpp
+autoView(out_v, out, AcceleratorWriteDiscard);   // RAII; closes at end of scope
+autoView(in_v,  in,  AcceleratorRead);
+accelerator_for(ss, grid->oSites(), Nsimd, {
+    coalescedWrite(out_v[ss], coalescedRead(in_v[ss]));
+});
+```
+
+Modes are `AcceleratorRead/Write/WriteDiscard` and `CpuRead/Write/WriteDiscard`. Getting the mode wrong (e.g. `AcceleratorRead` on a field you write) produces stale-data bugs that only appear on GPU builds. Inside kernels use `coalescedRead`/`coalescedWrite` rather than raw `operator[]` — they map the SIMD lane onto `threadIdx.x` so accesses stay coalesced.
+
+### Repo-local debugging skills (`skills/`)
+
+`skills/` contains hard-won, Grid-specific playbooks written as invocable skill files. Consult them before debugging in these areas rather than reasoning from first principles:
+
+| File | Covers |
+|---|---|
+| `gpu-memory-performance.md` | `acceleratorThreads()`, LambdaApply thread mapping, `coalescedRead` idiom, fused vs staged HBM access |
+| `gpu-runtime-correctness.md` | GPU runtime returning early from sync, silent wrong answers |
+| `communication-overlap.md` | 7-phase halo pipeline, per-packet events, host-staging vs GPU-direct RDMA |
+| `mpi-heterogeneous.md` | `MPI_Sendrecv` device-buffer aliasing, deterministic reductions |
+| `compiler-validation.md` | Isolating GPU compiler codegen bugs, minimal reproducers |
+| `correctness-verification.md` | Double-run fingerprinting, per-packet checksums, flight recorder |
+| `hang-diagnosis.md` | Diagnosing MPI/accelerator hangs |
 
 ### Memory and I/O
 
@@ -85,14 +133,24 @@ GPU support is injected via macros (`accelerator_for`, `accelerator_for2dNB`). T
 - `Grid/parallelIO/` — distributed parallel reader/writer for ILDG (via LIME), SciDAC, and native binary formats
 - `Grid/serialisation/` — text, binary, HDF5, XML/JSON serialisation of arbitrary Grid objects
 
-### HMC applications
+### Executables
 
-`HMC/` contains production-ready HMC driver programmes (e.g. `Mobius2p1f.cc`, `DWF_plus_DSDR_nf2plus1_Shamir_Gparity.cc`). These are built separately from the library tests.
+- `HMC/` — production HMC driver programmes (e.g. `Mobius2p1f.cc`, `DWF_plus_DSDR_nf2plus1_Shamir_Gparity.cc`)
+- `benchmarks/` — `Benchmark_dwf`, `Benchmark_ITT`, `Benchmark_comms`, `Benchmark_memory_bandwidth`, … used to qualify a new machine
+- `examples/` — small, readable programmes (`Example_plaquette.cc`, `Example_Mobius_spectrum.cc`) that are the best starting point for learning the API
+
+Each of these directories auto-builds every top-level `.cc` as its own binary via `scripts/filelist`.
+
+Every programme is wrapped in `Grid_init(&argc, &argv)` / `Grid_finalize()` (`Grid/util/Init.h`).
 
 ## Key Conventions
 
 - **C++17** is required throughout.
-- Template structure: most classes are templated on `<_FImpl>` (fermion impl) or `<Gimpl>` (gauge impl), which encode the representation and precision. Instantiation is controlled by `--enable-fermion-instantiations`.
+- Template structure: most classes are templated on `<_FImpl>` (fermion impl) or `<Gimpl>` (gauge impl), which encode the representation and precision. Instantiation is controlled by `--enable-fermion-instantiations`; the explicit instantiation `.cc` files live under `Grid/qcd/action/fermion/instantiation/<Impl>/` and are selected by `scripts/filelist`.
 - The `RealD`/`RealF`/`ComplexD`/`ComplexF` typedefs are used everywhere; avoid raw `double`/`float`.
-- Logging uses `Grid_log`, `Grid_error` macros (from `Grid/log/`); performance-critical paths use the `GRID_TRACE` / timer macros from `Grid/perfmon/`.
+- Use `GRID_ASSERT(cond)` (defined in `Grid/GridStd.h`), not bare `assert` — it prints a Grid-formatted message and aborts cleanly under MPI.
+- Logging is stream-based, not macro-based: `std::cout << GridLogMessage << ... << std::endl;`. Channels declared in `Grid/log/Log.h` include `GridLogError`, `GridLogWarning`, `GridLogDebug`, `GridLogPerformance`, `GridLogIterative`, `GridLogSolver`, `GridLogHMC`, `GridLogComms`, `GridLogMemory`, `GridLogDslash`, `GridLogIRL`, `GridLogMG`. A subset is switched on at runtime with e.g. `--log Error,Warning,Message,Performance,Iterative,Integrator,Debug,Colours` (names given without the `GridLog` prefix).
+- Performance-critical paths use `GRID_TRACE(name)` from `Grid/perfmon/Tracing.h` (compiled out unless `--enable-tracing` selects a backend) and the `GridStopWatch` timers in `Grid/perfmon/Timer.h`.
 - Reductions across MPI ranks go through `GridBase::GlobalSum` / `GlobalMax`; never reduce with bare MPI calls inside library code.
+- Everything lives in `NAMESPACE_BEGIN(Grid)` / `NAMESPACE_END(Grid)` macros; follow the surrounding file rather than writing `namespace Grid { }`.
+- British spelling is used in identifiers and comments (`colour`, `neighbour`, `serialisation`).

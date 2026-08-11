@@ -238,6 +238,16 @@ public:
   }
   void AllToAll(int dim  ,void *in,void *out,uint64_t words,uint64_t bytes);
   void AllToAll(void  *in,void *out,uint64_t words         ,uint64_t bytes);
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Variable count all to all. Counts and displacements are in units of
+  // "bytes" sized words and are indexed by rank within this communicator.
+  // For exchanges that are a permutation but do not divide evenly between
+  // ranks; AllToAll above is the uniform count special case.
+  ////////////////////////////////////////////////////////////////////////////
+  void AllToAllV(void *in ,const std::vector<int> &sendcounts,const std::vector<int> &senddispls,
+                 void *out,const std::vector<int> &recvcounts,const std::vector<int> &recvdispls,
+                 uint64_t bytes);
   
   template<class obj> void Broadcast(int root,obj &data)
   {

@@ -113,6 +113,17 @@ void CartesianCommunicator::AllToAll(void  *in,void *out,uint64_t words,uint64_t
 {
   bcopy(in,out,bytes*words);
 }
+void CartesianCommunicator::AllToAllV(void *in ,const std::vector<int> &sendcounts,const std::vector<int> &senddispls,
+                                      void *out,const std::vector<int> &recvcounts,const std::vector<int> &recvdispls,
+                                      uint64_t bytes)
+{
+  // Single rank: the exchange degenerates to a copy of our own segment
+  GRID_ASSERT(sendcounts.size()==1);
+  GRID_ASSERT(recvcounts.size()==1);
+  GRID_ASSERT(sendcounts[0]==recvcounts[0]);
+  bcopy((char *)in +(uint64_t)senddispls[0]*bytes,
+        (char *)out+(uint64_t)recvdispls[0]*bytes,bytes*(uint64_t)sendcounts[0]);
+}
 
 int  CartesianCommunicator::RankWorld(void){return 0;}
 void CartesianCommunicator::Barrier(void){}

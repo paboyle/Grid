@@ -39,6 +39,7 @@
 #endif
 
 #include <arpa/inet.h>
+#include <sys/stat.h>
 #include <algorithm>
 
 NAMESPACE_BEGIN(Grid);
@@ -87,6 +88,7 @@ class BinaryIO {
 
   static IoPerf lastPerf;
   static int latticeWriteMaxRetry;
+  static uint64_t aggregateTargetBytes;
 
   /////////////////////////////////////////////////////////////////////////////
   // more byte manipulation helpers
@@ -253,11 +255,391 @@ class BinaryIO {
   // Read or Write distributed lexico array of ANY object to a specific location in file 
   //////////////////////////////////////////////////////////////////////////////////////
 
+  static const int BINARYIO_AGGREGATE     = 0x20;
   static const int BINARYIO_MASTER_APPEND = 0x10;
   static const int BINARYIO_UNORDERED     = 0x08;
   static const int BINARYIO_LEXICOGRAPHIC = 0x04;
   static const int BINARYIO_READ          = 0x02;
   static const int BINARYIO_WRITE         = 0x01;
+
+#ifdef USE_MPI_IO
+  /////////////////////////////////////////////////////////////////////////////
+  // Aggregation: self controlled transposition onto an I/O friendly layout.
+  //
+  // Under BINARYIO_LEXICOGRAPHIC the subarray file view handed to MPI-IO has
+  // contiguous runs of only lLattice[0]*sizeof(fobj) bytes -- a few KB for
+  // typical local volumes. Rather than rely on collective buffering to repair
+  // that, redistribute the payload ourselves so every rank owns a contiguous
+  // range of the global lexicographic site ordering, then issue large plain
+  // contiguous writes.
+  //
+  // "Un-splitting" the nunsplit fastest dimensions means the row of ranks
+  // sharing the remaining process coordinates collectively owns whole global
+  // hyperplanes. All data movement is then confined to that row communicator.
+  // Every rank still owns exactly lSites() sites afterwards, so the exchange is
+  // a pure permutation and needs no divisibility condition on the process grid.
+  /////////////////////////////////////////////////////////////////////////////
+  struct AggregationPlan {
+    int      nunsplit{0};  // number of fastest dimensions un-split
+    int      rowsize{0};   // ranks in the aggregation (row) communicator
+    int      rowrank{0};   // our logical (lexicographic) index within the row
+    uint64_t lsites{0};    // sites per rank -- invariant under the permutation
+    uint64_t chunk{0};     // sites in one globally contiguous run owned by the row
+    std::unique_ptr<CartesianCommunicator> rowcomm;
+    // counts and displacements are indexed by rank within rowcomm
+    std::vector<int>      sendcounts, senddispls, recvcounts, recvdispls;
+    std::vector<uint64_t> scatter;     // recv slot -> slot in the aggregated buffer
+    std::vector<uint64_t> extentGsite; // global lex site index of extent start
+    std::vector<uint64_t> extentLocal; // offset of extent within aggregated buffer
+    std::vector<uint64_t> extentSites; // sites in this extent
+  };
+
+  static inline void BuildAggregationPlan(GridBase *grid,uint64_t fobjSize,AggregationPlan &p)
+  {
+    int ndim           = grid->Dimensions();
+    Coordinate psizes  = grid->ProcessorGrid();
+    Coordinate pcoor   = grid->ThisProcessorCoor();
+    Coordinate gLattice= grid->GlobalDimensions();
+    Coordinate lLattice= grid->LocalDimensions();
+    Coordinate lstart  = grid->LocalStarts();
+
+    uint64_t lsites = grid->lSites();
+    p.lsites = lsites;
+
+    //////////////////////////////////////////////////////////////////////////
+    // Un-splitting dims 0..k-1 gives the row a contiguous run of
+    //     chunk(k) = prod_{d<k} gLattice[d] * lLattice[k]
+    // sites, and each rank writes extents of min(chunk,lsites). Take the
+    // smallest k that reaches the target so we disturb as few dimensions --
+    // and move as little data -- as possible.
+    //////////////////////////////////////////////////////////////////////////
+    int k = ndim-1;
+    for(int trial=1; trial<ndim; trial++){
+      uint64_t chunk = lLattice[trial];
+      for(int d=0; d<trial; d++) chunk *= gLattice[d];
+      if ( std::min(chunk,lsites)*fobjSize >= aggregateTargetBytes ) { k = trial; break; }
+    }
+    p.nunsplit = k;
+
+    //////////////////////////////////////////////////////////////////////////
+    // The box the row collectively owns, expressed in global coordinates.
+    // Restricting the global lexicographic order to this box preserves the
+    // ordering, so the row index below is monotone in the global index.
+    //////////////////////////////////////////////////////////////////////////
+    Coordinate B(ndim), S(ndim);
+    for(int d=0; d<ndim; d++){
+      if ( d<k ) { B[d] = gLattice[d]; S[d] = 0;         }
+      else       { B[d] = lLattice[d]; S[d] = lstart[d]; }
+    }
+
+    uint64_t chunk = lLattice[k];
+    for(int d=0; d<k; d++) chunk *= gLattice[d];
+    p.chunk = chunk;
+
+    //////////////////////////////////////////////////////////////////////////
+    // Row communicator: the ranks sharing the process coordinates of the slow
+    // (still split) dimensions. This is the sub-division the Cartesian
+    // communicator already performs for AllToAll(dim,...), widened from one
+    // dimension to the k fastest.
+    //////////////////////////////////////////////////////////////////////////
+    Coordinate row(ndim,1);
+    for(int d=0; d<k; d++) row[d] = psizes[d];
+    int srank;
+    p.rowcomm.reset(new CartesianCommunicator(row,*grid,srank));
+    p.rowsize = p.rowcomm->ProcessorCount();
+
+    //////////////////////////////////////////////////////////////////////////
+    // Our logical index in the row is the forward lexicographic index of the
+    // un-split process coordinates, so that increasing logical index means
+    // increasing global lexicographic position in the file. The communicator
+    // numbers its own ranks by the reversed (MPI) convention, so build the map
+    // between the two rather than assuming either.
+    //////////////////////////////////////////////////////////////////////////
+    int64_t logical=0, lstride=1;
+    for(int d=0; d<k; d++){ logical += pcoor[d]*lstride; lstride *= psizes[d]; }
+    GRID_ASSERT(lstride == (int64_t)p.rowsize);
+    p.rowrank = (int)logical;
+
+    std::vector<uint64_t> commOf(p.rowsize,0);
+    commOf[p.rowrank] = (uint64_t)p.rowcomm->ThisRank();
+    p.rowcomm->GlobalSumVector(&commOf[0],p.rowsize);
+
+    uint64_t mystart = (uint64_t)p.rowrank * lsites;
+    uint64_t myend   = mystart + lsites;
+
+    Coordinate lcoor(ndim), bcoor(ndim), gcoor(ndim);
+
+    //////////////////////////////////////////////////////////////////////////
+    // Send side. Walking our local sites in local lexicographic order walks
+    // the row index monotonically, so the send buffer is iodata untouched and
+    // we need only the per destination counts.
+    //////////////////////////////////////////////////////////////////////////
+    std::vector<int> sendLogical(p.rowsize,0);
+    for(uint64_t L=0; L<lsites; L++){
+      Lexicographic::CoorFromIndex(lcoor,L,lLattice);
+      for(int d=0; d<ndim; d++) bcoor[d] = (d<k) ? (lstart[d]+lcoor[d]) : lcoor[d];
+      int64_t ri; Lexicographic::IndexFromCoor(bcoor,ri,B);
+      sendLogical[ ri/(int64_t)lsites ]++;
+    }
+    p.sendcounts.assign(p.rowsize,0);
+    p.senddispls.assign(p.rowsize,0);
+    { int64_t disp=0;
+      for(int d=0; d<p.rowsize; d++){          // send buffer is in logical order
+        int c = (int)commOf[d];
+        p.sendcounts[c] = sendLogical[d];
+        p.senddispls[c] = (int)disp;
+        disp += sendLogical[d];
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Receive side. For each slot of our aggregated range work out which rank
+    // of the row owns it. Within one source the slots arrive in increasing row
+    // index order, which is the order the source sends them in.
+    //////////////////////////////////////////////////////////////////////////
+    std::vector<int> recvLogical(p.rowsize,0), recvDisplLogical(p.rowsize,0);
+    std::vector<int> source(lsites);
+    for(uint64_t pos=0; pos<lsites; pos++){
+      Lexicographic::CoorFromIndex(bcoor,(int64_t)(mystart+pos),B);
+      int64_t j=0, jstride=1;
+      for(int d=0; d<k; d++){ j += (bcoor[d]/lLattice[d])*jstride; jstride *= psizes[d]; }
+      source[pos] = (int)j;
+      recvLogical[j]++;
+    }
+    p.recvcounts.assign(p.rowsize,0);
+    p.recvdispls.assign(p.rowsize,0);
+    { int64_t disp=0;
+      for(int s=0; s<p.rowsize; s++){         // recv buffer is in logical order
+        int c = (int)commOf[s];
+        recvDisplLogical[s] = (int)disp;
+        p.recvcounts[c] = recvLogical[s];
+        p.recvdispls[c] = (int)disp;
+        disp += recvLogical[s];
+      }
+    }
+    p.scatter.resize(lsites);
+    {
+      std::vector<int> fill(p.rowsize,0);
+      for(uint64_t pos=0; pos<lsites; pos++){
+        int j = source[pos];
+        p.scatter[ recvDisplLogical[j] + fill[j]++ ] = pos;
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // The two sides are derived independently; make them check each other.
+    //////////////////////////////////////////////////////////////////////////
+    {
+      std::vector<uint64_t> sendc(p.rowsize),recvc(p.rowsize);
+      for(int c=0;c<p.rowsize;c++) sendc[c]=(uint64_t)p.sendcounts[c];
+      p.rowcomm->AllToAll(&sendc[0],&recvc[0],1,sizeof(uint64_t));
+      for(int c=0;c<p.rowsize;c++) GRID_ASSERT((int)recvc[c]==p.recvcounts[c]);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Decompose our range into globally contiguous file extents.
+    //////////////////////////////////////////////////////////////////////////
+    for(uint64_t c = mystart/chunk; c <= (myend-1)/chunk; c++){
+      uint64_t lo = std::max(mystart, c*chunk);
+      uint64_t hi = std::min(myend, (c+1)*chunk);
+      Lexicographic::CoorFromIndex(bcoor,(int64_t)(c*chunk),B);
+      for(int d=0;d<ndim;d++) gcoor[d] = (d<k) ? bcoor[d] : bcoor[d]+S[d];
+      int64_t gbase; Lexicographic::IndexFromCoor(gcoor,gbase,gLattice);
+      p.extentGsite.push_back( (uint64_t)gbase + (lo - c*chunk) );
+      p.extentLocal.push_back( lo - mystart );
+      p.extentSites.push_back( hi - lo );
+    }
+  }
+
+  static inline void ReportAggregationPlan(GridBase *grid,const AggregationPlan &p,uint64_t fobjSize,const char *what)
+  {
+    if ( !grid->IsBoss() ) return;
+    std::cout << GridLogMessage << "IOobject: aggregate " << what
+              << " un-splitting " << p.nunsplit << " fastest dimensions, row of "
+              << p.rowsize << " ranks" << std::endl;
+    std::cout << GridLogMessage << "IOobject: aggregate " << p.extentSites.size()
+              << " extent(s)/rank, first " << p.extentSites[0]*fobjSize/1024./1024. << " MB"
+              << " (target " << aggregateTargetBytes/1024./1024. << " MB)" << std::endl;
+    std::cout << GridLogMessage << "IOobject: aggregate buffer overhead "
+              << p.lsites*fobjSize/1024./1024. << " MB/rank" << std::endl;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Stage timings.  The interesting quantity is the slowest rank, since every
+  // stage is followed sooner or later by a synchronisation, so reduce with
+  // GlobalMax rather than reporting whatever the boss happened to see.
+  ////////////////////////////////////////////////////////////////////////////
+  static inline void ReportStages(GridBase *grid,const char *what,
+                                  const std::vector<const char *> &names,
+                                  std::vector<RealD> &useconds)
+  {
+    GRID_ASSERT(names.size()==useconds.size());
+    for(uint64_t i=0;i<useconds.size();i++) grid->GlobalMax(useconds[i]);
+    if ( grid->IsBoss() ) {
+      std::cout << GridLogMessage << "IOobject: aggregate " << what << " stages (max over ranks, s):";
+      for(uint64_t i=0;i<names.size();i++)
+        std::cout << " " << names[i] << " " << useconds[i]/1.0e6;
+      std::cout << std::endl;
+    }
+  }
+
+  template<class fobj>
+  static inline void AggregateExchange(GridBase *grid,AggregationPlan &p,std::vector<fobj> &iodata,
+                                       std::vector<fobj> &aggregated,int forward)
+  {
+    uint64_t lsites = p.lsites;
+    GridStopWatch talloc,tperm,tcomm;
+
+    talloc.Start();
+    std::vector<fobj> tmp(lsites);
+    talloc.Stop();
+
+    if ( forward ) { // iodata (local order) -> aggregated (lexicographic order)
+      tcomm.Start();
+      p.rowcomm->AllToAllV(&iodata[0],p.sendcounts,p.senddispls,
+                           &tmp[0],   p.recvcounts,p.recvdispls,sizeof(fobj));
+      tcomm.Stop();
+      tperm.Start();
+      thread_for(s,lsites,{ aggregated[p.scatter[s]] = tmp[s]; });
+      tperm.Stop();
+    } else {         // aggregated -> iodata, the exact mirror
+      tperm.Start();
+      thread_for(s,lsites,{ tmp[s] = aggregated[p.scatter[s]]; });
+      tperm.Stop();
+      tcomm.Start();
+      p.rowcomm->AllToAllV(&tmp[0],   p.recvcounts,p.recvdispls,
+                           &iodata[0],p.sendcounts,p.senddispls,sizeof(fobj));
+      tcomm.Stop();
+    }
+
+    std::vector<RealD> us = { (RealD)talloc.useconds(), (RealD)tperm.useconds(), (RealD)tcomm.useconds() };
+    ReportStages(grid,forward?"exchange (write)":"exchange (read)",
+                 {"alloc","permute","alltoallv"},us);
+  }
+
+  template<class fobj>
+  static inline void AggregateWrite(GridBase *grid,AggregationPlan &p,std::vector<fobj> &aggregated,
+                                    std::string file,uint64_t offset)
+  {
+    //////////////////////////////////////////////////////////////////////////
+    // All ranks write concurrently into a shared file, so the file must exist
+    // before any of them open it for update, but it does NOT have to be the
+    // right length first: the extents tile the record exactly, so writing them
+    // extends a short file to precisely offset+payload.
+    //
+    // Records are created in sequence, so this payload ends the file: the
+    // length must end up precisely offset+payload. Anything beyond is left
+    // over from whatever the file previously held and must not survive -- a
+    // shorter new record written over a longer old one would otherwise leave
+    // a trailing fragment of the previous contents masquerading as data.
+    // That is the only case needing a truncate, so stat first and truncate
+    // afterwards only when the size actually came out wrong. Measured on
+    // Frontier, an unconditional truncate up front cost 0.22 to 5.4 s per
+    // record -- 15 to 25% of a 19 GB write and 100% of a small one -- while
+    // create, open and close together cost a few milliseconds. It is per
+    // record, so multi record files do not amortise it away.
+    //
+    // ::truncate is used because the C++ standard library cannot express this.
+    // std::filebuf has no length operation at all; ios::trunc only truncates to
+    // zero; seeking past the end and writing a byte can grow a file but never
+    // shrink one; and there is no portable way to recover a descriptor from a
+    // stream in order to call ftruncate. C++17 does finally offer
+    // std::filesystem::resize_file, but that would be Grid's first <filesystem>
+    // dependency and needs -lstdc++fs on the older toolchains still in use.
+    //////////////////////////////////////////////////////////////////////////
+    GridStopWatch tcreate,ttrunc,tbar,topen,twrite,tclose,tskew;
+    uint64_t need = offset + (uint64_t)grid->_gsites*sizeof(fobj);
+
+    tcreate.Start();
+    if ( grid->IsBoss() ) {
+      // opening for update needs the file to exist; create one only if not
+      std::fstream probe(file,std::ios::binary|std::ios::out|std::ios::in);
+      if ( !probe.is_open() ) {
+        std::ofstream create(file,std::ios::binary|std::ios::out);
+        create.close();
+      }
+    }
+    tcreate.Stop();
+
+    tbar.Start();
+    grid->Barrier();
+    tbar.Stop();
+
+    std::ofstream fout;
+    fout.exceptions( std::fstream::failbit | std::fstream::badbit );
+    try {
+      topen.Start();
+      fout.open(file,std::ios::binary|std::ios::out|std::ios::in);
+      topen.Stop();
+      twrite.Start();
+      for(uint64_t e=0;e<p.extentSites.size();e++){
+        fout.seekp(offset + p.extentGsite[e]*sizeof(fobj));
+        fout.write((char *)&aggregated[p.extentLocal[e]],p.extentSites[e]*sizeof(fobj));
+      }
+      twrite.Stop();
+      tclose.Start();
+      fout.close();   // flushes the stream buffer; does not force writeback
+      tclose.Stop();
+    } catch (const std::fstream::failure& exc) {
+      std::cout << GridLogError << "Error in aggregate write to " << file << std::endl;
+      std::cout << GridLogError << "Exception description: " << exc.what() << std::endl;
+      GridAbort();
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    // Timed apart from the truncate that follows it.  seek+write above is the
+    // slowest rank; this barrier is what the fastest rank then waits, so the
+    // pair separates the write cost from the spread across ranks. Folding it
+    // into the truncate makes a millisecond stat look like a second.
+    ////////////////////////////////////////////////////////////////////////
+    tskew.Start();
+    grid->Barrier();                 // every extent must be on its way first
+    tskew.Stop();
+
+    ttrunc.Start();
+    if ( grid->IsBoss() ) {
+      struct stat sb;
+      int ierr = ::stat(file.c_str(),&sb);
+      GRID_ASSERT(ierr==0);
+      if ( (uint64_t)sb.st_size != need ) {   // only when a longer record preceded us
+        ierr = ::truncate(file.c_str(),(off_t)need);
+        GRID_ASSERT(ierr==0);
+      }
+    }
+    grid->Barrier();
+    ttrunc.Stop();
+
+    std::vector<RealD> us = { (RealD)tcreate.useconds(), (RealD)tbar.useconds(),
+                              (RealD)topen.useconds(),   (RealD)twrite.useconds(),
+                              (RealD)tclose.useconds(),  (RealD)tskew.useconds(),
+                              (RealD)ttrunc.useconds() };
+    ReportStages(grid,"write",{"create","barrier","open","seek+write","close","skew","stat+truncate"},us);
+  }
+
+  template<class fobj>
+  static inline void AggregateRead(GridBase *grid,AggregationPlan &p,std::vector<fobj> &aggregated,
+                                   std::string file,uint64_t offset)
+  {
+    GridStopWatch topen,tread,tclose;
+    std::ifstream fin;
+    topen.Start();
+    fin.open(file,std::ios::binary|std::ios::in);
+    topen.Stop();
+    tread.Start();
+    for(uint64_t e=0;e<p.extentSites.size();e++){
+      fin.seekg(offset + p.extentGsite[e]*sizeof(fobj));
+      fin.read((char *)&aggregated[p.extentLocal[e]],p.extentSites[e]*sizeof(fobj));
+      GRID_ASSERT(fin.fail()==0);
+    }
+    tread.Stop();
+    tclose.Start();
+    fin.close();
+    tclose.Stop();
+
+    std::vector<RealD> us = { (RealD)topen.useconds(), (RealD)tread.useconds(), (RealD)tclose.useconds() };
+    ReportStages(grid,"read",{"open","seek+read","close"},us);
+  }
+#endif
 
   template<class word,class fobj>
   static inline void IOobject(word w,
@@ -302,6 +684,18 @@ class BinaryIO {
       lStart[d] = 0;
     }
 
+    //////////////////////////////////////////////////////////////////////////////
+    // Aggregate the lexicographic layout onto contiguous per rank extents
+    // ourselves rather than leaving it to MPI-IO collective buffering
+    //////////////////////////////////////////////////////////////////////////////
+    int aggregate = (control & BINARYIO_AGGREGATE)
+                 && (control & BINARYIO_LEXICOGRAPHIC)
+                 && !(control & BINARYIO_MASTER_APPEND)
+                 && (nrank > 1);
+#ifndef USE_MPI_IO
+    GRID_ASSERT(aggregate==0); // BINARYIO_AGGREGATE requires MPI
+#endif
+
 #ifdef USE_MPI_IO
     std::vector<int> distribs(ndim,MPI_DISTRIBUTE_BLOCK);
     std::vector<int> dargs   (ndim,MPI_DISTRIBUTE_DFLT_DARG);
@@ -329,6 +723,8 @@ class BinaryIO {
     ierr = MPI_Type_contiguous(numword,mpiword,&mpiObject);    GRID_ASSERT(ierr==0);
     ierr = MPI_Type_commit(&mpiObject);
 
+    // The subarray view is what aggregation exists to avoid; do not build it
+    if ( !aggregate ) {
     //////////////////////////////////////////////////////////////////////////////
     // File global array data type
     //////////////////////////////////////////////////////////////////////////////
@@ -340,6 +736,7 @@ class BinaryIO {
     //////////////////////////////////////////////////////////////////////////////
     ierr=MPI_Type_create_subarray(ndim,&lLattice[0],&lLattice[0],&lStart[0],MPI_ORDER_FORTRAN, mpiObject,&localArray);    GRID_ASSERT(ierr==0);
     ierr=MPI_Type_commit(&localArray);    GRID_ASSERT(ierr==0);
+    }
 #endif
 
     //////////////////////////////////////////////////////////////////////////////
@@ -358,7 +755,19 @@ class BinaryIO {
 
       timer.Start();
 
-      if ( (control & BINARYIO_LEXICOGRAPHIC) && (nrank > 1) ) {
+      if ( aggregate ) {
+#ifdef USE_MPI_IO
+        std::cout<< GridLogMessage<<"IOobject: aggregate read I/O "<< file<< std::endl;
+        AggregationPlan plan;
+        BuildAggregationPlan(grid,sizeof(fobj),plan);
+        ReportAggregationPlan(grid,plan,sizeof(fobj),"read");
+        std::vector<fobj> aggregated(lsites);
+        AggregateRead(grid,plan,aggregated,file,offset);
+        AggregateExchange(grid,plan,iodata,aggregated,0);
+#else
+        GRID_ASSERT(0);
+#endif
+      } else if ( (control & BINARYIO_LEXICOGRAPHIC) && (nrank > 1) ) {
 #ifdef USE_MPI_IO
 	std::cout<< GridLogMessage<<"IOobject: MPI read I/O "<< file<< std::endl;
 	ierr=MPI_File_open(grid->communicator,(char *) file.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);    GRID_ASSERT(ierr==0);
@@ -416,7 +825,25 @@ class BinaryIO {
       grid->Barrier();
 
       timer.Start();
-      if ( (control & BINARYIO_LEXICOGRAPHIC) && (nrank > 1) ) {
+      if ( aggregate ) {
+#ifdef USE_MPI_IO
+        std::cout << GridLogMessage <<"IOobject: aggregate write I/O " << file << std::endl;
+        AggregationPlan plan;
+        BuildAggregationPlan(grid,sizeof(fobj),plan);
+        ReportAggregationPlan(grid,plan,sizeof(fobj),"write");
+        std::vector<fobj> aggregated(lsites);
+        AggregateExchange(grid,plan,iodata,aggregated,1);
+        AggregateWrite(grid,plan,aggregated,file,offset);
+        ////////////////////////////////////////////////////////////////////////
+        // Not every rank ends at the end of the payload, so the position can
+        // not be recovered from a file handle. Callers (Lime record chaining)
+        // rely on this being the first byte past the record.
+        ////////////////////////////////////////////////////////////////////////
+        offset = offset + (uint64_t)grid->_gsites*sizeof(fobj);
+#else
+        GRID_ASSERT(0);
+#endif
+      } else if ( (control & BINARYIO_LEXICOGRAPHIC) && (nrank > 1) ) {
 #ifdef USE_MPI_IO
         std::cout << GridLogMessage <<"IOobject: MPI write I/O " << file << std::endl;
         ierr = MPI_File_open(grid->communicator, (char *)file.c_str(), MPI_MODE_RDWR | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
@@ -461,12 +888,26 @@ class BinaryIO {
         
 	std::ofstream fout; 
 	fout.exceptions ( std::fstream::failbit | std::fstream::badbit );
+
+        ////////////////////////////////////////////////////////////////////
+        // Grid's model is that the boss rank performs the metadata
+        // operations and every other rank only seeks and writes into a file
+        // that already exists. Opening with ios::out on all ranks broke that:
+        // it is O_TRUNC, so a rank opening late truncated the file back to
+        // zero after an earlier rank had written its segment, leaving a hole
+        // in its place. The barriers around this block are outside it and do
+        // not order the opens against the writes. Let the boss create and
+        // empty the file, then everyone opens for update only. Same resulting
+        // length, one metadata operation instead of one per rank, no race.
+        ////////////////////////////////////////////////////////////////////
+        if ( !offset && grid->IsBoss() ) { // offset zero: this record starts the file
+          std::ofstream create(file,std::ios::binary|std::ios::out);
+          create.close();
+        }
+        grid->Barrier();
+
 	try {
-	  if (offset) { // Must already exist and contain data
-	    fout.open(file,std::ios::binary|std::ios::out|std::ios::in);
-	  } else {     // Allow create
-	    fout.open(file,std::ios::binary|std::ios::out);
-	  }
+	  fout.open(file,std::ios::binary|std::ios::out|std::ios::in);
 	} catch (const std::fstream::failure& exc) {
 	  std::cout << GridLogError << "Error in opening the file " << file << " for output" <<std::endl;
 	  std::cout << GridLogError << "Exception description: " << exc.what() << std::endl;
@@ -477,7 +918,7 @@ class BinaryIO {
 	  exit(1);
 #endif
 	}
-	
+
 	if ( control & BINARYIO_MASTER_APPEND )  {
 	  try {
 	    fout.seekp(0,fout.end);
