@@ -124,6 +124,68 @@ Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > Inverse(const Lattice<iScala
   return ret;
 }
 
+template<int N>
+Lattice<iMatrix<iScalar<iScalar<iScalar<vComplexD> > > , N> > Inverse(const Lattice<iMatrix<iScalar<iScalar<iScalar<vComplexD> > >, N> > &Umu)
+{
+  GridBase *grid=Umu.Grid();
+  auto lvol = grid->lSites();
+  Lattice<iMatrix<iScalar<iScalar<iScalar<vComplexD> > >, N > > ret(grid);
+  
+  autoView(Umu_v,Umu,CpuRead);
+  autoView(ret_v,ret,CpuWrite);
+  thread_for(site,lvol,{
+    Eigen::MatrixXcd EigenU = Eigen::MatrixXcd::Zero(N,N);
+    Coordinate lcoor;
+    grid->LocalIndexToLocalCoor(site, lcoor);
+    iMatrix<iScalar<iScalar<iScalar<ComplexD> > >, N > Us;
+    iMatrix<iScalar<iScalar<iScalar<ComplexD> > >, N > Ui;
+    peekLocalSite(Us, Umu_v, lcoor);
+    for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	EigenU(i,j) = Us(i,j)()()();
+      }}
+    Eigen::MatrixXcd EigenUinv = EigenU.inverse();
+    for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	Ui(i,j)()()() = EigenUinv(i,j);
+      }}
+    pokeLocalSite(Ui,ret_v,lcoor);
+  });
+  return ret;
+}
+
+template<int N>
+Lattice<iMatrix<iScalar<iScalar<iScalar<iScalar<vComplexD> > > > , N> > Inverse(const Lattice<iMatrix<iScalar<iScalar<iScalar<iScalar<vComplexD> > > >, N> > &Umu)
+{
+  GridBase *grid=Umu.Grid();
+  auto lvol = grid->lSites();
+  Lattice<iMatrix<iScalar<iScalar<iScalar<iScalar<vComplexD> > > >, N > > ret(grid);
+  
+  autoView(Umu_v,Umu,CpuRead);
+  autoView(ret_v,ret,CpuWrite);
+  thread_for(site,lvol,{
+    Eigen::MatrixXcd EigenU = Eigen::MatrixXcd::Zero(N,N);
+    Coordinate lcoor;
+    grid->LocalIndexToLocalCoor(site, lcoor);
+    iMatrix<iScalar<iScalar<iScalar<iScalar<ComplexD> > > >, N > Us;
+    iMatrix<iScalar<iScalar<iScalar<iScalar<ComplexD> > > >, N > Ui;
+    peekLocalSite(Us, Umu_v, lcoor);
+    for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	EigenU(i,j) = Us(i,j)()()()();
+      }}
+    Eigen::MatrixXcd EigenUinv = EigenU.inverse();
+    for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	Ui(i,j)()()()() = EigenUinv(i,j);
+      }}
+    pokeLocalSite(Ui,ret_v,lcoor);
+  });
+  return ret;
+}
+
+
+
 
 NAMESPACE_END(Grid);
 #endif
