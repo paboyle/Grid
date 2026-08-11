@@ -212,7 +212,7 @@ class GridLimeReader : public BinaryIO {
   // Read a generic lattice field and verify checksum
   ////////////////////////////////////////////
   template<class vobj>
-  void readLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name,int control=BINARYIO_LEXICOGRAPHIC)
+  void readLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name,int control=BINARYIO_LEXICOGRAPHIC|BINARYIO_AGGREGATE)
   {
     typedef typename vobj::scalar_object sobj;
     scidacChecksum scidacChecksum_;
@@ -414,7 +414,7 @@ class GridLimeWriter : public BinaryIO
   // in communicator used by the field.Grid()
   ////////////////////////////////////////////////////
   template<class vobj>
-  void writeLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name,int control=BINARYIO_LEXICOGRAPHIC)
+  void writeLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name,int control=BINARYIO_LEXICOGRAPHIC|BINARYIO_AGGREGATE)
   {
     ////////////////////////////////////////////////////////////////////
     // NB: FILE and iostream are jointly writing disjoint sequences in the
@@ -519,7 +519,7 @@ class ScidacWriter : public GridLimeWriter {
   template <class vobj, class userRecord>
   void writeScidacFieldRecord(Lattice<vobj> &field,userRecord _userRecord,
                               const unsigned int recordScientificPrec = 0,
-			      int control=BINARYIO_LEXICOGRAPHIC)
+			      int control=BINARYIO_LEXICOGRAPHIC|BINARYIO_AGGREGATE)
   {
     GridBase * grid = field.Grid();
 
@@ -561,7 +561,7 @@ class ScidacReader : public GridLimeReader {
   ////////////////////////////////////////////////
   template <class vobj, class userRecord>
   void readScidacFieldRecord(Lattice<vobj> &field,userRecord &_userRecord,
-			     int control=BINARYIO_LEXICOGRAPHIC) 
+			     int control=BINARYIO_LEXICOGRAPHIC|BINARYIO_AGGREGATE) 
   {
     typedef typename vobj::scalar_object sobj;
     GridBase * grid = field.Grid();
