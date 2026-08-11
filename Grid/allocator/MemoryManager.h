@@ -113,7 +113,7 @@ private:
   static void *Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim,uint64_t &cbytes) ;
   static void *Lookup(size_t bytes,AllocationCacheEntry *entries,int ncache,uint64_t &cbytes) ;
 
- public:
+public:  
   static void PrintBytes(void);
   static void Audit(std::string s);
   static void Init(void);
@@ -215,6 +215,7 @@ private:
   static void NotifyDeletion(void * CpuPtr);
   static void Print(void);
   static void PrintAll(void);
+  static void EvictAll(void);
   static void PrintState( void* CpuPtr);
   static int   isOpen   (void* CpuPtr);
   static void  ViewClose(void* CpuPtr,ViewMode mode);
