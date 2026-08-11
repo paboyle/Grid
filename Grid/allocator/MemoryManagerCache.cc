@@ -79,6 +79,25 @@ void MemoryManager::EntryErase(uint64_t CpuPtr)
   auto AccCache = EntryLookup(CpuPtr);
   AccViewTable.erase(CpuPtr);
 }
+/////////////////////////////////////////////////////////////////////////////////
+// LRU membership invariant:
+//
+//    LRU_valid == 1   <=>   AccPtr != NULL  &&  accLock == 0  &&  cpuLock == 0
+//
+// i.e. the LRU queue contains exactly the device-resident, completely unlocked
+// entries -- the evictable set.  Membership is maintained EAGERLY at the lock
+// 0<->1 edges, O(1) via the stored LRU_entry iterator:
+//
+//    AcceleratorViewOpen   lock 0->1 : LRUremove   (gated on LRU_valid)
+//    AcceleratorViewClose  accLock->0: LRUinsert   (AccPtr necessarily exists)
+//    CpuViewOpen           lock 0->1 : LRUremove   (gated on LRU_valid)
+//    CpuViewClose          cpuLock->0: LRUinsert   (iff AccPtr exists)
+//    Evict/AccDiscard                : LRUremove   (frees the device copy)
+//
+// Consequences: victims taken from LRU.back() are evictable by construction;
+// Evict() on a locked entry is an invariant violation (asserted), and the
+// eviction loops (EvictVictims/EvictAll) cannot spin.
+/////////////////////////////////////////////////////////////////////////////////
 void  MemoryManager::LRUinsert(AcceleratorViewEntry &AccCache)
 {
   GRID_ASSERT(AccCache.LRU_valid==0);
@@ -130,21 +149,21 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
 {
   ///////////////////////////////////////////////////////////////////////////
   // Make CPU consistent, remove from Accelerator, remove from LRU, LEAVE CPU only entry
-  // Cannot be acclocked. If allocated must be in LRU pool.
+  // Cannot be locked. If allocated must be in LRU pool.
   //
-  // Nov 2022... Felix issue: Allocating two CpuPtrs, can have an entry in LRU-q with CPUlock.
-  //                          and require to evict the AccPtr copy. Eviction was a mistake in CpuViewOpen
-  //                          but there is a weakness where CpuLock entries are attempted for erase
-  //                          Take these OUT LRU queue when CPU locked?
-  //                          Cannot take out the table as cpuLock data is important.
+  // (Historical: a Nov 2022 incident (two CpuPtrs; eviction called from
+  //  CpuViewOpen -- since excised) could present a cpuLocked entry here, and
+  //  silent-return guards were added.  The LRU membership invariant (see
+  //  LRUinsert) now excludes ALL locked entries from the queue eagerly at the
+  //  lock edges, so a locked victim is an invariant violation: asserted.)
   ///////////////////////////////////////////////////////////////////////////
   GRID_ASSERT(AccCache.state!=Empty);
   
   mprintf("MemoryManager: Evict CpuPtr %lx AccPtr %lx cpuLock %ld accLock %ld",
 	  (uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr,
 	  (uint64_t)AccCache.cpuLock,(uint64_t)AccCache.accLock); 
-  if (AccCache.accLock!=0) return;
-  if (AccCache.cpuLock!=0) return;
+  GRID_ASSERT(AccCache.accLock==0);
+  GRID_ASSERT(AccCache.cpuLock==0);
   if(AccCache.state==AccDirty) {
     Flush(AccCache);
   }
@@ -241,6 +260,19 @@ void  MemoryManager::EvictVictims(uint64_t bytes)
   while(bytes+DeviceLRUBytes > DeviceMaxBytes){
     if ( DeviceLRUBytes > 0){
       GRID_ASSERT(LRU.size()>0);
+      uint64_t victim = LRU.back(); // From the LRU
+      auto AccCacheIterator = EntryLookup(victim);
+      auto & AccCache = AccCacheIterator->second;
+      Evict(AccCache);
+    } else {
+      return;
+    }
+  }
+}
+void  MemoryManager::EvictAll(void)
+{
+  while(LRU.size()>0){
+    if ( DeviceLRUBytes > 0){
       uint64_t victim = LRU.back(); // From the LRU
       auto AccCacheIterator = EntryLookup(victim);
       auto & AccCache = AccCacheIterator->second;
@@ -383,6 +415,13 @@ void MemoryManager::CpuViewClose(uint64_t CpuPtr)
   GRID_ASSERT(AccCache.accLock==0);
 
   AccCache.cpuLock--;
+  // Return to LRU queue when fully unlocked -- mirrors AcceleratorViewClose.
+  // Asymmetry vs the Acc side: a device copy need not exist for a host view;
+  // only device-resident entries belong in the (evictable) LRU queue.
+  if( (AccCache.cpuLock==0) && (AccCache.AccPtr!=(uint64_t)NULL) ) {
+    dprintf("CpuViewClose %lx cpuLock decremented to zero, move to LRU queue",(uint64_t)CpuPtr);
+    LRUinsert(AccCache);
+  }
 }
 /*
  *  Action  State   StateNext         Flush    Clone
@@ -447,6 +486,14 @@ uint64_t MemoryManager::CpuViewOpen(uint64_t CpuPtr,size_t bytes,ViewMode mode,V
     AccCache.cpuLock++;
   } else {
     GRID_ASSERT(0); // should be unreachable
+  }
+
+  GRID_ASSERT(AccCache.cpuLock>0);
+  // If view is opened on host must remove from LRU -- mirrors AcceleratorViewOpen.
+  // LRU_valid==1 here implies this is the 0->1 lock edge of a device-resident entry.
+  if(AccCache.LRU_valid==1){
+    dprintf("CpuViewOpen: entry removed from LRU ");
+    LRUremove(AccCache);
   }
 
   AccCache.transient= transient? EvictNext : 0;
