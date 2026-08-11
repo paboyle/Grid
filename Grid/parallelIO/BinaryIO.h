@@ -989,7 +989,7 @@ class BinaryIO {
 				       uint32_t &nersc_csum,
 				       uint32_t &scidac_csuma,
 				       uint32_t &scidac_csumb,
-				       int control=BINARYIO_LEXICOGRAPHIC
+				       int control=BINARYIO_LEXICOGRAPHIC|BINARYIO_AGGREGATE
 				       )
   {
     typedef typename vobj::scalar_object sobj;
@@ -1028,7 +1028,7 @@ class BinaryIO {
 					  uint32_t &nersc_csum,
 					  uint32_t &scidac_csuma,
 					  uint32_t &scidac_csumb,
-					  int control=BINARYIO_LEXICOGRAPHIC)
+					  int control=BINARYIO_LEXICOGRAPHIC|BINARYIO_AGGREGATE)
   {
     typedef typename vobj::scalar_object sobj;
     typedef typename vobj::Realified::scalar_type word;    word w=0;
@@ -1115,7 +1115,7 @@ class BinaryIO {
     std::cout << GridLogMessage << "RNG read I/O on file " << file << std::endl;
 
     std::vector<RNGstate> iodata(lsites);
-    IOobject(w,grid,iodata,file,offset,format,BINARYIO_READ|BINARYIO_LEXICOGRAPHIC,
+    IOobject(w,grid,iodata,file,offset,format,BINARYIO_READ|BINARYIO_LEXICOGRAPHIC|BINARYIO_AGGREGATE,
 	     nersc_csum,scidac_csuma,scidac_csumb);
 
     timer.Start();
@@ -1194,7 +1194,7 @@ class BinaryIO {
     });
     timer.Stop();
 
-    IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC,
+    IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC|BINARYIO_AGGREGATE,
 	     nersc_csum,scidac_csuma,scidac_csumb);
     iodata.resize(1);
     {
