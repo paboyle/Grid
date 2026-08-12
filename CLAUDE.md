@@ -31,11 +31,17 @@ Key configure options:
 | `--with-gmp=`, `--with-mpfr=`, `--with-fftw=`, `--with-lime=` | paths to libs |
 | `--enable-hdf5`, `--enable-mkl`, `--enable-lapack` | optional features |
 
+GPU builds additionally need `--enable-gen-simd-width=64` (sets 512-bit SIMD width for GPU warp/wavefront sizing) and `--enable-unified=no --enable-shm=nvlink` for multi-GPU runs.
+
+To speed up compilation, `--disable-fermion-reps --disable-gparity` skips instantiating G-parity and higher-representation fermion operators.
+
 Platform recipes from `README.md`:
 - **KNL**: `--enable-simd=KNL --enable-comms=mpi3-auto --enable-mkl`
 - **Skylake/Haswell**: `--enable-simd=AVX512` or `AVX2` + `--enable-comms=mpi3-auto`
 - **AMD EPYC**: `--enable-simd=AVX2 --enable-comms=mpi3`
 - **A64FX (Fugaku)**: `--enable-simd=A64FX --enable-comms=mpi3 --enable-shm=shmget` (see `SVE_README.txt`)
+
+Complete, working `configure` invocations for specific HPC systems (Frontier/ROCm, Perlmutter/CUDA, Summit, SDCC-A100, etc.) live in `systems/<platform>/config-command`. These are the canonical references for production builds.
 
 Required external libs: GMP, MPFR, OpenSSL, zlib.
 
@@ -59,9 +65,9 @@ Note the GPU builds use `--enable-simd=GPU --enable-gen-simd-width=64`, so `Nsim
 
 ```bash
 # From build directory
-make check                          # runs only Test_simd, Test_cshift, Test_stencil, Test_dwf_mixedcg_prec
-make -C tests/<subdir> tests        # build (not run) the tests in a subdirectory
-make bench                          # build benchmarks
+make check                          # root-level tests (Test_simd, Test_cshift, etc.)
+make -C tests/<subdir> tests        # build tests in a subdirectory
+make tests                          # build all tests across all subdirectories
 ./tests/core/Test_simd              # run a single test binary directly
 mpirun -n 4 ./tests/core/Test_cshift --grid 16.16.16.16 --mpi 1.1.1.4
 ```
@@ -84,7 +90,7 @@ Tests and benchmarks that need optional fermion representations are guarded by `
 
 4. **Cartesian/comms layer** (`Grid/cartesian/`, `Grid/communicator/`) — `GridCartesian` holds the MPI topology and local/global geometry. `Grid/cshift/` implements nearest-neighbour halo exchange; `Grid/stencil/` is the optimised multi-hop stencil used by Dirac operators.
 
-5. **Algorithm layer** (`Grid/algorithms/`) — iterative solvers (CG, GMRES, BiCGSTAB, mixed-precision), eigensolvers (Lanczos, LAPACK), FFT, smearing.
+5. **Algorithm layer** (`Grid/algorithms/`) — iterative solvers (CG, GMRES, BiCGSTAB, mixed-precision), eigensolvers (Lanczos, LAPACK), FFT, smearing, and multigrid.
 
 6. **QCD layer** (`Grid/qcd/`) — gauge and fermion actions, HMC integrators, observables.
 
@@ -98,6 +104,11 @@ Tests and benchmarks that need optional fermion representations are guarded by `
 - `observables/` — Polyakov loop, plaquette, topological charge
 
 ### GPU acceleration and the view/memory-manager discipline
+### Multigrid (`Grid/algorithms/multigrid/`)
+
+Aggregation-based algebraic multigrid for Wilson-type fermions. Key files: `CoarsenedMatrix.h` (coarse operator), `GeneralCoarsenedMatrix.h` and `GeneralCoarsenedMatrixMultiRHS.h` (general coarsening supporting multi-RHS solves), `Aggregates.h` (near-null vector construction), `Geometry.h` (coarse-grid geometry). `MultiGrid.h` is the top-level include.
+
+### GPU acceleration
 
 GPU support is injected via macros in `Grid/threads/Accelerator.h` — `accelerator_for(i, n, nsimd, {...})`, `accelerator_forNB` (non-blocking, must be followed by `accelerator_barrier()`), `accelerator_for2dNB`, and `accelerator_inline`. On a CPU build these degrade to `thread_for` (OpenMP). Unified virtual memory is on by default (`--enable-unified=yes`); device-aware MPI (`--enable-accelerator-aware-mpi`) avoids device→host copies on transfers.
 
@@ -127,6 +138,20 @@ Modes are `AcceleratorRead/Write/WriteDiscard` and `CpuRead/Write/WriteDiscard`.
 | `correctness-verification.md` | Double-run fingerprinting, per-packet checksums, flight recorder |
 | `hang-diagnosis.md` | Diagnosing MPI/accelerator hangs |
 
+The key loop macros (defined in `Grid/threads/Accelerator.h`) are:
+- `accelerator_for(iter, num, nsimd, {...})` — maps to CUDA/HIP kernel or OpenMP loop; `nsimd` is the innermost SIMD lane count
+- `accelerator_forNB(...)` — non-blocking variant (no implicit barrier)
+- `accelerator_for2dNB(iter1, num1, iter2, num2, nsimd, {...})` — 2D kernel launch
+- `thread_for(iter, num, {...})` — CPU OpenMP loop (never dispatches to GPU)
+
+On CPU builds, `accelerator_for` aliases to `thread_for`.
+
+### Solver patterns
+
+`SchurRedBlack` (`Grid/algorithms/iterative/SchurRedBlack.h`) implements red-black (even/odd) preconditioning for fermion operators. Most production fermion solves use `SchurRedBlackDiagMooeeSolve` or similar wrappers that internally call a `ConjugateGradient` on the Schur complement.
+
+Mixed-precision solvers (`ConjugateGradientMixedPrec`, `BiCGSTABMixedPrec`) drive a double-precision outer loop with single-precision inner solves.
+
 ### Memory and I/O
 
 - `Grid/allocator/` — aligned/NUMA-aware allocators; caching allocator via `--enable-alloc-cache`
@@ -146,7 +171,9 @@ Every programme is wrapped in `Grid_init(&argc, &argv)` / `Grid_finalize()` (`Gr
 ## Key Conventions
 
 - **C++17** is required throughout.
-- Template structure: most classes are templated on `<_FImpl>` (fermion impl) or `<Gimpl>` (gauge impl), which encode the representation and precision. Instantiation is controlled by `--enable-fermion-instantiations`; the explicit instantiation `.cc` files live under `Grid/qcd/action/fermion/instantiation/<Impl>/` and are selected by `scripts/filelist`.
+- Template structure: most classes are templated on `<_FImpl>` (fermion impl) or `<Gimpl>` (gauge impl), which encode the representation and precision. Instantiation is controlled by `--enable-fermion-instantiations`.
+- **Tensor indices are positional, not labelled.** The `Grid/tensors/` arithmetic recurses structurally over the `iScalar`/`iVector`/`iMatrix` nest: each level defines only the {scalar,vector,matrix}² products at its own level, with element types resolved by automatic type deduction, so every colour/spin/lorentz combination composes from ~200 lines (versus the pre-C++11 QDP++/PETE approach of machine-generating every case). An index's meaning derives entirely from its nesting depth counted from the outside; `iScalar` is the identity/broadcast case at every level. Never insert or remove a nesting level casually — the multiplication tables contract by position.
+- **Multigrid coarsening deepens the tensor nest by one level.** A coarse site vector is `iVector<CComplex,nbasis>`, and `innerProduct` on it returns `iScalar<CComplex>` — one level deeper than the fine block scalar. So the block-inner-product scalar type gains one `iScalar` wrapper per MG level (fine: `vTComplex`; level 2: `iScalar<vTComplex>`; see `examples/Example_pvdagm_3level.cc`). When calling `blockInnerProduct`/`blockZAXPY`/`blockOrthogonalise` on coarse fields, the coarse scalar type must match `decltype(innerProduct(siteVector(),siteVector()))` exactly; a wrong depth fails to compile (no viable `operator=` deep in the instantiation chain) rather than mis-contracting.
 - The `RealD`/`RealF`/`ComplexD`/`ComplexF` typedefs are used everywhere; avoid raw `double`/`float`.
 - Use `GRID_ASSERT(cond)` (defined in `Grid/GridStd.h`), not bare `assert` — it prints a Grid-formatted message and aborts cleanly under MPI.
 - Logging is stream-based, not macro-based: `std::cout << GridLogMessage << ... << std::endl;`. Channels declared in `Grid/log/Log.h` include `GridLogError`, `GridLogWarning`, `GridLogDebug`, `GridLogPerformance`, `GridLogIterative`, `GridLogSolver`, `GridLogHMC`, `GridLogComms`, `GridLogMemory`, `GridLogDslash`, `GridLogIRL`, `GridLogMG`. A subset is switched on at runtime with e.g. `--log Error,Warning,Message,Performance,Iterative,Integrator,Debug,Colours` (names given without the `GridLog` prefix).
