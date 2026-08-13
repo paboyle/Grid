@@ -69,18 +69,32 @@ enum GridBLASOperation_t { GridBLAS_OP_N, GridBLAS_OP_T, GridBLAS_OP_C } ;
 enum GridBLASPrecision_t { GridBLAS_PRECISION_DEFAULT, GridBLAS_PRECISION_16F, GridBLAS_PRECISION_16BF, GridBLAS_PRECISION_TF32 };
 
 ///////////////////////////////////////////////////////////////////////////
-// Device-resident scalar constant with VALUE CACHING: the host->device
-// copy is issued ONLY when the requested value differs from what is
-// already resident.  Motivation (rocprof, Frontier, 2026-08-13): per-call
-// alpha/beta staging in the gemmBatched family generated ~92k tiny staged
-// hipMemcpys in a 12s solve window (~26% of host API time) at the
-// latency-bound coarse level.  With the single-slot cache the coarse-mult
-// accumulation pattern beta = (p==0 ? 0 : 1) costs two copies per Mult
-// instead of npoint.  NB not thread safe -- matches the single-threaded
-// host BLAS call pattern of the per-call staging it replaces.
+// BLAS scalar constants: the put() wrapper OWNS the residency policy so
+// call sites just pass values (scalars-live-on-the-host rule).
+//
+// Policy per backend:
+//  - CUDA / HIP : handles are put in HOST pointer mode at Init (cuBLAS docs
+//    2.2.7: host mode is the documented default; 2.1.5: host-mode scalars
+//    are consumed AT CALL TIME, "can be freed just after the return of the
+//    call even though the kernel launch is asynchronous").  put() stores
+//    the value in persistent host memory and returns its address: ZERO
+//    host->device copies.
+//  - SYCL : the oneMKL group-API alpha/beta arrays are dereferenced
+//    USM-side (spec is silent for the group API; implementation observed
+//    to require USM-accessible storage -- host stack pointers fault).
+//    put() keeps a device-resident copy with VALUE CACHING: the copy is
+//    issued only when the value changes (accumulation pattern
+//    beta = (p==0 ? 0 : 1) costs two copies per Mult instead of npoint).
+//
+// Motivation (rocprof, Frontier, 2026-08-13): per-call alpha/beta device
+// staging generated ~92k tiny staged hipMemcpys in a 12s solve window
+// (~26% of host API time) at the latency-bound coarse level.
+// NB not thread safe -- matches the single-threaded host BLAS call
+// pattern of the per-call staging it replaces.
 ///////////////////////////////////////////////////////////////////////////
 template<class T>
 class GridBLASDeviceConstant {
+#ifdef GRID_SYCL
   deviceVector<T> dev;
   T               host;
   int             valid;
@@ -94,6 +108,17 @@ public:
     }
     return &dev[0];
   }
+#else
+  // CUDA / HIP in HOST pointer mode (and CPU/Eigen, where the pointer is
+  // unused): persistent host storage, no copies ever.
+  T host;
+public:
+  GridBLASDeviceConstant() {};
+  T * put(T v) {
+    host = v;
+    return &host;
+  }
+#endif
 };
 
 class GridBLAS {
@@ -109,11 +134,31 @@ public:
 #ifdef GRID_CUDA
       std::cout << "cublasCreate"<<std::endl;
       cublasCreate(&gridblasHandle);
-      cublasSetPointerMode(gridblasHandle, CUBLAS_POINTER_MODE_DEVICE);
+      // HOST pointer mode: scalars consumed at call time from host memory
+      // (cuBLAS docs 2.1.5/2.2.7) -- no device staging of alpha/beta.
+      // DEVICE mode would be a deliberate opt-in for device-produced
+      // scalars (e.g. a future graph-captured solver).
+      cublasSetPointerMode(gridblasHandle, CUBLAS_POINTER_MODE_HOST);
+      {
+        cublasPointerMode_t pm;
+        cublasGetPointerMode(gridblasHandle,&pm);
+        std::cout << "GridBLAS: cuBLAS pointer mode "
+                  << ((pm==CUBLAS_POINTER_MODE_DEVICE)?"DEVICE":"HOST") <<std::endl;
+      }
 #endif
 #ifdef GRID_HIP
       std::cout << "hipblasCreate"<<std::endl;
       hipblasCreate(&gridblasHandle);
+      // Explicit HOST mode: the hipBLAS default is UNDOCUMENTED in the
+      // headers (enum 0 == HOST by cuBLAS-mirroring convention only);
+      // set it and print it so every log carries the ground truth.
+      hipblasSetPointerMode(gridblasHandle, HIPBLAS_POINTER_MODE_HOST);
+      {
+        hipblasPointerMode_t pm;
+        hipblasGetPointerMode(gridblasHandle,&pm);
+        std::cout << "GridBLAS: hipBLAS pointer mode "
+                  << ((pm==HIPBLAS_POINTER_MODE_DEVICE)?"DEVICE":"HOST") <<std::endl;
+      }
 #endif
 #ifdef GRID_SYCL
       gridblasHandle = theGridAccelerator;
