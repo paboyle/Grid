@@ -1,1 +1,2 @@
 mpicxx  -fsycl halo_mpi.cc -o halo_mpi
+mpicxx -O2 -std=c++11 io_mpi.cc -o io_mpi
