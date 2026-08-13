@@ -272,7 +272,11 @@ public:
 
     for(int p=0; p<_Op.geom.npoint; p++){
       Coordinate shift = _Op.geom.shifts[p];
-      autoView(Av, _Op._A[p], CpuRead);
+      // _A[p] is PADDED after ExchangeCoarseLinks (end of CoarsenOperator):
+      // extract the unpadded field before peeking with unpadded coordinates
+      // (exactly as MultiGeneralCoarsenedMatrix::CopyMatrix does).
+      CoarseMatrix Aun = _Op.Cell.Extract(_Op._A[p]);
+      autoView(Av, Aun, CpuRead);
       thread_for(ss, lsites, {
         Coordinate ncoor(nd);
         for(int d=0; d<nd; d++){

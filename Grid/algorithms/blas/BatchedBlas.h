@@ -68,6 +68,34 @@ NAMESPACE_BEGIN(Grid);
 enum GridBLASOperation_t { GridBLAS_OP_N, GridBLAS_OP_T, GridBLAS_OP_C } ;
 enum GridBLASPrecision_t { GridBLAS_PRECISION_DEFAULT, GridBLAS_PRECISION_16F, GridBLAS_PRECISION_16BF, GridBLAS_PRECISION_TF32 };
 
+///////////////////////////////////////////////////////////////////////////
+// Device-resident scalar constant with VALUE CACHING: the host->device
+// copy is issued ONLY when the requested value differs from what is
+// already resident.  Motivation (rocprof, Frontier, 2026-08-13): per-call
+// alpha/beta staging in the gemmBatched family generated ~92k tiny staged
+// hipMemcpys in a 12s solve window (~26% of host API time) at the
+// latency-bound coarse level.  With the single-slot cache the coarse-mult
+// accumulation pattern beta = (p==0 ? 0 : 1) costs two copies per Mult
+// instead of npoint.  NB not thread safe -- matches the single-threaded
+// host BLAS call pattern of the per-call staging it replaces.
+///////////////////////////////////////////////////////////////////////////
+template<class T>
+class GridBLASDeviceConstant {
+  deviceVector<T> dev;
+  T               host;
+  int             valid;
+public:
+  GridBLASDeviceConstant() : dev(1), valid(0) {};
+  T * put(T v) {
+    if ( (!valid) || (v != host) ) {
+      acceleratorCopyToDevice((void *)&v,(void *)&dev[0],sizeof(T));
+      host  = v;
+      valid = 1;
+    }
+    return &dev[0];
+  }
+};
+
 class GridBLAS {
 public:
 
@@ -240,11 +268,11 @@ public:
     if(OpB!=GridBLAS_OP_N)
       ldb = n;
     
-    static deviceVector<ComplexD> alpha_p(1);
-    static deviceVector<ComplexD> beta_p(1);
-    // can prestore the 1 and the zero on device
-    acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(ComplexD));
-    acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(ComplexD));
+    // Cached device constants: copy only on value change (see GridBLASDeviceConstant)
+    static GridBLASDeviceConstant<ComplexD> alpha_c;
+    static GridBLASDeviceConstant<ComplexD> beta_c;
+    ComplexD *alpha_p = alpha_c.put(alpha);
+    ComplexD *beta_p  = beta_c.put(beta);
     RealD t0=usecond();
     //    std::cout << "ZgemmBatched mnk  "<<m<<","<<n<<","<<k<<" count "<<batchCount<<std::endl;
 #ifdef GRID_HIP
@@ -498,11 +526,11 @@ public:
       lda = k;
     if(OpB!=GridBLAS_OP_N)
       ldb = n;
-    static deviceVector<ComplexF> alpha_p(1);
-    static deviceVector<ComplexF> beta_p(1);
-    // can prestore the 1 and the zero on device
-    acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(ComplexF));
-    acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(ComplexF));
+    // Cached device constants: copy only on value change (see GridBLASDeviceConstant)
+    static GridBLASDeviceConstant<ComplexF> alpha_c;
+    static GridBLASDeviceConstant<ComplexF> beta_c;
+    ComplexF *alpha_p = alpha_c.put(alpha);
+    ComplexF *beta_p  = beta_c.put(beta);
     RealD t0=usecond();
 
     GRID_ASSERT(Bkn.size()==batchCount);
@@ -723,10 +751,11 @@ public:
     GRID_ASSERT( ldb >= ((OpB==GridBLAS_OP_N) ? k : n) );
     GRID_ASSERT( ldc >= m );
 
-    static deviceVector<ComplexF> alpha_p(1);
-    static deviceVector<ComplexF> beta_p(1);
-    acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(ComplexF));
-    acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(ComplexF));
+    // Cached device constants: copy only on value change (see GridBLASDeviceConstant)
+    static GridBLASDeviceConstant<ComplexF> alpha_c;
+    static GridBLASDeviceConstant<ComplexF> beta_c;
+    ComplexF *alpha_p = alpha_c.put(alpha);
+    ComplexF *beta_p  = beta_c.put(beta);
     RealD t0=usecond();
 
     GRID_ASSERT(Bkn.size()==batchCount);
@@ -943,11 +972,11 @@ public:
       lda = k;
     if(OpB!=GridBLAS_OP_N)
       ldb = n;
-    static deviceVector<RealF> alpha_p(1);
-    static deviceVector<RealF> beta_p(1);
-    // can prestore the 1 and the zero on device
-    acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(RealF));
-    acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(RealF));
+    // Cached device constants: copy only on value change (see GridBLASDeviceConstant)
+    static GridBLASDeviceConstant<RealF> alpha_c;
+    static GridBLASDeviceConstant<RealF> beta_c;
+    RealF *alpha_p = alpha_c.put(alpha);
+    RealF *beta_p  = beta_c.put(beta);
     RealD t0=usecond();
 
     GRID_ASSERT(Bkn.size()==batchCount);
@@ -1104,11 +1133,11 @@ public:
     if(OpB!=GridBLAS_OP_N)
       ldb = n;
     
-    static deviceVector<RealD> alpha_p(1);
-    static deviceVector<RealD> beta_p(1);
-    // can prestore the 1 and the zero on device
-    acceleratorCopyToDevice((void *)&alpha,(void *)&alpha_p[0],sizeof(RealD));
-    acceleratorCopyToDevice((void *)&beta ,(void *)&beta_p[0],sizeof(RealD));
+    // Cached device constants: copy only on value change (see GridBLASDeviceConstant)
+    static GridBLASDeviceConstant<RealD> alpha_c;
+    static GridBLASDeviceConstant<RealD> beta_c;
+    RealD *alpha_p = alpha_c.put(alpha);
+    RealD *beta_p  = beta_c.put(beta);
     RealD t0=usecond();
 
     GRID_ASSERT(Bkn.size()==batchCount);
