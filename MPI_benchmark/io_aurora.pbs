@@ -1,0 +1,116 @@
+#!/bin/bash
+
+# Standalone MPI-only I/O reproducer on Aurora.  Host only -- no SYCL, no
+# gpu_tile_compact.sh -- so unlike halo_mpi this needs nothing but MPI:
+#
+#   mpicxx -O2 -std=c++11 io_mpi.cc -o io_mpi
+#
+# 12 ranks per node, one per tile, which is what the machine is.  That is a
+# deliberate difference from io_frontier.slurm (8 per node, one per GCD), so
+# read the comparison carefully -- see WHAT IS AND IS NOT COMPARABLE below.
+
+#PBS -l select=128
+#PBS -l walltime=02:00:00
+#PBS -l filesystems=flare
+#PBS -q prod
+#PBS -A LatticeQCD_aesp_CNDA
+
+cd $PBS_O_WORKDIR
+
+##########################################################################
+# WHAT IS AND IS NOT COMPARABLE WITH THE FRONTIER SCAN
+#
+# Held identical at every rung of both scans:
+#   local volume  8.8.32.128 = 262144 sites x 576 B = 151 MB/rank
+#   file view     32768 contiguous runs of 4608 B per rank
+#   aggregation   k=2, row of 16, 8 extents of 18 MB
+# (verified: 4.4.3.1 at 48 ranks and 4.4.3.2 at 96 ranks give exactly the
+# same plan as Frontier's 4.4.2.1 at 32 ranks.)
+#
+# NOT identical, because 12 ranks/node is 1.5x the clients per node:
+#   record size at a given NODE count is 1.5x Frontier's
+#   client count at a given NODE count is 1.5x Frontier's
+#
+# So compare the two machines at equal RANK count (Aurora 4 nodes vs
+# Frontier 6, and so on) if what you want is equal client count and equal
+# record size; compare at equal NODE count if what you want is each machine
+# used as it is meant to be used.  Both are legitimate, they answer
+# different questions, and a table that does not say which one it is
+# reporting is worthless.  The quantity that carries the MPI-IO pathology --
+# per rank local volume and the resulting file view -- is invariant either
+# way, which is the point.
+##########################################################################
+
+##########################################################################
+# WHICH FILESYSTEM.  Point this at Lustre for the like-for-like comparison
+# with Frontier's Orion.  DAOS is a different architecture -- its numbers
+# are interesting but they are NOT a reproduction of the Frontier result,
+# and mixing them into one table would misrepresent both.  Label every set
+# of numbers with the filesystem it came from.
+##########################################################################
+WORK=/lus/flare/projects/LatticeQCD_aesp_CNDA/$USER/iompi.$PBS_JOBID
+mkdir -p $WORK
+cd       $WORK
+
+# Match Frontier's default: no explicit striping.  Record what was inherited.
+lfs getstripe -d $WORK 2>/dev/null || echo "(no lfs getstripe -- not Lustre?)"
+
+# The largest rung writes three files of 232 GB, so budget ~700 GB and check
+# the quota before submitting.  Each run unlinks the three files first, so
+# that is peak usage, not cumulative.
+
+NRANKS=12          # one per tile
+
+BIN=$PBS_O_WORKDIR/io_mpi
+ARGS="--target 4194304 --reps 3"
+
+# MPICH's own account of what it did; the first thing anyone reading the
+# report will ask for.
+# export MPICH_MPIIO_STATS=1
+# export MPICH_MPIIO_TIMERS=1
+
+run () {   # run <nodes> <grid> <mpi> <comment> [extra args...]
+  local nodes=$1 gr=$2 mp=$3 note=$4
+  local ntot=$(( nodes * NRANKS ))
+  shift 4
+  echo
+  echo "==================================================================="
+  echo "=== nodes=$nodes ranks=$ntot grid=$gr mpi=$mp   $note"
+  echo "=== extra: $@"
+  echo "==================================================================="
+  mpiexec -np $ntot -ppn $NRANKS $BIN --grid $gr --mpi $mp $ARGS "$@"
+  echo "=== exit $?"
+}
+
+#####################################################################
+# Phase 0.  Correctness.  Both count branches of MPI_Alltoallv are
+# covered; the labels below were checked, not assumed.  The whole-file
+# crc32 is serial, so keep these small.
+#####################################################################
+run 1 16.16.16.24  2.2.1.3  "correctness, UNIFORM counts, row of 4"      --reps 0 --serial-crc
+run 2 24.12.8.8    3.2.2.2  "correctness, NON-UNIFORM counts, row of 12" --reps 0 --serial-crc
+run 4 16.16.32.24  2.2.4.3  "correctness, NON-UNIFORM, non-zero offset"  --reps 0 --serial-crc --offset 1024
+
+#####################################################################
+# Phase 1.  Weak scan at 151 MB/rank.  Identical plan at every rung:
+# k=2, row of 16, 8 extents of 18 MB, 32768 runs of 4608 B in the view.
+#####################################################################
+#          nodes  global lattice    mpi        record
+run    4     32.32.96.128    4.4.3.1   "7.2 GB"    --no-validate
+run    8     32.32.96.256    4.4.3.2   "14.5 GB"   --no-validate
+run   16     32.32.96.512    4.4.3.4   "29.0 GB"   --no-validate
+run   32     32.32.192.512   4.4.6.4   "58.0 GB"   --no-validate
+run   64     32.32.192.1024  4.4.6.8   "116.0 GB"  --no-validate
+run  128     32.32.384.1024  4.4.12.8  "231.9 GB"  --no-validate
+
+#####################################################################
+# Phase 2.  The three questions a reviewer asks immediately.
+#####################################################################
+run  128     32.32.384.1024  4.4.12.8  "231.9 GB, durable"  --no-validate --fsync --drop-cache
+run  128     32.32.384.1024  4.4.12.8  "231.9 GB, cb hints" --no-validate \
+     --hints romio_cb_write=enable,romio_cb_read=enable,cb_nodes=128,cb_buffer_size=16777216
+run  128     32.32.384.1024  4.4.12.8  "231.9 GB, mem subarray" --no-validate --mem-subarray
+
+echo
+echo "=== done.  Files left in $WORK"
+ls -l $WORK

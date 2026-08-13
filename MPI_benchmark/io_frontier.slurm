@@ -15,6 +15,20 @@
 #
 # so any change in the relative bandwidth of the two lexicographic paths is a
 # property of the client count alone.
+#
+# The PERF lines are MiB/s (bytes/1024/1024/s), which is what BinaryIO.h
+# computes for lastPerf.mbytesPerSecond and prints as "MB/s", so the two
+# tools can be compared directly.  Grid's timed region is used here too:
+# barrier, start, [plan build + exchange + I/O], barrier, stop, quoting the
+# boss rank's stopwatch.  --reuse-plan hoists the plan build out, which is
+# how to show it is not where the time goes; do not use it when comparing
+# against Grid's own numbers.
+#
+# io_aurora.pbs runs 12 ranks per node, one per tile, because that is what
+# that machine is.  The per rank local volume and the file view are the same
+# there as here, but the record size and client count at a given NODE count
+# are 1.5x.  See the header of that script before tabulating the two
+# together.
 
 #SBATCH --job-name=ioMPI
 #SBATCH --nodes=128
