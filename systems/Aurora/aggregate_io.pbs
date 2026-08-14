@@ -1,0 +1,144 @@
+#!/bin/bash
+
+# Grid's tests/IO/Test_aggregate_io on Aurora, 12 ranks per node (one per
+# tile).  This is the Grid-side counterpart of MPI_benchmark/io_aurora.pbs:
+# same three paths, same comparison, but exercising the real BinaryIO.h
+# code that production uses, with Grid's checksums and its munge/endian
+# conversion in the loop.  Run both -- if they disagree, the difference is
+# in Grid, not in MPI-IO.
+#
+# Submit from the BUILD directory: BIN below is $PBS_O_WORKDIR relative.
+
+#PBS -q debug-scaling
+#PBS -l filesystems=flare
+#PBS -l filesystems=home
+#PBS -l select=4
+#PBS -l walltime=01:00:00
+#PBS -A 15479
+##PBS -A LatticeQCD_aesp_CNDA
+
+cd $PBS_O_WORKDIR
+cp $PBS_NODEFILE nodefile
+
+##########################################################################
+# Grid source tree.  Unlike io_mpi this IS a Grid binary -- SYCL, c-lime,
+# the lot -- so sourceme.sh is required, and so is the tile wrapper.
+##########################################################################
+root=$HOME/Grid/systems/Aurora            # <-- adjust to your source tree
+source ${root}/sourceme.sh
+TILE=${root}/benchmarks/gpu_tile.sh
+
+BIN=$PBS_O_WORKDIR/tests/IO/Test_aggregate_io
+[ -x $BIN   ] || { echo "no $BIN -- submit from the build directory"; exit 1; }
+[ -x $TILE  ] || { echo "no $TILE -- check \$root"; exit 1; }
+
+export OMP_NUM_THREADS=4
+export MPICH_OFI_NIC_POLICY=GPU
+# The aggregate path's MPI_Alltoallv runs on HOST buffers, so NIC policy
+# NUMA is arguably the better match here even though GPU is the standard
+# for Grid on this machine.  Worth one comparison run; do not change it
+# silently, the rest of the Grid numbers on Aurora were taken with GPU.
+#export MPICH_OFI_NIC_POLICY=NUMA
+
+##########################################################################
+# Test_aggregate_io writes ref.bin / agg.bin / raw.bin / trunc.bin with
+# RELATIVE paths, so they land in the cwd.  Home is not the point of the
+# exercise.
+##########################################################################
+# PROJECT is the flare project DIRECTORY name, not the -A account number.
+PROJECT=LatticeQCD_aesp_CNDA
+WORK=/lus/flare/projects/$PROJECT/$USER/aggio.$PBS_JOBID
+mkdir -p $WORK || { echo "cannot create $WORK -- set PROJECT correctly"; exit 1; }
+cd       $WORK
+
+# Leave striping at the directory default, as the Frontier runs did.  At
+# 128 nodes there the aggregate path was 2.2x faster on the default layout
+# than on -c -1, while MPI-IO was 2.4x slower on it; the two paths want
+# opposite things.  Set it only to reproduce that interaction, and say so.
+#lfs setstripe -c -1 -S 8M $WORK
+lfs getstripe -d $WORK 2>/dev/null || echo "(no lfs getstripe -- not Lustre?)"
+
+# ROMIO's own account of what the reference path did.  Verbose; switch on
+# deliberately.
+#export MPICH_MPIIO_STATS=1
+#export MPICH_MPIIO_TIMERS=1
+
+AT=8        # accelerator threads; immaterial to an I/O test, kept canonical
+
+run () {   # run <nodes> <grid> <mpi> <comment> [extra args...]
+  local nodes=$1 gr=$2 mp=$3 note=$4
+  local ntot=$(( nodes * 12 ))
+  shift 4
+  echo
+  echo "==================================================================="
+  echo "=== nodes=$nodes ranks=$ntot grid=$gr mpi=$mp   $note"
+  echo "=== extra: $@"
+  echo "==================================================================="
+  # Deliberately NOT removing ref.bin/agg.bin/raw.bin here.  The test does
+  # it itself (Test_aggregate_io.cc:203 and :370) for exactly the stale-tail
+  # reason, and doing it in the script would destroy the files a later
+  # --io-read-only job needs.
+  mpiexec -np $ntot -ppn 12 -envall $TILE $BIN --mpi $mp --grid $gr \
+          --shm-mpi 0 --shm 2048 --device-mem 32000 --accelerator-threads $AT "$@"
+  echo "=== exit $?"
+}
+
+#####################################################################
+# Phase 0.  Logic corners, correctness only, no bandwidth claimed.
+#
+# These run the FULL default target sweep {1, 1024, 64K, 4M}, which walks
+# k from 1 to Nd-1 and so exercises every shape of aggregation plan on a
+# volume small enough that the serial byte-for-byte file comparison is
+# affordable.  1.3 MB/rank means nothing for bandwidth and is not meant to.
+#
+# Both branches of MPI_Alltoallv are covered; the labels were checked with
+# MPI_benchmark/io_mpi, not assumed.
+#####################################################################
+run 1 16.16.16.24 2.2.1.3 "UNIFORM counts, row of 4"      --io-reps 0
+run 1 12.12.24.8  2.2.3.1 "NON-UNIFORM counts, row of 12" --io-reps 0
+
+#####################################################################
+# Phase 1.  151 MB/rank, 3.6 GB record, 24 ranks.  Correctness AND
+# performance at the production 4 MB target only -- the byte-for-byte
+# comparison reads the whole file on one rank, so the four-target sweep
+# is not affordable here.
+#####################################################################
+run 2 16.16.96.256 2.2.3.2 "3.6 GB, row of 4, 32 extents, correctness + perf" \
+    --aggregate-target 4194304
+
+# Same volume per rank, but an odd process factor in an un-split dimension
+# puts the variable-count branch of Alltoallv where the bandwidth is real.
+run 2 24.16.64.256 3.2.2.2 "3.6 GB, NON-UNIFORM counts, row of 6, 22 extents" \
+    --aggregate-target 4194304
+
+#####################################################################
+# Phase 2.  604 MB/rank, 29.0 GB record, 48 ranks.  Correctness off.
+#
+# Per-rank volume is held at 16.16.32.128 in ALL FOUR, so the only thing
+# changing is how much work the aggregation has to do:
+#
+#   4.4.3.1   row 16    8 extents of 72 MB   <- old path: 9 KB runs
+#   4.2.3.2   row  8   16 extents of 36 MB
+#   2.2.12.1  row  4   32 extents of 18 MB
+#   1.1.3.16  row  1  128 extents of 4.5 MB  <- no exchange at all
+#
+# The last is the interesting control: with the fast dimensions unsplit
+# the aggregate path degenerates to plain large-extent POSIX and the
+# Alltoallv is trivial, so it separates "the transposition is cheap" from
+# "the writes are large".  Note the test's own header warns that 1.1.X.Y
+# makes the CORRECTNESS section vacuous -- rows of size one exchange
+# nothing.  That is fine here because correctness is off; it would not be
+# fine as a correctness run.
+#####################################################################
+run 4 64.64.96.128   4.4.3.1  "29.0 GB, row of 16"  --aggregate-target 4194304 --io-no-correctness
+run 4 64.32.96.256   4.2.3.2  "29.0 GB, row of 8"   --aggregate-target 4194304 --io-no-correctness
+run 4 32.32.384.128  2.2.12.1 "29.0 GB, row of 4"   --aggregate-target 4194304 --io-no-correctness
+run 4 16.16.96.2048  1.1.3.16 "29.0 GB, row of 1, no exchange" \
+    --aggregate-target 4194304 --io-no-correctness
+
+echo
+echo "=== done.  Output left in $WORK"
+echo "=== For COLD read numbers, submit a second job on a fresh allocation"
+echo "=== with WORK pointed at this directory and --io-read-only added."
+echo "=== Reading back what this job just wrote only measures page cache."
+ls -l $WORK
