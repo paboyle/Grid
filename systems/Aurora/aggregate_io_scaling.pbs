@@ -1,0 +1,117 @@
+#!/bin/bash
+
+# Node count scan for Grid's tests/IO/Test_aggregate_io on Aurora, 12 ranks
+# per node.  The Aurora counterpart of systems/Frontier/aggregate_io_scaling.slurm.
+#
+# Everything that could confound the comparison is held fixed and only the
+# number of Lustre clients changes:
+#
+#   local volume   8.8.32.128        = 262144 sites x 576 B = 151 MB / rank
+#   aggregation    k=2, row of 16, 8 extents of 18 MB        (identical at
+#                                                             every node count)
+#   old path       contiguous run = lLattice[0]*576 = 4.6 KB (identical too)
+#
+# So the ratio of contiguous extent between the two layout preserving paths
+# is a constant 4000x across the whole scan, and any change in their relative
+# bandwidth is a property of the client count alone.
+#
+# The mpi decompositions differ from the Frontier scan because 12 ranks per
+# node is not 8, but they were chosen to give the SAME aggregation plan --
+# verified with MPI_benchmark/io_mpi, which uses the identical plan algorithm
+# and the same 576 B site object:
+#
+#   Frontier   4.4.2.1  at   32 ranks  ->  k=2, row 16, 8 extents
+#   Aurora     4.4.3.1  at   48 ranks  ->  k=2, row 16, 8 extents
+#   Aurora     4.4.12.8 at 1536 ranks  ->  k=2, row 16, 8 extents
+#
+# Consequence of 12 rather than 8: at a given NODE count the record and the
+# client count are 1.5x Frontier's.  Compare the machines at equal RANK count
+# for equal record size, or at equal NODE count for each machine used as it
+# is meant to be used.  Say which one any table is reporting.
+#
+# Trim the tail of the run list for a smaller allocation; the geometries are
+# independent.
+#
+# Submit from the BUILD directory.
+
+#PBS -q prod
+#PBS -l filesystems=flare
+#PBS -l filesystems=home
+#PBS -l select=128
+#PBS -l walltime=02:00:00
+#PBS -A 15479
+##PBS -A LatticeQCD_aesp_CNDA
+
+cd $PBS_O_WORKDIR
+cp $PBS_NODEFILE nodefile
+
+root=$HOME/Grid/systems/Aurora            # <-- adjust to your source tree
+source ${root}/sourceme.sh
+TILE=${root}/benchmarks/gpu_tile.sh
+
+BIN=$PBS_O_WORKDIR/tests/IO/Test_aggregate_io
+[ -x $BIN  ] || { echo "no $BIN -- submit from the build directory"; exit 1; }
+[ -x $TILE ] || { echo "no $TILE -- check \$root"; exit 1; }
+
+export OMP_NUM_THREADS=4
+export MPICH_OFI_NIC_POLICY=GPU
+
+# MPICH_DBG_* and MPICH_MPIIO_STATS are deliberately absent: at 1536 ranks
+# they produce gigabytes of log and perturb the timings they would explain.
+# Get those from systems/Aurora/aggregate_io.pbs on the debug queue.
+
+# PROJECT is the flare project DIRECTORY name, not the -A account number.
+PROJECT=LatticeQCD_aesp_CNDA
+WORK=/lus/flare/projects/$PROJECT/$USER/aggscale.$PBS_JOBID
+mkdir -p $WORK || { echo "cannot create $WORK -- set PROJECT correctly"; exit 1; }
+cd       $WORK
+
+# The largest rung writes three files of 232 GB, so budget ~700 GB for the
+# scan and check the quota before submitting.  The test unlinks its three
+# files at the start of each run, so that is peak, not cumulative.
+#
+# Do NOT stripe by default.  Measured on FRONTIER at 128 nodes / 1024 ranks,
+# 154.6 GB record, best of 3 (MB/s) -- these are Frontier numbers, quoted for
+# what to look for, not a prediction for Aurora:
+#
+#                     default layout    lfs setstripe -c -1 -S 8M
+#   raw                    97673                81728
+#   MPI-IO lexicographic   31675                77534
+#   aggregate             189535                86063
+#
+# The two layout preserving paths want opposite things.  Wide striping is
+# what rescues MPI-IO at scale, 32 -> 78 GB/s; it costs the aggregate path a
+# factor of 2.2 and costs raw as well.  With the default layout MPI-IO
+# plateaued at ~30 GB/s from 64 nodes upward while the aggregate path kept
+# scaling.  Uncomment only to reproduce that interaction, and record which.
+#lfs setstripe -c -1 -S 8M $WORK
+lfs getstripe -d $WORK 2>/dev/null || echo "(no lfs getstripe -- not Lustre?)"
+
+ARGS="--aggregate-target 4194304 --io-no-correctness --io-reps 3"
+AT=8
+
+run () {   # run <nodes> <grid> <mpi> <comment>
+  local nodes=$1 nranks=$(( $1 * 12 ))
+  echo
+  echo "==================================================================="
+  echo "=== SCAN nodes=$nodes ranks=$nranks  grid=$2  mpi=$3   $4"
+  echo "==================================================================="
+  mpiexec -np $nranks -ppn 12 -envall $TILE $BIN --grid $2 --mpi $3 \
+          --shm-mpi 0 --shm 2048 --device-mem 32000 --accelerator-threads $AT $ARGS
+  echo "=== exit $?"
+}
+
+#            nodes  global lattice      decomposition   record
+run    4     32.32.96.128    4.4.3.1   "7.2 GB"
+run    8     32.32.96.256    4.4.3.2   "14.5 GB"
+run   16     32.32.96.512    4.4.3.4   "29.0 GB"
+run   32     32.32.192.512   4.4.6.4   "58.0 GB"
+run   64     32.32.192.1024  4.4.6.8   "116.0 GB"
+run  128     32.32.384.1024  4.4.12.8  "231.9 GB"
+
+echo
+echo "=== done.  Files left in $WORK"
+echo "=== For cold read numbers, submit a SECOND job on a fresh allocation"
+echo "=== with WORK pointed at this directory and --io-read-only added to"
+echo "=== ARGS.  Reading back what this job wrote only measures page cache."
+ls -l $WORK
