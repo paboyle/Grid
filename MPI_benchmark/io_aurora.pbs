@@ -9,13 +9,35 @@
 # deliberate difference from io_frontier.slurm (8 per node, one per GCD), so
 # read the comparison carefully -- see WHAT IS AND IS NOT COMPARABLE below.
 
+# Run io_aurora_debug.pbs first.  If the cross validation fails there, this
+# scan is 2 hours of 128 nodes producing numbers for a broken file.
+
+#PBS -q prod
+#PBS -l filesystems=flare
+#PBS -l filesystems=home
 #PBS -l select=128
 #PBS -l walltime=02:00:00
-#PBS -l filesystems=flare
-#PBS -q prod
-#PBS -A LatticeQCD_aesp_CNDA
+#PBS -A 15479
 
 cd $PBS_O_WORKDIR
+cp $PBS_NODEFILE nodefile
+
+# Only if mpiexec is not already in the environment.  io_mpi is host only
+# and needs no part of the Grid build environment.
+#source ../../sourceme.sh
+
+##########################################################################
+# Environment.  io_mpi has no OpenMP and never touches a GPU, so one thread
+# per rank and a NUMA NIC policy rather than a GPU one.
+#
+# The MPICH_DBG_* variables are deliberately absent: at 1536 ranks they
+# produce gigabytes of log and perturb the timings they would explain.
+# MPICH_MPIIO_STATS/TIMERS are also off here -- they are per collective and
+# 1536 ranks x 6 rungs x 3 reps is unreadable.  Get them from the debug run.
+##########################################################################
+export OMP_NUM_THREADS=1
+export MPICH_CH4_SHM=XPMEM
+export MPICH_OFI_NIC_POLICY=NUMA
 
 ##########################################################################
 # WHAT IS AND IS NOT COMPARABLE WITH THE FRONTIER SCAN
@@ -48,8 +70,12 @@ cd $PBS_O_WORKDIR
 # and mixing them into one table would misrepresent both.  Label every set
 # of numbers with the filesystem it came from.
 ##########################################################################
-WORK=/lus/flare/projects/LatticeQCD_aesp_CNDA/$USER/iompi.$PBS_JOBID
-mkdir -p $WORK
+# PROJECT is the flare project DIRECTORY name, which is not the -A account
+# number.  Set it once; the mkdir below fails loudly rather than writing
+# somewhere unintended.
+PROJECT=LatticeQCD_aesp_CNDA
+WORK=/lus/flare/projects/$PROJECT/$USER/iompi.$PBS_JOBID
+mkdir -p $WORK || { echo "cannot create $WORK -- set PROJECT correctly"; exit 1; }
 cd       $WORK
 
 # Match Frontier's default: no explicit striping.  Record what was inherited.
@@ -64,11 +90,6 @@ NRANKS=12          # one per tile
 BIN=$PBS_O_WORKDIR/io_mpi
 ARGS="--target 4194304 --reps 3"
 
-# MPICH's own account of what it did; the first thing anyone reading the
-# report will ask for.
-# export MPICH_MPIIO_STATS=1
-# export MPICH_MPIIO_TIMERS=1
-
 run () {   # run <nodes> <grid> <mpi> <comment> [extra args...]
   local nodes=$1 gr=$2 mp=$3 note=$4
   local ntot=$(( nodes * NRANKS ))
@@ -78,7 +99,7 @@ run () {   # run <nodes> <grid> <mpi> <comment> [extra args...]
   echo "=== nodes=$nodes ranks=$ntot grid=$gr mpi=$mp   $note"
   echo "=== extra: $@"
   echo "==================================================================="
-  mpiexec -np $ntot -ppn $NRANKS $BIN --grid $gr --mpi $mp $ARGS "$@"
+  mpiexec -np $ntot -ppn $NRANKS -envall $BIN --grid $gr --mpi $mp $ARGS "$@"
   echo "=== exit $?"
 }
 
