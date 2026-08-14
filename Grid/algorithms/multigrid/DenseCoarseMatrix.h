@@ -290,7 +290,7 @@ public:
           Msobj m;
           peekLocalSite(m, Adbg, myLcoor[ss]);
           ComplexD *md = (ComplexD *)&m;
-          for(int i=0; i<nbasis*nbasis; i++) pk += std::norm(md[i]);
+          for(int i=0; i<nbasis*nbasis; i++) pk += md[i].real()*md[i].real() + md[i].imag()*md[i].imag();
         }
         RealD gpk = pk;
         grid->GlobalSumVector(&gpk, 1);

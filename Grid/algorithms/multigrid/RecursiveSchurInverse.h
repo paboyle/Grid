@@ -313,10 +313,14 @@ public:
     uint64_t len = (uint64_t)X.rows*w;
     std::vector<ComplexD> h(len);
     acceleratorCopyFromDevice(X.ColumnWindow(col0), &h[0], len*sizeof(ComplexD));
+    // Member real()/imag(): portable across std::complex (CPU) and
+    // thrust::complex (HIP), where std::norm does not resolve.
     double s = 0.0;
     for(uint64_t i=0; i<len; i++)
     {
-      s += std::norm(h[i]);
+      double re = h[i].real();
+      double im = h[i].imag();
+      s += re*re + im*im;
     }
     return s;
   }
@@ -366,9 +370,11 @@ public:
       double mx = 0.0;
       for(uint64_t i=0; i<len; i++)
       {
-        mx = std::max(mx, std::abs(h[i]));
+        double re = h[i].real();
+        double im = h[i].imag();
+        mx = std::max(mx, re*re + im*im);
       }
-      telLeafMaxInv = std::max(telLeafMaxInv, mx);
+      telLeafMaxInv = std::max(telLeafMaxInv, std::sqrt(mx));
     }
   }
 
