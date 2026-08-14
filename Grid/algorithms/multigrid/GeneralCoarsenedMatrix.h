@@ -453,8 +453,18 @@ public:
 	autoView( A_v  , _A[k], AcceleratorWrite);
 	autoView( FT_v  , FT[k], AcceleratorRead);
 	accelerator_for(sss, osites, nbasis, {
+#ifdef GRID_SIMT
 	    int j = acceleratorSIMTlane(nbasis);
 	    A_v[sss](i,j) = FT_v[sss](j);
+#else
+	    // CPU build: acceleratorSIMTlane()==0 -- an un-looped SIMT tensor
+	    // index writes ONLY j=0 and silently drops the other nbasis-1
+	    // columns (caught by Test_schur_dense_coarse import certificate,
+	    // 2026-08-14).  Loop explicitly.
+	    for(int j=0;j<nbasis;j++){
+	      A_v[sss](i,j) = FT_v[sss](j);
+	    }
+#endif
         });
       }
       tinv+=usecond();
@@ -630,8 +640,18 @@ public:
 	autoView( A_v  , _A[k], AcceleratorWrite);
 	autoView( FT_v  , FT[k], AcceleratorRead);
 	accelerator_for(sss, osites, nbasis, {
+#ifdef GRID_SIMT
 	    int j = acceleratorSIMTlane(nbasis);
 	    A_v[sss](i,j) = FT_v[sss](j);
+#else
+	    // CPU build: acceleratorSIMTlane()==0 -- an un-looped SIMT tensor
+	    // index writes ONLY j=0 and silently drops the other nbasis-1
+	    // columns (caught by Test_schur_dense_coarse import certificate,
+	    // 2026-08-14).  Loop explicitly.
+	    for(int j=0;j<nbasis;j++){
+	      A_v[sss](i,j) = FT_v[sss](j);
+	    }
+#endif
         });
       }
       tinv+=usecond();
