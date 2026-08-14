@@ -275,7 +275,7 @@ esac
 ############### CHECKSUM COMMS
 AC_ARG_ENABLE([checksum-comms],
     [AS_HELP_STRING([--enable-checksum-comms=yes|no],[checksum all communication])],
-    [ac_CHECKSUM_COMMS=${enable_checksum_comms}], [ac_CHECKSUM_COMMS=yes])
+    [ac_CHECKSUM_COMMS=${enable_checksum_comms}], [ac_CHECKSUM_COMMS=no])
 
 case ${ac_CHECKSUM_COMMS} in
     yes)
@@ -283,10 +283,21 @@ case ${ac_CHECKSUM_COMMS} in
     *);;
 esac
 
+############### DEVICE MEMORY ALLOCATOR
+AC_ARG_ENABLE([device-memory-allocator],
+    [AS_HELP_STRING([--enable-device-memory-allocator=yes|no],[device memory allocator])],
+    [ac_DEVICE_MEMORY_ALLOCATOR=${enable_device_memory_allocator}], [ac_DEVICE_MEMORY_ALLOCATOR=no])
+
+case ${ac_DEVICE_MEMORY_ALLOCATOR} in
+    yes)
+      AC_DEFINE([GRID_DEVICE_MEMORY_ALLOCATOR],[1],[device memory allocator]);;
+    *);;
+esac
+
 ############### LOG VIEWS
 AC_ARG_ENABLE([log-views],
     [AS_HELP_STRING([--enable-log-views=yes|no],[log information on all view open/close])],
-    [ac_LOG_VIEWS=${enable_log_views}], [ac_LOG_VIEWS=yes])
+    [ac_LOG_VIEWS=${enable_log_views}], [ac_LOG_VIEWS=no])
 
 case ${ac_LOG_VIEWS} in
     yes)
