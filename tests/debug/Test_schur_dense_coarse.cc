@@ -223,7 +223,9 @@ int main (int argc, char ** argv)
           Lexicographic::CoorFromIndex(gci, gsi, Coarse5d->GlobalDimensions());
           csobj si;
           peekSite(si, Me, gci);
-          eA(i,j) = ((ComplexD *)&si)[bi];
+          // Explicit re/im at the thrust/std boundary (HIP builds)
+          ComplexD zz = ((ComplexD *)&si)[bi];
+          eA(i,j) = std::complex<double>(zz.real(), zz.imag());
         }
       }
       Eigen::JacobiSVD<Eigen::MatrixXcd> svd(eA);

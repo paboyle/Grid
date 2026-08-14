@@ -640,13 +640,19 @@ int main (int argc, char ** argv)
           for(int64_t d=0; d<b; d++) Aglob[(uint64_t)(d + d*N)] += ComplexD(bshift,0.0);
         }
 
-        // Eigen fp64 oracle
+        // Eigen fp64 oracle.  Explicit re/im conversion at the boundary:
+        // on HIP builds ComplexD is thrust::complex, which has no
+        // operators against Eigen's std::complex.
+        auto toStd = [](const ComplexD &z) -> std::complex<double>
+        {
+          return std::complex<double>(z.real(), z.imag());
+        };
         Eigen::MatrixXcd eA(N,N);
         for(int64_t j=0; j<N; j++)
         {
           for(int64_t i=0; i<N; i++)
           {
-            eA(i,j) = Aglob[(uint64_t)(i + j*N)];
+            eA(i,j) = toStd(Aglob[(uint64_t)(i + j*N)]);
           }
         }
         Eigen::MatrixXcd Xref = eA.inverse();
@@ -709,8 +715,8 @@ int main (int argc, char ** argv)
         {
           for(int64_t i=0; i<N; i++)
           {
-            maxref = std::max(maxref, abs(Xref(i,j)));
-            maxdif = std::max(maxdif, abs(Xfull[(uint64_t)(i + j*N)] - Xref(i,j)));
+            maxref = std::max(maxref, std::abs(Xref(i,j)));
+            maxdif = std::max(maxdif, std::abs(toStd(Xfull[(uint64_t)(i + j*N)]) - Xref(i,j)));
           }
         }
         double cert2 = maxdif / maxref;
