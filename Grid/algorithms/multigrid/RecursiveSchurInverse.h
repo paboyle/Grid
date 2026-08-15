@@ -121,11 +121,9 @@ public:
 
   // Phase timers/counters (this rank), accumulated across the whole walk:
   // where does the setup wall actually go?  Reported by ReportTelemetry.
-  double                tStage;        // owner B-window device->host
-  double                tMemset;       // panel zero-fill (host)
-  double                tDeposit;      // owner rows -> panel (host memcpy)
-  double                tAllreduce;    // GlobalSumVector on panels
-  double                tH2D;          // panel host->device
+  double                tMemset;       // device panel zero-fill
+  double                tDeposit;      // owner rows -> panel (device kernel)
+  double                tAllreduce;    // GlobalSumVector on device panels
   double                tGemm;         // strided gemm + synchronise
   double                tLeaf;         // leaf inversions
   double                tARmin;        // fastest single panel collective
@@ -134,15 +132,18 @@ public:
   uint64_t              nAllreduce;    // panel collectives
   uint64_t              nGatherGemm;   // GatherGemm calls
 
-  // PERSISTENT comms/staging buffers, grow-only across the whole walk.
-  // Fresh per-call host allocations defeat the MPI registration cache
-  // (every page unpinned every call => re-registration or bounce-buffer
-  // copies inside MPI on ~GB panels) -- the same reason the halo
-  // exchange uses allocate-once buffers.  Measured motivation: 0.48 GB/s
-  // effective allreduce payload at N=138k with per-call vectors.
-  std::vector<ComplexD>  panelBuf;
+  // PERSISTENT DEVICE panel, grow-only across the whole walk.
+  // Persistent: fresh per-call allocations defeat the MPI registration
+  // cache (measured 13% at N=138k).  DEVICE-RESIDENT: the collective runs
+  // on the device pointer via GPU-aware MPI, and panel assembly (zero-fill
+  // + owner deposit) is device-side -- the entire host round-trip (stage
+  // D2H, 92s memset, deposit, H2D at N=138k) is deleted.  Measured
+  // motivation (MPI_benchmark/gather_mpi, Frontier, 16-128 ranks):
+  // host-buffer allreduce 0.8-1.3 GB/s vs device-buffer 5.9-6.8 GB/s;
+  // device allgatherv/ring 20-24 GB/s is the planned stage-2 pattern.
+  // DEVICE BUILDS REQUIRE GPU-aware MPI (MPICH_GPU_SUPPORT_ENABLED=1,
+  // standard in production); CPU builds are unaffected (device == host).
   deviceVector<ComplexD> dPanelBuf;
-  std::vector<ComplexD>  stageBuf;
 
   ///////////////////////////////////////////////////////////////////////////
   // Ownership-table validation: a proper partition of [0,N).
@@ -215,15 +216,14 @@ public:
   // owned by ranks [rB0, rB1): owner r contributes its rows of
   // B(:, colB : colB+widthB) at sub-block row offset
   // rowStart[r] - rowStart[rB0].  The sub-block is gathered in panelBytes
-  // row-chunks by host zero-fill + world GlobalSumVector.
+  // row-chunks, DEVICE-NATIVE: device zero-fill + device deposit kernel +
+  // world GlobalSumVector on the device pointer (GPU-aware MPI on device
+  // builds; see the dPanelBuf comment for the measured motivation).
   //
   // SPMD rules: EVERY rank calls (the collectives are world-wide);
   // non-owners of B add zeros; ranks with A.rows == 0 skip all local
   // compute but still make every collective call.  Column offsets are
   // LOCAL buffer offsets -- non-participants pass 0.
-  //
-  // Owners stage their whole B window device->host ONCE (ld == rows makes
-  // the window contiguous); per-chunk deposits are host memcpy runs.
   ///////////////////////////////////////////////////////////////////////////
   void GatherGemm(ComplexD alpha,
                   BlockRows &A, int64_t colA, int64_t widthA,
@@ -259,15 +259,9 @@ public:
     nGatherGemm++;
     GRID_TRACE("GatherGemm");
 
-    std::vector<ComplexD> &stage = stageBuf;
     if ( owner )
     {
       GRID_ASSERT( colB + widthB <= B.cols );
-      tStage -= usecond();
-      if ( stage.size() < (uint64_t)B.rows*n ) stage.resize((uint64_t)B.rows*n);
-      acceleratorCopyFromDevice(B.ColumnWindow(colB), &stage[0],
-                                (uint64_t)B.rows*n*sizeof(ComplexD));
-      tStage += usecond();
     }
 
     int64_t kc = panelBytes / ( (int64_t)sizeof(ComplexD) * n );
@@ -275,9 +269,7 @@ public:
     if ( kc > k ) kc = k;
     GRID_ASSERT( kc*n < 2147483647L );   // GlobalSumVector count is int
 
-    std::vector<ComplexD>  &panel  = panelBuf;
     deviceVector<ComplexD> &dPanel = dPanelBuf;
-    if ( panel.size()  < (uint64_t)kc*n ) panel.resize((uint64_t)kc*n);
     if ( dPanel.size() < (uint64_t)kc*n ) dPanel.resize((uint64_t)kc*n);
     deviceVector<ComplexD*> ap(1);
     deviceVector<ComplexD*> bp(1);
@@ -288,13 +280,8 @@ public:
     {
       int64_t kchunk = std::min(kc, k-k0);
 
-      // PLANNED OPTIMISATION (not yet): single-threaded memset zero-fills
-      // the WHOLE panel; owners then overwrite their segment.  A threaded
-      // zero of only the non-owned rows (thread_for over columns, memset
-      // per column run) halves the host traffic and parallelises it.
-      // Deliberately deferred until the simple version is proven.
       tMemset -= usecond();
-      memset(&panel[0], 0, (uint64_t)kchunk*n*sizeof(ComplexD));
+      acceleratorMemSet(&dPanel[0], 0, (uint64_t)kchunk*n*sizeof(ComplexD));
       tMemset += usecond();
       if ( owner )
       {
@@ -302,18 +289,25 @@ public:
         int64_t i1 = std::min(k0+kchunk, myOff+B.rows);
         if ( i1 > i0 )
         {
-          int64_t len = i1-i0;
+          // Device-side deposit straight from the B window: strided
+          // block copy as a flat kernel (len rows of n columns).
+          int64_t   len   = i1-i0;
+          int64_t   brows = B.rows;
+          int64_t   dof   = i0-k0;
+          int64_t   sof   = i0-myOff;
+          ComplexD *src   = B.ColumnWindow(colB);
+          ComplexD *dst   = &dPanel[0];
           tDeposit -= usecond();
-          thread_for(j, n, {
-            memcpy(&panel[(uint64_t)((i0-k0)    + j*kchunk)],
-                   &stage[(uint64_t)((i0-myOff) + j*B.rows)],
-                   len*sizeof(ComplexD));
+          accelerator_for(idx, (uint64_t)(len*n), 1, {
+            int64_t j = idx / len;
+            int64_t i = idx % len;
+            dst[(uint64_t)(dof + i + j*kchunk)] = src[(uint64_t)(sof + i + j*brows)];
           });
           tDeposit += usecond();
         }
       }
       double tar = -usecond();
-      grid->GlobalSumVector(&panel[0], (int)(kchunk*n));
+      grid->GlobalSumVector(&dPanel[0], (int)(kchunk*n));
       tar += usecond();
       tAllreduce += tar;
       tARmin = std::min(tARmin, tar);
@@ -323,11 +317,6 @@ public:
 
       if ( m > 0 )
       {
-        tH2D -= usecond();
-        acceleratorCopyToDevice(&panel[0], &dPanel[0],
-                                (uint64_t)kchunk*n*sizeof(ComplexD));
-        tH2D += usecond();
-
         ComplexD beta_use = ( k0==0 ) ? beta : ComplexD(1.0,0.0);
 
         ptr[0] = A.ColumnWindow(colA + k0);
@@ -590,11 +579,9 @@ public:
     telSratio.resize(0);
     telLeafMaxInv = 0.0;
 
-    tStage         = 0.0;
     tMemset        = 0.0;
     tDeposit       = 0.0;
     tAllreduce     = 0.0;
-    tH2D           = 0.0;
     tGemm          = 0.0;
     tLeaf          = 0.0;
     tARmin         = 1.0e30;
@@ -636,11 +623,9 @@ public:
     armin = -armin;
 
     std::cout << GridLogMessage << "Schur phases (boss rank, seconds):"
-              << "  stage "     << tStage/1.0e6
               << "  memset "    << tMemset/1.0e6
               << "  deposit "   << tDeposit/1.0e6
               << "  allreduce " << tAllreduce/1.0e6
-              << "  H2D "       << tH2D/1.0e6
               << "  gemm "      << tGemm/1.0e6
               << "  leaf "      << tLeaf/1.0e6
               << std::endl;
@@ -652,7 +637,7 @@ public:
               << " / " << armax/1.0e6
               << std::endl;
     std::cout << GridLogMessage << "Schur comms per-call (boss):"
-              << "  min " << tARmin/1.0e3 << " ms"
+              << "  min " << (nAllreduce ? tARmin/1.0e3 : 0.0) << " ms"
               << "  avg " << (nAllreduce ? tAllreduce/nAllreduce/1.0e3 : 0.0) << " ms"
               << "  max " << tARmax/1.0e3 << " ms"
               << std::endl;
