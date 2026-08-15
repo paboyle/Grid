@@ -119,6 +119,19 @@ public:
   std::vector<double>   telSratio;     // ||S||_F / ||A22||_F
   double                telLeafMaxInv; // max |(leaf inverse)_ij| over leaves
 
+  // Phase timers/counters (this rank), accumulated across the whole walk:
+  // where does the setup wall actually go?  Reported by ReportTelemetry.
+  double                tStage;        // owner B-window device->host
+  double                tMemset;       // panel zero-fill (host)
+  double                tDeposit;      // owner rows -> panel (host memcpy)
+  double                tAllreduce;    // GlobalSumVector on panels
+  double                tH2D;          // panel host->device
+  double                tGemm;         // strided gemm + synchronise
+  double                tLeaf;         // leaf inversions
+  uint64_t              bytesAllreduce;
+  uint64_t              nAllreduce;    // panel collectives
+  uint64_t              nGatherGemm;   // GatherGemm calls
+
   ///////////////////////////////////////////////////////////////////////////
   // Ownership-table validation: a proper partition of [0,N).
   // Static and communicator-free so synthetic tables unit-test directly.
@@ -231,13 +244,18 @@ public:
       GRID_ASSERT( C.rows == m );
     }
 
+    nGatherGemm++;
+    GRID_TRACE("GatherGemm");
+
     std::vector<ComplexD> stage;
     if ( owner )
     {
       GRID_ASSERT( colB + widthB <= B.cols );
+      tStage -= usecond();
       stage.resize((uint64_t)B.rows*n);
       acceleratorCopyFromDevice(B.ColumnWindow(colB), &stage[0],
                                 (uint64_t)B.rows*n*sizeof(ComplexD));
+      tStage += usecond();
     }
 
     int64_t kc = panelBytes / ( (int64_t)sizeof(ComplexD) * n );
@@ -261,7 +279,9 @@ public:
       // zero of only the non-owned rows (thread_for over columns, memset
       // per column run) halves the host traffic and parallelises it.
       // Deliberately deferred until the simple version is proven.
+      tMemset -= usecond();
       memset(&panel[0], 0, (uint64_t)kchunk*n*sizeof(ComplexD));
+      tMemset += usecond();
       if ( owner )
       {
         int64_t i0 = std::max(k0,        myOff);
@@ -269,19 +289,27 @@ public:
         if ( i1 > i0 )
         {
           int64_t len = i1-i0;
+          tDeposit -= usecond();
           thread_for(j, n, {
             memcpy(&panel[(uint64_t)((i0-k0)    + j*kchunk)],
                    &stage[(uint64_t)((i0-myOff) + j*B.rows)],
                    len*sizeof(ComplexD));
           });
+          tDeposit += usecond();
         }
       }
+      tAllreduce -= usecond();
       grid->GlobalSumVector(&panel[0], (int)(kchunk*n));
+      tAllreduce += usecond();
+      bytesAllreduce += (uint64_t)kchunk*n*sizeof(ComplexD);
+      nAllreduce++;
 
       if ( m > 0 )
       {
+        tH2D -= usecond();
         acceleratorCopyToDevice(&panel[0], &dPanel[0],
                                 (uint64_t)kchunk*n*sizeof(ComplexD));
+        tH2D += usecond();
 
         ComplexD beta_use = ( k0==0 ) ? beta : ComplexD(1.0,0.0);
 
@@ -292,12 +320,14 @@ public:
         ptr[0] = C.ColumnWindow(colC);
         acceleratorCopyToDevice(&ptr[0], &cp[0], sizeof(ComplexD*));
 
+        tGemm -= usecond();
         BLAS.gemmBatched(GridBLAS_OP_N, GridBLAS_OP_N,
                          (int)m, (int)n, (int)kchunk,
                          alpha,    ap, (int)A.ld,
                                    bp, (int)kchunk,
                          beta_use, cp, (int)C.ld);
         BLAS.synchronise();
+        tGemm += usecond();
       }
     }
   }
@@ -352,10 +382,12 @@ public:
   ///////////////////////////////////////////////////////////////////////////
   void LeafInvert(int64_t col0, int64_t width, BlockRows &Arows)
   {
+    GRID_TRACE("SchurLeaf");
     GRID_ASSERT( width == Arows.rows );
     GRID_ASSERT( col0 + width <= Arows.cols );
     int64_t  w   = width;
     uint64_t len = (uint64_t)w*w;
+    tLeaf -= usecond();
 
     deviceVector<ComplexD*> bp(1);
     std::vector<ComplexD*>  ptr(1);
@@ -376,6 +408,7 @@ public:
       }
       telLeafMaxInv = std::max(telLeafMaxInv, std::sqrt(mx));
     }
+    tLeaf += usecond();
   }
 
   ///////////////////////////////////////////////////////////////////////////
@@ -540,6 +573,17 @@ public:
     telSratio.resize(0);
     telLeafMaxInv = 0.0;
 
+    tStage         = 0.0;
+    tMemset        = 0.0;
+    tDeposit       = 0.0;
+    tAllreduce     = 0.0;
+    tH2D           = 0.0;
+    tGemm          = 0.0;
+    tLeaf          = 0.0;
+    bytesAllreduce = 0;
+    nAllreduce     = 0;
+    nGatherGemm    = 0;
+
     SchurNode(0, P, 0, N, Arows);
 
     RealD mx = telLeafMaxInv;
@@ -547,8 +591,11 @@ public:
     telLeafMaxInv = mx;
   }
 
-  // All telemetry values are globally reduced: safe to stream on every
-  // rank (Grid quiesces stdout to the boss unless --debug-stdout).
+  // All telemetry values are globally reduced or boss-local; safe to
+  // stream on every rank (Grid quiesces stdout to the boss unless
+  // --debug-stdout).  NOTE: tAllreduce INCLUDES wait/imbalance -- a rank
+  // arriving early books its wait here; the min/max spread across ranks
+  // separates true wire time (~min) from skew (max-min).
   void ReportTelemetry(void)
   {
     for(uint64_t i=0; i<telNormB.size(); i++)
@@ -561,6 +608,29 @@ public:
     }
     std::cout << GridLogPerformance
               << "Schur leaves max|Ainv| " << telLeafMaxInv
+              << std::endl;
+
+    RealD armax =  tAllreduce;
+    RealD armin = -tAllreduce;
+    grid->GlobalMax(armax);
+    grid->GlobalMax(armin);
+    armin = -armin;
+
+    std::cout << GridLogMessage << "Schur phases (boss rank, seconds):"
+              << "  stage "     << tStage/1.0e6
+              << "  memset "    << tMemset/1.0e6
+              << "  deposit "   << tDeposit/1.0e6
+              << "  allreduce " << tAllreduce/1.0e6
+              << "  H2D "       << tH2D/1.0e6
+              << "  gemm "      << tGemm/1.0e6
+              << "  leaf "      << tLeaf/1.0e6
+              << std::endl;
+    std::cout << GridLogMessage << "Schur comms:"
+              << "  GatherGemm calls " << nGatherGemm
+              << "  panel allreduces " << nAllreduce
+              << "  allreduce GB "     << bytesAllreduce/1024./1024./1024.
+              << "  allreduce s min/max over ranks " << armin/1.0e6
+              << " / " << armax/1.0e6
               << std::endl;
   }
 };
