@@ -128,9 +128,21 @@ public:
   double                tH2D;          // panel host->device
   double                tGemm;         // strided gemm + synchronise
   double                tLeaf;         // leaf inversions
+  double                tARmin;        // fastest single panel collective
+  double                tARmax;        // slowest single panel collective
   uint64_t              bytesAllreduce;
   uint64_t              nAllreduce;    // panel collectives
   uint64_t              nGatherGemm;   // GatherGemm calls
+
+  // PERSISTENT comms/staging buffers, grow-only across the whole walk.
+  // Fresh per-call host allocations defeat the MPI registration cache
+  // (every page unpinned every call => re-registration or bounce-buffer
+  // copies inside MPI on ~GB panels) -- the same reason the halo
+  // exchange uses allocate-once buffers.  Measured motivation: 0.48 GB/s
+  // effective allreduce payload at N=138k with per-call vectors.
+  std::vector<ComplexD>  panelBuf;
+  deviceVector<ComplexD> dPanelBuf;
+  std::vector<ComplexD>  stageBuf;
 
   ///////////////////////////////////////////////////////////////////////////
   // Ownership-table validation: a proper partition of [0,N).
@@ -247,12 +259,12 @@ public:
     nGatherGemm++;
     GRID_TRACE("GatherGemm");
 
-    std::vector<ComplexD> stage;
+    std::vector<ComplexD> &stage = stageBuf;
     if ( owner )
     {
       GRID_ASSERT( colB + widthB <= B.cols );
       tStage -= usecond();
-      stage.resize((uint64_t)B.rows*n);
+      if ( stage.size() < (uint64_t)B.rows*n ) stage.resize((uint64_t)B.rows*n);
       acceleratorCopyFromDevice(B.ColumnWindow(colB), &stage[0],
                                 (uint64_t)B.rows*n*sizeof(ComplexD));
       tStage += usecond();
@@ -263,8 +275,10 @@ public:
     if ( kc > k ) kc = k;
     GRID_ASSERT( kc*n < 2147483647L );   // GlobalSumVector count is int
 
-    std::vector<ComplexD>   panel((uint64_t)kc*n);
-    deviceVector<ComplexD>  dPanel((uint64_t)kc*n);
+    std::vector<ComplexD>  &panel  = panelBuf;
+    deviceVector<ComplexD> &dPanel = dPanelBuf;
+    if ( panel.size()  < (uint64_t)kc*n ) panel.resize((uint64_t)kc*n);
+    if ( dPanel.size() < (uint64_t)kc*n ) dPanel.resize((uint64_t)kc*n);
     deviceVector<ComplexD*> ap(1);
     deviceVector<ComplexD*> bp(1);
     deviceVector<ComplexD*> cp(1);
@@ -298,9 +312,12 @@ public:
           tDeposit += usecond();
         }
       }
-      tAllreduce -= usecond();
+      double tar = -usecond();
       grid->GlobalSumVector(&panel[0], (int)(kchunk*n));
-      tAllreduce += usecond();
+      tar += usecond();
+      tAllreduce += tar;
+      tARmin = std::min(tARmin, tar);
+      tARmax = std::max(tARmax, tar);
       bytesAllreduce += (uint64_t)kchunk*n*sizeof(ComplexD);
       nAllreduce++;
 
@@ -580,6 +597,8 @@ public:
     tH2D           = 0.0;
     tGemm          = 0.0;
     tLeaf          = 0.0;
+    tARmin         = 1.0e30;
+    tARmax         = 0.0;
     bytesAllreduce = 0;
     nAllreduce     = 0;
     nGatherGemm    = 0;
@@ -631,6 +650,11 @@ public:
               << "  allreduce GB "     << bytesAllreduce/1024./1024./1024.
               << "  allreduce s min/max over ranks " << armin/1.0e6
               << " / " << armax/1.0e6
+              << std::endl;
+    std::cout << GridLogMessage << "Schur comms per-call (boss):"
+              << "  min " << tARmin/1.0e3 << " ms"
+              << "  avg " << (nAllreduce ? tAllreduce/nAllreduce/1.0e3 : 0.0) << " ms"
+              << "  max " << tARmax/1.0e3 << " ms"
               << std::endl;
   }
 };
