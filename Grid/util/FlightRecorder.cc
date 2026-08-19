@@ -208,7 +208,7 @@ bool FlightRecorder::CsumLog(uint64_t hex)
         std::cerr<<"FlightRecorder::CsumLog Oops, I did it again "<< CsumLoggingCounter
 		 <<std::hex<<" "<<hex<<" "<<hexref<<std::dec<<std::endl;
 
-	fprintf(stderr,"%s:%d Oops, I did it again! Reproduce failure for csum %d %lx expect %lx\n",
+	fprintf(stderr,"%s:%d Oops, I did it again! Reproduce failure for csum %d %llx expect %llx\n",
 		GridHostname(),
 		GlobalSharedMemory::WorldShmRank,
 		CsumLoggingCounter,hex, hexref);
