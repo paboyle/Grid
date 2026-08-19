@@ -155,12 +155,27 @@ accelerator_inline vComplexD innerProductD(const vComplexF &l,const vComplexF &r
   return innerProduct(la,ra) + innerProduct(lb,rb); 
 }
 accelerator_inline vRealD innerProductD(const vRealF &l,const vRealF &r)
-{  
+{
   vRealD la,lb;
   vRealD ra,rb;
   Optimization::PrecisionChange::StoD(l.v,la.v,lb.v);
   Optimization::PrecisionChange::StoD(r.v,ra.v,rb.v);
-  return innerProduct(la,ra) + innerProduct(lb,rb); 
+  return innerProduct(la,ra) + innerProduct(lb,rb);
+}
+
+accelerator_inline sComplexD innerProductD(const sComplexD &l,const sComplexD &r){  return innerProduct(l,r); }
+accelerator_inline sRealD    innerProductD(const sRealD    &l,const sRealD    &r){  return innerProduct(l,r); }
+accelerator_inline sComplexD innerProductD(const sComplexF &l,const sComplexF &r)
+{
+  sComplexD ret;
+  ret.v = innerProduct(ComplexD(l.v),ComplexD(r.v));
+  return ret;
+}
+accelerator_inline sRealD innerProductD(const sRealF &l,const sRealF &r)
+{
+  sRealD ret;
+  ret.v = innerProduct(RealD(l.v),RealD(r.v));
+  return ret;
 }
 
 // Now do it for vector, matrix, scalar
@@ -211,6 +226,26 @@ accelerator_inline RealD    innerProductD2(const RealF    &l,const RealF    &r){
 
 accelerator_inline vComplexD innerProductD2(const vComplexD &l,const vComplexD &r){  return innerProduct(l,r); }
 accelerator_inline vRealD    innerProductD2(const vRealD    &l,const vRealD    &r){  return innerProduct(l,r); }
+
+// Lex chart. One lane, so the promotion is not a doubling and there is no
+// sComplexD2 counterpart to vComplexD2.
+accelerator_inline sComplexD innerProductD2(const sComplexD &l,const sComplexD &r){  return innerProduct(l,r); }
+accelerator_inline sRealD    innerProductD2(const sRealD    &l,const sRealD    &r){  return innerProduct(l,r); }
+
+accelerator_inline sComplexD innerProductD2(const sComplexF &l,const sComplexF &r)
+{
+  sComplexD dl,dr;
+  precisionChange(&dl,&l,1);
+  precisionChange(&dr,&r,1);
+  return innerProduct(dl,dr);
+}
+accelerator_inline sRealD innerProductD2(const sRealF &l,const sRealF &r)
+{
+  sRealD dl,dr;
+  precisionChange(&dl,&l,1);
+  precisionChange(&dr,&r,1);
+  return innerProduct(dl,dr);
+}
 
 accelerator_inline vComplexD2 innerProductD2(const vComplexF &l,const vComplexF &r)
 {  
