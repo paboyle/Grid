@@ -40,46 +40,52 @@ NAMESPACE_BEGIN(Grid);
   // Should guard this with isGridTensor<> enable if?
   /////////////////////////////////////////
   //
+  // Predicate type matching the operand's vectorisation
+  //
+  template<class obj> using IntegerPredicate =
+    typename GridTypeMapper<typename GridTypeMapper<obj>::vector_type>::Integerified;
+
+  //
   // Generic list of functors
   //
   template<class lobj,class robj> class veq {
   public:
-    accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
+    accelerator IntegerPredicate<lobj> operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) == (rhs);
     }
   };
   template<class lobj,class robj> class vne {
   public:
-    accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
+    accelerator IntegerPredicate<lobj> operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) != (rhs);
     }
   };
   template<class lobj,class robj> class vlt {
   public:
-    accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
+    accelerator IntegerPredicate<lobj> operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) < (rhs);
     }
   };
   template<class lobj,class robj> class vle {
   public:
-    accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
+    accelerator IntegerPredicate<lobj> operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) <= (rhs);
     }
   };
   template<class lobj,class robj> class vgt {
   public:
-    accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
+    accelerator IntegerPredicate<lobj> operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) > (rhs);
     }
   };
   template<class lobj,class robj> class vge {
     public:
-    accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
+    accelerator IntegerPredicate<lobj> operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) >= (rhs);
     }
@@ -133,78 +139,78 @@ NAMESPACE_BEGIN(Grid);
   // Integer and real get extra relational functions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   template<class sfunctor, class vsimd,IfNotComplex<vsimd> = 0> 
-    accelerator_inline vInteger Comparison(sfunctor sop,const vsimd & lhs, const vsimd & rhs)
+    accelerator_inline IntegerPredicate<vsimd> Comparison(sfunctor sop,const vsimd & lhs, const vsimd & rhs)
     {
       typedef typename vsimd::scalar_type scalar;
       ExtractBuffer<scalar> vlhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
       ExtractBuffer<scalar> vrhs(vsimd::Nsimd());
       ExtractBuffer<Integer> vpred(vsimd::Nsimd());
-      vInteger ret;
+      IntegerPredicate<vsimd> ret;
       extract<vsimd,scalar>(lhs,vlhs);
       extract<vsimd,scalar>(rhs,vrhs);
       for(int s=0;s<vsimd::Nsimd();s++){
 	vpred[s] = sop(vlhs[s],vrhs[s]);
       }
-      merge<vInteger,Integer>(ret,vpred);
+      merge<IntegerPredicate<vsimd>,Integer>(ret,vpred);
       return ret;
     }
 
   template<class sfunctor, class vsimd,IfNotComplex<vsimd> = 0> 
-    accelerator_inline vInteger Comparison(sfunctor sop,const vsimd & lhs, const typename vsimd::scalar_type & rhs)
+    accelerator_inline IntegerPredicate<vsimd> Comparison(sfunctor sop,const vsimd & lhs, const typename vsimd::scalar_type & rhs)
     {
       typedef typename vsimd::scalar_type scalar;
       ExtractBuffer<scalar> vlhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
       ExtractBuffer<Integer> vpred(vsimd::Nsimd());
-      vInteger ret;
+      IntegerPredicate<vsimd> ret;
       extract<vsimd,scalar>(lhs,vlhs);
       for(int s=0;s<vsimd::Nsimd();s++){
 	vpred[s] = sop(vlhs[s],rhs);
       }
-      merge<vInteger,Integer>(ret,vpred);
+      merge<IntegerPredicate<vsimd>,Integer>(ret,vpred);
       return ret;
     }
 
   template<class sfunctor, class vsimd,IfNotComplex<vsimd> = 0> 
-    accelerator_inline vInteger Comparison(sfunctor sop,const typename vsimd::scalar_type & lhs, const vsimd & rhs)
+    accelerator_inline IntegerPredicate<vsimd> Comparison(sfunctor sop,const typename vsimd::scalar_type & lhs, const vsimd & rhs)
     {
       typedef typename vsimd::scalar_type scalar;
       ExtractBuffer<scalar> vrhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
       ExtractBuffer<Integer> vpred(vsimd::Nsimd());
-      vInteger ret;
+      IntegerPredicate<vsimd> ret;
       extract<vsimd,scalar>(rhs,vrhs);
       for(int s=0;s<vsimd::Nsimd();s++){
 	vpred[s] = sop(lhs,vrhs[s]);
       }
-      merge<vInteger,Integer>(ret,vpred);
+      merge<IntegerPredicate<vsimd>,Integer>(ret,vpred);
       return ret;
     }
 
 #define DECLARE_RELATIONAL_EQ(op,functor) \
   template<class vsimd,IfSimd<vsimd> = 0>\
-    accelerator_inline vInteger operator op (const vsimd & lhs, const vsimd & rhs)\
+    accelerator_inline IntegerPredicate<vsimd> operator op (const vsimd & lhs, const vsimd & rhs)\
     {\
       typedef typename vsimd::scalar_type scalar;\
       return Comparison(functor<scalar,scalar>(),lhs,rhs);\
     }\
   template<class vsimd,IfSimd<vsimd> = 0>\
-    accelerator_inline vInteger operator op (const vsimd & lhs, const typename vsimd::scalar_type & rhs) \
+    accelerator_inline IntegerPredicate<vsimd> operator op (const vsimd & lhs, const typename vsimd::scalar_type & rhs) \
     {\
       typedef typename vsimd::scalar_type scalar;\
       return Comparison(functor<scalar,scalar>(),lhs,rhs);\
     }\
   template<class vsimd,IfSimd<vsimd> = 0>\
-    accelerator_inline vInteger operator op (const typename vsimd::scalar_type & lhs, const vsimd & rhs) \
+    accelerator_inline IntegerPredicate<vsimd> operator op (const typename vsimd::scalar_type & lhs, const vsimd & rhs) \
     {\
       typedef typename vsimd::scalar_type scalar;\
       return Comparison(functor<scalar,scalar>(),lhs,rhs);\
     }\
   template<class vsimd>\
-    accelerator_inline vInteger operator op(const iScalar<vsimd> &lhs,const typename vsimd::scalar_type &rhs) \
+    accelerator_inline IntegerPredicate<vsimd> operator op(const iScalar<vsimd> &lhs,const typename vsimd::scalar_type &rhs) \
     {									\
       return lhs._internal op rhs;					\
     }									\
   template<class vsimd>\
-    accelerator_inline vInteger operator op(const typename vsimd::scalar_type &lhs,const iScalar<vsimd> &rhs) \
+    accelerator_inline IntegerPredicate<vsimd> operator op(const typename vsimd::scalar_type &lhs,const iScalar<vsimd> &rhs) \
     {									\
       return lhs op rhs._internal;					\
     }									\
@@ -212,7 +218,7 @@ NAMESPACE_BEGIN(Grid);
 #define DECLARE_RELATIONAL(op,functor) \
   DECLARE_RELATIONAL_EQ(op,functor)    \
   template<class vsimd>\
-    accelerator_inline vInteger operator op(const iScalar<vsimd> &lhs,const iScalar<vsimd> &rhs)\
+    accelerator_inline IntegerPredicate<vsimd> operator op(const iScalar<vsimd> &lhs,const iScalar<vsimd> &rhs)\
     {									\
       return lhs._internal op rhs._internal;				\
     }									

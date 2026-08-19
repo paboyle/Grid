@@ -74,7 +74,7 @@ accelerator_inline vobj predicatedWhere(const iobj &predicate,
 
   extract(iftrue, truevals);
   extract(iffalse, falsevals);
-  extract<vInteger, Integer>(TensorRemove(predicate), mask);
+  extract(TensorRemove(predicate), mask);
 
   for (int s = 0; s < Nsimd; s++) {
     if (mask[s]) falsevals[s] = truevals[s];

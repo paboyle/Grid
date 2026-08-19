@@ -40,16 +40,16 @@ NAMESPACE_BEGIN(Grid);
 //Query supporting logical &&, ||, 
 //////////////////////////////////////////////////////////////////////////
 
-typedef iScalar<vInteger> vPredicate ;
+template<class vobj> using vPredicate = iScalar<IntegerPredicate<vobj> > ;
 
 //////////////////////////////////////////////////////////////////////////
 // compare lattice to lattice
 //////////////////////////////////////////////////////////////////////////
 
 template<class vfunctor,class lobj,class robj>  
-inline Lattice<vPredicate> LLComparison(vfunctor op,const Lattice<lobj> &lhs,const Lattice<robj> &rhs)
+inline Lattice<vPredicate<lobj> > LLComparison(vfunctor op,const Lattice<lobj> &lhs,const Lattice<robj> &rhs)
 {
-  Lattice<vPredicate> ret(rhs.Grid());
+  Lattice<vPredicate<lobj> > ret(rhs.Grid());
   autoView( lhs_v, lhs, CpuRead);
   autoView( rhs_v, rhs, CpuRead);
   autoView( ret_v, ret, CpuWrite);
@@ -62,9 +62,9 @@ inline Lattice<vPredicate> LLComparison(vfunctor op,const Lattice<lobj> &lhs,con
 // compare lattice to scalar
 //////////////////////////////////////////////////////////////////////////
 template<class vfunctor,class lobj,class robj> 
-inline Lattice<vPredicate> LSComparison(vfunctor op,const Lattice<lobj> &lhs,const robj &rhs)
+inline Lattice<vPredicate<lobj> > LSComparison(vfunctor op,const Lattice<lobj> &lhs,const robj &rhs)
 {
-  Lattice<vPredicate> ret(lhs.Grid());
+  Lattice<vPredicate<lobj> > ret(lhs.Grid());
   autoView( lhs_v, lhs, CpuRead);
   autoView( ret_v, ret, CpuWrite);
   thread_for( ss, lhs_v.size(), {
@@ -76,9 +76,9 @@ inline Lattice<vPredicate> LSComparison(vfunctor op,const Lattice<lobj> &lhs,con
 // compare scalar to lattice
 //////////////////////////////////////////////////////////////////////////
 template<class vfunctor,class lobj,class robj> 
-inline Lattice<vPredicate> SLComparison(vfunctor op,const lobj &lhs,const Lattice<robj> &rhs)
+inline Lattice<vPredicate<robj> > SLComparison(vfunctor op,const lobj &lhs,const Lattice<robj> &rhs)
 {
-  Lattice<vPredicate> ret(rhs.Grid());
+  Lattice<vPredicate<robj> > ret(rhs.Grid());
   autoView( rhs_v, rhs, CpuRead);
   autoView( ret_v, ret, CpuWrite);
   thread_for( ss, rhs_v.size(), {
@@ -92,87 +92,87 @@ inline Lattice<vPredicate> SLComparison(vfunctor op,const lobj &lhs,const Lattic
 //////////////////////////////////////////////////////////////////////////
 // Less than
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator < (const Lattice<lobj> & lhs, const Lattice<robj> & rhs) {
+inline Lattice<vPredicate<lobj> > operator < (const Lattice<lobj> & lhs, const Lattice<robj> & rhs) {
   return LLComparison(vlt<lobj,robj>(),lhs,rhs);
 }
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator < (const Lattice<lobj> & lhs, const robj & rhs) {
+inline Lattice<vPredicate<lobj> > operator < (const Lattice<lobj> & lhs, const robj & rhs) {
   return LSComparison(vlt<lobj,robj>(),lhs,rhs);
 }
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator < (const lobj & lhs, const Lattice<robj> & rhs) {
+inline Lattice<vPredicate<robj> > operator < (const lobj & lhs, const Lattice<robj> & rhs) {
   return SLComparison(vlt<lobj,robj>(),lhs,rhs);
 }
   
 // Less than equal
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator <= (const Lattice<lobj> & lhs, const Lattice<robj> & rhs) {
+inline Lattice<vPredicate<lobj> > operator <= (const Lattice<lobj> & lhs, const Lattice<robj> & rhs) {
   return LLComparison(vle<lobj,robj>(),lhs,rhs);
 }
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator <= (const Lattice<lobj> & lhs, const robj & rhs) {
+inline Lattice<vPredicate<lobj> > operator <= (const Lattice<lobj> & lhs, const robj & rhs) {
   return LSComparison(vle<lobj,robj>(),lhs,rhs);
 }
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator <= (const lobj & lhs, const Lattice<robj> & rhs) {
+inline Lattice<vPredicate<robj> > operator <= (const lobj & lhs, const Lattice<robj> & rhs) {
   return SLComparison(vle<lobj,robj>(),lhs,rhs);
 }
   
 // Greater than 
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator > (const Lattice<lobj> & lhs, const Lattice<robj> & rhs) {
+inline Lattice<vPredicate<lobj> > operator > (const Lattice<lobj> & lhs, const Lattice<robj> & rhs) {
   return LLComparison(vgt<lobj,robj>(),lhs,rhs);
 }
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator > (const Lattice<lobj> & lhs, const robj & rhs) {
+inline Lattice<vPredicate<lobj> > operator > (const Lattice<lobj> & lhs, const robj & rhs) {
   return LSComparison(vgt<lobj,robj>(),lhs,rhs);
 }
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator > (const lobj & lhs, const Lattice<robj> & rhs) {
+inline Lattice<vPredicate<robj> > operator > (const lobj & lhs, const Lattice<robj> & rhs) {
   return SLComparison(vgt<lobj,robj>(),lhs,rhs);
 }
   
   
 // Greater than equal
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator >= (const Lattice<lobj> & lhs, const Lattice<robj> & rhs) {
+inline Lattice<vPredicate<lobj> > operator >= (const Lattice<lobj> & lhs, const Lattice<robj> & rhs) {
   return LLComparison(vge<lobj,robj>(),lhs,rhs);
 }
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator >= (const Lattice<lobj> & lhs, const robj & rhs) {
+inline Lattice<vPredicate<lobj> > operator >= (const Lattice<lobj> & lhs, const robj & rhs) {
   return LSComparison(vge<lobj,robj>(),lhs,rhs);
 }
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator >= (const lobj & lhs, const Lattice<robj> & rhs) {
+inline Lattice<vPredicate<robj> > operator >= (const lobj & lhs, const Lattice<robj> & rhs) {
   return SLComparison(vge<lobj,robj>(),lhs,rhs);
 }
    
 // equal
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator == (const Lattice<lobj> & lhs, const Lattice<robj> & rhs) {
+inline Lattice<vPredicate<lobj> > operator == (const Lattice<lobj> & lhs, const Lattice<robj> & rhs) {
   return LLComparison(veq<lobj,robj>(),lhs,rhs);
 }
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator == (const Lattice<lobj> & lhs, const robj & rhs) {
+inline Lattice<vPredicate<lobj> > operator == (const Lattice<lobj> & lhs, const robj & rhs) {
   return LSComparison(veq<lobj,robj>(),lhs,rhs);
 }
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator == (const lobj & lhs, const Lattice<robj> & rhs) {
+inline Lattice<vPredicate<robj> > operator == (const lobj & lhs, const Lattice<robj> & rhs) {
   return SLComparison(veq<lobj,robj>(),lhs,rhs);
 }
    
    
 // not equal
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator != (const Lattice<lobj> & lhs, const Lattice<robj> & rhs) {
+inline Lattice<vPredicate<lobj> > operator != (const Lattice<lobj> & lhs, const Lattice<robj> & rhs) {
   return LLComparison(vne<lobj,robj>(),lhs,rhs);
 }
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator != (const Lattice<lobj> & lhs, const robj & rhs) {
+inline Lattice<vPredicate<lobj> > operator != (const Lattice<lobj> & lhs, const robj & rhs) {
   return LSComparison(vne<lobj,robj>(),lhs,rhs);
 }
 template<class lobj,class robj>
-inline Lattice<vPredicate> operator != (const lobj & lhs, const Lattice<robj> & rhs) {
+inline Lattice<vPredicate<robj> > operator != (const lobj & lhs, const Lattice<robj> & rhs) {
   return SLComparison(vne<lobj,robj>(),lhs,rhs);
 }
 NAMESPACE_END(Grid);
