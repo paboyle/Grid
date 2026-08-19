@@ -1,0 +1,1 @@
+../NaiveStaggeredFermionInstantiation.cc.master
