@@ -36,34 +36,20 @@ NAMESPACE_BEGIN(Grid);
 // RecursiveSchurInverse: distributed dense inversion by recursive Schur
 // complement over a binary rank-range tree.
 //
-// CONTRACT: the caller presents an N x N matrix in RANK-MAJOR row ordering,
-// distributed by rows -- rank r owns global rows [rowStart[r], rowStart[r+1])
-// -- and receives its rows of the INVERSE in the same layout.  This class
-// knows nothing of lattices or coarse operators; it consumes a GridBase for
-// world collectives, GridBLAS for GEMMs and GridBLASInverse for the leaf
-// inversions (all of which have Eigen reference backends, so the whole
-// algorithm unit-tests on a CPU-only laptop build under mpirun).
+// Contract: rank r owns global rows [rowStart[r], rowStart[r+1]) of an
+// N x N matrix in rank-major ordering, and receives its rows of the
+// inverse in the same layout.  Consumes GridBase collectives, GridBLAS
+// and GridBLASInverse only; Eigen reference backends permit CPU unit
+// testing under mpirun (Test_schur_inverse).
 //
-// PRECISION (decision 2026-08-14, superseding the fp32-merge design): the
-// ENTIRE inversion runs in fp64 (ComplexD).  The apply-side fp32 gain is
-// taken where it matters -- inside the iterative process -- by rounding the
-// finished inverse ONCE when the caller stores it in the fp32 apply slab.
-// Consequences: merge-growth error accumulates in eps64 and the terminal
-// rounding gives representation-only ~eps32 accuracy independent of growth;
-// the Newton-Schulz refinement and the fp32 escalation ladder are DELETED
-// (resurrectable from git history if a future scale forces reduced-precision
-// merges).  Setup cost: ~2x panel-gather bytes and ~2x transient memory,
-// once per setup; fp64 GEMM runs at fp32 rate on CDNA2/PVC.
+// Arithmetic is fp64 throughout; the caller rounds once into fp32 storage.
 //
-// EXECUTION MODEL: SPMD full-tree walk.  Every rank executes the identical
-// recursion call sequence; participation in DATA is ownership-gated, and
-// every collective is a world-communicator zero-fill GlobalSumVector.  No
-// sub-communicators exist, so no deadlock surface exists.
+// Execution: SPMD full-tree walk.  Every rank makes the identical call
+// sequence; data participation is ownership-gated; all collectives are
+// world-wide, so no deadlock surface exists.
 //
-// STORAGE CONVENTION (pinned by unit test T1b, Test_schur_inverse.cc):
-// BlockRows is COLUMN-MAJOR with ld = rows, matching the BLAS world:
-// element (i,j) lives at data[ i + j*ld ]; a column window [col0, col0+w)
-// is the contiguous slice starting at data[ col0*ld ].
+// Storage: BlockRows is column-major, ld = rows; element (i,j) at
+// data[i + j*ld]; a column window is the contiguous slice at data[col0*ld].
 ///////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -113,14 +99,12 @@ public:
   GridBLAS              BLAS;
   GridBLASInverse       INV;
 
-  // Growth telemetry (diagnostic, not load-bearing at fp64): one entry per
-  // merge node, walk order
+  // Growth telemetry: one entry per merge node, walk order
   std::vector<double>   telNormB;      // ||B||_F = ||A11inv A12||_F
   std::vector<double>   telSratio;     // ||S||_F / ||A22||_F
   double                telLeafMaxInv; // max |(leaf inverse)_ij| over leaves
 
-  // Phase timers/counters (this rank), accumulated across the whole walk:
-  // where does the setup wall actually go?  Reported by ReportTelemetry.
+  // Phase timers/counters, reported by ReportTelemetry
   double                tMemset;       // device panel zero-fill
   double                tDeposit;      // owner rows -> panel (device kernel)
   double                tAllreduce;    // GlobalSumVector on device panels
@@ -132,17 +116,8 @@ public:
   uint64_t              nAllreduce;    // panel collectives
   uint64_t              nGatherGemm;   // GatherGemm calls
 
-  // PERSISTENT DEVICE panel, grow-only across the whole walk.
-  // Persistent: fresh per-call allocations defeat the MPI registration
-  // cache (measured 13% at N=138k).  DEVICE-RESIDENT: the collective runs
-  // on the device pointer via GPU-aware MPI, and panel assembly (zero-fill
-  // + owner deposit) is device-side -- the entire host round-trip (stage
-  // D2H, 92s memset, deposit, H2D at N=138k) is deleted.  Measured
-  // motivation (MPI_benchmark/gather_mpi, Frontier, 16-128 ranks):
-  // host-buffer allreduce 0.8-1.3 GB/s vs device-buffer 5.9-6.8 GB/s;
-  // device allgatherv/ring 20-24 GB/s is the planned stage-2 pattern.
-  // DEVICE BUILDS REQUIRE GPU-aware MPI (MPICH_GPU_SUPPORT_ENABLED=1,
-  // standard in production); CPU builds are unaffected (device == host).
+  // Persistent grow-only device panel; assembly and collectives are
+  // device-resident.  Device builds require GPU-aware MPI.
   deviceVector<ComplexD> dPanelBuf;
 
   ///////////////////////////////////////////////////////////////////////////
@@ -207,7 +182,7 @@ public:
   }
 
   ///////////////////////////////////////////////////////////////////////////
-  // THE communication primitive (plan 3.4 / 4B.3).
+  // The communication primitive.
   //
   //   C(:, colC : colC+widthB) <-   beta  * C(:, colC : colC+widthB)
   //                               + alpha * A(:, colA : colA+widthA) * Bsub
@@ -215,15 +190,12 @@ public:
   // Bsub is the widthA x widthB sub-block of a row-distributed operand
   // owned by ranks [rB0, rB1): owner r contributes its rows of
   // B(:, colB : colB+widthB) at sub-block row offset
-  // rowStart[r] - rowStart[rB0].  The sub-block is gathered in panelBytes
-  // row-chunks, DEVICE-NATIVE: device zero-fill + device deposit kernel +
-  // world GlobalSumVector on the device pointer (GPU-aware MPI on device
-  // builds; see the dPanelBuf comment for the measured motivation).
+  // rowStart[r] - rowStart[rB0], gathered in panelBytes row-chunks by
+  // device zero-fill + deposit kernel + GlobalSumVector.
   //
-  // SPMD rules: EVERY rank calls (the collectives are world-wide);
-  // non-owners of B add zeros; ranks with A.rows == 0 skip all local
-  // compute but still make every collective call.  Column offsets are
-  // LOCAL buffer offsets -- non-participants pass 0.
+  // Every rank calls; non-owners of B add zeros; ranks with A.rows == 0
+  // skip local compute but make every collective call.  Column offsets
+  // are local buffer offsets -- non-participants pass 0.
   ///////////////////////////////////////////////////////////////////////////
   void GatherGemm(ComplexD alpha,
                   BlockRows &A, int64_t colA, int64_t widthA,
@@ -280,6 +252,8 @@ public:
     {
       int64_t kchunk = std::min(kc, k-k0);
 
+      // Zeroing must complete before MPI reads the panel; it is the sole
+      // producer on non-owner ranks.
       tMemset -= usecond();
       acceleratorMemSet(&dPanel[0], 0, (uint64_t)kchunk*n*sizeof(ComplexD));
       tMemset += usecond();
@@ -289,8 +263,7 @@ public:
         int64_t i1 = std::min(k0+kchunk, myOff+B.rows);
         if ( i1 > i0 )
         {
-          // Device-side deposit straight from the B window: strided
-          // block copy as a flat kernel (len rows of n columns).
+          // Deposit my rows: strided block copy, len rows x n columns
           int64_t   len   = i1-i0;
           int64_t   brows = B.rows;
           int64_t   dof   = i0-k0;
@@ -380,11 +353,8 @@ public:
   }
 
   ///////////////////////////////////////////////////////////////////////////
-  // Leaf inversion.  Purely LOCAL -- the calling rank owns the whole
-  // width x width leaf (width == my row count); no collectives, so the
-  // SPMD walk stays uniform with other ranks doing nothing.  The window
-  // is contiguous (ld == rows == width): invert IN PLACE via
-  // GridBLASInverse.  Everything is already fp64; no promote/demote.
+  // Leaf inversion: local, in place on the contiguous diagonal window.
+  // No collectives.
   ///////////////////////////////////////////////////////////////////////////
   void LeafInvert(int64_t col0, int64_t width, BlockRows &Arows)
   {
