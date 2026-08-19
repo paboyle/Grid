@@ -61,6 +61,17 @@ public:
   uint64_t coarse_vol;
   uint64_t words;
 
+  ////////////////////////////////////////////////////////////////////////////
+  // Blocking geometry in full local coordinates. Addressing in lSites rather
+  // than (lane,oSite) lets the fine and coarse spaces carry different SIMD
+  // layouts, so an unvectorised coarse space may block a vectorised fine one.
+  ////////////////////////////////////////////////////////////////////////////
+  Coordinate fine_ldimensions;
+  Coordinate coarse_ldimensions;
+  Coordinate block_ldimensions;
+  Coordinate fine_simd;
+  Coordinate coarse_simd;
+
   // Row major layout "C" order:
   // BLAS_V[coarse_vol][nbasis][block_vol][words]
   // BLAS_F[coarse_vol][nrhs][block_vol][words]
@@ -120,8 +131,25 @@ public:
     fine_vol   = fine_grid->lSites();
     coarse_vol = coarse_grid->lSites();
     block_vol = fine_vol/coarse_vol;
-    
+
     words = sizeof(scalar_object)/sizeof(scalar);
+
+    int nd = coarse_grid->_ndimension;
+    GRID_ASSERT(fine_grid->_ndimension == nd);
+
+    fine_ldimensions.resize(nd);
+    coarse_ldimensions.resize(nd);
+    block_ldimensions.resize(nd);
+    fine_simd   = fine_grid->_simd_layout;
+    coarse_simd = coarse_grid->_simd_layout;
+    for(int d=0;d<nd;d++){
+      GRID_ASSERT(fine_grid->_processors[d] == coarse_grid->_processors[d]);
+      fine_ldimensions  [d] = fine_grid->_rdimensions  [d]*fine_grid->_simd_layout  [d];
+      coarse_ldimensions[d] = coarse_grid->_rdimensions[d]*coarse_grid->_simd_layout[d];
+      block_ldimensions [d] = fine_ldimensions[d]/coarse_ldimensions[d];
+      GRID_ASSERT(block_ldimensions[d]*coarse_ldimensions[d] == fine_ldimensions[d]);
+    }
+    GRID_ASSERT(block_vol == fine_vol/coarse_vol);
 
     BLAS_V.resize (fine_vol * words * nbasis );
   }
@@ -133,22 +161,16 @@ public:
 
     GRID_ASSERT(vecs[0].Grid()==fine_grid);
 
-    subdivides(coarse_grid,fine_grid); // require they map
-
     int _ndimension = coarse_grid->_ndimension;
-    GRID_ASSERT(block_vol == fine_grid->oSites() / coarse_grid->oSites());
-    
-    Coordinate  block_r      (_ndimension);
-    for(int d=0 ; d<_ndimension;d++){
-      block_r[d] = fine_grid->_rdimensions[d] / coarse_grid->_rdimensions[d];
-    }
 
     uint64_t sz = blas.size();
 
     acceleratorMemSet(&blas[0],0,blas.size()*sizeof(scalar));
 
     Coordinate fine_rdimensions = fine_grid->_rdimensions;
-    Coordinate coarse_rdimensions = coarse_grid->_rdimensions;
+    Coordinate coarse_l = coarse_ldimensions;
+    Coordinate block_l  = block_ldimensions;
+    Coordinate fsimd    = fine_simd;
     int64_t bv= block_vol;
     for(int v=0;v<vecs.size();v++){
 
@@ -162,9 +184,7 @@ public:
 
       // loop over fine sites
       const int Nsimd = vobj::Nsimd();
-      //      std::cout << "sz "<<sz<<std::endl;
-      //      std::cout << "prod "<<Nsimd * coarse_grid->oSites() * block_vol * nvec * words<<std::endl;
-      GRID_ASSERT(sz == Nsimd * coarse_grid->oSites() * block_vol * nvec * words);
+      GRID_ASSERT(sz == coarse_vol * block_vol * nvec * words);
       uint64_t lwords= words; // local variable for copy in to GPU
       accelerator_for(sf,osites,Nsimd,{
 #ifdef GRID_SIMT
@@ -175,27 +195,27 @@ public:
 #endif
 	  // One thread per fine site
 	  Coordinate coor_f(_ndimension);
+	  Coordinate coor_l(_ndimension);
 	  Coordinate coor_b(_ndimension);
 	  Coordinate coor_c(_ndimension);
 
-	  // Fine site to fine coor
+	  // Fine (oSite,lane) to full local coor
 	  Lexicographic::CoorFromIndex(coor_f,sf,fine_rdimensions);
+	  Lexicographic::CoorFromIndex(coor_l,lane,fsimd);
+	  for(int d=0;d<_ndimension;d++) coor_f[d] += fine_rdimensions[d]*coor_l[d];
 
-	  for(int d=0;d<_ndimension;d++) coor_b[d] = coor_f[d]%block_r[d];
-	  for(int d=0;d<_ndimension;d++) coor_c[d] = coor_f[d]/block_r[d];
-	  
+	  for(int d=0;d<_ndimension;d++) coor_b[d] = coor_f[d]%block_l[d];
+	  for(int d=0;d<_ndimension;d++) coor_c[d] = coor_f[d]/block_l[d];
+
 	  int sc;// coarse site
 	  int sb;// block site
-	  Lexicographic::IndexFromCoor(coor_c,sc,coarse_rdimensions);
-	  Lexicographic::IndexFromCoor(coor_b,sb,block_r);
+	  Lexicographic::IndexFromCoor(coor_c,sc,coarse_l);
+	  Lexicographic::IndexFromCoor(coor_b,sb,block_l);
 
           scalar_object data = extractLane(lane,fineData[sf]);
 
-	  // BLAS layout address calculation
-	  // words * block_vol * nbasis x coarse_vol
-	  // coarse oSite x block vole x lanes
-	  int64_t site = (lane*osites + sc*bv)*nvec
-   	               + v*bv
+	  // BLAS_F[coarse_vol][nvec][block_vol][words]
+	  int64_t site = (sc*nvec + v)*bv
 	               + sb;
 
 	  //	  GRID_ASSERT(site*lwords<sz);
@@ -213,6 +233,318 @@ public:
       //      std::cout << " BlockProjector imported vector"<<v<<std::endl;
     }
   }
+  ////////////////////////////////////////////////////////////////////////////
+  // Import direct from multiRHS fine order, avoiding the unpack to a vector
+  // of single RHS fields.
+  //
+  //   fine mrhs grid  : rhs is dimension 0, undistributed, unvectorised
+  //   Grid  order     : F[fine_vol][nrhs][words]
+  //   BLAS  order     : BLAS_F[lane][coarse_vol][nrhs][block_vol][words]
+  //
+  // The gather of block_vol from fine_vol, and the transpose of nrhs against
+  // block_vol, are the irreducible part: this is not the identity.
+  ////////////////////////////////////////////////////////////////////////////
+  void ImportFineGridMrhsVectors(Field &vec_mrhs, deviceVector<scalar> &blas)
+  {
+    typedef typename Field::vector_object vobj;
+
+    GridBase *fine_mrhs_grid = vec_mrhs.Grid();
+    int _ndimension = coarse_grid->_ndimension;
+
+    GRID_ASSERT(fine_mrhs_grid->_ndimension == _ndimension+1);
+    GRID_ASSERT(fine_mrhs_grid->_simd_layout[0] == 1);
+    GRID_ASSERT(fine_mrhs_grid->_processors[0] == 1);
+    for(int d=0;d<_ndimension;d++){
+      GRID_ASSERT(fine_mrhs_grid->_rdimensions[d+1] == fine_grid->_rdimensions[d]);
+      GRID_ASSERT(fine_mrhs_grid->_simd_layout[d+1] == fine_grid->_simd_layout[d]);
+    }
+    int nvec = fine_mrhs_grid->_rdimensions[0];   // nrhs
+
+    uint64_t sz = blas.size();
+    acceleratorMemSet(&blas[0],0,blas.size()*sizeof(scalar));
+
+    Coordinate fine_mrhs_rdimensions = fine_mrhs_grid->_rdimensions;
+    Coordinate fine_rdimensions      = fine_grid->_rdimensions;
+    Coordinate coarse_l = coarse_ldimensions;
+    Coordinate block_l  = block_ldimensions;
+    Coordinate fsimd    = fine_simd;
+    int64_t bv= block_vol;
+
+    autoView( fineData   , vec_mrhs, AcceleratorRead);
+    auto blasData_p  = &blas[0];
+    auto fineData_p  = &fineData[0];
+
+    int64_t osites     = fine_grid->oSites();       // D dimensional
+    int64_t osites_hi  = fine_mrhs_grid->oSites();  // nvec * osites
+
+    const int Nsimd = vobj::Nsimd();
+    GRID_ASSERT(sz == coarse_vol * block_vol * nvec * words);
+    uint64_t lwords= words;
+    int64_t lnvec = nvec;
+
+    accelerator_for(sfr,osites_hi,Nsimd,{
+#ifdef GRID_SIMT
+      {
+	int lane=acceleratorSIMTlane(Nsimd); // buffer lane
+#else
+	for(int lane=0;lane<Nsimd;lane++) {
+#endif
+	  Coordinate coor_hi(_ndimension+1);
+	  Coordinate coor_f(_ndimension);
+	  Coordinate coor_l(_ndimension);
+	  Coordinate coor_b(_ndimension);
+	  Coordinate coor_c(_ndimension);
+
+	  // rhs is dimension 0 of the D+1 grid
+	  Lexicographic::CoorFromIndex(coor_hi,sfr,fine_mrhs_rdimensions);
+	  int v = coor_hi[0];
+	  for(int d=0;d<_ndimension;d++) coor_f[d] = coor_hi[d+1];
+
+	  Lexicographic::CoorFromIndex(coor_l,lane,fsimd);
+	  for(int d=0;d<_ndimension;d++) coor_f[d] += fine_rdimensions[d]*coor_l[d];
+
+	  for(int d=0;d<_ndimension;d++) coor_b[d] = coor_f[d]%block_l[d];
+	  for(int d=0;d<_ndimension;d++) coor_c[d] = coor_f[d]/block_l[d];
+
+	  int sc;// coarse site
+	  int sb;// block site
+	  Lexicographic::IndexFromCoor(coor_c,sc,coarse_l);
+	  Lexicographic::IndexFromCoor(coor_b,sb,block_l);
+
+	  scalar_object data = extractLane(lane,fineData[sfr]);
+
+	  int64_t site = (sc*lnvec + v)*bv
+	               + sb;
+
+	  scalar_object * ptr = (scalar_object *)&blasData_p[site*lwords];
+	  *ptr = data;
+#ifdef GRID_SIMT
+      }
+#else
+      }
+#endif
+    });
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Export direct to multiRHS coarse order.
+  //
+  //   Grid  order : C[coarse_vol][nrhs][nbasis]
+  //   BLAS  order : BLAS_C[lane][coarse_vol][nrhs][nbasis]
+  //
+  // At Nsimd()==1 these are the same sequence of addresses.
+  ////////////////////////////////////////////////////////////////////////////
+  template<class vobj>
+  void ExportCoarseGridMrhsVectors(Lattice<vobj> &vec_mrhs, deviceVector<scalar> &blas)
+  {
+    typedef typename vobj::scalar_object coarse_scalar_object;
+
+    GridBase *coarse_mrhs_grid = vec_mrhs.Grid();
+    int _ndimension = coarse_grid->_ndimension;
+
+    GRID_ASSERT(coarse_mrhs_grid->_ndimension == _ndimension+1);
+    GRID_ASSERT(coarse_mrhs_grid->_simd_layout[0] == 1);
+    GRID_ASSERT(coarse_mrhs_grid->_processors[0] == 1);
+    for(int d=0;d<_ndimension;d++){
+      GRID_ASSERT(coarse_mrhs_grid->_rdimensions[d+1] == coarse_grid->_rdimensions[d]);
+      GRID_ASSERT(coarse_mrhs_grid->_simd_layout[d+1] == coarse_grid->_simd_layout[d]);
+    }
+    int nvec = coarse_mrhs_grid->_rdimensions[0];   // nrhs
+
+    Coordinate coarse_mrhs_rdimensions = coarse_mrhs_grid->_rdimensions;
+    Coordinate coarse_rdimensions      = coarse_grid->_rdimensions;
+    Coordinate coarse_l = coarse_ldimensions;
+    Coordinate csimd    = coarse_simd;
+
+    autoView( coarseData   , vec_mrhs, AcceleratorWrite);
+    auto blasData_p    = &blas[0];
+    auto coarseData_p  = &coarseData[0];
+
+    int64_t osites    = coarse_grid->oSites();       // D dimensional
+    int64_t osites_hi = coarse_mrhs_grid->oSites();  // nvec * osites
+
+    const int Nsimd = vobj::Nsimd();
+    uint64_t cwords=sizeof(typename vobj::scalar_object)/sizeof(scalar);
+    GRID_ASSERT(cwords==nbasis);
+    int64_t lnvec = nvec;
+
+    accelerator_for(scr,osites_hi,Nsimd,{
+#ifdef GRID_SIMT
+      {
+	int lane=acceleratorSIMTlane(Nsimd); // buffer lane
+#else
+	for(int lane=0;lane<Nsimd;lane++) {
+#endif
+	  Coordinate coor_hi(_ndimension+1);
+	  Coordinate coor_l(_ndimension);
+	  Coordinate coor_c(_ndimension);
+
+	  Lexicographic::CoorFromIndex(coor_hi,scr,coarse_mrhs_rdimensions);
+	  int v = coor_hi[0];
+	  for(int d=0;d<_ndimension;d++) coor_c[d] = coor_hi[d+1];
+
+	  Lexicographic::CoorFromIndex(coor_l,lane,csimd);
+	  for(int d=0;d<_ndimension;d++) coor_c[d] += coarse_rdimensions[d]*coor_l[d];
+
+	  int sc;
+	  Lexicographic::IndexFromCoor(coor_c,sc,coarse_l);
+
+	  int64_t blas_site = (sc*lnvec + v)*cwords;
+	  coarse_scalar_object * ptr = (coarse_scalar_object *)&blasData_p[blas_site];
+	  coarse_scalar_object data = *ptr;
+	  insertLane(lane,coarseData[scr],data);
+#ifdef GRID_SIMT
+      }
+#else
+      }
+#endif
+    });
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Reverse directions: BLAS_F -> fine mrhs field, coarse mrhs field -> BLAS_C
+  ////////////////////////////////////////////////////////////////////////////
+  void ExportFineGridMrhsVectors(Field &vec_mrhs, deviceVector<scalar> &blas)
+  {
+    typedef typename Field::vector_object vobj;
+
+    GridBase *fine_mrhs_grid = vec_mrhs.Grid();
+    int _ndimension = coarse_grid->_ndimension;
+
+    GRID_ASSERT(fine_mrhs_grid->_ndimension == _ndimension+1);
+    GRID_ASSERT(fine_mrhs_grid->_simd_layout[0] == 1);
+    for(int d=0;d<_ndimension;d++){
+      GRID_ASSERT(fine_mrhs_grid->_rdimensions[d+1] == fine_grid->_rdimensions[d]);
+      GRID_ASSERT(fine_mrhs_grid->_simd_layout[d+1] == fine_grid->_simd_layout[d]);
+    }
+    int nvec = fine_mrhs_grid->_rdimensions[0];
+
+    Coordinate fine_mrhs_rdimensions = fine_mrhs_grid->_rdimensions;
+    Coordinate fine_rdimensions      = fine_grid->_rdimensions;
+    Coordinate coarse_l = coarse_ldimensions;
+    Coordinate block_l  = block_ldimensions;
+    Coordinate fsimd    = fine_simd;
+    int64_t bv= block_vol;
+
+    autoView( fineData   , vec_mrhs, AcceleratorWrite);
+    auto blasData_p  = &blas[0];
+    auto fineData_p  = &fineData[0];
+
+    int64_t osites     = fine_grid->oSites();
+    int64_t osites_hi  = fine_mrhs_grid->oSites();
+
+    const int Nsimd = vobj::Nsimd();
+    uint64_t lwords= words;
+    int64_t lnvec = nvec;
+
+    accelerator_for(sfr,osites_hi,Nsimd,{
+#ifdef GRID_SIMT
+      {
+	int lane=acceleratorSIMTlane(Nsimd);
+#else
+	for(int lane=0;lane<Nsimd;lane++) {
+#endif
+	  Coordinate coor_hi(_ndimension+1);
+	  Coordinate coor_f(_ndimension);
+	  Coordinate coor_l(_ndimension);
+	  Coordinate coor_b(_ndimension);
+	  Coordinate coor_c(_ndimension);
+
+	  Lexicographic::CoorFromIndex(coor_hi,sfr,fine_mrhs_rdimensions);
+	  int v = coor_hi[0];
+	  for(int d=0;d<_ndimension;d++) coor_f[d] = coor_hi[d+1];
+
+	  Lexicographic::CoorFromIndex(coor_l,lane,fsimd);
+	  for(int d=0;d<_ndimension;d++) coor_f[d] += fine_rdimensions[d]*coor_l[d];
+
+	  for(int d=0;d<_ndimension;d++) coor_b[d] = coor_f[d]%block_l[d];
+	  for(int d=0;d<_ndimension;d++) coor_c[d] = coor_f[d]/block_l[d];
+
+	  int sc,sb;
+	  Lexicographic::IndexFromCoor(coor_c,sc,coarse_l);
+	  Lexicographic::IndexFromCoor(coor_b,sb,block_l);
+
+	  int64_t site = (sc*lnvec + v)*bv
+	               + sb;
+
+	  scalar_object * ptr = (scalar_object *)&blasData_p[site*lwords];
+	  scalar_object data = *ptr;
+	  insertLane(lane,fineData[sfr],data);
+#ifdef GRID_SIMT
+      }
+#else
+      }
+#endif
+    });
+  }
+
+  template<class vobj>
+  void ImportCoarseGridMrhsVectors(Lattice<vobj> &vec_mrhs, deviceVector<scalar> &blas)
+  {
+    typedef typename vobj::scalar_object coarse_scalar_object;
+
+    GridBase *coarse_mrhs_grid = vec_mrhs.Grid();
+    int _ndimension = coarse_grid->_ndimension;
+
+    GRID_ASSERT(coarse_mrhs_grid->_ndimension == _ndimension+1);
+    GRID_ASSERT(coarse_mrhs_grid->_simd_layout[0] == 1);
+    for(int d=0;d<_ndimension;d++){
+      GRID_ASSERT(coarse_mrhs_grid->_rdimensions[d+1] == coarse_grid->_rdimensions[d]);
+      GRID_ASSERT(coarse_mrhs_grid->_simd_layout[d+1] == coarse_grid->_simd_layout[d]);
+    }
+    int nvec = coarse_mrhs_grid->_rdimensions[0];
+
+    Coordinate coarse_mrhs_rdimensions = coarse_mrhs_grid->_rdimensions;
+    Coordinate coarse_rdimensions      = coarse_grid->_rdimensions;
+    Coordinate coarse_l = coarse_ldimensions;
+    Coordinate csimd    = coarse_simd;
+
+    autoView( coarseData   , vec_mrhs, AcceleratorRead);
+    auto blasData_p    = &blas[0];
+    auto coarseData_p  = &coarseData[0];
+
+    int64_t osites    = coarse_grid->oSites();
+    int64_t osites_hi = coarse_mrhs_grid->oSites();
+
+    const int Nsimd = vobj::Nsimd();
+    uint64_t cwords=sizeof(typename vobj::scalar_object)/sizeof(scalar);
+    GRID_ASSERT(cwords==nbasis);
+    int64_t lnvec = nvec;
+
+    accelerator_for(scr,osites_hi,Nsimd,{
+#ifdef GRID_SIMT
+      {
+	int lane=acceleratorSIMTlane(Nsimd);
+#else
+	for(int lane=0;lane<Nsimd;lane++) {
+#endif
+	  Coordinate coor_hi(_ndimension+1);
+	  Coordinate coor_l(_ndimension);
+	  Coordinate coor_c(_ndimension);
+
+	  Lexicographic::CoorFromIndex(coor_hi,scr,coarse_mrhs_rdimensions);
+	  int v = coor_hi[0];
+	  for(int d=0;d<_ndimension;d++) coor_c[d] = coor_hi[d+1];
+
+	  Lexicographic::CoorFromIndex(coor_l,lane,csimd);
+	  for(int d=0;d<_ndimension;d++) coor_c[d] += coarse_rdimensions[d]*coor_l[d];
+
+	  int sc;
+	  Lexicographic::IndexFromCoor(coor_c,sc,coarse_l);
+
+	  coarse_scalar_object data = extractLane(lane,coarseData[scr]);
+
+	  int64_t blas_site = (sc*lnvec + v)*cwords;
+	  coarse_scalar_object * ptr = (coarse_scalar_object *)&blasData_p[blas_site];
+	  *ptr = data;
+#ifdef GRID_SIMT
+      }
+#else
+      }
+#endif
+    });
+  }
+
   void ExportFineGridVectors(std::vector <Field> &vecs, deviceVector<scalar> &blas)
   {
     typedef typename Field::vector_object vobj;
@@ -221,17 +553,12 @@ public:
 
     GRID_ASSERT(vecs[0].Grid()==fine_grid);
 
-    subdivides(coarse_grid,fine_grid); // require they map
-
     int _ndimension = coarse_grid->_ndimension;
-    GRID_ASSERT(block_vol == fine_grid->oSites() / coarse_grid->oSites());
-    
-    Coordinate  block_r      (_ndimension);
-    for(int d=0 ; d<_ndimension;d++){
-      block_r[d] = fine_grid->_rdimensions[d] / coarse_grid->_rdimensions[d];
-    }
+
     Coordinate fine_rdimensions = fine_grid->_rdimensions;
-    Coordinate coarse_rdimensions = coarse_grid->_rdimensions;
+    Coordinate coarse_l = coarse_ldimensions;
+    Coordinate block_l  = block_ldimensions;
+    Coordinate fsimd    = fine_simd;
 
     //    std::cout << " export fine Blas norm "<<blasNorm2(blas)<<std::endl;
 
@@ -259,23 +586,24 @@ public:
 #endif
 	  // One thread per fine site
 	  Coordinate coor_f(_ndimension);
+	  Coordinate coor_l(_ndimension);
 	  Coordinate coor_b(_ndimension);
 	  Coordinate coor_c(_ndimension);
 
 	  Lexicographic::CoorFromIndex(coor_f,sf,fine_rdimensions);
+	  Lexicographic::CoorFromIndex(coor_l,lane,fsimd);
+	  for(int d=0;d<_ndimension;d++) coor_f[d] += fine_rdimensions[d]*coor_l[d];
 
-	  for(int d=0;d<_ndimension;d++) coor_b[d] = coor_f[d]%block_r[d];
-	  for(int d=0;d<_ndimension;d++) coor_c[d] = coor_f[d]/block_r[d];
-	  
+	  for(int d=0;d<_ndimension;d++) coor_b[d] = coor_f[d]%block_l[d];
+	  for(int d=0;d<_ndimension;d++) coor_c[d] = coor_f[d]/block_l[d];
+
 	  int sc;
 	  int sb;
-	  Lexicographic::IndexFromCoor(coor_c,sc,coarse_rdimensions);
-	  Lexicographic::IndexFromCoor(coor_b,sb,block_r);
+	  Lexicographic::IndexFromCoor(coor_c,sc,coarse_l);
+	  Lexicographic::IndexFromCoor(coor_b,sb,block_l);
 
-	  // BLAS layout address calculation
-	  // words * block_vol * nbasis x coarse_vol 	  
-	  int64_t site = (lane*osites + sc*bv)*nvec
-   	               + v*bv
+	  // BLAS_F[coarse_vol][nvec][block_vol][words]
+	  int64_t site = (sc*nvec + v)*bv
 	               + sb;
 
 	  scalar_object * ptr = (scalar_object *)&blasData_p[site*lwords];
@@ -306,7 +634,9 @@ public:
     uint64_t sz = blas.size();
 
     Coordinate coarse_rdimensions = coarse_grid->_rdimensions;
-    
+    Coordinate coarse_l = coarse_ldimensions;
+    Coordinate csimd    = coarse_simd;
+
     for(int v=0;v<vecs.size();v++){
 
       //      std::cout << " BlockProjector importing coarse vector"<<v<<" "<<norm2(vecs[v])<<std::endl;
@@ -330,8 +660,17 @@ public:
 	  for(int lane=0;lane<Nsimd;lane++) {
 #endif
            // C_br per site
-	    int64_t blas_site = (lane*osites + sc)*nvec*cwords + v*cwords;
-	    
+	    Coordinate coor_c(_ndimension);
+	    Coordinate coor_l(_ndimension);
+	    Lexicographic::CoorFromIndex(coor_c,sc,coarse_rdimensions);
+	    Lexicographic::CoorFromIndex(coor_l,lane,csimd);
+	    for(int d=0;d<_ndimension;d++) coor_c[d] += coarse_rdimensions[d]*coor_l[d];
+
+	    int scl;
+	    Lexicographic::IndexFromCoor(coor_c,scl,coarse_l);
+
+	    int64_t blas_site = (scl*nvec + v)*cwords;
+
 	    coarse_scalar_object data = extractLane(lane,coarseData[sc]);
 
 	    coarse_scalar_object * ptr = (coarse_scalar_object *)&blasData_p[blas_site];
@@ -360,7 +699,9 @@ public:
     uint64_t sz = blas.size();
 
     Coordinate coarse_rdimensions = coarse_grid->_rdimensions;
-    
+    Coordinate coarse_l = coarse_ldimensions;
+    Coordinate csimd    = coarse_simd;
+
     //    std::cout << " export coarsee Blas norm "<<blasNorm2(blas)<<std::endl;
     for(int v=0;v<vecs.size();v++){
 
@@ -385,7 +726,16 @@ public:
 #else
 	  for(int lane=0;lane<Nsimd;lane++) {
 #endif
-	    int64_t blas_site = (lane*osites + sc)*nvec*cwords + v*cwords;
+	    Coordinate coor_c(_ndimension);
+	    Coordinate coor_l(_ndimension);
+	    Lexicographic::CoorFromIndex(coor_c,sc,coarse_rdimensions);
+	    Lexicographic::CoorFromIndex(coor_l,lane,csimd);
+	    for(int d=0;d<_ndimension;d++) coor_c[d] += coarse_rdimensions[d]*coor_l[d];
+
+	    int scl;
+	    Lexicographic::IndexFromCoor(coor_c,scl,coarse_l);
+
+	    int64_t blas_site = (scl*nvec + v)*cwords;
 	    coarse_scalar_object * ptr = (coarse_scalar_object *)&blasData_p[blas_site];
 	    coarse_scalar_object data = *ptr;
 	    insertLane(lane,coarseData[sc],data);
@@ -507,6 +857,168 @@ public:
     
     ExportFineGridVectors(fine, BLAS_F);
     //    std::cout << " exported "<<std::endl;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  // multiRHS ordered interfaces.  The GEMM is identical; only the import and
+  // export differ, so those are the whole of the layout question.
+  ////////////////////////////////////////////////////////////////////////////
+  template<class cobj>
+  void blockProject(Field &fine_mrhs,Lattice<cobj> &coarse_mrhs)
+  {
+    int nrhs = fine_mrhs.Grid()->_rdimensions[0];
+    int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
+    GRID_ASSERT(nbasis==_nbasis);
+    GRID_ASSERT(coarse_mrhs.Grid()->_rdimensions[0]==nrhs);
+
+    BLAS_F.resize (fine_vol * words * nrhs );
+    BLAS_C.resize (coarse_vol * nbasis * nrhs );
+
+    ImportFineGridMrhsVectors(fine_mrhs,BLAS_F);
+    ProjectBLAS(nrhs);
+    ExportCoarseGridMrhsVectors(coarse_mrhs,BLAS_C);
+  }
+
+  template<class cobj>
+  void blockPromote(Field &fine_mrhs,Lattice<cobj> &coarse_mrhs)
+  {
+    int nrhs = fine_mrhs.Grid()->_rdimensions[0];
+    int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
+    GRID_ASSERT(nbasis==_nbasis);
+    GRID_ASSERT(coarse_mrhs.Grid()->_rdimensions[0]==nrhs);
+
+    BLAS_F.resize (fine_vol * words * nrhs );
+    BLAS_C.resize (coarse_vol * nbasis * nrhs );
+
+    ImportCoarseGridMrhsVectors(coarse_mrhs,BLAS_C);
+    PromoteBLAS(nrhs);
+    ExportFineGridMrhsVectors(fine_mrhs,BLAS_F);
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Mixed orderings. A single RHS fine operator produces a vector of fine
+  // fields with no packing; the coarse side is still wanted in mrhs order.
+  ////////////////////////////////////////////////////////////////////////////
+  template<class cobj>
+  void blockProject(std::vector<Field> &fine,Lattice<cobj> &coarse_mrhs)
+  {
+    int nrhs = fine.size();
+    int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
+    GRID_ASSERT(nbasis==_nbasis);
+    GRID_ASSERT(coarse_mrhs.Grid()->_rdimensions[0]==nrhs);
+
+    BLAS_F.resize (fine_vol * words * nrhs );
+    BLAS_C.resize (coarse_vol * nbasis * nrhs );
+
+    ImportFineGridVectors(fine,BLAS_F);
+    ProjectBLAS(nrhs);
+    ExportCoarseGridMrhsVectors(coarse_mrhs,BLAS_C);
+  }
+
+  template<class cobj>
+  void blockProject(Field &fine_mrhs,std::vector< Lattice<cobj> > &coarse)
+  {
+    int nrhs = fine_mrhs.Grid()->_rdimensions[0];
+    int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
+    GRID_ASSERT(nbasis==_nbasis);
+    GRID_ASSERT(coarse.size()==nrhs);
+
+    BLAS_F.resize (fine_vol * words * nrhs );
+    BLAS_C.resize (coarse_vol * nbasis * nrhs );
+
+    ImportFineGridMrhsVectors(fine_mrhs,BLAS_F);
+    ProjectBLAS(nrhs);
+    ExportCoarseGridVectors(coarse,BLAS_C);
+  }
+
+  template<class cobj>
+  void blockPromote(std::vector<Field> &fine,Lattice<cobj> &coarse_mrhs)
+  {
+    int nrhs = fine.size();
+    int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
+    GRID_ASSERT(nbasis==_nbasis);
+    GRID_ASSERT(coarse_mrhs.Grid()->_rdimensions[0]==nrhs);
+
+    BLAS_F.resize (fine_vol * words * nrhs );
+    BLAS_C.resize (coarse_vol * nbasis * nrhs );
+
+    ImportCoarseGridMrhsVectors(coarse_mrhs,BLAS_C);
+    PromoteBLAS(nrhs);
+    ExportFineGridVectors(fine,BLAS_F);
+  }
+
+  template<class cobj>
+  void blockPromote(Field &fine_mrhs,std::vector< Lattice<cobj> > &coarse)
+  {
+    int nrhs = fine_mrhs.Grid()->_rdimensions[0];
+    int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
+    GRID_ASSERT(nbasis==_nbasis);
+    GRID_ASSERT(coarse.size()==nrhs);
+
+    BLAS_F.resize (fine_vol * words * nrhs );
+    BLAS_C.resize (coarse_vol * nbasis * nrhs );
+
+    ImportCoarseGridVectors(coarse,BLAS_C);
+    PromoteBLAS(nrhs);
+    ExportFineGridMrhsVectors(fine_mrhs,BLAS_F);
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Pointer tables and the batched GEMM, shared by both orderings
+  ////////////////////////////////////////////////////////////////////////////
+  void BLASPointers(int nrhs,
+		    deviceVector<scalar *> &Vd,
+		    deviceVector<scalar *> &Fd,
+		    deviceVector<scalar *> &Cd)
+  {
+    for(int c=0;c<coarse_vol;c++){
+      scalar * Vh = & BLAS_V[c*nbasis*block_vol*words];
+      scalar * Fh = & BLAS_F[c*nrhs*block_vol*words];
+      scalar * Ch = & BLAS_C[c*nrhs*nbasis];
+      acceleratorPut(Vd[c],Vh);
+      acceleratorPut(Fd[c],Fh);
+      acceleratorPut(Cd[c],Ch);
+    }
+  }
+
+  // C_br = V^dag F
+  void ProjectBLAS(int nrhs)
+  {
+    deviceVector<scalar *> Vd(coarse_vol);
+    deviceVector<scalar *> Fd(coarse_vol);
+    deviceVector<scalar *> Cd(coarse_vol);
+    BLASPointers(nrhs,Vd,Fd,Cd);
+
+    GridBLAS BLAS;
+    int64_t vw = block_vol * words;
+    BLAS.gemmBatched(GridBLAS_OP_C,GridBLAS_OP_N,
+		     nbasis,nrhs,vw,
+		     scalar(1.0),
+		     Vd,
+		     Fd,
+		     scalar(0.0),  // wipe out C
+		     Cd);
+    BLAS.synchronise();
+  }
+
+  // F_xr = Vxb Cbr
+  void PromoteBLAS(int nrhs)
+  {
+    deviceVector<scalar *> Vd(coarse_vol);
+    deviceVector<scalar *> Fd(coarse_vol);
+    deviceVector<scalar *> Cd(coarse_vol);
+    BLASPointers(nrhs,Vd,Fd,Cd);
+
+    GridBLAS BLAS;
+    int64_t vw = block_vol * words;
+    BLAS.gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N,
+		     vw,nrhs,nbasis,
+		     scalar(1.0),
+		     Vd,
+		     Cd,
+		     scalar(0.0),  // wipe out F
+		     Fd);
+    BLAS.synchronise();
   }
 };
 
