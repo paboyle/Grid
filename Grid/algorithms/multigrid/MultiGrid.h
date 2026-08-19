@@ -32,3 +32,5 @@ Author: Peter Boyle <pboyle@bnl.gov>
 #include <Grid/algorithms/multigrid/CoarsenedMatrix.h>
 #include <Grid/algorithms/multigrid/GeneralCoarsenedMatrix.h>
 #include <Grid/algorithms/multigrid/GeneralCoarsenedMatrixMultiRHS.h>
+#include <Grid/algorithms/multigrid/GeneralCoarsenedMatrixMultiRHSV2.h>
+#include <Grid/algorithms/multigrid/MrhsPromotedOperator.h>
