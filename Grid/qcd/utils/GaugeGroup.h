@@ -36,7 +36,7 @@ directory
 // This is the only reason why the second template parameter has a name.
 #define ONLY_IF_SU                                                       \
   typename dummy_name = group_name,                                      \
-           typename named_dummy = std::enable_if_t <                                 \
+          typename named_dummy = std::enable_if_t <                                 \
                           std::is_same<dummy_name, group_name>::value && \
                       is_su<dummy_name>::value >
 
@@ -89,10 +89,8 @@ template <int ncolour, class group_name>
 class GaugeGroup {
  public:
   static const int Dimension = ncolour;
-  static const int AdjointDimension =
-      compute_adjoint_dimension<group_name>(ncolour);
-  static const int AlgebraDimension =
-      compute_adjoint_dimension<group_name>(ncolour);
+  static const int AdjointDimension = compute_adjoint_dimension<group_name>(ncolour);
+  static const int AlgebraDimension = compute_adjoint_dimension<group_name>(ncolour);
 
   template <typename vtype>
   using iSU2Matrix = iScalar<iScalar<iMatrix<vtype, 2> > >;
@@ -101,38 +99,37 @@ class GaugeGroup {
   template <typename vtype>
   using iAlgebraVector = iScalar<iScalar<iVector<vtype, AdjointDimension> > >;
   template <typename vtype>
-  using iSUnAlgebraMatrix =
-    iScalar<iScalar<iMatrix<vtype, AdjointDimension> > >;
+  using iSUnAlgebraMatrix = iScalar<iScalar<iMatrix<vtype, AdjointDimension> > >;
   static int su2subgroups(void) { return su2subgroups(group_name()); }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Types can be accessed as SU<2>::Matrix , SU<2>::vSUnMatrix,
   // SU<2>::LatticeMatrix etc...
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  typedef iGroupMatrix<Complex> Matrix;
+  typedef iGroupMatrix<Complex>  Matrix;
   typedef iGroupMatrix<ComplexF> MatrixF;
   typedef iGroupMatrix<ComplexD> MatrixD;
 
-  typedef iGroupMatrix<vComplex> vMatrix;
+  typedef iGroupMatrix<vComplex>  vMatrix;
   typedef iGroupMatrix<vComplexF> vMatrixF;
   typedef iGroupMatrix<vComplexD> vMatrixD;
 
   // For the projectors to the algebra
   // these should be real...
   // keeping complex for consistency with the SIMD vector types
-  typedef iAlgebraVector<Complex> AlgebraVector;
+  typedef iAlgebraVector<Complex>  AlgebraVector;
   typedef iAlgebraVector<ComplexF> AlgebraVectorF;
   typedef iAlgebraVector<ComplexD> AlgebraVectorD;
 
-  typedef iAlgebraVector<vComplex> vAlgebraVector;
+  typedef iAlgebraVector<vComplex>  vAlgebraVector;
   typedef iAlgebraVector<vComplexF> vAlgebraVectorF;
   typedef iAlgebraVector<vComplexD> vAlgebraVectorD;
 
-  typedef Lattice<vMatrix> LatticeMatrix;
+  typedef Lattice<vMatrix>  LatticeMatrix;
   typedef Lattice<vMatrixF> LatticeMatrixF;
   typedef Lattice<vMatrixD> LatticeMatrixD;
   
-  typedef Lattice<vAlgebraVector> LatticeAlgebraVector;
+  typedef Lattice<vAlgebraVector>  LatticeAlgebraVector;
   typedef Lattice<vAlgebraVectorF> LatticeAlgebraVectorF;
   typedef Lattice<vAlgebraVectorD> LatticeAlgebraVectorD;
    
@@ -145,15 +142,15 @@ class GaugeGroup {
   typedef Lattice<vAlgebraMatrixD> LatticeAlgebraMatrixD;
   
 
-  typedef iSU2Matrix<Complex> SU2Matrix;
+  typedef iSU2Matrix<Complex>  SU2Matrix;
   typedef iSU2Matrix<ComplexF> SU2MatrixF;
   typedef iSU2Matrix<ComplexD> SU2MatrixD;
 
-  typedef iSU2Matrix<vComplex> vSU2Matrix;
+  typedef iSU2Matrix<vComplex>  vSU2Matrix;
   typedef iSU2Matrix<vComplexF> vSU2MatrixF;
   typedef iSU2Matrix<vComplexD> vSU2MatrixD;
 
-  typedef Lattice<vSU2Matrix> LatticeSU2Matrix;
+  typedef Lattice<vSU2Matrix>  LatticeSU2Matrix;
   typedef Lattice<vSU2MatrixF> LatticeSU2MatrixF;
   typedef Lattice<vSU2MatrixD> LatticeSU2MatrixD;
 
@@ -296,16 +293,18 @@ class GaugeGroup {
       Umu = ProjectOnGeneralGroup(Umu);
     }
   }
-       
-
   
   template <int N,class vComplex_t>
-  static Lattice<iScalar<iScalar<iMatrix<vComplex_t, N> > > > ProjectOnGeneralGroup(const Lattice<iScalar<iScalar<iMatrix<vComplex_t, N> > > > &Umu) {
+  static Lattice<iScalar<iScalar<iMatrix<vComplex_t, N> > > >
+  ProjectOnGeneralGroup(const Lattice<iScalar<iScalar<iMatrix<vComplex_t, N> > > > &Umu)
+  {
     return ProjectOnGeneralGroup(Umu, group_name());
   }
 
-  template <int N,class vComplex_t>       // Projects on SU(N), Sp(2N), with unit determinant, by first projecting on general group and then enforcing unit determinant
-  static void ProjectOnSpecialGroup(Lattice<iScalar<iScalar<iMatrix<vComplex_t, N> > > > &Umu) {
+  // Projects on SU(N), Sp(2N), with unit determinant, by first projecting on general group and then enforcing unit determinant
+  template <int N,class vComplex_t>  
+  static void ProjectOnSpecialGroup(Lattice<iScalar<iScalar<iMatrix<vComplex_t, N> > > > &Umu)
+  {
        Umu = ProjectOnGeneralGroup(Umu);
        auto det = Determinant(Umu);
 
@@ -319,14 +318,15 @@ class GaugeGroup {
    }
 
   template <int N,class vComplex_t>    // reunitarise, resimplectify... previously ProjectSUn
-    static void ProjectOnSpecialGroup(Lattice<iVector<iScalar<iMatrix<vComplex_t, N> >, Nd> > &U) {
+  static void ProjectOnSpecialGroup(Lattice<iVector<iScalar<iMatrix<vComplex_t, N> >, Nd> > &U)
+  {
       // Reunitarise
       for (int mu = 0; mu < Nd; mu++) {
         auto Umu = PeekIndex<LorentzIndex>(U, mu);
         ProjectOnSpecialGroup(Umu);
         PokeIndex<LorentzIndex>(U, Umu, mu);
       }
-    }
+  }
     
   template <typename GaugeField>
   static void HotConfiguration(GridParallelRNG &pRNG, GaugeField &out) {
