@@ -197,6 +197,24 @@ typedef PeriodicGaugeImpl<SpGimplTypesR> SpPeriodicGimplR; // Real.. whichever p
 typedef PeriodicGaugeImpl<SpGimplTypesF> SpPeriodicGimplF; // Float
 typedef PeriodicGaugeImpl<SpGimplTypesD> SpPeriodicGimplD; // Double
 
+/////////////////////////////////////////////////////////////////////////////
+// Lexicographic gauge implementations
+/////////////////////////////////////////////////////////////////////////////
+typedef PeriodicGaugeImpl<lexGimplTypesF> lexPeriodicGimplF;
+typedef PeriodicGaugeImpl<lexGimplTypesD> lexPeriodicGimplD;
+
+typedef PeriodicGaugeImpl<lexGimplAdjointTypesF> lexPeriodicGimplAdjF;
+typedef PeriodicGaugeImpl<lexGimplAdjointTypesD> lexPeriodicGimplAdjD;
+
+typedef ConjugateGaugeImpl<lexGimplTypesF> lexConjugateGimplF;
+typedef ConjugateGaugeImpl<lexGimplTypesD> lexConjugateGimplD;
+
+typedef PeriodicGaugeImpl<lexSpGimplTypesF> lexSpPeriodicGimplF;
+typedef PeriodicGaugeImpl<lexSpGimplTypesD> lexSpPeriodicGimplD;
+/////////////////////////////////////////////////////////////////////////////
+// End lexicographic gauge implementations
+/////////////////////////////////////////////////////////////////////////////
+
 
 NAMESPACE_END(Grid);
 

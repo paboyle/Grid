@@ -60,8 +60,10 @@ NAMESPACE_BEGIN(Grid);
   typedef typename Impl::SiteField SiteField;	    \
   typedef typename Impl::Field Field;
 
-// hardcodes the exponential approximation in the template
-template <class S, int Nrepresentation = Nc, int Nexp = 12, class Group = SU<Nc> > class GaugeImplTypes {
+// Order of the exponential approximation
+const int NexpDefault = 12;
+
+template <class S, int Nrepresentation = Nc, int Nexp = NexpDefault, class Group = SU<Nc> > class GaugeImplTypes {
 public:
   typedef S Simd;
   typedef typename Simd::scalar_type scalar_type;
@@ -188,13 +190,28 @@ typedef GaugeImplTypes<vComplex, Nc> GimplTypesR;
 typedef GaugeImplTypes<vComplexF, Nc> GimplTypesF;
 typedef GaugeImplTypes<vComplexD, Nc> GimplTypesD;
 
-typedef GaugeImplTypes<vComplex, Nc, 12, Sp<Nc> > SpGimplTypesR;
-typedef GaugeImplTypes<vComplexF, Nc, 12, Sp<Nc> > SpGimplTypesF;
-typedef GaugeImplTypes<vComplexD, Nc, 12, Sp<Nc> > SpGimplTypesD;
+typedef GaugeImplTypes<vComplex, Nc, NexpDefault, Sp<Nc> > SpGimplTypesR;
+typedef GaugeImplTypes<vComplexF, Nc, NexpDefault, Sp<Nc> > SpGimplTypesF;
+typedef GaugeImplTypes<vComplexD, Nc, NexpDefault, Sp<Nc> > SpGimplTypesD;
 
 typedef GaugeImplTypes<vComplex, SU<Nc>::AdjointDimension> GimplAdjointTypesR;
 typedef GaugeImplTypes<vComplexF, SU<Nc>::AdjointDimension> GimplAdjointTypesF;
 typedef GaugeImplTypes<vComplexD, SU<Nc>::AdjointDimension> GimplAdjointTypesD;
+
+/////////////////////////////////////////////////////////////////////////////
+// Lexicographic gauge implementation types
+/////////////////////////////////////////////////////////////////////////////
+typedef GaugeImplTypes<sComplexF, Nc> lexGimplTypesF;
+typedef GaugeImplTypes<sComplexD, Nc> lexGimplTypesD;
+
+typedef GaugeImplTypes<sComplexF, Nc, NexpDefault, Sp<Nc> > lexSpGimplTypesF;
+typedef GaugeImplTypes<sComplexD, Nc, NexpDefault, Sp<Nc> > lexSpGimplTypesD;
+
+typedef GaugeImplTypes<sComplexF, SU<Nc>::AdjointDimension> lexGimplAdjointTypesF;
+typedef GaugeImplTypes<sComplexD, SU<Nc>::AdjointDimension> lexGimplAdjointTypesD;
+/////////////////////////////////////////////////////////////////////////////
+// End lexicographic gauge implementation types
+/////////////////////////////////////////////////////////////////////////////
 
 
 
