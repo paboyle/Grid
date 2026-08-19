@@ -33,6 +33,7 @@ using namespace Grid;
 
 int main (int argc, char ** argv)
 {
+  
   Grid_init(&argc,&argv);
 
   int Ls = 12;
@@ -60,9 +61,6 @@ int main (int argc, char ** argv)
 
   LatticeFermionD field_d(FGridD), tmp_d(FGridD);
   random(RNG5,field_d); tmp_d = field_d;
-
-  LatticeFermionD2 field_d2(FGridF), tmp_d2(FGridF);
-  precisionChange(field_d2, field_d); tmp_d2 = field_d2;
 
   LatticeFermionF field_f(FGridF), tmp_f(FGridF);
   precisionChange(field_f, field_d); tmp_f = field_f;
@@ -138,50 +136,6 @@ int main (int argc, char ** argv)
     stop=usecond();
     time_ds += stop - start;
 
-  }
-  std::cout << "d->s " << time_ds/N << "us" << " s->d " << time_sd/N << "us" << std::endl;
-
-
-  std::cout<<GridLogMessage << "Benchmarking single<->double2 (fields initially device-resident)" << std::endl;
-  time_sd = time_ds = 0;
-  for(int i=0;i<N;i++){
-    field_d2 = tmp_d2;
-    field_f = tmp_f;
-
-    double start=usecond();
-    precisionChangeFast(field_d2,field_f);
-    double stop=usecond();
-    time_sd += stop - start;
-
-    field_d2 = tmp_d2;
-    field_f = tmp_f;
-
-    start=usecond();
-    precisionChangeFast(field_f,field_d2);
-    stop=usecond();
-    time_ds += stop - start;
-  }
-  std::cout << "d->s " << time_ds/N << "us" << " s->d " << time_sd/N << "us" << std::endl;
-
-
-  std::cout<<GridLogMessage << "Benchmarking single<->double2 through standard precisionChange call(fields initially device-resident) [NB: perf should be the same as the previous test!]" << std::endl;
-  time_sd = time_ds = 0;
-  for(int i=0;i<N;i++){
-    field_d2 = tmp_d2;
-    field_f = tmp_f;
-
-    double start=usecond();
-    precisionChange(field_d2,field_f);
-    double stop=usecond();
-    time_sd += stop - start;
-
-    field_d2 = tmp_d2;
-    field_f = tmp_f;
-
-    start=usecond();
-    precisionChange(field_f,field_d2);
-    stop=usecond();
-    time_ds += stop - start;
   }
   std::cout << "d->s " << time_ds/N << "us" << " s->d " << time_sd/N << "us" << std::endl;
 
