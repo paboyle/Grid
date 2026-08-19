@@ -560,29 +560,198 @@ int main (int argc, char ** argv)
   auto latt_size   = GridDefaultLatt();
   auto simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
   auto mpi_layout  = GridDefaultMpi();
-
+  Coordinate simd1_layout({1,1,1,1});
+  
   {
     std::cout << " Constructing Test({1,2,3,4,5,6}) " << std::endl;
     Coordinate Test({1,2,3,4,5,6});
     std::cout << " Test({1,2,3,4,5,6}) = " << Test <<std::endl;
   }
-  /*
-  {
-    Coordinate Test =  {1,2,3,4} ;
-    std::cout << " Test = {1,2,3,4} " << Test <<std::endl;
-  }
-  {
-    Coordinate Test {1,2,3,4};
-    std::cout << " Test {1,2,3,4} " << Test <<std::endl;
-  }
-  */
 
   GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
   std::vector<int> seeds({1,2,3,4});
 
   // Insist that operations on random scalars gives
   // identical results to on vectors.
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
+  std::cout << GridLogMessage <<"Testing sRealF "<<std::endl;
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
+  Tester<RealF,sRealF>(funcPlus());
+  Tester<RealF,sRealF>(funcMinus());
+  Tester<RealF,sRealF>(funcTimes());
+  Tester<RealF,sRealF>(funcDivide());
+  Tester<RealF,sRealF>(funcAdj());
+  Tester<RealF,sRealF>(funcConj());
+  Tester<RealF,sRealF>(funcInnerProduct());
+  ReductionTester<RealF,RealF,sRealF>(funcReduce());
 
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing sRealF permutes (there are none) "<<std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+
+  // Log2 iteration
+  for(int i=0;(1<<i)< sRealF::Nsimd();i++){
+    PermTester<RealF,sRealF>(funcPermute(i));
+  }
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing sRealF exchanges "<<std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+
+  // Log2 iteration
+  for(int i=0;(1<<i)< sRealF::Nsimd();i++){
+    ExchangeTester<RealF,sRealF>(funcExchange(i));
+  }
+
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing sRealF rotate "<<std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  for(int r=0;r<sRealF::Nsimd();r++){
+    PermTester<RealF,sRealF>(funcRotate(r));
+  }
+
+
+
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
+  std::cout << GridLogMessage <<"Testing sRealD "<<std::endl;
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
+
+  Tester<RealD,sRealD>(funcPlus());
+  Tester<RealD,sRealD>(funcMinus());
+  Tester<RealD,sRealD>(funcTimes());
+  Tester<RealD,sRealD>(funcDivide());
+  Tester<RealD,sRealD>(funcAdj());
+  Tester<RealD,sRealD>(funcConj());
+  Tester<RealD,sRealD>(funcInnerProduct());
+  ReductionTester<RealD,RealD,sRealD>(funcReduce());
+
+
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing sRealD permutes "<<std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+
+  // Log2 iteration
+  for(int i=0;(1<<i)< sRealD::Nsimd();i++){
+    PermTester<RealD,sRealD>(funcPermute(i));
+  }
+
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing sRealD exchanges "<<std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  // Log2 iteration
+  for(int i=0;(1<<i)< sRealD::Nsimd();i++){
+    ExchangeTester<RealD,sRealD>(funcExchange(i));
+  }
+
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing sRealD rotate "<<std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  for(int r=0;r<sRealD::Nsimd();r++){
+    PermTester<RealD,sRealD>(funcRotate(r));
+  }
+
+
+
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
+  std::cout << GridLogMessage <<"Testing sComplexF "<<std::endl;
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
+
+  Tester<ComplexF,sComplexF>(funcTimesI());
+  Tester<ComplexF,sComplexF>(funcTimesMinusI());
+  Tester<ComplexF,sComplexF>(funcPlus());
+  Tester<ComplexF,sComplexF>(funcMinus());
+  Tester<ComplexF,sComplexF>(funcTimes());
+  Tester<ComplexF,sComplexF>(funcConj());
+  Tester<ComplexF,sComplexF>(funcAdj());
+  Tester<ComplexF,sComplexF>(funcReal());
+  Tester<ComplexF,sComplexF>(funcImag());
+  Tester<ComplexF,sComplexF>(funcInnerProduct());
+  ReductionTester<ComplexF,ComplexF,sComplexF>(funcReduce());
+
+
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing sComplexF permutes "<<std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+
+  // Log2 iteration
+  for(int i=0;(1<<i)< sComplexF::Nsimd();i++){
+    PermTester<ComplexF,sComplexF>(funcPermute(i));
+  }
+
+
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing sComplexF exchanges "<<std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  // Log2 iteration
+  for(int i=0;(1<<i)< sComplexF::Nsimd();i++){
+    ExchangeTester<ComplexF,sComplexF>(funcExchange(i));
+  }
+
+
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing sComplexF rotate "<<std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  for(int r=0;r<sComplexF::Nsimd();r++){
+    PermTester<ComplexF,sComplexF>(funcRotate(r));
+  }
+
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing sComplexD "<<std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+
+
+  Tester<ComplexD,sComplexD>(funcTimesI());
+  Tester<ComplexD,sComplexD>(funcTimesMinusI());
+  Tester<ComplexD,sComplexD>(funcPlus());
+  Tester<ComplexD,sComplexD>(funcMinus());
+  Tester<ComplexD,sComplexD>(funcTimes());
+  Tester<ComplexD,sComplexD>(funcConj());
+  Tester<ComplexD,sComplexD>(funcAdj());
+  Tester<ComplexD, sComplexD>(funcReal());
+  Tester<ComplexD, sComplexD>(funcImag());
+
+  Tester<ComplexD, sComplexD>(funcInnerProduct());
+  ReductionTester<ComplexD, ComplexD, sComplexD>(funcReduce());
+
+  std::cout << GridLogMessage
+            << "===================================" << std::endl;
+  std::cout << GridLogMessage << "Testing sComplexD permutes " << std::endl;
+  std::cout << GridLogMessage
+            << "===================================" << std::endl;
+
+  // Log2 iteration
+  for (int i = 0; (1 << i) < sComplexD::Nsimd(); i++) {
+    PermTester<ComplexD, sComplexD>(funcPermute(i));
+  }
+
+
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing sComplexD exchanges "<<std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  // Log2 iteration
+  for(int i=0;(1<<i)< sComplexD::Nsimd();i++){
+    ExchangeTester<ComplexD,sComplexD>(funcExchange(i));
+  }
+
+
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing sComplexD rotate "<<std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  for(int r=0;r<sComplexD::Nsimd();r++){
+    PermTester<ComplexD,sComplexD>(funcRotate(r));
+  }
+
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing sInteger                   "<<  std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  IntTester(funcPlus());
+  IntTester(funcMinus());
+  IntTester(funcTimes());
+  IntReductionTester<Integer, Integer, sInteger>(funcReduce());
+
+
+
+  
+  
   std::cout << GridLogMessage <<"==================================="<<  std::endl;
   std::cout << GridLogMessage <<"Testing vRealF "<<std::endl;
   std::cout << GridLogMessage <<"==================================="<<  std::endl;
@@ -622,7 +791,6 @@ int main (int argc, char ** argv)
   for(int r=0;r<vRealF::Nsimd();r++){
     PermTester<RealF,vRealF>(funcRotate(r));
   }
-
 
   std::cout << GridLogMessage <<"==================================="<<  std::endl;
   std::cout << GridLogMessage <<"Testing vRealD "<<std::endl;
