@@ -2,14 +2,15 @@
 
 STAG_IMPL_LIST=" \
 	   StaggeredImplF \
-	   StaggeredImplD  "
-
-STAG5_IMPL_LIST=""
+	   StaggeredImplD \
+	   lexStaggeredImplF \
+	   lexStaggeredImplD  "
 
 WILSON_IMPL_LIST=" \
 	   WilsonImplF \
 	   WilsonImplD \
-	   WilsonImplD2 \
+	   lexWilsonImplF \
+	   lexWilsonImplD \
 	   SpWilsonImplF \
 	   SpWilsonImplD \
 	   WilsonAdjImplF \
@@ -32,9 +33,10 @@ COMPACT_WILSON_IMPL_LIST=" \
 DWF_IMPL_LIST=" \
 	   WilsonImplF \
 	   WilsonImplD \
-	   WilsonImplD2 \
+	   lexWilsonImplF \
+	   lexWilsonImplD \
 	   ZWilsonImplF \
-	   ZWilsonImplD2 "
+	   ZWilsonImplD "
 
 GDWF_IMPL_LIST=" \
 	   GparityWilsonImplF \
@@ -109,8 +111,3 @@ do
   ln -f -s ../$f.cc.master $impl/$f$impl.cc
 done
 done
-
-CC_LIST=" \
-  ImprovedStaggeredFermion5DInstantiation \
-  StaggeredKernelsInstantiation "
-

@@ -48,7 +48,6 @@ public:
 
  static const int Dimension = Representation::Dimension;
  static const bool isFundamental = Representation::isFundamental;
- static const int Nhcs = Options::Nhcs;
  static const bool LsVectorised=false;
  static const bool isGparity=true;
 
@@ -56,18 +55,15 @@ public:
  INHERIT_GIMPL_TYPES(Gimpl);
  
  typedef typename Options::_Coeff_t Coeff_t;
- typedef typename Options::template PrecisionMapper<Simd>::LowerPrecVector SimdL;
       
  template <typename vtype> using iImplSpinor            = iVector<iVector<iVector<vtype, Dimension>, Ns>,   Ngp>;
  template <typename vtype> using iImplPropagator        = iMatrix<iMatrix<iMatrix<vtype, Dimension>, Ns>,   Ngp>;
  template <typename vtype> using iImplHalfSpinor        = iVector<iVector<iVector<vtype, Dimension>, Nhs>,  Ngp>;
- template <typename vtype> using iImplHalfCommSpinor    = iVector<iVector<iVector<vtype, Dimension>, Nhcs>, Ngp>;
  template <typename vtype> using iImplDoubledGaugeField = iVector<iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>, Ngp>;
 
   typedef iImplSpinor<Simd>            SiteSpinor;
   typedef iImplPropagator<Simd>        SitePropagator;
   typedef iImplHalfSpinor<Simd>        SiteHalfSpinor;
-  typedef iImplHalfCommSpinor<SimdL>   SiteHalfCommSpinor;
   typedef iImplDoubledGaugeField<Simd> SiteDoubledGaugeField;
 
   typedef Lattice<SiteSpinor> FermionField;
@@ -75,7 +71,7 @@ public:
   typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
  
   typedef GparityWilsonImplParams ImplParams;
-  typedef WilsonCompressor<SiteHalfCommSpinor,SiteHalfSpinor, SiteSpinor> Compressor;
+  typedef WilsonCompressor<SiteHalfSpinor, SiteSpinor> Compressor;
   typedef WilsonStencil<SiteSpinor, SiteHalfSpinor, ImplParams> StencilImpl;
   typedef typename StencilImpl::View_type StencilView;
       
@@ -408,9 +404,5 @@ public:
 typedef GparityWilsonImpl<vComplex , FundamentalRepresentation,CoeffReal> GparityWilsonImplR;  // Real.. whichever prec
 typedef GparityWilsonImpl<vComplexF, FundamentalRepresentation,CoeffReal> GparityWilsonImplF;  // Float
 typedef GparityWilsonImpl<vComplexD, FundamentalRepresentation,CoeffReal> GparityWilsonImplD;  // Double
- 
-//typedef GparityWilsonImpl<vComplex , FundamentalRepresentation,CoeffRealHalfComms> GparityWilsonImplRL;  // Real.. whichever prec
-//typedef GparityWilsonImpl<vComplexF, FundamentalRepresentation,CoeffRealHalfComms> GparityWilsonImplFH;  // Float
-//typedef GparityWilsonImpl<vComplexD, FundamentalRepresentation,CoeffRealHalfComms> GparityWilsonImplDF;  // Double
 
 NAMESPACE_END(Grid);

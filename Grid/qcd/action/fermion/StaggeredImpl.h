@@ -176,4 +176,13 @@ typedef StaggeredImpl<vComplex,  FundamentalRepresentation > StaggeredImplR;   /
 typedef StaggeredImpl<vComplexF, FundamentalRepresentation > StaggeredImplF;  // Float
 typedef StaggeredImpl<vComplexD, FundamentalRepresentation > StaggeredImplD;  // Double
 
+/////////////////////////////////////////////////////////////////////////////
+// Lexicographic staggered implementations
+/////////////////////////////////////////////////////////////////////////////
+typedef StaggeredImpl<sComplexF, FundamentalRepresentation > lexStaggeredImplF;
+typedef StaggeredImpl<sComplexD, FundamentalRepresentation > lexStaggeredImplD;
+/////////////////////////////////////////////////////////////////////////////
+// End lexicographic staggered implementations
+/////////////////////////////////////////////////////////////////////////////
+
 NAMESPACE_END(Grid);

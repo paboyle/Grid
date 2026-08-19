@@ -38,7 +38,7 @@ NAMESPACE_BEGIN(Grid);
 
 
 //Could make FaceGather a template param, but then behaviour is runtime not compile time
-template<class _HCspinor,class _Hspinor,class _Spinor, class projector>
+template<class _Hspinor,class _Spinor, class projector>
 class WilsonCompressorTemplate : public FaceGatherSimple
 {
 public:
@@ -53,13 +53,11 @@ public:
 
   typedef _Spinor         SiteSpinor;
   typedef _Hspinor     SiteHalfSpinor;
-  typedef _HCspinor SiteHalfCommSpinor;
-  typedef typename SiteHalfCommSpinor::vector_type vComplexLow;
-  typedef typename SiteHalfSpinor::vector_type     vComplexHigh;
-  constexpr static int Nw=sizeof(SiteHalfSpinor)/sizeof(vComplexHigh);
+  typedef typename SiteHalfSpinor::vector_type vector_type;    
+  constexpr static int Nw=sizeof(SiteHalfSpinor)/sizeof(vector_type);
 
   accelerator_inline int CommDatumSize(void) const {
-    return sizeof(SiteHalfCommSpinor);
+    return sizeof(SiteHalfSpinor);
   }
 
   /*****************************************************/
@@ -159,7 +157,7 @@ public:
     spProj(result,in);							\
   }									\
   };									\
-  template<typename HCS,typename HS,typename S> using Compressor = WilsonCompressorTemplate<HCS,HS,S,Projector>;
+  template<typename HS,typename S> using Compressor = WilsonCompressorTemplate<HS,S,Projector>;
 
 DECLARE_PROJ(WilsonXpProjector,WilsonXpCompressor,spProjXp);
 DECLARE_PROJ(WilsonYpProjector,WilsonYpCompressor,spProjYp);
@@ -188,7 +186,7 @@ public:
     }
   }
 };
-template<typename HCS,typename HS,typename S> using WilsonCompressor = WilsonCompressorTemplate<HCS,HS,S,WilsonProjector>;
+template<typename HS,typename S> using WilsonCompressor = WilsonCompressorTemplate<HS,S,WilsonProjector>;
 
 // Fast comms buffer manipulation which should inline right through (avoid direction
 // dependent logic that prevents inlining
@@ -237,7 +235,6 @@ public:
     // Use types to select the write direction by directon compressor
     typedef typename compressor::SiteSpinor         SiteSpinor;
     typedef typename compressor::SiteHalfSpinor     SiteHalfSpinor;
-    typedef typename compressor::SiteHalfCommSpinor SiteHalfCommSpinor;
 
     this->_grid->StencilBarrier();
 
@@ -245,14 +242,14 @@ public:
     
     this->u_comm_offset=0;
       
-    WilsonXpCompressor<SiteHalfCommSpinor,SiteHalfSpinor,SiteSpinor> XpCompress; 
-    WilsonYpCompressor<SiteHalfCommSpinor,SiteHalfSpinor,SiteSpinor> YpCompress; 
-    WilsonZpCompressor<SiteHalfCommSpinor,SiteHalfSpinor,SiteSpinor> ZpCompress; 
-    WilsonTpCompressor<SiteHalfCommSpinor,SiteHalfSpinor,SiteSpinor> TpCompress;
-    WilsonXmCompressor<SiteHalfCommSpinor,SiteHalfSpinor,SiteSpinor> XmCompress; 
-    WilsonYmCompressor<SiteHalfCommSpinor,SiteHalfSpinor,SiteSpinor> YmCompress; 
-    WilsonZmCompressor<SiteHalfCommSpinor,SiteHalfSpinor,SiteSpinor> ZmCompress; 
-    WilsonTmCompressor<SiteHalfCommSpinor,SiteHalfSpinor,SiteSpinor> TmCompress;
+    WilsonXpCompressor<SiteHalfSpinor,SiteSpinor> XpCompress; 
+    WilsonYpCompressor<SiteHalfSpinor,SiteSpinor> YpCompress; 
+    WilsonZpCompressor<SiteHalfSpinor,SiteSpinor> ZpCompress; 
+    WilsonTpCompressor<SiteHalfSpinor,SiteSpinor> TpCompress;
+    WilsonXmCompressor<SiteHalfSpinor,SiteSpinor> XmCompress; 
+    WilsonYmCompressor<SiteHalfSpinor,SiteSpinor> YmCompress; 
+    WilsonZmCompressor<SiteHalfSpinor,SiteSpinor> ZmCompress; 
+    WilsonTmCompressor<SiteHalfSpinor,SiteSpinor> TmCompress;
 
     int dag = compress.dag;
     int face_idx=0;

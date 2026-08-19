@@ -42,7 +42,6 @@ public:
   static const bool isFundamental = Representation::isFundamental;
   static const bool LsVectorised=false;
   static const bool isGparity=false;
-  static const int Nhcs = Options::Nhcs;
 
   typedef PeriodicGaugeImpl<GaugeImplTypes<S, Dimension > > Gimpl;
   INHERIT_GIMPL_TYPES(Gimpl);
@@ -51,25 +50,22 @@ public:
   constexpr bool is_fundamental() const{return Dimension == Nc ? 1 : 0;}
     
   typedef typename Options::_Coeff_t Coeff_t;
-  typedef typename Options::template PrecisionMapper<Simd>::LowerPrecVector SimdL;
       
   template <typename vtype> using iImplSpinor            = iScalar<iVector<iVector<vtype, Dimension>, Ns> >;
   template <typename vtype> using iImplPropagator        = iScalar<iMatrix<iMatrix<vtype, Dimension>, Ns> >;
   template <typename vtype> using iImplHalfSpinor        = iScalar<iVector<iVector<vtype, Dimension>, Nhs> >;
-  template <typename vtype> using iImplHalfCommSpinor    = iScalar<iVector<iVector<vtype, Dimension>, Nhcs> >;
   template <typename vtype> using iImplDoubledGaugeField = iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>;
     
   typedef iImplSpinor<Simd>            SiteSpinor;
   typedef iImplPropagator<Simd>        SitePropagator;
   typedef iImplHalfSpinor<Simd>        SiteHalfSpinor;
-  typedef iImplHalfCommSpinor<SimdL>   SiteHalfCommSpinor;
   typedef iImplDoubledGaugeField<Simd> SiteDoubledGaugeField;
     
   typedef Lattice<SiteSpinor>            FermionField;
   typedef Lattice<SitePropagator>        PropagatorField;
   typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
     
-  typedef WilsonCompressor<SiteHalfCommSpinor,SiteHalfSpinor, SiteSpinor> Compressor;
+  typedef WilsonCompressor<SiteHalfSpinor, SiteSpinor> Compressor;
   typedef WilsonImplParams ImplParams;
   typedef WilsonStencil<SiteSpinor, SiteHalfSpinor,ImplParams> StencilImpl;
   typedef const typename StencilImpl::View_type StencilView;
@@ -242,12 +238,19 @@ public:
 typedef WilsonImpl<vComplex,  FundamentalRepresentation, CoeffReal > WilsonImplR;  // Real.. whichever prec
 typedef WilsonImpl<vComplexF, FundamentalRepresentation, CoeffReal > WilsonImplF;  // Float
 typedef WilsonImpl<vComplexD, FundamentalRepresentation, CoeffReal > WilsonImplD;  // Double
-typedef WilsonImpl<vComplexD2, FundamentalRepresentation, CoeffReal > WilsonImplD2;  // Double
+
+/////////////////////////////////////////////////////////////////////////////
+// Lexicographic Wilson implementations
+/////////////////////////////////////////////////////////////////////////////
+typedef WilsonImpl<sComplexF, FundamentalRepresentation, CoeffReal > lexWilsonImplF;
+typedef WilsonImpl<sComplexD, FundamentalRepresentation, CoeffReal > lexWilsonImplD;
+/////////////////////////////////////////////////////////////////////////////
+// End lexicographic Wilson implementations
+/////////////////////////////////////////////////////////////////////////////
 
 typedef WilsonImpl<vComplex,  FundamentalRepresentation, CoeffComplex > ZWilsonImplR; // Real.. whichever prec
 typedef WilsonImpl<vComplexF, FundamentalRepresentation, CoeffComplex > ZWilsonImplF; // Float
 typedef WilsonImpl<vComplexD, FundamentalRepresentation, CoeffComplex > ZWilsonImplD; // Double
-typedef WilsonImpl<vComplexD2, FundamentalRepresentation, CoeffComplex > ZWilsonImplD2; // Double
 
 typedef WilsonImpl<vComplex,  AdjointRepresentation, CoeffReal > WilsonAdjImplR;   // Real.. whichever prec
 typedef WilsonImpl<vComplexF, AdjointRepresentation, CoeffReal > WilsonAdjImplF;  // Float

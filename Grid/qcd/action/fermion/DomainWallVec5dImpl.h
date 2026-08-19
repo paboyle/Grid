@@ -40,15 +40,12 @@ public:
   static const int Dimension = Representation::Dimension;
   static const bool isFundamental = Representation::isFundamental;
   static const bool LsVectorised=true;
-  static const int Nhcs = Options::Nhcs;
       
   typedef typename Options::_Coeff_t Coeff_t;      
-  typedef typename Options::template PrecisionMapper<Simd>::LowerPrecVector SimdL;
   
   template <typename vtype> using iImplSpinor            = iScalar<iVector<iVector<vtype, Dimension>, Ns> >;
   template <typename vtype> using iImplPropagator        = iScalar<iMatrix<iMatrix<vtype, Dimension>, Ns> >;
   template <typename vtype> using iImplHalfSpinor        = iScalar<iVector<iVector<vtype, Dimension>, Nhs> >;
-  template <typename vtype> using iImplHalfCommSpinor    = iScalar<iVector<iVector<vtype, Dimension>, Nhcs> >;
   template <typename vtype> using iImplDoubledGaugeField = iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>;
   template <typename vtype> using iImplGaugeField        = iVector<iScalar<iMatrix<vtype, Dimension> >, Nd>;
   template <typename vtype> using iImplGaugeLink         = iScalar<iScalar<iMatrix<vtype, Dimension> > >;
@@ -56,7 +53,6 @@ public:
   typedef iImplSpinor<Simd>            SiteSpinor;
   typedef iImplPropagator<Simd>        SitePropagator;
   typedef iImplHalfSpinor<Simd>        SiteHalfSpinor;
-  typedef iImplHalfCommSpinor<SimdL>   SiteHalfCommSpinor;
   typedef Lattice<SiteSpinor>          FermionField;
   typedef Lattice<SitePropagator>      PropagatorField;
 
@@ -68,7 +64,7 @@ public:
   typedef iImplGaugeLink<typename Simd::scalar_type>          SiteScalarGaugeLink;  // scalar
   typedef Lattice<SiteDoubledGaugeField>                      DoubledGaugeField;
       
-  typedef WilsonCompressor<SiteHalfCommSpinor,SiteHalfSpinor, SiteSpinor> Compressor;
+  typedef WilsonCompressor<SiteHalfSpinor, SiteSpinor> Compressor;
   typedef WilsonImplParams ImplParams;
   typedef WilsonStencil<SiteSpinor, SiteHalfSpinor,ImplParams> StencilImpl;
   typedef typename StencilImpl::View_type StencilView;
@@ -201,16 +197,8 @@ typedef DomainWallVec5dImpl<vComplex ,FundamentalRepresentation, CoeffReal> Doma
 typedef DomainWallVec5dImpl<vComplexF,FundamentalRepresentation, CoeffReal> DomainWallVec5dImplF; // Float
 typedef DomainWallVec5dImpl<vComplexD,FundamentalRepresentation, CoeffReal> DomainWallVec5dImplD; // Double
  
-typedef DomainWallVec5dImpl<vComplex ,FundamentalRepresentation, CoeffRealHalfComms> DomainWallVec5dImplRL; // Real.. whichever prec
-typedef DomainWallVec5dImpl<vComplexF,FundamentalRepresentation, CoeffRealHalfComms> DomainWallVec5dImplFH; // Float
-typedef DomainWallVec5dImpl<vComplexD,FundamentalRepresentation, CoeffRealHalfComms> DomainWallVec5dImplDF; // Double
- 
 typedef DomainWallVec5dImpl<vComplex ,FundamentalRepresentation,CoeffComplex> ZDomainWallVec5dImplR; // Real.. whichever prec
 typedef DomainWallVec5dImpl<vComplexF,FundamentalRepresentation,CoeffComplex> ZDomainWallVec5dImplF; // Float
 typedef DomainWallVec5dImpl<vComplexD,FundamentalRepresentation,CoeffComplex> ZDomainWallVec5dImplD; // Double
- 
-typedef DomainWallVec5dImpl<vComplex ,FundamentalRepresentation,CoeffComplexHalfComms> ZDomainWallVec5dImplRL; // Real.. whichever prec
-typedef DomainWallVec5dImpl<vComplexF,FundamentalRepresentation,CoeffComplexHalfComms> ZDomainWallVec5dImplFH; // Float
-typedef DomainWallVec5dImpl<vComplexD,FundamentalRepresentation,CoeffComplexHalfComms> ZDomainWallVec5dImplDF; // Double
 
 NAMESPACE_END(Grid);

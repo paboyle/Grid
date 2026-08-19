@@ -88,51 +88,14 @@ NAMESPACE_BEGIN(Grid);
 //  }
 //////////////////////////////////////////////
 
-template <class T> struct SamePrecisionMapper {
-  typedef T HigherPrecVector ;
-  typedef T LowerPrecVector ;
-};
-template <class T> struct LowerPrecisionMapper {  };
-template <> struct LowerPrecisionMapper<vRealF> {
-  typedef vRealF HigherPrecVector ;
-  typedef vRealH LowerPrecVector ;
-};
-template <> struct LowerPrecisionMapper<vRealD> {
-  typedef vRealD HigherPrecVector ;
-  typedef vRealF LowerPrecVector ;
-};
-template <> struct LowerPrecisionMapper<vComplexF> {
-  typedef vComplexF HigherPrecVector ;
-  typedef vComplexH LowerPrecVector ;
-};
-template <> struct LowerPrecisionMapper<vComplexD> {
-  typedef vComplexD HigherPrecVector ;
-  typedef vComplexF LowerPrecVector ;
-};
 
 struct CoeffReal {
 public:
   typedef RealD _Coeff_t;
-  static const int Nhcs = 2;
-  template<class Simd> using PrecisionMapper = SamePrecisionMapper<Simd>;
-};
-struct CoeffRealHalfComms {
-public:
-  typedef RealD _Coeff_t;
-  static const int Nhcs = 1;
-  template<class Simd> using PrecisionMapper = LowerPrecisionMapper<Simd>;
 };
 struct CoeffComplex {
 public:
   typedef ComplexD _Coeff_t;
-  static const int Nhcs = 2;
-  template<class Simd> using PrecisionMapper = SamePrecisionMapper<Simd>;
-};
-struct CoeffComplexHalfComms {
-public:
-  typedef ComplexD _Coeff_t;
-  static const int Nhcs = 1;
-  template<class Simd> using PrecisionMapper = LowerPrecisionMapper<Simd>;
 };
 
 ////////////////////////////////////////////////////////////////////////

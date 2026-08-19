@@ -143,6 +143,8 @@ public:
   static int getNMAX(Lattice<iImplClover<vComplexD2>> &t, RealD R) {return getNMAX(1e-12,R);}
   static int getNMAX(Lattice<iImplClover<vComplexD>> &t, RealD R) {return getNMAX(1e-12,R);}
   static int getNMAX(Lattice<iImplClover<vComplexF>> &t, RealD R) {return getNMAX(1e-6,R);}
+  static int getNMAX(Lattice<iImplClover<sComplexD>> &t, RealD R) {return getNMAX(1e-12,R);}
+  static int getNMAX(Lattice<iImplClover<sComplexF>> &t, RealD R) {return getNMAX(1e-6,R);}
 
   static void Instantiate(CloverField& Clover, CloverField& CloverInv, RealD csw_t, RealD diag_mass) {
     GridBase* grid = Clover.Grid();
@@ -268,6 +270,8 @@ public:
 
   static int getNMAX(Lattice<iImplClover<vComplexD>> &t, RealD R) {return getNMAX(1e-12,R);}
   static int getNMAX(Lattice<iImplClover<vComplexF>> &t, RealD R) {return getNMAX(1e-6,R);}
+  static int getNMAX(Lattice<iImplClover<sComplexD>> &t, RealD R) {return getNMAX(1e-12,R);}
+  static int getNMAX(Lattice<iImplClover<sComplexF>> &t, RealD R) {return getNMAX(1e-6,R);}
 
   static void InstantiateClover(CloverField& Clover, CloverField& CloverInv, RealD csw_t, RealD diag_mass) {
 
