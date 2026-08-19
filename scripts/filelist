@@ -10,8 +10,8 @@ CCFILES=`find . -name '*.cc' -not -path '*/instantiation/*/*' -not -path '*/gamm
 
 
 ZWILS_FERMION_FILES=` find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/ZWilsonImpl*' `
-WILS_FERMION_FILES=`  find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/WilsonImpl*' `
-STAG_FERMION_FILES=`  find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/StaggeredImpl*' `
+WILS_FERMION_FILES=`  find . -name '*.cc' -path '*/instantiation/*' \( -path '*/instantiation/WilsonImpl*' -o -path '*/instantiation/lexWilsonImpl*' \) `
+STAG_FERMION_FILES=`  find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/*StaggeredImpl*' `
 GP_FERMION_FILES=`    find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/Gparity*' `
 ADJ_FERMION_FILES=`   find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/WilsonAdj*' `
 TWOIND_FERMION_FILES=`find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/WilsonTwoIndex*'`
