@@ -262,6 +262,16 @@ class BinaryIO {
   static const int BINARYIO_READ          = 0x02;
   static const int BINARYIO_WRITE         = 0x01;
 
+  // Single point of control for the aggregated path. Setting
+  // GRID_BINARYIO_NOAGGREGATE falls back to plain lexicographic I/O.
+  static int DefaultControl(void)
+  {
+    static int ctrl = getenv("GRID_BINARYIO_NOAGGREGATE")
+                    ? BINARYIO_LEXICOGRAPHIC
+                    : BINARYIO_LEXICOGRAPHIC|BINARYIO_AGGREGATE;
+    return ctrl;
+  }
+
 #ifdef USE_MPI_IO
   /////////////////////////////////////////////////////////////////////////////
   // Aggregation: self controlled transposition onto an I/O friendly layout.
@@ -989,7 +999,7 @@ class BinaryIO {
 				       uint32_t &nersc_csum,
 				       uint32_t &scidac_csuma,
 				       uint32_t &scidac_csumb,
-				       int control=BINARYIO_LEXICOGRAPHIC|BINARYIO_AGGREGATE
+				       int control=DefaultControl()
 				       )
   {
     typedef typename vobj::scalar_object sobj;
@@ -1028,7 +1038,7 @@ class BinaryIO {
 					  uint32_t &nersc_csum,
 					  uint32_t &scidac_csuma,
 					  uint32_t &scidac_csumb,
-					  int control=BINARYIO_LEXICOGRAPHIC|BINARYIO_AGGREGATE)
+					  int control=DefaultControl())
   {
     typedef typename vobj::scalar_object sobj;
     typedef typename vobj::Realified::scalar_type word;    word w=0;
@@ -1115,7 +1125,7 @@ class BinaryIO {
     std::cout << GridLogMessage << "RNG read I/O on file " << file << std::endl;
 
     std::vector<RNGstate> iodata(lsites);
-    IOobject(w,grid,iodata,file,offset,format,BINARYIO_READ|BINARYIO_LEXICOGRAPHIC|BINARYIO_AGGREGATE,
+    IOobject(w,grid,iodata,file,offset,format,BINARYIO_READ|DefaultControl(),
 	     nersc_csum,scidac_csuma,scidac_csumb);
 
     timer.Start();
@@ -1194,7 +1204,7 @@ class BinaryIO {
     });
     timer.Stop();
 
-    IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC|BINARYIO_AGGREGATE,
+    IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|DefaultControl(),
 	     nersc_csum,scidac_csuma,scidac_csumb);
     iodata.resize(1);
     {

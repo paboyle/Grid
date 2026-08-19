@@ -180,7 +180,7 @@ template<class Impl>
 class GaugeStatistics
 {
 public:
-  void operator()(Lattice<vLorentzColourMatrixD> & data,FieldMetaData &header)
+  void operator()(typename Impl::Field & data,FieldMetaData &header)
   {
     header.link_trace = WilsonLoops<Impl>::linkTrace(data);
     header.plaquette  = WilsonLoops<Impl>::avgPlaquette(data);
@@ -188,13 +188,24 @@ public:
 };
 typedef GaugeStatistics<PeriodicGimplD> PeriodicGaugeStatistics;
 typedef GaugeStatistics<ConjugateGimplD> ConjugateGaugeStatistics;
+typedef GaugeStatistics<lexPeriodicGimplD> lexPeriodicGaugeStatistics;
+typedef GaugeStatistics<lexConjugateGimplD> lexConjugateGaugeStatistics;
 template<> inline void PrepareMetaData<vLorentzColourMatrixD>(Lattice<vLorentzColourMatrixD> & field, FieldMetaData &header)
 {
   GridBase *grid = field.Grid();
   std::string format = getFormatString<vLorentzColourMatrixD>();
   header.floating_point = format;
   header.checksum = 0x0; // Nersc checksum unused in ILDG, Scidac
-  GridMetaData(grid,header); 
+  GridMetaData(grid,header);
+  MachineCharacteristics(header);
+}
+template<> inline void PrepareMetaData<sLorentzColourMatrixD>(Lattice<sLorentzColourMatrixD> & field, FieldMetaData &header)
+{
+  GridBase *grid = field.Grid();
+  std::string format = getFormatString<sLorentzColourMatrixD>();
+  header.floating_point = format;
+  header.checksum = 0x0; // Nersc checksum unused in ILDG, Scidac
+  GridMetaData(grid,header);
   MachineCharacteristics(header);
 }
 

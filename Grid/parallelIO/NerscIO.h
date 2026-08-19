@@ -136,12 +136,14 @@ public:
   // Now the meat: the object readers
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  template<class GaugeStats=PeriodicGaugeStatistics>
-  static inline void readConfiguration(GaugeField &Umu,
-				       FieldMetaData& header,
-				       std::string file,
-				       GaugeStats GaugeStatisticsCalculator=GaugeStats())
+  template<class GaugeFieldType,class GaugeStats>
+  static inline void readConfigurationInternal(GaugeFieldType &Umu,
+					       FieldMetaData& header,
+					       std::string file,
+					       GaugeStats GaugeStatisticsCalculator)
   {
+    typedef typename GaugeFieldType::vector_object vobj;
+    typedef typename GaugeFieldType::scalar_object sobj;
 
     GridBase *grid = Umu.Grid();
     uint64_t offset = readHeader(file,Umu.Grid(),header);
@@ -162,24 +164,24 @@ public:
     const std::string stNC = std::to_string( Nc ) ;
     if ( header.data_type == std::string("4D_SU"+stNC+"_GAUGE") ) {
       if ( ieee32 || ieee32big ) {
-	BinaryIO::readLatticeObject<vLorentzColourMatrixD, LorentzColour2x3F> 
-	  (Umu,file,Gauge3x2munger<LorentzColour2x3F,LorentzColourMatrix>(), offset,format,
+	BinaryIO::readLatticeObject<vobj, LorentzColour2x3F> 
+	  (Umu,file,Gauge3x2munger<LorentzColour2x3F,sobj>(), offset,format,
 	   nersc_csum,scidac_csuma,scidac_csumb);
       }
       if ( ieee64 || ieee64big ) {
-	BinaryIO::readLatticeObject<vLorentzColourMatrixD, LorentzColour2x3D> 
-	  (Umu,file,Gauge3x2munger<LorentzColour2x3D,LorentzColourMatrix>(),offset,format,
+	BinaryIO::readLatticeObject<vobj, LorentzColour2x3D> 
+	  (Umu,file,Gauge3x2munger<LorentzColour2x3D,sobj>(),offset,format,
 	   nersc_csum,scidac_csuma,scidac_csumb);
       }
     } else if ( header.data_type == std::string("4D_SU"+stNC+"_GAUGE_"+stNC+"x"+stNC) ) {
       if ( ieee32 || ieee32big ) {
-	BinaryIO::readLatticeObject<vLorentzColourMatrixD,LorentzColourMatrixF>
-	  (Umu,file,GaugeSimpleMunger<LorentzColourMatrixF,LorentzColourMatrix>(),offset,format,
+	BinaryIO::readLatticeObject<vobj,LorentzColourMatrixF>
+	  (Umu,file,GaugeSimpleMunger<LorentzColourMatrixF,sobj>(),offset,format,
 	   nersc_csum,scidac_csuma,scidac_csumb);
       }
       if ( ieee64 || ieee64big ) {
-	BinaryIO::readLatticeObject<vLorentzColourMatrixD,LorentzColourMatrixD>
-	  (Umu,file,GaugeSimpleMunger<LorentzColourMatrixD,LorentzColourMatrix>(),offset,format,
+	BinaryIO::readLatticeObject<vobj,LorentzColourMatrixD>
+	  (Umu,file,GaugeSimpleMunger<LorentzColourMatrixD,sobj>(),offset,format,
 	   nersc_csum,scidac_csuma,scidac_csumb);
       }
     } else {
@@ -198,18 +200,37 @@ public:
     if ( fabs(clone.plaquette -header.plaquette ) >=  1.0e-5 ) { 
       std::cout << " Plaquette mismatch "<<std::endl;
     }
-    if ( nersc_csum != header.checksum ) { 
+    if ( nersc_csum != header.checksum ) {
       std::cerr << " checksum mismatch " << std::endl;
       std::cerr << " plaqs " << clone.plaquette << " " << header.plaquette << std::endl;
       std::cerr << " trace " << clone.link_trace<< " " << header.link_trace<< std::endl;
       std::cerr << " nersc_csum  " <<std::hex<< nersc_csum << " " << header.checksum<< std::dec<< std::endl;
-      exit(0);
     }
     if(exitOnReadPlaquetteMismatch()) GRID_ASSERT(fabs(clone.plaquette -header.plaquette ) < 1.0e-5 );
     GRID_ASSERT(fabs(clone.link_trace-header.link_trace) < 1.0e-6 );
     GRID_ASSERT(nersc_csum == header.checksum );
       
     std::cout<<GridLogMessage <<"NERSC Configuration "<<file<< " and plaquette, link trace, and checksum agree"<<std::endl;
+  }
+
+  //////////////////////////////////////////////////////////////////////////
+  // Constrained frontends: vectorised and lexicographic gauge fields
+  //////////////////////////////////////////////////////////////////////////
+  template<class GaugeStats=PeriodicGaugeStatistics>
+  static inline void readConfiguration(Lattice<vLorentzColourMatrixD> &Umu,
+				       FieldMetaData& header,
+				       std::string file,
+				       GaugeStats GaugeStatisticsCalculator=GaugeStats())
+  {
+    readConfigurationInternal(Umu,header,file,GaugeStatisticsCalculator);
+  }
+  template<class GaugeStats=lexPeriodicGaugeStatistics>
+  static inline void readConfiguration(Lattice<sLorentzColourMatrixD> &Umu,
+				       FieldMetaData& header,
+				       std::string file,
+				       GaugeStats GaugeStatisticsCalculator=GaugeStats())
+  {
+    readConfigurationInternal(Umu,header,file,GaugeStatisticsCalculator);
   }
 
   // Preferred interface
@@ -220,7 +241,16 @@ public:
 					std::string ens_id = std::string("UKQCD"),
 					unsigned int sequence_number = 1)
   {
-    writeConfiguration(Umu,file,0,1,ens_label,ens_id,sequence_number);
+    writeConfigurationInternal<Lattice<vLorentzColourMatrixD>,GaugeStats>(Umu,file,0,1,ens_label,ens_id,sequence_number);
+  }
+  template<class GaugeStats=lexPeriodicGaugeStatistics>
+  static inline void writeConfiguration(Lattice<sLorentzColourMatrixD > &Umu,
+					std::string file, 
+					std::string ens_label = std::string("DWF"),
+					std::string ens_id = std::string("UKQCD"),
+					unsigned int sequence_number = 1)
+  {
+    writeConfigurationInternal<Lattice<sLorentzColourMatrixD>,GaugeStats>(Umu,file,0,1,ens_label,ens_id,sequence_number);
   }
   template<class GaugeStats=PeriodicGaugeStatistics>
   static inline void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,
@@ -231,7 +261,29 @@ public:
 					std::string ens_id = std::string("UKQCD"),
 					unsigned int sequence_number = 1)
   {
-    typedef vLorentzColourMatrixD vobj;
+    writeConfigurationInternal<Lattice<vLorentzColourMatrixD>,GaugeStats>(Umu,file,two_row,bits32,ens_label,ens_id,sequence_number);
+  }
+  template<class GaugeStats=lexPeriodicGaugeStatistics>
+  static inline void writeConfiguration(Lattice<sLorentzColourMatrixD > &Umu,
+					std::string file, 
+					int two_row,
+					int bits32,
+					std::string ens_label = std::string("DWF"),
+					std::string ens_id = std::string("UKQCD"),
+					unsigned int sequence_number = 1)
+  {
+    writeConfigurationInternal<Lattice<sLorentzColourMatrixD>,GaugeStats>(Umu,file,two_row,bits32,ens_label,ens_id,sequence_number);
+  }
+  template<class GaugeFieldType,class GaugeStats>
+  static inline void writeConfigurationInternal(GaugeFieldType &Umu,
+					std::string file, 
+					int two_row,
+					int bits32,
+					std::string ens_label = std::string("DWF"),
+					std::string ens_id = std::string("UKQCD"),
+					unsigned int sequence_number = 1)
+  {
+    typedef typename GaugeFieldType::vector_object vobj;
     typedef typename vobj::scalar_object sobj;
 
     FieldMetaData header;
@@ -277,9 +329,12 @@ public:
 						nersc_csum,scidac_csuma,scidac_csumb);
     }
     header.checksum = nersc_csum;
-    if ( grid->IsBoss() ) { 
+    if ( grid->IsBoss() ) {
       writeHeader(header,file);
     }
+    // The header is written twice; the checksum is only known after the data.
+    // Other ranks must not proceed to read it until the rewrite has landed.
+    grid->Barrier();
 
     std::cout<<GridLogMessage <<"Written NERSC Configuration on "<< file << " checksum "
 	     <<std::hex<<header.checksum
@@ -330,11 +385,14 @@ public:
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
     BinaryIO::writeRNG(serial,parallel,file,offset,nersc_csum,scidac_csuma,scidac_csumb);
     header.checksum = nersc_csum;
-	if ( grid->IsBoss() ) { 
+	if ( grid->IsBoss() ) {
     offset = writeHeader(header,file);
 	}
+    // As for the gauge field: the checksum is only known after the data, so
+    // the header is rewritten. Hold the other ranks until that has landed.
+    grid->Barrier();
 
-    std::cout<<GridLogMessage 
+    std::cout<<GridLogMessage
 	     <<"Written NERSC RNG STATE "<<file<< " checksum "
 	     <<std::hex<<header.checksum
 	     <<std::dec<<std::endl;
@@ -372,9 +430,8 @@ public:
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
     BinaryIO::readRNG(serial,parallel,file,offset,nersc_csum,scidac_csuma,scidac_csumb);
 
-    if ( nersc_csum != header.checksum ) { 
+    if ( nersc_csum != header.checksum ) {
       std::cerr << "checksum mismatch "<<std::hex<< nersc_csum <<" "<<header.checksum<<std::dec<<std::endl;
-      exit(0);
     }
     GRID_ASSERT(nersc_csum == header.checksum );
 
