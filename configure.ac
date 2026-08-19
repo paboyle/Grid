@@ -574,6 +574,9 @@ case ${ax_cv_cxx_compiler_vendor} in
       NEONv8)
         AC_DEFINE([NEONV8],[1],[ARMv8 NEON])
         SIMD_FLAGS='-march=armv8-a';;
+      NEONv8.3)
+        AC_DEFINE([NEONV8],[1],[ARMv8.3 NEON])
+        SIMD_FLAGS='-march=armv8.3-a';;
       QPX|BGQ)
         AC_DEFINE([QPX],[1],[QPX intrinsics for BG/Q])
         SIMD_FLAGS='';;
@@ -907,6 +910,7 @@ AC_CONFIG_FILES(tests/Makefile)
 AC_CONFIG_FILES(tests/IO/Makefile)
 AC_CONFIG_FILES(tests/core/Makefile)
 AC_CONFIG_FILES(tests/debug/Makefile)
+AC_CONFIG_FILES(tests/lexLattice/Makefile)
 AC_CONFIG_FILES(tests/forces/Makefile)
 AC_CONFIG_FILES(tests/hmc/Makefile)
 AC_CONFIG_FILES(tests/solver/Makefile)
