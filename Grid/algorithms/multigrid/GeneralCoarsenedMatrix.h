@@ -74,6 +74,17 @@ public:
   ///////////////////////
   // Interface
   ///////////////////////
+  //////////////////////////////////////////////////////////////////////////
+  // Bilingual accessors: everything a consumer needs to read the operator
+  // without knowing which of the three coarse classes it holds. The D
+  // dimensional grid the elements live on, the geometry they are indexed by,
+  // and one unpadded point at a time (a whole npoint vector is too much
+  // memory at production nbasis).
+  //////////////////////////////////////////////////////////////////////////
+  GridCartesian * CoarseGridD(void)             { return _CoarseGrid; };
+  NonLocalStencilGeometry & Geometry(void)      { return geom; };
+  void ExtractMatrix(int p,CoarseMatrix &A)     { A = Cell.Extract(_A[p]); };
+
   GridBase      * Grid(void)           { return _CoarseGrid; };   // this is all the linalg routines need to know
   GridBase      * FineGrid(void)       { return _FineGrid; };   // this is all the linalg routines need to know
   GridCartesian * CoarseGrid(void)     { return _CoarseGrid; };   // this is all the linalg routines need to know

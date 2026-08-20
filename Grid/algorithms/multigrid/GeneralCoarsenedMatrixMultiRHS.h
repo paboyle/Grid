@@ -77,13 +77,22 @@ public:
   GridBase      * Grid(void)           { return _CoarseGridMulti; };   // this is all the linalg routines need to know
   GridCartesian * CoarseGrid(void)     { return _CoarseGridMulti; };   // this is all the linalg routines need to know
 
-  // Can be used to do I/O on the operator matrices externally
-  void SetMatrix (int p,CoarseMatrix & A)
+  //////////////////////////////////////////////////////////////////////////
+  // Bilingual accessors, matching GeneralCoarsenedMatrix. Grid() here is the
+  // D+1 multiRHS grid and this class never holds the D dimensional one, so
+  // ExtractMatrix writes into whatever grid the caller's lattice is on.
+  //////////////////////////////////////////////////////////////////////////
+  NonLocalStencilGeometry & Geometry(void)      { return geom_srhs; };
+  void ExtractMatrix(int p,CoarseMatrix &A)     { BLAStoGrid(A,BLAS_A[p]); };
+
+  // I/O on the operator matrices, via the BLAS layout array. The parameter is
+  // a vector over the geometry points; the body indexes A[p].
+  void SetMatrix (int p,std::vector<CoarseMatrix> & A)
   {
     GRID_ASSERT(A.size()==geom_srhs.npoint);
     GridtoBLAS(A[p],BLAS_A[p]);
   }
-  void GetMatrix (int p,CoarseMatrix & A)
+  void GetMatrix (int p,std::vector<CoarseMatrix> & A)
   {
     GRID_ASSERT(A.size()==geom_srhs.npoint);
     BLAStoGrid(A[p],BLAS_A[p]);

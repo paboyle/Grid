@@ -224,6 +224,37 @@ int main (int argc, char ** argv)
   GRID_ASSERT( nums/den < 1.0e-20 );
 
   ////////////////////////////////////////////////
+  // GetMatrix/SetMatrix round trip through the BLAS layout array. This is
+  // how a bilingual DenseCoarseMatrix will retrieve the elements, and it
+  // needs no SetGrid since the matrix elements are Nrhs independent.
+  ////////////////////////////////////////////////
+  {
+    typedef MrhsV2::CoarseMatrix CoarseMatrixS;
+    std::vector<CoarseMatrixS> Aget(npoint,CoarseS);
+    for(int p=0;p<npoint;p++) OpV2.GetMatrix(p,Aget);
+
+    MrhsV2 OpV2rt(geomS,CoarseS);
+    for(int p=0;p<npoint;p++) OpV2rt.SetMatrix(p,Aget);
+
+    std::vector<std::vector<calcMatrix> > A4;
+    ReadMatrix(OpV2rt,npoint,A4);
+
+    RealD numrt=0.0;
+    for(int p=0;p<npoint;p++){
+      GRID_ASSERT(A2[p].size()==A4[p].size());
+      ComplexD *w2 = (ComplexD *)&A2[p][0];
+      ComplexD *w4 = (ComplexD *)&A4[p][0];
+      int64_t words = A2[p].size()*sizeof(calcMatrix)/sizeof(ComplexD);
+      for(int64_t i=0;i<words;i++){
+        ComplexD d = w2[i]-w4[i];
+        numrt += real(d)*real(d)+imag(d)*imag(d);
+      }
+    }
+    std::cout << GridLogMessage << "GetMatrix/SetMatrix round trip |diff|^2 = " << numrt << std::endl;
+    GRID_ASSERT( numrt == 0.0 );
+  }
+
+  ////////////////////////////////////////////////
   // and V2 applies the matrix it just built
   ////////////////////////////////////////////////
   typedef MrhsV2::CoarseVector CoarseVectorS;

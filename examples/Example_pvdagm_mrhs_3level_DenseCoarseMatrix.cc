@@ -467,7 +467,7 @@ int main (int argc, char ** argv)
   typedef Aggregation<CoarseSiteObj,vTTComplex,nbasis>                     SubspaceL2;
 
   // The library dense bottom over the L2 coarse operator
-  typedef DenseCoarseMatrix<CoarseSiteObj,vTTComplex,nbasis>               DenseCC_t;
+  typedef DenseCoarseMatrix<vTTComplex,nbasis>                             DenseCC_t;
 
   PVdagM_t        PVdagM(Ddwf,Dpv);
   ShiftedPVdagM_t ShiftedPVdagM(FineSmootherShift,Ddwf,Dpv);
@@ -573,7 +573,8 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage << "**********************************************" << std::endl;
     std::cout << GridLogMessage << " Dense CC inverse setup (library DenseCoarseMatrix)" << std::endl;
     std::cout << GridLogMessage << "**********************************************" << std::endl;
-    DenseCC.reset(new DenseCC_t(LittleDiracOpL2, CoarseCoarse5d));
+    DenseCC.reset(new DenseCC_t(CoarseCoarse5d));
+    DenseCC->Import(LittleDiracOpL2);
     MrhsDenseCC.reset(new MrhsDenseCCSolve<DenseCC_t,CoarseCoarseVector>(*DenseCC, CoarseCoarse5d, nrhs));
   }
 

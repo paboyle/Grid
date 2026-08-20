@@ -81,19 +81,25 @@ NAMESPACE_BEGIN(Grid);
 // Tensor-depth agnostic: site scalar objects treated as contiguous ComplexD
 // (iScalar wrappers add no data), so any MG level's coarse operator imports.
 //////////////////////////////////////////////////////////////////////////////////////
-template<class Fobj,class CComplex,int nbasis>
-class DenseCoarseMatrix : public LinearFunction<typename GeneralCoarsenedMatrix<Fobj,CComplex,nbasis>::CoarseVector> {
+//
+// Depends on a coarse operator only to extract its matrix elements; thereafter
+// it is given a coarse vector and applies the inverse. Import() is a template
+// member so any of the coarse classes will do, and the type of a
+// DenseCoarseMatrix does not record which one built it.
+//
+template<class CComplex,int nbasis>
+class DenseCoarseMatrix : public LinearFunction<Lattice<iVector<CComplex,nbasis> > > {
 public:
-  typedef GeneralCoarsenedMatrix<Fobj,CComplex,nbasis> GeneralCoarseOp;
-  typedef typename GeneralCoarseOp::CoarseVector       Field;
-  typedef typename GeneralCoarseOp::CoarseMatrix       CoarseMatrix;
+  typedef iVector<CComplex,nbasis >           siteVector;
+  typedef Lattice<siteVector>                 CoarseVector;
+  typedef Lattice<iMatrix<CComplex,nbasis > > CoarseMatrix;
+  typedef CoarseVector                        Field;
   using LinearFunction<Field>::operator();
   typedef typename Field::vector_object vobj;
   typedef typename vobj::scalar_object  sobj;
   typedef typename CoarseMatrix::vector_object Mvobj;
   typedef typename Mvobj::scalar_object        Msobj;
 
-  GeneralCoarseOp &_Op;             // the coarse operator: stencil source + certificate oracle
   GridBase *grid;
   int      nd;
   int64_t  N;                       // dense rank = gSites * nbasis
@@ -121,12 +127,11 @@ public:
   int devSum;
   double schurAuditRel;             // DENSE_SCHUR=2: rel slab diff single-vs-schur (-1 = not run)
 
-  DenseCoarseMatrix(GeneralCoarseOp &Op, GridBase *g)
-    : _Op(Op), grid(g)
+  DenseCoarseMatrix(GridBase *g)
+    : grid(g)
   {
     GRID_ASSERT( sizeof(sobj)  == nbasis*sizeof(ComplexD) );
     GRID_ASSERT( sizeof(Msobj) == nbasis*nbasis*sizeof(ComplexD) );
-    GRID_ASSERT( grid == Op.Grid() );
     nd     = grid->_ndimension;
     N      = grid->gSites() * nbasis;
     lsites = grid->lSites();
@@ -158,7 +163,16 @@ public:
     }
 
     slab.resize((uint64_t)nrows * N);
+  }
 
+  ////////////////////////////////////////////////////////////////////
+  // The only place a coarse operator is needed: pull its elements, invert,
+  // and make the slab resident. Any class exposing Geometry() and
+  // ExtractMatrix(p,A) will do -- single RHS or either multiRHS.
+  ////////////////////////////////////////////////////////////////////
+  template<class CoarseOp>
+  void Import(CoarseOp &Op)
+  {
     double t0 = usecond();
     ////////////////////////////////////////////////////////////////////
     // 0. Slab cache: SLAB_FILE=<stem> -> per-rank raw file <stem>.<rank>.
@@ -187,9 +201,9 @@ public:
       }
     }
     if (!loaded) {
-      ImportDense();          // slab <- my rows of A   (LOCAL, no comms)
-      ImportCertificate();    // dense apply == Op.M on a non-constant vector
-      InvertDense();          // slab <- my rows of A^{-1}
+      ImportDense(Op);        // slab <- my rows of A   (LOCAL, no comms)
+      ImportCertificate(Op);  // dense apply == Op.M, before inversion
+      InvertDense(Op);        // slab <- my rows of A^{-1}
       double t1 = usecond();
       if (sfile) {
         FILE *f = fopen(slabfile.c_str(),"wb");
@@ -251,7 +265,7 @@ public:
       double ta = usecond();
       (*this)(x, y);
       double tb = usecond();
-      _Op.M(y, z);
+      ApplyOracle(Op, y, z);
       z = z - x;
       RealD rel = std::sqrt(norm2(z)/norm2(x));
       std::cout << GridLogMessage << "DenseCoarseMatrix: VERIFY ||A Ainv x - x||/||x|| = "
@@ -263,10 +277,51 @@ public:
   }
 
   ////////////////////////////////////////////////////////////////////
+  // Apply the source operator to a D dimensional field, whichever kind it is.
+  //
+  // A multiRHS operator lives on the D+1 grid, so drive it with several right
+  // hand sides at once: slice r carries (r+1)*in, and linearity says the
+  // results must scale likewise. One apply, and unlike a single rhs check it
+  // also catches rhs mixing. Cheap check, not a production path.
+  ////////////////////////////////////////////////////////////////////
+  template<class CoarseOp>
+  void ApplyOracle(CoarseOp &Op,const Field &in, Field &out)
+  {
+    if ( Op.Grid() == grid ) { Op.M(in,out); return; }
+
+    GridBase *mgrid = Op.Grid();
+    GRID_ASSERT(mgrid->_ndimension == nd+1);
+    int nr = mgrid->_fdimensions[0];
+
+    Field min(mgrid), mout(mgrid);
+    for(int r=0;r<nr;r++){
+      Field scaled(grid);
+      scaled = ComplexD(r+1.0,0.0)*in;
+      InsertSliceFast(scaled,min,r,0);
+    }
+
+    Op.M(min,mout);
+
+    ExtractSliceFast(out,mout,0,0);
+    for(int r=1;r<nr;r++){
+      Field sr(grid),d(grid);
+      ExtractSliceFast(sr,mout,r,0);
+      d = sr - ComplexD(r+1.0,0.0)*out;
+      RealD rel = std::sqrt(norm2(d)/norm2(sr));
+      if ( rel >= 1.0e-6 ) {
+        std::cout << GridLogMessage << "DenseCoarseMatrix: oracle rhs "<<r
+                  <<" inconsistent with rhs 0, rel "<<rel<<std::endl;
+      }
+      GRID_ASSERT( rel < 1.0e-6 );
+    }
+  }
+
+  ////////////////////////////////////////////////////////////////////
   // 1. Direct stencil -> dense import of MY ROWS of A (no comms):
   //      Dense[(s,a),(wrap(s+shift_p),b)] += A[p][s]_{a,b}
   ////////////////////////////////////////////////////////////////////
-  void ImportDense(void)
+  template<class CoarseOp>
+  void ImportDense(CoarseOp &Op)
   {
     double t = -usecond();
     Coordinate gdims = grid->GlobalDimensions();
@@ -276,12 +331,12 @@ public:
     uint64_t nelem = (uint64_t)nrows * N;
     thread_for(i, nelem, { slab[i] = ComplexF(0.0,0.0); });
 
-    for(int p=0; p<_Op.geom.npoint; p++){
-      Coordinate shift = _Op.geom.shifts[p];
+    for(int p=0; p<Op.Geometry().npoint; p++){
+      Coordinate shift = Op.Geometry().shifts[p];
       // _A[p] is PADDED after ExchangeCoarseLinks (end of CoarsenOperator):
       // extract the unpadded field before peeking with unpadded coordinates
       // (exactly as MultiGeneralCoarsenedMatrix::CopyMatrix does).
-      CoarseMatrix Aun = _Op.Cell.Extract(_Op._A[p]);
+      CoarseMatrix Aun(grid);  Op.ExtractMatrix(p,Aun);
       if ( getenv("DENSE_IMPORT_DEBUG") ) {
         // Peek-path vs field-norm audit: sum |peekLocalSite|^2 must match norm2
         double pk = 0.0;
@@ -295,7 +350,7 @@ public:
         RealD gpk = pk;
         grid->GlobalSumVector(&gpk, 1);
         std::cout << GridLogMessage << "DenseCoarseMatrix: DEBUG p=" << p
-                  << " norm2(_A[p]) " << norm2(_Op._A[p])
+                  << " norm2(_A[p]) " << norm2(Aun)
                   << " norm2(Extract) " << norm2(Aun)
                   << " sum|peek|^2 " << gpk << std::endl;
       }
@@ -346,7 +401,7 @@ public:
     grid->GlobalSumVector(&gz, 1);
 
     std::cout << GridLogMessage << "DenseCoarseMatrix: stencil->dense import took "
-              << t/1.0e6 << " s  (" << _Op.geom.npoint << " points, local, no comms)"
+              << t/1.0e6 << " s  (" << Op.Geometry().npoint << " points, local, no comms)"
               << "  zero rows " << (int64_t)gz << "/" << N << std::endl;
 
     // Debug: coordinate pattern of live sites (mechanism fingerprint)
@@ -375,7 +430,8 @@ public:
   // 2. IMPORT CERTIFICATE: dense rows vs Op.M on a NON-CONSTANT vector.
   //    (Constant x has x[s+d]==x[s-d]: blind to a shift-sign error.)
   ////////////////////////////////////////////////////////////////////
-  void ImportCertificate(void)
+  template<class CoarseOp>
+  void ImportCertificate(CoarseOp &Op)
   {
     Field x(grid); Field Ax(grid); Field Dx(grid);
     for(int ss=0; ss<lsites; ss++){
@@ -406,7 +462,7 @@ public:
       for(int b=0; b<nbasis; b++) ((ComplexD *)&s)[b] = yh[ss*nbasis+b];
       pokeLocalSite(s, Dx, myLcoor[ss]);
     }
-    _Op.M(x, Ax);
+    ApplyOracle(Op, x, Ax);
     Field d(grid); d = Dx - Ax;
     RealD rel = std::sqrt(norm2(d)/norm2(Ax));
     std::cout << GridLogMessage << "DenseCoarseMatrix: IMPORT CERTIFICATE ||Dense x - A x||/||A x|| = "
@@ -428,7 +484,8 @@ public:
   //                             slab difference; keep the Schur result
   //                             (so VERIFY certifies the new path).
   ////////////////////////////////////////////////////////////////////
-  void InvertDense(void)
+  template<class CoarseOp>
+  void InvertDense(CoarseOp &Op)
   {
     char *sc  = getenv("DENSE_SCHUR");
     int  mode = sc ? atoi(sc) : 0;
@@ -440,7 +497,7 @@ public:
     }
     if ( mode == 1 )
     {
-      InvertDenseSchur();
+      InvertDenseSchur(Op);
       return;
     }
     GRID_ASSERT( mode == 2 );
@@ -448,7 +505,7 @@ public:
     InvertDenseSingle();
     std::vector<ComplexF> ref(slab);        // Ainv, single path
     slab = Aimp;
-    InvertDenseSchur();                     // slab = Ainv, Schur path
+    InvertDenseSchur(Op);                   // slab = Ainv, Schur path
 
     // NaN-PROOF comparison: max() masks NaN, so count non-finite
     // entries in each result explicitly.
@@ -713,17 +770,18 @@ public:
   //    different precision order).  NaN-proof: non-finite entries are
   //    counted explicitly since max() silently masks NaN.
   ////////////////////////////////////////////////////////////////////
-  void ImportDenseFP64(BlockRows &S, std::vector<int64_t> &g2rm)
+  template<class CoarseOp>
+  void ImportDenseFP64(CoarseOp &Op, BlockRows &S, std::vector<int64_t> &g2rm)
   {
     Coordinate gdims = grid->GlobalDimensions();
     int sign = getenv("DENSE_IMPORT_SIGN") ? atoi(getenv("DENSE_IMPORT_SIGN")) : 1;
     GRID_ASSERT( sign==1 || sign==-1 );
 
     std::vector<ComplexD> h((uint64_t)nrows*N, ComplexD(0.0,0.0));
-    for(int p=0; p<_Op.geom.npoint; p++)
+    for(int p=0; p<Op.Geometry().npoint; p++)
     {
-      Coordinate shift = _Op.geom.shifts[p];
-      CoarseMatrix Aun = _Op.Cell.Extract(_Op._A[p]);
+      Coordinate shift = Op.Geometry().shifts[p];
+      CoarseMatrix Aun(grid);  Op.ExtractMatrix(p,Aun);
       autoView(Av, Aun, CpuRead);
       thread_for(ss, lsites, {
         Coordinate ncoor(nd);
@@ -785,7 +843,8 @@ public:
   //    slab.  Everything downstream (device residency, split-K apply,
   //    VERIFY, SLAB_FILE) is untouched.
   ////////////////////////////////////////////////////////////////////
-  void InvertDenseSchur(void)
+  template<class CoarseOp>
+  void InvertDenseSchur(CoarseOp &Op)
   {
     double t1 = usecond();
     int P  = grid->ProcessorCount();
@@ -812,7 +871,7 @@ public:
     }
 
     BlockRows S;
-    ImportDenseFP64(S, g2rm);
+    ImportDenseFP64(Op, S, g2rm);
 
     int64_t panelBytes = getenv("DENSE_PANEL_BYTES") ? atol(getenv("DENSE_PANEL_BYTES"))
                                                      : (int64_t)1024*1024*1024;
@@ -921,13 +980,21 @@ public:
         ((ComplexD *)&s)[b] = ComplexD(hY[ss*nbasis + b]);
       pokeLocalSite(s, psi, myLcoor[ss]);
     }
-    if ( getenv("DENSE_CC_CHECK") ) {
-      Field tmp(grid);
-      _Op.M(psi, tmp);
-      tmp = tmp - src;
-      std::cout << GridLogMessage << "DenseCoarseMatrix: apply defect ||A x - b||/||b|| = "
-                << std::sqrt(norm2(tmp)/norm2(src)) << std::endl;
-    }
+  }
+
+  ////////////////////////////////////////////////////////////////////
+  // Defect of an applied inverse. Was a DENSE_CC_CHECK block inside
+  // operator(), but that is virtual and cannot take an operator, so the
+  // caller now asks for it explicitly.
+  ////////////////////////////////////////////////////////////////////
+  template<class CoarseOp>
+  void CheckApply(CoarseOp &Op,const Field &src,const Field &psi)
+  {
+    Field tmp(grid);
+    Op.M(psi, tmp);
+    tmp = tmp - src;
+    std::cout << GridLogMessage << "DenseCoarseMatrix: apply defect ||A x - b||/||b|| = "
+              << std::sqrt(norm2(tmp)/norm2(src)) << std::endl;
   }
 
   ////////////////////////////////////////////////////////////////////
@@ -960,14 +1027,17 @@ public:
     double t1 = usecond();
     std::cout << GridLogMessage << "DenseCoarseMatrix: batched apply " << nr << " rhs took "
               << (t1-t0)/1000.0 << " ms  (" << (t1-t0)/1000.0/nr << " ms/rhs)" << std::endl;
-    if ( getenv("DENSE_CC_CHECK") ) {
-      Field tmp(grid);
-      for(int rr=0; rr<nr; rr++){
-        _Op.M(psi[rr], tmp);
-        tmp = tmp - src[rr];
-        std::cout << GridLogMessage << "DenseCoarseMatrix: batch defect["<<rr<<"] = "
-                  << std::sqrt(norm2(tmp)/norm2(src[rr])) << std::endl;
-      }
+  }
+
+  template<class CoarseOp>
+  void CheckApplyBatch(CoarseOp &Op,std::vector<Field> &src,std::vector<Field> &psi,int nr)
+  {
+    Field tmp(grid);
+    for(int rr=0; rr<nr; rr++){
+      Op.M(psi[rr], tmp);
+      tmp = tmp - src[rr];
+      std::cout << GridLogMessage << "DenseCoarseMatrix: batch defect["<<rr<<"] = "
+                << std::sqrt(norm2(tmp)/norm2(src[rr])) << std::endl;
     }
   }
 
