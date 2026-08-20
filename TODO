@@ -1,3 +1,32 @@
+SIMD lane extent audit (2026-08-19)
+
+i) Remove the explicit lattice types from GaugeGroup.h; take a Gimpl or other
+   policy template instead.
+
+ -- LieAlgebraProject(LatticeAlgebraMatrix &, const LatticeMatrix &, int) names the
+    default precision typedefs and launches accelerator_for with vComplex::Nsimd()
+    as the lane extent (GaugeGroup.h:438).
+ -- Correct today ONLY because the signature pins the precision. LatticeMatrixF/D and
+    LatticeAlgebraMatrixF/D exist alongside (GaugeGroup.h:131-145); an overload or a
+    retype would silently mismatch the launch geometry under GRID_SIMT.
+ -- Policy template, and derive the lane extent from the field, not from a named type.
+
+ -- Audit context: 258 accelerator_for* call sites; this is the ONLY library one whose
+    lane extent names a type. 8 more in benchmarks/Benchmark_su3_gpu.cc. 45 derive from
+    vobj::Nsimd() and are clean.
+
+ii) acceleratorSIMTlane(int Nsimd) ignores its argument -- every definition returns the
+    thread index. The lane a kernel reads is set solely by the accelerator_for launch
+    extent, so the argument is decorative and enforces nothing. Remove it.
+    The (threadIdx.x % Nsimd) idea is too constraining.
+
+iii) GeneralCoarsenedMatrix.h:455,642 launch with nbasis lanes and use the SIMT dimension
+     as a BASIS index rather than a SIMD lane. Works only because the launch extent is
+     nbasis. No coalescedRead/coalescedWrite may appear inside such a kernel.
+     Retired with V1: V2 launches nsimd=1 with an explicit j loop.
+
+-------
+
 i)    Refine subspace with HDCG & recompute
 ii)   Block Lanczos in coarse space
 iii)  Batched block project in the operator computation

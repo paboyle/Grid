@@ -42,8 +42,12 @@ template <typename T>
 struct RealPart {
   typedef T type;
 };
+// Grid's own complex alias, so this matches thrust::complex on CUDA/HIP as
+// well as std::complex on the host. Qualifying it std:: left Real == the
+// complex type itself on device builds, which removes the Grid_simd(Real)
+// constructor and so any assignment of a real to a complex lattice.
 template <typename T>
-struct RealPart<std::complex<T> > {
+struct RealPart<complex<T> > {
   typedef T type;
 };
 
