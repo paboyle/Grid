@@ -198,6 +198,7 @@ public:
       _Dense.ApplyBatch(split_in, split_out);
       for(int r=0;r<_nrhs;r++) InsertSliceFast(split_out[r], out, r, 0);
     } else {
+      GRID_TRACE("MrhsDensCCSolve::ApplyBatch6D");
       _Dense.ApplyBatch6D(in, out, _nrhs);
     }
   }
@@ -226,11 +227,12 @@ public:
   void SetZeroGuess(int z){ ZeroGuess=z; }
   MrhsPGCRNonHermitian(RealD tol,Integer maxit,LinearOperatorBase<Field> &_Linop,MrhsLinearFunction<Field> &Prec,int _mmax,int _nstep)
     : Tolerance(tol),MaxIterations(maxit),Linop(_Linop),Preconditioner(Prec),mmax(_mmax),nstep(_nstep){ level=1; }
-  static RealD vnorm2(std::vector<Field> &x){ RealD s=0; for(auto &f:x) s+=norm2(f); return s; }
-  static ComplexD vinnerProduct(std::vector<Field> &x,std::vector<Field> &y){ ComplexD s(0); for(int r=0;r<(int)x.size();r++) s+=innerProduct(x[r],y[r]); return s; }
-  static void vaxpy(std::vector<Field> &z,ComplexD a,std::vector<Field> &x,std::vector<Field> &y){ for(int r=0;r<(int)z.size();r++) axpy(z[r],a,x[r],y[r]); }
-  void vOp(std::vector<Field> &in,std::vector<Field> &out){ for(int r=0;r<(int)in.size();r++) Linop.Op(in[r],out[r]); }
+  static RealD vnorm2(std::vector<Field> &x){ GRID_TRACE("GCR-vnorm2"); RealD s=0; for(auto &f:x) s+=norm2(f); return s; }
+  static ComplexD vinnerProduct(std::vector<Field> &x,std::vector<Field> &y){ GRID_TRACE("GCR-vinnerProduct"); ComplexD s(0); for(int r=0;r<(int)x.size();r++) s+=innerProduct(x[r],y[r]); return s; }
+  static void vaxpy(std::vector<Field> &z,ComplexD a,std::vector<Field> &x,std::vector<Field> &y){ GRID_TRACE("GCR-vaxpy"); for(int r=0;r<(int)z.size();r++) axpy(z[r],a,x[r],y[r]); }
+  void vOp(std::vector<Field> &in,std::vector<Field> &out){ GRID_TRACE("GCR-vOp"); for(int r=0;r<(int)in.size();r++) Linop.Op(in[r],out[r]); }  
   void operator()(std::vector<Field> &src,std::vector<Field> &psi){
+    GRID_TRACE((name+"MrhsPGCRNonHermitian").c_str());
     RealD cp,ssq,rsq; int nrhs=src.size(); GridBase *grid=src[0].Grid();
     ssq=vnorm2(src); rsq=Tolerance*Tolerance*ssq;
     std::vector<Field> r(nrhs,grid);
@@ -264,17 +266,32 @@ public:
     p[0]=z; q[0]=Az; qq[0]=zAAz; cp=vnorm2(r);
     for(int k=0;k<nstep;k++){
       steps++; int kp=k+1, peri_k=k%mmax, peri_kp=kp%mmax;
-      rq=vinnerProduct(q[peri_k],r); a=rq/qq[peri_k];
-      vaxpy(psi,a,p[peri_k],psi); vaxpy(r,-a,q[peri_k],r); cp=vnorm2(r);
+      {
+        GRID_TRACE("GCR-project");
+        rq=vinnerProduct(q[peri_k],r); a=rq/qq[peri_k];
+        vaxpy(psi,a,p[peri_k],psi); vaxpy(r,-a,q[peri_k],r); cp=vnorm2(r);
+      }      
+      //      rq=vinnerProduct(q[peri_k],r); a=rq/qq[peri_k];
+      //      vaxpy(psi,a,p[peri_k],psi); vaxpy(r,-a,q[peri_k],r); cp=vnorm2(r);
       std::cout<<GridLogMessage<<std::string(level,'\t')<<" "<<name<<" MrhsPGCR step["<<steps<<"]  resid "<<cp<<" target "<<rsq<<std::endl;
       if((k==nstep-1)||(cp<rsq)) return cp;
       Preconditioner(r,z); vOp(z,Az); zAAz=vnorm2(Az);
-      q[peri_kp]=Az; p[peri_kp]=z;
-      int northog=((kp)>(mmax-1))?(mmax-1):(kp);
-      for(int back=0;back<northog;back++){ int peri_back=(k-back)%mmax; GRID_ASSERT((k-back)>=0);
-        b=-real(vinnerProduct(q[peri_back],Az))/qq[peri_back];
-        vaxpy(p[peri_kp],b,p[peri_back],p[peri_kp]); vaxpy(q[peri_kp],b,q[peri_back],q[peri_kp]); }
-      qq[peri_kp]=vnorm2(q[peri_kp]);
+
+      {
+        GRID_TRACE("GCR-orthog");
+        q[peri_kp]=Az; p[peri_kp]=z;
+        int northog=((kp)>(mmax-1))?(mmax-1):(kp);
+        for(int back=0;back<northog;back++){ int peri_back=(k-back)%mmax; GRID_ASSERT((k-back)>=0);
+          b=-real(vinnerProduct(q[peri_back],Az))/qq[peri_back];
+          vaxpy(p[peri_kp],b,p[peri_back],p[peri_kp]); vaxpy(q[peri_kp],b,q[peri_back],q[peri_kp]); }
+        qq[peri_kp]=vnorm2(q[peri_kp]);
+      }      
+      //      q[peri_kp]=Az; p[peri_kp]=z;
+      //      int northog=((kp)>(mmax-1))?(mmax-1):(kp);
+      //      for(int back=0;back<northog;back++){ int peri_back=(k-back)%mmax; GRID_ASSERT((k-back)>=0);
+      //        b=-real(vinnerProduct(q[peri_back],Az))/qq[peri_back];
+      //        vaxpy(p[peri_kp],b,p[peri_back],p[peri_kp]); vaxpy(q[peri_kp],b,q[peri_back],q[peri_kp]); }
+      //      qq[peri_kp]=vnorm2(q[peri_kp]);
     }
     GRID_ASSERT(0); return cp;
   }
@@ -323,33 +340,45 @@ public:
     CoarseCoarseField CCsol(_CoarseCoarseMrhs);
 
     t=-usecond();
-    for(int r=0;r<nrhs;r++) ExtractSliceFast(csplit[r],vec1,r,0);
-    _Projector.blockProject(csplit,ccsplit);
-    for(int r=0;r<nrhs;r++) InsertSliceFast(ccsplit[r],CCsrc,r,0);
+    {
+      GRID_TRACE("L2L3-Vcycle - Extract/blockProject/Insert");
+      for(int r=0;r<nrhs;r++) ExtractSliceFast(csplit[r],vec1,r,0);
+      _Projector.blockProject(csplit,ccsplit);
+      for(int r=0;r<nrhs;r++) InsertSliceFast(ccsplit[r],CCsrc,r,0);
+    }
     t+=usecond();
     std::cout<<GridLogMessage<<"L2->L3 restrict took "<<t/1000.0<<"ms"<<std::endl;
 
     // L3 solve (dense mrhs GEMM, or PGCR)
     t=-usecond();
-    CCsol=Zero();
-    _CoarseCoarseSolve(CCsrc,CCsol);
+    {
+      GRID_TRACE("L2L3-Vcycle - CoarseCoarseSolve");
+      CCsol=Zero();
+      _CoarseCoarseSolve(CCsrc,CCsol);
+    }
     t+=usecond();
     std::cout<<GridLogMessage<<"L3 coarse-coarse solve took "<<t/1000.0<<"ms  ("<<t/1000.0/nrhs<<"ms/rhs)"<<std::endl;
 
     // prolong: unpack 6D cc -> blockPromote -> pack 6D coarse; add correction
     t=-usecond();
-    for(int r=0;r<nrhs;r++) ExtractSliceFast(ccsplit[r],CCsol,r,0);
-    _Projector.blockPromote(csplit,ccsplit);
-    for(int r=0;r<nrhs;r++) InsertSliceFast(csplit[r],vec1,r,0);
-    add(out,out,vec1);
+    {
+      GRID_TRACE("L2L3-Vcycle - Ext/blockPromote/Ins");
+      for(int r=0;r<nrhs;r++) ExtractSliceFast(ccsplit[r],CCsol,r,0);
+      _Projector.blockPromote(csplit,ccsplit);
+      for(int r=0;r<nrhs;r++) InsertSliceFast(csplit[r],vec1,r,0);
+      add(out,out,vec1);
+    }
     t+=usecond();
     std::cout<<GridLogMessage<<"L2->L3 prolong took "<<t/1000.0<<"ms"<<std::endl;
 
     // residual + coarse smoother (6D coarse)
-    _CoarseOp.Op(out,vec1);  sub(vec1,in,vec1);
-    vec2=Zero();
-    _CoarseSmoother(vec1,vec2);
-    add(out,out,vec2);
+    {
+      GRID_TRACE("L2L3-Vcycle - Resid+CoarseSmooth");
+      _CoarseOp.Op(out,vec1);  sub(vec1,in,vec1);
+      vec2=Zero();
+      _CoarseSmoother(vec1,vec2);
+      add(out,out,vec2);
+    }
   }
 };
 
@@ -372,25 +401,50 @@ public:
       _CoarseGrid(CoarseGrid),_CoarseGridMrhs(CoarseGridMrhs){}
   virtual void operator()(std::vector<FineField> &in, std::vector<FineField> &out){
     int nrhs=in.size(); GridBase *fgrid=in[0].Grid(); double t;
+
     std::vector<FineField> vec1(nrhs,fgrid),vec2(nrhs,fgrid);
-    for(int r=0;r<nrhs;r++) out[r]=in[r];
-    for(int r=0;r<nrhs;r++){ _FineOperator.Op(out[r],vec1[r]); sub(vec1[r],in[r],vec1[r]); }
+    {
+      GRID_TRACE("L1L2-Vcycle - Resid");
+      for(int r=0;r<nrhs;r++) out[r]=in[r];
+      for(int r=0;r<nrhs;r++){
+	_FineOperator.Op(out[r],vec1[r]);
+	sub(vec1[r],in[r],vec1[r]);
+      }
+    }
     std::vector<CoarseVector> Csrc_split(nrhs,_CoarseGrid), Csol_split(nrhs,_CoarseGrid);
     CoarseVector CsrcMrhs(_CoarseGridMrhs), CsolMrhs(_CoarseGridMrhs);
     t=-usecond();
-    _Projector.blockProject(vec1,Csrc_split);
-    for(int r=0;r<nrhs;r++) InsertSliceFast(Csrc_split[r],CsrcMrhs,r,0);
+    {
+      GRID_TRACE("L1L2-Vcycle - blockProject");
+      _Projector.blockProject(vec1,Csrc_split);
+      for(int r=0;r<nrhs;r++) InsertSliceFast(Csrc_split[r],CsrcMrhs,r,0);
+    }
     t+=usecond(); std::cout<<GridLogMessage<<"Mrhs project+pack took "<<t/1000.0<<"ms"<<std::endl;
-    t=-usecond(); CsolMrhs=Zero(); _CoarseSolve(CsrcMrhs,CsolMrhs); t+=usecond();
+    t=-usecond();
+    {
+      GRID_TRACE("L1L2-Vcycle - CoarseSolve");
+      CsolMrhs=Zero();
+      _CoarseSolve(CsrcMrhs,CsolMrhs);
+    }
+    t+=usecond();
     std::cout<<GridLogMessage<<"Mrhs coarse solve took "<<t/1000.0<<"ms  ("<<t/1000.0/nrhs<<"ms/rhs)"<<std::endl;
     t=-usecond();
-    for(int r=0;r<nrhs;r++) ExtractSliceFast(Csol_split[r],CsolMrhs,r,0);
-    _Projector.blockPromote(vec1,Csol_split);
-    for(int r=0;r<nrhs;r++) add(out[r],out[r],vec1[r]);
+    {
+      GRID_TRACE("L1L2-Vcycle - ExtractSlice/blockPromote/add delta");
+      for(int r=0;r<nrhs;r++) ExtractSliceFast(Csol_split[r],CsolMrhs,r,0);
+      _Projector.blockPromote(vec1,Csol_split);
+      for(int r=0;r<nrhs;r++) add(out[r],out[r],vec1[r]);
+    }
     t+=usecond(); std::cout<<GridLogMessage<<"Mrhs unpack+promote took "<<t/1000.0<<"ms"<<std::endl;
-    for(int r=0;r<nrhs;r++){ _FineOperator.Op(out[r],vec1[r]); sub(vec1[r],in[r],vec1[r]); }
+    {
+      GRID_TRACE("L1L2-Vcycle - Residuals");
+      for(int r=0;r<nrhs;r++){ _FineOperator.Op(out[r],vec1[r]); sub(vec1[r],in[r],vec1[r]); }
+    }
     t=-usecond();
-    for(int r=0;r<nrhs;r++){ vec2[r]=Zero(); _PostSmoother(vec1[r],vec2[r]); add(out[r],out[r],vec2[r]); }
+    {
+      GRID_TRACE("L1L2-Vcycle - Smoothers");
+      for(int r=0;r<nrhs;r++){ vec2[r]=Zero(); _PostSmoother(vec1[r],vec2[r]); add(out[r],out[r],vec2[r]); }
+    }
     t+=usecond(); std::cout<<GridLogMessage<<"Mrhs post-smooth took "<<t/1000.0<<"ms  ("<<t/1000.0/nrhs<<"ms/rhs)"<<std::endl;
   }
 };
@@ -419,7 +473,7 @@ int main (int argc, char ** argv)
 
   // Level 2 blocking: SUPERCOARSE default 8,4,3,6 -> CC [3,6,8,8], the dense floor.
   Coordinate cclatt = clatt;
-  Coordinate Block2({8,4,3,6});
+  Coordinate Block2({4,4,3,6});
   if ( getenv("BLOCK2") ){ GridCmdOptionIntVector(std::string(getenv("BLOCK2")),Block2); GRID_ASSERT(Block2.size()==4); }
   for(int d=0;d<4;d++){ GRID_ASSERT(clatt[d]%Block2[d]==0); cclatt[d]=clatt[d]/Block2[d]; }
   std::cout << GridLogMessage << "Block2 " << Block2 << "  coarse-coarse lattice " << cclatt << std::endl;
