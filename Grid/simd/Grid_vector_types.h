@@ -36,8 +36,7 @@ Author: Michael Marshall <michael.marshall@ed.ac.au>
 */
 // Time-stamp: <2015-07-10 17:45:33 neo>
 //---------------------------------------------------------------------------
-#ifndef GRID_VECTOR_TYPES
-#define GRID_VECTOR_TYPES
+#pragma once
 
 // PAB - Lifted and adapted from Eigen, which is GPL V2
 struct Grid_half {
@@ -168,78 +167,6 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
 #endif
 
 NAMESPACE_BEGIN(Grid);
-
-
-//////////////////////////////////////
-// To take the floating point type of real/complex type
-//////////////////////////////////////
-template <typename T>
-struct RealPart {
-  typedef T type;
-};
-template <typename T>
-struct RealPart<complex<T> > {
-  typedef T type;
-};
-
-#include <type_traits>
-
-//////////////////////////////////////
-// demote a vector to real type
-//////////////////////////////////////
-// type alias used to simplify the syntax of std::enable_if
-template <typename T> using Invoke = typename T::type;
-template <typename Condition, typename ReturnType = void> using EnableIf    = Invoke<std::enable_if<Condition::value, ReturnType> >;
-template <typename Condition, typename ReturnType = void> using NotEnableIf = Invoke<std::enable_if<!Condition::value, ReturnType> >;
-
-////////////////////////////////////////////////////////
-// Check for complexity with type traits
-template <typename T> struct is_complex : public std::false_type {};
-template <> struct is_complex<ComplexD> : public std::true_type {};
-template <> struct is_complex<ComplexF> : public std::true_type {};
-
-template <typename T> struct is_ComplexD : public std::false_type {};
-template <> struct is_ComplexD<ComplexD> : public std::true_type {};
-
-template <typename T> struct is_ComplexF : public std::false_type {};
-template <> struct is_ComplexF<ComplexF> : public std::true_type {};
-
-template<typename T, typename V=void> struct is_real : public std::false_type {};
-template<typename T> struct is_real<T, typename std::enable_if<std::is_floating_point<T>::value,
-  void>::type> : public std::true_type {};
-
-template<typename T, typename V=void> struct is_integer : public std::false_type {};
-template<typename T> struct is_integer<T, typename std::enable_if<std::is_integral<T>::value,
-  void>::type> : public std::true_type {};
-
-template <typename T>              using IfReal    = Invoke<std::enable_if<is_real<T>::value, int> >;
-template <typename T>              using IfComplex = Invoke<std::enable_if<is_complex<T>::value, int> >;
-template <typename T>              using IfInteger = Invoke<std::enable_if<is_integer<T>::value, int> >;
-template <typename T1,typename T2> using IfSame    = Invoke<std::enable_if<std::is_same<T1,T2>::value, int> >;
-
-template <typename T>              using IfNotReal    = Invoke<std::enable_if<!is_real<T>::value, int> >;
-template <typename T>              using IfNotComplex = Invoke<std::enable_if<!is_complex<T>::value, int> >;
-template <typename T>              using IfNotInteger = Invoke<std::enable_if<!is_integer<T>::value, int> >;
-template <typename T1,typename T2> using IfNotSame    = Invoke<std::enable_if<!std::is_same<T1,T2>::value, int> >;
-
-////////////////////////////////////////////////////////
-// Define the operation templates functors
-// general forms to allow for vsplat syntax
-// need explicit declaration of types when used since
-// clang cannot automatically determine the output type sometimes
-template <class Out, class Input1, class Input2, class Input3, class Operation>
-Out accelerator_inline  trinary(Input1 src_1, Input2 src_2, Input3 src_3, Operation op) {
-  return op(src_1, src_2, src_3);
-}
-template <class Out, class Input1, class Input2, class Operation>
-Out accelerator_inline binary(Input1 src_1, Input2 src_2, Operation op) {
-  return op(src_1, src_2);
-}
-template <class Out, class Input, class Operation>
-Out accelerator_inline  unary(Input src, Operation op) {
-  return op(src);
-}
-///////////////////////////////////////////////
 
 /*
   @brief Grid_simd class for the SIMD vector type operations
@@ -378,11 +305,18 @@ public:
 
   // FIXME -- alias this to an accelerator_inline MAC struct.
 
-  #if defined(A64FX) || defined(A64FXFIXEDSIZE)
+  #ifdef GRID_ARCH_HAS_COMPLEX_MULT_ADD
+  // Architecture has a fused complex multiply-add (FCMLA and friends).
+  // Defining GRID_ARCH_HAS_COMPLEX_MULT_ADD asserts BOTH MultAddComplexSIMD
+  // and a three argument MultSIMD operator() computing a*b+c.
   friend accelerator_inline void mac(Grid_simd *__restrict__ y,
 				     const Grid_simd *__restrict__ a,
 				     const Grid_simd *__restrict__ x) {
-    *y = fxmac((*a), (*x), (*y));
+    if constexpr ( is_complex<Scalar_type>::value ) {
+      y->v = trinary<Vector_type>(a->v, x->v, y->v, MultAddComplexSIMD());
+    } else {
+      y->v = trinary<Vector_type>(a->v, x->v, y->v, MultSIMD());
+    }
   };
   #else
   friend accelerator_inline void mac(Grid_simd *__restrict__ y,
@@ -670,7 +604,6 @@ typedef Grid_simd<complex<uint16_t>, SIMD_Htype> vComplexH;
 typedef Grid_simd<complex<float>   , SIMD_Ftype> vComplexF;
 typedef Grid_simd<complex<double>  , SIMD_Dtype> vComplexD;
 #endif
-
 /////////////////////////////////////////
 // Pointer type to use on extractLane
 /////////////////////////////////////////
@@ -885,25 +818,7 @@ accelerator_inline Grid_simd<S, V> operator*(Grid_simd<S, V> a, Grid_simd<S, V> 
   return ret;
 };
 
-// ---------------- A64FX MAC -------------------
-// Distinguish between complex types and others
-#if defined(A64FX) || defined(A64FXFIXEDSIZE)
-template <class S, class V, IfComplex<S> = 0>
-accelerator_inline Grid_simd<S, V> fxmac(Grid_simd<S, V> a, Grid_simd<S, V> b, Grid_simd<S, V> c) {
-  Grid_simd<S, V> ret;
-  ret.v = trinary<V>(a.v, b.v, c.v, MultAddComplexSIMD());
-  return ret;
-};
-
-// Real/Integer types
-template <class S, class V, IfNotComplex<S> = 0>
-accelerator_inline Grid_simd<S, V> fxmac(Grid_simd<S, V> a, Grid_simd<S, V> b, Grid_simd<S, V> c) {
-  Grid_simd<S, V> ret;
-  ret.v = trinary<V>(a.v, b.v, c.v, MultSIMD());
-  return ret;
-};
-#endif
-// ----------------------------------------------
+// mac() selects MultAddComplexSIMD directly where the architecture has it.
 
 
 ///////////////////////
@@ -1141,13 +1056,3 @@ template<class vobj> void gpermute(vobj & inout,int perm){
 
 NAMESPACE_END(Grid);
 
-#ifdef GRID_SYCL
-template<> struct sycl::is_device_copyable<Grid::vComplexF> : public std::true_type {};
-template<> struct sycl::is_device_copyable<Grid::vComplexD> : public std::true_type {};
-template<> struct sycl::is_device_copyable<Grid::vRealF   > : public std::true_type {};
-template<> struct sycl::is_device_copyable<Grid::vRealD   > : public std::true_type {};
-template<> struct sycl::is_device_copyable<Grid::vInteger > : public std::true_type {};
-#endif
-
-
-#endif

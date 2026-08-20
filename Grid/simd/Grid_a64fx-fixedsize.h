@@ -760,6 +760,8 @@ typedef Optimization::Div            DivSIMD;
 typedef Optimization::Mult           MultSIMD;
 typedef Optimization::MultComplex    MultComplexSIMD;
 typedef Optimization::MultAddComplex MultAddComplexSIMD;
+// Asserts MultAddComplexSIMD and a three argument MultSIMD operator()
+#define GRID_ARCH_HAS_COMPLEX_MULT_ADD 1
 typedef Optimization::MultRealPart   MultRealPartSIMD;
 typedef Optimization::MaddRealPart   MaddRealPartSIMD;
 typedef Optimization::Conj           ConjSIMD;

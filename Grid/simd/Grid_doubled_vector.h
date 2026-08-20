@@ -339,54 +339,6 @@ typedef Grid_simd2<complex<double>  , vComplexD>  vComplexD2;
 typedef Grid_simd2<double           , vRealD>     vRealD2;
 
 
-
-/////////////////////////////////////////
-// Some traits to recognise the types
-/////////////////////////////////////////
-template <typename T>
-struct is_simd : public std::false_type {};
-template <> struct is_simd<vRealF>     : public std::true_type {};
-template <> struct is_simd<vRealD>     : public std::true_type {};
-template <> struct is_simd<vRealH>     : public std::true_type {};
-template <> struct is_simd<vComplexF>  : public std::true_type {};
-template <> struct is_simd<vComplexD>  : public std::true_type {};
-template <> struct is_simd<vComplexH>  : public std::true_type {};
-template <> struct is_simd<vInteger>   : public std::true_type {};
-template <> struct is_simd<vRealD2>    : public std::true_type {};
-template <> struct is_simd<vComplexD2> : public std::true_type {};
-
-template <typename T> using IfSimd    = Invoke<std::enable_if<is_simd<T>::value, int> >;
-template <typename T> using IfNotSimd = Invoke<std::enable_if<!is_simd<T>::value, unsigned> >;
-
-///////////////////////////////////////////////
-// insert / extract with complex support
-///////////////////////////////////////////////
-template <class S, class V>
-accelerator_inline S getlane(const Grid_simd<S, V> &in,int lane) {
-  return in.getlane(lane);
-}
-template <class S, class V>
-accelerator_inline void putlane(Grid_simd<S, V> &vec,const S &_S, int lane){
-  vec.putlane(_S,lane);
-}
-template <class S,IfNotSimd<S> = 0 >
-accelerator_inline S getlane(const S &in,int lane) {
-  return in;
-}
-template <class S,IfNotSimd<S> = 0 >
-accelerator_inline void putlane(S &vec,const S &_S, int lane){
-  vec = _S;
-}
-template <class S, class V>
-accelerator_inline S getlane(const Grid_simd2<S, V> &in,int lane) {
-  return in.getlane(lane);
-}
-template <class S, class V>
-accelerator_inline void putlane(Grid_simd2<S, V> &vec,const S &_S, int lane){
-  vec.putlane(_S,lane);
-}
-
-
 ////////////////////////////////////////////////////////////////////
 // General rotate
 ////////////////////////////////////////////////////////////////////

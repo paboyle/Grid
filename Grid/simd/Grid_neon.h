@@ -42,6 +42,16 @@
 #define GEN_SIMD_WIDTH 16u
 #endif
 
+//////////////////////////////////////////////////////////////////////////////
+// ARMv8.3 complex assist (FCMLA). Kept separate from the ACLE
+// __ARM_FEATURE_COMPLEX: the instructions are also present on A64FX, where
+// their throughput is 1:4 and this path would be a regression. Revisit the
+// rule once measured per target.
+//////////////////////////////////////////////////////////////////////////////
+#ifdef __ARM_FEATURE_COMPLEX
+#define GRID_ARM_FEATURE_COMPLEX 1
+#endif
+
 #include "Grid_generic_types.h"
 #include <arm_neon.h>
 
@@ -226,6 +236,22 @@ struct Div{
 };
 
 struct MultComplex{
+#ifdef GRID_ARM_FEATURE_COMPLEX
+  // fcmla #0  : r += (ar,ar)*(br,bi) = ( ar*br, ar*bi)
+  // fcmla #90 : r += (-ai,ai)*(bi,br) = (-ai*bi, ai*br)
+  // Complex float: two products, two instructions
+  inline float32x4_t operator()(float32x4_t a, float32x4_t b){
+    float32x4_t r = vdupq_n_f32(0.0f);
+    r = vcmlaq_f32(r, a, b);
+    return vcmlaq_rot90_f32(r, a, b);
+  }
+  // Complex double
+  inline float64x2_t operator()(float64x2_t a, float64x2_t b){
+    float64x2_t r = vdupq_n_f64(0.0);
+    r = vcmlaq_f64(r, a, b);
+    return vcmlaq_rot90_f64(r, a, b);
+  }
+#else
   // Complex float
   inline float32x4_t operator()(float32x4_t a, float32x4_t b){
 
@@ -273,7 +299,22 @@ struct MultComplex{
     // r5 = vmulq_f64(r0, a);
     // return vaddq_f64(r4, r5);
   }
+#endif
 };
+
+#ifdef GRID_ARM_FEATURE_COMPLEX
+struct MultAddComplex{
+  // Complex a*b+c
+  inline float32x4_t operator()(float32x4_t a, float32x4_t b, float32x4_t c){
+    c = vcmlaq_f32(c, a, b);
+    return vcmlaq_rot90_f32(c, a, b);
+  }
+  inline float64x2_t operator()(float64x2_t a, float64x2_t b, float64x2_t c){
+    c = vcmlaq_f64(c, a, b);
+    return vcmlaq_rot90_f64(c, a, b);
+  }
+};
+#endif
 
 struct Mult{
   // Real float
@@ -284,6 +325,13 @@ struct Mult{
   inline float64x2_t mac(float64x2_t a, float64x2_t b, float64x2_t c){
     //return vaddq_f64(vmulq_f64(b,c),a);
     return vfmaq_f64(a, b, c);
+  }
+  // Real a*b+c
+  inline float32x4_t operator()(float32x4_t a, float32x4_t b, float32x4_t c){
+    return vfmaq_f32(c, a, b);
+  }
+  inline float64x2_t operator()(float64x2_t a, float64x2_t b, float64x2_t c){
+    return vfmaq_f64(c, a, b);
   }
   inline float32x4_t operator()(float32x4_t a, float32x4_t b){
     return vmulq_f32(a,b);
@@ -585,6 +633,11 @@ typedef Optimization::Sub         SubSIMD;
 typedef Optimization::Div         DivSIMD;
 typedef Optimization::Mult        MultSIMD;
 typedef Optimization::MultComplex MultComplexSIMD;
+#ifdef GRID_ARM_FEATURE_COMPLEX
+typedef Optimization::MultAddComplex MultAddComplexSIMD;
+// Asserts MultAddComplexSIMD and a three argument MultSIMD operator()
+#define GRID_ARCH_HAS_COMPLEX_MULT_ADD 1
+#endif
 typedef Optimization::MultRealPart MultRealPartSIMD;
 typedef Optimization::MaddRealPart MaddRealPartSIMD;
 typedef Optimization::Conj        ConjSIMD;
