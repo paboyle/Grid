@@ -167,10 +167,6 @@ int main(int argc, char **argv) {
   typedef typename FermionAction::FermionField FermionField;
   typedef typename FermionActionF::FermionField FermionFieldF;
 
-  typedef WilsonImplD2 FermionImplPolicyD2;
-  typedef MobiusFermionD2 FermionActionD2;
-  typedef MobiusEOFAFermionD2 FermionEOFAActionD2;
-  typedef typename FermionActionD2::FermionField FermionFieldD2;
   
   typedef Grid::XmlReader       Serialiser;
 
