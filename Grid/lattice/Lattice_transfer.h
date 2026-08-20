@@ -191,6 +191,15 @@ accelerator_inline void convertType(vComplexD & out, const ComplexD & in) {
 accelerator_inline void convertType(vComplexD2 & out, const ComplexD & in) {
   ((ComplexD*)&out)[acceleratorSIMTlane(vComplexD::Nsimd()*2)] = in;
 }
+// Lex chart: one lane, so there is no lane to select. Needed because the
+// coalesced accessor hands the kernel a scalar object while the destination
+// is still the vector type.
+accelerator_inline void convertType(sComplexF & out, const ComplexF & in) {
+  out.v = in;
+}
+accelerator_inline void convertType(sComplexD & out, const ComplexD & in) {
+  out.v = in;
+}
 #endif
 
 accelerator_inline void convertType(vComplexF & out, const vComplexD2 & in) {
