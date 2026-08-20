@@ -25,11 +25,9 @@ class GridTracer {
  public:
   GridTracer(const char* name) {
     roctxRangePushA(name);
-    std::cout << "roctxRangePush "<<name<<std::endl;
   }
   ~GridTracer() {
     roctxRangePop();
-    std::cout << "roctxRangePop "<<std::endl;
   }
 };
 inline void tracePush(const char *name) { roctxRangePushA(name); }

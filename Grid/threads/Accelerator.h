@@ -251,7 +251,7 @@ inline void acceleratorFreeDevice(void *ptr){ cudaFree(ptr);};
 inline void acceleratorFreeHost(void *ptr){ cudaFree(ptr);};
 inline void acceleratorCopyToDevice(const void *from,void *to,size_t bytes)  { cudaMemcpy(to,from,bytes, cudaMemcpyHostToDevice);}
 inline void acceleratorCopyFromDevice(const void *from,void *to,size_t bytes){ cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToHost);}
-inline void acceleratorMemSet(void *base,int value,size_t bytes) { cudaMemset(base,value,bytes);}
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { cudaMemset(base,value,bytes); cudaDeviceSynchronize(); }
 inline acceleratorEvent_t acceleratorCopyToDeviceAsynch(void *from, void *to, size_t bytes, cudaStream_t stream = copyStream) {
   acceleratorCopyToDevice(from,to,bytes);
   return 0;
@@ -525,10 +525,9 @@ inline void *acceleratorAllocDevice(size_t bytes)
 inline void acceleratorFreeHost(void *ptr){ auto discard=hipFree(ptr);};
 inline void acceleratorFreeShared(void *ptr){ auto discard=hipFree(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ auto discard=hipFree(ptr);};
-inline void acceleratorCopyToDevice(const void *from,void *to,size_t bytes)  { auto discard=hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
-inline void acceleratorCopyFromDevice(const void *from,void *to,size_t bytes){ auto discard=hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
-
-inline void acceleratorMemSet(void *base,int value,size_t bytes) { auto discard=hipMemset(base,value,bytes);}
+inline void acceleratorCopyToDevice(const void *from,void *to,size_t bytes)  { auto discard=hipMemcpy(to,from,bytes, hipMemcpyHostToDevice); }
+inline void acceleratorCopyFromDevice(const void *from,void *to,size_t bytes){ auto discard=hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost); }
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { auto discard=hipMemset(base,value,bytes); discard = hipDeviceSynchronize(); }
 
 typedef int acceleratorEvent_t;
 

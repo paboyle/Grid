@@ -4,7 +4,7 @@ CLIME=`spack find --paths c-lime@2-3-9 | grep c-lime| cut -c 15-`
 --with-lime=$CLIME \
 --enable-unified=no \
 --enable-shm=nvlink \
---enable-tracing=none \
+--enable-tracing=roctx \
 --enable-accelerator=hip \
 --enable-gen-simd-width=64 \
 --disable-gparity \

@@ -19,8 +19,8 @@
  **************************************************************
  */
 #undef ACC_CUDA
-#undef  ACC_HIP
-#define  ACC_SYCL
+#define  ACC_HIP
+#undef  ACC_SYCL
 #undef  ACC_NONE
 
 /**************************************************************

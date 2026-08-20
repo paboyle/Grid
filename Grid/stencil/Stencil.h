@@ -314,6 +314,7 @@ public:
     return accessor;
   }
 
+  int              traceID;
   int face_table_computed;
   //  int partialDirichlet;
   int fullDirichlet;
@@ -537,6 +538,7 @@ public:
       _grid->StencilBarrier(); 
 #endif
     }
+    traceID = traceStart("Stencil::CommunicateBegin");
     
     for(int i=0;i<Packets.size();i++){
       //      std::cout << "Communicate prepare "<<i<<std::endl;
@@ -588,6 +590,8 @@ public:
     //    _grid->Barrier();
     _grid->StencilSendToRecvFromComplete(MpiReqs,0); // MPI is done
     //    if   ( this->partialDirichlet ) DslashLogPartial();
+    traceStop(traceID);
+    
     if ( this->fullDirichlet ) DslashLogDirichlet();
     else DslashLogFull();
     //    acceleratorCopySynchronise();// is in the StencilSendToRecvFromComplete

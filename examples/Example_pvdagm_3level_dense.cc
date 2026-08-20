@@ -948,7 +948,7 @@ void runMG(
   std::cout<<GridLogMessage<<" Three-level outer solve (dense CC bottom)"<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
 
-  PrecGeneralisedConjugateResidualNonHermitian<LatticeFermionD> SmootherGCR(0.01,1,ShiftedPVdagM,simple_fine,16,16);
+  PrecGeneralisedConjugateResidualNonHermitian<LatticeFermionD> SmootherGCR(0.01,1,ShiftedPVdagM,simple_fine,8,8);
   SmootherGCR.SetZeroGuess(1);        // pre+post smoother slots both zero their guess: saves 2 fine mults/outer
   SmootherGCR.Level(1);
   SmootherGCR.Name("Fsmoother");
@@ -1000,7 +1000,15 @@ int main (int argc, char ** argv)
 
   // Level 1 coarse grid: block 2^4 from fine (48×48×48×96 → 24×24×24×48, Ls=1)
   Coordinate clatt = lat_size;
-  for (int d = 0; d < 4; d++) clatt[d] /= 2;
+  //  Coordinate Block1({2,2,2,2});
+  //  Coordinate Block2({8,4,3,6});
+  //  Coordinate Block1({2,2,3,3});
+  //  Coordinate Block2({8,4,2,4});
+  //  Coordinate Block1({4,2,3,3}); // 144s with Fsmoother 12
+  //  Coordinate Block2({4,4,2,4});
+  Coordinate Block1({4,4,3,3}); 
+  Coordinate Block2({4,2,2,4});
+  for (int d = 0; d < 4; d++) clatt[d] /= Block1[d];
   std::cout << GridLogMessage << "Level 1 coarse lattice: " << clatt << std::endl;
 
   GridCartesian *Coarse4d  = SpaceTimeGrid::makeFourDimGrid(clatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
@@ -1015,10 +1023,7 @@ int main (int argc, char ** argv)
   //   blocking; the iterative CC solve was the sole remaining cost -- which the
   //   dense inverse removes.
   Coordinate clatt2 = clatt;
-  clatt2[0] /= 8;
-  clatt2[1] /= 4;
-  clatt2[2] /= 3;
-  clatt2[3] /= 6;
+  for (int d = 0; d < 4; d++) clatt2[d] /= Block2[d];
   std::cout << GridLogMessage << "Level 2 supercoarse lattice: " << clatt2 << std::endl;
 
   GridCartesian *CoarseCoarse4d = SpaceTimeGrid::makeFourDimGrid(clatt2, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
@@ -1048,7 +1053,7 @@ int main (int argc, char ** argv)
   typedef MGPreconditioner<vSpinColourVector,vTComplex,nbasis>        TwoLevelMG;
 
   PVdagM_t        PVdagM(Ddwf,Dpv);
-  ShiftedPVdagM_t ShiftedPVdagM(0.01,Ddwf,Dpv);
+  ShiftedPVdagM_t ShiftedPVdagM(0.2,Ddwf,Dpv);
 
   NextToNearestStencilGeometry5D geom(Coarse5d);
 

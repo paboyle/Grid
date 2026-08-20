@@ -1,4 +1,4 @@
-mpicxx  -fsycl halo_mpi.cc -o halo_mpi
+mpicxx -O2 -x hip halo_mpi.cc -o halo_mpi -L${PE_MPICH_GTL_DIR_amd_gfx90a} -lmpi_gtl_hsa
 mpicxx -O2 -std=c++11 io_mpi.cc -o io_mpi
 # Frontier: (hipcc via mpicxx wrapper; ACC_HIP is the default in-file)
-mpicxx -O2 -x hip gather_mpi.cc -o gather_mpi -L${ROCM_PATH}/lib -lamdhip64
+mpicxx -O2 -x hip gather_mpi.cc -o gather_mpi -L${ROCM_PATH}/lib -lamdhip64 -L${PE_MPICH_GTL_DIR_amd_gfx90a} -lmpi_gtl_hsa
