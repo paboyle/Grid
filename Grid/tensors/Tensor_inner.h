@@ -227,8 +227,9 @@ accelerator_inline RealD    innerProductD2(const RealF    &l,const RealF    &r){
 accelerator_inline vComplexD innerProductD2(const vComplexD &l,const vComplexD &r){  return innerProduct(l,r); }
 accelerator_inline vRealD    innerProductD2(const vRealD    &l,const vRealD    &r){  return innerProduct(l,r); }
 
-// Lex chart. One lane, so the promotion is not a doubling and there is no
-// sComplexD2 counterpart to vComplexD2.
+// Lex chart. D2 means double precision carried at the F type's Nsimd, so that
+// both fit the same Grid; sComplexF and sComplexD are both Nsimd 1, so
+// sComplexD2 would be sComplexD and no separate type is needed.
 accelerator_inline sComplexD innerProductD2(const sComplexD &l,const sComplexD &r){  return innerProduct(l,r); }
 accelerator_inline sRealD    innerProductD2(const sRealD    &l,const sRealD    &r){  return innerProduct(l,r); }
 
