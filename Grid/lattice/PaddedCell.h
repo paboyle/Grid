@@ -435,6 +435,11 @@ public:
     RealD t_scatter=0.0;
     RealD t_comms=0.0;
     RealD t_copy=0.0;
+
+    // Packet lifetime: posted to waited. The two directions overlap rather
+    // than nest -- bwd is still in flight across the fwd scatter -- so these
+    // use the id API and not a scoped range.
+    int fwd_trace, bwd_trace;
     
     //    std::cout << GridLogMessage << "dimension " <<dimension<<std::endl;
     //    DumpSliceNorm(std::string("Face_exchange from"),from,dimension);
@@ -501,6 +506,8 @@ public:
       t_gather+=usecond()-t;
 
       t=usecond();
+
+      if(d==0) fwd_trace = traceStart("PaddedCellFwdMPI");
 #ifdef ACCELERATOR_AWARE_MPI
       grid->SendToRecvFromBegin(fwd_req,
 				(void *)&send_buf[d*buffer_size], xmit_to_rank,
@@ -521,6 +528,7 @@ public:
       t_gather+= usecond() - t;
 
       t=usecond();
+      if (d==0) bwd_trace = traceStart("PaddedCellBwdMPI");
 #ifdef ACCELERATOR_AWARE_MPI
       grid->SendToRecvFromBegin(bwd_req,
 				(void *)&send_buf[(d+depth)*buffer_size], recv_from_rank,
@@ -553,6 +561,7 @@ public:
 
     t=usecond();
     grid->CommsComplete(fwd_req);
+    traceStop(fwd_trace);
 #ifndef ACCELERATOR_AWARE_MPI
     for ( int d=0;d < depth ; d ++ ) {
       acceleratorCopyToDevice(&hrecv_buf[d*buffer_size],&recv_buf[d*buffer_size],bytes);
@@ -568,6 +577,7 @@ public:
 
     t=usecond();
     grid->CommsComplete(bwd_req);
+    traceStop(bwd_trace);
 #ifndef ACCELERATOR_AWARE_MPI
     for ( int d=0;d < depth ; d ++ ) {
       acceleratorCopyToDevice(&hrecv_buf[(d+depth)*buffer_size],&recv_buf[(d+depth)*buffer_size],bytes);
