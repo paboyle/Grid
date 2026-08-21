@@ -107,7 +107,9 @@ public:
   // Phase timers/counters, reported by ReportTelemetry
   double                tMemset;       // device panel zero-fill
   double                tDeposit;      // owner rows -> panel (device kernel)
-  double                tAllreduce;    // GlobalSumVector on device panels
+  double                tAllreduce;    // panel collective (see tBarrier)
+  double                tBarrier;      // arrival skew, when DENSE_BARRIER_PROBE
+  double                tRepack;       // rank-major -> panel (gather path)
   double                tGemm;         // strided gemm + synchronise
   double                tLeaf;         // leaf inversions
   double                tARmin;        // fastest single panel collective
@@ -119,6 +121,28 @@ public:
   // Persistent grow-only device panel; assembly and collectives are
   // device-resident.  Device builds require GPU-aware MPI.
   deviceVector<ComplexD> dPanelBuf;
+  // Rank-major receive staging for the AllGatherV path, plus the per-panel-row
+  // owner maps that drive the repack.  Grow-only, same discipline as dPanelBuf:
+  // a fresh device allocation per collective is catastrophic (measured).
+  deviceVector<ComplexD> dRecvBuf;
+  deviceVector<int64_t>  dOwnerOff;    // panel row -> owner's first panel row
+  deviceVector<int64_t>  dOwnerRows;   // panel row -> owner's row count
+
+  // DENSE_GATHER            : 1 => AllGatherV in place of zero-fill+GlobalSum
+  // DENSE_GATHER_MIN_BYTES  : panels below this stay on the allreduce path.
+  //                           Default 0 (always gather).  The Schur tree puts
+  //                           94% of its bytes in panels with ~3.7 MB per-rank
+  //                           messages, i.e. squarely bandwidth bound; only the
+  //                           two deepest levels (1.2% of bytes, 16-65 KB per
+  //                           rank) are latency bound.  This exists so that
+  //                           tail can be excluded with an env var rather than
+  //                           a rebuild, if it ever proves to matter.
+  // DENSE_BARRIER_PROBE     : 1 => Barrier() before each collective, so that
+  //                           arrival skew lands in tBarrier and tAllreduce
+  //                           measures transfer alone.
+  int                    useGather;
+  int64_t                gatherMinBytes;
+  int                    barrierProbe;
 
   ///////////////////////////////////////////////////////////////////////////
   // Ownership-table validation: a proper partition of [0,N).
@@ -179,6 +203,11 @@ public:
     myNrows = rowStart[me+1] - rowStart[me];
 
     telLeafMaxInv = 0.0;
+
+    useGather      = getenv("DENSE_GATHER") ? atoi(getenv("DENSE_GATHER")) : 0;
+    gatherMinBytes = getenv("DENSE_GATHER_MIN_BYTES")
+                   ? atol(getenv("DENSE_GATHER_MIN_BYTES")) : 0;
+    barrierProbe   = getenv("DENSE_BARRIER_PROBE") ? 1 : 0;
   }
 
   ///////////////////////////////////////////////////////////////////////////
@@ -236,75 +265,145 @@ public:
       GRID_ASSERT( colB + widthB <= B.cols );
     }
 
-    int64_t kc = panelBytes / ( (int64_t)sizeof(ComplexD) * n );
-    if ( kc < 1 ) kc = 1;
-    if ( kc > k ) kc = k;
-    GRID_ASSERT( kc*n < 2147483647L );   // GlobalSumVector count is int
+    // COLUMN chunking, not row chunking.  Each rank's contribution to a
+    // column chunk is rows_r x nchunk at ld = B.rows -- i.e. exactly the
+    // contiguous window B.ColumnWindow(colB+j0) -- so the AllGatherV send
+    // needs no pack.  Row chunking would slice each column and force one.
+    // It also makes every chunk a full-k product, so beta applies directly
+    // and the cross-chunk accumulation disappears.
+    int64_t bufs = useGather ? 2 : 1;         // panel, plus receive staging
+    int64_t nc = panelBytes / ( bufs * (int64_t)sizeof(ComplexD) * k );
+    if ( nc < 1 ) nc = 1;
+    if ( nc > n ) nc = n;
+    GRID_ASSERT( k*nc < 2147483647L );        // collective counts are int
 
     deviceVector<ComplexD> &dPanel = dPanelBuf;
-    if ( dPanel.size() < (uint64_t)kc*n ) dPanel.resize((uint64_t)kc*n);
+    if ( dPanel.size() < (uint64_t)k*nc ) dPanel.resize((uint64_t)k*nc);
     deviceVector<ComplexD*> ap(1);
     deviceVector<ComplexD*> bp(1);
     deviceVector<ComplexD*> cp(1);
     std::vector<ComplexD*>  ptr(1);
 
-    for(int64_t k0=0; k0<k; k0+=kc)
+    // Panel-row -> owner maps for the repack.  Depend only on [rB0,rB1),
+    // so they are built once per call rather than once per chunk.
+    if ( useGather )
     {
-      int64_t kchunk = std::min(kc, k-k0);
-
-      // Zeroing must complete before MPI reads the panel; it is the sole
-      // producer on non-owner ranks.
-      tMemset -= usecond();
-      acceleratorMemSet(&dPanel[0], 0, (uint64_t)kchunk*n*sizeof(ComplexD));
-      tMemset += usecond();
-      if ( owner )
+      if ( dRecvBuf.size()   < (uint64_t)k*nc ) dRecvBuf.resize((uint64_t)k*nc);
+      if ( dOwnerOff.size()  < (uint64_t)k )    dOwnerOff.resize((uint64_t)k);
+      if ( dOwnerRows.size() < (uint64_t)k )    dOwnerRows.resize((uint64_t)k);
+      std::vector<int64_t> hoff(k), hrows(k);
+      for(int r=rB0; r<rB1; r++)
       {
-        int64_t i0 = std::max(k0,        myOff);
-        int64_t i1 = std::min(k0+kchunk, myOff+B.rows);
-        if ( i1 > i0 )
+        int64_t off_r  = rowStart[r]   - rowStart[rB0];
+        int64_t rows_r = rowStart[r+1] - rowStart[r];
+        for(int64_t i=0;i<rows_r;i++){ hoff[off_r+i]=off_r; hrows[off_r+i]=rows_r; }
+      }
+      acceleratorCopyToDevice(&hoff[0], &dOwnerOff[0], (uint64_t)k*sizeof(int64_t));
+      acceleratorCopyToDevice(&hrows[0],&dOwnerRows[0],(uint64_t)k*sizeof(int64_t));
+      if ( owner ) GRID_ASSERT( B.rows == rowStart[me+1]-rowStart[me] );
+    }
+
+    for(int64_t j0=0; j0<n; j0+=nc)
+    {
+      int64_t nchunk = std::min(nc, n-j0);
+      uint64_t panelWords = (uint64_t)k*nchunk;
+      uint64_t panelBytesThis = panelWords*sizeof(ComplexD);
+
+      int gatherThis = useGather && ( (int64_t)panelBytesThis >= gatherMinBytes );
+
+      // Arrival skew is charged to the barrier, so that tAllreduce measures
+      // transfer alone.  Diagnostic only; off by default.
+      if ( barrierProbe ) { double tb = -usecond(); grid->Barrier(); tBarrier += tb+usecond(); }
+
+      double tar = -usecond();
+      if ( gatherThis )
+      {
+        //////////////////////////////////////////////////////////////////
+        // AllGatherV: move the payload once, no arithmetic, no zero fill.
+        // Receive is rank major -- a concatenation of rows_r x nchunk
+        // column-major blocks -- which is the correct ROW order but the
+        // wrong LAYOUT, so one device repack follows.
+        //////////////////////////////////////////////////////////////////
+        std::vector<int> counts(P,0), displs(P,0);
+        for(int r=rB0; r<rB1; r++)
         {
-          // Deposit my rows: strided block copy, len rows x n columns
-          int64_t   len   = i1-i0;
+          counts[r] = (int)((rowStart[r+1]-rowStart[r])*nchunk);
+          displs[r] = (int)((rowStart[r]  -rowStart[rB0])*nchunk);
+        }
+        void *send = owner ? (void *)B.ColumnWindow(colB+j0) : (void *)&dRecvBuf[0];
+        grid->AllGatherV(send, counts[me],
+                         (void *)&dRecvBuf[0], counts, displs, sizeof(ComplexD));
+        tar += usecond();
+
+        tRepack -= usecond();
+        {
+          ComplexD *pan = &dPanel[0];
+          ComplexD *rcv = &dRecvBuf[0];
+          int64_t  *ooff  = &dOwnerOff[0];
+          int64_t  *orows = &dOwnerRows[0];
+          int64_t   kk = k, ncw = nchunk;
+          accelerator_for(idx, panelWords, 1, {
+            int64_t j = idx / kk;
+            int64_t p = idx - j*kk;
+            int64_t o = ooff[p];
+            int64_t rr= orows[p];
+            pan[idx] = rcv[(uint64_t)(o*ncw + (p-o) + j*rr)];
+          });
+        }
+        tRepack += usecond();
+      }
+      else
+      {
+        //////////////////////////////////////////////////////////////////
+        // Zero fill + deposit + GlobalSumVector.  Exact because the zero
+        // fill leaves exactly one contributing rank per element, but it
+        // moves the payload twice and reduces over zeros.
+        //////////////////////////////////////////////////////////////////
+        tar += usecond();
+        tMemset -= usecond();
+        acceleratorMemSet(&dPanel[0], 0, panelBytesThis);
+        tMemset += usecond();
+        if ( owner )
+        {
           int64_t   brows = B.rows;
-          int64_t   dof   = i0-k0;
-          int64_t   sof   = i0-myOff;
-          ComplexD *src   = B.ColumnWindow(colB);
+          int64_t   kk    = k;
+          int64_t   dof   = myOff;
+          ComplexD *src   = B.ColumnWindow(colB+j0);
           ComplexD *dst   = &dPanel[0];
           tDeposit -= usecond();
-          accelerator_for(idx, (uint64_t)(len*n), 1, {
-            int64_t j = idx / len;
-            int64_t i = idx % len;
-            dst[(uint64_t)(dof + i + j*kchunk)] = src[(uint64_t)(sof + i + j*brows)];
+          accelerator_for(idx, (uint64_t)(brows*nchunk), 1, {
+            int64_t j = idx / brows;
+            int64_t i = idx - j*brows;
+            dst[(uint64_t)(dof + i + j*kk)] = src[(uint64_t)(i + j*brows)];
           });
           tDeposit += usecond();
         }
+        tar = -usecond();
+        grid->GlobalSumVector(&dPanel[0], (int)panelWords);
+        tar += usecond();
       }
-      double tar = -usecond();
-      grid->GlobalSumVector(&dPanel[0], (int)(kchunk*n));
-      tar += usecond();
       tAllreduce += tar;
       tARmin = std::min(tARmin, tar);
       tARmax = std::max(tARmax, tar);
-      bytesAllreduce += (uint64_t)kchunk*n*sizeof(ComplexD);
+      bytesAllreduce += panelBytesThis;
       nAllreduce++;
 
       if ( m > 0 )
       {
-        ComplexD beta_use = ( k0==0 ) ? beta : ComplexD(1.0,0.0);
-
-        ptr[0] = A.ColumnWindow(colA + k0);
+        // Full-k product into this column chunk of C: beta applies directly.
+        ptr[0] = A.ColumnWindow(colA);
         acceleratorCopyToDevice(&ptr[0], &ap[0], sizeof(ComplexD*));
         ptr[0] = &dPanel[0];
         acceleratorCopyToDevice(&ptr[0], &bp[0], sizeof(ComplexD*));
-        ptr[0] = C.ColumnWindow(colC);
+        ptr[0] = C.ColumnWindow(colC+j0);
         acceleratorCopyToDevice(&ptr[0], &cp[0], sizeof(ComplexD*));
 
         tGemm -= usecond();
         BLAS.gemmBatched(GridBLAS_OP_N, GridBLAS_OP_N,
-                         (int)m, (int)n, (int)kchunk,
+                         (int)m, (int)nchunk, (int)k,
                          alpha,    ap, (int)A.ld,
-                                   bp, (int)kchunk,
-                         beta_use, cp, (int)C.ld);
+                                   bp, (int)k,
+                         beta,     cp, (int)C.ld);
         BLAS.synchronise();
         tGemm += usecond();
       }
@@ -552,6 +651,8 @@ public:
     tMemset        = 0.0;
     tDeposit       = 0.0;
     tAllreduce     = 0.0;
+    tBarrier       = 0.0;
+    tRepack        = 0.0;
     tGemm          = 0.0;
     tLeaf          = 0.0;
     tARmin         = 1.0e30;
@@ -596,10 +697,14 @@ public:
               << "  memset "    << tMemset/1.0e6
               << "  deposit "   << tDeposit/1.0e6
               << "  allreduce " << tAllreduce/1.0e6
+              << "  barrier "   << tBarrier/1.0e6
+              << "  repack "    << tRepack/1.0e6
               << "  gemm "      << tGemm/1.0e6
               << "  leaf "      << tLeaf/1.0e6
               << std::endl;
     std::cout << GridLogMessage << "Schur comms:"
+              << ( useGather ? "  [AllGatherV]" : "  [zero-fill+GlobalSum]" )
+              << ( barrierProbe ? " [barrier probe on]" : "" )
               << "  GatherGemm calls " << nGatherGemm
               << "  panel allreduces " << nAllreduce
               << "  allreduce GB "     << bytesAllreduce/1024./1024./1024.
@@ -610,6 +715,8 @@ public:
               << "  min " << (nAllreduce ? tARmin/1.0e3 : 0.0) << " ms"
               << "  avg " << (nAllreduce ? tAllreduce/nAllreduce/1.0e3 : 0.0) << " ms"
               << "  max " << tARmax/1.0e3 << " ms"
+              << "   effective " << (tAllreduce>0 ? bytesAllreduce/tAllreduce*1.0e6/1.0e9 : 0.0)
+              << " GB/s"
               << std::endl;
   }
 };

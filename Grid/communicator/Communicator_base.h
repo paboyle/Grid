@@ -248,6 +248,23 @@ public:
   void AllToAllV(void *in ,const std::vector<int> &sendcounts,const std::vector<int> &senddispls,
                  void *out,const std::vector<int> &recvcounts,const std::vector<int> &recvdispls,
                  uint64_t bytes);
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Gather to all. Every rank contributes sendcount words from "in"; every
+  // rank receives the concatenation of all contributions in rank order.
+  // Counts and displacements are in units of "bytes" sized words and are
+  // indexed by rank within this communicator; recvcounts[ThisRank()] must
+  // equal sendcount.  AllGather below is the uniform count special case.
+  //
+  // This is the primitive form of the zero-fill + GlobalSumVector idiom used
+  // wherever each element of the result has exactly one contributing rank.
+  // That idiom moves the payload twice and reduces over zeros; this moves it
+  // once and performs no arithmetic.
+  ////////////////////////////////////////////////////////////////////////////
+  void AllGatherV(void *in ,int sendcount,
+                  void *out,const std::vector<int> &recvcounts,const std::vector<int> &recvdispls,
+                  uint64_t bytes);
+  void AllGather (void *in ,void *out,uint64_t words,uint64_t bytes);
   
   template<class obj> void Broadcast(int root,obj &data)
   {

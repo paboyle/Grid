@@ -153,6 +153,94 @@ MPI latency: 1188 μs = 37% of 3.2 ms per call. Irreducible for single-RHS.
 Multi-RHS is the fundamental solution for throughput, but cannot be used in HMC
 (each trajectory has a new gauge field → new coarse operator).
 
+## Fine operator performance model (measured 2026-08-20, Frontier, 288 ranks)
+
+48³×96, Ls=24, mpi 3.6.4.4 (36 nodes), `--accelerator-threads 8 --shm-mpi 1 --comms-overlap`.
+
+### Measured decomposition of one Möbius `M` (roctx trace, MG smoother)
+
+| | ms |
+|---|---|
+| `DhopInternalOverlappedComms` (wall) | 5.549 |
+| ... of which self | 4.746 |
+| `hipStreamSynchronize` x7 | 2.158 |
+| whole `L1L2-Vcycle - Smoothers` step = one `M` | 7.128 |
+
+Per `M`: one `Meooe`/DW (~4.7 ms, comms dominated), two `M5D` (~0.5 ms each),
+axpy (~0.4 ms). Dslash arithmetic is only 1.4 (interior) + 0.4 (exterior) ms.
+**~63% of the sequence has MPI in flight; comms and compute are essentially
+serialised despite `--comms-overlap`.**
+
+`PVdagM.Op` = `M` + `Mdag` = 2x7.128 = 14.3 ms. `CoarsenOperator` `tmat`
+measured 30.695 s / 1980 Ops = 15.5 ms/Op, i.e. **within 9% of the fine
+operator's own in-production cost** -- the coarsening is not the problem.
+
+### Benchmark_dwf, fp64 (mflop/s per node, avg of 4 runs)
+
+| accelerator-threads | comms fp64 | comms fp32 (`SloppyComms`) |
+|---|---|---|
+| 16 | 1,769,808 | 2,842,248 |
+| **8** | **1,803,904** | **2,862,619** |
+| 4 | 1,802,937 | 2,731,611 |
+
+- **Comms precision is the dominant knob: +59%.** `--shm-mpi 1` a further 2-4%.
+- Thread count is second-order (2-5% spread). A wavefront-fill model
+  (`block = Nsimd x nt`, fp64 halves Nsimd, so nt=16 refills 64) predicts 16 and
+  is WRONG -- the Dslash is bandwidth bound, not occupancy bound. The flatness is
+  itself the disproof. 8 remains best, as tuned under fp32.
+- **Trap:** `Benchmark_dwf` defaults to `Ls=16` and takes `-Ls` (single dash).
+  Check the reported mflop/s against `1320*V5*ncall/t` before comparing to Ls=24
+  work, or you will infer a 2x deficit that is not there.
+
+### Optimisation model (per `M`, from 7.1 ms)
+
+Overlappable work = DslashInterior + DslashExterior + addQmu(noop) + axpby + M5D
++ gather = 1.4+0.4+0+0.4+0.5+0.4 ~ **3.1 ms**, against **4.7 ms** irreducible comms.
+
+| | ms | speedup |
+|---|---|---|
+| now | 7.5 | - |
+| overlap only | max(3.1,4.7) = 4.7 | 1.6x |
+| overlap + sloppy comms | 3.1 (compute bound) | 2.3x |
+
+**The two are independent.** Overlap is 1.6x at *zero* precision cost -- do it
+unconditionally. Sloppy is the further 1.4x and is the only piece carrying a
+judgement.
+
+### Where sloppy comms may be applied
+
+- **Whole V-cycle (fine smoother + coarse solves): safe.** Only the outer PGCR
+  operator application must be exact; the outer Krylov corrects the rest every
+  iteration.
+- **`CoarsenOperator`: different risk category.** Error goes into `A_c`
+  permanently and propagates to its inverse; it is not corrected by the outer
+  solver.
+  **The dense bottom's certificate does NOT detect this.** The import
+  certificate compares `Dense x` against `Op.M x`; if `A_c` was built sloppily
+  both sides carry the same error and it still reads ~1e-8. VERIFY is likewise
+  the exact inverse of whatever matrix it was handed. Both certify the import
+  and inversion, not the accuracy of `A_c`.
+  The instruments that DO see it: coarsen twice and compare `BLAS_A` element by
+  element against an exact run (the comparison `Test_coarse_v2_coarsen` already
+  performs between V1 and V2), or the outer iteration count and time to
+  solution.
+- **Does not reach the coarse levels.** `SloppyComms` sets a flag on
+  `Stencil`/`StencilEven`/`StencilOdd`; V2's `M` uses `PaddedCell::Face_exchange`,
+  which sends raw `vobj` bytes with no precision option. Coarse levels are less
+  bandwidth sensitive, so this matters less than it sounds.
+- **Object sharing caveat:** the flag is per fermion operator. A single
+  `MobiusFermionD` shared between `PVdagM` and `ShiftedPVdagM` cannot be sloppy
+  for one and exact for the other -- the preconditioner needs its own pair on the
+  same gauge field.
+
+### Pipelined mrhs (idea iii)
+
+Ripple independent vectors so `Dwbegin(n)` overlaps `Dwcomplete(n-1)`; needs
+double-buffered comms (two DWF operators alternating, or the stencil
+`preserve_shm` flag) and a larger SHM segment. **`CoarsenOperator` is the natural
+first customer**: its 1980 applications are already fully independent and the
+single-RHS driver is already the loop shape, so no algorithmic change is needed.
+
 ## Three-level perspective
 
 The chi deflation of the coarse solve can be viewed as a third level: coarsening all
