@@ -315,6 +315,10 @@ public:
   }
 
   int              traceID;
+  double           OffNodeBytes;
+  double           CommTimer;
+  double           InterNodeBandwidthMBps;
+  
   int face_table_computed;
   //  int partialDirichlet;
   int fullDirichlet;
@@ -539,11 +543,12 @@ public:
 #endif
     }
     traceID = traceStart("Stencil::CommunicateBegin");
-    
+    OffNodeBytes=0;
+    CommTimer=-usecond();
     for(int i=0;i<Packets.size();i++){
       //      std::cout << "Communicate prepare "<<i<<std::endl;
       //      _grid->Barrier();
-      _grid->StencilSendToRecvFromPrepare(MpiReqs,
+      OffNodeBytes+=_grid->StencilSendToRecvFromPrepare(MpiReqs,
 					  Packets[i].compressed_send_buf,
 					  Packets[i].to_rank,Packets[i].do_send,
 					  Packets[i].compressed_recv_buf,
@@ -560,7 +565,7 @@ public:
     for(int i=0;i<Packets.size();i++){
       //      std::cout << "Communicate Begin "<<i<<std::endl;
       //      _grid->Barrier();
-      _grid->StencilSendToRecvFromBegin(MpiReqs,
+      OffNodeBytes+=_grid->StencilSendToRecvFromBegin(MpiReqs,
 					Packets[i].send_buf,Packets[i].compressed_send_buf,
 					Packets[i].to_rank,Packets[i].do_send,
 					Packets[i].recv_buf,Packets[i].compressed_recv_buf,
@@ -591,6 +596,8 @@ public:
     _grid->StencilSendToRecvFromComplete(MpiReqs,0); // MPI is done
     //    if   ( this->partialDirichlet ) DslashLogPartial();
     traceStop(traceID);
+    CommTimer+=usecond();
+    InterNodeBandwidthMBps = OffNodeBytes/CommTimer;
     
     if ( this->fullDirichlet ) DslashLogDirichlet();
     else DslashLogFull();

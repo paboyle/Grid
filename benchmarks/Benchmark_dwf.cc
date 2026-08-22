@@ -276,12 +276,14 @@ void Benchmark(int Ls, Coordinate Dirichlet,bool sloppy)
     Dw.Dhop(src,result,0);
     std::cout<<GridLogMessage<<"Called warmup"<<std::endl;
     double t0=usecond();
+    double aveBW = 0;
     for(int i=0;i<ncall;i++){
       Dw.Dhop(src,result,0);
+      aveBW +=Dw.Stencil.InterNodeBandwidthMBps/ncall;
     }
     double t1=usecond();
     FGrid->Barrier();
-
+    
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=single_site_flops*volume*ncall;
 
@@ -298,6 +300,7 @@ void Benchmark(int Ls, Coordinate Dirichlet,bool sloppy)
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NN<<std::endl;
+    std::cout<<GridLogMessage << "average bandwidth =  "<< aveBW <<std::endl;
     err = ref-result;
     n2e = norm2(err);
     std::cout<<GridLogMessage << "norm diff   "<< n2e<< "  Line "<<__LINE__ <<std::endl;
