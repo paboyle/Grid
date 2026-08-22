@@ -30,6 +30,8 @@ Author: Peter Boyle <pboyle@bnl.gov>
 #include <Grid/algorithms/blas/BatchedBlas.h>
 #include <Grid/algorithms/blas/BatchedInverse.h>
 
+#include <algorithm>
+
 NAMESPACE_BEGIN(Grid);
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -114,6 +116,7 @@ public:
   double                tLeaf;         // leaf inversions
   double                tARmin;        // fastest single panel collective
   double                tARmax;        // slowest single panel collective
+  std::vector<double>   tARall;        // every panel collective, for percentiles
   uint64_t              bytesAllreduce;
   uint64_t              nAllreduce;    // panel collectives
   uint64_t              nGatherGemm;   // GatherGemm calls
@@ -137,12 +140,24 @@ public:
   //                           rank) are latency bound.  This exists so that
   //                           tail can be excluded with an env var rather than
   //                           a rebuild, if it ever proves to matter.
-  // DENSE_BARRIER_PROBE     : 1 => Barrier() before each collective, so that
-  //                           arrival skew lands in tBarrier and tAllreduce
-  //                           measures transfer alone.
+  // DENSE_BARRIER_PROBE     : Barrier() before each panel collective.
+  //   DEFAULTS ON, and it is an optimisation rather than instrumentation.
+  //   Measured at 288 ranks, N=138240: comms 380.3 s -> 314.7 s and the whole
+  //   invert 394.3 s -> 327.7 s, with the worst single collective falling
+  //   2474.9 ms -> 256.2 ms and effective rate 2.40 -> 4.27 GB/s.  Convoy
+  //   accounting alone predicts NO saving (barrier and collective both
+  //   complete at max-over-ranks), so the mechanism is that the collective
+  //   itself degrades under skewed arrival, not that skew is rebooked.
+  //   Set DENSE_BARRIER_PROBE=0 to recover the old behaviour.  It also
+  //   separates arrival skew (tBarrier) from transfer (tAllreduce).
   int                    useGather;
   int64_t                gatherMinBytes;
   int                    barrierProbe;
+  // DENSE_GATHER_DEBUG=N : dump the descriptor of the first N AllGatherV
+  // calls from rank 0.  The tiling invariant below is checked ALWAYS -- it
+  // costs one O(P) host loop against a collective, and a counts array that
+  // does not tile the panel is exactly the failure we are hunting.
+  int                    gatherDebug;
 
   ///////////////////////////////////////////////////////////////////////////
   // Ownership-table validation: a proper partition of [0,N).
@@ -207,7 +222,42 @@ public:
     useGather      = getenv("DENSE_GATHER") ? atoi(getenv("DENSE_GATHER")) : 0;
     gatherMinBytes = getenv("DENSE_GATHER_MIN_BYTES")
                    ? atol(getenv("DENSE_GATHER_MIN_BYTES")) : 0;
-    barrierProbe   = getenv("DENSE_BARRIER_PROBE") ? 1 : 0;
+    barrierProbe   = getenv("DENSE_BARRIER_PROBE") ? atoi(getenv("DENSE_BARRIER_PROBE")) : 1;
+    gatherDebug    = getenv("DENSE_GATHER_DEBUG") ? atoi(getenv("DENSE_GATHER_DEBUG")) : 0;
+
+    ///////////////////////////////////////////////////////////////////////
+    // DENSE_GATHER=1 is KNOWN BROKEN on Cray MPICH and refuses to start.
+    //
+    // The gather asks MPI_Allgatherv to assemble a panel to which only the
+    // rank sub-range [rB0,rB1) contributes; every other rank passes count 0.
+    // At Schur depth d that is P/2^(d+1) contributors out of P, i.e. 9 of 288
+    // at depth 4 and ~1 of 288 at depth 7.  Measured consequences at 288
+    // ranks (tests/debug/Test_allgather):
+    //   T5  288/288 contributing, 18.4 MB on device : sub-second.
+    //   T6  144/288 contributing,  9.2 MB on device : ~53 s.
+    // and in production, 9/288 contributing at 299 MB hangs and then aborts
+    // inside PMPI_Allgatherv ("req != NULL", mpir_request.h:508).
+    //
+    // The primitive itself is sound -- Test_allgather T1-T6 pass, and T3/T4
+    // verify it BITWISE against the zero-fill+GlobalSum idiom.  What fails is
+    // MPI's handling of a collective in which almost every rank contributes
+    // nothing.  Fixing it needs either P2P (a bisection allgather over
+    // [r0,r1)) or the 2D block-cyclic layout, which removes the shape
+    // altogether by giving every rank part of every sub-block.
+    //
+    // Fail here, in the first second, rather than 100 s and 36 nodes into a
+    // job.  DENSE_GATHER_FORCE=1 proceeds anyway for debugging.
+    ///////////////////////////////////////////////////////////////////////
+    if ( useGather && !getenv("DENSE_GATHER_FORCE") )
+    {
+      std::cout << GridLogError
+                << "DENSE_GATHER=1 is disabled: MPI_Allgatherv on this MPI is"
+                << " pathological when most ranks contribute count 0 (see the"
+                << " note at RecursiveSchurInverse.h, and Test_allgather T5 vs"
+                << " T6).  Unset DENSE_GATHER, or set DENSE_GATHER_FORCE=1 to"
+                << " proceed anyway." << std::endl;
+      GRID_ASSERT(0 && "DENSE_GATHER=1 known broken: see comment above");
+    }
   }
 
   ///////////////////////////////////////////////////////////////////////////
@@ -330,6 +380,27 @@ public:
           counts[r] = (int)((rowStart[r+1]-rowStart[r])*nchunk);
           displs[r] = (int)((rowStart[r]  -rowStart[rB0])*nchunk);
         }
+        //////////////////////////////////////////////////////////////////
+        // The counts MUST tile the panel exactly: every one of the
+        // k*nchunk words has exactly one owner, or MPI is handed an
+        // inconsistent descriptor.  Always checked; O(P) against a
+        // collective is free.
+        //////////////////////////////////////////////////////////////////
+        int64_t csum = 0; int nz = 0;
+        for(int r=0;r<P;r++){ csum += counts[r]; if ( counts[r] ) nz++; }
+        GRID_ASSERT( csum == (int64_t)panelWords );
+        GRID_ASSERT( displs[rB1-1] + counts[rB1-1] == (int)panelWords );
+        if ( gatherDebug && ((int)nAllreduce < gatherDebug) && (me==0) ) {
+          std::cout << GridLogMessage << "GATHER["<<nAllreduce<<"]"
+                    << "  ranks ["<<rB0<<","<<rB1<<")"
+                    << "  k "<<k<<"  n "<<n<<"  nchunk "<<nchunk
+                    << "  panelWords "<<panelWords
+                    << " ("<<panelBytesThis/1024/1024<<" MB)"
+                    << "  contributors "<<nz<<"/"<<P
+                    << "  maxcount "<<*std::max_element(counts.begin(),counts.end())
+                    << "  rank0: count "<<counts[me]<<(owner?" owner":" non-owner")
+                    << std::endl;
+        }
         void *send = owner ? (void *)B.ColumnWindow(colB+j0) : (void *)&dRecvBuf[0];
         grid->AllGatherV(send, counts[me],
                          (void *)&dRecvBuf[0], counts, displs, sizeof(ComplexD));
@@ -385,6 +456,7 @@ public:
       tAllreduce += tar;
       tARmin = std::min(tARmin, tar);
       tARmax = std::max(tARmax, tar);
+      tARall.push_back(tar);
       bytesAllreduce += panelBytesThis;
       nAllreduce++;
 
@@ -657,6 +729,7 @@ public:
     tLeaf          = 0.0;
     tARmin         = 1.0e30;
     tARmax         = 0.0;
+    tARall.clear();
     bytesAllreduce = 0;
     nAllreduce     = 0;
     nGatherGemm    = 0;
@@ -718,6 +791,29 @@ public:
               << "   effective " << (tAllreduce>0 ? bytesAllreduce/tAllreduce*1.0e6/1.0e9 : 0.0)
               << " GB/s"
               << std::endl;
+    //////////////////////////////////////////////////////////////////////
+    // Distribution, not just min/avg/max.  A barrier that merely REBOOKS
+    // skew shifts the median; a barrier that suppresses pathological
+    // collectives shortens the tail.  p50 vs p99 separates the two from a
+    // single run, which min/avg/max cannot.
+    //////////////////////////////////////////////////////////////////////
+    if ( tARall.size() ) {
+      std::vector<double> v = tARall;
+      std::sort(v.begin(),v.end());
+      size_t n = v.size();
+      auto pc = [&](double f){ size_t i=(size_t)(f*(n-1)); return v[i]/1.0e3; };
+      double med = pc(0.50);
+      // how much time is spent in calls that are gross outliers
+      double tail=0.0; size_t ntail=0;
+      for(size_t i=0;i<n;i++) if ( v[i] > 4.0*med*1.0e3 ) { tail+=v[i]; ntail++; }
+      std::cout << GridLogMessage << "Schur comms distribution (boss):"
+                << "  p50 "  << med
+                << "  p90 "  << pc(0.90)
+                << "  p99 "  << pc(0.99)
+                << " ms   calls > 4x median: " << ntail << "/" << n
+                << " carrying " << tail/1.0e6 << " s"
+                << std::endl;
+    }
   }
 };
 

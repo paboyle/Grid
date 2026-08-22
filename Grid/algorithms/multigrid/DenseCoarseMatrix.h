@@ -628,14 +628,15 @@ public:
       GRID_ASSERT( hipMalloc((void **)&dIpiv, N*sizeof(int64_t)) == hipSuccess );
       GRID_ASSERT( hipMalloc((void **)&dInfo, sizeof(int64_t))   == hipSuccess );
       auto st1 = rocsolver_cgetrf_64(handle, (int64_t)N, (int64_t)N, dA, (int64_t)N, dIpiv, dInfo);
-      hipDeviceSynchronize();
+      GRID_ASSERT( hipDeviceSynchronize() == hipSuccess );
       int64_t info_h = -1;
-      hipMemcpy(&info_h, dInfo, sizeof(int64_t), hipMemcpyDeviceToHost);
+      GRID_ASSERT( hipMemcpy(&info_h, dInfo, sizeof(int64_t),
+                             hipMemcpyDeviceToHost) == hipSuccess );
       std::cout << GridLogMessage << "DenseCoarseMatrix: cgetrf_64 status " << (int)st1
                 << " info = " << (int)info_h << std::endl;
       GRID_ASSERT(st1 == rocblas_status_success);
       GRID_ASSERT(info_h == 0);
-      hipFree(dInfo);
+      GRID_ASSERT( hipFree(dInfo) == hipSuccess );
       GRID_ASSERT( hipMalloc((void **)&dB, (uint64_t)CHUNKROWS*N*sizeof(ComplexF)) == hipSuccess );
       // dA holds the LU of A^T; rows of A^{-1} are produced blockwise below via
       // cgetrs_64 on identity-column blocks: A^T X = E => X columns = rows of
@@ -680,7 +681,7 @@ public:
                                           (int64_t)N, (int64_t)nrow,
                                           dA, (int64_t)N, dIpiv, dB, (int64_t)N);
           GRID_ASSERT(strs == rocblas_status_success);
-          hipDeviceSynchronize();
+          GRID_ASSERT( hipDeviceSynchronize() == hipSuccess );
           GRID_ASSERT( hipMemcpy(&chunk[0], dB, nelem*sizeof(ComplexF), hipMemcpyDeviceToHost) == hipSuccess );
 #else
           uint64_t src = (uint64_t)row0 * N;
@@ -700,9 +701,9 @@ public:
     }
 #ifdef GRID_HIP
     if (boss) {
-      if (dA)    hipFree(dA);
-      if (dB)    hipFree(dB);
-      if (dIpiv) hipFree(dIpiv);
+      if (dA)    GRID_ASSERT( hipFree(dA)    == hipSuccess );
+      if (dB)    GRID_ASSERT( hipFree(dB)    == hipSuccess );
+      if (dIpiv) GRID_ASSERT( hipFree(dIpiv) == hipSuccess );
     }
 #endif
     double t4 = usecond();

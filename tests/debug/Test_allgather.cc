@@ -201,8 +201,16 @@ int main(int argc, char **argv)
   // 288 ranks, while the host-buffer stages above passed.  Reproducing that
   // here costs one node and a second instead of a 36-node job.
   ////////////////////////////////////////////////////////////////////////
+  // AG_WORDS : ComplexD words each CONTRIBUTING rank sends (default 4096)
+  // AG_NPART : how many ranks contribute at all in T6 (default P/2).
+  //   The GatherGemm shape at Schur depth d has only P/2^(d+1) contributors,
+  //   so depth 7 at 288 ranks is AG_NPART=2 AG_WORDS=518400 (8.3 MB each,
+  //   18.7 MB gathered).  Depth 0 is AG_NPART=144 AG_WORDS=232800.
+  const int64_t AGW = getenv("AG_WORDS") ? atol(getenv("AG_WORDS")) : 4096;
+  const int     AGN = getenv("AG_NPART") ? atoi(getenv("AG_NPART")) : (P+1)/2;
+
   {
-    const int64_t W = 4096;                       // words per contributing rank
+    const int64_t W = AGW;                        // words per contributing rank
     std::vector<int> counts(P,0), displs(P,0);
     int64_t total=0;
     for(int r=0;r<P;r++){ counts[r]=(int)W; displs[r]=(int)total; total+=W; }
@@ -220,13 +228,15 @@ int main(int argc, char **argv)
     for(int r=0;r<P;r++)
       for(int64_t i=0;i<W;i++)
         if ( hall[displs[r]+i] != Stamp(r,i) ) ok=false;
-    Report("T5  AllGatherV on DEVICE buffers", ok);
+    Report("T5  AllGatherV on DEVICE, all "+std::to_string(P)+" contributing, "+
+           std::to_string(W*16/1024)+" KB each, "+
+           std::to_string(total*16/1048576)+" MB gathered", ok);
   }
 
   {
     // Only the first half of the ranks contribute; the rest send count 0.
-    const int64_t W = 4096;
-    int half = (P+1)/2;
+    const int64_t W = AGW;
+    int half = AGN < 1 ? 1 : (AGN > P ? P : AGN);
     std::vector<int> counts(P,0), displs(P,0);
     int64_t total=0;
     for(int r=0;r<P;r++){
@@ -247,8 +257,9 @@ int main(int argc, char **argv)
     for(int r=0;r<half;r++)
       for(int64_t i=0;i<W;i++)
         if ( hall[displs[r]+i] != Stamp(r,i) ) ok=false;
-    Report("T6  AllGatherV on DEVICE, "+std::to_string(P-half)+"/"+std::to_string(P)+
-           " ranks sending count 0", ok);
+    Report("T6  AllGatherV on DEVICE, "+std::to_string(half)+"/"+std::to_string(P)+
+           " contributing, "+std::to_string(W*16/1024)+" KB each, "+
+           std::to_string(total*16/1048576)+" MB gathered", ok);
   }
 
   std::cout << GridLogMessage << (failures ? "AllGather regression: FAILURES" 

@@ -155,6 +155,7 @@ public:
   }
   void ImportFineGridVectors(std::vector <Field > &vecs, deviceVector<scalar> &blas)
   {
+    GRID_TRACE("ImportFineGridVectors");
     int nvec = vecs.size();
     typedef typename Field::vector_object vobj;
     //    std::cout << GridLogMessage <<" BlockProjector importing "<<nvec<< " fine grid vectors" <<std::endl;
@@ -547,6 +548,7 @@ public:
 
   void ExportFineGridVectors(std::vector <Field> &vecs, deviceVector<scalar> &blas)
   {
+    GRID_TRACE("ExportFineGridVectors");
     typedef typename Field::vector_object vobj;
 
     int nvec = vecs.size();
@@ -622,6 +624,7 @@ public:
   template<class vobj>
   void ImportCoarseGridVectors(std::vector <Lattice<vobj> > &vecs, deviceVector<scalar> &blas)
   {
+    GRID_TRACE("ImportCoarseGridVectors");
     int nvec = vecs.size();
     typedef typename vobj::scalar_object coarse_scalar_object;
 
@@ -688,6 +691,7 @@ public:
   template<class vobj>
   void ExportCoarseGridVectors(std::vector <Lattice<vobj> > &vecs, deviceVector<scalar> &blas)
   {
+    GRID_TRACE("ExportCoarseGridVectors");
     int nvec = vecs.size();
     typedef typename vobj::scalar_object coarse_scalar_object;
     //    std::cout << GridLogMessage<<" BlockProjector exporting "<<nvec<< " coarse grid vectors" <<std::endl;
@@ -775,17 +779,20 @@ public:
     deviceVector<scalar *> Cd(coarse_vol);
 
     //    std::cout << "BlockProject pointers"<<std::endl;
-    for(int c=0;c<coarse_vol;c++){
-      // BLAS_V[coarse_vol][nbasis][block_vol][words]
-      // BLAS_F[coarse_vol][nrhs][block_vol][words]
-      // BLAS_C[coarse_vol][nrhs][nbasis]
-      scalar * Vh = & BLAS_V[c*nbasis*block_vol*words];
-      scalar * Fh = & BLAS_F[c*nrhs*block_vol*words];
-      scalar * Ch = & BLAS_C[c*nrhs*nbasis];
-
-      acceleratorPut(Vd[c],Vh);
-      acceleratorPut(Fd[c],Fh);
-      acceleratorPut(Cd[c],Ch);
+    // ONE bulk transfer per table.  acceleratorPut is a *synchronous* 8-byte
+    // hipMemcpy, so the elementwise form emitted 3*coarse_vol of them per call:
+    // a traced run showed 272k hipMemcpy calls costing 4.5 s of API time to move
+    // 0.7 s worth of bytes.  Same fix as BatchedBlas.h's staging rewrite.
+    if ( coarse_vol ) {
+      std::vector<scalar *> hVd(coarse_vol), hFd(coarse_vol), hCd(coarse_vol);
+      for(int c=0;c<coarse_vol;c++){
+	hVd[c] = & BLAS_V[c*nbasis*block_vol*words];
+	hFd[c] = & BLAS_F[c*nrhs*block_vol*words];
+	hCd[c] = & BLAS_C[c*nrhs*nbasis];
+      }
+      acceleratorCopyToDevice(&hVd[0],&Vd[0],coarse_vol*sizeof(scalar *));
+      acceleratorCopyToDevice(&hFd[0],&Fd[0],coarse_vol*sizeof(scalar *));
+      acceleratorCopyToDevice(&hCd[0],&Cd[0],coarse_vol*sizeof(scalar *));
     }
 
     GridBLAS BLAS;
@@ -827,16 +834,20 @@ public:
     deviceVector<scalar *> Fd(coarse_vol);
     deviceVector<scalar *> Cd(coarse_vol);
 
-    for(int c=0;c<coarse_vol;c++){
-      // BLAS_V[coarse_vol][nbasis][block_vol][words]
-      // BLAS_F[coarse_vol][nrhs][block_vol][words]
-      // BLAS_C[coarse_vol][nrhs][nbasis]
-      scalar * Vh = & BLAS_V[c*nbasis*block_vol*words];
-      scalar * Fh = & BLAS_F[c*nrhs*block_vol*words];
-      scalar * Ch = & BLAS_C[c*nrhs*nbasis];
-      acceleratorPut(Vd[c],Vh);
-      acceleratorPut(Fd[c],Fh);
-      acceleratorPut(Cd[c],Ch);
+    // ONE bulk transfer per table.  acceleratorPut is a *synchronous* 8-byte
+    // hipMemcpy, so the elementwise form emitted 3*coarse_vol of them per call:
+    // a traced run showed 272k hipMemcpy calls costing 4.5 s of API time to move
+    // 0.7 s worth of bytes.  Same fix as BatchedBlas.h's staging rewrite.
+    if ( coarse_vol ) {
+      std::vector<scalar *> hVd(coarse_vol), hFd(coarse_vol), hCd(coarse_vol);
+      for(int c=0;c<coarse_vol;c++){
+	hVd[c] = & BLAS_V[c*nbasis*block_vol*words];
+	hFd[c] = & BLAS_F[c*nrhs*block_vol*words];
+	hCd[c] = & BLAS_C[c*nrhs*nbasis];
+      }
+      acceleratorCopyToDevice(&hVd[0],&Vd[0],coarse_vol*sizeof(scalar *));
+      acceleratorCopyToDevice(&hFd[0],&Fd[0],coarse_vol*sizeof(scalar *));
+      acceleratorCopyToDevice(&hCd[0],&Cd[0],coarse_vol*sizeof(scalar *));
     }
 
     /////////////////////////////////////////
@@ -971,13 +982,20 @@ public:
 		    deviceVector<scalar *> &Fd,
 		    deviceVector<scalar *> &Cd)
   {
-    for(int c=0;c<coarse_vol;c++){
-      scalar * Vh = & BLAS_V[c*nbasis*block_vol*words];
-      scalar * Fh = & BLAS_F[c*nrhs*block_vol*words];
-      scalar * Ch = & BLAS_C[c*nrhs*nbasis];
-      acceleratorPut(Vd[c],Vh);
-      acceleratorPut(Fd[c],Fh);
-      acceleratorPut(Cd[c],Ch);
+    // ONE bulk transfer per table.  acceleratorPut is a *synchronous* 8-byte
+    // hipMemcpy, so the elementwise form emitted 3*coarse_vol of them per call:
+    // a traced run showed 272k hipMemcpy calls costing 4.5 s of API time to move
+    // 0.7 s worth of bytes.  Same fix as BatchedBlas.h's staging rewrite.
+    if ( coarse_vol ) {
+      std::vector<scalar *> hVd(coarse_vol), hFd(coarse_vol), hCd(coarse_vol);
+      for(int c=0;c<coarse_vol;c++){
+	hVd[c] = & BLAS_V[c*nbasis*block_vol*words];
+	hFd[c] = & BLAS_F[c*nrhs*block_vol*words];
+	hCd[c] = & BLAS_C[c*nrhs*nbasis];
+      }
+      acceleratorCopyToDevice(&hVd[0],&Vd[0],coarse_vol*sizeof(scalar *));
+      acceleratorCopyToDevice(&hFd[0],&Fd[0],coarse_vol*sizeof(scalar *));
+      acceleratorCopyToDevice(&hCd[0],&Cd[0],coarse_vol*sizeof(scalar *));
     }
   }
 

@@ -90,6 +90,14 @@ RealD OuterTol             = 1.0e-8;
 int   OuterMmax            = 8;
 int   OuterNstep           = 8;
 
+// Halo exchange in reduced precision on the fine stencils.  Stencil::SloppyComms
+// is a plain runtime setter (Stencil.h:303) applied to the full/even/odd stencils
+// of an operator that is already built, so this costs no extra storage and no
+// second operator.  Benchmark_dwf at this decomposition measures ~1.6x on the
+// fine Dhop, consistent with the uncompressed halo being ~1.6x the interior
+// compute time.  Set FineSloppyComms=0 to recover the exact-comms behaviour.
+int   FineSloppyComms      = 1;
+
 void ParseEnvironment(void)
 {
   if(getenv("MASS"))          mass        = atof(getenv("MASS"));
@@ -104,6 +112,7 @@ void ParseEnvironment(void)
   if(getenv("CoarseSolverOrder"))  CoarseSolverOrder  = atoi(getenv("CoarseSolverOrder"));
   if(getenv("OuterTol"))           OuterTol           = atof(getenv("OuterTol"));
   if(getenv("OuterMmax"))          OuterMmax          = atoi(getenv("OuterMmax"));
+  if(getenv("FineSloppyComms"))    FineSloppyComms    = atoi(getenv("FineSloppyComms"));
   if(getenv("OuterNstep"))         OuterNstep         = atoi(getenv("OuterNstep"));
   if(getenv("LATT")){
     Coordinate l;
@@ -475,6 +484,16 @@ int main (int argc, char ** argv)
   MobiusFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c);
   MobiusFermionD Dpv (Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0, M5,b,c);
 
+  // Reduced-precision halo on both fine operators.  PVdagM and ShiftedPVdagM are
+  // thin wrappers over these same objects, so this covers coarsening, the fine
+  // smoother, the V-cycle and the outer Krylov alike.  The final residual check
+  // below turns it off again: a verification computed with a sloppy operator
+  // would certify the wrong matrix.
+  Ddwf.SloppyComms(FineSloppyComms);
+  Dpv .SloppyComms(FineSloppyComms);
+  std::cout << GridLogMessage << "Fine stencils: SloppyComms = " << FineSloppyComms
+            << (FineSloppyComms ? "  (reduced-precision halo)" : "  (exact halo)") << std::endl;
+
   typedef PVdagMLinearOperator<MobiusFermionD,LatticeFermionD>        PVdagM_t;
   typedef ShiftedPVdagMLinearOperator<MobiusFermionD,LatticeFermionD> ShiftedPVdagM_t;
   PVdagM_t PVdagM(Ddwf,Dpv);
@@ -815,13 +834,20 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage << "V2 3-level solve Nrhs "<<nr<<" total " << w.Elapsed()
               << "  (per RHS: " << w.useconds()/1.0e6/nr << " s)" << std::endl;
 
+    // Verify against the EXACT operator: the solve may have used a reduced
+    // precision halo, but the residual we report must not.
+    Ddwf.SloppyComms(0);
+    Dpv .SloppyComms(0);
     { LatticeFermionD Ax(FGrid); RealD worst=0.0;
       for(int r=0;r<nr;r++){ PVdagM.Op(sol[r],Ax); Ax=Ax-src[r];
         RealD rn=std::sqrt(norm2(Ax)/norm2(src[r]));
         std::cout << GridLogMessage << "FINAL Nrhs "<<nr<<": rhs["<<r<<"] true residual = " << rn << std::endl;
         worst=std::max(worst,rn); }
-      std::cout << GridLogMessage << "FINAL Nrhs "<<nr<<": worst-case residual = " << worst << std::endl;
+      std::cout << GridLogMessage << "FINAL Nrhs "<<nr<<": worst-case residual = " << worst
+                << "   (exact-halo verification)" << std::endl;
     }
+    Ddwf.SloppyComms(FineSloppyComms);
+    Dpv .SloppyComms(FineSloppyComms);
 
     // The operators borrow these grids and build a PaddedCell on them, so
     // they must let go before the grids are destroyed.

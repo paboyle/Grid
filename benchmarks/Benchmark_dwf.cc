@@ -276,10 +276,15 @@ void Benchmark(int Ls, Coordinate Dirichlet,bool sloppy)
     Dw.Dhop(src,result,0);
     std::cout<<GridLogMessage<<"Called warmup"<<std::endl;
     double t0=usecond();
-    double aveBW = 0;
+    // Accumulate BYTES and TIME separately and divide once.  Averaging the
+    // per-call rate instead would over-weight the fast calls: one anomalously
+    // short exchange contributes an enormous rate to the mean.
+    double locBytes = 0;   // off-node bytes moved by THIS rank, over all calls
+    double locTime  = 0;   // microseconds THIS rank spent in the exchange
     for(int i=0;i<ncall;i++){
       Dw.Dhop(src,result,0);
-      aveBW +=Dw.Stencil.InterNodeBandwidthMBps/ncall;
+      locBytes += Dw.Stencil.OffNodeBytes;
+      locTime  += Dw.Stencil.CommTimer;
     }
     double t1=usecond();
     FGrid->Barrier();
@@ -300,7 +305,34 @@ void Benchmark(int Ls, Coordinate Dirichlet,bool sloppy)
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NN<<std::endl;
-    std::cout<<GridLogMessage << "average bandwidth =  "<< aveBW <<std::endl;
+    //////////////////////////////////////////////////////////////////////
+    // Delivered inter-node bandwidth, measured CONCURRENT WITH COMPUTE.
+    //
+    // Bytes are summed over the whole machine; the exchange time is averaged
+    // over ranks; the result is reported per node.  Reduced ONCE here rather
+    // than inside CommunicateComplete -- a collective in the exchange would
+    // perturb the quantity being measured.
+    //
+    // bytes / microsecond == MB/s exactly (decimal MB).
+    //
+    // NB OffNodeBytes is bidirectional (send + receive) only under
+    // ACCELERATOR_AWARE_MPI; on the host-staged path the send side is
+    // deferred to PollDtoH and is not currently counted, so numbers from the
+    // two paths are not comparable.
+    //////////////////////////////////////////////////////////////////////
+    {
+      double sumBytes = locBytes;  FGrid->GlobalSum(sumBytes);   // whole machine
+      double sumTime  = locTime;   FGrid->GlobalSum(sumTime);
+      double avgTime  = sumTime/NP;                              // mean over ranks
+      double BWnode   = sumBytes/avgTime/NN;                     // MB/s per node
+      std::cout<<GridLogMessage << "Comms: off-node bytes/call/node = "
+               << sumBytes/ncall/NN/1.0e6 <<" MB"<<std::endl;
+      std::cout<<GridLogMessage << "Comms: in-exchange time = "
+               << avgTime/ncall <<" us/call (mean over "<<NP<<" ranks)"<<std::endl;
+      std::cout<<GridLogMessage << "Comms: delivered inter-node bandwidth = "
+               << BWnode <<" MB/s per node  ("<< BWnode/1000.0
+               <<" GB/s per node, "<<NN<<" nodes)"<<std::endl;
+    }
     err = ref-result;
     n2e = norm2(err);
     std::cout<<GridLogMessage << "norm diff   "<< n2e<< "  Line "<<__LINE__ <<std::endl;
@@ -408,8 +440,11 @@ void Benchmark(int Ls, Coordinate Dirichlet,bool sloppy)
     FGrid->Barrier();
     Dw.DhopEO(src_o,r_e,DaggerNo);
     double t0=usecond();
+    double locBytes = 0, locTime = 0;
     for(int i=0;i<ncall;i++){
       Dw.DhopEO(src_o,r_e,DaggerNo);
+      locBytes += Dw.StencilOdd.OffNodeBytes;   // DhopEO drives StencilOdd,
+      locTime  += Dw.StencilOdd.CommTimer;      // NOT the full-grid Stencil
     }
     double t1=usecond();
     FGrid->Barrier();
@@ -420,6 +455,13 @@ void Benchmark(int Ls, Coordinate Dirichlet,bool sloppy)
     std::cout<<GridLogMessage << "Deo mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "Deo mflop/s per rank   "<< flops/(t1-t0)/NP<<std::endl;
     std::cout<<GridLogMessage << "Deo mflop/s per node   "<< flops/(t1-t0)/NN<<std::endl;
+    {
+      double sumBytes = locBytes;  FGrid->GlobalSum(sumBytes);
+      double sumTime  = locTime;   FGrid->GlobalSum(sumTime);
+      double avgTime  = sumTime/NP;
+      std::cout<<GridLogMessage << "Deo comms: delivered inter-node bandwidth = "
+               << sumBytes/avgTime/NN <<" MB/s per node"<<std::endl;
+    }
   }
   Dw.DhopEO(src_o,r_e,DaggerNo);
   Dw.DhopOE(src_e,r_o,DaggerNo);

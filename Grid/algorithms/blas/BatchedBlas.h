@@ -148,14 +148,15 @@ public:
 #endif
 #ifdef GRID_HIP
       std::cout << "hipblasCreate"<<std::endl;
-      hipblasCreate(&gridblasHandle);
+      GRID_ASSERT( hipblasCreate(&gridblasHandle) == HIPBLAS_STATUS_SUCCESS );
       // Explicit HOST mode: the hipBLAS default is UNDOCUMENTED in the
       // headers (enum 0 == HOST by cuBLAS-mirroring convention only);
       // set it and print it so every log carries the ground truth.
-      hipblasSetPointerMode(gridblasHandle, HIPBLAS_POINTER_MODE_HOST);
+      GRID_ASSERT( hipblasSetPointerMode(gridblasHandle, HIPBLAS_POINTER_MODE_HOST)
+                   == HIPBLAS_STATUS_SUCCESS );
       {
         hipblasPointerMode_t pm;
-        hipblasGetPointerMode(gridblasHandle,&pm);
+        GRID_ASSERT( hipblasGetPointerMode(gridblasHandle,&pm) == HIPBLAS_STATUS_SUCCESS );
         std::cout << "GridBLAS: hipBLAS pointer mode "
                   << ((pm==HIPBLAS_POINTER_MODE_DEVICE)?"DEVICE":"HOST") <<std::endl;
       }
