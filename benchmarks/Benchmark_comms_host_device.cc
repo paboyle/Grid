@@ -296,10 +296,20 @@ int main (int argc, char ** argv)
 
       uint64_t bytes = (uint64_t)lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
 
+      // Buffers MUST come from the shared-memory pool, not acceleratorAllocDevice.
+      // The Stencil allocates u_send_buf_p/u_recv_buf_p via ShmBufferMalloc
+      // (Stencil.h:1090) and reaches a peer's buffer with ShmBufferTranslate
+      // (Stencil.h:423) -- that IPC mapping is what makes an intranode
+      // transfer intranode.  Unshared device memory cannot be translated, so
+      // the peer path never engages and every packet falls back to MPI, which
+      // would silently make this benchmark measure the wrong thing.
+      Grid.ShmBufferFreeAll();
       std::vector<HalfSpinColourVectorD *> xbuf(8), rbuf(8);
       for(int d=0;d<8;d++){
-	xbuf[d] = (HalfSpinColourVectorD *)acceleratorAllocDevice(bytes);
-	rbuf[d] = (HalfSpinColourVectorD *)acceleratorAllocDevice(bytes);
+	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
+	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
+	GRID_ASSERT(xbuf[d]!=nullptr);
+	GRID_ASSERT(rbuf[d]!=nullptr);
       }
 
       // Packet table in the same shape the Stencil builds: 8 directions,
@@ -370,10 +380,7 @@ int main (int argc, char ** argv)
 	       <<"  "<< std::setw(8) << sumMpi/avgT/Nnode/1000.0
 	       <<std::endl;
 
-      for(int d=0;d<8;d++){
-	acceleratorFreeDevice(xbuf[d]);
-	acceleratorFreeDevice(rbuf[d]);
-      }
+      Grid.ShmBufferFreeAll();   // bump allocator: released as a whole
     }
   }
 
