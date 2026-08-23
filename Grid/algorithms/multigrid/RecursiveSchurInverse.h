@@ -120,6 +120,7 @@ public:
   uint64_t              bytesAllreduce;
   uint64_t              nAllreduce;    // panel collectives
   uint64_t              nGatherGemm;   // GatherGemm calls
+  uint64_t              nGather;       // AllGatherV collectives (debug gate)
 
   // Persistent grow-only device panel; assembly and collectives are
   // device-resident.  Device builds require GPU-aware MPI.
@@ -390,8 +391,13 @@ public:
         for(int r=0;r<P;r++){ csum += counts[r]; if ( counts[r] ) nz++; }
         GRID_ASSERT( csum == (int64_t)panelWords );
         GRID_ASSERT( displs[rB1-1] + counts[rB1-1] == (int)panelWords );
-        if ( gatherDebug && ((int)nAllreduce < gatherDebug) && (me==0) ) {
-          std::cout << GridLogMessage << "GATHER["<<nAllreduce<<"]"
+        // Gate on the count of GATHERS, not of all collectives.  nAllreduce
+        // is already in the hundreds by the first gather -- the recursion is
+        // depth first and everything below the size threshold takes the
+        // allreduce path -- so gating on it prints nothing at any sane value.
+        nGather++;
+        if ( gatherDebug && ((int)nGather <= gatherDebug) && (me==0) ) {
+          std::cout << GridLogMessage << "GATHER["<<nGather-1<<"]"
                     << "  ranks ["<<rB0<<","<<rB1<<")"
                     << "  k "<<k<<"  n "<<n<<"  nchunk "<<nchunk
                     << "  panelWords "<<panelWords
@@ -733,6 +739,7 @@ public:
     bytesAllreduce = 0;
     nAllreduce     = 0;
     nGatherGemm    = 0;
+    nGather        = 0;
 
     SchurNode(0, P, 0, N, Arows);
 
