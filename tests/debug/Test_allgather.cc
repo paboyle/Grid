@@ -208,8 +208,15 @@ int main(int argc, char **argv)
   //   18.7 MB gathered).  Depth 0 is AG_NPART=144 AG_WORDS=232800.
   const int64_t AGW = getenv("AG_WORDS") ? atol(getenv("AG_WORDS")) : 4096;
   const int     AGN = getenv("AG_NPART") ? atoi(getenv("AG_NPART")) : (P+1)/2;
+  // Stage skips.  T6 is the pathological one: at 288 ranks with 9 contributors
+  // it takes ~26 minutes and aborts on at least one rank, which would prevent
+  // T7 from ever running.  T7 is therefore ordered FIRST, and AG_T6=0 skips
+  // the slow stage entirely when only the Bcast answer is wanted.
+  const int     doT5 = getenv("AG_T5") ? atoi(getenv("AG_T5")) : 1;
+  const int     doT6 = getenv("AG_T6") ? atoi(getenv("AG_T6")) : 1;
+  const int     doT7 = getenv("AG_T7") ? atoi(getenv("AG_T7")) : 1;
 
-  {
+  if ( doT5 ) {
     const int64_t W = AGW;                        // words per contributing rank
     std::vector<int> counts(P,0), displs(P,0);
     int64_t total=0;
@@ -233,7 +240,42 @@ int main(int argc, char **argv)
            std::to_string(total*16/1048576)+" MB gathered", ok);
   }
 
-  {
+  ////////////////////////////////////////////////////////////////////////
+  // T7 : the SAME shape as T6, but assembled by C sequential MPI_Bcast --
+  // one broadcast per contributing rank -- instead of one MPI_Allgatherv.
+  //
+  // This is the transport of DENSE_GATHER=2.  Bcast takes no count vector,
+  // so the zero-count asymmetry that makes T6 run at ~0.18 MB/s and trip
+  // mpir_request.h:508 cannot arise.  It costs C collectives rather than 1
+  // and the roots do not transmit concurrently, so the byte cost is about
+  // 2x that of an ideal allgather; it is worth having only if Bcast is
+  // faster PER BYTE than the alternatives.  Compare the T6 and T7 times.
+  ////////////////////////////////////////////////////////////////////////
+  if ( doT7 ) {
+    const int64_t W = AGW;
+    int nroot = AGN < 1 ? 1 : (AGN > P ? P : AGN);
+    int64_t total = (int64_t)nroot*W;
+
+    deviceVector<ComplexD> dall(total>0?total:1);
+    std::vector<ComplexD>  hall(total), hmine(W);
+    for(int64_t i=0;i<W;i++) hmine[i]=Stamp(me,i);
+    if ( me < nroot )                                  // roots seed their slot
+      acceleratorCopyToDevice(&hmine[0],&dall[(int64_t)me*W],W*sizeof(ComplexD));
+
+    for(int r=0;r<nroot;r++)
+      grid->Broadcast(r,(void *)&dall[(int64_t)r*W],(uint64_t)W*sizeof(ComplexD));
+
+    acceleratorCopyFromDevice(&dall[0],&hall[0],total*sizeof(ComplexD));
+    bool ok=true;
+    for(int r=0;r<nroot;r++)
+      for(int64_t i=0;i<W;i++)
+        if ( hall[(int64_t)r*W+i] != Stamp(r,i) ) ok=false;
+    Report("T7  "+std::to_string(nroot)+" x MPI_Bcast on DEVICE, "+
+           std::to_string(W*16/1024)+" KB each, "+
+           std::to_string(total*16/1048576)+" MB assembled", ok);
+  }
+
+  if ( doT6 ) {
     // Only the first half of the ranks contribute; the rest send count 0.
     const int64_t W = AGW;
     int half = AGN < 1 ? 1 : (AGN > P ? P : AGN);
@@ -260,6 +302,19 @@ int main(int argc, char **argv)
     Report("T6  AllGatherV on DEVICE, "+std::to_string(half)+"/"+std::to_string(P)+
            " contributing, "+std::to_string(W*16/1024)+" KB each, "+
            std::to_string(total*16/1048576)+" MB gathered", ok);
+  }
+
+  // Reduce across ranks before reporting.  Report() prints from rank 0 only
+  // and `failures` is rank-local, so a stage that passes on rank 0 and fails
+  // (or aborts) elsewhere would otherwise be announced as ALL PASS -- which
+  // is exactly what happened at 288 ranks with 9 contributors.
+  {
+    uint64_t f = failures;
+    grid->GlobalSum(f);
+    if ( f && !failures )
+      std::cout << GridLogMessage << "  ** failures on OTHER ranks: " << f
+                << " (this rank saw none) **" << std::endl;
+    failures = (int)f;
   }
 
   std::cout << GridLogMessage << (failures ? "AllGather regression: FAILURES" 
