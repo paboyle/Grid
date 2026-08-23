@@ -656,7 +656,8 @@ void Grid_finalize(void)
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
   std::cout<<GridLogMessage<<"******* Grid Finalize                ******"<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
-
+  CartesianCommunicator::BarrierWorld();
+				    
 #if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) || defined (GRID_COMMS_MPIT)
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
