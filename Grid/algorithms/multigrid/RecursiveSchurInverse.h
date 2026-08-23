@@ -132,7 +132,15 @@ public:
   deviceVector<int64_t>  dOwnerOff;    // panel row -> owner's first panel row
   deviceVector<int64_t>  dOwnerRows;   // panel row -> owner's row count
 
-  // DENSE_GATHER            : 1 => AllGatherV in place of zero-fill+GlobalSum
+  // DENSE_GATHER            : transport for the panel assembly.
+  //     0 = zero-fill + GlobalSumVector  (default; moves the payload twice)
+  //     1 = MPI_Allgatherv               (KNOWN BROKEN here, see guard below)
+  //     2 = C sequential MPI_Bcast, one per contributing rank.  Bcast has no
+  //         count vector, so the zero-count shape that breaks Allgatherv
+  //         cannot arise.  Costs C collectives instead of 1 and the roots do
+  //         not transmit concurrently, so the byte cost is ~2*panel per rank
+  //         -- the same as the allreduce.  It wins only if Bcast is faster
+  //         PER BYTE than Allreduce, which is why it must be measured.
   // DENSE_GATHER_MIN_BYTES  : panels below this stay on the allreduce path.
   //                           Default 0 (always gather).  The Schur tree puts
   //                           94% of its bytes in panels with ~3.7 MB per-rank
@@ -249,7 +257,7 @@ public:
     // Fail here, in the first second, rather than 100 s and 36 nodes into a
     // job.  DENSE_GATHER_FORCE=1 proceeds anyway for debugging.
     ///////////////////////////////////////////////////////////////////////
-    if ( useGather && !getenv("DENSE_GATHER_FORCE") )
+    if ( (useGather==1) && !getenv("DENSE_GATHER_FORCE") )
     {
       std::cout << GridLogError
                 << "DENSE_GATHER=1 is disabled: MPI_Allgatherv on this MPI is"
@@ -407,9 +415,38 @@ public:
                     << "  rank0: count "<<counts[me]<<(owner?" owner":" non-owner")
                     << std::endl;
         }
-        void *send = owner ? (void *)B.ColumnWindow(colB+j0) : (void *)&dRecvBuf[0];
-        grid->AllGatherV(send, counts[me],
-                         (void *)&dRecvBuf[0], counts, displs, sizeof(ComplexD));
+        if ( gatherThis == 1 )
+        {
+          void *send = owner ? (void *)B.ColumnWindow(colB+j0) : (void *)&dRecvBuf[0];
+          grid->AllGatherV(send, counts[me],
+                           (void *)&dRecvBuf[0], counts, displs, sizeof(ComplexD));
+        }
+        else
+        {
+          ////////////////////////////////////////////////////////////////
+          // C sequential broadcasts into the SAME rank-major staging
+          // buffer, so the repack below is shared with the AllGatherV arm.
+          // The root must already hold its own block: B.ColumnWindow is
+          // contiguous rows_r x nchunk, and so is its slot in dRecvBuf.
+          // Every rank issues all C broadcasts in the same order, so
+          // collective matching stays positional and safe.
+          ////////////////////////////////////////////////////////////////
+          if ( owner )
+          {
+            int64_t off_me = rowStart[me] - rowStart[rB0];
+            acceleratorCopyDeviceToDevice((void *)B.ColumnWindow(colB+j0),
+                                          (void *)&dRecvBuf[off_me*nchunk],
+                                          (uint64_t)B.rows*nchunk*sizeof(ComplexD));
+          }
+          for(int r=rB0;r<rB1;r++)
+          {
+            int64_t off_r  = rowStart[r]   - rowStart[rB0];
+            int64_t rows_r = rowStart[r+1] - rowStart[r];
+            if ( rows_r )
+              grid->Broadcast(r,(void *)&dRecvBuf[off_r*nchunk],
+                              (uint64_t)rows_r*nchunk*sizeof(ComplexD));
+          }
+        }
         tar += usecond();
 
         tRepack -= usecond();
