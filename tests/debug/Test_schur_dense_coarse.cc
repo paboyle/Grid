@@ -262,8 +262,11 @@ int main (int argc, char ** argv)
   setenv("DENSE_PANEL_BYTES","65536",1);
   unsetenv("SLAB_FILE");
 
-  typedef DenseCoarseMatrix<vSpinColourVector,vTComplex,nbasis> DenseCC;
-  DenseCC dcm(LittleDiracOp, Coarse5d);
+  // Restructured interface: DenseCoarseMatrix<CComplex,nbasis>, constructed
+  // on the grid and fed by Import (which runs the certificate chain).
+  typedef DenseCoarseMatrix<vTComplex,nbasis> DenseCC;
+  DenseCC dcm(Coarse5d);
+  dcm.Import(LittleDiracOp);
 
   std::cout << GridLogMessage << "T6  audit relative slab difference (schur vs single) = "
             << dcm.schurAuditRel << std::endl;

@@ -36,8 +36,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 using namespace std;
 using namespace Grid;
 
-gridblasHandle_t GridBLAS::gridblasHandle;
-int            GridBLAS::gridblasInit;
+// GridBLAS statics are defined ONCE, in Grid/algorithms/blas/BatchedBlas.cc;
+// a second definition here is a duplicate-symbol link error the moment the
+// archive member is pulled in.
 
 ///////////////////////
 // Tells little dirac op to use MdagM as the .Op()
