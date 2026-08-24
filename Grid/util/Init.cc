@@ -653,20 +653,20 @@ void Grid_init(int *argc,char ***argv)
 
 void Grid_finalize(void)
 {
-  std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
-  std::cout<<GridLogMessage<<"******* Grid Finalize entered         ******"<<std::endl;
+  std::cout<<GridLogMessage<<"********************************************"<<std::endl;
+  std::cout<<GridLogMessage<<"******* Grid Finalize                 ******"<<std::endl;
   CartesianCommunicator::BarrierWorld();
   std::cout<<GridLogMessage<<"******* Grid Finalize synched         ******"<<std::endl;
 				    
 #if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) || defined (GRID_COMMS_MPIT)
   MPI_Finalize();
-  Grid_unquiesce_nodes();
 #endif
 #if defined (GRID_COMMS_SHMEM)
   shmem_finalize();
 #endif
   std::cout<<GridLogMessage<<"******* Grid Finalize successful     ******"<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
+  Grid_unquiesce_nodes();
   Grid_is_initialised = 0;
 }
 

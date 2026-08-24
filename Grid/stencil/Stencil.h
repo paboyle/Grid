@@ -563,7 +563,7 @@ public:
       _grid->StencilBarrier(); 
 #endif
     }
-    traceID = traceStart("Stencil::CommunicateBegin");
+    traceID = traceStart("Stencil Communicate");
     OffNodeBytes=0;
     CommTimer=-usecond();
     for(int i=0;i<Packets.size();i++){
