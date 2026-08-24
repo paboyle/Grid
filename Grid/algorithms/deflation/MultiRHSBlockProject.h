@@ -760,6 +760,7 @@ public:
   template<class cobj>
   void blockProject(std::vector<Field> &fine,std::vector< Lattice<cobj> > & coarse)
   {
+    GRID_TRACE("BlockProject");
     int nrhs=fine.size();
     int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
     //    std::cout << "blockProject nbasis " <<nbasis<<" " << _nbasis<<std::endl;
@@ -819,6 +820,7 @@ public:
   template<class cobj>
   void blockPromote(std::vector<Field> &fine,std::vector<Lattice<cobj> > & coarse)
   {
+    GRID_TRACE("BlockPromote");
     int nrhs=fine.size();
     int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
     GRID_ASSERT(nbasis==_nbasis);
@@ -877,6 +879,7 @@ public:
   template<class cobj>
   void blockProject(Field &fine_mrhs,Lattice<cobj> &coarse_mrhs)
   {
+    GRID_TRACE("BlockProjectMrhs");
     int nrhs = fine_mrhs.Grid()->_rdimensions[0];
     int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
     GRID_ASSERT(nbasis==_nbasis);
@@ -893,6 +896,7 @@ public:
   template<class cobj>
   void blockPromote(Field &fine_mrhs,Lattice<cobj> &coarse_mrhs)
   {
+    GRID_TRACE("BlockPromoteMrhs");
     int nrhs = fine_mrhs.Grid()->_rdimensions[0];
     int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
     GRID_ASSERT(nbasis==_nbasis);
@@ -913,6 +917,7 @@ public:
   template<class cobj>
   void blockProject(std::vector<Field> &fine,Lattice<cobj> &coarse_mrhs)
   {
+    GRID_TRACE("BlockProjectMixed");
     int nrhs = fine.size();
     int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
     GRID_ASSERT(nbasis==_nbasis);
@@ -929,6 +934,7 @@ public:
   template<class cobj>
   void blockProject(Field &fine_mrhs,std::vector< Lattice<cobj> > &coarse)
   {
+    GRID_TRACE("BlockProjectMixed");
     int nrhs = fine_mrhs.Grid()->_rdimensions[0];
     int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
     GRID_ASSERT(nbasis==_nbasis);
@@ -945,6 +951,7 @@ public:
   template<class cobj>
   void blockPromote(std::vector<Field> &fine,Lattice<cobj> &coarse_mrhs)
   {
+    GRID_TRACE("BlockPromoteMixed");
     int nrhs = fine.size();
     int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
     GRID_ASSERT(nbasis==_nbasis);
@@ -961,6 +968,7 @@ public:
   template<class cobj>
   void blockPromote(Field &fine_mrhs,std::vector< Lattice<cobj> > &coarse)
   {
+    GRID_TRACE("BlockPromoteMixed");
     int nrhs = fine_mrhs.Grid()->_rdimensions[0];
     int _nbasis = sizeof(typename cobj::scalar_object)/sizeof(scalar);
     GRID_ASSERT(nbasis==_nbasis);
@@ -1002,6 +1010,7 @@ public:
   // C_br = V^dag F
   void ProjectBLAS(int nrhs)
   {
+    GRID_TRACE("ProjectBLAS");
     deviceVector<scalar *> Vd(coarse_vol);
     deviceVector<scalar *> Fd(coarse_vol);
     deviceVector<scalar *> Cd(coarse_vol);
@@ -1022,6 +1031,7 @@ public:
   // F_xr = Vxb Cbr
   void PromoteBLAS(int nrhs)
   {
+    GRID_TRACE("PromoteBLAS");
     deviceVector<scalar *> Vd(coarse_vol);
     deviceVector<scalar *> Fd(coarse_vol);
     deviceVector<scalar *> Cd(coarse_vol);

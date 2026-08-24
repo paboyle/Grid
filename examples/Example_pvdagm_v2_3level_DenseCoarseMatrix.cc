@@ -90,13 +90,25 @@ RealD OuterTol             = 1.0e-8;
 int   OuterMmax            = 8;
 int   OuterNstep           = 8;
 
-// Halo exchange in reduced precision on the fine stencils.  Stencil::SloppyComms
-// is a plain runtime setter (Stencil.h:303) applied to the full/even/odd stencils
-// of an operator that is already built, so this costs no extra storage and no
-// second operator.  Benchmark_dwf at this decomposition measures ~1.6x on the
-// fine Dhop, consistent with the uncompressed halo being ~1.6x the interior
-// compute time.  Set FineSloppyComms=0 to recover the exact-comms behaviour.
+// "It's legal to get the same answer faster, not to get a less correct
+// answer."  (PB, 2026-08-24)
+//
+// Halo-precision POLICY: reduced-precision (fp32 wire)
+// halos belong in the PRECONDITIONER -- the smoother, the V-cycle's own
+// residuals, and the coarsening -- and NEVER in the outer Krylov.  The
+// outer operator's applications define what "converged" means; making them
+// sloppy turns the stopping criterion into a statement about the wrong
+// operator (measured: solver stops at computed 9.8e-9 while the true
+// residual is 3.4e-8).  Exactness costs one exact fine matvec per outer
+// iteration, a few percent of the solve.
+//
+// Stencil::SloppyComms is a free runtime setter (Stencil.h:303), so the
+// policy is implemented by SCOPED toggling: SetFineSloppy(1) on entering
+// the preconditioner / coarsening, SetFineSloppy(0) on leaving.  The
+// operators default to EXACT.  FineSloppyComms therefore now means
+// "sloppy inside the preconditioner"; =0 makes everything exact.
 int   FineSloppyComms      = 1;
+std::function<void(int)> SetFineSloppy = [](int){};
 
 void ParseEnvironment(void)
 {
@@ -388,23 +400,37 @@ public:
     : _FineOperator(FineOp),_PostSmoother(Post),_Projector(Projector),_CoarseSolve(CoarseSolve),
       _CoarseGrid(CoarseGrid),_CoarseGridMrhs(CoarseGridMrhs){}
   virtual void operator()(std::vector<FineField> &in, std::vector<FineField> &out){
+    // The whole V-cycle is preconditioner: its fine residuals and the
+    // smoother run with sloppy halos; the caller (the outer Krylov) gets
+    // the exact operator back on exit.
+    GRID_TRACE("MGVcycle");
+    SetFineSloppy(FineSloppyComms);
     int nrhs=in.size(); GridBase *fgrid=in[0].Grid();
     std::vector<FineField> vec1(nrhs,fgrid),vec2(nrhs,fgrid);
     for(int r=0;r<nrhs;r++) out[r]=in[r];
-    for(int r=0;r<nrhs;r++){ _FineOperator.Op(out[r],vec1[r]); sub(vec1[r],in[r],vec1[r]); }
-
+    { GRID_TRACE("MGFineResidual");
+      for(int r=0;r<nrhs;r++){ _FineOperator.Op(out[r],vec1[r]); sub(vec1[r],in[r],vec1[r]); }
+    }
     // fine vector -> D+1 coarse, via the mixed blockProject
     CoarseVector CsrcMrhs(_CoarseGridMrhs), CsolMrhs(_CoarseGridMrhs);
-    _Projector.blockProject(vec1,CsrcMrhs);
-
+    { GRID_TRACE("MGProject");
+      _Projector.blockProject(vec1,CsrcMrhs);
+    }
     CsolMrhs=Zero();
-    _CoarseSolve(CsrcMrhs,CsolMrhs);
-
-    _Projector.blockPromote(vec1,CsolMrhs);
-    for(int r=0;r<nrhs;r++) add(out[r],out[r],vec1[r]);
-
-    for(int r=0;r<nrhs;r++){ _FineOperator.Op(out[r],vec1[r]); sub(vec1[r],in[r],vec1[r]); }
-    for(int r=0;r<nrhs;r++){ vec2[r]=Zero(); _PostSmoother(vec1[r],vec2[r]); add(out[r],out[r],vec2[r]); }
+    { GRID_TRACE("MGCoarseSolve");
+      _CoarseSolve(CsrcMrhs,CsolMrhs);
+    }
+    { GRID_TRACE("MGPromote");
+      _Projector.blockPromote(vec1,CsolMrhs);
+      for(int r=0;r<nrhs;r++) add(out[r],out[r],vec1[r]);
+    }
+    { GRID_TRACE("MGFineResidual2");
+      for(int r=0;r<nrhs;r++){ _FineOperator.Op(out[r],vec1[r]); sub(vec1[r],in[r],vec1[r]); }
+    }
+    { GRID_TRACE("MGPostSmooth");
+      for(int r=0;r<nrhs;r++){ vec2[r]=Zero(); _PostSmoother(vec1[r],vec2[r]); add(out[r],out[r],vec2[r]); }
+    }
+    SetFineSloppy(0);
   }
 };
 
@@ -484,15 +510,18 @@ int main (int argc, char ** argv)
   MobiusFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c);
   MobiusFermionD Dpv (Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0, M5,b,c);
 
-  // Reduced-precision halo on both fine operators.  PVdagM and ShiftedPVdagM are
-  // thin wrappers over these same objects, so this covers coarsening, the fine
-  // smoother, the V-cycle and the outer Krylov alike.  The final residual check
-  // below turns it off again: a verification computed with a sloppy operator
-  // would certify the wrong matrix.
-  Ddwf.SloppyComms(FineSloppyComms);
-  Dpv .SloppyComms(FineSloppyComms);
-  std::cout << GridLogMessage << "Fine stencils: SloppyComms = " << FineSloppyComms
-            << (FineSloppyComms ? "  (reduced-precision halo)" : "  (exact halo)") << std::endl;
+  // PVdagM and ShiftedPVdagM are thin wrappers over these same two objects,
+  // so this one callback controls every fine halo in the program.  Default
+  // EXACT; the preconditioner and the coarsening turn sloppiness on for
+  // their own scope only (policy note at FineSloppyComms).
+  SetFineSloppy = [&Ddwf,&Dpv](int sloppy){
+    Ddwf.SloppyComms(sloppy);
+    Dpv .SloppyComms(sloppy);
+  };
+  SetFineSloppy(0);
+  std::cout << GridLogMessage << "Fine halo policy: preconditioner+coarsening "
+            << (FineSloppyComms ? "SLOPPY (fp32 wire)" : "exact")
+            << ", outer Krylov EXACT" << std::endl;
 
   typedef PVdagMLinearOperator<MobiusFermionD,LatticeFermionD>        PVdagM_t;
   typedef ShiftedPVdagMLinearOperator<MobiusFermionD,LatticeFermionD> ShiftedPVdagM_t;
@@ -546,6 +575,7 @@ int main (int argc, char ** argv)
   CoarseOpPV.SetGrid(CoarseBatch);
 
   std::cout << GridLogMessage << "*** L1 CoarsenOperator, batch "<<batch<<" ***" << std::endl;
+  SetFineSloppy(FineSloppyComms);   // coarsening builds the PRECONDITIONER
   if ( getenv("MRHS_COARSEN") ) {
     // Promote the single RHS operator and pack the batch: costs an
     // ExtractSlice/InsertSlice pair per rhs. Here for the A/B only; this is
@@ -556,6 +586,7 @@ int main (int argc, char ** argv)
     // PVdagM is single RHS: apply it directly, batch on the coarse side.
     CoarseOpPV.CoarsenOperator(PVdagM,AggregatesGCR.subspace,Coarse5d,batch);
   }
+  SetFineSloppy(0);
 
   // Stay on the batch grid: the L2 coarsening drives this operator at the
   // batch. It is switched to the solve Nrhs once L2 is built.
@@ -602,7 +633,9 @@ int main (int argc, char ** argv)
 
     LittleDiracOperator LittleDiracOpPV(geomV,FGrid,Coarse5dV);
     std::cout << GridLogMessage << "*** V1 CoarsenOperator (cross check) ***" << std::endl;
+    SetFineSloppy(FineSloppyComms);
     LittleDiracOpPV.CoarsenOperator(PVdagM,AggV);
+    SetFineSloppy(0);
 
     MrhsLittleDiracOperator mrhsV1(geomV,CoarseMrhsV);
     mrhsV1.CopyMatrix(LittleDiracOpPV);
@@ -834,10 +867,9 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage << "V2 3-level solve Nrhs "<<nr<<" total " << w.Elapsed()
               << "  (per RHS: " << w.useconds()/1.0e6/nr << " s)" << std::endl;
 
-    // Verify against the EXACT operator: the solve may have used a reduced
-    // precision halo, but the residual we report must not.
-    Ddwf.SloppyComms(0);
-    Dpv .SloppyComms(0);
+    // The outer operator is exact by policy; assert the state rather than
+    // trust it -- a preconditioner that failed to restore would surface here.
+    SetFineSloppy(0);
     { LatticeFermionD Ax(FGrid); RealD worst=0.0;
       for(int r=0;r<nr;r++){ PVdagM.Op(sol[r],Ax); Ax=Ax-src[r];
         RealD rn=std::sqrt(norm2(Ax)/norm2(src[r]));
@@ -846,8 +878,7 @@ int main (int argc, char ** argv)
       std::cout << GridLogMessage << "FINAL Nrhs "<<nr<<": worst-case residual = " << worst
                 << "   (exact-halo verification)" << std::endl;
     }
-    Ddwf.SloppyComms(FineSloppyComms);
-    Dpv .SloppyComms(FineSloppyComms);
+
 
     // The operators borrow these grids and build a PaddedCell on them, so
     // they must let go before the grids are destroyed.

@@ -785,10 +785,14 @@ public:
       GRID_ASSERT(in.Grid() == _CoarseGridMulti);
     }
 
+    GRID_TRACE("CoarseV2Mult");
     t_tot=-usecond();
     CoarseVector tin=in;
     t_exch=-usecond();
-    CoarseVector pin = CellMulti->ExchangePeriodic(tin); //padded input
+    // lambda scope so the roctx range covers exactly the exchange; the
+    // PaddedCellFwd/BwdMPI markers inside it then nest properly.
+    CoarseVector pin = [&](){ GRID_TRACE("CoarseV2Exchange");
+                              return CellMulti->ExchangePeriodic(tin); }(); //padded input
     t_exch+=usecond();
 
     CoarseVector pout(pin.Grid());
@@ -812,12 +816,15 @@ public:
     
 
     t_GtoB=-usecond();
-    GridtoBLAS(pin,BLAS_B);
+    { GRID_TRACE("CoarseV2GridToBLAS");
+      GridtoBLAS(pin,BLAS_B);
+    }
     t_GtoB+=usecond();
 
     GridBLAS BLAS;
 
     t_mult=-usecond();
+    { GRID_TRACE("CoarseV2StencilGEMM");
     for(int p=0;p<geom.npoint;p++){
       RealD c = 1.0;
       if (p==0) c = 0.0;
@@ -831,10 +838,13 @@ public:
 		       BLAS_CP);
     }
     BLAS.synchronise();
+    }
     t_mult+=usecond();
 
     t_BtoG=-usecond();
-    BLAStoGrid(out,BLAS_C);
+    { GRID_TRACE("CoarseV2BLASToGrid");
+      BLAStoGrid(out,BLAS_C);
+    }
     t_BtoG+=usecond();
     t_tot+=usecond();
     /*

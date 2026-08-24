@@ -948,6 +948,7 @@ public:
   ////////////////////////////////////////////////////////////////////
   void SlabApplyPacked(int nr, double *tprof)
   {
+    GRID_TRACE("DenseSlabApply");
     GRID_ASSERT(nr <= MRHS_MAX);
     uint64_t nX = (uint64_t)N * nr;
     uint64_t nY = (uint64_t)nrows * nr;
@@ -955,14 +956,22 @@ public:
     double t1 = usecond();
     double t2, t3;
     if (devSum) {
-      acceleratorCopyToDevice(&hX[0],&dX[0],nX*sizeof(ComplexF));
+      { GRID_TRACE("DenseH2D");
+        acceleratorCopyToDevice(&hX[0],&dX[0],nX*sizeof(ComplexF));
+      }
       t2 = usecond();
-      grid->GlobalSumVector((ComplexF *)&dX[0], (int)nX);
+      { GRID_TRACE("DenseAllreduce");
+        grid->GlobalSumVector((ComplexF *)&dX[0], (int)nX);
+      }
       t3 = usecond();
     } else {
-      grid->GlobalSumVector(&hX[0], (int)nX);
+      { GRID_TRACE("DenseAllreduce");
+        grid->GlobalSumVector(&hX[0], (int)nX);
+      }
       t2 = usecond();
-      acceleratorCopyToDevice(&hX[0],&dX[0],nX*sizeof(ComplexF));
+      { GRID_TRACE("DenseH2D");
+        acceleratorCopyToDevice(&hX[0],&dX[0],nX*sizeof(ComplexF));
+      }
       t3 = usecond();
     }
     // Y = op(slab,T) . X : row-major slab (nrows x N) == col-major A^T
@@ -970,13 +979,13 @@ public:
     // Split-K: NK chunk-GEMMs by pointer offset (AOT lists), then reduce.
     ComplexF one (1.0,0.0);
     ComplexF zero(0.0,0.0);
-    BLAS.gemmBatched(GridBLAS_OP_T, GridBLAS_OP_N,
-                     (int)nrows, nr, (int)Kc,
-                     one,  aptrs, (int)N,
-                           xptrs, (int)N,
-                     zero, cptrs, (int)nrows);
-    BLAS.synchronise();
-    {
+    { GRID_TRACE("DenseSplitKGEMM");
+      BLAS.gemmBatched(GridBLAS_OP_T, GridBLAS_OP_N,
+                       (int)nrows, nr, (int)Kc,
+                       one,  aptrs, (int)N,
+                             xptrs, (int)N,
+                       zero, cptrs, (int)nrows);
+      BLAS.synchronise();
       ComplexF *pp = &dPartial[0];
       ComplexF *py = &dY[0];
       uint64_t stride = (uint64_t)nrows*MRHS_MAX;
@@ -988,7 +997,9 @@ public:
       });
     }
     double t4 = usecond();
-    acceleratorCopyFromDevice(&dY[0],&hY[0],nY*sizeof(ComplexF));
+    { GRID_TRACE("DenseD2H");
+      acceleratorCopyFromDevice(&dY[0],&hY[0],nY*sizeof(ComplexF));
+    }
     double t5 = usecond();
     if (tprof) {
       tprof[0] = devSum ? (t3-t2) : (t2-t1);   // allreduce
@@ -1003,20 +1014,25 @@ public:
   ////////////////////////////////////////////////////////////////////
   virtual void operator()(const Field &src, Field &psi)
   {
+    GRID_TRACE("DenseApply1");
     uint64_t nX = (uint64_t)N;
-    thread_for(i, nX, { hX[i]=ComplexF(0.0,0.0); });
-    for(int ss=0; ss<lsites; ss++){
-      sobj s;
-      peekLocalSite(s, src, myLcoor[ss]);
-      for(int b=0; b<nbasis; b++)
-        hX[ myGsite[ss]*nbasis + b ] = ComplexF(((ComplexD *)&s)[b]);
+    { GRID_TRACE("DensePack");
+      thread_for(i, nX, { hX[i]=ComplexF(0.0,0.0); });
+      for(int ss=0; ss<lsites; ss++){
+        sobj s;
+        peekLocalSite(s, src, myLcoor[ss]);
+        for(int b=0; b<nbasis; b++)
+          hX[ myGsite[ss]*nbasis + b ] = ComplexF(((ComplexD *)&s)[b]);
+      }
     }
     SlabApplyPacked(1, nullptr);
-    for(int ss=0; ss<lsites; ss++){
-      sobj s;
-      for(int b=0; b<nbasis; b++)
-        ((ComplexD *)&s)[b] = ComplexD(hY[ss*nbasis + b]);
-      pokeLocalSite(s, psi, myLcoor[ss]);
+    { GRID_TRACE("DenseUnpack");
+      for(int ss=0; ss<lsites; ss++){
+        sobj s;
+        for(int b=0; b<nbasis; b++)
+          ((ComplexD *)&s)[b] = ComplexD(hY[ss*nbasis + b]);
+        pokeLocalSite(s, psi, myLcoor[ss]);
+      }
     }
   }
 
@@ -1044,22 +1060,26 @@ public:
     GRID_ASSERT(nr <= MRHS_MAX);
     double t0 = usecond();
     uint64_t nX = (uint64_t)N*nr;
-    thread_for(i, nX, { hX[i]=ComplexF(0.0,0.0); });
-    for(int rr=0; rr<nr; rr++){
-      for(int ss=0; ss<lsites; ss++){
-        sobj s;
-        peekLocalSite(s, src[rr], myLcoor[ss]);
-        for(int b=0; b<nbasis; b++)
-          hX[ (uint64_t)rr*N + myGsite[ss]*nbasis + b ] = ComplexF(((ComplexD *)&s)[b]);
+    { GRID_TRACE("DensePack");
+      thread_for(i, nX, { hX[i]=ComplexF(0.0,0.0); });
+      for(int rr=0; rr<nr; rr++){
+        for(int ss=0; ss<lsites; ss++){
+          sobj s;
+          peekLocalSite(s, src[rr], myLcoor[ss]);
+          for(int b=0; b<nbasis; b++)
+            hX[ (uint64_t)rr*N + myGsite[ss]*nbasis + b ] = ComplexF(((ComplexD *)&s)[b]);
+        }
       }
     }
     SlabApplyPacked(nr, nullptr);
-    for(int rr=0; rr<nr; rr++){
-      for(int ss=0; ss<lsites; ss++){
-        sobj s;
-        for(int b=0; b<nbasis; b++)
-          ((ComplexD *)&s)[b] = ComplexD(hY[(uint64_t)rr*nrows + (ss*nbasis+b)]);
-        pokeLocalSite(s, psi[rr], myLcoor[ss]);
+    { GRID_TRACE("DenseUnpack");
+      for(int rr=0; rr<nr; rr++){
+        for(int ss=0; ss<lsites; ss++){
+          sobj s;
+          for(int b=0; b<nbasis; b++)
+            ((ComplexD *)&s)[b] = ComplexD(hY[(uint64_t)rr*nrows + (ss*nbasis+b)]);
+          pokeLocalSite(s, psi[rr], myLcoor[ss]);
+        }
       }
     }
     double t1 = usecond();
@@ -1090,7 +1110,7 @@ public:
     Field &in = const_cast<Field &>(in6);
     uint64_t nX = (uint64_t)N * nr;
     thread_for(i, nX, { hX[i]=ComplexF(0.0,0.0); });
-    {
+    { GRID_TRACE("DensePack");
       autoView(iv, in, CpuRead);
       Coordinate c6(nd+1);
       for(int ss=0; ss<lsites; ss++){
@@ -1108,7 +1128,7 @@ public:
     double tprof[4];
     SlabApplyPacked(nr, tprof);
     double t5 = usecond();
-    {
+    { GRID_TRACE("DenseUnpack");
       autoView(ov, out6, CpuWrite);
       Coordinate c6(nd+1);
       for(int ss=0; ss<lsites; ss++){
