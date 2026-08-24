@@ -221,7 +221,7 @@ public:
     GCRLogLevel<< "PGCR true residual "<< sqrt(cp/SSQ)     <<std::endl;
 
     for(int k=0;k<nstep;k++){
-
+      GRID_TRACE("PGCR_step");
       steps++;
 
       int kp     = k+1;
