@@ -82,10 +82,13 @@ std::vector<int> lat_size({48,48,48,96});
 // Solver tuning, values as in the V1 example
 RealD FineSmootherShift    = 0.1;
 int   FineSmootherOrder    = 16;
+int   FineSmootherMmax     = 1;
 RealD CoarseSmootherShift  = 0.1;
 int   CoarseSmootherNstep  = 4;
+int   CoarseSmootherMmax   = 1;
 RealD CoarseSolverTol      = 0.03;
 int   CoarseSolverOrder    = 200;
+int   CoarseSolverMmax     = 4;
 RealD OuterTol             = 1.0e-8;
 int   OuterMmax            = 8;
 int   OuterNstep           = 8;
@@ -122,10 +125,13 @@ void ParseEnvironment(void)
   if(getenv("COARSEN_BATCH")) CoarsenBatch= atoi(getenv("COARSEN_BATCH"));
   if(getenv("FineSmootherShift"))  FineSmootherShift  = atof(getenv("FineSmootherShift"));
   if(getenv("FineSmootherOrder"))  FineSmootherOrder  = atoi(getenv("FineSmootherOrder"));
+  if(getenv("FineSmootherMmax"))   FineSmootherMmax   = atoi(getenv("FineSmootherMmax"));
   if(getenv("CoarseSmootherShift"))CoarseSmootherShift= atof(getenv("CoarseSmootherShift"));
   if(getenv("CoarseSmootherNstep"))CoarseSmootherNstep= atoi(getenv("CoarseSmootherNstep"));
+  if(getenv("CoarseSmootherMmax")) CoarseSmootherMmax = atoi(getenv("CoarseSmootherMmax"));
   if(getenv("CoarseSolverTol"))    CoarseSolverTol    = atof(getenv("CoarseSolverTol"));
   if(getenv("CoarseSolverOrder"))  CoarseSolverOrder  = atoi(getenv("CoarseSolverOrder"));
+  if(getenv("CoarseSolverMmax"))   CoarseSolverMmax   = atoi(getenv("CoarseSolverMmax"));
   if(getenv("OuterTol"))           OuterTol           = atof(getenv("OuterTol"));
   if(getenv("OuterMmax"))          OuterMmax          = atoi(getenv("OuterMmax"));
   if(getenv("FineSloppyComms"))    FineSloppyComms    = atoi(getenv("FineSloppyComms"));
@@ -292,7 +298,7 @@ public:
   static RealD vnorm2(std::vector<Field> &x){ RealD s=0; for(auto &f:x) s+=norm2(f); return s; }
   static ComplexD vinnerProduct(std::vector<Field> &x,std::vector<Field> &y){ ComplexD s(0); for(int r=0;r<(int)x.size();r++) s+=innerProduct(x[r],y[r]); return s; }
   static void vaxpy(std::vector<Field> &z,ComplexD a,std::vector<Field> &x,std::vector<Field> &y){ for(int r=0;r<(int)z.size();r++) axpy(z[r],a,x[r],y[r]); }
-  void vOp(std::vector<Field> &in,std::vector<Field> &out){ for(int r=0;r<(int)in.size();r++) Linop.Op(in[r],out[r]); }
+  void vOp(std::vector<Field> &in,std::vector<Field> &out){ GRID_TRACE("MrhsPGCR::vOp"); for(int r=0;r<(int)in.size();r++) Linop.Op(in[r],out[r]); }
   void operator()(std::vector<Field> &src,std::vector<Field> &psi){
     RealD cp,ssq,rsq; int nrhs=src.size(); GridBase *grid=src[0].Grid();
     ssq=vnorm2(src); rsq=Tolerance*Tolerance*ssq;
@@ -329,12 +335,19 @@ public:
       vaxpy(psi,a,p[peri_k],psi); vaxpy(r,-a,q[peri_k],r); cp=vnorm2(r);
       std::cout<<GridLogMessage<<std::string(level,'\t')<<" "<<name<<" MrhsPGCR step["<<steps<<"]  resid "<<cp<<" target "<<rsq<<std::endl;
       if((k==nstep-1)||(cp<rsq)) return cp;
-      Preconditioner(r,z); vOp(z,Az); zAAz=vnorm2(Az);
+      Preconditioner(r,z);
+      vOp(z,Az);
+      zAAz=vnorm2(Az);
       q[peri_kp]=Az; p[peri_kp]=z;
       int northog=((kp)>(mmax-1))?(mmax-1):(kp);
-      for(int back=0;back<northog;back++){ int peri_back=(k-back)%mmax; GRID_ASSERT((k-back)>=0);
-        b=-real(vinnerProduct(q[peri_back],Az))/qq[peri_back];
-        vaxpy(p[peri_kp],b,p[peri_back],p[peri_kp]); vaxpy(q[peri_kp],b,q[peri_back],q[peri_kp]); }
+      {
+	GRID_TRACE("MrhsPGCR orthog");
+        for(int back=0;back<northog;back++){
+	  int peri_back=(k-back)%mmax; GRID_ASSERT((k-back)>=0);
+	  b=-real(vinnerProduct(q[peri_back],Az))/qq[peri_back];
+	  vaxpy(p[peri_kp],b,p[peri_back],p[peri_kp]); vaxpy(q[peri_kp],b,q[peri_back],q[peri_kp]);
+	}
+      }
       qq[peri_kp]=vnorm2(q[peri_kp]);
     }
     GRID_ASSERT(0); return cp;
@@ -374,14 +387,14 @@ public:
     CoarseCoarseField CCsol(_CoarseCoarseMrhs);
     _Projector.blockProject(vec1,CCsrc);
 
-    CCsol=Zero();
+    //    CCsol=Zero(); // Is this necessary?
     _CoarseCoarseSolve(CCsrc,CCsol);
 
     _Projector.blockPromote(vec1,CCsol);
     add(out,out,vec1);
 
     _CoarseOp.Op(out,vec1);  sub(vec1,in,vec1);
-    vec2=Zero();
+    //    vec2=Zero(); // Zero guess
     _CoarseSmoother(vec1,vec2);
     add(out,out,vec2);
   }
@@ -433,7 +446,10 @@ public:
       for(int r=0;r<nrhs;r++){ _FineOperator.Op(out[r],vec1[r]); sub(vec1[r],in[r],vec1[r]); }
     }
     { GRID_TRACE("MGPostSmooth");
-      for(int r=0;r<nrhs;r++){ vec2[r]=Zero(); _PostSmoother(vec1[r],vec2[r]); add(out[r],out[r],vec2[r]); }
+      for(int r=0;r<nrhs;r++){
+	//	vec2[r]=Zero();
+	_PostSmoother(vec1[r],vec2[r]); add(out[r],out[r],vec2[r]);
+      }
     }
     SetFineSloppy(0);
   }
@@ -842,7 +858,7 @@ int main (int argc, char ** argv)
 
     ShiftedLinearOperator<CoarseVector> ShiftedC(CoarseSmootherShift, LinOpC);
     PrecGeneralisedConjugateResidualNonHermitian<CoarseVector>
-      CoarseSmootherGCR(0.01,1,ShiftedC,simpleC,CoarseSmootherNstep,CoarseSmootherNstep);
+      CoarseSmootherGCR(0.01,1,ShiftedC,simpleC,CoarseSmootherMmax,CoarseSmootherNstep);
     CoarseSmootherGCR.Level(2); CoarseSmootherGCR.Name("Csmoother"); CoarseSmootherGCR.SetZeroGuess(1);
 
     MrhsCoarseThreeLevelPrec<CoarseVector,CoarseCoarseVector>
@@ -850,10 +866,10 @@ int main (int argc, char ** argv)
                   Coarse5d, CoarseCoarse5d, CCMrhs, nr);
 
     PrecGeneralisedConjugateResidualNonHermitian<CoarseVector>
-      L2PGCR(CoarseSolverTol, CoarseSolverOrder/16, LinOpC, L2to3Precon, 16, 16);
+      L2PGCR(CoarseSolverTol, CoarseSolverOrder/16, LinOpC, L2to3Precon, CoarseSolverMmax, 16);
     L2PGCR.Level(2); L2PGCR.Name("Couter"); L2PGCR.SetZeroGuess(1);
 
-    FineSmoother_t SmootherGCR(0.0,1,ShiftedPVdagM,simple_fine,FineSmootherOrder,FineSmootherOrder);
+    FineSmoother_t SmootherGCR(0.0,1,ShiftedPVdagM,simple_fine,FineSmootherMmax,FineSmootherOrder);
     SmootherGCR.Level(1); SmootherGCR.Name("Fsmoother"); SmootherGCR.SetZeroGuess(1);
     SmootherGCR.LogCoefficients(SmootherCoeffLog);
     CoarseSmootherGCR.LogCoefficients(SmootherCoeffLog);
