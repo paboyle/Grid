@@ -57,6 +57,11 @@ public:
   GridStopWatch LinalgTimer;
   std::string name;
   int ZeroGuess  = 0;  // caller contract: guess is always zero => first-cycle r0 = src, skip the apply
+  // persistent GCR history (see GCRnStep)
+  GridBase           *hist_grid = nullptr;
+  std::vector<Field>  q;
+  std::vector<Field>  p;
+  std::vector<RealD>  qq;
   int FirstCycle = 0;
 
   LinearFunction<Field>     &Preconditioner;
@@ -145,9 +150,20 @@ public:
     ////////////////////////////////
     // history for flexible orthog
     ////////////////////////////////
-    std::vector<Field> q(mmax,grid);
-    std::vector<Field> p(mmax,grid);
-    std::vector<RealD> qq(mmax);
+    // History arrays are PERSISTENT across calls (allocated once per grid,
+    // re-made only if the grid or mmax changes).  The per-call form
+    // std::vector<Field>(mmax,grid) built a temporary and copy-constructed it
+    // mmax times on every restart cycle -- measured ~5 ms per fine-smoother
+    // call.  Safe: every entry is written before it is read within a cycle
+    // (q[kp],p[kp] assigned before the northog loop can reach them), so no
+    // stale content is ever consumed.
+    if ( hist_grid != grid || (int)q.size() != mmax ) {
+      q.clear(); p.clear();
+      q.reserve(mmax); p.reserve(mmax);
+      for(int i=0;i<mmax;i++){ q.emplace_back(grid); p.emplace_back(grid); }
+      qq.assign(mmax, 0.0);
+      hist_grid = grid;
+    }
       
     GCRLogLevel<< "PGCR nStep("<<nstep<<")"<<std::endl;
 

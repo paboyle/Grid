@@ -120,7 +120,9 @@ public:
   uint64_t              bytesAllreduce;
   uint64_t              nAllreduce;    // panel collectives
   uint64_t              nGatherGemm;   // GatherGemm calls
-  uint64_t              nGather;       // AllGatherV collectives (debug gate)
+  uint64_t              nGather;       // gather-path collectives (debug gate)
+  uint64_t              nGatherV;      // ... of which MPI_Allgatherv
+  uint64_t              nBcast;        // ... of which Bcast-assembled
 
   // Persistent grow-only device panel; assembly and collectives are
   // device-resident.  Device builds require GPU-aware MPI.
@@ -368,7 +370,10 @@ public:
       uint64_t panelWords = (uint64_t)k*nchunk;
       uint64_t panelBytesThis = panelWords*sizeof(ComplexD);
 
-      int gatherThis = useGather && ( (int64_t)panelBytesThis >= gatherMinBytes );
+      // The MODE (0/1/2), not a boolean: `useGather && cond` collapses 2 to 1
+      // and silently dispatched DENSE_GATHER=2 onto the known-broken
+      // AllGatherV path (Frontier hang, 2026-08-24).  Identical on all ranks.
+      int gatherThis = ( (int64_t)panelBytesThis >= gatherMinBytes ) ? useGather : 0;
 
       // Arrival skew is charged to the barrier, so that tAllreduce measures
       // transfer alone.  Diagnostic only; off by default.
@@ -417,6 +422,7 @@ public:
         }
         if ( gatherThis == 1 )
         {
+          nGatherV++;
           void *send = owner ? (void *)B.ColumnWindow(colB+j0) : (void *)&dRecvBuf[0];
           grid->AllGatherV(send, counts[me],
                            (void *)&dRecvBuf[0], counts, displs, sizeof(ComplexD));
@@ -431,6 +437,7 @@ public:
           // Every rank issues all C broadcasts in the same order, so
           // collective matching stays positional and safe.
           ////////////////////////////////////////////////////////////////
+          nBcast++;
           if ( owner )
           {
             int64_t off_me = rowStart[me] - rowStart[rB0];
@@ -777,6 +784,8 @@ public:
     nAllreduce     = 0;
     nGatherGemm    = 0;
     nGather        = 0;
+    nGatherV       = 0;
+    nBcast         = 0;
 
     SchurNode(0, P, 0, N, Arows);
 
@@ -820,7 +829,8 @@ public:
               << "  leaf "      << tLeaf/1.0e6
               << std::endl;
     std::cout << GridLogMessage << "Schur comms:"
-              << ( useGather ? "  [AllGatherV]" : "  [zero-fill+GlobalSum]" )
+              << "  [transports run: allreduce " << (nAllreduce - nGatherV - nBcast)
+              << " allgatherv " << nGatherV << " bcast " << nBcast << "]"
               << ( barrierProbe ? " [barrier probe on]" : "" )
               << "  GatherGemm calls " << nGatherGemm
               << "  panel allreduces " << nAllreduce
