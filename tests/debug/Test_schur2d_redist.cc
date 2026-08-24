@@ -46,6 +46,15 @@ using namespace Grid;
 
 static int failures = 0;
 
+// Portable |z|: ComplexD is std::complex on CPU builds and thrust::complex
+// under HIP, where std::abs does not resolve (same trap RecursiveSchurInverse
+// documents at FrobNorm2Local).  Member real()/imag() work on both.
+static double Cabs(const ComplexD &z)
+{
+  double re = z.real(), im = z.imag();
+  return std::sqrt(re*re + im*im);
+}
+
 static void Report(const std::string &name, bool pass, const std::string &detail="")
 {
   std::cout << GridLogMessage << "  " << name << (pass ? "  PASS" : "  ** FAIL **");
@@ -72,9 +81,9 @@ static void HostInverse(std::vector<ComplexD> A, std::vector<ComplexD> &X, int64
   X.assign((uint64_t)N*N, ComplexD(0.0,0.0));
   for(int64_t i=0;i<N;i++) X[i+i*N] = ComplexD(1.0,0.0);
   for(int64_t c=0;c<N;c++){
-    int64_t piv=c; double mx = std::abs(A[c+c*N]);
+    int64_t piv=c; double mx = Cabs(A[c+c*N]);
     for(int64_t r=c+1;r<N;r++)
-      if ( std::abs(A[r+c*N]) > mx ){ mx=std::abs(A[r+c*N]); piv=r; }
+      if ( Cabs(A[r+c*N]) > mx ){ mx=Cabs(A[r+c*N]); piv=r; }
     GRID_ASSERT( mx > 0.0 );
     if ( piv != c )
       for(int64_t j=0;j<N;j++){ std::swap(A[c+j*N],A[piv+j*N]); std::swap(X[c+j*N],X[piv+j*N]); }
@@ -204,7 +213,7 @@ int main(int argc, char **argv)
             h[i + j*myrows] = Ag[(rowStart[me]+i) + j*N];
 
         double mxref = 0.0;
-        for(auto &z : Ref) mxref = std::max(mxref, std::abs(z));
+        for(auto &z : Ref) mxref = std::max(mxref, Cabs(z));
 
         // ---- 2D pipeline: rows -> cyclic -> invert -> rows ----
         std::vector<ComplexD> h2d(h.size());
@@ -219,7 +228,7 @@ int main(int argc, char **argv)
         }
         for(int64_t j=0;j<N;j++)
           for(int64_t i=0;i<myrows;i++){
-            double d = std::abs(h2d[i+j*myrows]-Ref[(rowStart[me]+i)+j*N])/mxref;
+            double d = Cabs(h2d[i+j*myrows]-Ref[(rowStart[me]+i)+j*N])/mxref;
             worst3 = std::max(worst3,d);
             if ( d > 1.0e-9 ) ok3 = false;
           }
@@ -235,7 +244,7 @@ int main(int argc, char **argv)
           acceleratorCopyFromDevice(&Ar.data[0], &h1d[0], h1d.size()*sizeof(ComplexD));
           for(int64_t j=0;j<N;j++)
             for(int64_t i=0;i<myrows;i++){
-              double d = std::abs(h2d[i+j*myrows]-h1d[i+j*myrows])/mxref;
+              double d = Cabs(h2d[i+j*myrows]-h1d[i+j*myrows])/mxref;
               worst4 = std::max(worst4,d);
               if ( d > 1.0e-9 ) ok4 = false;
             }

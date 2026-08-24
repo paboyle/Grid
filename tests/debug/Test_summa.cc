@@ -22,10 +22,10 @@ Author: Peter Boyle <pboyle@bnl.gov>
 // Regression gate for BlockCyclicSumma -- stage 2 of the 2D distributed
 // dense inverse.  CPU build under mpirun:
 //
-//   mpirun -n 1 ./Test_summa --grid 8.8.8.8 --mpi 1.1.1.1
-//   mpirun -n 2 ./Test_summa --grid 8.8.8.8 --mpi 1.1.1.2
-//   mpirun -n 3 ./Test_summa --grid 8.8.8.12 --mpi 1.1.1.3
-//   mpirun -n 4 ./Test_summa --grid 8.8.8.8 --mpi 1.1.1.4
+//   mpirun -n 1 ./Test_summa --grid 16.16.16.32 --mpi 1.1.1.1
+//   mpirun -n 2 ./Test_summa --grid 16.16.16.32 --mpi 1.1.1.2
+//   mpirun -n 3 ./Test_summa --grid 16.16.16.48 --mpi 1.1.1.3
+//   mpirun -n 4 ./Test_summa --grid 16.16.16.32 --mpi 1.1.1.4
 //
 // Every stage sweeps all process-grid factorisations of P (including the
 // degenerate 1xP and Px1 rings) and a battery of (N,nb) with ragged
@@ -48,6 +48,15 @@ Author: Peter Boyle <pboyle@bnl.gov>
 using namespace Grid;
 
 static int failures = 0;
+
+// Portable |z|: ComplexD is std::complex on CPU builds and thrust::complex
+// under HIP, where std::abs does not resolve (same trap RecursiveSchurInverse
+// documents at FrobNorm2Local).  Member real()/imag() work on both.
+static double Cabs(const ComplexD &z)
+{
+  double re = z.real(), im = z.imag();
+  return std::sqrt(re*re + im*im);
+}
 
 static void Report(const std::string &name, bool pass, const std::string &detail="")
 {
@@ -83,7 +92,7 @@ static void RefGemm(ComplexD alpha, const std::vector<ComplexD> &A,
 static double MaxDiff(const std::vector<ComplexD> &X, const std::vector<ComplexD> &Y)
 {
   double m = 0.0;
-  for(uint64_t i=0;i<X.size();i++) m = std::max(m, std::abs(X[i]-Y[i]));
+  for(uint64_t i=0;i<X.size();i++) m = std::max(m, Cabs(X[i]-Y[i]));
   return m;
 }
 

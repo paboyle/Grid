@@ -22,10 +22,10 @@ Author: Peter Boyle <pboyle@bnl.gov>
 // Regression gate for BlockCyclicSchurInverse -- stage 3 of the 2D
 // distributed dense inverse.  CPU build under mpirun:
 //
-//   mpirun -n 1 ./Test_schur2d --grid 8.8.8.8  --mpi 1.1.1.1
-//   mpirun -n 2 ./Test_schur2d --grid 8.8.8.8  --mpi 1.1.1.2
-//   mpirun -n 3 ./Test_schur2d --grid 8.8.8.12 --mpi 1.1.1.3
-//   mpirun -n 4 ./Test_schur2d --grid 8.8.8.8  --mpi 1.1.1.4
+//   mpirun -n 1 ./Test_schur2d --grid 16.16.16.32 --mpi 1.1.1.1
+//   mpirun -n 2 ./Test_schur2d --grid 16.16.16.32 --mpi 1.1.1.2
+//   mpirun -n 3 ./Test_schur2d --grid 16.16.16.48 --mpi 1.1.1.3
+//   mpirun -n 4 ./Test_schur2d --grid 16.16.16.32 --mpi 1.1.1.4
 //
 // Sweeps all process-grid factorisations of P and a battery of (N,nb)
 // including ragged trailing blocks, a single-leaf matrix (nblocks==1),
@@ -47,6 +47,15 @@ Author: Peter Boyle <pboyle@bnl.gov>
 using namespace Grid;
 
 static int failures = 0;
+
+// Portable |z|: ComplexD is std::complex on CPU builds and thrust::complex
+// under HIP, where std::abs does not resolve (same trap RecursiveSchurInverse
+// documents at FrobNorm2Local).  Member real()/imag() work on both.
+static double Cabs(const ComplexD &z)
+{
+  double re = z.real(), im = z.imag();
+  return std::sqrt(re*re + im*im);
+}
 
 static void Report(const std::string &name, bool pass, const std::string &detail="")
 {
@@ -78,9 +87,9 @@ static void HostInverse(std::vector<ComplexD> A, std::vector<ComplexD> &X, int64
   X.assign((uint64_t)N*N, ComplexD(0.0,0.0));
   for(int64_t i=0;i<N;i++) X[i+i*N] = ComplexD(1.0,0.0);
   for(int64_t c=0;c<N;c++){
-    int64_t piv=c; double mx = std::abs(A[c+c*N]);
+    int64_t piv=c; double mx = Cabs(A[c+c*N]);
     for(int64_t r=c+1;r<N;r++)
-      if ( std::abs(A[r+c*N]) > mx ){ mx=std::abs(A[r+c*N]); piv=r; }
+      if ( Cabs(A[r+c*N]) > mx ){ mx=Cabs(A[r+c*N]); piv=r; }
     GRID_ASSERT( mx > 0.0 );
     if ( piv != c )
       for(int64_t j=0;j<N;j++){
@@ -152,7 +161,7 @@ int main(int argc, char **argv)
         for(int64_t j=0;j<N;j++)
           for(int64_t i=0;i<N;i++){
             ComplexD id = (i==j) ? ComplexD(1.0,0.0) : ComplexD(0.0,0.0);
-            dc = std::max(dc, std::abs(Cert[i+j*N]-id));
+            dc = std::max(dc, Cabs(Cert[i+j*N]-id));
           }
         worstC = std::max(worstC,dc);
         if ( dc > 1.0e-10 ) okC = false;
@@ -160,8 +169,8 @@ int main(int argc, char **argv)
         // reference: element-wise, scaled by the largest inverse entry
         A.ExportGlobal(Ainv);
         double mxref = 0.0, dr = 0.0;
-        for(uint64_t i=0;i<Ref.size();i++) mxref = std::max(mxref, std::abs(Ref[i]));
-        for(uint64_t i=0;i<Ref.size();i++) dr = std::max(dr, std::abs(Ainv[i]-Ref[i]));
+        for(uint64_t i=0;i<Ref.size();i++) mxref = std::max(mxref, Cabs(Ref[i]));
+        for(uint64_t i=0;i<Ref.size();i++) dr = std::max(dr, Cabs(Ainv[i]-Ref[i]));
         dr /= mxref;
         worstR = std::max(worstR,dr);
         if ( dr > 1.0e-9 ) okR = false;

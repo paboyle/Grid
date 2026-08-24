@@ -21,10 +21,10 @@ Author: Peter Boyle <pboyle@bnl.gov>
 // Regression gate for CartesianCommunicator::AllGather / AllGatherV.
 //
 // CPU build under mpirun:
-//   mpirun -n 1 ./Test_allgather --grid 8.8.8.8  --mpi 1.1.1.1
-//   mpirun -n 2 ./Test_allgather --grid 8.8.8.8  --mpi 1.1.1.2
-//   mpirun -n 3 ./Test_allgather --grid 8.8.8.12 --mpi 1.1.1.3
-//   mpirun -n 4 ./Test_allgather --grid 8.8.8.8  --mpi 1.1.1.4
+//   mpirun -n 1 ./Test_allgather --grid 16.16.16.32 --mpi 1.1.1.1
+//   mpirun -n 2 ./Test_allgather --grid 16.16.16.32 --mpi 1.1.1.2
+//   mpirun -n 3 ./Test_allgather --grid 16.16.16.48 --mpi 1.1.1.3
+//   mpirun -n 4 ./Test_allgather --grid 16.16.16.32 --mpi 1.1.1.4
 //
 //   T1 : uniform AllGather, rank-ordered concatenation.
 //   T2 : AllGatherV with non-uniform counts and displacements.

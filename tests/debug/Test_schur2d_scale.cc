@@ -54,6 +54,15 @@ Author: Peter Boyle <pboyle@bnl.gov>
 
 using namespace Grid;
 
+// Portable |z|: ComplexD is std::complex on CPU builds and thrust::complex
+// under HIP, where std::abs does not resolve (same trap RecursiveSchurInverse
+// documents at FrobNorm2Local).  Member real()/imag() work on both.
+static double Cabs(const ComplexD &z)
+{
+  double re = z.real(), im = z.imag();
+  return std::sqrt(re*re + im*im);
+}
+
 static ComplexD Fill(int64_t i, int64_t j, int64_t N)
 {
   double x = std::sin(0.7*i + 1.3*j);
@@ -61,7 +70,7 @@ static ComplexD Fill(int64_t i, int64_t j, int64_t N)
   if ( i==j ) return ComplexD(3.0*64 + x, 0.5);   // dominance independent of N
   // band-limit the off-diagonal so row sums stay bounded as N grows:
   // only |i-j| <= 64 entries are non-zero => sum |offdiag| <= 128*1.42 < 3*64
-  if ( std::abs((double)(i-j)) > 64.0 ) return ComplexD(0.0,0.0);
+  if ( std::fabs((double)(i-j)) > 64.0 ) return ComplexD(0.0,0.0);
   return ComplexD(x,y);
 }
 
@@ -149,7 +158,7 @@ int main(int argc, char **argv)
       for(int64_t li=0;li<L.mloc;li++){
         int64_t gi = BlockCyclicLayout::LocalToGlobal(li, nb, L.prow, Pr);
         ComplexD id = (gi==gj) ? ComplexD(1.0,0.0) : ComplexD(0.0,0.0);
-        mx = std::max(mx, std::abs(hc[li+lj*L.mloc]-id));
+        mx = std::max(mx, Cabs(hc[li+lj*L.mloc]-id));
       }
     }
     RealD gmx = mx;  grid->GlobalMax(gmx);
