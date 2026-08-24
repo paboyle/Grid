@@ -30,6 +30,8 @@ Author: Peter Boyle <pboyle@bnl.gov>
 #include <Grid/algorithms/blas/BatchedBlas.h>
 #include <Grid/algorithms/blas/BatchedInverse.h>
 #include <Grid/algorithms/multigrid/RecursiveSchurInverse.h>
+#include <Grid/algorithms/multigrid/BlockCyclicSchurInverse.h>
+#include <Grid/algorithms/multigrid/BlockCyclicRedistribute.h>
 
 #include <unordered_map>
 
@@ -874,13 +876,48 @@ public:
     BlockRows S;
     ImportDenseFP64(Op, S, g2rm);
 
+    ////////////////////////////////////////////////////////////////
+    // DENSE_SCHUR2D=1 : invert via the 2D block-cyclic recursion
+    // (BlockCyclicSchurInverse) instead of the 1D rank-range one.
+    // The SAME imported rank-major rows S go in and come back, so the
+    // import certificate above and the slab rounding / VERIFY below are
+    // identical for both paths: a clean A/B on one imported operator.
+    //
+    // Everything in the 2D path -- redistribution, SUMMA rings, leaf --
+    // is point-to-point SendToRecvFrom; no collectives at all.
+    // DENSE_NB overrides the block size (default: rows-per-rank, which
+    // makes the redistribution edges maximally regular).
+    ////////////////////////////////////////////////////////////////
+    int use2d = getenv("DENSE_SCHUR2D") ? atoi(getenv("DENSE_SCHUR2D")) : 0;
     int64_t panelBytes = getenv("DENSE_PANEL_BYTES") ? atol(getenv("DENSE_PANEL_BYTES"))
-                                                     : (int64_t)1024*1024*1024;
-    RecursiveSchurInverse RSI(grid, N, rowStart, panelBytes);
-    double t2 = usecond();
-    RSI.Invert(S);
-    double t3 = usecond();
-    RSI.ReportTelemetry();
+                                                     : (int64_t)1024*1024*1024;   // 1D path only
+    double t2, t3;
+    if ( use2d )
+    {
+      int Pr,Pc;
+      BlockCyclicLayout::ChooseProcessGrid(P, Pr, Pc);
+      int64_t nb = getenv("DENSE_NB") ? atol(getenv("DENSE_NB")) : nrows;
+      GRID_ASSERT( nb >= 1 );
+      std::cout << GridLogMessage << "DenseCoarseMatrix: 2D SCHUR invert, process grid "
+                << Pr << " x " << Pc << "  nb " << nb
+                << "  (pure P2P: redistribute + SUMMA rings + local leaves)" << std::endl;
+      BlockCyclicMatrix A2(grid, N, nb, Pr, Pc);
+      BlockCyclicSchurInverse RSI2;
+      t2 = usecond();
+      BlockCyclicRedistribute::RowsToCyclic(grid, rowStart, &S.data[0], nrows, A2);
+      RSI2.Invert(A2);
+      BlockCyclicRedistribute::CyclicToRows(grid, rowStart, A2, &S.data[0], nrows);
+      t3 = usecond();
+      RSI2.ReportTelemetry(grid);
+    }
+    else
+    {
+      RecursiveSchurInverse RSI(grid, N, rowStart, panelBytes);
+      t2 = usecond();
+      RSI.Invert(S);
+      t3 = usecond();
+      RSI.ReportTelemetry();
+    }
 
     // The single terminal rounding: fp64 inverse -> fp32 apply slab
     // (row-major, global columns)
