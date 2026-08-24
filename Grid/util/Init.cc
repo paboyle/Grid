@@ -666,7 +666,7 @@ void Grid_finalize(void)
 #endif
   std::cout<<GridLogMessage<<"******* Grid Finalize successful     ******"<<std::endl;
   std::cout<<GridLogMessage<<"*******************************************"<<std::endl;
-  Grid_unquiesce_nodes();
+  //  Grid_unquiesce_nodes();
   Grid_is_initialised = 0;
 }
 
