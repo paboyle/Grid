@@ -72,6 +72,13 @@ public:
   void Level(int n) { Name("Level " + std::to_string(n)); level = n; }
 
   void SetZeroGuess(int z) { ZeroGuess = z; };
+  // Coefficient logging: one line per step with the step length a_k and the
+  // orthogonalisation coefficients b_{k,j}.  These are the data from which a
+  // FIXED polynomial smoother can be harvested: if they are stable from call
+  // to call, the adaptive GCR can be replaced by a stationary p(A) with the
+  // same applies and no reductions.  Off by default; boss rank prints.
+  int  LogCoeffs = 0;
+  void LogCoefficients(int l) { LogCoeffs = l; };
 
   PrecGeneralisedConjugateResidualNonHermitian(RealD tol,Integer maxit,LinearOperatorBase<Field> &_Linop,LinearFunction<Field> &Prec,int _mmax,int _nstep) : 
     Tolerance(tol), 
@@ -229,6 +236,10 @@ public:
 
       cp = axpy_norm(r,-a,q[peri_k],r);
       LinalgTimer.Stop();
+      if ( LogCoeffs ) {
+        GCRLogLevel<<"coeff["<<k<<"] a=("<<real(a)<<","<<imag(a)<<")"
+                   <<" |r|/|r0|="<<sqrt(cp/SSQ)<<std::endl;
+      }
 
       GCRLogLevel<< "PGCR step["<<steps<<"]  resid " << sqrt(cp/SSQ)<<std::endl;
 
@@ -252,6 +263,7 @@ public:
       p[peri_kp]=z;
 
       int northog = ((kp)>(mmax-1))?(mmax-1):(kp);  // if more than mmax done, we orthog all mmax history.
+      std::ostringstream bs;
       for(int back=0;back<northog;back++){
 
 	int peri_back=(k-back)%mmax;   	  GRID_ASSERT((k-back)>=0);
@@ -259,7 +271,11 @@ public:
 	b=-real(innerProduct(q[peri_back],Az))/qq[peri_back];
 	p[peri_kp]=p[peri_kp]+b*p[peri_back];
 	q[peri_kp]=q[peri_kp]+b*q[peri_back];
+        if ( LogCoeffs ) bs<<" b["<<back<<"]="<<b;
 
+      }
+      if ( LogCoeffs && northog ) {
+        GCRLogLevel<<"coeff["<<k<<"]"<<bs.str()<<std::endl;
       }
       qq[peri_kp]=norm2(q[peri_kp]); // could use axpy_norm
       LinalgTimer.Stop();

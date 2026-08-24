@@ -108,6 +108,10 @@ int   OuterNstep           = 8;
 // operators default to EXACT.  FineSloppyComms therefore now means
 // "sloppy inside the preconditioner"; =0 makes everything exact.
 int   FineSloppyComms      = 1;
+// SmootherCoeffLog=1 : print the GCR step lengths a_k and orthogonalisation
+// coefficients b_kj of BOTH smoothers every call -- the harvest for a fixed
+// polynomial smoother (stable coefficients => stationary p(A), no reductions).
+int   SmootherCoeffLog     = 0;
 std::function<void(int)> SetFineSloppy = [](int){};
 
 void ParseEnvironment(void)
@@ -125,6 +129,7 @@ void ParseEnvironment(void)
   if(getenv("OuterTol"))           OuterTol           = atof(getenv("OuterTol"));
   if(getenv("OuterMmax"))          OuterMmax          = atoi(getenv("OuterMmax"));
   if(getenv("FineSloppyComms"))    FineSloppyComms    = atoi(getenv("FineSloppyComms"));
+  if(getenv("SmootherCoeffLog"))   SmootherCoeffLog   = atoi(getenv("SmootherCoeffLog"));
   if(getenv("OuterNstep"))         OuterNstep         = atoi(getenv("OuterNstep"));
   if(getenv("LATT")){
     Coordinate l;
@@ -850,6 +855,8 @@ int main (int argc, char ** argv)
 
     FineSmoother_t SmootherGCR(0.0,1,ShiftedPVdagM,simple_fine,FineSmootherOrder,FineSmootherOrder);
     SmootherGCR.Level(1); SmootherGCR.Name("Fsmoother"); SmootherGCR.SetZeroGuess(1);
+    SmootherGCR.LogCoefficients(SmootherCoeffLog);
+    CoarseSmootherGCR.LogCoefficients(SmootherCoeffLog);
 
     MrhsTwoLevelMG<LatticeFermionD,CoarseVector,FineSmoother_t>
       ThreeLevelPrecon(PVdagM, SmootherGCR, MrhsProjector, L2PGCR, Coarse5d, CMrhs);
