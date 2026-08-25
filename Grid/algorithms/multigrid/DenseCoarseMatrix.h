@@ -251,11 +251,13 @@ public:
       for(int j=0;j<NK;j++) h[j] = &dPartial[0] + (uint64_t)j*nrows*MRHS_MAX;  // compact, ldc=nrows
       acceleratorCopyToDevice(&h[0],&cptrs[0],NK*sizeof(ComplexF*));
 
-      devSum = getenv("DENSE_DEVICE_SUM") ? 1 : 0;
+      devSum = getenv("DENSE_DEVICE_SUM") ? atoi(getenv("DENSE_DEVICE_SUM")) : 0;
+      const char *sumName[4] = {"host allreduce","DEVICE-buffer allreduce (GPU-aware MPI)",
+                                "DEVICE cartesian ring allreduce (P2P)","DEVICE flat ring allreduce (P2P)"};
+      GRID_ASSERT(devSum>=0 && devSum<=3);
       std::cout << GridLogMessage << "DenseCoarseMatrix: slab resident on device ("
                 << sbytes/1024./1024. << " MB/rank), split-K NK=" << NK << " (Kc=" << Kc << "); "
-                << (devSum ? "DEVICE-buffer allreduce (GPU-aware MPI)" : "host allreduce")
-                << std::endl;
+                << sumName[devSum] << std::endl;
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -961,7 +963,13 @@ public:
       }
       t2 = usecond();
       { GRID_TRACE("DenseAllreduce");
-        grid->GlobalSumVector((ComplexF *)&dX[0], (int)nX);
+        // DENSE_DEVICE_SUM=1 : device-buffer MPI_Allreduce (Cray MPICH aborts
+        //                      above ~8 MB: 12 RHS at N=138240 is 13.3 MB)
+        // DENSE_DEVICE_SUM=2 : CartesianRingAllReduce, P2P only, no size cliff
+        // DENSE_DEVICE_SUM=3 : flat RingAllReduce, P2P only
+        if      (devSum==2) CartesianRingAllReduce(grid,(ComplexF *)&dX[0],nX);
+        else if (devSum==3) RingAllReduce(grid,(ComplexF *)&dX[0],nX);
+        else                grid->GlobalSumVector((ComplexF *)&dX[0], (int)nX);
       }
       t3 = usecond();
     } else {

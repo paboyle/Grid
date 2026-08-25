@@ -77,11 +77,14 @@ inline void thread_bcopy(const void *from, void *to,size_t bytes)
 {
   const uint64_t *ufrom = (const uint64_t *)from;
   uint64_t *uto   = (uint64_t *)to;
-  GRID_ASSERT(bytes%8==0);
   uint64_t words=bytes/8;
   thread_for(w,words,{
       uto[w] = ufrom[w];
   });
+  // Tail: byte counts that are not a multiple of 8 (e.g. odd-length float
+  // buffers) copy the remainder serially instead of asserting.
+  uint64_t tail = bytes%8;
+  if ( tail ) bcopy((const char *)from + words*8, (char *)to + words*8, tail);
 }
 #else
 inline void thread_bcopy(const void *from, void *to,size_t bytes)
