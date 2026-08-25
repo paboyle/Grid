@@ -149,13 +149,18 @@ int main(int argc, char **argv)
   // first.  Run a small throwaway inverse through BOTH paths so the timed
   // legs below measure hot code.  Not reported.
   ////////////////////////////////////////////////////////////////////////
-  {
+  // S2D_NOWARM=1 skips it (hang localisation).  Stage markers are flushed so
+  // a hang shows WHERE even through block-buffered stdout.
+  auto Stage = [&](const char *s){ std::cout << GridLogMessage << "stage: " << s << std::endl << std::flush; };
+  if ( !getenv("S2D_NOWARM") ) {
     int64_t Nw = 8*P; int64_t nbw = 8;
     std::vector<int64_t> rs(P+1); for(int r=0;r<=P;r++) rs[r]=8*r;
     std::vector<ComplexD> hw(8*Nw); for(int64_t jj=0;jj<Nw;jj++) for(int64_t i=0;i<8;i++) hw[i+jj*8]=Fill(8*me+i,jj);
     deviceVector<ComplexD> dw(hw.size()); acceleratorCopyToDevice(&hw[0],&dw[0],hw.size()*sizeof(ComplexD));
     BlockCyclicMatrix W(grid,Nw,nbw,Pr,Pc);
+    Stage("warm-up Grid RowsToCyclic");
     BlockCyclicRedistribute::RowsToCyclic(grid,rs,&dw[0],8,W);
+    Stage("warm-up Grid Invert");
     BlockCyclicSchurInverse RSIw; RSIw.Invert(W);
 #ifdef HAVE_SLATE
     {
@@ -164,6 +169,7 @@ int main(int argc, char **argv)
       uint64_t nloc = (uint64_t)L.mloc*L.nloc;
       std::vector<scalar_t> hA(nloc ? nloc : 1);
       if ( nloc ) acceleratorCopyFromDevice(&W.data[0],(void *)&hA[0],nloc*sizeof(ComplexD));
+      Stage("warm-up SLATE fromScaLAPACK");
       auto S = slate::Matrix<scalar_t>::fromScaLAPACK(Nw,Nw,&hA[0],(int64_t)std::max<int64_t>(L.mloc,1),
                                                       nbw,nbw,slate::GridOrder::Row,Pr,Pc,grid->communicator);
 #if defined(GRID_HIP) || defined(GRID_CUDA) || defined(GRID_SYCL)
@@ -171,10 +177,16 @@ int main(int argc, char **argv)
 #else
       slate::Options opts = { { slate::Option::Target, slate::Target::HostTask } };
 #endif
-      slate::Pivots piv; slate::getrf(S,piv,opts); slate::getri(S,piv,opts);
+      slate::Pivots piv;
+      Stage("warm-up SLATE getrf");
+      slate::getrf(S,piv,opts);
+      Stage("warm-up SLATE getri");
+      slate::getri(S,piv,opts);
     }
 #endif
-    std::cout << GridLogMessage << "warm-up done (both paths, N=" << Nw << ")" << std::endl;
+    std::cout << GridLogMessage << "warm-up done (both paths, N=" << Nw << ")" << std::endl << std::flush;
+  } else {
+    std::cout << GridLogMessage << "warm-up SKIPPED (S2D_NOWARM)" << std::endl << std::flush;
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -190,6 +202,7 @@ int main(int argc, char **argv)
     if ( A.data.size() )
       acceleratorCopyDeviceToDevice((void *)&A.data[0],(void *)&A0.data[0],A.data.size()*sizeof(ComplexD));
     double t2=usecond();
+    Stage("Grid Invert");
     RSI2.Invert(A);
     double t3=usecond();
     BlockCyclicRedistribute::CyclicToRows(grid,rowStart,A,&rows1d[0],myrows);
@@ -247,9 +260,11 @@ int main(int argc, char **argv)
       { slate::Option::InnerBlocking, 16 },
     };
     slate::Pivots pivots;
+    Stage("SLATE getrf");
     double t4=usecond();
     slate::getrf(S, pivots, opts);          // LU, partial pivoting
     double t5=usecond();
+    Stage("SLATE getri");
     slate::getri(S, pivots, opts);          // in-place inverse from the factor
     double t6=usecond();
 
