@@ -793,6 +793,151 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
   delete SliceGrid;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// Batched linear algebra for Krylov orthogonalisation (GCR history windows).
+//
+//   innerProductMulti(out,left,right):  out[j] = <left[j],right> for all j in
+//        ONE kernel (right read once), ONE device reduction / sync (the per-site
+//        partials are an iVector over the batch) and ONE GlobalSumVector.
+//   axpyMulti(z,b,x):                   z = z + sum_j b[j] x[j] in ONE pass.
+//   axpyMultiNorm(z,b,x):               same, returning global |z|^2 from the
+//        same pass (one reduction, one GlobalSum).
+//
+// The batch width is a template parameter chosen at runtime from {2,4,8,16}
+// so a short window (mmax=2 smoother) does not pay for 16 partial lanes;
+// windows longer than 16 are processed in chunks of 16, one reduction each.
+// Same code path for every Lattice<vobj>: fine fermion fields and coarse
+// multi-RHS fields (nrhs folded into the grid) alike.
+/////////////////////////////////////////////////////////////////////////////
+template<int B,class vobj>
+void rankInnerProductMultiChunk(ComplexD *out,int m,
+				const std::vector<const Lattice<vobj>*> &left,
+				const Lattice<vobj> &right)
+{
+  typedef decltype(innerProductD(vobj(),vobj())) inner_t;
+  typedef iVector<inner_t,B> batch_t;
+  typedef decltype(right.View(AcceleratorRead)) View;
+
+  GRID_ASSERT(m>=1 && m<=B);
+  GridBase *grid = right.Grid();
+  const uint64_t sites = grid->oSites();
+
+  hostVector<View>   h_left_v(m);
+  deviceVector<View> d_left_v(m);
+  for(int j=0;j<m;j++){
+    conformable(*left[j],right);
+    h_left_v[j] = left[j]->View(AcceleratorRead);
+  }
+  acceleratorCopyToDevice(&h_left_v[0],&d_left_v[0],m*sizeof(View));
+  View *left_vp = &d_left_v[0];
+
+  deviceVector<batch_t> partial(sites);
+  batch_t *partial_v = &partial[0];
+  {
+    autoView(right_v,right,AcceleratorRead);
+    accelerator_for(ss,sites,1,{
+	auto r = right_v[ss];
+	batch_t acc;
+	for(int j=0;j<B;j++){
+	  if ( j<m ) acc._internal[j] = innerProductD(left_vp[j][ss],r);
+	  else       zeroit(acc._internal[j]);
+	}
+	partial_v[ss] = acc;
+    });
+  }
+  for(int j=0;j<m;j++) h_left_v[j].ViewClose();
+
+  auto res = sum(partial_v,sites);   // one reduction for the whole batch
+  for(int j=0;j<m;j++) out[j] = TensorRemove(res._internal[j]);
+}
+
+template<class vobj>
+void rankInnerProductMulti(std::vector<ComplexD> &out,
+			   const std::vector<const Lattice<vobj>*> &left,
+			   const Lattice<vobj> &right)
+{
+  int m = left.size();
+  out.resize(m);
+  for(int j0=0;j0<m;j0+=16){
+    int mm = std::min(16,m-j0);
+    std::vector<const Lattice<vobj>*> sub(left.begin()+j0,left.begin()+j0+mm);
+    if      ( mm<=2 ) rankInnerProductMultiChunk<2> (&out[j0],mm,sub,right);
+    else if ( mm<=4 ) rankInnerProductMultiChunk<4> (&out[j0],mm,sub,right);
+    else if ( mm<=8 ) rankInnerProductMultiChunk<8> (&out[j0],mm,sub,right);
+    else              rankInnerProductMultiChunk<16>(&out[j0],mm,sub,right);
+  }
+}
+
+template<class vobj>
+void innerProductMulti(std::vector<ComplexD> &out,
+		       const std::vector<const Lattice<vobj>*> &left,
+		       const Lattice<vobj> &right)
+{
+  rankInnerProductMulti(out,left,right);
+  if ( out.size() ) right.Grid()->GlobalSumVector(&out[0],(int)out.size());
+}
+
+// z = z + sum_j b[j] x[j];  if do_norm, returns global |z|^2 from the same pass.
+template<class vobj>
+RealD axpyMultiNormImpl(Lattice<vobj> &z,const std::vector<ComplexD> &b,
+			const std::vector<const Lattice<vobj>*> &x,int do_norm)
+{
+  typedef decltype(z.View(AcceleratorRead)) View;
+
+  int m = x.size();
+  GRID_ASSERT((int)b.size()>=m);
+  GridBase *grid = z.Grid();
+  const uint64_t nsimd = grid->Nsimd();
+  const uint64_t sites = grid->oSites();
+
+  hostVector<View>   h_x_v(std::max(m,1));
+  deviceVector<View> d_x_v(std::max(m,1));
+  hostVector<ComplexD>   h_b(std::max(m,1));
+  deviceVector<ComplexD> d_b(std::max(m,1));
+  for(int j=0;j<m;j++){
+    conformable(*x[j],z);
+    GRID_ASSERT(x[j]!=&z);            // window must not alias the accumulator
+    h_x_v[j] = x[j]->View(AcceleratorRead);
+    h_b[j]   = b[j];
+  }
+  if ( m ) {
+    acceleratorCopyToDevice(&h_x_v[0],&d_x_v[0],m*sizeof(View));
+    acceleratorCopyToDevice(&h_b[0],&d_b[0],m*sizeof(ComplexD));
+  }
+  View     *x_vp = &d_x_v[0];
+  ComplexD *b_p  = &d_b[0];
+
+  autoView(z_v,z,AcceleratorWrite);
+  typedef decltype(innerProduct(z_v[0],z_v[0])) inner_t;
+  deviceVector<inner_t> inner_tmp(do_norm ? sites : 1);
+  inner_t *inner_tmp_v = &inner_tmp[0];
+
+  accelerator_for(ss,sites,nsimd,{
+      auto acc = coalescedRead(z_v[ss]);
+      for(int j=0;j<m;j++) acc = acc + b_p[j]*coalescedRead(x_vp[j][ss]);
+      coalescedWrite(z_v[ss],acc);
+      if ( do_norm ) coalescedWrite(inner_tmp_v[ss],innerProduct(acc,acc));
+  });
+  for(int j=0;j<m;j++) h_x_v[j].ViewClose();
+
+  RealD nrm = 0.0;
+  if ( do_norm ) {
+    nrm = real(TensorRemove(sumD(inner_tmp_v,sites)));
+    grid->GlobalSum(nrm);
+  }
+  return nrm;
+}
+template<class vobj>
+void axpyMulti(Lattice<vobj> &z,const std::vector<ComplexD> &b,const std::vector<const Lattice<vobj>*> &x)
+{
+  axpyMultiNormImpl(z,b,x,0);
+}
+template<class vobj>
+RealD axpyMultiNorm(Lattice<vobj> &z,const std::vector<ComplexD> &b,const std::vector<const Lattice<vobj>*> &x)
+{
+  return axpyMultiNormImpl(z,b,x,1);
+}
+
 NAMESPACE_END(Grid);
 
 

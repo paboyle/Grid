@@ -142,16 +142,13 @@ public:
 
     RealD cp;
     ComplexD a, b;
-    //    ComplexD zAz;
-    RealD zAAz;
     ComplexD rq;
 
     GridBase *grid = src.Grid();
 
+    // Only r and one scratch for the restart residual; the new p/q directions
+    // are produced directly in their persistent history slots.
     Field r(grid);
-    Field z(grid);
-    Field tmp(grid);
-    Field ttmp(grid);
     Field Az(grid);
 
     ////////////////////////////////
@@ -198,24 +195,19 @@ public:
     // p = Prec(r)
     /////////////////////
 
+    // p[0] = Prec(r), q[0] = A p[0], written straight into the history slots
     PrecTimer.Start();
-    Preconditioner(r,z);
+    Preconditioner(r,p[0]);
     PrecTimer.Stop();
 
     MatTimer.Start();
-    Linop.Op(z,Az);
+    Linop.Op(p[0],q[0]);
     MatTimer.Stop();
 
     LinalgTimer.Start();
 
-    //    zAz = innerProduct(Az,psi);
-    zAAz= norm2(Az);
+    qq[0]= norm2(q[0]);
 
-    //p[0],q[0],qq[0] 
-    p[0]= z;
-    q[0]= Az;
-    qq[0]= zAAz;
-    
     cp =norm2(r);
     LinalgTimer.Stop();
     GCRLogLevel<< "PGCR true residual "<< sqrt(cp/SSQ)     <<std::endl;
@@ -247,32 +239,46 @@ public:
 	return cp;
       }
 
+      // New direction written straight into its history slot: p = Prec(r), q = A p.
       PrecTimer.Start();
-      Preconditioner(r,z);// solve Az = r
+      Preconditioner(r,p[peri_kp]);
       PrecTimer.Stop();
 
       MatTimer.Start();
-      Linop.Op(z,Az);
+      Linop.Op(p[peri_kp],q[peri_kp]);
       MatTimer.Stop();
-      //      zAz = innerProduct(Az,psi);
-      zAAz= norm2(Az);
 
       LinalgTimer.Start();
 
-      q[peri_kp]=Az;
-      p[peri_kp]=z;
-
       int northog = ((kp)>(mmax-1))?(mmax-1):(kp);  // if more than mmax done, we orthog all mmax history.
       std::ostringstream bs;
+
+      // Classical Gram-Schmidt: every coefficient is taken against the
+      // UN-updated new q (so all northog inner products are independent and
+      // batchable), then the window is applied.  The coefficient is complex:
+      // for a non-Hermitian operator <q_j,Aq> is complex and keeping only the
+      // real part left the q's non-orthogonal.
+      // Batched: one fused kernel + one reduction for all coefficients,
+      // one fused pass per update (independent of mmax).
+      std::vector<const Field*> qwin(northog), pwin(northog);
       for(int back=0;back<northog;back++){
-
 	int peri_back=(k-back)%mmax;   	  GRID_ASSERT((k-back)>=0);
-
-	b=-real(innerProduct(q[peri_back],Az))/qq[peri_back];
-	p[peri_kp]=p[peri_kp]+b*p[peri_back];
-	q[peri_kp]=q[peri_kp]+b*q[peri_back];
-        if ( LogCoeffs ) bs<<" b["<<back<<"]="<<b;
-
+	GRID_ASSERT(peri_back!=peri_kp);
+	qwin[back] = &q[peri_back];
+	pwin[back] = &p[peri_back];
+      }
+      std::vector<ComplexD> bcoef;
+      innerProductMulti(bcoef,qwin,q[peri_kp]);
+      for(int back=0;back<northog;back++){
+	int peri_back=(k-back)%mmax;
+	bcoef[back] = -bcoef[back]/qq[peri_back];
+        if ( LogCoeffs ) bs<<" b["<<back<<"]="<<bcoef[back];
+      }
+      if ( northog ) {
+	axpyMulti(p[peri_kp],bcoef,pwin);
+	qq[peri_kp]=axpyMultiNorm(q[peri_kp],bcoef,qwin);
+      } else {
+	qq[peri_kp]=norm2(q[peri_kp]);
       }
       if ( LogCoeffs && northog ) {
         GCRLogLevel<<"coeff["<<k<<"]"<<bs.str()<<std::endl;

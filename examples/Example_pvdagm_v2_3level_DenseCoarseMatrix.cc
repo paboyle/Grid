@@ -79,18 +79,26 @@ int   Ls        = 24;
 int   CoarsenBatch = 9;
 std::vector<int> lat_size({48,48,48,96});
 
-// Solver tuning, values as in the V1 example
+// Solver tuning.  PRINCIPLE (PB, 2026-08-24): the defaults ARE the current
+// optimum, so an unset environment reproduces the best banked result; they
+// are updated as and when a better point is found, and every change is
+// dated here.  Environment variables of the same names override for sweeps.
+//
+// Current optimum: 2026-08-24, slurm-5335492 F4, 48^3x96 Ls=24 on 288 GCDs,
+//   17.2 s/RHS at Nrhs=4, 32.2 s at Nrhs=1 (exact-halo FINAL ~1e-8 pending
+//   the exact-outer rerun).  Smoother mmax == order (full GCR history);
+//   PB's mmax=1 trial gave 72 vs ~60 outer iterations and was slower.
 RealD FineSmootherShift    = 0.1;
-int   FineSmootherOrder    = 16;
-int   FineSmootherMmax     = 1;
+int   FineSmootherOrder    = 6;
+int   FineSmootherMmax     = 6;
 RealD CoarseSmootherShift  = 0.1;
-int   CoarseSmootherNstep  = 4;
-int   CoarseSmootherMmax   = 1;
-RealD CoarseSolverTol      = 0.03;
+int   CoarseSmootherNstep  = 2;
+int   CoarseSmootherMmax   = 2;
+RealD CoarseSolverTol      = 0.05;
 int   CoarseSolverOrder    = 200;
-int   CoarseSolverMmax     = 4;
+int   CoarseSolverMmax     = 16;
 RealD OuterTol             = 1.0e-8;
-int   OuterMmax            = 8;
+int   OuterMmax            = 4;
 int   OuterNstep           = 8;
 
 // "It's legal to get the same answer faster, not to get a less correct
@@ -319,34 +327,48 @@ public:
     std::cout<<GridLogMessage<<"MrhsPGCR: did not converge"<<std::endl;
   }
   RealD GCRnStep(std::vector<Field> &src,std::vector<Field> &psi,RealD rsq){
-    RealD cp; ComplexD a,b,rq; RealD zAAz; int nrhs=src.size(); GridBase *grid=src[0].Grid();
-    std::vector<Field> r(nrhs,grid),z(nrhs,grid),Az(nrhs,grid);
+    RealD cp; ComplexD a,b,rq; int nrhs=src.size(); GridBase *grid=src[0].Grid();
+    std::vector<Field> r(nrhs,grid),Az(nrhs,grid);   // Az: restart residual scratch only
     std::vector< std::vector<Field> > q(mmax,std::vector<Field>(nrhs,grid));
     std::vector< std::vector<Field> > p(mmax,std::vector<Field>(nrhs,grid));
     std::vector<RealD> qq(mmax);
     if (ZeroGuess && FirstCycle) { for(int rr=0;rr<nrhs;rr++){ psi[rr]=Zero(); r[rr]=src[rr]; } }
     else                         { vOp(psi,Az); for(int rr=0;rr<nrhs;rr++) r[rr]=src[rr]-Az[rr]; }
     FirstCycle=0;
-    Preconditioner(r,z); vOp(z,Az); zAAz=vnorm2(Az);
-    p[0]=z; q[0]=Az; qq[0]=zAAz; cp=vnorm2(r);
+    // p[0]=Prec(r), q[0]=A p[0], produced directly in the history slots (no copies)
+    Preconditioner(r,p[0]); vOp(p[0],q[0]); qq[0]=vnorm2(q[0]); cp=vnorm2(r);
     for(int k=0;k<nstep;k++){
       steps++; int kp=k+1, peri_k=k%mmax, peri_kp=kp%mmax;
       rq=vinnerProduct(q[peri_k],r); a=rq/qq[peri_k];
       vaxpy(psi,a,p[peri_k],psi); vaxpy(r,-a,q[peri_k],r); cp=vnorm2(r);
       std::cout<<GridLogMessage<<std::string(level,'\t')<<" "<<name<<" MrhsPGCR step["<<steps<<"]  resid "<<cp<<" target "<<rsq<<std::endl;
       if((k==nstep-1)||(cp<rsq)) return cp;
-      Preconditioner(r,z);
-      vOp(z,Az);
-      zAAz=vnorm2(Az);
-      q[peri_kp]=Az; p[peri_kp]=z;
+      // New direction straight into its history slot: p=Prec(r), q=A p.
+      Preconditioner(r,p[peri_kp]);
+      vOp(p[peri_kp],q[peri_kp]);
       int northog=((kp)>(mmax-1))?(mmax-1):(kp);
       {
 	GRID_TRACE("MrhsPGCR orthog");
-        for(int back=0;back<northog;back++){
-	  int peri_back=(k-back)%mmax; GRID_ASSERT((k-back)>=0);
-	  b=-real(vinnerProduct(q[peri_back],Az))/qq[peri_back];
-	  vaxpy(p[peri_kp],b,p[peri_back],p[peri_kp]); vaxpy(q[peri_kp],b,q[peri_back],q[peri_kp]);
-	}
+        // Classical Gram-Schmidt: all coefficients against the UN-updated new q
+        // (independent, batchable), then apply.  Complex coefficient: the
+        // operator is non-Hermitian, real(<q_j,Aq>) alone left q's non-orthogonal.
+        // Batched per rhs (one fused kernel + one reduction each), the shared
+        // coefficient summed over rhs on the host, ONE GlobalSumVector.
+        std::vector<ComplexD> bcoef(northog,ComplexD(0.0)), part;
+        for(int rr=0;rr<nrhs;rr++){
+          std::vector<const Field*> qwin(northog);
+          for(int back=0;back<northog;back++){ int peri_back=(k-back)%mmax; GRID_ASSERT((k-back)>=0); qwin[back]=&q[peri_back][rr]; }
+          rankInnerProductMulti(part,qwin,q[peri_kp][rr]);
+          for(int back=0;back<northog;back++) bcoef[back]+=part[back];
+        }
+        if(northog) grid->GlobalSumVector(&bcoef[0],northog);
+        for(int back=0;back<northog;back++){ int peri_back=(k-back)%mmax; bcoef[back]=-bcoef[back]/qq[peri_back]; }
+        for(int rr=0;rr<nrhs;rr++){
+          std::vector<const Field*> qwin(northog), pwin(northog);
+          for(int back=0;back<northog;back++){ int peri_back=(k-back)%mmax; qwin[back]=&q[peri_back][rr]; pwin[back]=&p[peri_back][rr]; }
+          axpyMulti(p[peri_kp][rr],bcoef,pwin);
+          axpyMulti(q[peri_kp][rr],bcoef,qwin);
+        }
       }
       qq[peri_kp]=vnorm2(q[peri_kp]);
     }
@@ -475,7 +497,7 @@ int main (int argc, char ** argv)
 
   // Level 1 blocking (default 2^4)
   Coordinate clatt = lat_size;
-  Coordinate Block({2,2,2,2});
+  Coordinate Block({2,2,3,3});         // L1->L2 blocking; banked optimum 2026-08-24 (env BLOCK overrides)
   if ( getenv("BLOCK") ){ GridCmdOptionIntVector(std::string(getenv("BLOCK")),Block); GRID_ASSERT(Block.size()==4); }
   for(int d=0;d<4;d++){ GRID_ASSERT(lat_size[d]%Block[d]==0); clatt[d]=lat_size[d]/Block[d]; }
   std::cout << GridLogMessage << "Block  " << Block  << "  coarse lattice " << clatt << std::endl;
@@ -695,7 +717,7 @@ int main (int argc, char ** argv)
   // batch grid the L1 operator is currently set to.
   //////////////////////////////////////////////////////////////////////
   Coordinate cclatt = clatt;
-  Coordinate Block2({8,4,3,6});
+  Coordinate Block2({4,4,2,4});        // L2->L3 blocking; banked optimum 2026-08-24 (env BLOCK2 overrides)
   if ( getenv("BLOCK2") ){ GridCmdOptionIntVector(std::string(getenv("BLOCK2")),Block2); GRID_ASSERT(Block2.size()==4); }
   for(int d=0;d<4;d++){ GRID_ASSERT(clatt[d]%Block2[d]==0); cclatt[d]=clatt[d]/Block2[d]; }
   std::cout << GridLogMessage << "Block2 " << Block2 << "  coarse-coarse lattice " << cclatt << std::endl;
