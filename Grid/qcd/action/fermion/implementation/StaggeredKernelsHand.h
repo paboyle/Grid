@@ -63,7 +63,6 @@ NAMESPACE_BEGIN(Grid);
 
 #endif
 
-
 // To splat or not to splat depends on the implementation
 #define MULT(A,UChi)				\
   auto & ref(U[sU](A));			\
@@ -377,6 +376,9 @@ void StaggeredKernels<Impl>::DhopSiteHandExt(StencilView &st,
 
 #undef LOAD_CHI
 #undef HAND_DECLARATIONS
+#undef PERMUTE_DIR
+#undef LOAD_CHI_COMMS
+#undef MULT
 
 NAMESPACE_END(Grid);
 

@@ -963,4 +963,5 @@ template <> inline void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilVie
 }
 
 NAMESPACE_END(Grid);
+#undef PERMUTE_DIR
 

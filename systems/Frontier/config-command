@@ -2,6 +2,7 @@ CLIME=`spack find --paths c-lime@2-3-9 | grep c-lime| cut -c 15-`
 
 ../../configure --enable-comms=mpi-auto \
 --with-lime=$CLIME \
+--with-slate=$OLCF_SLATE_ROOT \
 --enable-unified=no \
 --enable-shm=nvlink \
 --enable-tracing=roctx \

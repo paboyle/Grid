@@ -80,6 +80,13 @@ AC_CHECK_DECLS([be64toh],[], [], [[#include <arpa/inet.h>]])
 AC_CHECK_LIB([m],[cos])
 AC_CHECK_LIB([stdc++],[abort])
 
+############## SLATE
+AC_ARG_WITH([slate],
+    [AS_HELP_STRING([--with-slate=prefix],
+    [try this for a non-standard install prefix of the SLATE library])],
+    [AM_CXXFLAGS="-I$with_slate/include $AM_CXXFLAGS"]
+    [AM_LDFLAGS="-L$with_slate/lib64 $AM_LDFLAGS"])
+
 ############### GMP and MPFR
 AC_ARG_WITH([gmp],
     [AS_HELP_STRING([--with-gmp=prefix],
@@ -407,6 +414,12 @@ AC_SEARCH_LIBS([fftw_execute], [fftw3],
                                [AC_MSG_ERROR("single precision FFTW library not found")])]
                [AC_DEFINE([HAVE_FFTW], [1], [Define to 1 if you have the `FFTW' library])]
                [have_fftw=true])
+
+AC_SEARCH_LIBS([slate_init], [slate],
+               [AC_SEARCH_LIBS([slate_init], [slate], [],
+                               [AC_MSG_ERROR("SLATE library not found")])]
+               [AC_DEFINE([HAVE_SLATE], [1], [Define to 1 if you have the `SLATE' library])]
+               [have_slate=true])
 
 AC_SEARCH_LIBS([limeCreateReader], [lime],
                [AC_DEFINE([HAVE_LIME], [1], [Define to 1 if you have the `LIME' library])]
