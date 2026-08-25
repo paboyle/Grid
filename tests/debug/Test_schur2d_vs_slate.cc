@@ -40,9 +40,9 @@ Author: Peter Boyle <pboyle@bnl.gov>
 // LU with partial pivoting then getri; Grid is pivot-free recursive Schur.
 //
 // Build: needs SLATE (spack load slate) and
-//   CXXFLAGS += -DGRID_HAVE_SLATE -I$SLATE_ROOT/include
+//   CXXFLAGS += -DHAVE_SLATE -I$SLATE_ROOT/include
 //   LDFLAGS  += -L$SLATE_ROOT/lib -lslate -lblaspp -llapackpp
-// Without GRID_HAVE_SLATE the SLATE leg reports itself as not built and the
+// Without HAVE_SLATE the SLATE leg reports itself as not built and the
 // Grid leg still runs, so the binary is always usable.
 //
 // MPI threading: the SLATE build initialises MPI at MPI_THREAD_MULTIPLE before
@@ -61,7 +61,7 @@ Author: Peter Boyle <pboyle@bnl.gov>
 #include <Grid/Grid.h>
 #include <Grid/algorithms/multigrid/BlockCyclicSchurInverse.h>
 #include <Grid/algorithms/multigrid/BlockCyclicRedistribute.h>
-#ifdef GRID_HAVE_SLATE
+#ifdef HAVE_SLATE
 #include <slate/slate.hh>
 #endif
 
@@ -104,7 +104,7 @@ static double Certify(GridBase *grid, BlockCyclicMatrix &A0, BlockCyclicMatrix &
 
 int main(int argc, char **argv)
 {
-#ifdef GRID_HAVE_SLATE
+#ifdef HAVE_SLATE
   // SLATE issues MPI calls from concurrent OpenMP tasks and needs
   // MPI_THREAD_MULTIPLE.  Grid (GridStd.h #undef GRID_COMMS_THREADS) only asks
   // for MPI_THREAD_SERIALIZED, which reproducibly gives Bus errors inside
@@ -170,7 +170,7 @@ int main(int argc, char **argv)
   ////////////////////////////////////////////////////////////////////////
   // LEG 2: SLATE, every layout step timed and charged.
   ////////////////////////////////////////////////////////////////////////
-#ifdef GRID_HAVE_SLATE
+#ifdef HAVE_SLATE
   {
     typedef std::complex<double> scalar_t;
     acceleratorCopyToDevice(&h[0], &rows1d[0], h.size()*sizeof(ComplexD));
@@ -233,7 +233,7 @@ int main(int argc, char **argv)
               << "   certificate " << cert << std::endl;
   }
 #else
-  std::cout << GridLogMessage << "SLATE : leg not built (compile with -DGRID_HAVE_SLATE and link -lslate -lblaspp -llapackpp)" << std::endl;
+  std::cout << GridLogMessage << "SLATE : leg not built (compile with -DHAVE_SLATE and link -lslate -lblaspp -llapackpp)" << std::endl;
 #endif
 
   Grid_finalize();
