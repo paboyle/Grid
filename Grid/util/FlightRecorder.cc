@@ -29,6 +29,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/Grid.h>
+#include <cinttypes>   // PRIx64: uint64_t is unsigned long on Linux, unsigned long long on macOS
 
 NAMESPACE_BEGIN(Grid);
 ///////////////////////////////////////////////////////
@@ -208,10 +209,8 @@ bool FlightRecorder::CsumLog(uint64_t hex)
         std::cerr<<"FlightRecorder::CsumLog Oops, I did it again "<< CsumLoggingCounter
 		 <<std::hex<<" "<<hex<<" "<<hexref<<std::dec<<std::endl;
 
-	fprintf(stderr,"%s:%d Oops, I did it again! Reproduce failure for csum %d %llx expect %llx\n",
-		GridHostname(),
-		GlobalSharedMemory::WorldShmRank,
-		CsumLoggingCounter,hex, hexref);
+	fprintf(stderr,"%s:%d Oops, I did it again! Reproduce failure for csum %d %" PRIx64 " expect %" PRIx64 "\n",
+		GridHostname(),GlobalSharedMemory::WorldShmRank,CsumLoggingCounter,(uint64_t)(hex),(uint64_t)(hexref));
 	BACKTRACEFP(stderr);
 	fflush(stderr);
 
@@ -302,11 +301,8 @@ void FlightRecorder::xmitLog(void *buf,uint64_t bytes)
 	fprintf(stderr,"FlightRecorder Oops step %d stage %s \n",
 		FlightRecorder::StepLoggingCounter,
 		FlightRecorder::StepName);
-	fprintf(stderr,"%s:%d Oops, send buf difference! Reproduce failure for xmit %d/%zu  %lx expect glb %lx\n",
-		GridHostname(),
-		GlobalSharedMemory::WorldShmRank,
-		XmitLoggingCounter,XmitLogVector.size(),
-		_xor, XmitLogVector[XmitLoggingCounter]); fflush(stderr);
+	fprintf(stderr,"%s:%d Oops, send buf difference! Reproduce failure for xmit %d/%zu  %" PRIx64 " expect glb %" PRIx64 "\n",
+		GridHostname(),GlobalSharedMemory::WorldShmRank,XmitLoggingCounter,XmitLogVector.size(),(uint64_t)(_xor),(uint64_t)(XmitLogVector[XmitLoggingCounter])); fflush(stderr);
 	BACKTRACEFP(stderr);
 	
 	if ( !ContinueOnFail ) GRID_ASSERT(0);
@@ -348,11 +344,8 @@ void FlightRecorder::recvLog(void *buf,uint64_t bytes,int rank)
 	fprintf(stderr,"FlightRecorder Oops step %d stage %s \n",
 		FlightRecorder::StepLoggingCounter,
 		FlightRecorder::StepName);
-	fprintf(stderr,"%s:%d Oops, recv buf difference! Reproduce failure for recv %d/%zu  %lx expect glb %lx from MPI rank %d\n",
-		GridHostname(),
-		GlobalSharedMemory::WorldShmRank,
-		RecvLoggingCounter,RecvLogVector.size(),
-		_xor, RecvLogVector[RecvLoggingCounter],rank); fflush(stderr);
+	fprintf(stderr,"%s:%d Oops, recv buf difference! Reproduce failure for recv %d/%zu  %" PRIx64 " expect glb %" PRIx64 " from MPI rank %d\n",
+		GridHostname(),GlobalSharedMemory::WorldShmRank,RecvLoggingCounter,RecvLogVector.size(),(uint64_t)(_xor),(uint64_t)(RecvLogVector[RecvLoggingCounter]),rank); fflush(stderr);
 	BACKTRACEFP(stderr);
 	
 	if ( !ContinueOnFail ) GRID_ASSERT(0);
