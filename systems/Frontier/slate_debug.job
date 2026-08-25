@@ -1,0 +1,84 @@
+#!/bin/bash -l
+#SBATCH --job-name=slate-debug
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=7
+#SBATCH --gpus-per-node=8
+#SBATCH --time=0:30:00
+#SBATCH --account=phy157_dwf
+#SBATCH --gpu-bind=none
+#SBATCH --exclusive
+#SBATCH --mem=0
+#SBATCH -S 0
+#SBATCH -q debug
+
+##############################################################################
+# Localise the multi-rank SLATE hang (Test_schur2d_vs_slate, 8 ranks, 2x4).
+# Each variant is a separate srun with unbuffered output (-u) and a hard
+# timeout, and the binary prints flushed "stage:" markers, so the log shows
+# the LAST stage reached in each variant:
+#
+#   V1 : as the production job     (warm-up on, OMP_NUM_THREADS=7)
+#   V2 : OMP_NUM_THREADS=1         -> is it threads x GPU-aware MPI?
+#   V3 : S2D_NOWARM=1, OMP=7       -> does the timed leg hang at the same
+#                                     SLATE call as the warm-up did?
+#   V4 : OMP_NUM_THREADS=1 + NOWARM
+#   V5 : MPICH_GPU_SUPPORT_ENABLED=0 -> SLATE Devices target with host-staged
+#                                     MPI (blaspp copies tiles itself)
+#
+# Read: for each variant the final "stage:" line and whether "SLATE :" was
+# printed.  A variant that completes identifies the fix.
+##############################################################################
+
+cat << EOF > select_gpu
+#!/bin/bash
+export GPU_MAP=(0 1 2 3 7 6 5 4)
+export NUMA_MAP=(3 3 1 1 2 2 0 0)
+export GPU=\${GPU_MAP[\$SLURM_LOCALID]}
+export NUMA=\${NUMA_MAP[\$SLURM_LOCALID]}
+export HIP_VISIBLE_DEVICES=\$GPU
+unset ROCR_VISIBLE_DEVICES
+if [ \$SLURM_PROCID = "0" ]; then echo \$*; fi
+exec numactl -m \$NUMA -N \$NUMA \$*
+EOF
+chmod +x ./select_gpu
+
+root=$HOME/ParallelIO/systems/Frontier
+source $root/sourceme-rocm7.2.sh
+
+export MPICH_GPU_SUPPORT_ENABLED=1
+export MPICH_SMP_SINGLE_COPY_MODE=CMA
+export MPICH_OFI_NIC_POLICY=GPU
+export MPICH_MAX_THREAD_SAFETY=multiple
+module load libfabric
+
+BIN=$root/tests/debug/Test_schur2d_vs_slate
+OPTS1="--accelerator-threads 8 --shm 4096 --shm-mpi 1 --device-mem 32000"
+export S2D_N=4096
+
+echo "binary: $(ls -l $BIN)"
+ldd $BIN | grep -E "slate|blaspp|lapackpp|omp|mpi_cray"
+module list 2>&1 | grep -i slate && echo "WARNING: a slate module is loaded"
+
+run_variant () {
+  name=$1; shift
+  echo "========================================================="
+  echo "$name :  $*"
+  echo "========================================================="
+  env "$@" timeout 240 srun -u -N1 -n8 ./select_gpu $BIN --mpi 1.1.2.4 --grid 16.16.16.16 $OPTS1 2>&1 | tee $name.out | grep -E "stage:|warm-up|GRID  :|SLATE :|rror|Assert|signal"
+  rc=${PIPESTATUS[0]}
+  echo "$name exit code $rc  (124 = timeout)   last stage: $(grep 'stage:' $name.out | tail -1 | sed 's/.*stage: //')"
+}
+
+run_variant V1_default        OMP_NUM_THREADS=7
+run_variant V2_omp1           OMP_NUM_THREADS=1
+run_variant V3_nowarm         OMP_NUM_THREADS=7 S2D_NOWARM=1
+run_variant V4_omp1_nowarm    OMP_NUM_THREADS=1 S2D_NOWARM=1
+run_variant V5_hostmpi        OMP_NUM_THREADS=7 MPICH_GPU_SUPPORT_ENABLED=0
+
+echo "========================================================="
+echo "summary"
+echo "========================================================="
+for v in V1_default V2_omp1 V3_nowarm V4_omp1_nowarm V5_hostmpi; do
+  printf "%-18s SLATE-line:%s  last-stage: %s\n" $v "$(grep -c 'SLATE :' $v.out)" "$(grep 'stage:' $v.out | tail -1 | sed 's/.*stage: //')"
+done
