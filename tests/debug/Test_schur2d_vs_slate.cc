@@ -144,6 +144,40 @@ int main(int argc, char **argv)
   deviceVector<ComplexD> rows1d(h.size());
 
   ////////////////////////////////////////////////////////////////////////
+  // WARM-UP: first-call costs (hipblasCreate, rocBLAS kernel load, SLATE's
+  // device queues) are seconds and would be charged to whichever leg runs
+  // first.  Run a small throwaway inverse through BOTH paths so the timed
+  // legs below measure hot code.  Not reported.
+  ////////////////////////////////////////////////////////////////////////
+  {
+    int64_t Nw = 8*P; int64_t nbw = 8;
+    std::vector<int64_t> rs(P+1); for(int r=0;r<=P;r++) rs[r]=8*r;
+    std::vector<ComplexD> hw(8*Nw); for(int64_t jj=0;jj<Nw;jj++) for(int64_t i=0;i<8;i++) hw[i+jj*8]=Fill(8*me+i,jj);
+    deviceVector<ComplexD> dw(hw.size()); acceleratorCopyToDevice(&hw[0],&dw[0],hw.size()*sizeof(ComplexD));
+    BlockCyclicMatrix W(grid,Nw,nbw,Pr,Pc);
+    BlockCyclicRedistribute::RowsToCyclic(grid,rs,&dw[0],8,W);
+    BlockCyclicSchurInverse RSIw; RSIw.Invert(W);
+#ifdef HAVE_SLATE
+    {
+      typedef std::complex<double> scalar_t;
+      BlockCyclicLayout &L = W.layout;
+      uint64_t nloc = (uint64_t)L.mloc*L.nloc;
+      std::vector<scalar_t> hA(nloc ? nloc : 1);
+      if ( nloc ) acceleratorCopyFromDevice(&W.data[0],(void *)&hA[0],nloc*sizeof(ComplexD));
+      auto S = slate::Matrix<scalar_t>::fromScaLAPACK(Nw,Nw,&hA[0],(int64_t)std::max<int64_t>(L.mloc,1),
+                                                      nbw,nbw,slate::GridOrder::Row,Pr,Pc,grid->communicator);
+#if defined(GRID_HIP) || defined(GRID_CUDA) || defined(GRID_SYCL)
+      slate::Options opts = { { slate::Option::Target, slate::Target::Devices } };
+#else
+      slate::Options opts = { { slate::Option::Target, slate::Target::HostTask } };
+#endif
+      slate::Pivots piv; slate::getrf(S,piv,opts); slate::getri(S,piv,opts);
+    }
+#endif
+    std::cout << GridLogMessage << "warm-up done (both paths, N=" << Nw << ")" << std::endl;
+  }
+
+  ////////////////////////////////////////////////////////////////////////
   // LEG 1: Grid
   ////////////////////////////////////////////////////////////////////////
   {
