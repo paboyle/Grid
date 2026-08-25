@@ -443,15 +443,32 @@ if test "x$with_slate" != "x"; then
   LIBS="-lslate -llapackpp -lblaspp $LIBS"
   CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
   LDFLAGS="$AM_LDFLAGS $LDFLAGS"
-  AC_LINK_IFELSE(
-    [AC_LANG_PROGRAM([[#include <slate/slate.hh>]],
-                     [[return slate::version() > 0 ? 0 : 1;]])],
-    [have_slate=true
-     AC_DEFINE([HAVE_SLATE], [1], [Define to 1 if you have the SLATE library])
-     AC_MSG_RESULT([yes])],
-    [LIBS="$ac_save_LIBS"
-     AC_MSG_RESULT([no])
-     AC_MSG_ERROR([--with-slate given but SLATE (with BLAS++/LAPACK++) failed to link; check --with-blaspp/--with-lapackpp])])
+  # Constructing a slate::Matrix instantiates SLATE templates in the CALLER's
+  # object, which reference omp_*_nest_lock: the user program needs an OpenMP
+  # runtime on its own link line even when Grid itself is built without
+  # OpenMP (GPU builds).  Try bare, then with -lomp (LLVM/ROCm/Apple), then
+  # -lgomp (GCC).
+  slate_prog='#include <slate/slate.hh>
+              #include <complex>'
+  slate_body='slate::Matrix<std::complex<double> > A(4,4,2,1,1,MPI_COMM_WORLD);
+              return slate::version() > 0 ? 0 : 1;'
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([$slate_prog],[$slate_body])],
+                 [have_slate=true; slate_omp=""],
+                 [LIBS="-lomp $LIBS"
+                  AC_LINK_IFELSE([AC_LANG_PROGRAM([$slate_prog],[$slate_body])],
+                                 [have_slate=true; slate_omp="-lomp"],
+                                 [LIBS="-lgomp $ac_save_LIBS"; LIBS="-lslate -llapackpp -lblaspp $LIBS"
+                                  AC_LINK_IFELSE([AC_LANG_PROGRAM([$slate_prog],[$slate_body])],
+                                                 [have_slate=true; slate_omp="-lgomp"],
+                                                 [have_slate=false])])])
+  if test "x$have_slate" = xtrue; then
+    AC_DEFINE([HAVE_SLATE], [1], [Define to 1 if you have the SLATE library])
+    AC_MSG_RESULT([yes${slate_omp:+ (needs $slate_omp)}])
+  else
+    LIBS="$ac_save_LIBS"
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([--with-slate given but SLATE (with BLAS++/LAPACK++ and an OpenMP runtime) failed to link; check --with-blaspp/--with-lapackpp and LDFLAGS for libomp])
+  fi
   CXXFLAGS="$ac_save_CXXFLAGS"
   LDFLAGS="$ac_save_LDFLAGS"
 fi
