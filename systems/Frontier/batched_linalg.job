@@ -1,0 +1,96 @@
+#!/bin/bash -l
+#SBATCH --job-name=batched-linalg
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=7
+#SBATCH --gpus-per-node=8
+#SBATCH --time=0:20:00
+#SBATCH --account=phy157_dwf
+#SBATCH --gpu-bind=none
+#SBATCH --exclusive
+#SBATCH --mem=0
+#SBATCH -S 0
+#SBATCH -q debug
+
+##############################################################################
+# GPU gate for the batched Krylov linear algebra (Lattice_reduction.h:
+# innerProductMulti / axpyMulti / axpyMultiNorm with the by-value ViewPack
+# kernel argument) and the PGCR that sits on it.  Nothing here has run on a
+# GPU before this job.
+#
+#   B1 : Test_multi_reduction   8 ranks, 2x4  -- every batch width {2,4,8,16},
+#        >16 chunking, fine (SpinColour) and coarse (iVector<CComplex,8> on a
+#        5D grid) fields, against the sequential reference, tol 1e-12.
+#   B2 : Test_multi_reduction   1 rank        -- same, no comms: separates a
+#        kernel fault from a reduction/allreduce fault if B1 fails.
+#   B3 : Test_pgcr_history      8 ranks       -- solver on top: bitwise-
+#        repeatable history reuse, true residual, second mmax.
+#   B4 : Test_ring_allreduce    8 ranks, 2x4  -- P2P ring allreduce vs
+#        MPI_Allreduce, all types/sizes, bitwise repeat, 16 MB timing.
+#        (Also not yet run on Frontier; cheap to include.)
+#
+# Each stage is a separate srun with unbuffered output and its own timeout;
+# the summary at the end lists pass/fail per stage from the binaries' own
+# "ALL PASS"/"FAILURES" lines, and any GRID_ASSERT or signal.
+##############################################################################
+
+cat << EOF > select_gpu
+#!/bin/bash
+export GPU_MAP=(0 1 2 3 7 6 5 4)
+export NUMA_MAP=(3 3 1 1 2 2 0 0)
+export GPU=\${GPU_MAP[\$SLURM_LOCALID]}
+export NUMA=\${NUMA_MAP[\$SLURM_LOCALID]}
+export HIP_VISIBLE_DEVICES=\$GPU
+unset ROCR_VISIBLE_DEVICES
+if [ \$SLURM_PROCID = "0" ]; then echo \$*; fi
+exec numactl -m \$NUMA -N \$NUMA \$*
+EOF
+chmod +x ./select_gpu
+
+root=$HOME/ParallelIO/systems/Frontier
+source $root/sourceme-rocm7.2.sh
+
+export OMP_NUM_THREADS=1
+export MPICH_GPU_SUPPORT_ENABLED=1
+export MPICH_SMP_SINGLE_COPY_MODE=CMA
+export MPICH_OFI_NIC_POLICY=GPU
+module load libfabric
+
+OPTS1="--accelerator-threads 8 --shm 4096 --shm-mpi 1 --device-mem 32000"
+T=$root/tests/debug
+
+echo "========================================================="
+echo "binaries (git hash line is libGrid's build, not the test's)"
+echo "========================================================="
+ls -l $T/Test_multi_reduction $T/Test_pgcr_history $T/Test_ring_allreduce
+
+run_stage () {
+  name=$1; nranks=$2; mpi=$3; grid=$4; bin=$5
+  echo "========================================================="
+  echo "$name : $bin  -n$nranks --mpi $mpi --grid $grid"
+  echo "========================================================="
+  timeout 300 srun -u -N1 -n$nranks ./select_gpu $T/$bin --mpi $mpi --grid $grid $OPTS1 2>&1 | tee $name.out \
+    | grep -E "PASS|FAIL|T4 timing|GRID_ASSERT|Signal|signal|abort|Bus error|Segmentation"
+  rc=${PIPESTATUS[0]}
+  echo "$name exit code $rc  (124 = timeout)"
+}
+
+run_stage B1_multi_reduction_8   8 1.1.2.4 16.16.16.32 Test_multi_reduction
+run_stage B2_multi_reduction_1   1 1.1.1.1 16.16.16.16 Test_multi_reduction
+run_stage B3_pgcr_history_8      8 1.1.2.4 16.16.16.16 Test_pgcr_history
+run_stage B4_ring_allreduce_8    8 1.1.2.4 16.16.16.32 Test_ring_allreduce
+
+echo "========================================================="
+echo "summary"
+echo "========================================================="
+for s in B1_multi_reduction_8 B2_multi_reduction_1 B3_pgcr_history_8 B4_ring_allreduce_8; do
+  verdict=$(grep -oE "ALL PASS|FAILURES" $s.out | head -1)
+  fails=$(grep -c "\*\* FAIL \*\*" $s.out)
+  asserts=$(grep -cE "GRID_ASSERT|Signal|Bus error|Segmentation" $s.out)
+  printf "%-24s %-10s fails=%s asserts/signals=%s\n" $s "${verdict:-NO-VERDICT}" $fails $asserts
+done
+echo "--- any FAIL lines ---"
+grep -h "\*\* FAIL \*\*" B*.out | head -20
+echo "--- ring allreduce timing (16 MB ComplexF) ---"
+grep -h "T4 timing" B4_ring_allreduce_8.out
+echo "========================================================="

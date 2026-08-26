@@ -1,0 +1,149 @@
+#!/bin/bash -l
+#SBATCH --job-name=schur2d-ladder
+#SBATCH --nodes=36
+#SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=7
+#SBATCH --gpus-per-node=8
+#SBATCH --time=2:00:00
+#SBATCH --account=phy157_dwf
+#SBATCH --gpu-bind=none
+#SBATCH --exclusive
+#SBATCH --mem=0
+#SBATCH -S 0
+##SBATCH -q debug
+
+##############################################################################
+# Staged shakeout of the 2D block-cyclic dense inverse (DENSE_SCHUR2D).
+#
+#   F1 : unit tests, 1 node / 8 ranks           (seconds)
+#   F2 : scale rehearsal, 1 node,  N=13824      (seconds)
+#   F3 : scale rehearsal, 36 nodes, N=138240    (the timing number)
+#   F4 : production example, 1D baseline then 2D, same nodes
+#
+# F4's 2D leg is gated on F3 passing: if the synthetic production-shape
+# inverse fails or is slow, do not spend the 400 s multigrid setup on it.
+##############################################################################
+
+cat << EOF > select_gpu
+#!/bin/bash
+export GPU_MAP=(0 1 2 3 7 6 5 4)
+export NUMA_MAP=(3 3 1 1 2 2 0 0)
+export GPU=\${GPU_MAP[\$SLURM_LOCALID]}
+export NUMA=\${NUMA_MAP[\$SLURM_LOCALID]}
+export HIP_VISIBLE_DEVICES=\$GPU
+unset ROCR_VISIBLE_DEVICES
+
+if [ \$SLURM_PROCID = "0" ]
+then
+echo \$*
+fi
+
+exec numactl -m \$NUMA -N \$NUMA \$*
+EOF
+
+chmod +x ./select_gpu
+
+root=$HOME/ParallelIO/systems/Frontier
+source $root/sourceme-rocm7.2.sh
+
+export OMP_NUM_THREADS=7
+export MPICH_GPU_SUPPORT_ENABLED=1
+export MPICH_SMP_SINGLE_COPY_MODE=CMA
+export MPICH_OFI_NIC_POLICY=GPU
+
+module load libfabric
+
+# Stale-environment protection: none of the gather knobs apply to the 2D
+# path, and DENSE_GATHER=1 without FORCE would (correctly) abort at start.
+unset DENSE_GATHER DENSE_GATHER_FORCE DENSE_GATHER_DEBUG DENSE_GATHER_MIN_BYTES
+
+OPTS1="--accelerator-threads 8 --shm 4096 --shm-mpi 1 --device-mem 32000"
+
+##############################################################################
+echo "========================================================="
+echo "F1: unit tests, 1 node, 8 ranks"
+echo "========================================================="
+##############################################################################
+for t in Test_blockcyclic Test_summa Test_schur2d Test_schur2d_redist
+do
+echo "----- F1 $t -----"
+srun -N1 -n8 ./select_gpu $root/tests/debug/$t --mpi 1.1.2.4 --grid 16.16.16.16 $OPTS1
+done
+
+##############################################################################
+echo "========================================================="
+echo "F2: scale rehearsal, 1 node, N=13824 (nb=1728, grid 2x4)"
+echo "========================================================="
+##############################################################################
+S2D_N=13824 srun -N1 -n8 ./select_gpu $root/tests/debug/Test_schur2d_scale \
+     --mpi 1.1.2.4 --grid 16.16.16.16 $OPTS1
+
+##############################################################################
+echo "========================================================="
+echo "F3: scale rehearsal, 36 nodes, N=138240 (nb=480, grid 16x18)"
+echo "     THE number: invert phase vs the 1D baseline 328 s"
+echo "========================================================="
+##############################################################################
+S2D_N=138240 srun -N36 -n288 ./select_gpu $root/tests/debug/Test_schur2d_scale \
+     --mpi 3.6.4.4 --grid 48.48.48.96 $OPTS1
+F3RC=$?
+echo "F3 exit code $F3RC"
+
+##############################################################################
+echo "========================================================="
+echo "F4: production example  (1D baseline first, then 2D if F3 passed)"
+echo "========================================================="
+##############################################################################
+
+vol=48.48.48.96
+MPI_GEOM=3.6.4.4
+
+export CoarseSmootherNstep=2
+export FineSmootherOrder=6
+
+export SUBSPACE_FILE=/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/subspace_nb64.scidac
+unset  SLAB_FILE              # force a fresh import in both legs
+
+export DENSE_SCHUR=1
+export MASS=0.00078
+
+export BLOCK=2.2.3.3                 # L1->L2 blocking
+export BLOCK2=4.4.2.4                # L2->L3 blocking
+
+export FineSmootherShift=0.1
+export CoarseSmootherShift=0.1
+export CoarseSolverTol=0.05
+export CoarseSolverOrder=200
+export L3_TOL=3.0e-1
+export L3_MAXIT=2
+export L3_NSTEP=50
+export OuterTol=1e-8
+export OuterMmax=4
+export OuterNstep=8
+export DENSE_CC=1
+export DENSE_APPLY_PROFILE=1
+unset  DENSE_CC_CHECK
+export DENSE_SPLITK=128
+export DENSE_DEVICE_SUM=1
+export GRID_ALLOC_NCACHE_LARGE=64
+export NRHS=4
+
+echo "----- F4a: 1D baseline (DENSE_SCHUR2D unset) -----"
+unset DENSE_SCHUR2D
+srun -N36 -n288 ./select_gpu $root/examples/Example_pvdagm_v2_3level_DenseCoarseMatrix \
+     --mpi ${MPI_GEOM} --grid $vol $OPTS1 --comms-overlap
+
+if [ $F3RC -eq 0 ]
+then
+echo "----- F4b: 2D block-cyclic (DENSE_SCHUR2D=1) -----"
+export DENSE_SCHUR2D=1
+srun -N36 -n288 ./select_gpu $root/examples/Example_pvdagm_v2_3level_DenseCoarseMatrix \
+     --mpi ${MPI_GEOM} --grid $vol $OPTS1 --comms-overlap
+else
+echo "----- F4b SKIPPED: F3 failed (rc=$F3RC), not spending the setup on it -----"
+fi
+
+echo "========================================================="
+echo "ladder complete; binaries were:"
+grep -h "git commit hash" slurm-$SLURM_JOB_ID.out 2>/dev/null | sort -u
+echo "========================================================="

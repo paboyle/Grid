@@ -1,0 +1,125 @@
+#!/bin/bash -l
+#SBATCH --job-name=smoother-modes
+#SBATCH --nodes=36
+#SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=7
+#SBATCH --gpus-per-node=8
+#SBATCH --time=1:00:00
+#SBATCH --account=phy157_dwf
+#SBATCH --gpu-bind=none
+#SBATCH --exclusive
+#SBATCH --mem=0
+#SBATCH -S 0
+
+##############################################################################
+# The 1402.2585 p.13 comparison on this machine: adaptive GCR smoothers vs
+# the same polynomials frozen (GCRReplaySmoother: recorded for the first
+# PolyRecordIters outer steps, then replayed with no inner products), vs a
+# Chebyshev 1/x fit on the measured interval.  Same banked point otherwise.
+#
+#   M1 gcr    / gcr      reference
+#   M2 replay / replay   both levels frozen after PolyRecordIters steps
+#   M3 replay / gcr      fine frozen only (the fine smoother is the reduction-
+#                        heavy one at Nrhs=1)
+#   M4 cheb   / gcr      fine Chebyshev [FineChebLo,FineChebHi] order Fso
+#   M5 cheb   / cheb
+#
+# Laptop 8^4 findings (hot config, Ls=4, NBASIS=8): replay/replay converges
+# (28 vs 23 outer); cheb on the FINE level diverges there while cheb on the
+# coarse level is fine -- the tiny operator has modes the fixed polynomial
+# amplifies (left of / off the axis) that GCR handles adaptively.  Production
+# spectrum is near-normal with edge 130.5 (shift 0.1) so M4/M5 may behave
+# differently; they are cheap to include and cheap to discard.
+#
+# Readouts per mode: Fouter count, s/RHS, and the FINAL exact-halo residual.
+##############################################################################
+
+cat << EOF > select_gpu
+#!/bin/bash
+export GPU_MAP=(0 1 2 3 7 6 5 4)
+export NUMA_MAP=(3 3 1 1 2 2 0 0)
+export GPU=\${GPU_MAP[\$SLURM_LOCALID]}
+export NUMA=\${NUMA_MAP[\$SLURM_LOCALID]}
+export HIP_VISIBLE_DEVICES=\$GPU
+unset ROCR_VISIBLE_DEVICES
+if [ \$SLURM_PROCID = "0" ]; then echo \$*; fi
+exec numactl -m \$NUMA -N \$NUMA \$*
+EOF
+chmod +x ./select_gpu
+
+root=$HOME/ParallelIO/systems/Frontier
+source $root/sourceme-rocm7.2.sh
+
+export OMP_NUM_THREADS=7
+export MPICH_GPU_SUPPORT_ENABLED=1
+export MPICH_SMP_SINGLE_COPY_MODE=CMA
+export MPICH_OFI_NIC_POLICY=GPU
+module load libfabric
+unset DENSE_GATHER DENSE_GATHER_FORCE DENSE_GATHER_DEBUG DENSE_GATHER_MIN_BYTES
+
+OPTS1="--accelerator-threads 8 --shm 4096 --shm-mpi 1 --device-mem 32000"
+vol=48.48.48.96
+MPI_GEOM=3.6.4.4
+
+# banked point (2026-08-26 sweep): Css 2.0, Nstep 2, Fso 6, mmax 4, svm 8
+export FineSmootherShift=0.1
+export FineSmootherOrder=6
+export FineSmootherMmax=4
+export CoarseSmootherShift=2.0
+export CoarseSmootherNstep=2
+export CoarseSmootherMmax=2
+export CoarseSolverTol=0.05
+export CoarseSolverOrder=200
+export CoarseSolverMmax=8
+export OuterTol=1e-8
+export OuterMmax=6
+export OuterNstep=12
+export SUBSPACE_FILE=/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/subspace_nb64.scidac
+unset  SLAB_FILE
+export DENSE_SCHUR=1
+export DENSE_SCHUR2D=1
+export MASS=0.00078
+export BLOCK=2.2.3.3
+export BLOCK2=4.4.2.4
+export L3_TOL=3.0e-1
+export L3_MAXIT=2
+export L3_NSTEP=50
+export DENSE_CC=1
+export DENSE_APPLY_PROFILE=1
+unset  DENSE_CC_CHECK
+export DENSE_SPLITK=128
+export DENSE_DEVICE_SUM=2          # cartesian P2P ring: no 8 MB device-allreduce cliff (NRHS=12 abort)
+export GRID_ALLOC_NCACHE_LARGE=64
+export NRHS=4
+export PowerIterations=0
+export SmootherCoeffLog=0
+
+# frozen-polynomial controls
+export PolyRecordIters=4           # outer steps recorded before the switch
+export FineChebLo=3.0              # harvested |R|<0.1 edge / PowerIteration edge x1.05
+export FineChebHi=137.0
+export CoarseChebLo=8.0
+export CoarseChebHi=47.0           # shift 2.0: edge 43.3 x1.08
+
+run_mode () {
+  name=$1; export FineSmootherMode=$2; export CoarseSmootherMode=$3
+  echo "----- $name : FineSmootherMode=$FineSmootherMode CoarseSmootherMode=$CoarseSmootherMode -----"
+  fname=log.modes.$name
+  srun -N36 -n288 ./select_gpu $root/examples/Example_pvdagm_v2_3level_DenseCoarseMatrix \
+       --mpi ${MPI_GEOM} --grid $vol $OPTS1 --comms-overlap > $fname 2>&1
+  echo "  $(grep -h 'V2 3-level solve Nrhs' $fname | tr '\n' ' ')"
+  echo "  $(grep -h 'Fouter MrhsPGCR: Converged' $fname | sed 's/.*Converged/Converged/' | tr '\n' ' ')"
+  echo "  $(grep -h 'FINAL Nrhs .: worst' $fname | tr '\n' ' ')"
+  grep -h "SwitchableSmoother\|GCRCoefficients .*calls" $fname | head -6
+}
+
+run_mode M1_gcr_gcr        gcr    gcr
+run_mode M2_replay_replay  replay replay
+run_mode M3_replay_gcr     replay gcr
+run_mode M4_cheb_gcr       cheb   gcr
+run_mode M5_cheb_cheb      cheb   cheb
+
+echo "========================================================="
+echo "summary"
+grep -h "V2 3-level solve Nrhs 1" log.modes.* | sed 's/.*V2/V2/'
+echo "========================================================="
