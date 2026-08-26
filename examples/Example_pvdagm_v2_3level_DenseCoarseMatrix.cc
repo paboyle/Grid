@@ -92,6 +92,7 @@ RealD FineSmootherShift    = 0.1;
 int   FineSmootherOrder    = 6;
 int   FineSmootherMmax     = 6;
 RealD CoarseSmootherShift  = 0.1;
+int   PowerIterations      = 0;     // >0: power-iterate the smoother operators before the solves (spectral edge)
 int   CoarseSmootherNstep  = 2;
 int   CoarseSmootherMmax   = 2;
 RealD CoarseSolverTol      = 0.05;
@@ -135,6 +136,7 @@ void ParseEnvironment(void)
   if(getenv("FineSmootherOrder"))  FineSmootherOrder  = atoi(getenv("FineSmootherOrder"));
   if(getenv("FineSmootherMmax"))   FineSmootherMmax   = atoi(getenv("FineSmootherMmax"));
   if(getenv("CoarseSmootherShift"))CoarseSmootherShift= atof(getenv("CoarseSmootherShift"));
+  if(getenv("PowerIterations"))    PowerIterations    = atoi(getenv("PowerIterations"));
   if(getenv("CoarseSmootherNstep"))CoarseSmootherNstep= atoi(getenv("CoarseSmootherNstep"));
   if(getenv("CoarseSmootherMmax")) CoarseSmootherMmax = atoi(getenv("CoarseSmootherMmax"));
   if(getenv("CoarseSolverTol"))    CoarseSolverTol    = atof(getenv("CoarseSolverTol"));
@@ -265,6 +267,52 @@ public:
   void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){ assert(0); }
   void HermOp  (const Field &in, Field &out) { Field tmp(in.Grid()); Op(in,tmp); AdjOp(tmp,out); }
 };
+
+//////////////////////////////////////////////////////////////////////
+// Power iteration on a (non-Hermitian) operator: the spectral edge the
+// smoother polynomial must not exceed.  Reports
+//   step 0 : |A v|/|v| on a RANDOM unit v -- a one-sample lower bound on
+//            sigma_max(A).  If this and the converged value agree, the
+//            operator is near-normal and the spectral picture (R_m(lambda)
+//            on the spectrum) is trustworthy; if not, the field of values
+//            sets the safe interval and the spectrum understates it.
+//   step k : |A v_k|/|v_k| -> |lambda_max| as v_k -> the dominant
+//            eigenvector; the complex Rayleigh quotient <v,Av> gives its
+//            phase (real => on the axis).  A non-converging oscillation
+//            means a complex-conjugate pair of equal modulus at the top.
+// Uses Op(), not HermOp(): this is the operator the smoother sees.
+//////////////////////////////////////////////////////////////////////
+template<class Field>
+void PowerIteration(const std::string &name, LinearOperatorBase<Field> &Op, GridBase *grid, int iters)
+{
+  GRID_TRACE("PowerIteration");
+  GridParallelRNG RNG(grid); RNG.SeedFixedIntegers(std::vector<int>({7,11,13,17}));
+  Field v(grid), Av(grid);
+  gaussian(RNG,v);
+  RealD nv = std::sqrt(norm2(v)); v = v*(1.0/nv);
+  RealD ratio=0.0, ratio0=0.0; ComplexD rq(0.0);
+  for(int i=0;i<iters;i++){
+    Op.Op(v,Av);
+    RealD nAv = std::sqrt(norm2(Av));
+    rq = innerProduct(v,Av);                 // v is unit
+    ratio = nAv;
+    if ( i==0 ) {
+      ratio0 = ratio;
+      std::cout << GridLogMessage << "PowerIteration " << name << " step 0 (random v): |Av|/|v| = " << ratio
+                << "   [lower bound on sigma_max]" << std::endl;
+    }
+    if ( (i%10==0) || (i==iters-1) )
+      std::cout << GridLogMessage << "PowerIteration " << name << " step " << i << " |Av|/|v| = " << ratio
+                << "  Rayleigh = (" << real(rq) << "," << imag(rq) << ")" << std::endl;
+    v = Av*(1.0/nAv);
+  }
+  std::cout << GridLogMessage << "PowerIteration " << name << " SUMMARY: |lambda_max| ~ " << ratio
+            << "  Rayleigh (" << real(rq) << "," << imag(rq) << ")"
+            << "  phase " << std::atan2(imag(rq),real(rq)) << " rad"
+            << "  step-0 ratio / converged = " << ratio0/ratio
+            << (ratio0/ratio > 1.2 ? "   ** non-normal: sigma_max well above |lambda_max| **" : "   (near-normal)")
+            << std::endl;
+}
 
 //////////////////////////////////////////////////////////////////////
 // Dense L3 solve on the packed D+1 coarse-coarse field
@@ -879,6 +927,13 @@ int main (int argc, char ** argv)
     MrhsDenseCCSolve<DenseCC_t,CoarseCoarseVector> ccSolve(*DenseCC,nr);
 
     ShiftedLinearOperator<CoarseVector> ShiftedC(CoarseSmootherShift, LinOpC);
+    if ( PowerIterations > 0 ) {
+      // Spectral edges the smoother polynomials must respect (see
+      // scripts/gcr_polynomial.py: |R_m|>1 beyond the edge = amplification).
+      PowerIteration<CoarseVector>   ("CoarseSmootherOp(shift="+std::to_string(CoarseSmootherShift)+")", ShiftedC, CMrhs, PowerIterations);
+      PowerIteration<CoarseVector>   ("CoarseOp(unshifted)", LinOpC, CMrhs, PowerIterations);
+      PowerIteration<LatticeFermionD>("FineSmootherOp(shift="+std::to_string(FineSmootherShift)+")", ShiftedPVdagM, Ddwf.FermionGrid(), PowerIterations);
+    }
     PrecGeneralisedConjugateResidualNonHermitian<CoarseVector>
       CoarseSmootherGCR(0.01,1,ShiftedC,simpleC,CoarseSmootherMmax,CoarseSmootherNstep);
     CoarseSmootherGCR.Level(2); CoarseSmootherGCR.Name("Csmoother"); CoarseSmootherGCR.SetZeroGuess(1);
