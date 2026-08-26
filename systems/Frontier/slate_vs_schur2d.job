@@ -52,15 +52,24 @@ chmod +x ./select_gpu
 root=$HOME/ParallelIO/systems/Frontier
 source $root/sourceme-rocm7.2.sh
 
-export OMP_NUM_THREADS=7
+# ONE host thread per rank, for both codes.  Grid uses no host OpenMP on the
+# GPU build; SLATE with 7 threads issuing device-buffer MPI concurrently
+# deadlocks in getrf's tile broadcast under Cray MPICH (slate_debug.job V1
+# hung, V2 with OMP_NUM_THREADS=1 completed, 2026-08-25).  Each rank has a
+# whole GCD; the parallelism is on the device for both.
+export OMP_NUM_THREADS=1
 export MPICH_GPU_SUPPORT_ENABLED=1
 export MPICH_SMP_SINGLE_COPY_MODE=CMA
 export MPICH_OFI_NIC_POLICY=GPU
-export MPICH_MAX_THREAD_SAFETY=multiple   # SLATE calls MPI from OpenMP tasks
+export MPICH_MAX_THREAD_SAFETY=multiple   # SLATE still requests MPI_THREAD_MULTIPLE
 
 module load libfabric
 
 BIN=$root/tests/debug/Test_schur2d_vs_slate
+# Three legs per stage: Grid 2D Schur, SLATE getrf+getri, SLATE getrf+getrs(I).
+# getri is a host loop in SLATE (minutes at N=138240; measured once already):
+# S2D_SKIP_GETRI=1 drops it so S3 is ~3 min.  Unset to measure it again.
+export S2D_SKIP_GETRI=${S2D_SKIP_GETRI:-1}
 OPTS1="--accelerator-threads 8 --shm 4096 --shm-mpi 1 --device-mem 32000"
 
 echo "========================================================="
@@ -80,7 +89,7 @@ S2D_N=4096 srun -N1 -n8 ./select_gpu $BIN --mpi 1.1.2.4 --grid 16.16.16.16 $OPTS
      2>&1 | tee s1.out
 S1RC=${PIPESTATUS[0]}
 S1CERT=$(grep -c "certificate" s1.out)
-echo "S1 exit code $S1RC, certificates printed $S1CERT (expect 2)"
+echo "S1 exit code $S1RC, certificates printed $S1CERT (expect 2, or 3 with getri)"
 
 ##############################################################################
 echo "========================================================="
@@ -94,7 +103,7 @@ echo "========================================================="
 echo "S3: THE comparison, 36 nodes, 288 ranks, N=138240 (nb=480, grid 16x18)"
 echo "========================================================="
 ##############################################################################
-if [ "$S1RC" -eq 0 ] && [ "$S1CERT" -eq 2 ]
+if [ "$S1RC" -eq 0 ] && [ "$S1CERT" -ge 2 ]
 then
   S2D_N=138240 srun -N36 -n288 ./select_gpu $BIN --mpi 3.6.4.4 --grid 48.48.48.96 $OPTS1
   echo "S3 exit code $?"
@@ -105,6 +114,6 @@ fi
 echo "========================================================="
 echo "summary (both legs, all stages)"
 echo "========================================================="
-grep -h -E "Grid-vs-SLATE|GRID  :|SLATE :" slurm-$SLURM_JOB_ID.out 2>/dev/null
+grep -h -E "Grid-vs-SLATE|GRID  :|SLATE :|SLATE-getrs" slurm-$SLURM_JOB_ID.out 2>/dev/null
 grep -h "git commit hash" slurm-$SLURM_JOB_ID.out 2>/dev/null | sort -u
 echo "========================================================="

@@ -55,7 +55,19 @@ Author: Peter Boyle <pboyle@bnl.gov>
 // grids, nb dividing N (48|720) and ragged (N=730, nb=50); both legs certify
 // max|A.Ainv-I| ~ 1e-15.
 //
+// Frontier (HIP, Target::Devices, Cray MPICH, 2026-08-25): run with
+// OMP_NUM_THREADS=1.  With 7 threads per rank SLATE's getrf deadlocks in its
+// tile broadcast (concurrent device-buffer MPI from OpenMP tasks); with one
+// thread it completes (8 GCDs, N=4096: certificate 2.7e-15).  One host
+// thread per rank is the like-for-like anyway: Grid's GPU build uses none.
+// Also: the site `slate` module (cpu env) must NOT be loaded -- its host-only
+// libblaspp shadows the ROCm one via LD_LIBRARY_PATH and throws
+// "device BLAS not available" from host_malloc_pinned.
+//
 //   S2D_N, S2D_NB as in Test_schur2d_scale (default nb = N/P).
+//   S2D_SKIP_GETRI=1 skips the getri leg (host loop; ~4 min at N=138240).
+//   S2D_NOWARM=1 skips the warm-up.
+// A third leg, getrf+getrs(I), is SLATE's device-resident inverse route.
 //////////////////////////////////////////////////////////////////////////////
 
 #include <Grid/Grid.h>
@@ -153,13 +165,22 @@ int main(int argc, char **argv)
   // a hang shows WHERE even through block-buffered stdout.
   auto Stage = [&](const char *s){ std::cout << GridLogMessage << "stage: " << s << std::endl << std::flush; };
   if ( !getenv("S2D_NOWARM") ) {
-    int64_t Nw = 8*P; int64_t nbw = 8;
-    std::vector<int64_t> rs(P+1); for(int r=0;r<=P;r++) rs[r]=8*r;
-    std::vector<ComplexD> hw(8*Nw); for(int64_t jj=0;jj<Nw;jj++) for(int64_t i=0;i<8;i++) hw[i+jj*8]=Fill(8*me+i,jj);
+    // Fixed tiny size independent of P: the purpose is handle creation and
+    // kernel loading, not work.  (8*P at P=288 was N=2304 -> a 122 s SLATE
+    // warm-up dominated by 288-way tile broadcasts.)  Ranks beyond the first
+    // Nw/nbw own nothing in the rows layout, which RowsToCyclic handles.
+    int64_t Nw = 64; int64_t nbw = 8;
+    // same partition rule as the main leg: Nw/P rows each, remainder to the
+    // first ranks; at P > Nw most ranks contribute zero rows.
+    std::vector<int64_t> rs(P+1); rs[0]=0;
+    for(int r=0;r<P;r++) rs[r+1] = rs[r] + Nw/P + ( r < (int)(Nw%P) ? 1 : 0 );
+    int64_t rw = rs[me+1]-rs[me];
+    std::vector<ComplexD> hw(std::max<int64_t>(rw,1)*Nw);
+    for(int64_t jj=0;jj<Nw;jj++) for(int64_t i=0;i<rw;i++) hw[i+jj*rw]=Fill(rs[me]+i,jj);
     deviceVector<ComplexD> dw(hw.size()); acceleratorCopyToDevice(&hw[0],&dw[0],hw.size()*sizeof(ComplexD));
     BlockCyclicMatrix W(grid,Nw,nbw,Pr,Pc);
     Stage("warm-up Grid RowsToCyclic");
-    BlockCyclicRedistribute::RowsToCyclic(grid,rs,&dw[0],8,W);
+    BlockCyclicRedistribute::RowsToCyclic(grid,rs,&dw[0],rw,W);
     Stage("warm-up Grid Invert");
     BlockCyclicSchurInverse RSIw; RSIw.Invert(W);
 #ifdef HAVE_SLATE
@@ -203,7 +224,7 @@ int main(int argc, char **argv)
       acceleratorCopyDeviceToDevice((void *)&A.data[0],(void *)&A0.data[0],A.data.size()*sizeof(ComplexD));
     double t2=usecond();
     Stage("Grid Invert");
-    RSI2.Invert(A);
+    { GRID_TRACE("GridInvert"); RSI2.Invert(A); }
     double t3=usecond();
     BlockCyclicRedistribute::CyclicToRows(grid,rowStart,A,&rows1d[0],myrows);
     double t4=usecond();
@@ -218,7 +239,7 @@ int main(int argc, char **argv)
   // LEG 2: SLATE, every layout step timed and charged.
   ////////////////////////////////////////////////////////////////////////
 #ifdef HAVE_SLATE
-  {
+  if ( !getenv("S2D_SKIP_GETRI") ) {   // S2D_SKIP_GETRI=1: getri is a host loop, minutes at N=138240
     typedef std::complex<double> scalar_t;
     acceleratorCopyToDevice(&h[0], &rows1d[0], h.size()*sizeof(ComplexD));
     BlockCyclicMatrix A(grid,N,nb,Pr,Pc), A0(grid,N,nb,Pr,Pc);
@@ -262,10 +283,10 @@ int main(int argc, char **argv)
     slate::Pivots pivots;
     Stage("SLATE getrf");
     double t4=usecond();
-    slate::getrf(S, pivots, opts);          // LU, partial pivoting
+    { GRID_TRACE("SLATE_getrf"); slate::getrf(S, pivots, opts); }   // LU, partial pivoting
     double t5=usecond();
     Stage("SLATE getri");
-    slate::getri(S, pivots, opts);          // in-place inverse from the factor
+    { GRID_TRACE("SLATE_getri"); slate::getri(S, pivots, opts); }   // in-place inverse from the factor
     double t6=usecond();
 
     // back onto the device, in our layout (getri applies the pivots itself)
@@ -277,6 +298,72 @@ int main(int argc, char **argv)
     std::cout << GridLogMessage << "SLATE : redist->2D " << (t1-t0)/1e6
               << "  D2H " << (t3-t2)/1e6 << "  wrap " << (t4-t3)/1e6
               << "  getrf " << (t5-t4)/1e6 << "  getri " << (t6-t5)/1e6
+              << "  H2D " << (t7-t6)/1e6 << "  redist->rows " << (t8-t7)/1e6
+              << "  TOTAL " << ((t1-t0)+(t8-t2))/1e6 << " s"
+              << "   certificate " << cert << std::endl;
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+  // LEG 3: SLATE getrf + getrs(I) -- SLATE's device-resident route to an
+  // explicit inverse.  getri's L-side loop is hard-coded Target::HostTask
+  // (src/getri.cc: copy/gemmA/trsm/permuteRows all <HostTask>), so under
+  // Target::Devices it runs as a 288-step host loop on one thread per rank.
+  // getrs is two trsm's that honour the target (plus host row permutes).
+  // The identity RHS is built on the host in the same ScaLAPACK layout and
+  // its construction is on SLATE's clock.
+  ////////////////////////////////////////////////////////////////////////
+  {
+    typedef std::complex<double> scalar_t;
+    acceleratorCopyToDevice(&h[0], &rows1d[0], h.size()*sizeof(ComplexD));
+    BlockCyclicMatrix A(grid,N,nb,Pr,Pc), A0(grid,N,nb,Pr,Pc);
+    double t0=usecond();
+    BlockCyclicRedistribute::RowsToCyclic(grid,rowStart,&rows1d[0],myrows,A);
+    double t1=usecond();
+    if ( A.data.size() )
+      acceleratorCopyDeviceToDevice((void *)&A.data[0],(void *)&A0.data[0],A.data.size()*sizeof(ComplexD));
+    BlockCyclicLayout &L = A.layout;
+    uint64_t nloc = (uint64_t)L.mloc*L.nloc;
+    std::vector<scalar_t> hA(nloc ? nloc : 1), hB(nloc ? nloc : 1);
+    double t2=usecond();
+    if ( nloc ) acceleratorCopyFromDevice(&A.data[0], (void *)&hA[0], nloc*sizeof(ComplexD));
+    for(int64_t lj=0;lj<L.nloc;lj++){
+      int64_t gj = BlockCyclicLayout::LocalToGlobal(lj, nb, L.pcol, Pc);
+      for(int64_t li=0;li<L.mloc;li++){
+        int64_t gi = BlockCyclicLayout::LocalToGlobal(li, nb, L.prow, Pr);
+        hB[li+lj*L.mloc] = (gi==gj) ? scalar_t(1.0,0.0) : scalar_t(0.0,0.0);
+      }
+    }
+    double t3=usecond();
+    auto S = slate::Matrix<scalar_t>::fromScaLAPACK(N, N, &hA[0], (int64_t)std::max<int64_t>(L.mloc,1),
+                                                    nb, nb, slate::GridOrder::Row, Pr, Pc, grid->communicator);
+    auto B = slate::Matrix<scalar_t>::fromScaLAPACK(N, N, &hB[0], (int64_t)std::max<int64_t>(L.mloc,1),
+                                                    nb, nb, slate::GridOrder::Row, Pr, Pc, grid->communicator);
+#if defined(GRID_HIP) || defined(GRID_CUDA) || defined(GRID_SYCL)
+    slate::Target target = slate::Target::Devices;
+#else
+    slate::Target target = slate::Target::HostTask;
+#endif
+    slate::Options opts = {
+      { slate::Option::Target,        target },
+      { slate::Option::Lookahead,     1 },
+      { slate::Option::InnerBlocking, 16 },
+    };
+    slate::Pivots pivots;
+    Stage("SLATE getrf (getrs leg)");
+    double t4=usecond();
+    { GRID_TRACE("SLATE_getrf"); slate::getrf(S, pivots, opts); }
+    double t5=usecond();
+    Stage("SLATE getrs(I)");
+    { GRID_TRACE("SLATE_getrs"); slate::getrs(S, pivots, B, opts); }   // B <- A^{-1} I
+    double t6=usecond();
+    if ( nloc ) acceleratorCopyToDevice((void *)&hB[0], &A.data[0], nloc*sizeof(ComplexD));
+    double t7=usecond();
+    BlockCyclicRedistribute::CyclicToRows(grid,rowStart,A,&rows1d[0],myrows);
+    double t8=usecond();
+    double cert = Certify(grid,A0,A,nb,Pr,Pc);
+    std::cout << GridLogMessage << "SLATE-getrs : redist->2D " << (t1-t0)/1e6
+              << "  D2H+I " << (t3-t2)/1e6 << "  wrap " << (t4-t3)/1e6
+              << "  getrf " << (t5-t4)/1e6 << "  getrs " << (t6-t5)/1e6
               << "  H2D " << (t7-t6)/1e6 << "  redist->rows " << (t8-t7)/1e6
               << "  TOTAL " << ((t1-t0)+(t8-t2))/1e6 << " s"
               << "   certificate " << cert << std::endl;

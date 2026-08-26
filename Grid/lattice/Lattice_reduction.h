@@ -809,6 +809,21 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
 // Same code path for every Lattice<vobj>: fine fermion fields and coarse
 // multi-RHS fields (nrhs folded into the grid) alike.
 /////////////////////////////////////////////////////////////////////////////
+// The batch of views and coefficients is passed to the kernel BY VALUE as
+// lambda-captured kernel arguments (a ViewPack), so there is no per-call
+// deviceVector allocation and no synchronous host->device memcpy of pointer
+// tables: the only sync points are the reductions themselves.
+// LatticeView has no default constructor, so the pack holds raw aligned
+// storage and views are copied in bytewise (as basisRotateJ does through
+// acceleratorPut); the struct is trivially copyable as a kernel argument.
+template<class View,int B>
+struct ViewPack {
+  alignas(View) unsigned char raw[B*sizeof(View)];
+  ComplexD b[B];
+  accelerator_inline const View & v(int j) const { return reinterpret_cast<const View *>(raw)[j]; }
+  void set(int j,const View &view){ memcpy(raw+j*sizeof(View),&view,sizeof(View)); }
+};
+
 template<int B,class vobj>
 void rankInnerProductMultiChunk(ComplexD *out,int m,
 				const std::vector<const Lattice<vobj>*> &left,
@@ -822,14 +837,14 @@ void rankInnerProductMultiChunk(ComplexD *out,int m,
   GridBase *grid = right.Grid();
   const uint64_t sites = grid->oSites();
 
-  hostVector<View>   h_left_v(m);
-  deviceVector<View> d_left_v(m);
+  std::vector<View> h_v; h_v.reserve(m);
+  ViewPack<View,B> pack;
   for(int j=0;j<m;j++){
     conformable(*left[j],right);
-    h_left_v[j] = left[j]->View(AcceleratorRead);
+    h_v.push_back(left[j]->View(AcceleratorRead));
+    pack.set(j,h_v[j]);
   }
-  acceleratorCopyToDevice(&h_left_v[0],&d_left_v[0],m*sizeof(View));
-  View *left_vp = &d_left_v[0];
+  for(int j=m;j<B;j++) pack.set(j,h_v[0]);   // valid but unused lanes
 
   deviceVector<batch_t> partial(sites);
   batch_t *partial_v = &partial[0];
@@ -839,13 +854,13 @@ void rankInnerProductMultiChunk(ComplexD *out,int m,
 	auto r = right_v[ss];
 	batch_t acc;
 	for(int j=0;j<B;j++){
-	  if ( j<m ) acc._internal[j] = innerProductD(left_vp[j][ss],r);
+	  if ( j<m ) acc._internal[j] = innerProductD(pack.v(j)[ss],r);
 	  else       zeroit(acc._internal[j]);
 	}
 	partial_v[ss] = acc;
     });
   }
-  for(int j=0;j<m;j++) h_left_v[j].ViewClose();
+  for(int j=0;j<m;j++) h_v[j].ViewClose();
 
   auto res = sum(partial_v,sites);   // one reduction for the whole batch
   for(int j=0;j<m;j++) out[j] = TensorRemove(res._internal[j]);
@@ -877,48 +892,70 @@ void innerProductMulti(std::vector<ComplexD> &out,
   if ( out.size() ) right.Grid()->GlobalSumVector(&out[0],(int)out.size());
 }
 
-// z = z + sum_j b[j] x[j];  if do_norm, returns global |z|^2 from the same pass.
-template<class vobj>
-RealD axpyMultiNormImpl(Lattice<vobj> &z,const std::vector<ComplexD> &b,
-			const std::vector<const Lattice<vobj>*> &x,int do_norm)
+// z = z + sum_{j<m} b[j] x[j] for one chunk of at most B vectors; if do_norm,
+// also writes per-site |z|^2 into inner_tmp_v.
+template<int B,class vobj>
+void axpyMultiChunk(Lattice<vobj> &z,const ComplexD *b,
+		    const std::vector<const Lattice<vobj>*> &x,int m,
+		    int do_norm,
+		    decltype(innerProduct(vobj(),vobj())) *inner_tmp_v)
 {
   typedef decltype(z.View(AcceleratorRead)) View;
-
-  int m = x.size();
-  GRID_ASSERT((int)b.size()>=m);
+  GRID_ASSERT(m>=1 && m<=B);
   GridBase *grid = z.Grid();
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
 
-  hostVector<View>   h_x_v(std::max(m,1));
-  deviceVector<View> d_x_v(std::max(m,1));
-  hostVector<ComplexD>   h_b(std::max(m,1));
-  deviceVector<ComplexD> d_b(std::max(m,1));
+  std::vector<View> h_v; h_v.reserve(m);
+  ViewPack<View,B> pack;
   for(int j=0;j<m;j++){
     conformable(*x[j],z);
     GRID_ASSERT(x[j]!=&z);            // window must not alias the accumulator
-    h_x_v[j] = x[j]->View(AcceleratorRead);
-    h_b[j]   = b[j];
+    h_v.push_back(x[j]->View(AcceleratorRead));
+    pack.set(j,h_v[j]);
+    pack.b[j] = b[j];
   }
-  if ( m ) {
-    acceleratorCopyToDevice(&h_x_v[0],&d_x_v[0],m*sizeof(View));
-    acceleratorCopyToDevice(&h_b[0],&d_b[0],m*sizeof(ComplexD));
-  }
-  View     *x_vp = &d_x_v[0];
-  ComplexD *b_p  = &d_b[0];
+  for(int j=m;j<B;j++){ pack.set(j,h_v[0]); pack.b[j] = ComplexD(0.0); }
 
   autoView(z_v,z,AcceleratorWrite);
-  typedef decltype(innerProduct(z_v[0],z_v[0])) inner_t;
-  deviceVector<inner_t> inner_tmp(do_norm ? sites : 1);
-  inner_t *inner_tmp_v = &inner_tmp[0];
-
   accelerator_for(ss,sites,nsimd,{
       auto acc = coalescedRead(z_v[ss]);
-      for(int j=0;j<m;j++) acc = acc + b_p[j]*coalescedRead(x_vp[j][ss]);
+      for(int j=0;j<B;j++) if ( j<m ) acc = acc + pack.b[j]*coalescedRead(pack.v(j)[ss]);
       coalescedWrite(z_v[ss],acc);
       if ( do_norm ) coalescedWrite(inner_tmp_v[ss],innerProduct(acc,acc));
   });
-  for(int j=0;j<m;j++) h_x_v[j].ViewClose();
+  for(int j=0;j<m;j++) h_v[j].ViewClose();
+}
+
+// z = z + sum_j b[j] x[j];  if do_norm, returns global |z|^2 from the same
+// (last) pass.  Chunks of 16 for windows longer than 16.
+template<class vobj>
+RealD axpyMultiNormImpl(Lattice<vobj> &z,const std::vector<ComplexD> &b,
+			const std::vector<const Lattice<vobj>*> &x,int do_norm)
+{
+  typedef decltype(innerProduct(vobj(),vobj())) inner_t;
+  int m = x.size();
+  GRID_ASSERT((int)b.size()>=m);
+  GridBase *grid = z.Grid();
+  const uint64_t sites = grid->oSites();
+
+  deviceVector<inner_t> inner_tmp(do_norm ? sites : 1);
+  inner_t *inner_tmp_v = &inner_tmp[0];
+
+  if ( m==0 ) {
+    if ( do_norm ) return norm2(z);
+    return 0.0;
+  }
+  for(int j0=0;j0<m;j0+=16){
+    int mm   = std::min(16,m-j0);
+    int last = (j0+mm>=m);
+    std::vector<const Lattice<vobj>*> sub(x.begin()+j0,x.begin()+j0+mm);
+    int dn = do_norm && last;
+    if      ( mm<=2 ) axpyMultiChunk<2> (z,&b[j0],sub,mm,dn,inner_tmp_v);
+    else if ( mm<=4 ) axpyMultiChunk<4> (z,&b[j0],sub,mm,dn,inner_tmp_v);
+    else if ( mm<=8 ) axpyMultiChunk<8> (z,&b[j0],sub,mm,dn,inner_tmp_v);
+    else              axpyMultiChunk<16>(z,&b[j0],sub,mm,dn,inner_tmp_v);
+  }
 
   RealD nrm = 0.0;
   if ( do_norm ) {
