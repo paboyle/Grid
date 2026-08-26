@@ -62,13 +62,19 @@ public:
   // For fixed P the per-rank SUMMA volume  N^2 (1/Pr + 1/Pc)  is minimised
   // at the most square grid.  P=288 -> 16 x 18.
   ///////////////////////////////////////////////////////////////////////////
+  // Nearest-to-square factorisation with Pr >= Pc.  The orientation matters
+  // for SUMMA: B panels travel along process columns in slots of
+  // S = ceil(Pc/Pr) panels, padded; with Pr >= Pc, S == 1 and there is no
+  // padding.  (288 as 16x18 had S=2 -- half the B-ring bytes were zeros;
+  // 18x16 moves ~30% fewer bytes for the same inverse.)
   static void ChooseProcessGrid(int P, int &Pr, int &Pc)
   {
     GRID_ASSERT(P >= 1);
-    Pr = 1;
-    for(int r=1; (int64_t)r*r <= (int64_t)P; r++)
-      if ( P % r == 0 ) Pr = r;
-    Pc = P / Pr;
+    int r = 1;
+    for(int f=1; (int64_t)f*f <= (int64_t)P; f++)
+      if ( P % f == 0 ) r = f;
+    Pc = r;
+    Pr = P / r;
   }
 
   ///////////////////////////////////////////////////////////////////////////

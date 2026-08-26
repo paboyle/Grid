@@ -103,6 +103,7 @@ int   PowerIterations      = 0;     // >0: power-iterate the smoother operators 
 std::string FineSmootherMode   = "gcr";
 std::string CoarseSmootherMode = "gcr";
 int   PolyRecordIters      = 4;
+int   PolyVerbose          = 0;     // 1: fixed-polynomial smoothers print |r_m|/|r_0| per call
 RealD FineChebLo   = 3.0,  FineChebHi   = 137.0;   // from the harvested polynomial and PowerIterations edge
 RealD CoarseChebLo = 8.0,  CoarseChebHi = 45.0;
 int   CoarseSmootherNstep  = 2;
@@ -152,6 +153,7 @@ void ParseEnvironment(void)
   if(getenv("FineSmootherMode"))   FineSmootherMode   = getenv("FineSmootherMode");
   if(getenv("CoarseSmootherMode")) CoarseSmootherMode = getenv("CoarseSmootherMode");
   if(getenv("PolyRecordIters"))    PolyRecordIters    = atoi(getenv("PolyRecordIters"));
+  if(getenv("PolyVerbose"))        PolyVerbose        = atoi(getenv("PolyVerbose"));
   if(getenv("FineChebLo"))         FineChebLo         = atof(getenv("FineChebLo"));
   if(getenv("FineChebHi"))         FineChebHi         = atof(getenv("FineChebHi"));
   if(getenv("CoarseChebLo"))       CoarseChebLo       = atof(getenv("CoarseChebLo"));
@@ -991,10 +993,12 @@ int main (int argc, char ** argv)
     GCRCoefficients recF, recC;
     if ( FineSmootherMode == "cheb" ) {
       FineCheb.reset(new ChebyshevNonHermitianSmoother<LatticeFermionD>(FineChebLo,FineChebHi,FineSmootherOrder,ShiftedPVdagM));
+      FineCheb->Verbose = PolyVerbose; FineCheb->name = "Fsmoother";
       FineSmootherSlot.Set(*FineCheb,"Fsmoother Chebyshev");
     }
     if ( CoarseSmootherMode == "cheb" ) {
       CoarseCheb.reset(new ChebyshevNonHermitianSmoother<CoarseVector>(CoarseChebLo,CoarseChebHi,CoarseSmootherNstep,ShiftedC));
+      CoarseCheb->Verbose = PolyVerbose; CoarseCheb->name = "Csmoother";
       CoarseSmootherSlot.Set(*CoarseCheb,"Csmoother Chebyshev");
     }
     if ( FineSmootherMode   == "replay" ) SmootherGCR.SetCoefficientRecorder(&recF);
@@ -1005,13 +1009,17 @@ int main (int argc, char ** argv)
         SmootherGCR.SetCoefficientRecorder(nullptr);
         recF.Report("Fsmoother");
         FineReplay.reset(new GCRReplaySmoother<LatticeFermionD>(ShiftedPVdagM,recF));
+        FineReplay->Verbose = PolyVerbose; FineReplay->name = "Fsmoother";
         FineSmootherSlot.Set(*FineReplay,"Fsmoother replay");
+        SmootherGCR.ReleaseHistory();          // memory-neutral swap: the GCR's history goes as the replay's comes
       }
       if ( CoarseSmootherMode == "replay" ) {
         CoarseSmootherGCR.SetCoefficientRecorder(nullptr);
         recC.Report("Csmoother");
         CoarseReplay.reset(new GCRReplaySmoother<CoarseVector>(ShiftedC,recC));
+        CoarseReplay->Verbose = PolyVerbose; CoarseReplay->name = "Csmoother";
         CoarseSmootherSlot.Set(*CoarseReplay,"Csmoother replay");
+        CoarseSmootherGCR.ReleaseHistory();
       }
     };
     std::cout << GridLogMessage << "Smoother modes: fine " << FineSmootherMode << "  coarse " << CoarseSmootherMode

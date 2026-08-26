@@ -38,7 +38,7 @@ Author: Peter Boyle <pboyle@bnl.gov>
 //        equal mloc*nloc; LocalOffset is a bijection onto [0,mloc*nloc).
 //   T5 : block contiguity: within any owned global block, consecutive
 //        global rows are consecutive local rows (what SUMMA panels rely on).
-//   T6 : ChooseProcessGrid: exact factorisation, Pr<=Pc, most-square.
+//   T6 : ChooseProcessGrid: exact factorisation, Pr>=Pc, most-square.
 //////////////////////////////////////////////////////////////////////////////
 
 #include <Grid/Grid.h>
@@ -227,15 +227,15 @@ int main(int argc, char **argv)
       int Pr,Pc;
       BlockCyclicLayout::ChooseProcessGrid(P,Pr,Pc);
       if ( Pr*Pc != P ) ok = false;
-      if ( Pr > Pc )    ok = false;
-      // most-square: no divisor r with Pr < r <= sqrt(P)
-      for(int r=Pr+1; (int64_t)r*r <= (int64_t)P; r++)
+      if ( Pr < Pc )    ok = false;                 // Pr >= Pc (SUMMA B panels unpadded)
+      // most-square: no divisor r with Pc < r <= sqrt(P)
+      for(int r=Pc+1; (int64_t)r*r <= (int64_t)P; r++)
         if ( P % r == 0 ) ok = false;
     }
     int Pr,Pc;
     BlockCyclicLayout::ChooseProcessGrid(288,Pr,Pc);
-    if ( !(Pr==16 && Pc==18) ) ok = false;
-    Report("T6  ChooseProcessGrid exact, Pr<=Pc, most-square (288 -> 16x18)", ok);
+    if ( !(Pr==18 && Pc==16) ) ok = false;   // Pr >= Pc: SUMMA B panels unpadded (S = ceil(Pc/Pr) = 1)
+    Report("T6  ChooseProcessGrid exact, Pr>=Pc, most-square (288 -> 18x16)", ok);
   }
 
   ////////////////////////////////////////////////////////////////////////

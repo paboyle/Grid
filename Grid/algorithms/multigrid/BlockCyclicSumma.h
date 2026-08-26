@@ -132,6 +132,15 @@ public:
   // row, ring B along the process column, then the local GEMMs.  The rings
   // are synchronous SendToRecvFrom, so tRing is time the GPU is idle unless
   // a future version overlaps them with the GEMMs.
+  // PERSISTENT ring buffers: allocated once (grow-only) and reused by every
+  // Multiply, so the device addresses handed to MPI never change.  Fresh
+  // per-call buffers rotated through the caching allocator's blocks, and a
+  // GPU-direct RDMA registration cache keyed on address then re-registers
+  // per message: measured 1.26 GB/s/rank on 13 MB ring messages (production,
+  // GRID_ALLOC_NCACHE_LARGE=64) against 62 s total for the same inverse when
+  // hipMalloc returned a stable address.
+  deviceVector<ComplexD> Abuf;
+  deviceVector<ComplexD> Bbuf;
   double   tAlloc=0, tPack=0, tRingA=0, tRingB=0, tGemm=0;
   uint64_t bytesRing=0, nRingMsg=0, nMultiply=0, nGemm=0;
   void ResetTelemetry(void){ tAlloc=tPack=tRingA=tRingB=tGemm=0; bytesRing=nRingMsg=nMultiply=nGemm=0; }
@@ -199,8 +208,8 @@ public:
     const uint64_t slotB  = (uint64_t)S*slotB1;
     nMultiply++;
     tAlloc -= usecond();
-    deviceVector<ComplexD> Abuf( slotA*Pc ? slotA*Pc : 1 );
-    deviceVector<ComplexD> Bbuf( slotB*Pr ? slotB*Pr : 1 );
+    if ( Abuf.size() < std::max<uint64_t>(slotA*Pc,1) ) Abuf.resize( std::max<uint64_t>(slotA*Pc,1) );
+    if ( Bbuf.size() < std::max<uint64_t>(slotB*Pr,1) ) Bbuf.resize( std::max<uint64_t>(slotB*Pr,1) );
     tAlloc += usecond();
 
     deviceVector<ComplexD *> ap(1), bp(1), cp(1);

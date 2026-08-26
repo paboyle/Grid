@@ -91,6 +91,8 @@ public:
   LinearOperatorBase<Field> &Linop;
   RealD lo, hi; int order;
   std::vector<RealD> Coeffs;
+  int Verbose = 0;
+  std::string name = "cheb";
   ChebyshevNonHermitianSmoother(RealD _lo,RealD _hi,int _order,LinearOperatorBase<Field> &Op)
     : Linop(Op), lo(_lo), hi(_hi), order(_order)
   {
@@ -126,6 +128,7 @@ public:
       if ( Coeffs[n] != 0.0 ) axpy(out,Coeffs[n],*Tnp,out);
       Field *swizzle=Tnm; Tnm=Tn; Tn=Tnp; Tnp=swizzle;
     }
+    if ( Verbose ) { Linop.Op(out,y); y = y - in; std::cout << GridLogMessage << " " << name << " cheb |r|/|r0| = " << std::sqrt(norm2(y)/norm2(in)) << std::endl; }
   }
 };
 
@@ -205,16 +208,27 @@ public:
   std::vector<std::vector<ComplexD> > b;
   GridBase *hist_grid = nullptr;
   std::vector<Field> p;
+  int Verbose = 0;                       // 1: print |r_m|/|r_0| per call (one extra reduction)
+  std::string name = "replay";
   GCRReplaySmoother(LinearOperatorBase<Field> &Op, const GCRCoefficients &c) : Linop(Op)
   {
     mmax  = c.mmax;  GRID_ASSERT(mmax>=1);
     nstep = c.Steps(); GRID_ASSERT(nstep>=1);
     a.resize(nstep); b.resize(nstep);
+    RealD amax=0.0, bmax=0.0;
     for(int k=0;k<nstep;k++){
       a[k] = c.A(k);
+      GRID_ASSERT( std::isfinite(real(a[k])) && std::isfinite(imag(a[k])) );
+      amax = std::max(amax, std::abs(a[k]));
       b[k].resize(c.NB(k));
-      for(int j=0;j<c.NB(k);j++) b[k][j] = c.B(k,j);
+      GRID_ASSERT( c.NB(k) <= mmax-1 );
+      for(int j=0;j<c.NB(k);j++){
+        b[k][j] = c.B(k,j);
+        GRID_ASSERT( std::isfinite(real(b[k][j])) && std::isfinite(imag(b[k][j])) );
+        bmax = std::max(bmax, std::abs(b[k][j]));
+      }
     }
+    std::cout << GridLogMessage << " GCRReplaySmoother: max|a| " << amax << " max|b| " << bmax << std::endl;
     std::cout << GridLogMessage << " GCRReplaySmoother: " << nstep << " steps, mmax " << mmax
               << ", from " << c.Calls() << " recorded calls" << std::endl;
   }
@@ -231,11 +245,15 @@ public:
     r = src;
     psi = Zero();
     p[0] = r;
+    RealD r0 = Verbose ? norm2(src) : 0.0;
     for(int k=0;k<nstep;k++){
       int kp=k+1, peri_k=k%mmax, peri_kp=kp%mmax;
       Linop.Op(p[peri_k],q);                 // q_k = A p_k
       axpy(psi,  a[k], p[peri_k], psi);
-      if ( k==nstep-1 ) break;
+      if ( k==nstep-1 ) {
+        if ( Verbose ) { axpy(r,-a[k],q,r); std::cout << GridLogMessage << " " << name << " replay |r|/|r0| = " << std::sqrt(norm2(r)/r0) << std::endl; }
+        break;
+      }
       axpy(r,   -a[k], q,         r);
       p[peri_kp] = r;
       for(int j=0;j<(int)b[k].size();j++){

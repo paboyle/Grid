@@ -23,6 +23,7 @@
 #                        heavy one at Nrhs=1)
 #   M4 cheb   / gcr      fine Chebyshev [FineChebLo,FineChebHi] order Fso
 #   M5 cheb   / cheb
+#   M6 gcr    / replay   coarse frozen only
 #
 # Laptop 8^4 findings (hot config, Ls=4, NBASIS=8): replay/replay converges
 # (28 vs 23 outer); cheb on the FINE level diverges there while cheb on the
@@ -96,6 +97,7 @@ export SmootherCoeffLog=0
 
 # frozen-polynomial controls
 export PolyRecordIters=4           # outer steps recorded before the switch
+export PolyVerbose=1               # frozen smoothers print |r_m|/|r_0| per call: separates 'bad polynomial' from 'linear V-cycle stagnates the outer'
 export FineChebLo=3.0              # harvested |R|<0.1 edge / PowerIteration edge x1.05
 export FineChebHi=137.0
 export CoarseChebLo=8.0
@@ -105,8 +107,9 @@ run_mode () {
   name=$1; export FineSmootherMode=$2; export CoarseSmootherMode=$3
   echo "----- $name : FineSmootherMode=$FineSmootherMode CoarseSmootherMode=$CoarseSmootherMode -----"
   fname=log.modes.$name
-  srun -N36 -n288 ./select_gpu $root/examples/Example_pvdagm_v2_3level_DenseCoarseMatrix \
+  srun -N36 -n288 --kill-on-bad-exit=1 ./select_gpu $root/examples/Example_pvdagm_v2_3level_DenseCoarseMatrix \
        --mpi ${MPI_GEOM} --grid $vol $OPTS1 --comms-overlap > $fname 2>&1
+  echo "  exit $?"; sleep 60      # let a faulted step's GPUs be released before the next srun (M3 after M2 faulted instantly)
   echo "  $(grep -h 'V2 3-level solve Nrhs' $fname | tr '\n' ' ')"
   echo "  $(grep -h 'Fouter MrhsPGCR: Converged' $fname | sed 's/.*Converged/Converged/' | tr '\n' ' ')"
   echo "  $(grep -h 'FINAL Nrhs .: worst' $fname | tr '\n' ' ')"
@@ -118,6 +121,7 @@ run_mode M2_replay_replay  replay replay
 run_mode M3_replay_gcr     replay gcr
 run_mode M4_cheb_gcr       cheb   gcr
 run_mode M5_cheb_cheb      cheb   cheb
+run_mode M6_gcr_replay     gcr    replay    # coarse frozen only: M2 showed Couter 16 -> 5 steps with it live
 
 echo "========================================================="
 echo "summary"

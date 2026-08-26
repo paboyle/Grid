@@ -85,6 +85,9 @@ public:
   // the iteration.
   GCRCoefficients *Recorder = nullptr;
   void SetCoefficientRecorder(GCRCoefficients *r) { Recorder = r; if(r) r->mmax = mmax; };
+  // Free the persistent history (e.g. when this solver is replaced by a
+  // replayed polynomial): re-made on the next call if ever needed again.
+  void ReleaseHistory(void) { q.clear(); p.clear(); qq.clear(); hist_grid = nullptr; };
 
   PrecGeneralisedConjugateResidualNonHermitian(RealD tol,Integer maxit,LinearOperatorBase<Field> &_Linop,LinearFunction<Field> &Prec,int _mmax,int _nstep) : 
     Tolerance(tol), 

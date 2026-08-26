@@ -20,7 +20,7 @@
 #
 #   S1 : 1 node,  8 ranks, N=4096    -- API/device/thread-level shakeout
 #   S2 : 1 node,  8 ranks, N=13824   -- one-node production-shape rehearsal
-#   S3 : 36 nodes, 288 ranks, N=138240 (nb=480, grid 16x18) -- THE comparison
+#   S3 : 36 nodes, 288 ranks, N=138240 (nb=480, grid 18x16) -- THE comparison
 #
 # S3 is gated on S1 passing (rc=0 and both certificates printed): a broken
 # SLATE leg should not burn the 36-node allocation.
@@ -100,7 +100,7 @@ S2D_N=13824 srun -N1 -n8 ./select_gpu $BIN --mpi 1.1.2.4 --grid 16.16.16.16 $OPT
 
 ##############################################################################
 echo "========================================================="
-echo "S3: THE comparison, 36 nodes, 288 ranks, N=138240 (nb=480, grid 16x18)"
+echo "S3: THE comparison, 36 nodes, 288 ranks, N=138240 (nb=480, grid 18x16)"
 echo "========================================================="
 ##############################################################################
 if [ "$S1RC" -eq 0 ] && [ "$S1CERT" -ge 2 ]
