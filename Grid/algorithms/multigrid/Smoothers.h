@@ -215,17 +215,22 @@ public:
     mmax  = c.mmax;  GRID_ASSERT(mmax>=1);
     nstep = c.Steps(); GRID_ASSERT(nstep>=1);
     a.resize(nstep); b.resize(nstep);
+    // No std::abs / std::isfinite on ComplexD: it is thrust::complex on HIP
+    // builds and neither overload exists.  Work on the real and imaginary
+    // parts explicitly.
+    auto finite = [](ComplexD z){ RealD x=real(z), y=imag(z); return (x==x) && (y==y) && (x-x==0.0) && (y-y==0.0); };
+    auto cabs   = [](ComplexD z){ RealD x=real(z), y=imag(z); return std::sqrt(x*x+y*y); };
     RealD amax=0.0, bmax=0.0;
     for(int k=0;k<nstep;k++){
       a[k] = c.A(k);
-      GRID_ASSERT( std::isfinite(real(a[k])) && std::isfinite(imag(a[k])) );
-      amax = std::max(amax, std::abs(a[k]));
+      GRID_ASSERT( finite(a[k]) );
+      amax = std::max(amax, cabs(a[k]));
       b[k].resize(c.NB(k));
       GRID_ASSERT( c.NB(k) <= mmax-1 );
       for(int j=0;j<c.NB(k);j++){
         b[k][j] = c.B(k,j);
-        GRID_ASSERT( std::isfinite(real(b[k][j])) && std::isfinite(imag(b[k][j])) );
-        bmax = std::max(bmax, std::abs(b[k][j]));
+        GRID_ASSERT( finite(b[k][j]) );
+        bmax = std::max(bmax, cabs(b[k][j]));
       }
     }
     std::cout << GridLogMessage << " GCRReplaySmoother: max|a| " << amax << " max|b| " << bmax << std::endl;
