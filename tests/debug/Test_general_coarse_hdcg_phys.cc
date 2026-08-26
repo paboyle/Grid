@@ -112,9 +112,6 @@ void LoadBasis(aggregation &Agg, std::string file)
 #endif
 }
 
-RealD InverseApproximation(RealD x){
-  return 1.0/x;
-}
 
 // Want Op in CoarsenOp to call MatPcDagMatPc
 template<class Field>
@@ -132,19 +129,6 @@ public:
   void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){    GRID_ASSERT(0);  }
 };
 /*
-template<class Field> class ChebyshevSmoother : public LinearFunction<Field>
-{
-public:
-  using LinearFunction<Field>::operator();
-  typedef LinearOperatorBase<Field> FineOperator;
-  FineOperator   & _SmootherOperator;
-  Chebyshev<Field> Cheby;
-  ChebyshevSmoother(RealD _lo,RealD _hi,int _ord, FineOperator &SmootherOperator) :
-    _SmootherOperator(SmootherOperator),
-    Cheby(_lo,_hi,_ord,InverseApproximation)
-  {
-    std::cout << GridLogMessage<<" Chebyshev smoother order "<<_ord<<" ["<<_lo<<","<<_hi<<"]"<<std::endl;
-  };
   void operator() (const Field &in, Field &out) 
   {
     Field tmp(in.Grid());

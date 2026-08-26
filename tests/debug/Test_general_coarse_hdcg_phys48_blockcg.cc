@@ -291,63 +291,8 @@ public:
 };
 
 
-RealD InverseApproximation(RealD x){
-  return 1.0/x;
-}
-template<class Field> class ChebyshevSmoother : public LinearFunction<Field>
-{
-public:
-  using LinearFunction<Field>::operator();
-  typedef LinearOperatorBase<Field> FineOperator;
-  FineOperator   & _SmootherOperator;
-  Chebyshev<Field> Cheby;
-  ChebyshevSmoother(RealD _lo,RealD _hi,int _ord, FineOperator &SmootherOperator) :
-    _SmootherOperator(SmootherOperator),
-    Cheby(_lo,_hi,_ord,InverseApproximation)
-  {
-    std::cout << GridLogMessage<<" Chebyshev smoother order "<<_ord<<" ["<<_lo<<","<<_hi<<"]"<<std::endl;
-  };
-  void operator() (const Field &in, Field &out) 
-  {
-    //    Field r(out.Grid());
-    Cheby(_SmootherOperator,in,out);
-    //    _SmootherOperator.HermOp(out,r);
-    //    r=r-in;
-    //    RealD rr=norm2(r);
-    //    RealD ss=norm2(in);
-    //    std::cout << GridLogMessage<<" Chebyshev smoother resid "<<::sqrt(rr/ss)<<std::endl;
-  }
-};
 
 
-template<class Field> class ChebyshevInverter : public LinearFunction<Field>
-{
-public:
-  using LinearFunction<Field>::operator();
-  typedef LinearOperatorBase<Field> FineOperator;
-  FineOperator   & _Operator;
-  Chebyshev<Field> Cheby;
-  ChebyshevInverter(RealD _lo,RealD _hi,int _ord, FineOperator &Operator) :
-    _Operator(Operator),
-    Cheby(_lo,_hi,_ord,InverseApproximation)
-  {
-    std::cout << GridLogMessage<<" Chebyshev Inverter order "<<_ord<<" ["<<_lo<<","<<_hi<<"]"<<std::endl;
-  };
-  void operator() (const Field &in, Field &out) 
-  {
-    Field r(in.Grid());
-    Field AinvR(in.Grid());
-    _Operator.HermOp(out,r);
-    r = in - r; // b - A x
-    Cheby(_Operator,r,AinvR); // A^{-1} ( b - A x ) ~ A^{-1} b - x
-    out = out + AinvR;
-    _Operator.HermOp(out,r);
-    r = in - r; // b - A x
-    RealD rr = norm2(r);
-    RealD ss = norm2(in);
-    std::cout << "ChebshevInverse resid " <<::sqrt(rr/ss)<<std::endl;
-  }
-};
 
 
 

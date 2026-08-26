@@ -140,6 +140,7 @@ public:
   ///////////////////////////////////////////////////////////////////////////
   void Leaf(BlockCyclicMatrix &A, int64_t b)
   {
+    GRID_TRACE("SchurLeaf");
     BlockCyclicLayout &L = A.layout;
     nLeaf++;
     if ( (int)(b % L.Pr) != L.prow ) return;
@@ -211,6 +212,7 @@ public:
     int64_t span = b1-b0;
     GRID_ASSERT( span >= 1 );
     if ( span == 1 ) { Leaf(A, b0); return; }
+    GRID_TRACE("SchurNode");
     nNode++;
 
     int64_t bm = b0 + span/2;
@@ -244,8 +246,10 @@ public:
     tGemm += usecond();
 
     // 9. Off-diagonal signs
+    { GRID_TRACE("SchurCopy");
     WindowCopyScale(mone, Ut, A, c0,m,  m,c1);
     WindowCopyScale(mone, Tt, A, m,c1,  c0,m);
+    }
   }
 
   ///////////////////////////////////////////////////////////////////////////
@@ -284,6 +288,22 @@ public:
               << "  (boss secs: gemm+comms " << tGemm/1.0e6
               << "  leaf " << tLeaf/1.0e6
               << "  copy " << tCopy/1.0e6 << ")"
+              << std::endl;
+    // SUMMA breakdown: boss-rank seconds, plus the ring/gemm time spread over
+    // ranks (min/max) -- skew shows as max >> min.
+    RealD ring = (SUMMA.tRingA+SUMMA.tRingB)/1.0e6;
+    RealD rmin = -ring, rmax = ring; grid->GlobalMax(rmin); grid->GlobalMax(rmax); rmin = -rmin;   // no GlobalMin: max of negation
+    RealD gmin = -SUMMA.tGemm/1.0e6, gmax = SUMMA.tGemm/1.0e6; grid->GlobalMax(gmin); grid->GlobalMax(gmax); gmin = -gmin;
+    double gb  = SUMMA.bytesRing/1.0e9;
+    std::cout << GridLogMessage << "BlockCyclicSumma:"
+              << " multiplies " << SUMMA.nMultiply << " gemms " << SUMMA.nGemm << " ring msgs " << SUMMA.nRingMsg
+              << " | boss secs: alloc " << SUMMA.tAlloc/1.0e6
+              << " pack " << SUMMA.tPack/1.0e6
+              << " ringA " << SUMMA.tRingA/1.0e6 << " ringB " << SUMMA.tRingB/1.0e6
+              << " gemm " << SUMMA.tGemm/1.0e6
+              << " | ring min/max over ranks " << rmin << "/" << rmax
+              << " gemm min/max " << gmin << "/" << gmax
+              << " | ring bytes/rank " << gb << " GB -> " << (ring>0 ? gb/ring : 0.0) << " GB/s/rank (boss)"
               << std::endl;
   }
 };

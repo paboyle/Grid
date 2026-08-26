@@ -226,6 +226,7 @@ int main(int argc, char **argv)
     Stage("Grid Invert");
     { GRID_TRACE("GridInvert"); RSI2.Invert(A); }
     double t3=usecond();
+    RSI2.ReportTelemetry(grid);            // SUMMA ring/gemm/alloc breakdown (outside the timed window)
     BlockCyclicRedistribute::CyclicToRows(grid,rowStart,A,&rows1d[0],myrows);
     double t4=usecond();
     double cert = Certify(grid,A0,A,nb,Pr,Pc);

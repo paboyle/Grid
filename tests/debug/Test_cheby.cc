@@ -31,9 +31,6 @@ using namespace std;
 using namespace Grid;
  ;
 
-RealD InverseApproximation(RealD x){
-  return 1.0/x;
-}
 RealD SqrtApproximation(RealD x){
   return std::sqrt(x);
 }

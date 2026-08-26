@@ -725,34 +725,7 @@ public:
   }
 };
 
-RealD InverseApproximation(RealD x){
-  return 1.0/x;
-}
 
-template<class Field,class Matrix> class ChebyshevSmoother : public LinearFunction<Field>
-{
-public:
-  using LinearFunction<Field>::operator();
-  typedef LinearOperatorBase<Field>                            FineOperator;
-  Matrix         & _SmootherMatrix;
-  FineOperator   & _SmootherOperator;
-  
-  Chebyshev<Field> Cheby;
-
-  ChebyshevSmoother(RealD _lo,RealD _hi,int _ord, FineOperator &SmootherOperator,Matrix &SmootherMatrix) :
-    _SmootherOperator(SmootherOperator),
-    _SmootherMatrix(SmootherMatrix),
-    Cheby(_lo,_hi,_ord,InverseApproximation)
-  {};
-
-  void operator() (const Field &in, Field &out) 
-  {
-    Field tmp(in.Grid());
-    MdagMLinearOperator<Matrix,Field>   MdagMOp(_SmootherMatrix); 
-    _SmootherOperator.AdjOp(in,tmp);
-    Cheby(MdagMOp,tmp,out);         
-  }
-};
 template<class Fobj,class CComplex,int nbasis, class CoarseSolver>
 class MGPreconditioner : public LinearFunction< Lattice<Fobj> > {
 public:

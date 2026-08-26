@@ -127,6 +127,15 @@ class BlockCyclicSumma
 public:
   GridBLAS BLAS;
 
+  // Per-rank telemetry (boss-rank seconds when printed; no reductions here).
+  // Every Multiply is: buffer alloc, pack panels, ring A along the process
+  // row, ring B along the process column, then the local GEMMs.  The rings
+  // are synchronous SendToRecvFrom, so tRing is time the GPU is idle unless
+  // a future version overlaps them with the GEMMs.
+  double   tAlloc=0, tPack=0, tRingA=0, tRingB=0, tGemm=0;
+  uint64_t bytesRing=0, nRingMsg=0, nMultiply=0, nGemm=0;
+  void ResetTelemetry(void){ tAlloc=tPack=tRingA=tRingB=tGemm=0; bytesRing=nRingMsg=nMultiply=nGemm=0; }
+
   static int Overlap(int64_t a0,int64_t a1,int64_t b0,int64_t b1)
   { return (a0 < b1) && (b0 < a1); }
 
@@ -188,8 +197,11 @@ public:
     const uint64_t slotA  = (uint64_t)mloc_i*nb;
     const uint64_t slotB1 = (uint64_t)nb*nloc_j;         // one panel
     const uint64_t slotB  = (uint64_t)S*slotB1;
+    nMultiply++;
+    tAlloc -= usecond();
     deviceVector<ComplexD> Abuf( slotA*Pc ? slotA*Pc : 1 );
     deviceVector<ComplexD> Bbuf( slotB*Pr ? slotB*Pr : 1 );
+    tAlloc += usecond();
 
     deviceVector<ComplexD *> ap(1), bp(1), cp(1);
     std::vector<ComplexD *>  ptr(1);
@@ -201,6 +213,8 @@ public:
       /////////////////////////////////////////////////////////////////////
       // Pack MY panels of this round into my origin slots.
       /////////////////////////////////////////////////////////////////////
+      tPack -= usecond();
+      { GRID_TRACE("SummaPack");
       for(int64_t s=r0; s<r1; s++){
         int64_t nb_s = L.BlockSize(s);
         if ( (int)(s%Pc) == pcol && mloc_i ){  // my A panel: block-column s
@@ -235,12 +249,16 @@ public:
         }
       }
       accelerator_barrier();
+      }
+      tPack += usecond();
 
       /////////////////////////////////////////////////////////////////////
       // Ring allgather along my process ROW: Pc-1 symmetric steps.  At
       // step t send the slot of origin (pcol-t+1), receive origin (pcol-t).
       /////////////////////////////////////////////////////////////////////
       if ( Pc > 1 && slotA ){
+        GRID_TRACE("SummaRingA");
+        tRingA -= usecond();
         int dest = prow*Pc + (pcol+1)%Pc;
         int src  = prow*Pc + (pcol-1+Pc)%Pc;
         for(int t=1;t<Pc;t++){
@@ -249,12 +267,16 @@ public:
           grid->SendToRecvFrom((void *)(&Abuf[0]+slotA*cs), dest,
                                (void *)(&Abuf[0]+slotA*cr), src,
                                slotA*sizeof(ComplexD));
+          bytesRing += slotA*sizeof(ComplexD); nRingMsg++;
         }
+        tRingA += usecond();
       }
       /////////////////////////////////////////////////////////////////////
       // Ring allgather along my process COLUMN: Pr-1 symmetric steps.
       /////////////////////////////////////////////////////////////////////
       if ( Pr > 1 && slotB ){
+        GRID_TRACE("SummaRingB");
+        tRingB -= usecond();
         int dest = ((prow+1)%Pr)*Pc + pcol;
         int src  = ((prow-1+Pr)%Pr)*Pc + pcol;
         for(int t=1;t<Pr;t++){
@@ -263,12 +285,16 @@ public:
           grid->SendToRecvFrom((void *)(&Bbuf[0]+slotB*rs), dest,
                                (void *)(&Bbuf[0]+slotB*rr), src,
                                slotB*sizeof(ComplexD));
+          bytesRing += slotB*sizeof(ComplexD); nRingMsg++;
         }
+        tRingB += usecond();
       }
 
       /////////////////////////////////////////////////////////////////////
       // Local update, ascending s: fixed order, bitwise-reproducible.
       /////////////////////////////////////////////////////////////////////
+      tGemm -= usecond();
+      { GRID_TRACE("SummaGEMM");
       for(int64_t s=r0; s<r1; s++){
         int64_t nb_s = L.BlockSize(s);
         if ( !(mloc_i && nloc_j && nb_s) ) { firstblock = 0; continue; }
@@ -291,7 +317,10 @@ public:
                                    bp, (int)nb_s,
                          beta_use, cp, (int)C.layout.mloc);
         BLAS.synchronise();
+        nGemm++;
       }
+      }
+      tGemm += usecond();
     }
   }
 };

@@ -48,9 +48,6 @@ using namespace Grid;
  * Lanczos:
  * CoarseCoarse IRL( Nk, Nm, Nstop, poly(lo,hi,order))   24,36,24,0.002,4.0,61 
  */
-RealD InverseApproximation(RealD x){
-  return 1.0/x;
-}
 
 template<class Field> class SolverWrapper : public LinearFunction<Field> {
 private:
@@ -72,60 +69,6 @@ public:
   }     
 };
 
-template<class Field,class Matrix> class ChebyshevSmoother : public LinearFunction<Field>
-{
-public:
-  using LinearFunction<Field>::operator();
-  typedef LinearOperatorBase<Field>                            FineOperator;
-  Matrix         & _SmootherMatrix;
-  FineOperator   & _SmootherOperator;
-  
-  Chebyshev<Field> Cheby;
-
-  ChebyshevSmoother(RealD _lo,RealD _hi,int _ord, FineOperator &SmootherOperator,Matrix &SmootherMatrix) :
-    _SmootherOperator(SmootherOperator),
-    _SmootherMatrix(SmootherMatrix),
-    Cheby(_lo,_hi,_ord,InverseApproximation)
-  {};
-
-  void operator() (const Field &in, Field &out) 
-  {
-    Field tmp(in.Grid());
-    MdagMLinearOperator<Matrix,Field>   MdagMOp(_SmootherMatrix); 
-    _SmootherOperator.AdjOp(in,tmp);
-    Cheby(MdagMOp,tmp,out);         
-  }
-};
-template<class Field,class Matrix> class MirsSmoother : public LinearFunction<Field>
-{
-public:
-  using LinearFunction<Field>::operator();
-  typedef LinearOperatorBase<Field>                            FineOperator;
-  Matrix         & SmootherMatrix;
-  FineOperator   & SmootherOperator;
-  RealD tol;
-  RealD shift;
-  int   maxit;
-
-  MirsSmoother(RealD _shift,RealD _tol,int _maxit,FineOperator &_SmootherOperator,Matrix &_SmootherMatrix) :
-    shift(_shift),tol(_tol),maxit(_maxit),
-    SmootherOperator(_SmootherOperator),
-    SmootherMatrix(_SmootherMatrix)
-  {};
-
-  void operator() (const Field &in, Field &out) 
-  {
-    ZeroGuesser<Field> Guess;
-    ConjugateGradient<Field>  CG(tol,maxit,false);
- 
-    Field src(in.Grid());
-
-    ShiftedMdagMLinearOperator<SparseMatrixBase<Field>,Field> MdagMOp(SmootherMatrix,shift);
-    SmootherOperator.AdjOp(in,src);
-    Guess(src,out);
-    CG(MdagMOp,src,out); 
-  }
-};
 
 template<class Fobj,class CComplex,int nbasis, class Matrix, class Guesser, class CoarseSolver>
 class MultiGridPreconditioner : public LinearFunction< Lattice<Fobj> > {
