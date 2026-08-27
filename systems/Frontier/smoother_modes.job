@@ -129,19 +129,21 @@ run_cell () {
   grep -h "SCHUR fp64 distributed invert took\|GB/s/rank" $fname | sed 's/^Grid : Message : [0-9.]* s : //' | cut -c1-120 | head -2
 }
 
-# The (order x shift) table at Csn=2, one axis at a time from the overshoot,
-# so a failing cell identifies WHICH knob it needed.  Reference: 28.57 s.
+# Ladder 2 (after L0-L3 of the first ladder): the stationary polynomial
+# wants a LARGER shift than the adaptive one -- it must suppress the
+# high-mode deviation on average, not per call.  Measured (Csn=2):
+#   (12,1.0) 48 outer 31.4 s   (8,1.0) 58 outer 30.9 s   (8,0.5) 60 outer 34.3 s
+# Reference (adaptive, Fso6/Fss0.1): 56 outer, 28.57 s.  So walk the SHIFT UP
+# at orders 8 and 6, trading shift against order.  Nrhs=1 is the target.
 #          name          Fso  Fss   Csn  fine    coarse
-run_cell   L0_overshoot   12   1.0   6    replay  gcr     # M3's point with last-call selection + record 8..16 + refresh 5
-run_cell   L1_12_10       12   1.0   2    replay  gcr     # coarse smoother back to 2 steps; the row/column anchor
-run_cell   L2_08_10       8    1.0   2    replay  gcr     # order axis
-run_cell   L3_06_10       6    1.0   2    replay  gcr
-run_cell   L4_12_05       12   0.5   2    replay  gcr     # shift axis
-run_cell   L5_08_05       8    0.5   2    replay  gcr
-run_cell   L6_06_05       6    0.5   2    replay  gcr     # nearest to the banked adaptive point (Fso6/Fss0.1)
-# Coarse replay: record a DECENT polynomial first (6-step, shift 2.0) and back off.
-run_cell   L7_coarse6     8    1.0   6    replay  replay
-run_cell   L8_coarse4     8    1.0   4    replay  replay
+run_cell   S1_08_20       8    2.0   2    replay  gcr     # the promising cell: ~50 outer at 0.53 s/step would be ~26.5 s
+run_cell   S2_08_30       8    3.0   2    replay  gcr
+run_cell   S3_06_20       6    2.0   2    replay  gcr     # banked order, larger shift
+run_cell   S4_06_10       6    1.0   2    replay  gcr     # the L3 of the second table (never ran)
+run_cell   S5_10_20       10   2.0   2    replay  gcr     # between 8 and 12
+# coarse replay, recorded at a decent polynomial and backed off, at the best fine point
+run_cell   S6_coarse6     8    2.0   6    replay  replay
+run_cell   S7_coarse4     8    2.0   4    replay  replay
 
 echo "========================================================="
 echo "summary"

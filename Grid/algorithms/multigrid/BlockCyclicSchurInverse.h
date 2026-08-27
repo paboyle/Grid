@@ -256,11 +256,73 @@ public:
   // PUBLIC ENTRY.  In-place inverse of the whole matrix.  Scratch (4x the
   // matrix footprint) is allocated here and released on return.
   ///////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////
+  // POWER - CLOCK - GROUND.  Before the inverse runs, print the preconditions
+  // that have differed between fast (62 s) and slow (133-141 s) runs of the
+  // SAME inverse, and measure ONE SendToRecvFrom to the ACTUAL ring partners
+  // at three sizes, device and host buffers.  Same code in the harness and in
+  // production, so the two processes are compared on the identical primitive
+  // before any explanation of the SUMMA rings is attempted.
+  // SCHUR2D_PROBE=0 disables (costs ~0.1-0.5 s).
+  ///////////////////////////////////////////////////////////////////////////
+  void Probe(BlockCyclicMatrix &A)
+  {
+    BlockCyclicLayout &L = A.layout;
+    GridBase *grid = A.grid;
+    int me = grid->ThisRank();
+    // --- banner ---
+    int thr = -1;
+#ifdef GRID_COMMS_MPI3
+    MPI_Query_thread(&thr);
+#endif
+    const char *omp = getenv("OMP_NUM_THREADS");
+    MemoryStatus ms = MemoryManager::GetFootprint();
+    std::cout << GridLogMessage << "Schur2D PROBE banner: MPI thread level " << thr
+              << " (0 single,1 funneled,2 serialized,3 multiple)  OMP_NUM_THREADS=" << (omp?omp:"unset")
+              << "  MemoryManager device bytes " << ms.DeviceBytes/1.0e9 << " GB (LRU " << ms.DeviceLRUBytes/1.0e9
+              << " GB, cap " << ms.DeviceMaxBytes/1.0e9 << " GB)"
+              << "  grid " << L.Pr << "x" << L.Pc << " nb " << L.nb << std::endl;
+#ifdef GRID_HIP
+    if ( me==0 ) acceleratorMem();
+#endif
+    // --- ring partners exactly as SUMMA uses them ---
+    int prow=L.prow, pcol=L.pcol, Pr=L.Pr, Pc=L.Pc;
+    struct Ring { const char *name; int dest, src; };
+    Ring rings[2] = { {"ringA(row, q+-1)", prow*Pc + (pcol+1)%Pc,       prow*Pc + (pcol-1+Pc)%Pc},
+                      {"ringB(col, p+-1)", ((prow+1)%Pr)*Pc + pcol,     ((prow-1+Pr)%Pr)*Pc + pcol} };
+    uint64_t sizes[3] = { 64ull*1024, 1024ull*1024, 8ull*1024*1024 };
+    uint64_t maxb = sizes[2];
+    deviceVector<char> dsend(maxb), drecv(maxb);
+    std::vector<char>  hsend(maxb), hrecv(maxb);
+    for(int r=0;r<2;r++){
+      if ( (r==0 && Pc==1) || (r==1 && Pr==1) ) continue;
+      int off = grid->IsOffNode(rings[r].dest);
+      for(int si=0;si<3;si++){
+        uint64_t bytes = sizes[si];
+        // warm one, time five, both memory spaces
+        grid->SendToRecvFrom(&dsend[0], rings[r].dest, &drecv[0], rings[r].src, bytes);
+        double t0=usecond();
+        for(int i=0;i<5;i++) grid->SendToRecvFrom(&dsend[0], rings[r].dest, &drecv[0], rings[r].src, bytes);
+        double td=(usecond()-t0)/5.0;
+        grid->SendToRecvFrom(&hsend[0], rings[r].dest, &hrecv[0], rings[r].src, bytes);
+        t0=usecond();
+        for(int i=0;i<5;i++) grid->SendToRecvFrom(&hsend[0], rings[r].dest, &hrecv[0], rings[r].src, bytes);
+        double th=(usecond()-t0)/5.0;
+        // spread over ranks
+        RealD dmax=td, dmin=-td; grid->GlobalMax(dmax); grid->GlobalMax(dmin); dmin=-dmin;
+        std::cout << GridLogMessage << "Schur2D PROBE " << rings[r].name << (off?" OFF-node":" on-node")
+                  << " " << bytes/1024 << " KB: device " << td << " us (" << bytes/td/1.0e3 << " GB/s) [min/max over ranks " << dmin << "/" << dmax << " us]"
+                  << "  host " << th << " us (" << bytes/th/1.0e3 << " GB/s)" << std::endl;
+      }
+    }
+  }
+
   void Invert(BlockCyclicMatrix &A)
   {
     BlockCyclicLayout &L = A.layout;
     GRID_ASSERT( L.N >= 1 );
     int64_t nblocks = (L.N + L.nb - 1)/L.nb;
+    if ( !(getenv("SCHUR2D_PROBE") && atoi(getenv("SCHUR2D_PROBE"))==0) ) Probe(A);
 
     BlockCyclicMatrix Bt(A.grid, L.N, L.nb, L.Pr, L.Pc);
     BlockCyclicMatrix Ct(A.grid, L.N, L.nb, L.Pr, L.Pc);
