@@ -143,7 +143,14 @@ public:
   deviceVector<ComplexD> Bbuf;
   double   tAlloc=0, tPack=0, tRingA=0, tRingB=0, tGemm=0;
   uint64_t bytesRing=0, nRingMsg=0, nMultiply=0, nGemm=0;
-  void ResetTelemetry(void){ tAlloc=tPack=tRingA=tRingB=tGemm=0; bytesRing=nRingMsg=nMultiply=nGemm=0; }
+  // Per-message-size histogram (bucket = floor(log2 bytes)): count, bytes,
+  // microseconds -- decomposes the ring time by packet size so a low average
+  // GB/s can be attributed (many small latency-bound messages vs slow large
+  // ones vs partner-wait).  The 8 MB probe runs at 11-20 GB/s; SUMMA averaged 2.
+  static const int NHIST=48;
+  uint64_t histN[NHIST]={0}, histBytes[NHIST]={0}; double histUs[NHIST]={0};
+  void HistAdd(uint64_t bytes, double us){ int b=0; while((bytes>>b)>1) b++; histN[b]++; histBytes[b]+=bytes; histUs[b]+=us; }
+  void ResetTelemetry(void){ tAlloc=tPack=tRingA=tRingB=tGemm=0; bytesRing=nRingMsg=nMultiply=nGemm=0; for(int b=0;b<NHIST;b++){histN[b]=histBytes[b]=0; histUs[b]=0;} }
 
   static int Overlap(int64_t a0,int64_t a1,int64_t b0,int64_t b1)
   { return (a0 < b1) && (b0 < a1); }
@@ -273,9 +280,11 @@ public:
         for(int t=1;t<Pc;t++){
           int cs = (pcol - t + 1 + Pc*Pc) % Pc;
           int cr = (pcol - t     + Pc*Pc) % Pc;
+          double tm = usecond();
           grid->SendToRecvFrom((void *)(&Abuf[0]+slotA*cs), dest,
                                (void *)(&Abuf[0]+slotA*cr), src,
                                slotA*sizeof(ComplexD));
+          HistAdd(slotA*sizeof(ComplexD), usecond()-tm);
           bytesRing += slotA*sizeof(ComplexD); nRingMsg++;
         }
         tRingA += usecond();
@@ -291,9 +300,11 @@ public:
         for(int t=1;t<Pr;t++){
           int rs = (prow - t + 1 + Pr*Pr) % Pr;
           int rr = (prow - t     + Pr*Pr) % Pr;
+          double tm = usecond();
           grid->SendToRecvFrom((void *)(&Bbuf[0]+slotB*rs), dest,
                                (void *)(&Bbuf[0]+slotB*rr), src,
                                slotB*sizeof(ComplexD));
+          HistAdd(slotB*sizeof(ComplexD), usecond()-tm);
           bytesRing += slotB*sizeof(ComplexD); nRingMsg++;
         }
         tRingB += usecond();

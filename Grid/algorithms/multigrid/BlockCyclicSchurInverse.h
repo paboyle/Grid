@@ -397,6 +397,25 @@ public:
               << " gemm min/max " << gmin << "/" << gmax
               << " | ring bytes/rank " << gb << " GB -> " << (ring>0 ? gb/ring : 0.0) << " GB/s/rank (boss)"
               << std::endl;
+    // Ring time decomposed by message size (boss rank; every rank sends the
+    // same sequence of sizes).  Time is wall time inside SendToRecvFrom, so it
+    // includes waiting for the partner -- a bucket whose GB/s is far below the
+    // probe's for the same size is wait, not wire.
+    std::cout << GridLogMessage << "BlockCyclicSumma ring histogram (boss):  size-bucket  msgs  GB  secs  GB/s  %time" << std::endl;
+    std::streamsize oldprec = std::cout.precision();
+    for(int b=0;b<SUMMA.NHIST;b++){
+      if ( !SUMMA.histN[b] ) continue;
+      double sec = SUMMA.histUs[b]/1.0e6, g = SUMMA.histBytes[b]/1.0e9;
+      double lo = (double)(1ull<<b);
+      char sz[32]; if (lo>=1048576) snprintf(sz,32,"%6.1f MB",lo/1048576.); else if (lo>=1024) snprintf(sz,32,"%6.1f KB",lo/1024.); else snprintf(sz,32,"%6.0f B ",lo);
+      std::cout << GridLogMessage << "   >=" << sz
+                << std::setw(8) << SUMMA.histN[b]
+                << std::setw(10) << std::setprecision(3) << g
+                << std::setw(9) << std::setprecision(3) << sec
+                << std::setw(9) << std::setprecision(3) << (sec>0 ? g/sec : 0.0)
+                << std::setw(8) << std::setprecision(3) << (ring>0 ? 100.0*sec/ring : 0.0) << std::endl;
+    }
+    std::cout.precision(oldprec);
   }
 };
 
