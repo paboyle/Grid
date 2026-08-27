@@ -4,7 +4,7 @@
 #SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=7
 #SBATCH --gpus-per-node=8
-#SBATCH --time=0:40:00
+#SBATCH --time=0:50:00
 #SBATCH --account=phy157_dwf
 #SBATCH --gpu-bind=none
 #SBATCH --exclusive
@@ -70,7 +70,7 @@ run_cell () {
   fname=log.env.$name
   env "$@" srun -N36 -n288 --kill-on-bad-exit=1 ./select_gpu $BIN --mpi ${MPI_GEOM} --grid $vol $OPTS1 > $fname 2>&1
   echo "  exit $?"; sleep 30
-  grep -h "PROBE banner\|device ballast\|PROBE leaf\|BIG LEAVES\|gemm min/max\|invert\|certificate" $fname \
+  grep -h "PROBE banner\|device ballast\|pre-heat\|PROBE leaf\|BIG LEAVES\|gemm min/max\|invert\|certificate" $fname \
     | sed 's/^Grid : Message : [0-9.]* s : //' | cut -c1-170
 }
 
@@ -81,6 +81,11 @@ run_cell   E3_omp7           OMP_NUM_THREADS=7                                  
 run_cell   E4_omp7_ballast   OMP_NUM_THREADS=7 S2D_BALLAST_GB=10.6                                            # + the example's device residency
 run_cell   E5_omp1_ballast   OMP_NUM_THREADS=1 S2D_BALLAST_GB=10.6                                            # ballast alone
 run_cell   E6_omp1_again     OMP_NUM_THREADS=1                                                                 # repeat E1: the noise floor
+# E1-E4 (2026-08-27): 24.5 (first cell, cold) / 21.2 / 21.3 / 21.35 s -- thread level, OMP, residency all cleared.
+# Remaining difference from the example (26.5-27.6 s, local kernels 20-40% slower, wires equal): the example
+# inverts after ~100 s of full load on every GCD.  Pre-heat reproduces that; "last zgemm" TF/s vs 23.7 is the tell.
+run_cell   E7_omp7_preheat   OMP_NUM_THREADS=7 S2D_PREHEAT_S=100                                              # sustained load before the invert
+run_cell   E8_omp7_preheat_ballast OMP_NUM_THREADS=7 S2D_PREHEAT_S=100 S2D_BALLAST_GB=10.6                    # the example's full state
 
 echo "========================================================="
 echo "summary"

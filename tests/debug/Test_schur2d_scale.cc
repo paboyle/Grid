@@ -139,6 +139,31 @@ int main(int argc, char **argv)
   BlockCyclicMatrix A0(grid,N,nb,Pr,Pc);
   BlockCyclicSchurInverse RSI2;
 
+  // Pre-heat: drive the GCD with back-to-back zgemm for S2D_PREHEAT_S seconds
+  // before the invert.  The example calls the inverse after ~100 s of full
+  // load on all 288 GCDs and its LOCAL kernels run 20-40% slower than the
+  // idle-start harness (GEMM 3.1 vs 2.5 s, leaf 0.76 vs 0.24 s) with the
+  // wires unchanged; thread level / OMP / residency (E1-E5) did not reproduce
+  // that.  If sustained load does, it is clock/power management, not code.
+  if ( getenv("S2D_PREHEAT_S") ) {
+    double secs = atof(getenv("S2D_PREHEAT_S"));
+    const int64_t W = 4320;
+    deviceVector<ComplexD> M((uint64_t)W*W), C((uint64_t)W*W);
+    { ComplexD *m = &M[0]; accelerator_for(idx,(uint64_t)W*W,1,{ m[idx] = ComplexD(1.0e-3*(idx%97),1.0e-3*(idx%89)); }); accelerator_barrier(); }
+    deviceVector<ComplexD*> ap(1),bp(1),cp(1); std::vector<ComplexD*> ptr(1);
+    ptr[0]=&M[0]; acceleratorCopyToDevice(&ptr[0],&ap[0],sizeof(ComplexD*)); acceleratorCopyToDevice(&ptr[0],&bp[0],sizeof(ComplexD*));
+    ptr[0]=&C[0]; acceleratorCopyToDevice(&ptr[0],&cp[0],sizeof(ComplexD*));
+    double t0=usecond(); int n=0; double tlast=0;
+    while ( (usecond()-t0)/1.0e6 < secs ) {
+      double t1=usecond();
+      RSI2.SUMMA.BLAS.gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N,(int)W,(int)W,(int)W,ComplexD(1.0,0.0),ap,(int)W,bp,(int)W,ComplexD(0.0,0.0),cp,(int)W);
+      RSI2.SUMMA.BLAS.synchronise(); tlast=usecond()-t1; n++;
+    }
+    double tfirst = 0; (void)tfirst;
+    std::cout << GridLogMessage << "Test_schur2d_scale: pre-heat " << (usecond()-t0)/1.0e6 << " s, " << n << " zgemm W=" << W
+              << ", last zgemm " << tlast/1.0e6 << " s (" << 8.0*W*W*W/tlast/1.0e6 << " TF/s; idle-start rate 23.7)" << std::endl;
+  }
+
   // Device ballast: Lattice fields written on the accelerator so they sit in
   // the MemoryManager's device LRU exactly as the example's fine-grid state does.
   typedef Lattice<iVector<iVector<vComplexD,Nc>,Ns> > BallastField;
