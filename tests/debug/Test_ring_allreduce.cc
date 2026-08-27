@@ -102,30 +102,42 @@ int main(int argc, char **argv)
   Check<RealF>   ("RealF   ", grid, 1.0e-5);
   Check<ComplexF>("ComplexF", grid, 1.0e-5);
 
-  // T5: CartesianRingAllGather == zero-padded GlobalSumVector, BITWISE
-  // (no arithmetic in either path for disjoint chunks), all types, chunk
-  // sizes including 1 element and non-multiples of anything.
+  // T5: CartesianRingAllGather delivers blocks in LEX-coordinate order; the
+  // reference is the zero-padded GlobalSumVector in RANK order, compared
+  // through the lex->rank table (bitwise: no arithmetic on either path).
+  // On a machine where ranks are relabelled (Frontier OptimalCommunicator)
+  // this is the test that catches a rank/coordinate confusion.
   {
-    int P=grid->ProcessorCount(), me=grid->ThisRank();
+    int P=grid->ProcessorCount(), me=grid->ThisRank(), mylex=CartesianLexIndex(grid);
+    std::vector<int> l2r(P);
+    for(int lp=0; lp<P; lp++){ Coordinate pc(grid->_ndimension); Lexicographic::CoorFromIndex(pc, lp, grid->_processors); l2r[lp]=grid->RankFromProcessorCoor(pc); }
+    Report("T5 lex->rank table consistent for my rank", l2r[mylex]==me);
+    int perm=0; for(int lp=0;lp<P;lp++) if(l2r[lp]!=lp) perm=1;
+    std::cout << GridLogMessage << "  (ranks " << (perm ? "ARE" : "are not") << " permuted relative to lex coordinates on this run)" << std::endl;
     for(uint64_t chunk : std::vector<uint64_t>({1,3,64,1000,65537})){
       uint64_t n=chunk*P;
       std::vector<ComplexD> h(n,ComplexD(0.0,0.0)), ref;
-      for(uint64_t i=0;i<chunk;i++) h[me*chunk+i]=Fill<ComplexD>(me*chunk+i,me);
+      for(uint64_t i=0;i<chunk;i++) h[me*chunk+i]=Fill<ComplexD>(me*chunk+i,me);   // rank-order reference
       ref=h; grid->GlobalSumVector(&ref[0],(int)n);
-      deviceVector<ComplexD> d(n); acceleratorCopyToDevice(&h[0],&d[0],n*sizeof(ComplexD));
+      std::vector<ComplexD> hin(n,ComplexD(0.0,0.0));
+      for(uint64_t i=0;i<chunk;i++) hin[mylex*chunk+i]=h[me*chunk+i];              // my slot is my lex index
+      deviceVector<ComplexD> d(n); acceleratorCopyToDevice(&hin[0],&d[0],n*sizeof(ComplexD));
       CartesianRingAllGather(grid,&d[0],chunk);
       std::vector<ComplexD> out(n); acceleratorCopyFromDevice(&d[0],&out[0],n*sizeof(ComplexD));
-      RealD diff=(memcmp(&out[0],&ref[0],n*sizeof(ComplexD))!=0)?1.0:0.0; grid->GlobalSum(diff);
-      Report("T5 CartesianRingAllGather bitwise == padded GlobalSumVector, ComplexD chunk="+std::to_string(chunk), diff==0.0);
+      int bad=0; for(int lp=0;lp<P;lp++) if(memcmp(&out[lp*chunk],&ref[(uint64_t)l2r[lp]*chunk],chunk*sizeof(ComplexD))!=0) bad=1;
+      RealD diff=bad; grid->GlobalSum(diff);
+      Report("T5 CartesianRingAllGather (lex blocks) bitwise == rank-order padded GlobalSumVector, ComplexD chunk="+std::to_string(chunk), diff==0.0);
     }
     { uint64_t chunk=1001, n=chunk*P;
       std::vector<ComplexF> h(n,ComplexF(0.0,0.0)), ref;
       for(uint64_t i=0;i<chunk;i++) h[me*chunk+i]=Fill<ComplexF>(me*chunk+i,me);
       ref=h; grid->GlobalSumVector(&ref[0],(int)n);
-      deviceVector<ComplexF> d(n); acceleratorCopyToDevice(&h[0],&d[0],n*sizeof(ComplexF));
+      std::vector<ComplexF> hin(n,ComplexF(0.0,0.0)); for(uint64_t i=0;i<chunk;i++) hin[mylex*chunk+i]=h[me*chunk+i];
+      deviceVector<ComplexF> d(n); acceleratorCopyToDevice(&hin[0],&d[0],n*sizeof(ComplexF));
       CartesianRingAllGather(grid,&d[0],chunk);
       std::vector<ComplexF> out(n); acceleratorCopyFromDevice(&d[0],&out[0],n*sizeof(ComplexF));
-      RealD diff=(memcmp(&out[0],&ref[0],n*sizeof(ComplexF))!=0)?1.0:0.0; grid->GlobalSum(diff);
+      int bad=0; for(int lp=0;lp<P;lp++) if(memcmp(&out[lp*chunk],&ref[(uint64_t)l2r[lp]*chunk],chunk*sizeof(ComplexF))!=0) bad=1;
+      RealD diff=bad; grid->GlobalSum(diff);
       Report("T5 CartesianRingAllGather bitwise, ComplexF chunk=1001", diff==0.0);
     }
     // timing: the dense-apply shape, N=138240 x 4 rhs of ComplexF, chunk = N*4/P

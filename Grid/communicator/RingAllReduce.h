@@ -120,44 +120,52 @@ void CartesianRingAllReduce(CartesianCommunicator *comm, T *buf, uint64_t n)
 // Cartesian ring ALLGATHER, point-to-point only.
 //
 //   CartesianRingAllGather(comm, buf, chunk)
-//     buf holds P*chunk elements of T.  On entry rank r's chunk is at
-//     buf[r*chunk]; on exit every rank holds all P chunks in RANK order.
+//     buf holds P*chunk elements of T.  Block index = the Grid LEXICOGRAPHIC
+//     index of the owning process coordinate (dimension 0 fastest,
+//     Lexicographic::CoorFromIndex convention), NOT the MPI rank: on entry my
+//     chunk is at buf[CartesianLexIndex(comm)*chunk]; on exit block L is the
+//     chunk of the process at coordinate CoorFromIndex(L).  Map to ranks with
+//     comm->RankFromProcessorCoor.  (Ranks and coordinates are NOT related
+//     lexicographically on Frontier -- the OptimalCommunicator relabels ranks
+//     for shared-memory locality; assuming rank order gave a wrong inverse,
+//     VERIFY 0.9965, 2026-08-26.)
 //
-// Dimension by dimension from the fastest-varying process coordinate
-// (dim Nd-1) to the slowest: each stage is a ring over the P_d ranks of that
-// line, after which the held block is the concatenation over that
-// coordinate; because MPI Cartesian ranks are lexicographic with the last
-// coordinate fastest, the final concatenation IS rank order -- no
-// permutation.  Bytes sent per rank ~ chunk*(P-1) ... dominated by the last
-// stage, i.e. ~N = P*chunk total: 8x less than a zero-padded
-// CartesianRingAllReduce of the same vector (which reduce-scatters AND
-// gathers along every dimension).  Steps: sum_d (P_d-1).  Exact (no
-// arithmetic): the result is bitwise the same as the padded allreduce.
+// Dimension by dimension from dimension 0 (fastest) upward: each stage is a
+// ring over the P_d ranks of that line, after which the held block is the
+// concatenation over that coordinate in the lexicographic nesting.  Bytes
+// sent per rank ~N = P*chunk in total (dominated by the last stage): 8x less
+// than a zero-padded CartesianRingAllReduce.  Steps: sum_d (P_d-1).  Exact.
 //
 // Written for the dense coarse-coarse apply (every rank owns rows of A^{-1}
-// and needs the whole x), measured 1.86 ms for 4.4 MB at 288 ranks with the
-// allreduce ring -- at wire speed, but moving 35 MB per rank to deliver 4.4.
+// and needs the whole x): 1.86 ms with the allreduce ring at 288 ranks was
+// wire speed but moved 35 MB per rank to deliver 4.4.
 /////////////////////////////////////////////////////////////////////////////
+inline int CartesianLexIndex(CartesianCommunicator *comm)
+{
+  int idx=0, stride=1;
+  for(int d=0; d<(int)comm->_ndimension; d++){ idx += comm->_processor_coor[d]*stride; stride *= comm->_processors[d]; }
+  return idx;
+}
+
 template<class T>
 void CartesianRingAllGather(CartesianCommunicator *comm, T *buf, uint64_t chunk)
 {
   int P  = comm->ProcessorCount();
-  int me = comm->ThisRank();
   if ( P==1 || chunk==0 ) return;
   int Nd = comm->_ndimension;
+  int mylex = CartesianLexIndex(comm);
   deviceVector<T> work((uint64_t)P*chunk);
   // ping-pong between buf and work; the held block lives at offset `off` in `cur`
-  T *cur = buf;       uint64_t off = (uint64_t)me*chunk;
+  T *cur = buf;       uint64_t off = (uint64_t)mylex*chunk;
   T *oth = &work[0];
   uint64_t blk = chunk;                        // elements in the held block
-  for(int d=Nd-1; d>=0; d--){
+  for(int d=0; d<Nd; d++){                     // dimension 0 first: it is the fastest lex index
     int Pd = comm->_processors[d];
     if ( Pd==1 ) continue;
     int med = comm->_processor_coor[d];
     int next, prev;
     comm->ShiftedRanks(d, 1, prev, next);      // (dim, shift, source, dest)
     GRID_ASSERT( (blk*sizeof(T))%4 == 0 );
-    // place my block in slot med of the staging area (oth[0 .. Pd*blk))
     acceleratorCopyDeviceToDevice((void *)(cur+off), (void *)(oth+(uint64_t)med*blk), blk*sizeof(T));
     for(int t=1;t<Pd;t++){
       int sendslot = (med - t + 1 + Pd) % Pd;
@@ -165,7 +173,6 @@ void CartesianRingAllGather(CartesianCommunicator *comm, T *buf, uint64_t chunk)
       comm->SendToRecvFrom((void *)(oth+(uint64_t)sendslot*blk), next,
                            (void *)(oth+(uint64_t)recvslot*blk), prev, blk*sizeof(T));
     }
-    // the staging area is the new held block
     T *tmp = cur; cur = oth; oth = tmp; off = 0;
     blk *= Pd;
   }

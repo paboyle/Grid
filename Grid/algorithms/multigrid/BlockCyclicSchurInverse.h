@@ -315,6 +315,36 @@ public:
                   << "  host " << th << " us (" << bytes/th/1.0e3 << " GB/s)" << std::endl;
       }
     }
+    ///////////////////////////////////////////////////////////////////////
+    // The SUMMA's conditions, one at a time, at 8 MB on ring B:
+    //  (a) LARGE persistent buffers (the rings use ~0.5 GB Abuf/Bbuf), sending
+    //      from offset 0 and from deep inside the region;
+    //  (b) a pack kernel + accelerator_barrier immediately before each
+    //      message, as the SUMMA does.
+    // Isolated 8 MB messages ran at 11-20 GB/s while the SUMMA averaged 2.1;
+    // whichever variant drops to ~2 GB/s names the condition.
+    ///////////////////////////////////////////////////////////////////////
+    {
+      int r = (Pr>1) ? 1 : 0;
+      uint64_t bytes = sizes[2];
+      uint64_t big = 512ull*1024*1024;
+      deviceVector<char> bsend(big), brecv(big);
+      for(int variant=0; variant<3; variant++){
+        uint64_t so = (variant==1) ? big-bytes : 0;               // deep offset in the large region
+        char *sp=&bsend[so], *rp=&brecv[so];
+        grid->SendToRecvFrom(sp, rings[r].dest, rp, rings[r].src, bytes);
+        double t0=usecond();
+        for(int i=0;i<5;i++){
+          if ( variant==2 ) { accelerator_for(k, bytes/8, 1, { ((uint64_t *)sp)[k] = (uint64_t)k; }); accelerator_barrier(); }
+          grid->SendToRecvFrom(sp, rings[r].dest, rp, rings[r].src, bytes);
+        }
+        double t=(usecond()-t0)/5.0;
+        RealD tmax=t, tmin=-t; grid->GlobalMax(tmax); grid->GlobalMax(tmin); tmin=-tmin;
+        const char *vn[3]={"512MB buffer, offset 0","512MB buffer, offset 504MB","pack kernel + barrier before each send"};
+        std::cout << GridLogMessage << "Schur2D PROBE " << rings[r].name << " 8192 KB device, " << vn[variant] << ": "
+                  << t << " us (" << bytes/t/1.0e3 << " GB/s) [min/max over ranks " << tmin << "/" << tmax << " us]" << std::endl;
+      }
+    }
   }
 
   void Invert(BlockCyclicMatrix &A)

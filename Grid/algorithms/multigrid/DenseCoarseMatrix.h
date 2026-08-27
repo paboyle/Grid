@@ -119,7 +119,9 @@ public:
   deviceVector<ComplexF>  dSlab;
   deviceVector<ComplexF>  dX;       // N x MRHS_MAX
   deviceVector<ComplexF>  dY;       // nrows x MRHS_MAX
-  deviceVector<ComplexF>  dG;       // N x MRHS_MAX rank-major staging for the allgather (devSum==4)
+  deviceVector<ComplexF>  dG;       // N x MRHS_MAX lex-major staging for the allgather (devSum==4)
+  deviceVector<int>       dLex2Rank;// lex index of a process coordinate -> its rank (allgather block order -> row-block order)
+  int                     myLex;
   deviceVector<ComplexF>  dPartial; // NK x (nrows x MRHS_MAX)
   deviceVector<ComplexF*> aptrs;    // slab K-chunk pointers   (lda = N)
   deviceVector<ComplexF*> xptrs;    // X    K-chunk pointers   (ldb = N)
@@ -257,7 +259,18 @@ public:
                                 "DEVICE cartesian ring allreduce (P2P)","DEVICE flat ring allreduce (P2P)",
                                 "DEVICE cartesian ring ALLGATHER (P2P, ~8x fewer bytes than the padded allreduce)"};
       GRID_ASSERT(devSum>=0 && devSum<=4);
-      if ( devSum==4 ) dG.resize((uint64_t)N*MRHS_MAX);
+      if ( devSum==4 ) {
+        dG.resize((uint64_t)N*MRHS_MAX);
+        // allgather delivers blocks in lexicographic-coordinate order; the row
+        // blocks of x are in RANK order.  Same table as BuildRankMajorMap.
+        int P = grid->ProcessorCount();
+        std::vector<int> l2r(P);
+        for(int lp=0; lp<P; lp++){ Coordinate pc(nd); Lexicographic::CoorFromIndex(pc, lp, grid->_processors); l2r[lp] = grid->RankFromProcessorCoor(pc); }
+        dLex2Rank.resize(P);
+        acceleratorCopyToDevice(&l2r[0], &dLex2Rank[0], P*sizeof(int));
+        myLex = CartesianLexIndex(grid);
+        GRID_ASSERT( l2r[myLex] == grid->ThisRank() );
+      }
       std::cout << GridLogMessage << "DenseCoarseMatrix: slab resident on device ("
                 << sbytes/1024./1024. << " MB/rank), split-K NK=" << NK << " (Kc=" << Kc << "); "
                 << sumName[devSum] << std::endl;
@@ -972,18 +985,18 @@ public:
         std::vector<ComplexF> hG(chunk);
         for(int r=0;r<nr;r++)
           memcpy(&hG[(uint64_t)r*nrows], &hX[(uint64_t)r*N + (uint64_t)me*nrows], nrows*sizeof(ComplexF));
-        acceleratorCopyToDevice(&hG[0], &dG[(uint64_t)me*chunk], chunk*sizeof(ComplexF));
+        acceleratorCopyToDevice(&hG[0], &dG[(uint64_t)myLex*chunk], chunk*sizeof(ComplexF));   // my slot is my LEX index
       }
       t2 = usecond();
       { GRID_TRACE("DenseAllgather");
         CartesianRingAllGather(grid, (ComplexF *)&dG[0], chunk);
-        // scatter [q][r][i] -> dX[r*N + q*nrows + i]
-        ComplexF *g = &dG[0]; ComplexF *x = &dX[0];
+        // scatter lex block L=[r][i] -> dX[r*N + rank(L)*nrows + i]
+        ComplexF *g = &dG[0]; ComplexF *x = &dX[0]; int *l2r = &dLex2Rank[0];
         const int64_t nrw = nrows; const int64_t NN = N; const int nrr = nr;
         accelerator_for(idx, (uint64_t)N*nr, 1, {
           int64_t r = idx / NN;  int64_t gi = idx - r*NN;
-          int64_t q = gi / nrw;  int64_t i  = gi - q*nrw;
-          x[idx] = g[q*(nrw*nrr) + r*nrw + i];
+          int64_t L = gi / nrw;  int64_t i  = gi - L*nrw;
+          x[r*NN + (int64_t)l2r[L]*nrw + i] = g[L*(nrw*nrr) + r*nrw + i];
         });
       }
       t3 = usecond();
