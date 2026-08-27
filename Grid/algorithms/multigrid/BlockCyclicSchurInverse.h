@@ -290,14 +290,17 @@ public:
     struct Ring { const char *name; int dest, src; };
     Ring rings[2] = { {"ringA(row, q+-1)", prow*Pc + (pcol+1)%Pc,       prow*Pc + (pcol-1+Pc)%Pc},
                       {"ringB(col, p+-1)", ((prow+1)%Pr)*Pc + pcol,     ((prow-1+Pr)%Pr)*Pc + pcol} };
-    uint64_t sizes[3] = { 64ull*1024, 1024ull*1024, 8ull*1024*1024 };
-    uint64_t maxb = sizes[2];
+    // 2/3/4 MB added 2026-08-27: the SUMMA histogram put 93% of ring time in
+    // [2,4) MB messages at 0.3 GB/s while >=4 MB ran at 11-13 GB/s.
+    const int NSZ = 6;
+    uint64_t sizes[NSZ] = { 64ull*1024, 1024ull*1024, 2048ull*1024, 3072ull*1024, 4096ull*1024, 8ull*1024*1024 };
+    uint64_t maxb = sizes[NSZ-1];
     deviceVector<char> dsend(maxb), drecv(maxb);
     std::vector<char>  hsend(maxb), hrecv(maxb);
     for(int r=0;r<2;r++){
       if ( (r==0 && Pc==1) || (r==1 && Pr==1) ) continue;
       int off = grid->IsOffNode(rings[r].dest);
-      for(int si=0;si<3;si++){
+      for(int si=0;si<NSZ;si++){
         uint64_t bytes = sizes[si];
         // warm one, time five, both memory spaces
         grid->SendToRecvFrom(&dsend[0], rings[r].dest, &drecv[0], rings[r].src, bytes);
@@ -326,7 +329,7 @@ public:
     ///////////////////////////////////////////////////////////////////////
     {
       int r = (Pr>1) ? 1 : 0;
-      uint64_t bytes = sizes[2];
+      uint64_t bytes = sizes[NSZ-1];
       uint64_t big = 512ull*1024*1024;
       deviceVector<char> bsend(big), brecv(big);
       for(int variant=0; variant<3; variant++){

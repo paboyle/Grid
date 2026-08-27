@@ -1211,7 +1211,7 @@ public:
     if ( getenv("DENSE_APPLY_PROFILE") ) {
       std::cout << GridLogMessage << "DenseCoarseMatrix: apply6D profile:"
                 << " pack "        << (t1-t0)/1000.0
-                << "  allreduce "  << tprof[0]/1000.0
+                << (devSum==4 ? "  allgather " : "  allreduce ")  << tprof[0]/1000.0
                 << "  H2D "        << tprof[1]/1000.0
                 << "  gemm+reduce "<< tprof[2]/1000.0
                 << "  D2H "        << tprof[3]/1000.0
