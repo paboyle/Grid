@@ -158,11 +158,21 @@ run_cell () {
 #   histogram ">= 2.0 MB" row              -- should shrink to ~nothing at s>=9; handshake column = partner wait
 # Solver settings are the banked adaptive point (solve time is the same in every cell; only setup changes).
 #          name          Fso  Fss   Csn  fine    coarse
-export SCHUR2D_LEAF_SPAN=1;  run_cell   I1_span01   6  0.1  2  gcr  gcr     # reference: today's recursion to single-block leaves
-export SCHUR2D_LEAF_SPAN=9;  run_cell   I2_span09   6  0.1  2  gcr  gcr     # 32 leaves of W=4320 (300 MB)
-export SCHUR2D_LEAF_SPAN=18; run_cell   I3_span18   6  0.1  2  gcr  gcr     # 16 leaves of W=8640 (1.2 GB): first span where every process row owns a piece
-export SCHUR2D_LEAF_SPAN=4;  run_cell   I4_span04   6  0.1  2  gcr  gcr     # 72 leaves of W=1920: if rocSOLVER is slow at 8640, the other end
-unset SCHUR2D_LEAF_SPAN
+# Sweep result (job 2026-08-27): span 1 132.5 s | 4 37.0 s | 9 27.6 s | 18 30.6 s; VERIFY 3.3939e-5 in all.
+# Span 9 optimal: above it the SERIAL leaf chain (32 x 0.53 s at W=4320, 16 x 1.84 s at 8640,
+# 287 ranks waiting) dominates; below it the partial rings return.
+#export SCHUR2D_LEAF_SPAN=1;  run_cell   I1_span01   6  0.1  2  gcr  gcr     # 132.5 s
+#export SCHUR2D_LEAF_SPAN=9;  run_cell   I2_span09   6  0.1  2  gcr  gcr     # 27.6 s
+#export SCHUR2D_LEAF_SPAN=18; run_cell   I3_span18   6  0.1  2  gcr  gcr     # 30.6 s
+#export SCHUR2D_LEAF_SPAN=4;  run_cell   I4_span04   6  0.1  2  gcr  gcr     # 37.0 s
+# Leaf inverse: rocSOLVER getri_batched scales n^1.2-1.8 here (overhead bound).  SCHUR2D_LEAF_LU=1
+# replaces it with blocked zgetrf_64 + one identity zgetrs_64 (the N=69120 1-rank path).
+# Readout: "BIG LEAVES ... inverse (max over ranks)" vs 0.53 s (span 9) / 1.84 s (span 18);
+# if the leaf gets ~3x cheaper, span 18's clean rings (10.3 GB/s) may win overall.
+export SCHUR2D_LEAF_LU=1
+export SCHUR2D_LEAF_SPAN=9;  run_cell   I5_span09_LU   6  0.1  2  gcr  gcr   # vs I2 27.6 s
+export SCHUR2D_LEAF_SPAN=18; run_cell   I6_span18_LU   6  0.1  2  gcr  gcr   # vs I3 30.6 s
+unset SCHUR2D_LEAF_SPAN SCHUR2D_LEAF_LU
 
 echo "========================================================="
 echo "summary"

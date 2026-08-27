@@ -99,6 +99,49 @@ public:
   GridBLASInverse() {};
   ~GridBLASInverse() {};
 
+  ///////////////////////////////////////////////////////////////////////////
+  // SINGLE large matrix, in place: blocked LU + identity solve.
+  //   HIP : rocsolver_zgetrf_64 (blocked, GEMM-based) then ONE zgetrs_64 with
+  //         the N x N identity as RHS (trsm-based) into a scratch N x N, copied
+  //         back.  Extra device memory: N*N*16 B (1.2 GB at N=8640).
+  //   other backends: falls through to inverseBatched(batch 1).
+  // Why: rocSOLVER getri_batched is a small-matrix routine -- measured 0.35 s
+  // at N=1920, 0.53 s at 4320, 1.84 s at 8640 (n^1.2-1.8, i.e. overhead
+  // bound) as the big-leaf inverse of the 2D Schur recursion, where 287
+  // ranks wait on it.  The _64 getrf/getrs pair is the path proven in the
+  // 1-rank dense coarse-coarse setup at N=69120 (DenseCoarseMatrix.h).
+  // Same in-place, column-major, lda=N contract as inverseBatched.
+  // NB: written to rocSOLVER's documented z*_64 signatures; not compiled on
+  // HIP in the air-gapped loop -- verify on first hipcc build.
+  ///////////////////////////////////////////////////////////////////////////
+  void inverseLU(int64_t N, ComplexD *A)
+  {
+#ifdef GRID_HIP
+    rocblas_handle handle = Handle();
+    deviceVector<int64_t>  ipiv((uint64_t)N);
+    deviceVector<int64_t>  info(1);
+    auto st1 = rocsolver_zgetrf_64(handle, N, N, (rocblas_double_complex *)A, N, &ipiv[0], &info[0]);
+    GRID_ASSERT(st1 == rocblas_status_success);
+    accelerator_barrier();
+    int64_t info_h = -1; acceleratorCopyFromDevice(&info[0], &info_h, sizeof(int64_t));
+    GRID_ASSERT(info_h == 0);
+    deviceVector<ComplexD> X((uint64_t)N*N);
+    { ComplexD *x = &X[0]; const int64_t NN = N;
+      accelerator_for(idx, (uint64_t)N*N, 1, { int64_t j = idx/NN, i = idx - j*NN; x[idx] = (i==j) ? ComplexD(1.0,0.0) : ComplexD(0.0,0.0); });
+      accelerator_barrier(); }
+    auto st2 = rocsolver_zgetrs_64(handle, rocblas_operation_none, N, N,
+                                   (rocblas_double_complex *)A, N, &ipiv[0],
+                                   (rocblas_double_complex *)&X[0], N);
+    GRID_ASSERT(st2 == rocblas_status_success);
+    accelerator_barrier();
+    acceleratorCopyDeviceToDevice((void *)&X[0], (void *)A, (uint64_t)N*N*sizeof(ComplexD));
+#else
+    deviceVector<ComplexD*> bp(1); std::vector<ComplexD*> ptr(1); ptr[0] = A;
+    acceleratorCopyToDevice(&ptr[0], &bp[0], sizeof(ComplexD*));
+    inverseBatched(N, bp);
+#endif
+  }
+
   void inverseBatched(int64_t N, deviceVector<ComplexF*> &Amat)
   {
     int32_t batchCount = Amat.size();

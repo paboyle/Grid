@@ -99,6 +99,7 @@ public:
   // single-block panels of exactly these levels).  Instead: gather the
   // (s*nb)^2 sub-block to one rank, invert locally, scatter back.
   int                     leafSpan = -1;
+  int                     leafLU   = -1;  // SCHUR2D_LEAF_LU=1: big-leaf inverse via GridBLASInverse::inverseLU (blocked getrf_64 + identity getrs_64) instead of getri_batched
   uint64_t                nBigLeaf = 0;  int64_t maxBigW = 0;
   double                  tBigGather = 0, tBigInv = 0, tBigScatter = 0;
   uint64_t                nNode;
@@ -285,10 +286,15 @@ public:
 
     // ---- invert on root ----
     tBigInv -= usecond();
+    if ( leafLU < 0 ) leafLU = getenv("SCHUR2D_LEAF_LU") ? atoi(getenv("SCHUR2D_LEAF_LU")) : 0;
     if ( me == root ) {
-      deviceVector<ComplexD*> bp(1); std::vector<ComplexD*> ptr(1); ptr[0] = &dense[0];
-      acceleratorCopyToDevice(&ptr[0], &bp[0], sizeof(ComplexD*));
-      INV.inverseBatched(W, bp);
+      if ( leafLU ) {
+        INV.inverseLU(W, &dense[0]);
+      } else {
+        deviceVector<ComplexD*> bp(1); std::vector<ComplexD*> ptr(1); ptr[0] = &dense[0];
+        acceleratorCopyToDevice(&ptr[0], &bp[0], sizeof(ComplexD*));
+        INV.inverseBatched(W, bp);
+      }
     }
     tBigInv += usecond();
 
@@ -500,7 +506,8 @@ public:
               << std::endl;
     if ( nBigLeaf ) {
       RealD ti = tBigInv/1.0e6; grid->GlobalMax(ti);     // inverse runs on the root of each leaf: report the max over ranks
-      std::cout << GridLogMessage << "BlockCyclicSchurInverse: BIG LEAVES (SCHUR2D_LEAF_SPAN=" << leafSpan << "): " << nBigLeaf
+      std::cout << GridLogMessage << "BlockCyclicSchurInverse: BIG LEAVES (SCHUR2D_LEAF_SPAN=" << leafSpan
+                << (leafLU>0 ? ", SCHUR2D_LEAF_LU=1: getrf_64+getrs_64" : ", getri_batched") << "): " << nBigLeaf
                 << " leaves, max W " << maxBigW
                 << "  boss secs: gather " << tBigGather/1.0e6 << " scatter " << tBigScatter/1.0e6
                 << "  inverse (max over ranks) " << ti << std::endl;
