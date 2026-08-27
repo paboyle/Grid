@@ -156,19 +156,31 @@ inline int CartesianLexIndex(CartesianCommunicator *comm)
   return idx;
 }
 
+//
+//   CartesianRingAllGather(comm, buf, chunk, dim)   dim in 0..Nd-1: gather along
+//     ONE processor dimension only.  buf holds P_dim*chunk elements; on entry my
+//     chunk is at buf[coor[dim]*chunk], on exit block c is the chunk of the rank
+//     at coordinate c along dim with all other coordinates equal to mine.  Every
+//     rank of the line holds the same result (e.g. dim=3 after a
+//     CartesianRingAllReduce(orthogDim=3): the boss of each spatial line can then
+//     write the P_t-times-longer vector, not the P-times-longer one).
+/////////////////////////////////////////////////////////////////////////////
 template<class T>
-void CartesianRingAllGather(CartesianCommunicator *comm, T *buf, uint64_t chunk)
+void CartesianRingAllGather(CartesianCommunicator *comm, T *buf, uint64_t chunk, int dim=-1)
 {
   int P  = comm->ProcessorCount();
-  if ( P==1 || chunk==0 ) return;
   int Nd = comm->_ndimension;
-  int mylex = CartesianLexIndex(comm);
+  GRID_ASSERT( dim >= -1 && dim < Nd );
+  if ( dim >= 0 ) P = comm->_processors[dim];      // ranks in my line along dim
+  if ( P==1 || chunk==0 ) return;
+  int mylex = (dim<0) ? CartesianLexIndex(comm) : comm->_processor_coor[dim];
   deviceVector<T> work((uint64_t)P*chunk);
   // ping-pong between buf and work; the held block lives at offset `off` in `cur`
   T *cur = buf;       uint64_t off = (uint64_t)mylex*chunk;
   T *oth = &work[0];
   uint64_t blk = chunk;                        // elements in the held block
   for(int d=0; d<Nd; d++){                     // dimension 0 first: it is the fastest lex index
+    if ( dim>=0 && d!=dim ) continue;          // single-dimension gather
     int Pd = comm->_processors[d];
     if ( Pd==1 ) continue;
     int med = comm->_processor_coor[d];
