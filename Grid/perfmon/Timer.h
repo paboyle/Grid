@@ -78,7 +78,12 @@ inline std::ostream& operator<< (std::ostream & stream, const GridUsecs & now)
   auto     seconds    = now/second ; 
   auto     subseconds = now%second ;
   auto     fill       = stream.fill();
-  stream << seconds<<"."<<std::setw(6)<<std::setfill('0')<<subseconds.count()<<" s";
+  auto     flags      = stream.flags();
+  // The logger leaves the stream in std::left (channel-name field); under
+  // std::left setw(6)/setfill('0') pads on the RIGHT, printing 403.059986 as
+  // 403.599860 -- timestamps with <6 sub-second digits jumped by up to 10x.
+  stream << seconds<<"."<<std::right<<std::setw(6)<<std::setfill('0')<<subseconds.count()<<" s";
+  stream.flags(flags);
   stream.fill(fill);
   return stream;
 }
