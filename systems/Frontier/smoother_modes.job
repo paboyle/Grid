@@ -90,6 +90,8 @@ export DENSE_APPLY_PROFILE=1
 unset  DENSE_CC_CHECK
 export DENSE_SPLITK=128
 export DENSE_DEVICE_SUM=4          # cartesian P2P ring ALLGATHER: ~8x fewer bytes than the padded allreduce (=2); no collectives, no size cliff
+export SUMMA_HANDSHAKE=1           # ring histogram splits each message into 4-byte handshake (partner wait) + transfer
+# SCHUR2D_PROBE: leave unset (probe on by default; =0 disables); probe now also runs 2/3/4 MB
 export GRID_ALLOC_NCACHE_LARGE=64
 export NRHS=4
 export PowerIterations=0
@@ -126,7 +128,7 @@ run_cell () {
   echo "  $(grep -h 'V2 3-level solve Nrhs' $fname | sed 's/.*V2/V2/' | tr '\n' ' ')"
   echo "  $(grep -h 'Fouter MrhsPGCR: Converged' $fname | sed 's/.*Converged/Converged/' | cut -c1-60 | tr '\n' ' ')"
   echo "  replay per-call |r|/|r0| (Nrhs=1 solve): $(awk '/THREE-level solve, Nrhs = 1/{s=1} s && /Fsmoother replay \|r\|/{v=$NF; n++; t+=v; if(v>mx)mx=v} END{if(n) printf "mean %.4f max %.4f over %d calls", t/n, mx, n}' $fname)"
-  grep -h "SCHUR fp64 distributed invert took\|GB/s/rank" $fname | sed 's/^Grid : Message : [0-9.]* s : //' | cut -c1-120 | head -2
+  grep -h "SCHUR fp64 distributed invert took\|GB/s/rank\|BIG LEAVES\|ring histogram\|^Grid : Message : [0-9.]* s :    >=" $fname | sed 's/^Grid : Message : [0-9.]* s : //' | cut -c1-150 | head -12
 }
 
 # Ladder 2 (after L0-L3 of the first ladder): the stationary polynomial
@@ -135,18 +137,35 @@ run_cell () {
 #   (12,1.0) 48 outer 31.4 s   (8,1.0) 58 outer 30.9 s   (8,0.5) 60 outer 34.3 s
 # Reference (adaptive, Fso6/Fss0.1): 56 outer, 28.57 s.  So walk the SHIFT UP
 # at orders 8 and 6, trading shift against order.  Nrhs=1 is the target.
+# Ladder 2 result (jobs 5353561/5353660/5356490): stationary polynomials floor
+# at ~31 s vs adaptive 28.57 s -- CLOSED.  Cells kept for reference:
 #          name          Fso  Fss   Csn  fine    coarse
-run_cell   S1_08_20       8    2.0   2    replay  gcr     # the promising cell: ~50 outer at 0.53 s/step would be ~26.5 s
-run_cell   S2_08_30       8    3.0   2    replay  gcr
-run_cell   S3_06_20       6    2.0   2    replay  gcr     # banked order, larger shift
-run_cell   S4_06_10       6    1.0   2    replay  gcr     # the L3 of the second table (never ran)
-run_cell   S5_10_20       10   2.0   2    replay  gcr     # between 8 and 12
-# coarse replay, recorded at a decent polynomial and backed off, at the best fine point
-run_cell   S6_coarse6     8    2.0   6    replay  replay
-run_cell   S7_coarse4     8    2.0   4    replay  replay
+#run_cell  S1_08_20       8    2.0   2    replay  gcr     # 57 outer 30.55 s
+#run_cell  S2_08_30       8    3.0   2    replay  gcr     # 60 / 31.29
+#run_cell  S3_06_20       6    2.0   2    replay  gcr     # 69 / 32.74
+#run_cell  S4_06_10       6    1.0   2    replay  gcr     # 78 / 35.74
+#run_cell  S5_10_20       10   2.0   2    replay  gcr     # 53 / 31.13
+#run_cell  S6_coarse6     8    2.0   6    replay  replay  # 61 / 42.53 (intermittent GPU page fault at outer step 22 on one run)
+#run_cell  S7_coarse4     8    2.0   4    replay  replay  # 60 / 84.12
+
+# SCHUR2D_LEAF_SPAN sweep (2026-08-27).  The SUMMA ring histogram put 93% of
+# the inverse's ring time in 3.7 MB single-block panels: the recursion levels
+# below span Pr=18 / Pc=16 run their rings on a few process rows/columns while
+# the rest wait.  Big leaves gather each sub-block of <= s blocks to one rank,
+# invert locally (rocSOLVER getrf/getri), scatter back.  Readout per cell:
+#   "SCHUR fp64 distributed invert took"   -- the number that matters (ref 73-148 s)
+#   "BIG LEAVES ... inverse (max over ranks)" -- rocSOLVER time at W = s*480 (unmeasured on a GCD)
+#   histogram ">= 2.0 MB" row              -- should shrink to ~nothing at s>=9; handshake column = partner wait
+# Solver settings are the banked adaptive point (solve time is the same in every cell; only setup changes).
+#          name          Fso  Fss   Csn  fine    coarse
+export SCHUR2D_LEAF_SPAN=1;  run_cell   I1_span01   6  0.1  2  gcr  gcr     # reference: today's recursion to single-block leaves
+export SCHUR2D_LEAF_SPAN=9;  run_cell   I2_span09   6  0.1  2  gcr  gcr     # 32 leaves of W=4320 (300 MB)
+export SCHUR2D_LEAF_SPAN=18; run_cell   I3_span18   6  0.1  2  gcr  gcr     # 16 leaves of W=8640 (1.2 GB): first span where every process row owns a piece
+export SCHUR2D_LEAF_SPAN=4;  run_cell   I4_span04   6  0.1  2  gcr  gcr     # 72 leaves of W=1920: if rocSOLVER is slow at 8640, the other end
+unset SCHUR2D_LEAF_SPAN
 
 echo "========================================================="
 echo "summary"
-for f in log.ladder.*; do echo "$f: $(grep -h "V2 3-level solve Nrhs 1" $f | sed "s/.*V2/V2/")   outer $(grep -h "Fouter MrhsPGCR: Converged" $f | tail -1 | grep -oE "iteration [0-9]+")"; done
-echo "reference (adaptive, banked): 28.57 s Nrhs=1, 14.9 s/RHS Nrhs=4"
+for f in log.ladder.I*; do echo "$f: $(grep -h "SCHUR fp64 distributed invert took" $f | sed "s/.*invert took//" | cut -c1-40)  $(grep -h "BIG LEAVES" $f | sed "s/.*leaves,//" | cut -c1-90)"; done
+echo "reference inverse (span 1): 73-148 s run to run; solve 28.57 s Nrhs=1"
 echo "========================================================="
