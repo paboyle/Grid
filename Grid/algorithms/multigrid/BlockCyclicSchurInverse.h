@@ -92,6 +92,15 @@ public:
   // Telemetry: accumulated LOCALLY, no comms unless ReportTelemetry().
   double                  telLeafMaxInv;
   uint64_t                nLeaf;
+  // BIG LEAVES (SCHUR2D_LEAF_SPAN=s, default 1 = off).  Below span s blocks a
+  // sub-block lives on <= s of the Pr process rows / s of the Pc columns; the
+  // SUMMA rings then run on a few ranks while the rest block in their next
+  // SendToRecvFrom (histogram 2026-08-27: 93% of ring time in the 3.7 MB
+  // single-block panels of exactly these levels).  Instead: gather the
+  // (s*nb)^2 sub-block to one rank, invert locally, scatter back.
+  int                     leafSpan = -1;
+  uint64_t                nBigLeaf = 0;  int64_t maxBigW = 0;
+  double                  tBigGather = 0, tBigInv = 0, tBigScatter = 0;
   uint64_t                nNode;
   double                  tLeaf;
   double                  tGemm;      // wall in Multiply calls (comms+gemm)
@@ -200,6 +209,109 @@ public:
   }
 
   ///////////////////////////////////////////////////////////////////////////
+  // BIG LEAF on block range [b0,b1): gather to root = owner of block (b0,b0),
+  // invert there, scatter back.  Rank q's piece of the sub-block is the
+  // contiguous local window RowRange(c0,c1) x ColRange(c0,c1); its local row
+  // ii maps to global row (brq0 + (ii/nb)*Pr)*nb + ii%nb where brq0 is q's
+  // first block row >= b0 (closed form: no tables).  Transport is pairwise
+  // SendToRecvFrom with root (symmetric byte count: the reverse direction
+  // carries a same-size dummy -- a leaf-local cost, accepted for simplicity).
+  ///////////////////////////////////////////////////////////////////////////
+  static int64_t FirstBlock(int64_t b0, int p, int Pg){ int64_t r = ((b0 % Pg) <= p) ? b0 - (b0 % Pg) + p : b0 - (b0 % Pg) + Pg + p; return r; }
+  void BigLeaf(BlockCyclicMatrix &A, int64_t b0, int64_t b1)
+  {
+    GRID_TRACE("SchurBigLeaf");
+    BlockCyclicLayout &L = A.layout;
+    GridBase *grid = A.grid;
+    const int Pr=L.Pr, Pc=L.Pc, nb=(int)L.nb;
+    GRID_ASSERT( L.me == L.prow*Pc + L.pcol );          // rank convention shared with the SUMMA rings
+    const int64_t c0 = b0*L.nb, c1 = std::min(L.N, b1*L.nb), W = c1-c0;
+    const int root = (int)((b0%Pr)*Pc + (b0%Pc));
+    const int me   = L.me;
+    nBigLeaf++; maxBigW = std::max(maxBigW, W);
+
+    // my piece
+    int64_t lr0,lr1,lc0,lc1; L.RowRange(c0,c1,lr0,lr1); L.ColRange(c0,c1,lc0,lc1);
+    const int64_t mq = lr1-lr0, nq = lc1-lc0;
+
+    deviceVector<ComplexD> dense;            // root only: W x W column major
+    deviceVector<ComplexD> piece, dummy;     // piece: my mq x nq contiguous; dummy: reverse-direction filler
+    if ( me == root ) dense.resize((uint64_t)W*W);
+
+    auto pack_piece = [&](ComplexD *dst, int64_t m, int64_t n, int64_t r0, int64_t cc0){
+      ComplexD *src = A.LocalWindow(r0,cc0); const int64_t ld = L.mloc;
+      accelerator_for(idx,(uint64_t)(m*n),1,{ int64_t jj=idx/m, ii=idx-jj*m; dst[ii+jj*m] = src[ii+jj*ld]; });
+    };
+    auto unpack_piece = [&](ComplexD *src, int64_t m, int64_t n, int64_t r0, int64_t cc0){
+      ComplexD *dst = A.LocalWindow(r0,cc0); const int64_t ld = L.mloc;
+      accelerator_for(idx,(uint64_t)(m*n),1,{ int64_t jj=idx/m, ii=idx-jj*m; dst[ii+jj*ld] = src[ii+jj*m]; });
+    };
+    // root: piece of rank q  <->  dense, via the closed-form block map
+    auto root_place = [&](ComplexD *pc, int64_t m, int64_t n, int q, int to_dense){
+      const int pq=q/Pc, cq=q%Pc;
+      const int64_t brq0=FirstBlock(b0,pq,Pr), bcq0=FirstBlock(b0,cq,Pc);
+      ComplexD *dn = &dense[0]; const int64_t WW=W, NB=nb, PR=Pr, PC=Pc, C0=c0;
+      accelerator_for(idx,(uint64_t)(m*n),1,{
+        int64_t jj=idx/m, ii=idx-jj*m;
+        int64_t gr = (brq0 + (ii/NB)*PR)*NB + ii%NB - C0;
+        int64_t gc = (bcq0 + (jj/NB)*PC)*NB + jj%NB - C0;
+        if ( to_dense ) dn[gr + gc*WW] = pc[ii+jj*m]; else pc[ii+jj*m] = dn[gr + gc*WW];
+      });
+    };
+    auto piece_dims = [&](int q, int64_t &m, int64_t &n){
+      const int pq=q/Pc, cq=q%Pc;
+      m = BlockCyclicLayout::NumLocal(c1,L.nb,pq,Pr) - BlockCyclicLayout::NumLocal(c0,L.nb,pq,Pr);
+      n = BlockCyclicLayout::NumLocal(c1,L.nb,cq,Pc) - BlockCyclicLayout::NumLocal(c0,L.nb,cq,Pc);
+    };
+
+    // ---- gather ----
+    tBigGather -= usecond();
+    if ( mq*nq ) { piece.resize((uint64_t)mq*nq); dummy.resize((uint64_t)mq*nq); pack_piece(&piece[0],mq,nq,lr0,lc0); accelerator_barrier(); }
+    if ( me == root ) {
+      deviceVector<ComplexD> stage;
+      for(int q=0;q<Pr*Pc;q++){
+        int64_t m,n; piece_dims(q,m,n); if ( !(m*n) ) continue;
+        if ( q == root ) { root_place(&piece[0],m,n,q,1); continue; }
+        if ( stage.size() < (uint64_t)(m*n) ) stage.resize((uint64_t)m*n);
+        deviceVector<ComplexD> junk((uint64_t)m*n);
+        grid->SendToRecvFrom((void *)&junk[0], q, (void *)&stage[0], q, (uint64_t)m*n*sizeof(ComplexD));
+        root_place(&stage[0],m,n,q,1);
+      }
+      accelerator_barrier();
+    } else if ( mq*nq ) {
+      grid->SendToRecvFrom((void *)&piece[0], root, (void *)&dummy[0], root, (uint64_t)mq*nq*sizeof(ComplexD));
+    }
+    tBigGather += usecond();
+
+    // ---- invert on root ----
+    tBigInv -= usecond();
+    if ( me == root ) {
+      deviceVector<ComplexD*> bp(1); std::vector<ComplexD*> ptr(1); ptr[0] = &dense[0];
+      acceleratorCopyToDevice(&ptr[0], &bp[0], sizeof(ComplexD*));
+      INV.inverseBatched(W, bp);
+    }
+    tBigInv += usecond();
+
+    // ---- scatter ----
+    tBigScatter -= usecond();
+    if ( me == root ) {
+      deviceVector<ComplexD> stage;
+      for(int q=0;q<Pr*Pc;q++){
+        int64_t m,n; piece_dims(q,m,n); if ( !(m*n) ) continue;
+        if ( q == root ) { root_place(&piece[0],m,n,q,0); accelerator_barrier(); continue; }
+        if ( stage.size() < (uint64_t)(m*n) ) stage.resize((uint64_t)m*n);
+        deviceVector<ComplexD> junk((uint64_t)m*n);
+        root_place(&stage[0],m,n,q,0); accelerator_barrier();
+        grid->SendToRecvFrom((void *)&stage[0], q, (void *)&junk[0], q, (uint64_t)m*n*sizeof(ComplexD));
+      }
+    } else if ( mq*nq ) {
+      grid->SendToRecvFrom((void *)&dummy[0], root, (void *)&piece[0], root, (uint64_t)mq*nq*sizeof(ComplexD));
+    }
+    if ( mq*nq ) { unpack_piece(&piece[0],mq,nq,lr0,lc0); accelerator_barrier(); }
+    tBigScatter += usecond();
+  }
+
+  ///////////////////////////////////////////////////////////////////////////
   // The recursion, on global BLOCK range [b0,b1).  SPMD: every rank calls
   // with identical arguments; there is no ownership gating to get wrong.
   ///////////////////////////////////////////////////////////////////////////
@@ -212,6 +324,8 @@ public:
     int64_t span = b1-b0;
     GRID_ASSERT( span >= 1 );
     if ( span == 1 ) { Leaf(A, b0); return; }
+    if ( leafSpan < 0 ) leafSpan = getenv("SCHUR2D_LEAF_SPAN") ? atoi(getenv("SCHUR2D_LEAF_SPAN")) : 1;
+    if ( span <= leafSpan ) { BigLeaf(A, b0, b1); return; }
     GRID_TRACE("SchurNode");
     nNode++;
 
@@ -384,6 +498,13 @@ public:
               << "  leaf " << tLeaf/1.0e6
               << "  copy " << tCopy/1.0e6 << ")"
               << std::endl;
+    if ( nBigLeaf ) {
+      RealD ti = tBigInv/1.0e6; grid->GlobalMax(ti);     // inverse runs on the root of each leaf: report the max over ranks
+      std::cout << GridLogMessage << "BlockCyclicSchurInverse: BIG LEAVES (SCHUR2D_LEAF_SPAN=" << leafSpan << "): " << nBigLeaf
+                << " leaves, max W " << maxBigW
+                << "  boss secs: gather " << tBigGather/1.0e6 << " scatter " << tBigScatter/1.0e6
+                << "  inverse (max over ranks) " << ti << std::endl;
+    }
     // SUMMA breakdown: boss-rank seconds, plus the ring/gemm time spread over
     // ranks (min/max) -- skew shows as max >> min.
     RealD ring = (SUMMA.tRingA+SUMMA.tRingB)/1.0e6;
