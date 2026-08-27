@@ -148,9 +148,14 @@ public:
   // GB/s can be attributed (many small latency-bound messages vs slow large
   // ones vs partner-wait).  The 8 MB probe runs at 11-20 GB/s; SUMMA averaged 2.
   static const int NHIST=48;
-  uint64_t histN[NHIST]={0}, histBytes[NHIST]={0}; double histUs[NHIST]={0};
-  void HistAdd(uint64_t bytes, double us){ int b=0; while((bytes>>b)>1) b++; histN[b]++; histBytes[b]+=bytes; histUs[b]+=us; }
-  void ResetTelemetry(void){ tAlloc=tPack=tRingA=tRingB=tGemm=0; bytesRing=nRingMsg=nMultiply=nGemm=0; for(int b=0;b<NHIST;b++){histN[b]=histBytes[b]=0; histUs[b]=0;} }
+  uint64_t histN[NHIST]={0}, histBytes[NHIST]={0}; double histUs[NHIST]={0}, histHsUs[NHIST]={0};
+  // SUMMA_HANDSHAKE=1: a 4-byte SendToRecvFrom with the same partner
+  // immediately before each ring message, timed separately (histHsUs).
+  // Handshake time = partner-arrival skew; the remainder = transfer.  Splits
+  // the [2,4) MB bucket's 12 ms/msg (2026-08-27) into wait vs wire.
+  int handshake = -1; int hsTx=0, hsRx=0;
+  void HistAdd(uint64_t bytes, double us, double hs=0.0){ int b=0; while((bytes>>b)>1) b++; histN[b]++; histBytes[b]+=bytes; histUs[b]+=us; histHsUs[b]+=hs; }
+  void ResetTelemetry(void){ tAlloc=tPack=tRingA=tRingB=tGemm=0; bytesRing=nRingMsg=nMultiply=nGemm=0; for(int b=0;b<NHIST;b++){histN[b]=histBytes[b]=0; histUs[b]=histHsUs[b]=0;} }
 
   static int Overlap(int64_t a0,int64_t a1,int64_t b0,int64_t b1)
   { return (a0 < b1) && (b0 < a1); }
@@ -214,6 +219,7 @@ public:
     const uint64_t slotB1 = (uint64_t)nb*nloc_j;         // one panel
     const uint64_t slotB  = (uint64_t)S*slotB1;
     nMultiply++;
+    if ( handshake < 0 ) handshake = getenv("SUMMA_HANDSHAKE") ? atoi(getenv("SUMMA_HANDSHAKE")) : 0;
     tAlloc -= usecond();
     if ( Abuf.size() < std::max<uint64_t>(slotA*Pc,1) ) Abuf.resize( std::max<uint64_t>(slotA*Pc,1) );
     if ( Bbuf.size() < std::max<uint64_t>(slotB*Pr,1) ) Bbuf.resize( std::max<uint64_t>(slotB*Pr,1) );
@@ -280,11 +286,12 @@ public:
         for(int t=1;t<Pc;t++){
           int cs = (pcol - t + 1 + Pc*Pc) % Pc;
           int cr = (pcol - t     + Pc*Pc) % Pc;
-          double tm = usecond();
+          double ths = 0.0, tm = usecond();
+          if ( handshake ) { grid->SendToRecvFrom((void *)&hsTx, dest, (void *)&hsRx, src, sizeof(int)); ths = usecond()-tm; tm = usecond(); }
           grid->SendToRecvFrom((void *)(&Abuf[0]+slotA*cs), dest,
                                (void *)(&Abuf[0]+slotA*cr), src,
                                slotA*sizeof(ComplexD));
-          HistAdd(slotA*sizeof(ComplexD), usecond()-tm);
+          HistAdd(slotA*sizeof(ComplexD), usecond()-tm, ths);
           bytesRing += slotA*sizeof(ComplexD); nRingMsg++;
         }
         tRingA += usecond();
@@ -300,11 +307,12 @@ public:
         for(int t=1;t<Pr;t++){
           int rs = (prow - t + 1 + Pr*Pr) % Pr;
           int rr = (prow - t     + Pr*Pr) % Pr;
-          double tm = usecond();
+          double ths = 0.0, tm = usecond();
+          if ( handshake ) { grid->SendToRecvFrom((void *)&hsTx, dest, (void *)&hsRx, src, sizeof(int)); ths = usecond()-tm; tm = usecond(); }
           grid->SendToRecvFrom((void *)(&Bbuf[0]+slotB*rs), dest,
                                (void *)(&Bbuf[0]+slotB*rr), src,
                                slotB*sizeof(ComplexD));
-          HistAdd(slotB*sizeof(ComplexD), usecond()-tm);
+          HistAdd(slotB*sizeof(ComplexD), usecond()-tm, ths);
           bytesRing += slotB*sizeof(ComplexD); nRingMsg++;
         }
         tRingB += usecond();

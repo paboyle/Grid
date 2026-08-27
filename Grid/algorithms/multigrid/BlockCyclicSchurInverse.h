@@ -404,7 +404,8 @@ public:
     // same sequence of sizes).  Time is wall time inside SendToRecvFrom, so it
     // includes waiting for the partner -- a bucket whose GB/s is far below the
     // probe's for the same size is wait, not wire.
-    std::cout << GridLogMessage << "BlockCyclicSumma ring histogram (boss):  size-bucket  msgs  GB  secs  GB/s  %time" << std::endl;
+    std::cout << GridLogMessage << "BlockCyclicSumma ring histogram (boss):  size-bucket  msgs  GB  xfer-secs  GB/s  %time"
+              << (SUMMA.handshake>0 ? "  handshake-secs (partner wait, excluded from xfer)" : "") << std::endl;
     std::streamsize oldprec = std::cout.precision();
     for(int b=0;b<SUMMA.NHIST;b++){
       if ( !SUMMA.histN[b] ) continue;
@@ -416,7 +417,9 @@ public:
                 << std::setw(10) << std::setprecision(3) << g
                 << std::setw(9) << std::setprecision(3) << sec
                 << std::setw(9) << std::setprecision(3) << (sec>0 ? g/sec : 0.0)
-                << std::setw(8) << std::setprecision(3) << (ring>0 ? 100.0*sec/ring : 0.0) << std::endl;
+                << std::setw(8) << std::setprecision(3) << (ring>0 ? 100.0*sec/ring : 0.0);
+      if ( SUMMA.handshake>0 ) std::cout << std::setw(12) << std::setprecision(3) << SUMMA.histHsUs[b]/1.0e6;
+      std::cout << std::endl;
     }
     std::cout.precision(oldprec);
   }
