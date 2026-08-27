@@ -114,15 +114,18 @@ public:
   // NB: written to rocSOLVER's documented z*_64 signatures; not compiled on
   // HIP in the air-gapped loop -- verify on first hipcc build.
   ///////////////////////////////////////////////////////////////////////////
+  double lastGetrfUs = 0.0, lastGetrsUs = 0.0;   // split timing of the last inverseLU (HIP path)
   void inverseLU(int64_t N, ComplexD *A)
   {
 #ifdef GRID_HIP
     rocblas_handle handle = Handle();
     deviceVector<int64_t>  ipiv((uint64_t)N);
     deviceVector<int64_t>  info(1);
+    double t0 = usecond();
     auto st1 = rocsolver_zgetrf_64(handle, N, N, (rocblas_double_complex *)A, N, &ipiv[0], &info[0]);
     GRID_ASSERT(st1 == rocblas_status_success);
     accelerator_barrier();
+    lastGetrfUs = usecond()-t0;
     int64_t info_h = -1; acceleratorCopyFromDevice(&info[0], &info_h, sizeof(int64_t));
     GRID_ASSERT(info_h == 0);
     deviceVector<ComplexD> X((uint64_t)N*N);
@@ -134,6 +137,7 @@ public:
                                    (rocblas_double_complex *)&X[0], N);
     GRID_ASSERT(st2 == rocblas_status_success);
     accelerator_barrier();
+    lastGetrsUs = usecond()-t0-lastGetrfUs;
     acceleratorCopyDeviceToDevice((void *)&X[0], (void *)A, (uint64_t)N*N*sizeof(ComplexD));
 #else
     deviceVector<ComplexD*> bp(1); std::vector<ComplexD*> ptr(1); ptr[0] = A;

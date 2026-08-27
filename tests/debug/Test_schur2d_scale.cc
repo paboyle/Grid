@@ -76,6 +76,20 @@ static ComplexD Fill(int64_t i, int64_t j, int64_t N)
 
 int main(int argc, char **argv)
 {
+  // Environment walk (2026-08-27): the SAME inverse runs 20.8 s in the SLATE
+  // harness and 26.5 s in the example, with the local GPU work (GEMM, leaf
+  // inverse) 25-40% slower in the example.  Knobs to reproduce the example's
+  // environment here, one at a time (systems/Frontier/schur2d_env.job):
+  //   GRID_MPI_THREAD_MULTIPLE=1  MPI_Init_thread(MULTIPLE) before Grid_init (SLATE harness does this)
+  //   S2D_BALLAST_GB=x            x GB of Lattice fields made device-resident before the invert
+  //                               (the example carries ~10.6 GB of fine-grid state in the MemoryManager)
+  //   OMP_NUM_THREADS             set in the job, read by nothing here but the runtime
+  if ( getenv("GRID_MPI_THREAD_MULTIPLE") ) {
+    int provided = 0;
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+    std::cout << "GRID_MPI_THREAD_MULTIPLE: requested MPI_THREAD_MULTIPLE, provided " << provided
+              << (provided==MPI_THREAD_MULTIPLE ? " (MULTIPLE)" : " (NOT multiple)") << std::endl;
+  }
   Grid_init(&argc, &argv);
 
   GridCartesian *grid = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(),
@@ -124,6 +138,24 @@ int main(int argc, char **argv)
   BlockCyclicMatrix A (grid,N,nb,Pr,Pc);
   BlockCyclicMatrix A0(grid,N,nb,Pr,Pc);
   BlockCyclicSchurInverse RSI2;
+
+  // Device ballast: Lattice fields written on the accelerator so they sit in
+  // the MemoryManager's device LRU exactly as the example's fine-grid state does.
+  typedef Lattice<iVector<iVector<vComplexD,Nc>,Ns> > BallastField;
+  std::vector<BallastField> ballast;
+  if ( getenv("S2D_BALLAST_GB") ) {
+    double gb = atof(getenv("S2D_BALLAST_GB"));
+    uint64_t fbytes = (uint64_t)grid->oSites()*sizeof(BallastField::vector_object);
+    int nf = (int)(gb*1.0e9/(double)fbytes + 0.5);
+    ballast.reserve(nf);
+    for(int i=0;i<nf;i++){
+      ballast.emplace_back(grid);
+      autoView(v, ballast[i], AcceleratorWriteDiscard);
+      accelerator_for(ss, grid->oSites(), 1, { v[ss] = Zero(); });
+    }
+    std::cout << GridLogMessage << "Test_schur2d_scale: device ballast " << nf << " fields x " << fbytes/1.0e6
+              << " MB = " << nf*fbytes/1.0e9 << " GB resident (S2D_BALLAST_GB=" << gb << ")" << std::endl;
+  }
 
   BlockCyclicRedistribute::RowsToCyclic(grid,rowStart,&rows1d[0],myrows,A);
   double t2 = usecond();

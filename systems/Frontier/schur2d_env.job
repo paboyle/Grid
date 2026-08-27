@@ -1,0 +1,91 @@
+#!/bin/bash -l
+#SBATCH --job-name=schur2d-env
+#SBATCH --nodes=36
+#SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=7
+#SBATCH --gpus-per-node=8
+#SBATCH --time=0:40:00
+#SBATCH --account=phy157_dwf
+#SBATCH --gpu-bind=none
+#SBATCH --exclusive
+#SBATCH --mem=0
+#SBATCH -S 0
+
+##############################################################################
+# Environment walk for the 2D Schur inverse (2026-08-27).
+#
+# The SAME inverse (N=138240, 18x16, nb 480, SCHUR2D_LEAF_SPAN=9, LU leaf)
+# runs 20.8 s in Test_schur2d_vs_slate and 26.5 s in the production example,
+# and the LOCAL GPU work is what differs: GEMM 2.47 vs 3.11 s, leaf inverse
+# 0.53 vs 0.76 s for identical calls; rings about equal.  The environments
+# differ in (a) OMP_NUM_THREADS 1 vs 7, (b) MPI_THREAD_MULTIPLE init (SLATE
+# harness) vs SERIALIZED (example), (c) ~10.6 GB of fine-grid state resident
+# on the device in the example.  Test_schur2d_scale is the SLATE-free harness
+# (same library code, plain Grid_init); walk it from the harness environment
+# to the example's one knob at a time.
+#
+# Readout per cell (identical work in every cell):
+#   "gemm min/max"                          vs 2.45/2.61 (harness) / 3.01/3.24 (example)
+#   "BIG LEAVES ... inverse (max over ranks)" vs 0.53 / 0.76
+#   "SCHUR fp64 ... invert" / "GRID : ... invert"  vs 20.8 / 26.5
+#   "Schur2D PROBE leaf W="                 one-GCD getri / getrf+getrs / zgemm TF/s
+##############################################################################
+
+cat << EOF > select_gpu
+#!/bin/bash
+export GPU_MAP=(0 1 2 3 7 6 5 4)
+export NUMA_MAP=(3 3 1 1 2 2 0 0)
+export GPU=\${GPU_MAP[\$SLURM_LOCALID]}
+export NUMA=\${NUMA_MAP[\$SLURM_LOCALID]}
+export HIP_VISIBLE_DEVICES=\$GPU
+unset ROCR_VISIBLE_DEVICES
+if [ \$SLURM_PROCID = "0" ]; then echo \$*; fi
+exec numactl -m \$NUMA -N \$NUMA \$*
+EOF
+chmod +x ./select_gpu
+
+root=$HOME/ParallelIO/systems/Frontier
+source $root/sourceme-rocm7.2.sh
+
+export MPICH_GPU_SUPPORT_ENABLED=1
+export MPICH_SMP_SINGLE_COPY_MODE=CMA
+export MPICH_OFI_NIC_POLICY=GPU
+module load libfabric
+
+BIN=$root/tests/debug/Test_schur2d_scale
+OPTS1="--accelerator-threads 8 --shm 4096 --shm-mpi 1 --device-mem 32000"
+vol=48.48.48.96
+MPI_GEOM=3.6.4.4
+
+export S2D_N=138240
+export S2D_NB=480
+export SCHUR2D_LEAF_SPAN=9
+export SCHUR2D_LEAF_LU=1
+export SUMMA_HANDSHAKE=1
+# SCHUR2D_PROBE unset: probe on, including the one-GCD leaf microbenchmark
+
+run_cell () {
+  name=$1; shift
+  echo "----- $name : $* -----"
+  fname=log.env.$name
+  env "$@" srun -N36 -n288 --kill-on-bad-exit=1 ./select_gpu $BIN --mpi ${MPI_GEOM} --grid $vol $OPTS1 > $fname 2>&1
+  echo "  exit $?"; sleep 30
+  grep -h "PROBE banner\|device ballast\|PROBE leaf\|BIG LEAVES\|gemm min/max\|invert\|certificate" $fname \
+    | sed 's/^Grid : Message : [0-9.]* s : //' | cut -c1-170
+}
+
+#          name              environment
+run_cell   E1_omp1           OMP_NUM_THREADS=1
+run_cell   E2_omp1_multiple  OMP_NUM_THREADS=1 GRID_MPI_THREAD_MULTIPLE=1 MPICH_MAX_THREAD_SAFETY=multiple     # = the SLATE harness environment
+run_cell   E3_omp7           OMP_NUM_THREADS=7                                                                 # the example's thread count
+run_cell   E4_omp7_ballast   OMP_NUM_THREADS=7 S2D_BALLAST_GB=10.6                                            # + the example's device residency
+run_cell   E5_omp1_ballast   OMP_NUM_THREADS=1 S2D_BALLAST_GB=10.6                                            # ballast alone
+run_cell   E6_omp1_again     OMP_NUM_THREADS=1                                                                 # repeat E1: the noise floor
+
+echo "========================================================="
+echo "summary"
+for f in log.env.E*; do
+  echo "$f: $(grep -h "invert" $f | grep -h "TOTAL\|took" | sed 's/^Grid : Message : [0-9.]* s : //' | cut -c1-80 | head -1)  gemm $(grep -oh "gemm min/max [0-9./]*" $f)  leaf $(grep -oh "inverse (max over ranks) [0-9.]*" $f)"
+done
+echo "harness (SLATE build, OMP=1, MULTIPLE): invert 20.8  gemm 2.45/2.61  leaf 0.53;  example (OMP=7, SERIALIZED, 10.6 GB resident): 26.5  3.01/3.24  0.76"
+echo "========================================================="

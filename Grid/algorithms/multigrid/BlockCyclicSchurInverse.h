@@ -439,6 +439,50 @@ public:
       }
     }
     ///////////////////////////////////////////////////////////////////////
+    // ONE-GCD LEAF MICROBENCHMARK (boss only).  The big-leaf inverse at
+    // W=4320 measured 0.53 s with BOTH getri_batched and getrf_64+getrs_64
+    // (2026-08-27) -- ~0.4 TF/s on a GCD that runs zgemm at ~15.  Time the
+    // three primitives in isolation on a well-conditioned dense matrix so the
+    // leaf's rate can be compared with the machine's, and getrf split from
+    // getrs.  Sizes: the W of span 4 / 9 / 18 leaves on accelerator builds;
+    // tiny on CPU builds (Eigen would take minutes at 4320).
+    ///////////////////////////////////////////////////////////////////////
+    if ( me == 0 ) {
+#if defined(GRID_HIP) || defined(GRID_CUDA) || defined(GRID_SYCL)
+      std::vector<int64_t> Ws({1920, 4320, 8640});
+#else
+      std::vector<int64_t> Ws({240, 480});
+#endif
+      for(int64_t W : Ws){
+        deviceVector<ComplexD> M((uint64_t)W*W), C((uint64_t)W*W);
+        { ComplexD *m = &M[0]; const int64_t WW = W;   // diagonally dominant: (i==j ? W : 0) + cos/sin noise
+          accelerator_for(idx,(uint64_t)W*W,1,{ int64_t j=idx/WW, i=idx-j*WW; double x=0.37*i+0.61*j;
+            m[idx] = ComplexD((i==j)?(double)WW:0.0,0.0) + ComplexD(std::cos(x),std::sin(1.3*x)); });
+          accelerator_barrier(); }
+        double flopLU = 8.0/3.0*(double)W*W*W;          // complex LU  ~ (4 real flops per complex mult-add) * (2/3 n^3)
+        double flopGEMM = 8.0*(double)W*W*W;            // complex GEMM
+        // 1. getri_batched (batch 1)
+        double tb;
+        { deviceVector<ComplexD*> bp(1); std::vector<ComplexD*> ptr(1); ptr[0]=&M[0];
+          acceleratorCopyToDevice(&ptr[0],&bp[0],sizeof(ComplexD*));
+          double t0=usecond(); INV.inverseBatched(W,bp); tb=usecond()-t0; }
+        // 2. inverseLU (getrf_64 + identity getrs_64), timed inside
+        double tl; { double t0=usecond(); INV.inverseLU(W,&M[0]); tl=usecond()-t0; }
+        // 3. one zgemm W x W x W for the machine rate
+        double tg;
+        { deviceVector<ComplexD*> ap(1),bp(1),cp(1); std::vector<ComplexD*> ptr(1);
+          ptr[0]=&M[0]; acceleratorCopyToDevice(&ptr[0],&ap[0],sizeof(ComplexD*)); acceleratorCopyToDevice(&ptr[0],&bp[0],sizeof(ComplexD*));
+          ptr[0]=&C[0]; acceleratorCopyToDevice(&ptr[0],&cp[0],sizeof(ComplexD*));
+          double t0=usecond();
+          SUMMA.BLAS.gemmBatched(GridBLAS_OP_N,GridBLAS_OP_N,(int)W,(int)W,(int)W,ComplexD(1.0,0.0),ap,(int)W,bp,(int)W,ComplexD(0.0,0.0),cp,(int)W);
+          SUMMA.BLAS.synchronise(); tg=usecond()-t0; }
+        std::cout << GridLogMessage << "Schur2D PROBE leaf W=" << W
+                  << ": getri_batched " << tb/1.0e6 << " s (" << flopLU/tb/1.0e6 << " TF/s)"
+                  << "  getrf_64+getrs_64 " << tl/1.0e6 << " s (getrf " << INV.lastGetrfUs/1.0e6 << " getrs " << INV.lastGetrsUs/1.0e6 << ")"
+                  << "  zgemm " << tg/1.0e6 << " s (" << flopGEMM/tg/1.0e6 << " TF/s)" << std::endl;
+      }
+    }
+    ///////////////////////////////////////////////////////////////////////
     // The SUMMA's conditions, one at a time, at 8 MB on ring B:
     //  (a) LARGE persistent buffers (the rings use ~0.5 GB Abuf/Bbuf), sending
     //      from offset 0 and from deep inside the region;
