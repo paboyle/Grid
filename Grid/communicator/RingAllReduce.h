@@ -27,8 +27,15 @@ NAMESPACE_BEGIN(Grid);
 // communicator-level primitive: needs only CartesianCommunicator.
 //
 //   RingAllReduce(comm, buf, n)           flat ring over all P ranks
-//   CartesianRingAllReduce(comm, buf, n)  ring along each processor dimension
-//                                         in turn (P_d ranks per ring)
+//   CartesianRingAllReduce(comm, buf, n, orthogDim=-1)
+//                                         ring along each processor dimension
+//                                         in turn (P_d ranks per ring).
+//                                         orthogDim in 0..Nd-1: that dimension is
+//                                         SKIPPED, so the result is the sum over
+//                                         all ranks sharing my coordinate in it
+//                                         (e.g. orthogDim=3: sum over each
+//                                         time-slice of processors separately).
+//                                         -1: all dimensions (full allreduce).
 //
 // Why: Cray MPICH device-buffer MPI_Allreduce aborts above ~8 MB (MPI_FLOAT,
 // measured 4.4 MB pass / 13.3 MB fail) and delivers 5.8 GB/s where P2P rings
@@ -95,11 +102,13 @@ void RingAllReduce(CartesianCommunicator *comm, T *buf, uint64_t n)
 }
 
 template<class T>
-void CartesianRingAllReduce(CartesianCommunicator *comm, T *buf, uint64_t n)
+void CartesianRingAllReduce(CartesianCommunicator *comm, T *buf, uint64_t n, int orthogDim=-1)
 {
   if ( comm->ProcessorCount()==1 || n==0 ) return;
   int Nd = comm->_ndimension;
+  GRID_ASSERT( orthogDim >= -1 && orthogDim < Nd );
   for(int d=0;d<Nd;d++){
+    if ( d==orthogDim ) continue;              // leave this dimension unsummed
     int P = comm->_processors[d];
     if ( P==1 ) continue;
     int me = comm->_processor_coor[d];
