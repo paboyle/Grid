@@ -104,6 +104,7 @@ int main(int argc, char **argv)
   LatticeFermionD src(UGrid), x(UGrid);
   for(int c=0;c<ncal;c++){ gaussian(RNG4,src); x = Zero(); GCR(src,x); }
   GCR.SetCoefficientRecorder(nullptr);
+  rec.Flush();
   rec.Report("smoother");
   Report("record: steps and calls", rec.Steps()==nstep && rec.Calls()==ncal,
          std::to_string(rec.Steps())+" steps, "+std::to_string(rec.Calls())+" calls");

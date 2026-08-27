@@ -103,6 +103,9 @@ int   PowerIterations      = 0;     // >0: power-iterate the smoother operators 
 std::string FineSmootherMode   = "gcr";
 std::string CoarseSmootherMode = "gcr";
 int   PolyRecordIters      = 4;
+int   PolyRecordStart      = 0;     // outer step at which recording begins (0: from the first step)
+std::string PolyRecordSelect = "last"; // which recorded call to replay: last|first|mean (mean is the bad one)
+int   PolyRefresh          = 0;     // >0: every PolyRefresh outer steps, one adaptive step re-records the polynomial (HDCG: every 10)
 int   PolyVerbose          = 0;     // 1: fixed-polynomial smoothers print |r_m|/|r_0| per call
 RealD FineChebLo   = 3.0,  FineChebHi   = 137.0;   // from the harvested polynomial and PowerIterations edge
 RealD CoarseChebLo = 8.0,  CoarseChebHi = 45.0;
@@ -153,6 +156,9 @@ void ParseEnvironment(void)
   if(getenv("FineSmootherMode"))   FineSmootherMode   = getenv("FineSmootherMode");
   if(getenv("CoarseSmootherMode")) CoarseSmootherMode = getenv("CoarseSmootherMode");
   if(getenv("PolyRecordIters"))    PolyRecordIters    = atoi(getenv("PolyRecordIters"));
+  if(getenv("PolyRecordStart"))    PolyRecordStart    = atoi(getenv("PolyRecordStart"));
+  if(getenv("PolyRecordSelect"))   PolyRecordSelect   = getenv("PolyRecordSelect");
+  if(getenv("PolyRefresh"))        PolyRefresh        = atoi(getenv("PolyRefresh"));
   if(getenv("PolyVerbose"))        PolyVerbose        = atoi(getenv("PolyVerbose"));
   if(getenv("FineChebLo"))         FineChebLo         = atof(getenv("FineChebLo"));
   if(getenv("FineChebHi"))         FineChebHi         = atof(getenv("FineChebHi"));
@@ -550,6 +556,17 @@ public:
 
 int main (int argc, char ** argv)
 {
+  // GRID_MPI_THREAD_MULTIPLE=1: initialise MPI at MPI_THREAD_MULTIPLE before
+  // Grid_init (Grid asks for SERIALIZED).  The SLATE harness does this and its
+  // copy of the 2D inverse ran at ~2x the production ring rate (62 s vs
+  // 133-141 s).  Second hypothesis behind OMP_NUM_THREADS; test one at a time.
+  // Pair with MPICH_MAX_THREAD_SAFETY=multiple.
+  if ( getenv("GRID_MPI_THREAD_MULTIPLE") ) {
+    int provided = 0;
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+    std::cout << "GRID_MPI_THREAD_MULTIPLE: requested MPI_THREAD_MULTIPLE, provided " << provided
+              << (provided==MPI_THREAD_MULTIPLE ? " (MULTIPLE)" : " (NOT multiple)") << std::endl;
+  }
   Grid_init(&argc,&argv);
   ParseEnvironment();
 
@@ -991,6 +1008,12 @@ int main (int argc, char ** argv)
     std::unique_ptr<GCRReplaySmoother<LatticeFermionD> > FineReplay;
     std::unique_ptr<GCRReplaySmoother<CoarseVector> >    CoarseReplay;
     GCRCoefficients recF, recC;
+    {
+      GCRCoefficients::Select sel = GCRCoefficients::Last;
+      if ( PolyRecordSelect=="first" ) sel = GCRCoefficients::First;
+      if ( PolyRecordSelect=="mean" )  sel = GCRCoefficients::Mean;
+      recF.select = sel; recC.select = sel;
+    }
     if ( FineSmootherMode == "cheb" ) {
       FineCheb.reset(new ChebyshevNonHermitianSmoother<LatticeFermionD>(FineChebLo,FineChebHi,FineSmootherOrder,ShiftedPVdagM));
       FineCheb->Verbose = PolyVerbose; FineCheb->name = "Fsmoother";
@@ -1001,29 +1024,58 @@ int main (int argc, char ** argv)
       CoarseCheb->Verbose = PolyVerbose; CoarseCheb->name = "Csmoother";
       CoarseSmootherSlot.Set(*CoarseCheb,"Csmoother Chebyshev");
     }
-    if ( FineSmootherMode   == "replay" ) SmootherGCR.SetCoefficientRecorder(&recF);
-    if ( CoarseSmootherMode == "replay" ) CoarseSmootherGCR.SetCoefficientRecorder(&recC);
-    L1PGCR.OnStep = [&](int step){
-      if ( step != PolyRecordIters ) return;
+    // Recording window [PolyRecordStart, PolyRecordStart+PolyRecordIters).
+    // M3 (2026-08-26): the GCR polynomial changes fast over the first outer
+    // steps (per-call |r|/|r0| 0.0034 -> 0.017 over steps 1-4) and the MEAN
+    // of those is a poor smoother (replay 0.033-0.049 per call); record a
+    // settled window instead.
+    if ( PolyRecordStart == 0 ) {
+      if ( FineSmootherMode   == "replay" ) SmootherGCR.SetCoefficientRecorder(&recF);
+      if ( CoarseSmootherMode == "replay" ) CoarseSmootherGCR.SetCoefficientRecorder(&recC);
+    }
+    // Record -> replay, with optional periodic re-recording ("re-record, not
+    // fade away": HDCG refreshed its polynomial every 10 steps, tracking the
+    // evolving spectral content of the residual).  Schedule on outer steps:
+    //   [PolyRecordStart, +PolyRecordIters)          adaptive GCR, recording
+    //   then replay of the selected recorded call;
+    //   if PolyRefresh>0: every PolyRefresh steps, ONE adaptive recording
+    //   step, then replay of that call.
+    auto BuildReplays = [&](void){
       if ( FineSmootherMode == "replay" ) {
         SmootherGCR.SetCoefficientRecorder(nullptr);
-        recF.Report("Fsmoother");
+        recF.Flush(); recF.Report("Fsmoother");
         FineReplay.reset(new GCRReplaySmoother<LatticeFermionD>(ShiftedPVdagM,recF));
         FineReplay->Verbose = PolyVerbose; FineReplay->name = "Fsmoother";
         FineSmootherSlot.Set(*FineReplay,"Fsmoother replay");
-        SmootherGCR.ReleaseHistory();          // memory-neutral swap: the GCR's history goes as the replay's comes
+        SmootherGCR.ReleaseHistory();
       }
       if ( CoarseSmootherMode == "replay" ) {
         CoarseSmootherGCR.SetCoefficientRecorder(nullptr);
-        recC.Report("Csmoother");
+        recC.Flush(); recC.Report("Csmoother");
         CoarseReplay.reset(new GCRReplaySmoother<CoarseVector>(ShiftedC,recC));
         CoarseReplay->Verbose = PolyVerbose; CoarseReplay->name = "Csmoother";
         CoarseSmootherSlot.Set(*CoarseReplay,"Csmoother replay");
         CoarseSmootherGCR.ReleaseHistory();
       }
     };
+    auto StartRecording = [&](int step){
+      if ( FineSmootherMode   == "replay" ) { { auto sel=recF.select; recF = GCRCoefficients(); recF.select=sel; } SmootherGCR.SetCoefficientRecorder(&recF);       FineSmootherSlot.Set(SmootherGCR,"Fsmoother GCR (recording)"); }
+      if ( CoarseSmootherMode == "replay" ) { { auto sel=recC.select; recC = GCRCoefficients(); recC.select=sel; } CoarseSmootherGCR.SetCoefficientRecorder(&recC); CoarseSmootherSlot.Set(CoarseSmootherGCR,"Csmoother GCR (recording)"); }
+      std::cout << GridLogMessage << "Smoother coefficient recording starts at outer step " << step << std::endl;
+    };
+    int switchStep = PolyRecordStart + PolyRecordIters;
+    L1PGCR.OnStep = [&](int step){
+      if ( FineSmootherMode != "replay" && CoarseSmootherMode != "replay" ) return;
+      if ( step == PolyRecordStart && PolyRecordStart > 0 ) StartRecording(step);
+      if ( step == switchStep ) { BuildReplays(); return; }
+      if ( PolyRefresh > 0 && step > switchStep ) {
+        int since = step - switchStep;
+        if ( since % PolyRefresh == 0 )     { StartRecording(step); }       // one adaptive, recorded step
+        if ( since % PolyRefresh == 1 )     { BuildReplays(); }             // then replay it
+      }
+    };
     std::cout << GridLogMessage << "Smoother modes: fine " << FineSmootherMode << "  coarse " << CoarseSmootherMode
-              << (FineSmootherMode=="replay"||CoarseSmootherMode=="replay" ? "  (record for "+std::to_string(PolyRecordIters)+" outer steps)" : "")
+              << (FineSmootherMode=="replay"||CoarseSmootherMode=="replay" ? "  (record outer steps "+std::to_string(PolyRecordStart)+".."+std::to_string(PolyRecordStart+PolyRecordIters)+")" : "")
               << std::endl;
 
     std::vector<LatticeFermionD> src(nr,FGrid), sol(nr,FGrid);

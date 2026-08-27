@@ -96,34 +96,49 @@ export PowerIterations=0
 export SmootherCoeffLog=0
 
 # frozen-polynomial controls
-export PolyRecordIters=4           # outer steps recorded before the switch
+export PolyRecordIters=8           # outer steps recorded
+export PolyRecordStart=8           # ...starting here: the early-step polynomials are unrepresentative (M3)
+export PolyRecordSelect=last       # replay ONE recorded call's polynomial (PB: every individual call beats the coefficient mean)
+export PolyRefresh=5               # re-record every 5 outer steps: BFM BfmHDCG.C:2243, k%5==1 -> LdopM1MirsPolyRecord, single call, replayed 4 steps
+# Inverse ring-rate hypotheses, ONE AT A TIME: (1) OMP_NUM_THREADS=1 (set above);
+# (2) if (1) fails, uncomment the two lines below (harness ran 62 s with these).
+#export MPICH_MAX_THREAD_SAFETY=multiple
+#export GRID_MPI_THREAD_MULTIPLE=1
 export PolyVerbose=1               # frozen smoothers print |r_m|/|r_0| per call: separates 'bad polynomial' from 'linear V-cycle stagnates the outer'
 export FineChebLo=3.0              # harvested |R|<0.1 edge / PowerIteration edge x1.05
 export FineChebHi=137.0
 export CoarseChebLo=8.0
 export CoarseChebHi=47.0           # shift 2.0: edge 43.3 x1.08
 
-run_mode () {
-  name=$1; export FineSmootherMode=$2; export CoarseSmootherMode=$3
-  echo "----- $name : FineSmootherMode=$FineSmootherMode CoarseSmootherMode=$CoarseSmootherMode -----"
-  fname=log.modes.$name
+# Reference: the banked ADAPTIVE optimum, Fso6 / sm4 / Css2.0 / Nstep2 / svm8 ->
+# 28.57 s (Nrhs=1), ~14.9 s/RHS (Nrhs=4).  The stationary smoother converged at
+# the deliberate overshoot (order 12, fine shift 1.0, coarse Nstep 6); the
+# ladder below walks back towards the banked point.  A cell wins if it stays
+# convergent AND beats 28.57 s.  Each cell ~5 min.
+run_cell () {
+  name=$1; export FineSmootherOrder=$2; export FineSmootherShift=$3; export CoarseSmootherNstep=$4
+  export FineSmootherMode=$5; export CoarseSmootherMode=$6
+  echo "----- $name : Fso=$FineSmootherOrder Fss=$FineSmootherShift Csn=$CoarseSmootherNstep fine=$FineSmootherMode coarse=$CoarseSmootherMode -----"
+  fname=log.ladder.$name
   srun -N36 -n288 --kill-on-bad-exit=1 ./select_gpu $root/examples/Example_pvdagm_v2_3level_DenseCoarseMatrix \
        --mpi ${MPI_GEOM} --grid $vol $OPTS1 --comms-overlap > $fname 2>&1
-  echo "  exit $?"; sleep 60      # let a faulted step's GPUs be released before the next srun (M3 after M2 faulted instantly)
-  echo "  $(grep -h 'V2 3-level solve Nrhs' $fname | tr '\n' ' ')"
-  echo "  $(grep -h 'Fouter MrhsPGCR: Converged' $fname | sed 's/.*Converged/Converged/' | tr '\n' ' ')"
-  echo "  $(grep -h 'FINAL Nrhs .: worst' $fname | tr '\n' ' ')"
-  grep -h "SwitchableSmoother\|GCRCoefficients .*calls" $fname | head -6
+  echo "  exit $?"; sleep 60
+  echo "  $(grep -h 'V2 3-level solve Nrhs' $fname | sed 's/.*V2/V2/' | tr '\n' ' ')"
+  echo "  $(grep -h 'Fouter MrhsPGCR: Converged' $fname | sed 's/.*Converged/Converged/' | cut -c1-60 | tr '\n' ' ')"
+  echo "  replay per-call |r|/|r0| (Nrhs=1 solve): $(awk '/THREE-level solve, Nrhs = 1/{s=1} s && /Fsmoother replay \|r\|/{v=$NF; n++; t+=v; if(v>mx)mx=v} END{if(n) printf "mean %.4f max %.4f over %d calls", t/n, mx, n}' $fname)"
+  grep -h "SCHUR fp64 distributed invert took\|GB/s/rank" $fname | sed 's/^Grid : Message : [0-9.]* s : //' | cut -c1-120 | head -2
 }
 
-run_mode M1_gcr_gcr        gcr    gcr
-run_mode M2_replay_replay  replay replay
-run_mode M3_replay_gcr     replay gcr
-run_mode M4_cheb_gcr       cheb   gcr
-run_mode M5_cheb_cheb      cheb   cheb
-run_mode M6_gcr_replay     gcr    replay    # coarse frozen only: M2 showed Couter 16 -> 5 steps with it live
+#          name        Fso  Fss   Csn  fine    coarse
+run_cell   L0_overshoot 12  1.0   6    replay  gcr     # the converged overshoot (M3), now with last-call selection + refresh 5
+run_cell   L1_csn2      12  1.0   2    replay  gcr     # coarse smoother back to the banked 2 steps
+run_cell   L2_fso8      8   1.0   2    replay  gcr
+run_cell   L3_fss05     8   0.5   2    replay  gcr
+run_cell   L4_banked    6   0.5   2    replay  gcr     # nearest to the banked adaptive point
+run_cell   L5_both      8   0.5   2    replay  replay  # coarse frozen too, at the best-looking fine point
 
 echo "========================================================="
 echo "summary"
-grep -h "V2 3-level solve Nrhs 1" log.modes.* | sed 's/.*V2/V2/'
+for f in log.ladder.*; do echo "$f: $(grep -h "V2 3-level solve Nrhs 1" $f | sed "s/.*V2/V2/")   outer $(grep -h "Fouter MrhsPGCR: Converged" $f | tail -1 | grep -oE "iteration [0-9]+")"; done
+echo "reference (adaptive, banked): 28.57 s Nrhs=1, 14.9 s/RHS Nrhs=4"
 echo "========================================================="
