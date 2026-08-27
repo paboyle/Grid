@@ -135,7 +135,10 @@ run_cell   L1_csn2      12  1.0   2    replay  gcr     # coarse smoother back to
 run_cell   L2_fso8      8   1.0   2    replay  gcr
 run_cell   L3_fss05     8   0.5   2    replay  gcr
 run_cell   L4_banked    6   0.5   2    replay  gcr     # nearest to the banked adaptive point
-run_cell   L5_both      8   0.5   2    replay  replay  # coarse frozen too, at the best-looking fine point
+# Coarse replay: same lesson as the fine level -- record a DECENT polynomial
+# first (overshoot: 6-step coarse smoother, shift 2.0) and back off from there.
+run_cell   L5_coarse6    8   0.5   6    replay  replay  # coarse frozen at a 6-step polynomial (overshoot)
+run_cell   L6_coarse4    8   0.5   4    replay  replay  # back off
 
 echo "========================================================="
 echo "summary"
