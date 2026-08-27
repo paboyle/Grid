@@ -26,6 +26,7 @@ Author: Peter Boyle <pboyle@bnl.gov>
 //   T2 cartesian ring == GlobalSumVector, same sweep
 //   T3 bitwise repeatable (deterministic order)
 //   T4 timing at 16 MB, both rings vs GlobalSumVector
+//   T5 CartesianRingAllGather bitwise == padded GlobalSumVector; timing at the dense-apply shape
 //
 //   mpirun -n 4 ./Test_ring_allreduce --grid 16.16.16.32 --mpi 1.1.2.2
 // (2D process grid so the cartesian variant exercises more than one ring)
@@ -100,6 +101,42 @@ int main(int argc, char **argv)
   Check<ComplexD>("ComplexD", grid, 1.0e-13);
   Check<RealF>   ("RealF   ", grid, 1.0e-5);
   Check<ComplexF>("ComplexF", grid, 1.0e-5);
+
+  // T5: CartesianRingAllGather == zero-padded GlobalSumVector, BITWISE
+  // (no arithmetic in either path for disjoint chunks), all types, chunk
+  // sizes including 1 element and non-multiples of anything.
+  {
+    int P=grid->ProcessorCount(), me=grid->ThisRank();
+    for(uint64_t chunk : std::vector<uint64_t>({1,3,64,1000,65537})){
+      uint64_t n=chunk*P;
+      std::vector<ComplexD> h(n,ComplexD(0.0,0.0)), ref;
+      for(uint64_t i=0;i<chunk;i++) h[me*chunk+i]=Fill<ComplexD>(me*chunk+i,me);
+      ref=h; grid->GlobalSumVector(&ref[0],(int)n);
+      deviceVector<ComplexD> d(n); acceleratorCopyToDevice(&h[0],&d[0],n*sizeof(ComplexD));
+      CartesianRingAllGather(grid,&d[0],chunk);
+      std::vector<ComplexD> out(n); acceleratorCopyFromDevice(&d[0],&out[0],n*sizeof(ComplexD));
+      RealD diff=(memcmp(&out[0],&ref[0],n*sizeof(ComplexD))!=0)?1.0:0.0; grid->GlobalSum(diff);
+      Report("T5 CartesianRingAllGather bitwise == padded GlobalSumVector, ComplexD chunk="+std::to_string(chunk), diff==0.0);
+    }
+    { uint64_t chunk=1001, n=chunk*P;
+      std::vector<ComplexF> h(n,ComplexF(0.0,0.0)), ref;
+      for(uint64_t i=0;i<chunk;i++) h[me*chunk+i]=Fill<ComplexF>(me*chunk+i,me);
+      ref=h; grid->GlobalSumVector(&ref[0],(int)n);
+      deviceVector<ComplexF> d(n); acceleratorCopyToDevice(&h[0],&d[0],n*sizeof(ComplexF));
+      CartesianRingAllGather(grid,&d[0],chunk);
+      std::vector<ComplexF> out(n); acceleratorCopyFromDevice(&d[0],&out[0],n*sizeof(ComplexF));
+      RealD diff=(memcmp(&out[0],&ref[0],n*sizeof(ComplexF))!=0)?1.0:0.0; grid->GlobalSum(diff);
+      Report("T5 CartesianRingAllGather bitwise, ComplexF chunk=1001", diff==0.0);
+    }
+    // timing: the dense-apply shape, N=138240 x 4 rhs of ComplexF, chunk = N*4/P
+    { uint64_t chunk=(uint64_t)138240*4/P, n=chunk*P;
+      deviceVector<ComplexF> d(n); std::vector<ComplexF> h(n,ComplexF(1.0,0.0)); acceleratorCopyToDevice(&h[0],&d[0],n*sizeof(ComplexF));
+      double t0=usecond(); CartesianRingAllGather(grid,&d[0],chunk); double t1=usecond();
+      acceleratorCopyToDevice(&h[0],&d[0],n*sizeof(ComplexF));
+      double t2=usecond(); CartesianRingAllReduce(grid,&d[0],n); double t3=usecond();
+      std::cout << GridLogMessage << "T5 timing N=138240 x 4 ComplexF (" << n*8/1.0e6 << " MB): allgather " << (t1-t0)/1000. << " ms, cartesian allreduce " << (t3-t2)/1000. << " ms" << std::endl;
+    }
+  }
 
   // T4 timing at 16 MB of ComplexF (the dense-apply size at 12 RHS is 13.3 MB)
   {

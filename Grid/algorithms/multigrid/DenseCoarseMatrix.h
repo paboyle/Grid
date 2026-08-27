@@ -119,6 +119,7 @@ public:
   deviceVector<ComplexF>  dSlab;
   deviceVector<ComplexF>  dX;       // N x MRHS_MAX
   deviceVector<ComplexF>  dY;       // nrows x MRHS_MAX
+  deviceVector<ComplexF>  dG;       // N x MRHS_MAX rank-major staging for the allgather (devSum==4)
   deviceVector<ComplexF>  dPartial; // NK x (nrows x MRHS_MAX)
   deviceVector<ComplexF*> aptrs;    // slab K-chunk pointers   (lda = N)
   deviceVector<ComplexF*> xptrs;    // X    K-chunk pointers   (ldb = N)
@@ -252,9 +253,11 @@ public:
       acceleratorCopyToDevice(&h[0],&cptrs[0],NK*sizeof(ComplexF*));
 
       devSum = getenv("DENSE_DEVICE_SUM") ? atoi(getenv("DENSE_DEVICE_SUM")) : 0;
-      const char *sumName[4] = {"host allreduce","DEVICE-buffer allreduce (GPU-aware MPI)",
-                                "DEVICE cartesian ring allreduce (P2P)","DEVICE flat ring allreduce (P2P)"};
-      GRID_ASSERT(devSum>=0 && devSum<=3);
+      const char *sumName[5] = {"host allreduce","DEVICE-buffer allreduce (GPU-aware MPI)",
+                                "DEVICE cartesian ring allreduce (P2P)","DEVICE flat ring allreduce (P2P)",
+                                "DEVICE cartesian ring ALLGATHER (P2P, ~8x fewer bytes than the padded allreduce)"};
+      GRID_ASSERT(devSum>=0 && devSum<=4);
+      if ( devSum==4 ) dG.resize((uint64_t)N*MRHS_MAX);
       std::cout << GridLogMessage << "DenseCoarseMatrix: slab resident on device ("
                 << sbytes/1024./1024. << " MB/rank), split-K NK=" << NK << " (Kc=" << Kc << "); "
                 << sumName[devSum] << std::endl;
@@ -957,7 +960,34 @@ public:
     int64_t  Kc = N / NK;
     double t1 = usecond();
     double t2, t3;
-    if (devSum) {
+    if (devSum==4) {
+      // ALLGATHER: x is not a reduction -- every rank owns rows
+      // [me*nrows,(me+1)*nrows) of x and needs all of it.  Only MY rows go
+      // host->device (nrows x nr, ~15 KB at nr=1), rank-major staged, gathered
+      // along the process grid, then scattered into the column-major dX
+      // (ld = N) the split-K GEMM reads.
+      const int me = grid->ThisRank();
+      const uint64_t chunk = (uint64_t)nrows*nr;              // my block: [r][i]
+      { GRID_TRACE("DenseH2D");
+        std::vector<ComplexF> hG(chunk);
+        for(int r=0;r<nr;r++)
+          memcpy(&hG[(uint64_t)r*nrows], &hX[(uint64_t)r*N + (uint64_t)me*nrows], nrows*sizeof(ComplexF));
+        acceleratorCopyToDevice(&hG[0], &dG[(uint64_t)me*chunk], chunk*sizeof(ComplexF));
+      }
+      t2 = usecond();
+      { GRID_TRACE("DenseAllgather");
+        CartesianRingAllGather(grid, (ComplexF *)&dG[0], chunk);
+        // scatter [q][r][i] -> dX[r*N + q*nrows + i]
+        ComplexF *g = &dG[0]; ComplexF *x = &dX[0];
+        const int64_t nrw = nrows; const int64_t NN = N; const int nrr = nr;
+        accelerator_for(idx, (uint64_t)N*nr, 1, {
+          int64_t r = idx / NN;  int64_t gi = idx - r*NN;
+          int64_t q = gi / nrw;  int64_t i  = gi - q*nrw;
+          x[idx] = g[q*(nrw*nrr) + r*nrw + i];
+        });
+      }
+      t3 = usecond();
+    } else if (devSum) {
       { GRID_TRACE("DenseH2D");
         acceleratorCopyToDevice(&hX[0],&dX[0],nX*sizeof(ComplexF));
       }
@@ -967,6 +997,7 @@ public:
         //                      above ~8 MB: 12 RHS at N=138240 is 13.3 MB)
         // DENSE_DEVICE_SUM=2 : CartesianRingAllReduce, P2P only, no size cliff
         // DENSE_DEVICE_SUM=3 : flat RingAllReduce, P2P only
+        // DENSE_DEVICE_SUM=4 : CartesianRingAllGather (branch above)
         if      (devSum==2) CartesianRingAllReduce(grid,(ComplexF *)&dX[0],nX);
         else if (devSum==3) RingAllReduce(grid,(ComplexF *)&dX[0],nX);
         else                grid->GlobalSumVector((ComplexF *)&dX[0], (int)nX);

@@ -4,7 +4,7 @@
 #SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=7
 #SBATCH --gpus-per-node=8
-#SBATCH --time=1:00:00
+#SBATCH --time=1:45:00
 #SBATCH --account=phy157_dwf
 #SBATCH --gpu-bind=none
 #SBATCH --exclusive
@@ -89,7 +89,7 @@ export DENSE_CC=1
 export DENSE_APPLY_PROFILE=1
 unset  DENSE_CC_CHECK
 export DENSE_SPLITK=128
-export DENSE_DEVICE_SUM=2          # cartesian P2P ring: no 8 MB device-allreduce cliff (NRHS=12 abort)
+export DENSE_DEVICE_SUM=4          # cartesian P2P ring ALLGATHER: ~8x fewer bytes than the padded allreduce (=2); no collectives, no size cliff
 export GRID_ALLOC_NCACHE_LARGE=64
 export NRHS=4
 export PowerIterations=0
@@ -129,16 +129,19 @@ run_cell () {
   grep -h "SCHUR fp64 distributed invert took\|GB/s/rank" $fname | sed 's/^Grid : Message : [0-9.]* s : //' | cut -c1-120 | head -2
 }
 
-#          name        Fso  Fss   Csn  fine    coarse
-run_cell   L0_overshoot 12  1.0   6    replay  gcr     # the converged overshoot (M3), now with last-call selection + refresh 5
-run_cell   L1_csn2      12  1.0   2    replay  gcr     # coarse smoother back to the banked 2 steps
-run_cell   L2_fso8      8   1.0   2    replay  gcr
-run_cell   L3_fss05     8   0.5   2    replay  gcr
-run_cell   L4_banked    6   0.5   2    replay  gcr     # nearest to the banked adaptive point
-# Coarse replay: same lesson as the fine level -- record a DECENT polynomial
-# first (overshoot: 6-step coarse smoother, shift 2.0) and back off from there.
-run_cell   L5_coarse6    8   0.5   6    replay  replay  # coarse frozen at a 6-step polynomial (overshoot)
-run_cell   L6_coarse4    8   0.5   4    replay  replay  # back off
+# The (order x shift) table at Csn=2, one axis at a time from the overshoot,
+# so a failing cell identifies WHICH knob it needed.  Reference: 28.57 s.
+#          name          Fso  Fss   Csn  fine    coarse
+run_cell   L0_overshoot   12   1.0   6    replay  gcr     # M3's point with last-call selection + record 8..16 + refresh 5
+run_cell   L1_12_10       12   1.0   2    replay  gcr     # coarse smoother back to 2 steps; the row/column anchor
+run_cell   L2_08_10       8    1.0   2    replay  gcr     # order axis
+run_cell   L3_06_10       6    1.0   2    replay  gcr
+run_cell   L4_12_05       12   0.5   2    replay  gcr     # shift axis
+run_cell   L5_08_05       8    0.5   2    replay  gcr
+run_cell   L6_06_05       6    0.5   2    replay  gcr     # nearest to the banked adaptive point (Fso6/Fss0.1)
+# Coarse replay: record a DECENT polynomial first (6-step, shift 2.0) and back off.
+run_cell   L7_coarse6     8    1.0   6    replay  replay
+run_cell   L8_coarse4     8    1.0   4    replay  replay
 
 echo "========================================================="
 echo "summary"
