@@ -121,6 +121,7 @@ public:
   deviceVector<ComplexF>  dY;       // nrows x MRHS_MAX
   deviceVector<ComplexF>  dG;       // N x MRHS_MAX lex-major staging for the allgather (devSum==4)
   deviceVector<int>       dLex2Rank;// lex index of a process coordinate -> its rank (allgather block order -> row-block order)
+  deviceVector<int64_t>   dRm2G;    // rank-major index (rank*nrows + ss*nbasis + b) -> global column (gsite*nbasis + b) of x / the slab
   int                     myLex;
   deviceVector<ComplexF>  dPartial; // NK x (nrows x MRHS_MAX)
   deviceVector<ComplexF*> aptrs;    // slab K-chunk pointers   (lda = N)
@@ -270,6 +271,15 @@ public:
         acceleratorCopyToDevice(&l2r[0], &dLex2Rank[0], P*sizeof(int));
         myLex = CartesianLexIndex(grid);
         GRID_ASSERT( l2r[myLex] == grid->ThisRank() );
+        // x and the slab columns are in GLOBAL-SITE order (hX[myGsite*nbasis+b]);
+        // the gathered blocks are in RANK-MAJOR order (rank*nrows + ss*nbasis + b).
+        // On one rank the two coincide, which is how the laptop passed while
+        // Frontier VERIFYed 0.9965 (2026-08-27).  Scatter through the inverse map.
+        std::vector<int64_t> g2rm; BuildRankMajorMap(g2rm);
+        std::vector<int64_t> rm2g(N); for(int64_t g=0; g<N; g++) rm2g[g2rm[g]] = g;
+        for(int ss=0; ss<lsites; ss++) GRID_ASSERT( rm2g[(int64_t)grid->ThisRank()*nrows + (int64_t)ss*nbasis] == myGsite[ss]*nbasis );
+        dRm2G.resize(N);
+        acceleratorCopyToDevice(&rm2g[0], &dRm2G[0], N*sizeof(int64_t));
       }
       std::cout << GridLogMessage << "DenseCoarseMatrix: slab resident on device ("
                 << sbytes/1024./1024. << " MB/rank), split-K NK=" << NK << " (Kc=" << Kc << "); "
@@ -974,29 +984,30 @@ public:
     double t1 = usecond();
     double t2, t3;
     if (devSum==4) {
-      // ALLGATHER: x is not a reduction -- every rank owns rows
-      // [me*nrows,(me+1)*nrows) of x and needs all of it.  Only MY rows go
-      // host->device (nrows x nr, ~15 KB at nr=1), rank-major staged, gathered
-      // along the process grid, then scattered into the column-major dX
-      // (ld = N) the split-K GEMM reads.
-      const int me = grid->ThisRank();
-      const uint64_t chunk = (uint64_t)nrows*nr;              // my block: [r][i]
+      // ALLGATHER: x is not a reduction -- every rank owns the rows of x at
+      // global columns myGsite[ss]*nbasis+b (scattered by site coordinate, NOT
+      // a contiguous block) and needs all of it.  Only MY rows go host->device
+      // (nrows x nr, ~15 KB at nr=1), packed rank-major [r][ss*nbasis+b],
+      // gathered along the process grid, then scattered through rm2g into the
+      // column-major dX (ld = N, global-site columns) the split-K GEMM reads.
+      const uint64_t chunk = (uint64_t)nrows*nr;              // my block: [r][ss*nbasis+b]
       { GRID_TRACE("DenseH2D");
         std::vector<ComplexF> hG(chunk);
         for(int r=0;r<nr;r++)
-          memcpy(&hG[(uint64_t)r*nrows], &hX[(uint64_t)r*N + (uint64_t)me*nrows], nrows*sizeof(ComplexF));
+          for(int ss=0; ss<lsites; ss++)
+            memcpy(&hG[(uint64_t)r*nrows + (uint64_t)ss*nbasis], &hX[(uint64_t)r*N + (uint64_t)myGsite[ss]*nbasis], nbasis*sizeof(ComplexF));
         acceleratorCopyToDevice(&hG[0], &dG[(uint64_t)myLex*chunk], chunk*sizeof(ComplexF));   // my slot is my LEX index
       }
       t2 = usecond();
       { GRID_TRACE("DenseAllgather");
         CartesianRingAllGather(grid, (ComplexF *)&dG[0], chunk);
-        // scatter lex block L=[r][i] -> dX[r*N + rank(L)*nrows + i]
-        ComplexF *g = &dG[0]; ComplexF *x = &dX[0]; int *l2r = &dLex2Rank[0];
+        // scatter lex block L=[r][i] -> dX[r*N + rm2g[rank(L)*nrows + i]]
+        ComplexF *g = &dG[0]; ComplexF *x = &dX[0]; int *l2r = &dLex2Rank[0]; int64_t *rm2g = &dRm2G[0];
         const int64_t nrw = nrows; const int64_t NN = N; const int nrr = nr;
         accelerator_for(idx, (uint64_t)N*nr, 1, {
           int64_t r = idx / NN;  int64_t gi = idx - r*NN;
           int64_t L = gi / nrw;  int64_t i  = gi - L*nrw;
-          x[r*NN + (int64_t)l2r[L]*nrw + i] = g[L*(nrw*nrr) + r*nrw + i];
+          x[r*NN + rm2g[(int64_t)l2r[L]*nrw + i]] = g[L*(nrw*nrr) + r*nrw + i];
         });
       }
       t3 = usecond();
