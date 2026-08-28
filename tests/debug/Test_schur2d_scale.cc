@@ -76,20 +76,13 @@ static ComplexD Fill(int64_t i, int64_t j, int64_t N)
 
 int main(int argc, char **argv)
 {
-  // Environment walk (2026-08-27): the SAME inverse runs 20.8 s in the SLATE
-  // harness and 26.5 s in the example, with the local GPU work (GEMM, leaf
-  // inverse) 25-40% slower in the example.  Knobs to reproduce the example's
-  // environment here, one at a time (systems/Frontier/schur2d_env.job):
-  //   GRID_MPI_THREAD_MULTIPLE=1  MPI_Init_thread(MULTIPLE) before Grid_init (SLATE harness does this)
-  //   S2D_BALLAST_GB=x            x GB of Lattice fields made device-resident before the invert
-  //                               (the example carries ~10.6 GB of fine-grid state in the MemoryManager)
-  //   OMP_NUM_THREADS             set in the job, read by nothing here but the runtime
-  if ( getenv("GRID_MPI_THREAD_MULTIPLE") ) {
-    int provided = 0;
-    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-    std::cout << "GRID_MPI_THREAD_MULTIPLE: requested MPI_THREAD_MULTIPLE, provided " << provided
-              << (provided==MPI_THREAD_MULTIPLE ? " (MULTIPLE)" : " (NOT multiple)") << std::endl;
-  }
+  // Environment walk (2026-08-27, systems/Frontier/schur2d_env.job): knobs to
+  // reproduce the example's environment here, one at a time.  Result: thread
+  // level, OMP_NUM_THREADS, device residency and sustained load all NIL; only
+  // "first job step on fresh nodes" (+3 s) is real.
+  //   S2D_BALLAST_GB=x     x GB of Lattice fields made device-resident before the invert
+  //   S2D_PREHEAT_S=x      x seconds of back-to-back zgemm before the invert
+  //   OMP_NUM_THREADS      set in the job, read by nothing here but the runtime
   Grid_init(&argc, &argv);
 
   GridCartesian *grid = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(),

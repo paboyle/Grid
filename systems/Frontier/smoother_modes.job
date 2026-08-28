@@ -102,10 +102,8 @@ export PolyRecordIters=8           # outer steps recorded
 export PolyRecordStart=8           # ...starting here: the early-step polynomials are unrepresentative (M3)
 export PolyRecordSelect=last       # replay ONE recorded call's polynomial (PB: every individual call beats the coefficient mean)
 export PolyRefresh=5               # re-record every 5 outer steps: BFM BfmHDCG.C:2243, k%5==1 -> LdopM1MirsPolyRecord, single call, replayed 4 steps
-# Inverse ring-rate hypotheses, ONE AT A TIME: (1) OMP_NUM_THREADS=1 (set above);
-# (2) if (1) fails, uncomment the two lines below (harness ran 62 s with these).
-#export MPICH_MAX_THREAD_SAFETY=multiple
-#export GRID_MPI_THREAD_MULTIPLE=1
+# Inverse ring-rate hypotheses (2026-08-27): OMP threads and MPI thread level both NIL
+# (schur2d_env.job); the cause was partial ring participation -> SCHUR2D_LEAF_SPAN.
 export PolyVerbose=1               # frozen smoothers print |r_m|/|r_0| per call: separates 'bad polynomial' from 'linear V-cycle stagnates the outer'
 export FineChebLo=3.0              # harvested |R|<0.1 edge / PowerIteration edge x1.05
 export FineChebHi=137.0

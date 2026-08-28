@@ -556,17 +556,6 @@ public:
 
 int main (int argc, char ** argv)
 {
-  // GRID_MPI_THREAD_MULTIPLE=1: initialise MPI at MPI_THREAD_MULTIPLE before
-  // Grid_init (Grid asks for SERIALIZED).  The SLATE harness does this and its
-  // copy of the 2D inverse ran at ~2x the production ring rate (62 s vs
-  // 133-141 s).  Second hypothesis behind OMP_NUM_THREADS; test one at a time.
-  // Pair with MPICH_MAX_THREAD_SAFETY=multiple.
-  if ( getenv("GRID_MPI_THREAD_MULTIPLE") ) {
-    int provided = 0;
-    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-    std::cout << "GRID_MPI_THREAD_MULTIPLE: requested MPI_THREAD_MULTIPLE, provided " << provided
-              << (provided==MPI_THREAD_MULTIPLE ? " (MULTIPLE)" : " (NOT multiple)") << std::endl;
-  }
   Grid_init(&argc,&argv);
   ParseEnvironment();
 

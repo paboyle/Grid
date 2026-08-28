@@ -4,7 +4,7 @@
 #SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=7
 #SBATCH --gpus-per-node=8
-#SBATCH --time=0:30:00
+#SBATCH --time=0:20:00
 #SBATCH --account=phy157_dwf
 #SBATCH --gpu-bind=none
 #SBATCH --exclusive
@@ -66,9 +66,29 @@ run_cell () {
 }
 
 #          name        nodes ntask  geom      vol
-run_cell   N1_8gcd     1     8      1.1.2.4   16.16.32.64
-run_cell   N4_32gcd    4     32     2.2.2.4   32.32.32.64
-run_cell   N36_288gcd  36    288    3.6.4.4   48.48.48.96
+#run_cell   N1_8gcd     1     8      1.1.2.4   16.16.32.64      # done 2026-08-27
+#run_cell   N4_32gcd    4     32     2.2.2.4   32.32.32.64      # done: MPI <1 MB, rings above, 2-2.5x at 512 MB
+#run_cell   N36_288gcd  36    288    3.6.4.4   48.48.48.96      # done: MPI <2 MB, cart 2-48 MB, flat above (3x at 512 MB);
+                                                               #       SCALAR: GlobalSumP2P 0.4 ms min / 12.8 ms MEAN vs MPI 45 us (!)
+
+# SCALAR-ONLY sweep at 288 ranks (BENCH_MAX_MB=0 skips the vector tables; each cell ~30 s):
+# S0 back-to-back as measured; S1 with ~2 ms of GPU work between sums (the solver's condition:
+# fine-smoother steps are 16 ms apart incl. a ~10 ms matvec, so the solver cannot be paying
+# 12 ms per reduction); S2-S3 one environment knob each.  Readout: the five "min/mean us" lines.
+export BENCH_MAX_MB=0
+scalar_cell () { name=$1; shift; run_cell_env "$name" 36 288 3.6.4.4 48.48.48.96 "$@"; }
+run_cell_env () {
+  name=$1; nodes=$2; ntask=$3; geom=$4; vol=$5; shift 5
+  echo "----- $name : $* -----"
+  fname=log.allreduce.$name
+  env "$@" srun -N$nodes -n$ntask --kill-on-bad-exit=1 ./select_gpu $BIN --mpi $geom --grid $vol $OPTS1 > $fname 2>&1
+  echo "  exit $?"; sleep 20
+  grep -h "==== SCALAR\|gap kernel\| min .* us" $fname | sed 's/^Grid : Message : [0-9.]* s : //' | cut -c1-140
+}
+scalar_cell  S0_tight        BENCH_SCALAR_GAP_US=0
+scalar_cell  S1_gap2ms       BENCH_SCALAR_GAP_US=2000
+scalar_cell  S2_gap2ms_omp1  BENCH_SCALAR_GAP_US=2000 OMP_NUM_THREADS=1
+scalar_cell  S3_gap2ms_nogpu BENCH_SCALAR_GAP_US=2000 MPICH_GPU_SUPPORT_ENABLED=0
 
 echo "========================================================="
 echo "done: see log.allreduce.N1_8gcd, N4_32gcd, N36_288gcd"

@@ -48,8 +48,16 @@ Author: Peter Boyle <pboyle@bnl.gov>
 // GlobalSumVector(1) vs the two rings at n=1.
 //
 //   mpirun -n 8 ./Benchmark_allreduce --grid 16.16.16.32 --mpi 1.1.2.4
-//   env: BENCH_MIN_KB (4)  BENCH_MAX_MB (512)  BENCH_REPS (5)
+//   env: BENCH_MIN_KB (4)  BENCH_MAX_MB (512; 0 = scalar section only)  BENCH_REPS (5)
 //        BENCH_MPI_DEV_MAX_MB (4: above this MPI-dev is skipped, not attempted)
+//        BENCH_SCALAR_REPS (200)
+//        BENCH_SCALAR_GAP_US (0): a device kernel of about this many us between
+//        scalar reps.  Back-to-back sums (gap 0) measured GlobalSumP2P at 12.8 ms
+//        mean / 0.4 ms min at P=288 vs MPI 45 us (2026-08-27), yet the solver's
+//        fine-smoother steps (16 ms incl. a ~10 ms matvec) cannot be paying that
+//        per reduction: the solver spaces its sums by ms of GPU work.  The gap
+//        reproduces the solver's condition; if P2P is fast with a gap and slow
+//        without, the tight loop is the pathology, not the primitive.
 //////////////////////////////////////////////////////////////////////////////
 
 #include <Grid/Grid.h>
@@ -149,25 +157,44 @@ void Run(GridCartesian *grid, const char *tname, uint64_t nbytes_lo, uint64_t nb
   }
 }
 
-void Scalar(GridCartesian *grid, int reps)
+void Scalar(GridCartesian *grid, int reps, double gap_us)
 {
   int me=grid->ThisRank();
-  Stats<RealD> sP2P, sBare, sVec, sCart, sFlat;
+  Stats<RealD> sP2P, sBare, sVec, sCart, sFlat, sP2Pdirect;
   RealD x; deviceVector<RealD> d(1); std::vector<RealD> h(1);
+  // gap: a bandwidth-bound device kernel sized to take ~gap_us (calibrated once)
+  uint64_t gapN = 0; deviceVector<RealD> gapbuf(1);
+  if ( gap_us > 0 ) {
+    gapN = 1<<20; gapbuf.resize(gapN);
+    RealD *g=&gapbuf[0];
+    accelerator_for(i,gapN,1,{ g[i]=1.0; });
+    double t0=usecond(); accelerator_for(i,gapN,1,{ g[i]=g[i]*1.000001+1.0e-9; }); double t1=usecond();
+    double per = (t1-t0)/gapN;                              // us per element at this size
+    gapN = (uint64_t)std::max(1.0, gap_us/std::max(per,1.0e-6)); gapbuf.resize(gapN);
+    g=&gapbuf[0]; accelerator_for(i,gapN,1,{ g[i]=1.0; });
+    double t2=usecond(); accelerator_for(i,gapN,1,{ g[i]=g[i]*1.000001+1.0e-9; }); double t3=usecond();
+    if ( me==0 ) std::cout << GridLogMessage << "Scalar gap kernel: " << gapN << " elements, " << (t3-t2) << " us (requested " << gap_us << ")" << std::endl;
+  }
+  auto gap=[&](void){ if(gapN){ RealD *g=&gapbuf[0]; accelerator_for(i,gapN,1,{ g[i]=g[i]*1.000001+1.0e-9; }); } };
+  // A Barrier before each timed call so that node skew (from the gap kernel or
+  // anything else) is not charged to the reduction: the timer measures the
+  // collective from a synchronised start.
   for(int r=0;r<reps;r++){
-    x=1.0+me;   { double t0=usecond(); grid->GlobalSum(x);                 sP2P.add(usecond()-t0); }
-    h[0]=1.0+me;{ double t0=usecond(); BareAllreduce(grid,&h[0],1);        sBare.add(usecond()-t0); }
-    h[0]=1.0+me;{ double t0=usecond(); grid->GlobalSumVector(&h[0],1);     sVec.add(usecond()-t0); }
-    acceleratorPut(d[0],h[0]); { double t0=usecond(); CartesianRingAllReduce(grid,&d[0],1); sCart.add(usecond()-t0); }
-    acceleratorPut(d[0],h[0]); { double t0=usecond(); RingAllReduce(grid,&d[0],1);          sFlat.add(usecond()-t0); }
+    gap(); x=1.0+me;   grid->Barrier(); { double t0=usecond(); grid->GlobalSum(x);                 sP2P.add(usecond()-t0); }
+    gap(); x=1.0+me;   grid->Barrier(); { double t0=usecond(); grid->GlobalSumP2P(x);              sP2Pdirect.add(usecond()-t0); }
+    gap(); h[0]=1.0+me;grid->Barrier(); { double t0=usecond(); BareAllreduce(grid,&h[0],1);        sBare.add(usecond()-t0); }
+    gap(); h[0]=1.0+me;grid->Barrier(); { double t0=usecond(); grid->GlobalSumVector(&h[0],1);     sVec.add(usecond()-t0); }
+    gap(); acceleratorPut(d[0],h[0]); grid->Barrier(); { double t0=usecond(); CartesianRingAllReduce(grid,&d[0],1); sCart.add(usecond()-t0); }
+    gap(); acceleratorPut(d[0],h[0]); grid->Barrier(); { double t0=usecond(); RingAllReduce(grid,&d[0],1);          sFlat.add(usecond()-t0); }
   }
   auto mx=[&](double v){ RealD y=v; grid->GlobalMax(y); return (double)y; };
   auto line=[&](const char *nm, Stats<RealD> &st){
     double tmin=mx(st.tmin), tmean=mx(st.tsum/st.n);
     if ( me==0 ) std::cout << GridLogMessage << "  " << std::setw(34) << std::left << nm << std::right
                            << " min " << std::setw(8) << tmin << " us   mean " << std::setw(8) << tmean << " us" << std::endl; };
-  if ( me==0 ) std::cout << GridLogMessage << "==== SCALAR latency (RealD, " << reps << " reps, slowest rank)  P=" << grid->ProcessorCount() << std::endl;
+  if ( me==0 ) std::cout << GridLogMessage << "==== SCALAR latency (RealD, " << reps << " reps, slowest rank, Barrier before each timed call, gap " << gap_us << " us)  P=" << grid->ProcessorCount() << std::endl;
   line("GlobalSum(RealD) = GlobalSumP2P",   sP2P);
+  line("GlobalSum(RealD) = GlobalSumP2Pdirect",   sP2Pdirect);
   line("bare MPI_Allreduce(1 double)",       sBare);
   line("GlobalSumVector(double*,1) [MPI]",   sVec);
   line("CartesianRingAllReduce n=1 (device)",sCart);
@@ -178,7 +205,8 @@ int main(int argc, char **argv)
 {
   Grid_init(&argc, &argv);
   GridCartesian *grid = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd, vComplexD::Nsimd()), GridDefaultMpi());
-  Scalar(grid, getenv("BENCH_SCALAR_REPS") ? atoi(getenv("BENCH_SCALAR_REPS")) : 200);
+  Scalar(grid, getenv("BENCH_SCALAR_REPS") ? atoi(getenv("BENCH_SCALAR_REPS")) : 200,
+               getenv("BENCH_SCALAR_GAP_US") ? atof(getenv("BENCH_SCALAR_GAP_US")) : 0.0);
   uint64_t lo   = (getenv("BENCH_MIN_KB")         ? atol(getenv("BENCH_MIN_KB"))         : 4) * 1024ull;
   uint64_t hi   = (getenv("BENCH_MAX_MB")         ? atol(getenv("BENCH_MAX_MB"))         : 512) * 1024ull*1024ull;
   int      reps = getenv("BENCH_REPS")            ? atoi(getenv("BENCH_REPS"))            : 5;
