@@ -56,24 +56,32 @@ module load libfabric
 
 BIN=$root/examples/Example_pvdagm_v2_3level_DenseCoarseMatrix
 OPTS1="--accelerator-threads 8 --shm 4096 --shm-mpi 1"
-vol=16.16.16.32
+# LOCAL VOLUME MATCHED to production: 48.48.48.96 on 3.6.4.4 is local 16.8.12.24; on 8 GCDs
+# (1.1.2.4) that is global 16.8.24.96 with the production blockings 2.2.3.3 / 4.4.2.4:
+# coarse local 8.4.4.8 and coarse-coarse local 2.1.2.2 exactly as at 288 ranks.  The global
+# lattice is oddly shaped and the dense bottom is tiny (N = 2.1.4.8 x 60 = 3840, one block),
+# but every solver-side buffer has the production shape.  (First submission, 2026-08-28,
+# used 16.16.16.32 with 2^4 blocks: local 16.16.8.8 -- NOT matched.)
+vol=16.8.24.96
 MPI_GEOM=1.1.2.4
+# The example sizes its lattice from LATT/LS (env), NOT from --grid (first submission
+# asserted heap_bytes<heap_size trying to build 48^3x96 on one node for exactly this reason).
+export LATT=$vol
+export LS=24
 
-# Small-lattice setup: 16^3x32 on 8 GCDs, blocks 2^4 twice -> coarse 8.8.8.16, coarse-coarse
-# 4.4.4.8 (N = 512 x 60 = 30720, 8 blocks of 3840 on a 2x4 grid; SCHUR2D_LEAF_SPAN=2 -> W=7680 leaves).
 # The subspace is generated on first use and saved to SUBSPACE_FILE (a few minutes).
-export SUBSPACE_FILE=$PWD/subspace_16x32_nb64.scidac
+export SUBSPACE_FILE=$PWD/subspace_16x8x24x96_nb64.scidac
 unset  SLAB_FILE
 export HOT_START=1
 export MASS=0.00078
-export BLOCK=2.2.2.2
-export BLOCK2=2.2.2.2
+export BLOCK=2.2.3.3
+export BLOCK2=4.4.2.4
 export DENSE_SCHUR=1
 export DENSE_SCHUR2D=1
 export DENSE_CC=1
-export DENSE_SPLITK=8
+export DENSE_SPLITK=1
 export DENSE_DEVICE_SUM=4
-export SCHUR2D_LEAF_SPAN=2
+export SCHUR2D_LEAF_SPAN=1
 export SCHUR2D_LEAF_LU=1
 export SCHUR2D_PROBE=0
 export GRID_ALLOC_NCACHE_LARGE=64
