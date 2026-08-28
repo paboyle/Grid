@@ -1,0 +1,75 @@
+#!/bin/bash -l
+#SBATCH --job-name=allreduce-bench
+#SBATCH --nodes=36
+#SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=7
+#SBATCH --gpus-per-node=8
+#SBATCH --time=0:30:00
+#SBATCH --account=phy157_dwf
+#SBATCH --gpu-bind=none
+#SBATCH --exclusive
+#SBATCH --mem=0
+#SBATCH -S 0
+
+##############################################################################
+# Benchmark_allreduce at 1, 4 and 36 nodes from one allocation: MPI_Allreduce
+# (host and device buffers) vs CartesianRingAllReduce vs flat RingAllReduce
+# (device, and host with explicit staging), 4 KB .. 512 MB, RealF and RealD.
+# Decides whether GlobalSumVector wants a size threshold or simply the ring
+# (deterministic, no size cliff) everywhere.  Cray MPICH's device-buffer
+# allreduce aborted above ~8 MB (MPI_FLOAT) in earlier runs: MPI-dev is
+# attempted only up to BENCH_MPI_DEV_MAX_MB (4); raise it to probe the cliff.
+#
+# Readout: the tables (one per type per node count).  Columns are ms (min of
+# reps, slowest rank), payload GB/s and "wire" GB/s (bytes each ring actually
+# moves / time).  Compare MPI-host with cart-dev / flat-dev at each size; the
+# crossovers, if any, should move with P as sum_d 2(P_d-1) vs 2(P-1) steps.
+##############################################################################
+
+cat << EOF > select_gpu
+#!/bin/bash
+export GPU_MAP=(0 1 2 3 7 6 5 4)
+export NUMA_MAP=(3 3 1 1 2 2 0 0)
+export GPU=\${GPU_MAP[\$SLURM_LOCALID]}
+export NUMA=\${NUMA_MAP[\$SLURM_LOCALID]}
+export HIP_VISIBLE_DEVICES=\$GPU
+unset ROCR_VISIBLE_DEVICES
+if [ \$SLURM_PROCID = "0" ]; then echo \$*; fi
+exec numactl -m \$NUMA -N \$NUMA \$*
+EOF
+chmod +x ./select_gpu
+
+root=$HOME/ParallelIO/systems/Frontier
+source $root/sourceme-rocm7.2.sh
+
+export OMP_NUM_THREADS=7
+export MPICH_GPU_SUPPORT_ENABLED=1
+export MPICH_SMP_SINGLE_COPY_MODE=CMA
+export MPICH_OFI_NIC_POLICY=GPU
+module load libfabric
+
+BIN=$root/benchmarks/Benchmark_allreduce
+OPTS1="--accelerator-threads 8 --shm 4096 --shm-mpi 1 --device-mem 32000"
+export BENCH_MIN_KB=4
+export BENCH_MAX_MB=512
+export BENCH_REPS=5
+export BENCH_MPI_DEV_MAX_MB=4
+export BENCH_SCALAR_REPS=200
+
+run_cell () {
+  name=$1; nodes=$2; ntask=$3; geom=$4; vol=$5
+  echo "----- $name : $nodes nodes, $ntask ranks, --mpi $geom -----"
+  fname=log.allreduce.$name
+  srun -N$nodes -n$ntask --kill-on-bad-exit=1 ./select_gpu $BIN --mpi $geom --grid $vol $OPTS1 > $fname 2>&1
+  echo "  exit $?"; sleep 20
+  grep -h "====\|bytes  *elements\|| .* |\| min .* us" $fname | sed 's/^Grid : Message : [0-9.]* s : //' | cut -c1-175
+}
+
+#          name        nodes ntask  geom      vol
+run_cell   N1_8gcd     1     8      1.1.2.4   16.16.32.64
+run_cell   N4_32gcd    4     32     2.2.2.4   32.32.32.64
+run_cell   N36_288gcd  36    288    3.6.4.4   48.48.48.96
+
+echo "========================================================="
+echo "done: see log.allreduce.N1_8gcd, N4_32gcd, N36_288gcd"
+echo "========================================================="
