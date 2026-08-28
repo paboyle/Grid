@@ -32,6 +32,13 @@
 #         dense bottom or MemoryManager eviction is involved.
 ##############################################################################
 
+# Run in a per-job subdirectory on Lustre: logs, per-rank --debug-stdout trees and GPU
+# core files are large and must not land in $HOME (quota).  Everything below is
+# relative to RUNDIR; the job's own slurm-*.out stays where sbatch was run.
+LUSTRE=/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle
+RUNDIR=$LUSTRE/runs/${SLURM_JOB_NAME}_${SLURM_JOB_ID}
+mkdir -p $RUNDIR && cd $RUNDIR && echo "RUNDIR $RUNDIR"
+
 cat << EOF > select_gpu
 #!/bin/bash
 export GPU_MAP=(0 1 2 3 7 6 5 4)
@@ -49,6 +56,10 @@ root=$HOME/ParallelIO/systems/Frontier
 source $root/sourceme-rocm7.2.sh
 
 export OMP_NUM_THREADS=7
+# No core dumps: the ROCm runtime's GPU core dump (gpucore.<pid>, ~22 GB per faulting GCD, the
+# .nfs quota disaster of 2026-08-25) obeys ulimit -c like the kernel's (ROCgdb docs, "AMD GPU
+# core dumps"); Slurm propagates the batch shell's limits to srun tasks by default.
+ulimit -c 0
 export MPICH_GPU_SUPPORT_ENABLED=1
 export MPICH_SMP_SINGLE_COPY_MODE=CMA
 export MPICH_OFI_NIC_POLICY=GPU
@@ -70,7 +81,7 @@ export LATT=$vol
 export LS=24
 
 # The subspace is generated on first use and saved to SUBSPACE_FILE (a few minutes).
-export SUBSPACE_FILE=$PWD/subspace_16x8x24x96_nb64.scidac
+export SUBSPACE_FILE=$LUSTRE/subspace_16x8x24x96_nb64.scidac   # persistent across jobs (generated once)
 unset  SLAB_FILE
 export HOT_START=1
 export MASS=0.00078

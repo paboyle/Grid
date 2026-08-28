@@ -160,7 +160,7 @@ void Run(GridCartesian *grid, const char *tname, uint64_t nbytes_lo, uint64_t nb
 void Scalar(GridCartesian *grid, int reps, double gap_us)
 {
   int me=grid->ThisRank();
-  Stats<RealD> sP2P, sBare, sVec, sCart, sFlat, sP2Pdirect;
+  Stats<RealD> sP2P, sBare, sVec, sCart, sFlat, sP2Pdirect, sP2Phead;
   RealD x; deviceVector<RealD> d(1); std::vector<RealD> h(1);
   // gap: a bandwidth-bound device kernel sized to take ~gap_us (calibrated once)
   uint64_t gapN = 0; deviceVector<RealD> gapbuf(1);
@@ -179,7 +179,14 @@ void Scalar(GridCartesian *grid, int reps, double gap_us)
   // A Barrier before each timed call so that node skew (from the gap kernel or
   // anything else) is not charged to the reduction: the timer measures the
   // collective from a synchronised start.
+  // The same GlobalSum is timed twice per rep: first thing after the previous
+  // rep's flat ring (574 Sendrecvs per rank at P=288, staggered exit), and again
+  // after the MPI calls.  2026-08-28 at P=288: first-position mean 198 us vs 51 us
+  // for the identical primitive one line later -- position, not the wrapper
+  // (StepLog is a pointer assignment).  If "head" stays slow and "P2P" matches
+  // the direct call, MPI is draining the ring's backlog into the next P2P call.
   for(int r=0;r<reps;r++){
+    gap(); x=1.0+me;   grid->Barrier(); { double t0=usecond(); grid->GlobalSum(x);                 sP2Phead.add(usecond()-t0); }
     gap(); x=1.0+me;   grid->Barrier(); { double t0=usecond(); grid->GlobalSum(x);                 sP2P.add(usecond()-t0); }
     gap(); x=1.0+me;   grid->Barrier(); { double t0=usecond(); grid->GlobalSumP2P(x);              sP2Pdirect.add(usecond()-t0); }
     gap(); h[0]=1.0+me;grid->Barrier(); { double t0=usecond(); BareAllreduce(grid,&h[0],1);        sBare.add(usecond()-t0); }
@@ -190,11 +197,12 @@ void Scalar(GridCartesian *grid, int reps, double gap_us)
   auto mx=[&](double v){ RealD y=v; grid->GlobalMax(y); return (double)y; };
   auto line=[&](const char *nm, Stats<RealD> &st){
     double tmin=mx(st.tmin), tmean=mx(st.tsum/st.n);
-    if ( me==0 ) std::cout << GridLogMessage << "  " << std::setw(34) << std::left << nm << std::right
+    if ( me==0 ) std::cout << GridLogMessage << "  " << std::setw(42) << std::left << nm << std::right
                            << " min " << std::setw(8) << tmin << " us   mean " << std::setw(8) << tmean << " us" << std::endl; };
   if ( me==0 ) std::cout << GridLogMessage << "==== SCALAR latency (RealD, " << reps << " reps, slowest rank, Barrier before each timed call, gap " << gap_us << " us)  P=" << grid->ProcessorCount() << std::endl;
-  line("GlobalSum(RealD) = GlobalSumP2P",   sP2P);
-  line("GlobalSum(RealD) = GlobalSumP2Pdirect",   sP2Pdirect);
+  line("GlobalSum(RealD) [head: 1st after flat ring]", sP2Phead);
+  line("GlobalSum(RealD) = GlobalSumP2P [2nd]", sP2P);
+  line("GlobalSumP2P direct [3rd]",          sP2Pdirect);
   line("bare MPI_Allreduce(1 double)",       sBare);
   line("GlobalSumVector(double*,1) [MPI]",   sVec);
   line("CartesianRingAllReduce n=1 (device)",sCart);
