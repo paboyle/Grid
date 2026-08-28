@@ -24,6 +24,7 @@ void  MemoryManager::PrintState(void* CpuPtr)
 std::cout << GridLogMessage << "Host<->Device memory movement not currently managed by Grid." << std::endl;
 };
 void  MemoryManager::Print(void){};
+void  MemoryManager::EvictAll(void){};   // nothing to evict in unified memory
 void  MemoryManager::PrintAll(void){};
 void  MemoryManager::NotifyDeletion(void *ptr){};
 

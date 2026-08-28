@@ -708,23 +708,9 @@ int main (int argc, char ** argv)
   }
   SetFineSloppy(0);
 
-  // Stay on the batch grid: the L2 coarsening drives this operator at the
-  // batch. It is switched to the solve Nrhs once L2 is built.
-
-  //////////////////////////////////////////////////////////////////////
-  // psi_coarse = P^dag (RAW fine null) -> Galerkin images that carry the
-  // near null content, and are free: A_c (P psi) = P A psi.
-  //////////////////////////////////////////////////////////////////////
-  MultiRHSBlockProject<LatticeFermionD> MrhsProjector;
-  MrhsProjector.Allocate(nbasis,FGrid,Coarse5d);
-  MrhsProjector.ImportBasis(AggregatesGCR.subspace);   // block orthonormal basis
-
-  std::vector<CoarseVector> psi_coarse(nbasis,Coarse5d);
-  MrhsProjector.blockProject(rawNull,psi_coarse);      // RAW vectors in
-  rawNull.clear(); rawNull.shrink_to_fit();
-
-  GramGuard("psi_coarse",psi_coarse,Coarse5d);
-
+  // (moved here 2026-08-28: it needs AggregatesGCR.subspace, which is freed right after
+  //  the projector imports it below -- the 60 fine vectors are 20 GB of host memory per
+  //  rank and 60 LRU-eligible device fields competing with the solver's working set)
   //////////////////////////////////////////////////////////////////////
   // Optional cross check of the coarse matrix elements against the V1
   // path, which needs a vectorised coarse space. Block Gram-Schmidt is
@@ -785,6 +771,27 @@ int main (int argc, char ** argv)
     GRID_ASSERT( den > 0.0 );
     GRID_ASSERT( num/den < 1.0e-18 );
   }
+
+  // Stay on the batch grid: the L2 coarsening drives this operator at the
+  // batch. It is switched to the solve Nrhs once L2 is built.
+
+  //////////////////////////////////////////////////////////////////////
+  // psi_coarse = P^dag (RAW fine null) -> Galerkin images that carry the
+  // near null content, and are free: A_c (P psi) = P A psi.
+  //////////////////////////////////////////////////////////////////////
+  MultiRHSBlockProject<LatticeFermionD> MrhsProjector;
+  MrhsProjector.Allocate(nbasis,FGrid,Coarse5d);
+  MrhsProjector.ImportBasis(AggregatesGCR.subspace);   // block orthonormal basis
+  // The basis now lives in the projector's BLAS_V (device); nothing after this
+  // point reads AggregatesGCR.subspace (V1_CHECK moved above).  Free it: 60 fine
+  // fields = 20 GB host per rank, and 60 LRU-eligible device copies.
+  AggregatesGCR.subspace.clear(); AggregatesGCR.subspace.shrink_to_fit();
+
+  std::vector<CoarseVector> psi_coarse(nbasis,Coarse5d);
+  MrhsProjector.blockProject(rawNull,psi_coarse);      // RAW vectors in
+  rawNull.clear(); rawNull.shrink_to_fit();
+
+  GramGuard("psi_coarse",psi_coarse,Coarse5d);
 
   //////////////////////////////////////////////////////////////////////
   // STAGE TWO: L2 -> L3.
@@ -940,6 +947,29 @@ int main (int argc, char ** argv)
   {
     std::cout << GridLogMessage << "**********************************************" << std::endl;
     std::cout << GridLogMessage << " V2 THREE-level solve, Nrhs = " << nr << std::endl;
+    // Device-memory budget BEFORE the solve (2026-08-28: NRHS=6 died in hipMalloc at the
+    // first fine-smoother history allocation -- reported as an asynchronous "memory
+    // access fault" unless AMD_SERIALIZE_KERNEL/COPY made it a clean OOM).  The outer
+    // mRHS GCR holds src, sol, r, Az and OuterMmax x (p,q) fine fields PER RHS; the fine
+    // smoother adds FineSmootherMmax x (p,q) once.  The MemoryManager LRU cap
+    // (--device-mem) must be BELOW what is physically left after the non-LRU allocations
+    // (comms buffers, dense slab, stencil buffers), or the device fills before anything
+    // is evicted.  Print the estimate, the LRU state, and the device's own free count.
+    {
+      uint64_t fieldBytes = (uint64_t)FGrid->lSites()*sizeof(typename LatticeFermionD::scalar_object);
+      double outerGB = (double)nr*(4 + 2*OuterMmax)*fieldBytes/1.0e9;
+      double smthGB  = (double)(2*FineSmootherMmax + 4)*fieldBytes/1.0e9;
+      std::cout << GridLogMessage << "Device budget: fine field " << fieldBytes/1.0e6 << " MB; outer GCR history "
+                << nr << " x (4 + 2 x " << OuterMmax << ") fields = " << outerGB << " GB; fine smoother history + temps ~ "
+                << smthGB << " GB; MemoryManager device LRU " << MemoryManager::DeviceCacheBytes()/1.0e9 << " GB now, cap "
+                << MemoryManager::DeviceMaxBytes/1.0e9 << " GB" << std::endl;
+      // Empty the device LRU: every setup-era Lattice copy (coarse null vectors,
+      // coarsening temporaries) goes back to host, so the solve's working set
+      // starts from a clean device and the cap applies to it alone.
+      MemoryManager::EvictAll();
+      MemoryManager::PrintBytes();
+      acceleratorMem();
+    }
     std::cout << GridLogMessage << "**********************************************" << std::endl;
 
     Coordinate cml({nr,1,clatt[0],clatt[1],clatt[2],clatt[3]});
