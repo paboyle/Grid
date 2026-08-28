@@ -967,6 +967,9 @@ int main (int argc, char ** argv)
       // coarsening temporaries) goes back to host, so the solve's working set
       // starts from a clean device and the cap applies to it alone.
       MemoryManager::EvictAll();
+      // ...and release the allocation caches' held blocks (setup-era deviceVector
+      // scratch that is "free" to the caller but not to hipMalloc).
+      MemoryManager::DropCache();
       MemoryManager::PrintBytes();
       acceleratorMem();
     }

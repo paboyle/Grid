@@ -272,7 +272,6 @@ void MemoryManager::InitMessage(void) {
 #endif
 
 }
-
 void *MemoryManager::Insert(void *ptr,size_t bytes,int type) 
 {
 #ifdef ALLOCATION_CACHE
@@ -285,6 +284,46 @@ void *MemoryManager::Insert(void *ptr,size_t bytes,int type)
 #else
   return ptr;
 #endif
+}
+void MemoryManager::DropCache(void)
+{
+  // Release every block held in the allocation caches (the "recent
+  // allocations" pools: Small/Large/Huge x Cpu/Acc/Shared).  Blocks in these
+  // pools are freed from the caller's point of view but still occupy memory;
+  // after a large setup phase (SUMMA scratch, coarsening temporaries) they can
+  // hold gigabytes of device memory that hipMalloc then cannot get.  Each pool
+  // is freed with the call that pairs with its allocator.
+  for(int sz=0;sz<3;sz++) {
+    int t;
+    t = Acc+sz;
+    for(int e=0;e<Ncache[t];e++) {
+      if( Entries[t][e].valid ) {
+	acceleratorFreeDevice(Entries[t][e].address);
+	Entries[t][e].valid = 0; Entries[t][e].bytes = 0; Entries[t][e].address = NULL;
+      }
+    }
+    CacheBytes[t]=0; Victim[t]=0;
+    t = Shared+sz;
+    for(int e=0;e<Ncache[t];e++) {
+      if( Entries[t][e].valid ) {
+	acceleratorFreeShared(Entries[t][e].address);
+	Entries[t][e].valid = 0; Entries[t][e].bytes = 0; Entries[t][e].address = NULL;
+      }
+    }
+    CacheBytes[t]=0; Victim[t]=0;
+    t = Cpu+sz;
+    for(int e=0;e<Ncache[t];e++) {
+      if( Entries[t][e].valid ) {
+#ifdef GRID_UVM
+	acceleratorFreeShared(Entries[t][e].address);
+#else
+	acceleratorFreeCpu(Entries[t][e].address);
+#endif
+	Entries[t][e].valid = 0; Entries[t][e].bytes = 0; Entries[t][e].address = NULL;
+      }
+    }
+    CacheBytes[t]=0; Victim[t]=0;
+  }
 }
 
 void *MemoryManager::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim, uint64_t &cacheBytes) 

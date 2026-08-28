@@ -216,6 +216,7 @@ public:
   static void Print(void);
   static void PrintAll(void);
   static void EvictAll(void);
+  static void DropCache(void);
   static void PrintState( void* CpuPtr);
   static int   isOpen   (void* CpuPtr);
   static void  ViewClose(void* CpuPtr,ViewMode mode);
