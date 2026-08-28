@@ -1,0 +1,107 @@
+#!/bin/bash -l
+#SBATCH --job-name=nrhs-fault-36
+#SBATCH --nodes=36
+#SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=7
+#SBATCH --gpus-per-node=8
+#SBATCH --time=1:30:00
+#SBATCH --account=phy157_dwf
+#SBATCH --gpu-bind=none
+#SBATCH --exclusive
+#SBATCH --mem=0
+#SBATCH -S 0
+
+##############################################################################
+# The NRHS>=6 GPU memory access fault, on the ACTUAL target (48^3x96, 288 GCDs),
+# made attributable in ONE queue traversal:
+#
+#   AMD_SERIALIZE_KERNEL=3 AMD_SERIALIZE_COPY=3  every launch/copy synchronous:
+#                                the fault is raised at the call that caused it
+#   AMD_LOG_LEVEL=3               the runtime names each kernel as it launches
+#   --debug-stdout                every rank's stdout/stderr to its own file:
+#                                GRID_STDOUT_ROOT/<32*(rank/32)>/Grid.std{out,err}.<rank>
+#                                (the runtime's log goes to stderr, so the faulting
+#                                rank's Grid.stderr.<rank> ends with the culprit)
+#   --log ...,Memory              MemoryManager transfers in program order
+#
+# Cell A: serialised (5-10x slower: setup ~10 min + solve until the fault).
+# Cell B: NOT serialised, same logging -- if serialisation makes the fault
+#         vanish (a race), B still captures the faulting rank's Memory trace.
+#
+# Readout:
+#   f=$(grep -l "Memory access fault" fault36_A/*/Grid.stderr.* | head -1); echo $f; tail -40 $f
+#   (the last kernel name / MemoryManager line before the fault); same for fault36_B.
+##############################################################################
+
+cat << EOF > select_gpu
+#!/bin/bash
+export GPU_MAP=(0 1 2 3 7 6 5 4)
+export NUMA_MAP=(3 3 1 1 2 2 0 0)
+export GPU=\${GPU_MAP[\$SLURM_LOCALID]}
+export NUMA=\${NUMA_MAP[\$SLURM_LOCALID]}
+export HIP_VISIBLE_DEVICES=\$GPU
+unset ROCR_VISIBLE_DEVICES
+if [ \$SLURM_PROCID = "0" ]; then echo \$*; fi
+exec numactl -m \$NUMA -N \$NUMA \$*
+EOF
+chmod +x ./select_gpu
+
+root=$HOME/ParallelIO/systems/Frontier
+source $root/sourceme-rocm7.2.sh
+
+export OMP_NUM_THREADS=7
+export MPICH_GPU_SUPPORT_ENABLED=1
+export MPICH_SMP_SINGLE_COPY_MODE=CMA
+export MPICH_OFI_NIC_POLICY=GPU
+module load libfabric
+
+BIN=$root/examples/Example_pvdagm_v2_3level_DenseCoarseMatrix
+OPTS1="--accelerator-threads 8 --shm 4096 --shm-mpi 1 --device-mem 32000"
+vol=48.48.48.96
+MPI_GEOM=3.6.4.4
+
+# production setup (as smoother_modes.job, banked adaptive point)
+export SUBSPACE_FILE=/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/subspace_nb64.scidac
+unset  SLAB_FILE
+export MASS=0.00078
+export BLOCK=2.2.3.3
+export BLOCK2=4.4.2.4
+export DENSE_SCHUR=1
+export DENSE_SCHUR2D=1
+export DENSE_CC=1
+export DENSE_APPLY_PROFILE=0
+export DENSE_SPLITK=128
+export DENSE_DEVICE_SUM=4
+export SCHUR2D_LEAF_SPAN=9
+export SCHUR2D_LEAF_LU=1
+export SCHUR2D_PROBE=0
+export GRID_ALLOC_NCACHE_LARGE=64
+export FineSmootherShift=0.1  FineSmootherOrder=6 FineSmootherMmax=4
+export CoarseSmootherShift=2.0 CoarseSmootherNstep=2 CoarseSmootherMmax=2
+export CoarseSolverTol=0.05 CoarseSolverOrder=200 CoarseSolverMmax=8
+export OuterTol=1e-8 OuterMmax=6 OuterNstep=12
+export PowerIterations=0 SmootherCoeffLog=0 PolyVerbose=0
+export NRHS=6
+
+run_cell () {
+  name=$1; shift
+  echo "----- $name : $* -----"
+  export GRID_STDOUT_ROOT=$PWD/fault36_$name
+  env "$@" srun -N36 -n288 --kill-on-bad-exit=1 ./select_gpu $BIN --mpi ${MPI_GEOM} --grid $vol $OPTS1 --comms-overlap \
+       --debug-stdout --log Error,Warning,Message,Memory > log.fault36.$name 2>&1
+  echo "  exit $?"; sleep 30
+  f=$(grep -l "Memory access fault" $GRID_STDOUT_ROOT/*/Grid.stderr.* 2>/dev/null | head -1)
+  if [ -n "$f" ]; then
+    echo "  FAULT in $f  (rank $(basename $f | sed 's/Grid.stderr.//'))"
+    rank=$(basename $f | sed 's/Grid.stderr.//')
+    echo "  --- last 30 lines of stderr (runtime log) ---";  tail -30 $f | cut -c1-160
+    echo "  --- last 15 lines of that rank's stdout (Grid Message/Memory) ---"
+    tail -15 $(dirname $f)/Grid.stdout.$rank | cut -c1-160
+  else
+    echo "  no 'Memory access fault' in any Grid.stderr.*"
+    grep -h "V2 3-level solve\|Fouter MrhsPGCR: Converged" $GRID_STDOUT_ROOT/0/Grid.stdout.0 | tail -3 | cut -c1-120
+  fi
+}
+
+run_cell   A_serialised   AMD_SERIALIZE_KERNEL=3 AMD_SERIALIZE_COPY=3 AMD_LOG_LEVEL=3
+run_cell   B_plain        AMD_LOG_LEVEL=1
