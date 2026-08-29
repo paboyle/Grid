@@ -128,3 +128,23 @@ run_cell () {
 # switch: FI_MR_CACHE_MAX_COUNT=0 disables the registration cache for ALL memory types.
 run_cell   D_nocache      FI_MR_CACHE_MAX_COUNT=0 FI_LOG_LEVEL=info FI_LOG_PROV=core           # step 3: no cache, any memory
 run_cell   E_rocrmon0     FI_MR_ROCR_CACHE_MONITOR_ENABLED=0 FI_LOG_LEVEL=info FI_LOG_PROV=core  # step 3b: device-memory monitor off, cache on
+run_cell   F_nocache      FI_MR_CACHE_MONITOR=disabled FI_MR_ROCR_CACHE_MONITOR_ENABLED=0        # PB: both monitors off
+# PROTOCOL vs REGISTRATION (fi_cxi(7)): FI_CXI_RDZV_THRESHOLD defaults to 16384 bytes, so the
+# failing L2 faces (7680 B) go EAGER and the working L1 faces (123 KB) / stencil packets go
+# RENDEZVOUS.  Device memory is registered via dmabuf by default (FI_HMEM_ROCR_USE_DMABUF).
+# All cells below keep the registration cache at its normal settings; one knob each.
+run_cell   G_rdzv_all     FI_CXI_RDZV_THRESHOLD=0          # every message rendezvous: does L2 now behave like L1?
+run_cell   H_eager_all    FI_CXI_RDZV_THRESHOLD=1048576    # every message eager (up to 1 MB): does L1 now fail like L2?
+run_cell   I_nodmabuf     FI_HMEM_ROCR_USE_DMABUF=0        # device registration without dmabuf export
+run_cell   J_noDevReg     FI_CXI_DISABLE_HMEM_DEV_REGISTER=1   # no BAR/load-store registration of device buffers
+# PB: cache ENABLED but capacity 1 -> every message still maps the WHOLE allocation (cached
+# path, cxip_map_get_mem_region_size) yet re-registers and evicts constantly.  Pass => the
+# exact sub-range mapping of the nocache path is the failure; fail => eviction churn itself.
+run_cell   K_cache1       FI_MR_CACHE_MAX_COUNT=1              # in-use overflow path (2nd registration created "uncached" but still whole-allocation)
+run_cell   L_cache4       FI_MR_CACHE_MAX_COUNT=4              # PB: room for PaddedCell's fwd+bwd send+recv, nothing survives across calls
+# 5374504/5374522 (2026-08-29, PaddedCell buffers carved from the IPC window): D/E/F NO_TRANSLATION
+# at the first exchange (as the reproducer predicts for the cache-off path); G-M all solved
+# Nrhs 6 + Nrhs 1 (NOTE: NRHS=6 above, the three failures in the ledger were at NRHS=12).
+# Missing control: the new PaddedCell, NO env knobs, at NRHS=12, twice (intermittent failure).
+run_cell   N_control      NRHS=12
+run_cell   N_control2     NRHS=12
