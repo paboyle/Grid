@@ -467,10 +467,24 @@ public:
     int rNsimd = Nsimd / simd[dimension];
     GRID_ASSERT( buffer_size == from.Grid()->_slice_nblock[dimension]*from.Grid()->_slice_block[dimension] / simd[dimension]);
 
+    // Comms buffers: persistent, grow-only, with a large floor.  2026-08-29: with the
+    // libfabric registration cache disabled (FI_MR_CACHE_MAX_COUNT=0) every rank
+    // failed NO_TRANSLATION on the FIRST coarse-coarse exchange (7.7 KB faces from
+    // small, per-call-resized deviceVectors) while the fine stencil (shm window) and
+    // the larger L1 faces (~120 KB) registered fine.  Small hipMallocs are runtime
+    // sub-allocations; separate registrations of two of them from one pool are what
+    // a cache masks and churn later exposes (the intermittent NO_TRANSLATION/hang at
+    // NRHS>=12).  A large, never-reallocated buffer removes both the sub-allocation
+    // and the per-call realloc churn.  Hypothesis under test; the A/B is the same
+    // job with and without the cache.
     static deviceVector<vobj> send_buf; 
     static deviceVector<vobj> recv_buf;
-    send_buf.resize(buffer_size*2*depth);    
-    recv_buf.resize(buffer_size*2*depth);
+    {
+      const size_t floor_elems = (4ull*1024*1024 + sizeof(vobj)-1)/sizeof(vobj);   // >= 4 MB
+      size_t need = std::max<size_t>((size_t)buffer_size*2*depth, floor_elems);
+      if ( send_buf.size() < need ) send_buf.resize(need);
+      if ( recv_buf.size() < need ) recv_buf.resize(need);
+    }
 #ifndef ACCELERATOR_AWARE_MPI
     static hostVector<vobj> hsend_buf; 
     static hostVector<vobj> hrecv_buf;
