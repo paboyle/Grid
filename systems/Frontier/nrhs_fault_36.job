@@ -23,8 +23,6 @@
 #                                (the runtime's log goes to stderr, so the faulting
 #                                rank's Grid.stderr.<rank> ends with the culprit)
 #   --log ...,Memory              MemoryManager transfers in program order
-#   --debug-heartbeat             periodic backtrace per rank: a HANG (2026-08-28, single-RHS solve
-#                                after 12 RHS with FineSloppyComms=0) shows where every rank sits
 #
 # Cell A: serialised (5-10x slower: setup ~10 min + solve until the fault).
 # Cell B: NOT serialised, same logging -- if serialisation makes the fault
@@ -102,7 +100,7 @@ run_cell () {
   echo "----- $name : $* -----"
   export GRID_STDOUT_ROOT=$RUNDIR/fault36_$name
   env "$@" srun -N36 -n288 --kill-on-bad-exit=1 ./select_gpu $BIN --mpi ${MPI_GEOM} --grid $vol $OPTS1 --comms-overlap \
-       --debug-stdout --debug-heartbeat --log Error,Warning,Message,Memory > log.fault36.$name 2>&1
+       --debug-stdout --log Error,Warning,Message,Memory > log.fault36.$name 2>&1
   echo "  exit $?"; sleep 30
   f=$(grep -l "Memory access fault" $GRID_STDOUT_ROOT/*/Grid.stderr.* 2>/dev/null | head -1)
   if [ -n "$f" ]; then
@@ -117,5 +115,16 @@ run_cell () {
   fi
 }
 
-run_cell   A_serialised   AMD_SERIALIZE_KERNEL=3 AMD_SERIALIZE_COPY=3 AMD_LOG_LEVEL=3
-run_cell   B_plain        AMD_LOG_LEVEL=1
+#run_cell   A_serialised   AMD_SERIALIZE_KERNEL=3 AMD_SERIALIZE_COPY=3 AMD_LOG_LEVEL=3   # 5371703-era: OOM found; done
+#run_cell   B_plain        AMD_LOG_LEVEL=1
+# Ladder for the NO_TRANSLATION / hang fault (both at NRHS=12):
+#   5371703  sloppy ON,  no kdreg2            -> NO_TRANSLATION (Dhop halo) at outer 36
+#   5371826  sloppy OFF, no kdreg2            -> 12-RHS converged, HANG in single-RHS solve
+#   5372414  sloppy OFF, kdreg2 (env also had FI_MR_CACHE_MAX_COUNT=786432) -> NO_TRANSLATION (Couter, 2 reqs) at outer 60
+# CORRECTION (fi_mr(3)): FI_MR_CACHE_MONITOR={memhooks,kdreg2,userfaultfd,disabled} governs
+# SYSTEM memory only.  Device (HMEM_ROCR) registrations have their own monitor,
+# FI_MR_ROCR_CACHE_MONITOR_ENABLED=0|1, and Grid's comms window is hipMalloc'd device memory
+# -- so 5372414 (kdreg2) never exercised the translations that fail.  Unambiguous global
+# switch: FI_MR_CACHE_MAX_COUNT=0 disables the registration cache for ALL memory types.
+run_cell   D_nocache      FI_MR_CACHE_MAX_COUNT=0 FI_LOG_LEVEL=info FI_LOG_PROV=core           # step 3: no cache, any memory
+run_cell   E_rocrmon0     FI_MR_ROCR_CACHE_MONITOR_ENABLED=0 FI_LOG_LEVEL=info FI_LOG_PROV=core  # step 3b: device-memory monitor off, cache on

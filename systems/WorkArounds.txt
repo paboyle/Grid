@@ -217,6 +217,19 @@ by analogy, and the fix is UNTESTED here.  Test ladder, one knob per run, NRHS=1
   (4) --disable-accelerator-aware-mpi build.
 REVISIT this entry with the result; if (2) does not cure it, remove kdreg2 from the
 job scripts' justification (it stays as OLCF's recommendation regardless).
+  2026-08-28 22:18, job 5372414: step (2) DID NOT cure it -- kdreg2 set (and the
+  environment already carried FI_MR_CACHE_MAX_COUNT=786432), sloppy comms OFF, still
+  NO_TRANSLATION at outer step 60 (Couter, Waitall count=2).
+  CORRECTION 2026-08-28 23:xx (fi_mr(3) man page): FI_MR_CACHE_MONITOR governs SYSTEM
+  memory only; device (HMEM_ROCR) registrations are monitored by
+  FI_MR_ROCR_CACHE_MONITOR_ENABLED=0|1.  Grid's comms window is hipMalloc'd device
+  memory, so the kdreg2 step tested nothing relevant -- the ALPS PLT bug (#11451) and
+  the Frontier NO_TRANSLATION are the same *library* but different monitors.
+  Attributed by gdb on a hung rank (5371826): main thread in MPI_Waitall <- Grid
+  0x5d539c3 (StencilSendToRecvFromComplete/CommsComplete class), i.e. the HALO
+  EXCHANGE; the two aborts' request counts (16 = fine Dhop, 2 = coarse PaddedCell
+  direction) agree.  Next: FI_MR_CACHE_MAX_COUNT=0 (all memory) and
+  FI_MR_ROCR_CACHE_MONITOR_ENABLED=0, one per cell.
 
 Symptom (Frontier, x86, Cray MPICH 8.1.x, ROCm 7.2): device-buffer MPI fails
 with
