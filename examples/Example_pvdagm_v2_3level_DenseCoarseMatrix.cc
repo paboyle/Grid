@@ -188,6 +188,27 @@ void ParseEnvironment(void)
   std::cout << GridLogMessage << "PARAM: NBASIS             " << NBASIS       << std::endl;
   std::cout << GridLogMessage << "PARAM: NRHS               " << Nrhs         << std::endl;
   std::cout << GridLogMessage << "PARAM: COARSEN_BATCH      " << CoarsenBatch << std::endl;
+  // EVERY knob this programme parsed, so a log identifies its own run (2026-08-28:
+  // four jobs in the queue differing in FineSloppyComms/NRHS/mmax and none of it
+  // printed).  Interim until the Serializable parameter struct replaces all of this.
+  auto P = [](const char *n, auto v){ std::cout << GridLogMessage << "PARAM: " << std::left << std::setw(20) << n << std::right << " " << v << std::endl; };
+  P("FineSmootherShift",FineSmootherShift);   P("FineSmootherOrder",FineSmootherOrder);   P("FineSmootherMmax",FineSmootherMmax);
+  P("FineSmootherMode",FineSmootherMode);     P("FineChebLo",FineChebLo);                 P("FineChebHi",FineChebHi);
+  P("FineSloppyComms",FineSloppyComms);
+  P("CoarseSmootherShift",CoarseSmootherShift); P("CoarseSmootherNstep",CoarseSmootherNstep); P("CoarseSmootherMmax",CoarseSmootherMmax);
+  P("CoarseSmootherMode",CoarseSmootherMode); P("CoarseChebLo",CoarseChebLo);             P("CoarseChebHi",CoarseChebHi);
+  P("CoarseSolverTol",CoarseSolverTol);       P("CoarseSolverOrder",CoarseSolverOrder);   P("CoarseSolverMmax",CoarseSolverMmax);
+  P("OuterTol",OuterTol);                     P("OuterMmax",OuterMmax);                   P("OuterNstep",OuterNstep);
+  P("PowerIterations",PowerIterations);       P("PolyRecordIters",PolyRecordIters);       P("PolyRecordStart",PolyRecordStart);
+  P("PolyRecordSelect",PolyRecordSelect);     P("PolyRefresh",PolyRefresh);               P("PolyVerbose",PolyVerbose);
+  P("SmootherCoeffLog",SmootherCoeffLog);
+  // library-side and runtime knobs, read straight from the environment as the library will
+  const char *envs[] = {"BLOCK","BLOCK2","SUBSPACE_FILE","CONFIG","HOT_START","MRHS_COARSEN","V1_CHECK",
+                        "DENSE_CC","DENSE_SCHUR","DENSE_SCHUR2D","DENSE_DEVICE_SUM","DENSE_SPLITK","DENSE_NB",
+                        "SCHUR2D_LEAF_SPAN","SCHUR2D_LEAF_LU","SCHUR2D_PROBE","SUMMA_HANDSHAKE","DENSE_APPLY_PROFILE","SLAB_FILE",
+                        "SOLVE_SRHS","GRID_ALLOC_NCACHE_LARGE","OMP_NUM_THREADS",
+                        "MPICH_GPU_SUPPORT_ENABLED","FI_MR_CACHE_MONITOR","FI_MR_CACHE_MAX_COUNT","AMD_SERIALIZE_KERNEL","AMD_LOG_LEVEL"};
+  for(auto e : envs) P(e, getenv(e) ? std::string(getenv(e)) : std::string("(unset)"));
 }
 
 template <class Field>

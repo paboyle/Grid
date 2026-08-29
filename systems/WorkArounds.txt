@@ -204,3 +204,38 @@ Aurora/unitrace
 --------------------------------------------------------------------
 Tursa/nsight-sys
 --------------------------------------------------------------------
+
+============================================================================
+2026-08-28  libfabric memory-registration-cache "memhooks" monitor -- DEFECTIVE
+           (libfabric issue #11451, filed by PB, HPE JIRA opened)
+============================================================================
+STATUS: the ALPS/aarch64 case below is DEMONSTRATED (issue + both fixes verified
+there).  The Frontier case is a HYPOTHESIS as of 2026-08-28: the NO_TRANSLATION
+failure is observed, its attribution to the memhooks MR cache is by mechanism and
+by analogy, and the fix is UNTESTED here.  Test ladder, one knob per run, NRHS=12:
+  (1) FineSloppyComms=0  (2) FI_MR_CACHE_MONITOR=kdreg2  (3) FI_MR_CACHE_MAX_COUNT=0
+  (4) --disable-accelerator-aware-mpi build.
+REVISIT this entry with the result; if (2) does not cure it, remove kdreg2 from the
+job scripts' justification (it stays as OLCF's recommendation regardless).
+
+Symptom (Frontier, x86, Cray MPICH 8.1.x, ROCm 7.2): device-buffer MPI fails
+with
+   MPI_Waitall ... MPIDI_OFI_handle_cq_error: OFI poll failed
+   (ofi_events.c:MPIDI_OFI_handle_cq_error: Input/output error - NO_TRANSLATION)
+on a LIVE, never-freed hipMalloc buffer (the sloppy-comms compressed halo buffer,
+a static deviceVector) once the process does sustained hipMalloc/hipFree churn
+(MemoryManager eviction at NRHS>=12, EvictAll/DropCache).  Translations cached by
+the provider go stale.
+Symptom (ALPS/CSCS, aarch64 Grace/H200, cray-mpich 8.1.32, libfabric 1.22): the
+memhooks monitor intercepts munmap by PATCHING THE PLT at MPI_Init
+(ofi_memhooks_start -> ofi_write_patch with a garbage data_size); the write overruns
+munmap@plt into the NEXT PLT entry (MPI_Comm_dup in Grid's binary), leaving
+`br x15` where an adrp belongs -> segfault on first MPI_Comm_dup.  Diagnosed with
+a hardware watchpoint on the PLT entry during MPI_Init; see the issue for the
+gdb transcript.  Reproduce on one node with MPICH_SINGLE_HOST_ENABLED=0.
+Fix (either):   export FI_MR_CACHE_MONITOR=kdreg2      (kernel-driven invalidation; OLCF's
+                                                        own recommendation, NOT the default)
+                export FI_MR_CACHE_MAX_COUNT=0         (no registration cache at all)
+On ALPS this is a CORRECTNESS requirement for MPI on Slingshot, not a tuning.
+Every systems/Frontier job and sourceme now sets kdreg2 on OLCF's recommendation;
+whether it resolves the Frontier NO_TRANSLATION is the pending test above.

@@ -23,6 +23,8 @@
 #                                (the runtime's log goes to stderr, so the faulting
 #                                rank's Grid.stderr.<rank> ends with the culprit)
 #   --log ...,Memory              MemoryManager transfers in program order
+#   --debug-heartbeat             periodic backtrace per rank: a HANG (2026-08-28, single-RHS solve
+#                                after 12 RHS with FineSloppyComms=0) shows where every rank sits
 #
 # Cell A: serialised (5-10x slower: setup ~10 min + solve until the fault).
 # Cell B: NOT serialised, same logging -- if serialisation makes the fault
@@ -61,6 +63,7 @@ export OMP_NUM_THREADS=7
 # .nfs quota disaster of 2026-08-25) obeys ulimit -c like the kernel's (ROCgdb docs, "AMD GPU
 # core dumps"); Slurm propagates the batch shell's limits to srun tasks by default.
 ulimit -c 0
+export FI_MR_CACHE_MONITOR=kdreg2       # REQUIRED for device-buffer MPI on Slingshot: libfabric memhooks monitor (default) is defective, see systems/WorkArounds.txt (libfabric #11451)
 export MPICH_GPU_SUPPORT_ENABLED=1
 export MPICH_SMP_SINGLE_COPY_MODE=CMA
 export MPICH_OFI_NIC_POLICY=GPU
@@ -99,7 +102,7 @@ run_cell () {
   echo "----- $name : $* -----"
   export GRID_STDOUT_ROOT=$RUNDIR/fault36_$name
   env "$@" srun -N36 -n288 --kill-on-bad-exit=1 ./select_gpu $BIN --mpi ${MPI_GEOM} --grid $vol $OPTS1 --comms-overlap \
-       --debug-stdout --log Error,Warning,Message,Memory > log.fault36.$name 2>&1
+       --debug-stdout --debug-heartbeat --log Error,Warning,Message,Memory > log.fault36.$name 2>&1
   echo "  exit $?"; sleep 30
   f=$(grep -l "Memory access fault" $GRID_STDOUT_ROOT/*/Grid.stderr.* 2>/dev/null | head -1)
   if [ -n "$f" ]; then

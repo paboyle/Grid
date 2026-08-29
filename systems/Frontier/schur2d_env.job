@@ -47,6 +47,7 @@ chmod +x ./select_gpu
 root=$HOME/ParallelIO/systems/Frontier
 source $root/sourceme-rocm7.2.sh
 
+export FI_MR_CACHE_MONITOR=kdreg2       # REQUIRED for device-buffer MPI on Slingshot: libfabric memhooks monitor (default) is defective, see systems/WorkArounds.txt (libfabric #11451)
 export MPICH_GPU_SUPPORT_ENABLED=1
 export MPICH_SMP_SINGLE_COPY_MODE=CMA
 export MPICH_OFI_NIC_POLICY=GPU

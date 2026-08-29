@@ -13,3 +13,4 @@ module load rocm/6.4.0
 export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=/opt/rocm-6.4.0/lib/llvm/lib/:$LD_LIBRARY_PATH
 module load emacs
+export FI_MR_CACHE_MONITOR=kdreg2       # REQUIRED for device-buffer MPI on Slingshot: libfabric memhooks monitor (default) is defective, see systems/WorkArounds.txt (libfabric #11451)

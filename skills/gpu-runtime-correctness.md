@@ -129,3 +129,27 @@ script suppresses it (Slurm propagates rlimits to `srun` tasks by default) and
 Deleted-while-open dumps on NFS persist as hidden `.nfs*` files against quota
 until the holder exits.  Run fault hunts from a Lustre directory.
 Source: ROCgdb documentation, "AMD GPU" chapter, core-dump section.
+
+## Attributing memory corruption in stripped vendor libraries: the watchpoint
+
+When code you cannot read (MPI, libfabric, driver: stripped, no debug info) corrupts
+something, source-level breakpoints are useless.  The tools that need no source
+(libfabric #11451, PB, aarch64 PLT corruption at MPI_Init, is the worked example):
+
+1. Find the corrupted word: `p/x *(uint32_t *)0x408ed0` before and after the suspect
+   call; compare with the binary's own disassembly (`objdump -d`, or `layout asm`).
+2. `watch *0x408ed0` (hardware watchpoint on the ADDRESS, not a breakpoint on a
+   function), then run the suspect call: the trap fires at the instruction that writes.
+3. `bt` at the trap names the writer and its arguments (there: `ofi_write_patch(
+   data_size=2876502996, address=<munmap@plt>)` -- a garbage length overrunning into
+   the next PLT entry).
+4. `layout asm` + `info registers` at the later crash show the mechanism (`br x15` with
+   x15=0x10 where an `adrp` belonged); `info symbol <addr>` names stray addresses.
+5. Trace the written opcode back to the library's source if you have it (0xd61f01e0 =
+   libfabric's `br(15)` in util_mem_hooks.c) -- irrefutable.
+6. Make it reproducible where a debugger attaches: `MPICH_SINGLE_HOST_ENABLED=0`
+   forces the CXI/fabric path on ONE node.
+
+Report standard (PB, from EDA/QCDOC/BG-Q QA): symptom -> instrument -> the line ->
+the fix.  A report without the mechanism is noise; one with it gets an HPE JIRA the
+same day.  Fix for the above: `FI_MR_CACHE_MONITOR=kdreg2` (see systems/WorkArounds.txt).
