@@ -343,7 +343,11 @@ void Grid_init(int *argc,char ***argv)
     GridCmdOptionInt(arg,forcempi);
     Stencil_force_mpi = (bool)forcempi;
   }
-  
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--shm-barrier-force") ){
+    Stencil_force_barrier = true;
+  }
+
   if( GridCmdOptionExists(*argv,*argv+*argc,"--device-mem") ){
     int MB;
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--device-mem");
@@ -538,6 +542,7 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"  --shm  M        : allocate M megabytes of shared memory for comms"<<std::endl;
     std::cout<<GridLogMessage<<"  --shm-mpi 0|1   : Force MPI usage under multi-rank per node "<<std::endl;
     std::cout<<GridLogMessage<<"  --shm-hugepages : use explicit huge pages in mmap call "<<std::endl;
+    std::cout<<GridLogMessage<<"  --shm-barrier-force : keep the node barrier in the halo exchange under --shm-mpi 1 (only orders shared memory PUT/GET, redundant otherwise)"<<std::endl;
     std::cout<<GridLogMessage<<"  --device-mem M  : Size of device software cache for lattice fields (MB) "<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Verbose:"<<std::endl;
