@@ -58,6 +58,7 @@ Author: Peter Boyle <pboyle@bnl.gov>
 //
 
 #include <Grid/Grid.h>
+#include <algorithm>              // std::sort, for the runtime-environment dump in ParseEnvironment
 #include <Grid/lattice/PaddedCell.h>
 #include <Grid/stencil/GeneralLocalStencil.h>
 #include <Grid/algorithms/iterative/PrecGeneralisedConjugateResidualNonHermitian.h>
@@ -202,13 +203,46 @@ void ParseEnvironment(void)
   P("PowerIterations",PowerIterations);       P("PolyRecordIters",PolyRecordIters);       P("PolyRecordStart",PolyRecordStart);
   P("PolyRecordSelect",PolyRecordSelect);     P("PolyRefresh",PolyRefresh);               P("PolyVerbose",PolyVerbose);
   P("SmootherCoeffLog",SmootherCoeffLog);
-  // library-side and runtime knobs, read straight from the environment as the library will
+  // library-side knobs, read straight from the environment as the library will
   const char *envs[] = {"BLOCK","BLOCK2","SUBSPACE_FILE","CONFIG","HOT_START","MRHS_COARSEN","V1_CHECK",
                         "DENSE_CC","DENSE_SCHUR","DENSE_SCHUR2D","DENSE_DEVICE_SUM","DENSE_SPLITK","DENSE_NB",
                         "SCHUR2D_LEAF_SPAN","SCHUR2D_LEAF_LU","SCHUR2D_PROBE","SUMMA_HANDSHAKE","DENSE_APPLY_PROFILE","SLAB_FILE",
-                        "SOLVE_SRHS","GRID_ALLOC_NCACHE_LARGE","OMP_NUM_THREADS",
-                        "MPICH_GPU_SUPPORT_ENABLED","FI_MR_CACHE_MONITOR","FI_MR_CACHE_MAX_COUNT","AMD_SERIALIZE_KERNEL","AMD_LOG_LEVEL"};
+                        "SOLVE_SRHS"};
   for(auto e : envs) P(e, getenv(e) ? std::string(getenv(e)) : std::string("(unset)"));
+
+  ////////////////////////////////////////////////////////////////////////////////////////
+  // The COMPLETE fabric/runtime environment, scanned from environ rather than a curated
+  // list.  2026-08-30: we could not tell from a failing log whether FI_CXI_ATS was set,
+  // because it was not in the list -- and a module or the submitting shell can set
+  // anything.  A log must describe its own run without reference to the job script.
+  ////////////////////////////////////////////////////////////////////////////////////////
+  {
+    extern char **environ;
+    const char *prefixes[] = {"FI_","OFI_","MPICH_","MPIR_","PMI_","CXI_","HSA_","HIP_","ROCR_",
+                              "ROCM_","AMD_","GPU_","NUMA_","OMP_","GOMP_","GRID_","CRAY_","LIBFABRIC"};
+    std::vector<std::string> hits;
+    for(char **e = environ; e && *e; e++){
+      std::string s(*e);
+      for(auto p : prefixes){
+        if( s.compare(0,strlen(p),p)==0 ){
+          if(s.size()>200) s = s.substr(0,197)+"...";     // paths can be enormous
+          hits.push_back(s);
+          break;
+        }
+      }
+    }
+    std::sort(hits.begin(),hits.end());
+    std::cout << GridLogMessage << "PARAM: ---- runtime environment: "<<hits.size()<<" variables set ----"<<std::endl;
+    for(auto &s : hits) std::cout << GridLogMessage << "PARAM: ENV " << s << std::endl;
+    // Variables whose ABSENCE is as informative as their value (defaults bite: an unset
+    // FI_MR_CACHE_MONITOR means libfabric's defective memhooks, see systems/WorkArounds.txt).
+    const char *notable[] = {"FI_MR_CACHE_MONITOR","FI_MR_CACHE_MAX_COUNT","FI_MR_ROCR_CACHE_MONITOR_ENABLED",
+                             "FI_CXI_ATS","FI_CXI_RDZV_THRESHOLD","FI_CXI_DISABLE_HMEM_DEV_REGISTER",
+                             "FI_HMEM_ROCR_USE_DMABUF","MPICH_GPU_SUPPORT_ENABLED","MPICH_OFI_NIC_POLICY",
+                             "MPICH_SMP_SINGLE_COPY_MODE","OMP_NUM_THREADS","GRID_ALLOC_NCACHE_LARGE"};
+    for(auto n : notable) if(!getenv(n))
+      std::cout << GridLogMessage << "PARAM: ENV " << n << " (UNSET - provider/runtime default applies)" << std::endl;
+  }
 }
 
 template <class Field>

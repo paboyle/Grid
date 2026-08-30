@@ -38,6 +38,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 extern bool Stencil_force_mpi ;
+extern bool Stencil_force_barrier ;
 
 class CartesianCommunicator : public SharedMemory {
 

@@ -872,6 +872,8 @@ void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsReque
 void CartesianCommunicator::StencilBarrier(void)
 {
   FlightRecorder::StepLog("NodeBarrier");
+  // Only orders the device-to-device PUT/GET into a peer's window; not needed under --shm-mpi 1.
+  if ( Stencil_force_mpi && !Stencil_force_barrier ) return;
   MPI_Barrier  (ShmComm);
 }
 //void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)

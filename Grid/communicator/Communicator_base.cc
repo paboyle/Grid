@@ -34,6 +34,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 bool Stencil_force_mpi = true;
+bool Stencil_force_barrier = false;
 
 ///////////////////////////////////////////////////////////////
 // Info that is setup once and indept of cartesian layout
