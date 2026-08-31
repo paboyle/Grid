@@ -479,6 +479,7 @@ public:
       Preconditioner(r,p[peri_kp]);
       vOp(p[peri_kp],q[peri_kp]);
       int northog=((kp)>(mmax-1))?(mmax-1):(kp);
+      MemoryManager::Snapshot(name+" orthog begin step "+std::to_string(steps));
       {
 	GRID_TRACE("MrhsPGCR orthog");
         // Classical Gram-Schmidt: all coefficients against the UN-updated new q
@@ -503,6 +504,7 @@ public:
         }
       }
       qq[peri_kp]=vnorm2(q[peri_kp]);
+      MemoryManager::Snapshot(name+" orthog+vnorm2 end   step "+std::to_string(steps));
     }
     GRID_ASSERT(0); return cp;
   }
