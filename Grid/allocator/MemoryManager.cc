@@ -84,6 +84,31 @@ MemoryManager::AllocationCacheEntry MemoryManager::Entries[MemoryManager::Nalloc
 int MemoryManager::Victim[MemoryManager::NallocType];
 int MemoryManager::Ncache[MemoryManager::NallocType] = { 2, 0, 8, 8, 0, 16, 8, 0, 16 };
 uint64_t MemoryManager::CacheBytes[MemoryManager::NallocType];
+uint64_t MemoryManager::DeviceAllocCalls;
+uint64_t MemoryManager::DeviceFreeCalls;
+uint64_t MemoryManager::DeviceAllocBytes;
+uint64_t MemoryManager::DeviceFreeBytes;
+uint64_t MemoryManager::DeviceCacheHits;
+
+void MemoryManager::PrintAllocCounts(void)
+{
+  std::cout << GridLogMemory << "MemoryManager: device allocator calls: acceleratorAllocDevice "
+	    << DeviceAllocCalls <<" ("<< DeviceAllocBytes <<" bytes), acceleratorFreeDevice "
+	    << DeviceFreeCalls  <<" ("<< DeviceFreeBytes  <<" bytes), served from ring cache "
+	    << DeviceCacheHits  << std::endl;
+  std::cout << GridLogMemory << "MemoryManager: view traffic: HostToDevice "
+	    << HostToDeviceXfer <<" transfers ("<< HostToDeviceBytes <<" bytes), DeviceToHost "
+	    << DeviceToHostXfer <<" transfers ("<< DeviceToHostBytes <<" bytes), evictions "
+	    << DeviceEvictions  << std::endl;
+}
+void MemoryManager::Snapshot(const std::string &where)
+{
+  if ( !GridLogMemory.isActive() ) return;
+  std::cout << GridLogMemory << "---------------- memory snapshot: "<< where <<" ----------------"<<std::endl;
+  PrintAllocCounts();
+  PrintBytes();
+  acceleratorMem();
+}
 //////////////////////////////////////////////////////////////////////
 // Actual allocation and deallocation utils
 //////////////////////////////////////////////////////////////////////
@@ -93,6 +118,11 @@ void *MemoryManager::AcceleratorAllocate(size_t bytes)
   void *ptr = (void *) Lookup(bytes,Acc);
   if ( ptr == (void *) NULL ) {
     ptr = (void *) acceleratorAllocDevice(bytes);
+    DeviceAllocCalls++;  DeviceAllocBytes+=bytes;
+    std::cout << GridLogMemory << "MemoryManager: acceleratorAllocDevice size "<< bytes
+	      <<" AccPtr "<< std::hex << (uint64_t)ptr << std::dec << std::endl;
+  } else {
+    DeviceCacheHits++;
   }
 #ifdef GRID_MM_VERBOSE
   std::cout <<"AcceleratorAllocate "<<std::endl;
@@ -103,9 +133,13 @@ void *MemoryManager::AcceleratorAllocate(size_t bytes)
 void  MemoryManager::AcceleratorFree    (void *ptr,size_t bytes)
 {
   total_device-=bytes;
-  void *__freeme = Insert(ptr,bytes,Acc);
+  size_t freed_bytes=0;
+  void *__freeme = Insert(ptr,bytes,Acc,&freed_bytes);
   if ( __freeme ) {
     acceleratorFreeDevice(__freeme);
+    DeviceFreeCalls++;  DeviceFreeBytes+=freed_bytes;
+    std::cout << GridLogMemory << "MemoryManager: acceleratorFreeDevice size "<< freed_bytes
+	      <<" AccPtr "<< std::hex << (uint64_t)__freeme << std::dec << std::endl;
   }
 #ifdef GRID_MM_VERBOSE
   std::cout <<"AcceleratorFree "<<std::endl;
@@ -272,7 +306,7 @@ void MemoryManager::InitMessage(void) {
 #endif
 
 }
-void *MemoryManager::Insert(void *ptr,size_t bytes,int type) 
+void *MemoryManager::Insert(void *ptr,size_t bytes,int type,size_t *freed) 
 {
 #ifdef ALLOCATION_CACHE
   int cache;
@@ -280,7 +314,7 @@ void *MemoryManager::Insert(void *ptr,size_t bytes,int type)
   else if (bytes >= GRID_ALLOC_HUGE_LIMIT) cache = type + 1;
   else                                     cache = type;
 
-  return Insert(ptr,bytes,Entries[cache],Ncache[cache],Victim[cache],CacheBytes[cache]);  
+  return Insert(ptr,bytes,Entries[cache],Ncache[cache],Victim[cache],CacheBytes[cache],freed);  
 #else
   return ptr;
 #endif
@@ -326,7 +360,7 @@ void MemoryManager::DropCache(void)
   }
 }
 
-void *MemoryManager::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim, uint64_t &cacheBytes) 
+void *MemoryManager::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim, uint64_t &cacheBytes,size_t *freed) 
 {
 #ifdef GRID_OMP
   GRID_ASSERT(omp_in_parallel()==0);
@@ -351,6 +385,7 @@ void *MemoryManager::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries
 
   if ( entries[v].valid ) {
     ret = entries[v].address;
+    if ( freed ) *freed = entries[v].bytes;   // the DISPLACED block is what actually gets freed
     cacheBytes -= entries[v].bytes;
     entries[v].valid = 0;
     entries[v].address = NULL;
