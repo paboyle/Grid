@@ -428,8 +428,13 @@ static void FFT_dim_execute(
     scalar *rbuf_v  = &rbuf[0];
     scalar *pgbuf_v = &pgbuf[0];
 
-    // deterministic ceil-pad slots (never read back, but keeps padded FFT lines finite)
-    acceleratorMemSet(sbuf_v, 0, nbuf*sizeof(scalar));
+    // Pad slots (olin in [Nperp, Oloc*P)) are never packed, so they would carry
+    // garbage device memory into the FFT.  Zero them so the padded lines stay
+    // finite -- but ONLY when padding is actually present.  In the common
+    // Nperp % P == 0 case pack writes every sbuf entry bijectively, so skip the
+    // whole-buffer memset and its device sync entirely.
+    if ( (int64_t)Oloc*P != Nperp )
+      acceleratorMemSet(sbuf_v, 0, nbuf*sizeof(scalar));
 
     const Coordinate ldims = grid->_ldimensions;
     const Coordinate rdims = grid->_rdimensions;
