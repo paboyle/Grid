@@ -366,7 +366,7 @@ void *MemoryManager::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries
   GRID_ASSERT(omp_in_parallel()==0);
 #endif 
 
-  if (ncache == 0) return ptr;
+  if (ncache == 0) { if(freed) *freed = bytes; return ptr; }   // uncached: the incoming block is the one freed
 
   void * ret = NULL;
   int v = -1;

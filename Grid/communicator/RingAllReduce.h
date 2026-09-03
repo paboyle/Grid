@@ -201,4 +201,54 @@ void CartesianRingAllGather(CartesianCommunicator *comm, T *buf, uint64_t chunk,
   if ( cur != buf ) acceleratorCopyDeviceToDevice((void *)cur, (void *)buf, blk*sizeof(T));
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// Cartesian ALL-TO-ALL along one processor dimension, point-to-point only.
+//
+//   CartesianRingAllToAll(comm, sbuf, rbuf, chunk, dim)
+//     sbuf, rbuf each hold P_dim*chunk elements of T.  Block index is the
+//     process COORDINATE along dim (not the MPI rank -- ShiftedRanks resolves
+//     the OptimalCommunicator relabelling): sbuf[c*chunk] is my data destined
+//     for the rank at coordinate c along dim; on exit rbuf[c*chunk] is the
+//     block that rank sent me.  All other coordinates equal mine.
+//
+// Direct-pairwise, NOT ring-forwarding: P_dim-1 symmetric exchanges, step k
+// with the +/-k neighbours (ShiftedRanks == MPI_Cart_shift, arbitrary shift),
+// each moving one chunk with no store-and-forward.  Per-rank traffic
+// (P_dim-1)*chunk -- a factor P below the AllGather's replicated P*chunk, which
+// is the point for the pencil-FFT transpose (partition the orthogonal coords
+// rather than replicate the whole transform line on every rank).
+//
+// On a switched fabric a distance-k send is one logical hop, so direct-pairwise
+// moves the minimum; ring-forwarding would only win on a true physical ring.
+// Every step is one SendToRecvFrom of one chunk: no collective, no size cliff.
+// Send/recv-rank binding follows Cshift_mpi.h: ShiftedRanks(dim,k,xmit,recv)
+// sends to coord-k, receives from coord+k.  Steps: P_dim-1.  Exact.
+/////////////////////////////////////////////////////////////////////////////
+template<class T>
+void CartesianRingAllToAll(CartesianCommunicator *comm,
+                           T *sbuf, T *rbuf, uint64_t chunk, int dim)
+{
+  int Nd = comm->_ndimension;
+  GRID_ASSERT( dim >= 0 && dim < Nd );
+  int P  = comm->_processors[dim];
+  int me = comm->_processor_coor[dim];
+  if ( chunk==0 ) return;
+  GRID_ASSERT( (chunk*sizeof(T))%4 == 0 );      // SendToRecvFrom counts int32 words
+  uint64_t bytes = chunk*sizeof(T);
+
+  // my own block never goes on the wire
+  acceleratorCopyDeviceToDevice((void *)&sbuf[(uint64_t)me*chunk],
+                                (void *)&rbuf[(uint64_t)me*chunk], bytes);
+  if ( P==1 ) return;
+
+  for(int k=1;k<P;k++){
+    int xmit_to_rank, recv_from_rank;
+    comm->ShiftedRanks(dim, k, xmit_to_rank, recv_from_rank); // xmit=coord-k, recv=coord+k
+    uint64_t sidx = (uint64_t)((me - k + P) % P);   // block destined for the coord-k rank
+    uint64_t ridx = (uint64_t)((me + k) % P);       // block arriving from the coord+k rank
+    comm->SendToRecvFrom((void *)&sbuf[sidx*chunk], xmit_to_rank,
+                         (void *)&rbuf[ridx*chunk], recv_from_rank, bytes);
+  }
+}
+
 NAMESPACE_END(Grid);

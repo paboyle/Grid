@@ -69,6 +69,7 @@ module load libfabric
 
 BIN=$root/examples/Example_pvdagm_v2_3level_DenseCoarseMatrix
 OPTS1="--accelerator-threads 8 --shm 4096 --shm-mpi 1 --device-mem 32000"
+OVERLAP="--comms-overlap"          # set empty for a no-overlap job
 vol=48.48.48.96
 MPI_GEOM=3.6.4.4
 
@@ -99,7 +100,7 @@ run_cell () {
   name=$1; shift
   echo "----- $name : $* -----"
   export GRID_STDOUT_ROOT=$RUNDIR/fault36_$name
-  env "$@" srun -N36 -n288 --kill-on-bad-exit=1 ./select_gpu $BIN --mpi ${MPI_GEOM} --grid $vol $OPTS1 --comms-overlap \
+  env "$@" srun -N36 -n288 --kill-on-bad-exit=1 ./select_gpu $BIN --mpi ${MPI_GEOM} --grid $vol $OPTS1 $OVERLAP \
        --debug-stdout --log Error,Warning,Message,Memory > log.fault36.$name 2>&1
   echo "  exit $?"; sleep 30
   f=$(grep -l "Memory access fault" $GRID_STDOUT_ROOT/*/Grid.stderr.* 2>/dev/null | head -1)
@@ -117,6 +118,8 @@ run_cell () {
 
 #run_cell   A_serialised   AMD_SERIALIZE_KERNEL=3 AMD_SERIALIZE_COPY=3 AMD_LOG_LEVEL=3   # 5371703-era: OOM found; done
 #run_cell   B_plain        AMD_LOG_LEVEL=1
+# NOTE (2026-08-29): FineSloppyComms is NOT set in this job; the example defaults it to 1, so every
+# cell below ran with SLOPPY comms ON (confirmed by the PARAM line).  Only 5371826/5372414 set it to 0.
 # Ladder for the NO_TRANSLATION / hang fault (both at NRHS=12):
 #   5371703  sloppy ON,  no kdreg2            -> NO_TRANSLATION (Dhop halo) at outer 36
 #   5371826  sloppy OFF, no kdreg2            -> 12-RHS converged, HANG in single-RHS solve
@@ -146,5 +149,7 @@ run_cell   L_cache4       FI_MR_CACHE_MAX_COUNT=4              # PB: room for Pa
 # at the first exchange (as the reproducer predicts for the cache-off path); G-M all solved
 # Nrhs 6 + Nrhs 1 (NOTE: NRHS=6 above, the three failures in the ledger were at NRHS=12).
 # Missing control: the new PaddedCell, NO env knobs, at NRHS=12, twice (intermittent failure).
-run_cell   N_control      NRHS=12
-run_cell   N_control2     NRHS=12
+run_cell   N_control      NRHS=12       # 5374670: PASSED
+run_cell   N_control2     NRHS=12       # 5374670: NO_TRANSLATION, Dhop Waitall(16), 3 ranks; last logged event on the faulting rank = eviction 49 of the 62-eviction restart burst after outer step 48 (170 MB hipFree via the ring cache), the failing exchange followed it
+# Overlap on/off is a WHOLE-JOB A/B: set OVERLAP empty above and submit again.  Measured
+# 2026-08-29/30: it does not change the failure rate.

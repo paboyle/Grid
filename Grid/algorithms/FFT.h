@@ -233,6 +233,15 @@ static void FFT_dim_execute(
   typedef typename vobj::vector_type   vector_type;
   typedef typename FFTW<scalar>::FFTW_scalar FFTW_scalar;
 
+#if 0
+  // ======================= ORIGINAL barrel-shift path =======================
+  // Preserved for reference.  Superseded by the transpose / all-to-all path
+  // below (the single active path for ALL P): the barrel is a P-fold redundant
+  // all-gather -- every rank assembles and transforms all Nperp lines of length
+  // G, keeping only its own L points.  The transpose partitions the Nperp
+  // perpendicular lines across the P ranks along dim, so each rank transforms
+  // only ceil(Nperp/P) lines and moves (P-1)/P of its data instead of P-1
+  // redundant copies.  See CartesianRingAllToAll in communicator/RingAllReduce.h.
   const int Ndim = grid->Nd();
   int L = grid->_ldimensions[dim];
   int G = grid->_fdimensions[dim];
@@ -363,6 +372,203 @@ static void FFT_dim_execute(
   std::cout << GridLogPerformance << "  of which shift" << t_shift/1.0e6 << " s" << std::endl;
   std::cout << GridLogPerformance << " FFT kernels " << t_fft/1.0e6    << " s" << std::endl;
   std::cout << GridLogPerformance << " FFT insert  " << t_insert/1.0e6 << " s" << std::endl;
+#endif
+
+  // ==================== transpose / all-to-all pencil FFT ====================
+  //
+  // P ranks lie along dim; each holds a local L-slab (L=ldim) of every global
+  // line (length G=fdim=L*P) and Nperp perpendicular lines.  We partition the
+  // Nperp lines across the P ranks: the rank at coord `own` owns the lines with
+  // olin/Oloc == own, gathers their full G points via a cartesian all-to-all,
+  // transforms only Oloc = ceil(Nperp/P) of them, then scatters the result back
+  // with the inverse all-to-all.
+  //
+  // The owned-line count is CEIL-padded to a multiple of P (Oloc*P >= Nperp) so
+  // the all-to-all stays SYMMETRIC (one uniform chunk) for ANY (P,Nperp) -- in
+  // particular a P carrying a factor absent from Nperp, e.g. P=3 on the T axis
+  // of 128^3x288 whose perpendicular volume is a pure power of two.  This keeps
+  // the transpose as total over decompositions as the barrel it replaces (no
+  // new geometry constraint), at a cost of <= (P-1) padded lines out of Nperp.
+  // Padding slots olin in [Nperp, Oloc*P) are never packed and never unpacked.
+  //
+  // The load-bearing identity: the all-to-all block index == cartesian coord
+  // along dim == which L-slab [c*L, c*L+L) of the global line -- so the block a
+  // rank receives carries the global-x tag needed to order the FFT input.
+  //
+  // Degenerate P: P=1 -> both all-to-alls are self-copies and the reorders are
+  // the identity (G=L), i.e. a pure local FFT.  P=2 -> each all-to-all moves
+  // half a field, two of them one field, equal to the barrel's single Cshift.
+  {
+    const int Ndim = grid->Nd();
+    int     L     = grid->_ldimensions[dim];
+    int     G     = grid->_fdimensions[dim];
+    int     Ncomp = sizeof(sobj) / sizeof(scalar);
+    int     P     = grid->_processors[dim];
+    int64_t Nperp = 1;
+    for (int d = 0; d < Ndim; d++)
+      if (d != dim) Nperp *= grid->_ldimensions[d];
+
+    int64_t Oloc  = (Nperp + P - 1) / P;        // ceil: owned (padded) lines/rank
+    int64_t chunk = (int64_t)L * Oloc * Ncomp;  // one all-to-all block (uniform)
+    int64_t nbuf  = (int64_t)P * chunk;         // == Ncomp*Oloc*G, one field's worth
+    int64_t howmany_local = (int64_t)Ncomp * Oloc;
+
+    scalar div;
+    if      (sign == FFTW_BACKWARD) div = 1.0 / G;
+    else if (sign == FFTW_FORWARD)  div = 1.0;
+    else GRID_ASSERT(0);
+
+    double t_total = -usecond();
+    double t_pack = 0, t_a2a = 0, t_reorder = 0, t_fft = 0, t_unpack = 0;
+
+    deviceVector<scalar> sbuf(nbuf);
+    deviceVector<scalar> rbuf(nbuf);
+    deviceVector<scalar> pgbuf(nbuf);           // FFTW pencil buffer, Ncomp*Oloc lines of G
+    scalar *sbuf_v  = &sbuf[0];
+    scalar *rbuf_v  = &rbuf[0];
+    scalar *pgbuf_v = &pgbuf[0];
+
+    // deterministic ceil-pad slots (never read back, but keeps padded FFT lines finite)
+    acceleratorMemSet(sbuf_v, 0, nbuf*sizeof(scalar));
+
+    const Coordinate ldims = grid->_ldimensions;
+    const Coordinate rdims = grid->_rdimensions;
+    const Coordinate sdims = grid->_simd_layout;
+    const int Nsimd = vobj::Nsimd();
+
+    // ---- 1. pack: source -> sbuf.  block = owner coord; payload xloc + L*(slot + Oloc*w)
+    t_pack -= usecond();
+    {
+      autoView(s_v, source, AcceleratorRead);
+      accelerator_for(idx, grid->oSites(), Nsimd, {
+#ifdef GRID_SIMT
+      {
+        int lane = acceleratorSIMTlane(Nsimd);
+#else
+      for (int lane = 0; lane < Nsimd; lane++) {
+#endif
+        Coordinate icoor(Ndim), ocoor(Ndim);
+        Lexicographic::CoorFromIndex(icoor, lane, sdims);
+        Lexicographic::CoorFromIndex(ocoor, idx,  rdims);
+        int64_t xloc = ocoor[dim] + icoor[dim]*rdims[dim];
+        int64_t olin = 0, str = 1;
+        for (int d = 0; d < Ndim; d++) {
+          if (d == dim) continue;
+          int64_t c = ocoor[d] + icoor[d]*rdims[d];
+          olin += str * c;
+          str  *= ldims[d];
+        }
+        int64_t own  = olin / Oloc;
+        int64_t slot = olin - own*Oloc;
+        vector_type *from = (vector_type *)&s_v[idx];
+        for (int w = 0; w < Ncomp; w++) {
+          scalar_type stmp = getlane(from[w], lane);
+          sbuf_v[ own*chunk + xloc + L*(slot + Oloc*w) ] = stmp;
+        }
+#ifdef GRID_SIMT
+      }
+#else
+      }
+#endif
+      });
+    }
+    t_pack += usecond();
+
+    // ---- 2. forward all-to-all: gather my owned lines' L-slabs from every rank
+    t_a2a -= usecond();
+    CartesianRingAllToAll(grid, sbuf_v, rbuf_v, (uint64_t)chunk, dim);
+    t_a2a += usecond();
+
+    // ---- 3. reorder rbuf -> pgbuf: contiguous G-lines (w,slot), xpos = src*L + xloc
+    t_reorder -= usecond();
+    accelerator_for(q, nbuf, 1, {
+      int64_t xpos = q % G;
+      int64_t t    = q / G;           // = w*Oloc + slot
+      int64_t slot = t % Oloc;
+      int64_t w    = t / Oloc;
+      int64_t src  = xpos / L;
+      int64_t xloc = xpos % L;
+      pgbuf_v[q] = rbuf_v[ src*chunk + xloc + L*(slot + Oloc*w) ];
+    });
+    t_reorder += usecond();
+
+    // ---- 4. FFT: Ncomp*Oloc contiguous lines of length G (istride 1, idist G)
+    {
+      FFTW_scalar *in  = (FFTW_scalar *)pgbuf_v;
+      FFTW_scalar *out = (FFTW_scalar *)pgbuf_v;
+      t_fft -= usecond();
+      FFTW<scalar>::fftw_execute_dft(p, in, out, sign);
+      t_fft += usecond();
+    }
+    flops_call = 5.0 * (double)howmany_local * G * log2(G);
+    usec  = (uint64_t)t_fft;
+    flops = flops_call;
+
+    // ---- 5a. reorder pgbuf -> sbuf: block = destination coord; xpos = dst*L + xloc
+    t_reorder -= usecond();
+    accelerator_for(j, nbuf, 1, {
+      int64_t dst  = j / chunk;
+      int64_t r    = j % chunk;
+      int64_t xloc = r % L;
+      int64_t u    = r / L;           // = slot + Oloc*w
+      int64_t slot = u % Oloc;
+      int64_t w    = u / Oloc;
+      int64_t xpos = dst*L + xloc;
+      sbuf_v[j] = pgbuf_v[ w*Oloc*G + slot*G + xpos ];
+    });
+    t_reorder += usecond();
+
+    // ---- 5b. inverse all-to-all: scatter transformed L-slabs back
+    t_a2a -= usecond();
+    CartesianRingAllToAll(grid, sbuf_v, rbuf_v, (uint64_t)chunk, dim);
+    t_a2a += usecond();
+
+    // ---- 5c. unpack rbuf -> result (x div); block = owner coord of each line
+    t_unpack -= usecond();
+    {
+      autoView(r_v, result, AcceleratorWrite);
+      accelerator_for(idx, grid->oSites(), Nsimd, {
+#ifdef GRID_SIMT
+      {
+        int lane = acceleratorSIMTlane(Nsimd);
+#else
+      for (int lane = 0; lane < Nsimd; lane++) {
+#endif
+        Coordinate icoor(Ndim), ocoor(Ndim);
+        Lexicographic::CoorFromIndex(icoor, lane, sdims);
+        Lexicographic::CoorFromIndex(ocoor, idx,  rdims);
+        int64_t xloc = ocoor[dim] + icoor[dim]*rdims[dim];
+        int64_t olin = 0, str = 1;
+        for (int d = 0; d < Ndim; d++) {
+          if (d == dim) continue;
+          int64_t c = ocoor[d] + icoor[d]*rdims[d];
+          olin += str * c;
+          str  *= ldims[d];
+        }
+        int64_t own  = olin / Oloc;
+        int64_t slot = olin - own*Oloc;
+        vector_type *to = (vector_type *)&r_v[idx];
+        for (int w = 0; w < Ncomp; w++) {
+          scalar_type stmp = div * rbuf_v[ own*chunk + xloc + L*(slot + Oloc*w) ];
+          putlane(to[w], stmp, lane);
+        }
+#ifdef GRID_SIMT
+      }
+#else
+      }
+#endif
+      });
+    }
+    t_unpack += usecond();
+    t_total  += usecond();
+
+    std::cout << GridLogPerformance << " FFT took     " << t_total/1.0e6   << " s (transpose P=" << P << ")" << std::endl;
+    std::cout << GridLogPerformance << " FFT pack     " << t_pack/1.0e6    << " s" << std::endl;
+    std::cout << GridLogPerformance << " FFT alltoall " << t_a2a/1.0e6     << " s" << std::endl;
+    std::cout << GridLogPerformance << " FFT reorder  " << t_reorder/1.0e6 << " s" << std::endl;
+    std::cout << GridLogPerformance << " FFT kernels  " << t_fft/1.0e6     << " s" << std::endl;
+    std::cout << GridLogPerformance << " FFT unpack   " << t_unpack/1.0e6  << " s" << std::endl;
+  }
 }
 
 class FFT : public FFTbase {
@@ -405,8 +611,10 @@ public:
     int64_t Nperp = 1;
     for (int d = 0; d < Ndim; d++)
       if (d != dim) Nperp *= _grid->_ldimensions[d];
+    int     P     = _grid->_processors[dim];
+    int64_t Oloc  = (Nperp + P - 1) / P;   // ceil-padded owned lines/rank (see FFT_dim_execute)
     int n[]     = {G};
-    int howmany = Ncomp * Nperp;
+    int howmany = Ncomp * (int)Oloc;
 
     deviceVector<scalar> dummy(2);
     FFTW_scalar *buf = (FFTW_scalar *)&dummy[0];
@@ -442,7 +650,9 @@ private:
       int64_t Nperp = 1;
       for (int dd = 0; dd < Ndim; dd++)
         if (dd != d) Nperp *= _grid->_ldimensions[dd];
-      int howmany = Ncomp * (int)Nperp;
+      int     P     = _grid->_processors[d];
+      int64_t Oloc  = (Nperp + P - 1) / P;   // ceil-padded owned lines/rank (see FFT_dim_execute)
+      int howmany = Ncomp * (int)Oloc;
       int n[]     = {G};
 
       deviceVector<scalar> dummy(2);

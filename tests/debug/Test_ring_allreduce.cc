@@ -204,6 +204,30 @@ int main(int argc, char **argv)
     }
   }
 
+  // T8: single-dimension ALL-TO-ALL.  Fingerprint block j (destined for coord j)
+  // on the rank at coord m with a tag encoding the (source,dest) coordinate pair,
+  // src*Pd+dst; after the exchange block i (from coord i) must carry the tag the
+  // coord-i rank prepared for me, i.e. Fill(e, i*Pd + m).  Analytic reference, so
+  // a coordinate<->rank relabelling bug (wrong ShiftedRanks partner) shows up as a
+  // mismatched source coordinate rather than silently passing.
+  {
+    int Nd=grid->_ndimension;
+    for(int d=0; d<Nd; d++){
+      int Pd=grid->_processors[d]; if ( Pd==1 ) continue;
+      int m=grid->_processor_coor[d];
+      uint64_t chunk=1009, n=chunk*(uint64_t)Pd;
+      std::vector<ComplexD> sh(n), rh(n), ref(n);
+      for(int j=0;j<Pd;j++) for(uint64_t e=0;e<chunk;e++) sh[j*chunk+e]=Fill<ComplexD>(e, m*Pd+j);
+      for(int i=0;i<Pd;i++) for(uint64_t e=0;e<chunk;e++) ref[i*chunk+e]=Fill<ComplexD>(e, i*Pd+m);
+      deviceVector<ComplexD> sd(n), rd(n);
+      acceleratorCopyToDevice(&sh[0],&sd[0],n*sizeof(ComplexD));
+      CartesianRingAllToAll(grid,&sd[0],&rd[0],chunk,d);
+      acceleratorCopyFromDevice(&rd[0],&rh[0],n*sizeof(ComplexD));
+      RealD diff=(memcmp(&rh[0],&ref[0],n*sizeof(ComplexD))!=0)?1.0:0.0; grid->GlobalSum(diff);
+      Report("T8 CartesianRingAllToAll(dim="+std::to_string(d)+") bitwise == analytic reference, P_d="+std::to_string(Pd), diff==0.0);
+    }
+  }
+
   // T4 timing at 16 MB of ComplexF (the dense-apply size at 12 RHS is 13.3 MB)
   {
     uint64_t n = 2*1024*1024;
