@@ -45,7 +45,7 @@ public:
   INHERIT_IMPL_TYPES(Impl);
 
   FermionOperator(const ImplParams &p= ImplParams()) : Impl(p) {};
-  virtual ~FermionOperator(void) = default;
+  virtual ~FermionOperator(void) { if ( _fermionGridFFT ) delete _fermionGridFFT; }
 
   virtual FermionField &tmp(void) = 0;
 
@@ -95,9 +95,23 @@ public:
 
   virtual void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m,std::vector<double> twist) { GRID_ASSERT(0);};
 
-  virtual void  FreePropagator(const FermionField &in,FermionField &out,RealD mass,std::vector<Complex> boundary,std::vector<double> twist) 
+protected:
+  // Cached planned FFT on the fermion grid -- a general utility (FreePropagator
+  // today; smoother, smearings and other users anticipated).  Frontier FFTW plan
+  // create+destroy is ~22 ms/call (measured, Test_fft_prop PLANCOST) -- ~4x the
+  // transform itself and ~80% of an unplanned call -- so a per-call `FFT theFFT(grid)`
+  // dominates.  Lazily built once on FermionGrid() and reused; owned, deleted in the dtor.
+  PlannedFFT<typename FermionField::vector_object> *_fermionGridFFT{nullptr};
+  PlannedFFT<typename FermionField::vector_object> & FermionGridFFT(void) {
+    if ( _fermionGridFFT == nullptr )
+      _fermionGridFFT = new PlannedFFT<typename FermionField::vector_object>((GridCartesian *)this->FermionGrid());
+    return *_fermionGridFFT;
+  }
+public:
+  virtual void  FreePropagator(const FermionField &in,FermionField &out,RealD mass,std::vector<Complex> boundary,std::vector<double> twist)
       {
-	FFT theFFT((GridCartesian *) in.Grid());
+	GRID_ASSERT(in.Grid() == this->FermionGrid());
+	PlannedFFT<typename FermionField::vector_object> &theFFT = this->FermionGridFFT();
 
 	typedef typename Simd::scalar_type Scalar;
 

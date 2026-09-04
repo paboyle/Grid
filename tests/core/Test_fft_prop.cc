@@ -46,7 +46,7 @@ void bench(GridCartesian *grid, std::string name)
   LatticeObject S(grid);  gaussian(RNG,S);
 
   typedef typename LatticeObject::vector_object vobj;
-  const int nrep = 10;
+  const int nrep = 50;
 
   // Correctness + Parseval pass (unplanned), also the WARMUP that absorbs
   // FFTW/allocator/MPI first-touch so the two timed passes below are both warm

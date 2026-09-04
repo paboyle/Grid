@@ -45,7 +45,8 @@ public:
 	FermionField in_k(in.Grid());
 	FermionField prop_k(in.Grid());
 
-	FFT theFFT((GridCartesian *) in.Grid());
+	GRID_ASSERT(in.Grid() == this->FermionGrid());
+	PlannedFFT<typename FermionField::vector_object> &theFFT = this->FermionGridFFT();
 
 	//phase for boundary condition
 	ComplexField coor(in.Grid());
