@@ -45,7 +45,7 @@ public:
   INHERIT_IMPL_TYPES(Impl);
 
   FermionOperator(const ImplParams &p= ImplParams()) : Impl(p) {};
-  virtual ~FermionOperator(void) { if ( _fermionGridFFT ) delete _fermionGridFFT; }
+  virtual ~FermionOperator(void) { if ( _thePlannedFFT ) delete _thePlannedFFT; }
 
   virtual FermionField &tmp(void) = 0;
 
@@ -96,22 +96,27 @@ public:
   virtual void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m,std::vector<double> twist) { GRID_ASSERT(0);};
 
 protected:
-  // Cached planned FFT on the fermion grid -- a general utility (FreePropagator
+  // Cached planned FFT for the ACTIVE field grid -- a general utility (FreePropagator
   // today; smoother, smearings and other users anticipated).  Frontier FFTW plan
   // create+destroy is ~22 ms/call (measured, Test_fft_prop PLANCOST) -- ~4x the
   // transform itself and ~80% of an unplanned call -- so a per-call `FFT theFFT(grid)`
-  // dominates.  Lazily built once on FermionGrid() and reused; owned, deleted in the dtor.
-  PlannedFFT<typename FermionField::vector_object> *_fermionGridFFT{nullptr};
-  PlannedFFT<typename FermionField::vector_object> & FermionGridFFT(void) {
-    if ( _fermionGridFFT == nullptr )
-      _fermionGridFFT = new PlannedFFT<typename FermionField::vector_object>((GridCartesian *)this->FermionGrid());
-    return *_fermionGridFFT;
+  // dominates.  We cache BOTH the FFT and the grid it was built on; when called with a
+  // different grid (e.g. the 5D propagator vs the 4D physical propagator) we rebuild.
+  // Lazily built, owned, deleted in the dtor.  Raw pointer, no smart pointers.
+  PlannedFFT<typename FermionField::vector_object> *_thePlannedFFT{nullptr};
+  GridBase                                         *_thePlannedFFTGrid{nullptr};
+  PlannedFFT<typename FermionField::vector_object> & ThePlannedFFT(GridBase *grid) {
+    if ( _thePlannedFFT == nullptr || _thePlannedFFTGrid != grid ) {
+      if ( _thePlannedFFT != nullptr ) delete _thePlannedFFT;   // active grid changed: rebuild
+      _thePlannedFFT     = new PlannedFFT<typename FermionField::vector_object>((GridCartesian *)grid);
+      _thePlannedFFTGrid = grid;
+    }
+    return *_thePlannedFFT;
   }
 public:
   virtual void  FreePropagator(const FermionField &in,FermionField &out,RealD mass,std::vector<Complex> boundary,std::vector<double> twist)
       {
-	GRID_ASSERT(in.Grid() == this->FermionGrid());
-	PlannedFFT<typename FermionField::vector_object> &theFFT = this->FermionGridFFT();
+	PlannedFFT<typename FermionField::vector_object> &theFFT = this->ThePlannedFFT(in.Grid());
 
 	typedef typename Simd::scalar_type Scalar;
 

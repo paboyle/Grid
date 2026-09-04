@@ -96,8 +96,7 @@ public:
     FermionField in_k(in.Grid());
     FermionField prop_k(in.Grid());
 
-    GRID_ASSERT(in.Grid() == this->FermionGrid());
-    PlannedFFT<typename FermionField::vector_object> &theFFT = this->FermionGridFFT();
+    PlannedFFT<typename FermionField::vector_object> &theFFT = this->ThePlannedFFT(in.Grid());
 
     //phase for boundary condition
     ComplexField coor(in.Grid());
