@@ -54,21 +54,7 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
 }
 */
 
-#define GENERIC_STENCIL_LEG(Dir,spProj,Recon)			\
-  SE = st.GetEntry(ptype, Dir, sF);				\
-  if (SE->_is_local) {						\
-    int perm= SE->_permute;					\
-    auto tmp = coalescedReadPermute(in[SE->_offset],ptype,perm,lane);	\
-    spProj(chi,tmp);						\
-  } else {							\
-    chi = coalescedRead(buf[SE->_offset],lane);			\
-  }								\
-  acceleratorSynchronise();					\
-  Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);		\
-  Recon(result, Uchi);
-
 #if defined(GRID_HIP)
-
 #define GENERIC_STENCIL_PRELOAD_INT()				\
   StencilEntry SEv[8];						\
   int ptv[8];							\
@@ -87,6 +73,17 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
 // Reads the entry out of the register copy by value, and never binds its
 // address to a variable, so that SROA can keep SEv[] entirely in registers
 // rather than spilling it to scratch.
+#define GENERIC_STENCIL_LEG_PRE(Dir,spProj,Recon) \
+  ptype = pvt[Dir]; \
+  if (SEv[Dir]._is_local) {					\
+    int perm= SEv[Dir]._permute;				\
+    auto tmp = coalescedReadPermute(in[SEv[Dir]._offset],ptype,perm,lane); \
+    spProj(chi,tmp);						\
+    Impl::multLink(Uchi, U[sU], chi, Dir, &SEv[Dir], st);	\
+    Recon(result, Uchi);					\
+  }								\
+  acceleratorSynchronise();
+
 #define GENERIC_STENCIL_LEG_INT_PRE(Dir,spProj,Recon)		\
   ptype = ptv[Dir];						\
   if (SEv[Dir]._is_local) {					\
@@ -98,7 +95,30 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
   }								\
   acceleratorSynchronise();
 
+#define GENERIC_STENCIL_LEG_EXT_PRE(Dir,spProj,Recon)		\
+  if (!SEv[Dir]._is_local ) {					\
+    auto chi = coalescedRead(buf[SEv[Dir]._offset],lane);	\
+    Impl::multLink(Uchi, U[sU], chi, Dir, &SEv[Dir], st);	\
+    Recon(result, Uchi);					\
+    nmu++;							\
+  }								\
+  acceleratorSynchronise();
+
 #endif
+
+#define GENERIC_STENCIL_LEG(Dir,spProj,Recon)			\
+  SE = st.GetEntry(ptype, Dir, sF);				\
+  if (SE->_is_local) {						\
+    int perm= SE->_permute;					\
+    auto tmp = coalescedReadPermute(in[SE->_offset],ptype,perm,lane);	\
+    spProj(chi,tmp);						\
+  } else {							\
+    chi = coalescedRead(buf[SE->_offset],lane);			\
+  }								\
+  acceleratorSynchronise();					\
+  Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);		\
+  Recon(result, Uchi);
+
 
 #define GENERIC_STENCIL_LEG_INT(Dir,spProj,Recon)		\
   SE = st.GetEntry(ptype, Dir, sF);				\
@@ -296,6 +316,18 @@ void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilView &st,  DoubledGaugeFi
   int nmu=0;
   const int Nsimd = SiteHalfSpinor::Nsimd();
   const int lane=acceleratorSIMTlane(Nsimd);
+#if defined(GRID_HIP)
+  GENERIC_STENCIL_PRELOAD_INT();
+  result=Zero();
+  GENERIC_STENCIL_LEG_EXT_PRE(Xp,spProjXp,accumReconXp);
+  GENERIC_STENCIL_LEG_EXT_PRE(Yp,spProjYp,accumReconYp);
+  GENERIC_STENCIL_LEG_EXT_PRE(Zp,spProjZp,accumReconZp);
+  GENERIC_STENCIL_LEG_EXT_PRE(Tp,spProjTp,accumReconTp);
+  GENERIC_STENCIL_LEG_EXT_PRE(Xm,spProjXm,accumReconXm);
+  GENERIC_STENCIL_LEG_EXT_PRE(Ym,spProjYm,accumReconYm);
+  GENERIC_STENCIL_LEG_EXT_PRE(Zm,spProjZm,accumReconZm);
+  GENERIC_STENCIL_LEG_EXT_PRE(Tm,spProjTm,accumReconTm);
+#else
   result=Zero();
   GENERIC_STENCIL_LEG_EXT(Xp,spProjXp,accumReconXp);
   GENERIC_STENCIL_LEG_EXT(Yp,spProjYp,accumReconYp);
@@ -305,6 +337,7 @@ void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilView &st,  DoubledGaugeFi
   GENERIC_STENCIL_LEG_EXT(Ym,spProjYm,accumReconYm);
   GENERIC_STENCIL_LEG_EXT(Zm,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG_EXT(Tm,spProjTm,accumReconTm);
+#endif
   if ( nmu ) {
     auto out_t = coalescedRead(out[sF],lane);
     out_t = out_t + result;
@@ -327,6 +360,18 @@ void WilsonKernels<Impl>::GenericDhopSiteExt(StencilView &st,  DoubledGaugeField
   int nmu=0;
   const int Nsimd = SiteHalfSpinor::Nsimd();
   const int lane=acceleratorSIMTlane(Nsimd);
+#if defined(GRID_HIP)
+  GENERIC_STENCIL_PRELOAD_INT();
+  result=Zero();
+  GENERIC_STENCIL_LEG_EXT_PRE(Xm,spProjXp,accumReconXp);
+  GENERIC_STENCIL_LEG_EXT_PRE(Ym,spProjYp,accumReconYp);
+  GENERIC_STENCIL_LEG_EXT_PRE(Zm,spProjZp,accumReconZp);
+  GENERIC_STENCIL_LEG_EXT_PRE(Tm,spProjTp,accumReconTp);
+  GENERIC_STENCIL_LEG_EXT_PRE(Xp,spProjXm,accumReconXm);
+  GENERIC_STENCIL_LEG_EXT_PRE(Yp,spProjYm,accumReconYm);
+  GENERIC_STENCIL_LEG_EXT_PRE(Zp,spProjZm,accumReconZm);
+  GENERIC_STENCIL_LEG_EXT_PRE(Tp,spProjTm,accumReconTm);
+#else
   result=Zero();
   GENERIC_STENCIL_LEG_EXT(Xm,spProjXp,accumReconXp);
   GENERIC_STENCIL_LEG_EXT(Ym,spProjYp,accumReconYp);
@@ -336,6 +381,7 @@ void WilsonKernels<Impl>::GenericDhopSiteExt(StencilView &st,  DoubledGaugeField
   GENERIC_STENCIL_LEG_EXT(Yp,spProjYm,accumReconYm);
   GENERIC_STENCIL_LEG_EXT(Zp,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG_EXT(Tp,spProjTm,accumReconTm);
+#endif
   if ( nmu ) {
     auto out_t = coalescedRead(out[sF],lane);
     out_t = out_t + result;
