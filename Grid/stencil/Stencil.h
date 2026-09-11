@@ -82,7 +82,7 @@ void DslashLogPartial(void);
 void DslashLogDirichlet(void);
 
 struct StencilEntry {
-#ifdef GRID_CUDA
+#if defined(GRID_CUDA) || defined(GRID_HIP)
   uint64_t _byte_offset;       // 8 bytes
   uint32_t _offset;            // 4 bytes
 #else
