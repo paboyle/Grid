@@ -82,6 +82,7 @@ public:
   {
     int npoints = shifts.size();
     int osites  = grid->oSites();
+    std::vector<GeneralStencilEntry> host_entries(npoints * osites);
     
     this->_grid    = grid;
     this->_npoints = npoints;
@@ -145,9 +146,10 @@ public:
 	  ////////////////////////////////////////////////
 	  // Store in look up table
 	  ////////////////////////////////////////////////
-	  acceleratorPut(this->_entries[lex],SE);
+    host_entries[lex] = SE;
 	}
       });
+    acceleratorCopyToDevice(host_entries.data(), &_entries[0], host_entries.size() * sizeof(GeneralStencilEntry));
   }
   
 };
