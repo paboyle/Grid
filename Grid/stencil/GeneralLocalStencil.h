@@ -146,7 +146,7 @@ public:
 	  ////////////////////////////////////////////////
 	  // Store in look up table
 	  ////////////////////////////////////////////////
-    host_entries[lex] = SE;
+	  host_entries[lex] = SE;
 	}
       });
     acceleratorCopyToDevice(host_entries.data(), &_entries[0], host_entries.size() * sizeof(GeneralStencilEntry));
