@@ -57,6 +57,7 @@ public:
   GridStopWatch MatTimer;
   GridStopWatch LinalgTimer;
   std::string name;
+  std::string trace_step = "PGCR_step";   // name + step; see Name()
   int ZeroGuess  = 0;  // caller contract: guess is always zero => first-cycle r0 = src, skip the apply
   // persistent GCR history (see GCRnStep)
   GridBase           *hist_grid = nullptr;
@@ -68,7 +69,10 @@ public:
   LinearFunction<Field>     &Preconditioner;
   LinearOperatorBase<Field> &Linop;
 
-  void Name(std::string _name) { name = _name; };
+  // The name is also the trace range's, so a profile separates the four
+  // instances (Fouter, Fsmoother, Couter, Csmoother) that otherwise nest
+  // indistinguishably as one shared range.
+  void Name(std::string _name) { name = _name; trace_step = name + " PGCR_step"; };
 
   void Level(int n) { Name("Level " + std::to_string(n)); level = n; }
 
@@ -222,7 +226,7 @@ public:
     GCRLogLevel<< "PGCR true residual "<< sqrt(cp/SSQ)     <<std::endl;
 
     for(int k=0;k<nstep;k++){
-      GRID_TRACE("PGCR_step");
+      GRID_TRACE(trace_step.c_str());
       steps++;
 
       int kp     = k+1;

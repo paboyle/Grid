@@ -57,46 +57,7 @@ Author: Peter Boyle <pboyle@bnl.gov>
 using namespace std;
 using namespace Grid;
 
-// Wraps any LinearOperatorBase so that Op = AdjOp = HermOp.
-// Required when coarsening an HPD operator whose Op != HermOp
-// (e.g. MdagMLinearOperator where Op=M, HermOp=M†M).
-template<class Field>
-class HermOpAdaptor : public LinearOperatorBase<Field>
-{
-  LinearOperatorBase<Field> &wrapped;
-public:
-  HermOpAdaptor(LinearOperatorBase<Field> &wrapme) : wrapped(wrapme) {}
-  void Op     (const Field &in, Field &out)   { wrapped.HermOp(in, out); }
-  void HermOp (const Field &in, Field &out)   { wrapped.HermOp(in, out); }
-  void AdjOp  (const Field &in, Field &out)   { wrapped.HermOp(in, out); }
-  void OpDiag (const Field &in, Field &out)                    { GRID_ASSERT(0); }
-  void OpDir  (const Field &in, Field &out, int dir, int disp) { GRID_ASSERT(0); }
-  void OpDirAll(const Field &in, std::vector<Field> &out)      { GRID_ASSERT(0); }
-  void HermOpAndNorm(const Field &in, Field &out, RealD &n1, RealD &n2) {
-    wrapped.HermOp(in, out);
-    ComplexD dot = innerProduct(in, out);
-    n1 = real(dot); n2 = norm2(out);
-  }
-};
 
-// Fixed-iteration CG as a smoother (LinearFunction).
-// Used as the IR-shifted smoother: solves (M†M + lo*I) x = b approximately.
-template<class Field>
-class CGSmoother : public LinearFunction<Field>
-{
-public:
-  using LinearFunction<Field>::operator();
-  LinearOperatorBase<Field> &_op;
-  int iters;
-  CGSmoother(int _iters, LinearOperatorBase<Field> &op) : _op(op), iters(_iters) {
-    std::cout << GridLogMessage << "CGSmoother order " << iters << std::endl;
-  }
-  void operator()(const Field &in, Field &out) {
-    ConjugateGradient<Field> CG(0.0, iters, false);
-    out = Zero();
-    CG(_op, in, out);
-  }
-};
 
 // Two-level V-cycle preconditioner (LinearFunction).
 template<class Fobj, class CComplex, int nbasis>

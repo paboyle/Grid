@@ -100,44 +100,7 @@ void LoadEigenvectors(std::vector<RealD>            &eval,
 #endif
 }
 
-// Want Op in CoarsenOp to call MatPcDagMatPc
-template<class Field>
-class HermOpAdaptor : public LinearOperatorBase<Field>
-{
-  LinearOperatorBase<Field> & wrapped;
-public:
-  HermOpAdaptor(LinearOperatorBase<Field> &wrapme) : wrapped(wrapme)  {};
-  void Op     (const Field &in, Field &out)   { wrapped.HermOp(in,out);  }
-  void HermOp(const Field &in, Field &out)    { wrapped.HermOp(in,out); }
-  void AdjOp     (const Field &in, Field &out){ wrapped.HermOp(in,out);  }
-  void OpDiag (const Field &in, Field &out)                  {    GRID_ASSERT(0);  }
-  void OpDir  (const Field &in, Field &out,int dir,int disp) {    GRID_ASSERT(0);  }
-  void OpDirAll  (const Field &in, std::vector<Field> &out)  {    GRID_ASSERT(0);  };
-  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){    GRID_ASSERT(0);  }
-};
 
-template<class Field> class CGSmoother : public LinearFunction<Field>
-{
-public:
-  using LinearFunction<Field>::operator();
-  typedef LinearOperatorBase<Field> FineOperator;
-  FineOperator   & _SmootherOperator;
-  int iters;
-  CGSmoother(int _iters, FineOperator &SmootherOperator) :
-    _SmootherOperator(SmootherOperator),
-    iters(_iters)
-  {
-    std::cout << GridLogMessage<<" Mirs smoother order "<<iters<<std::endl;
-  };
-  void operator() (const Field &in, Field &out) 
-  {
-    ConjugateGradient<Field>  CG(0.0,iters,false); // non-converge is just fine in a smoother
-
-    out=Zero();
-
-    CG(_SmootherOperator,in,out);
-  }
-};
 
 
 int main (int argc, char ** argv)
@@ -356,15 +319,9 @@ int main (int argc, char ** argv)
   CGSmoother<LatticeFermionD> CGsmooth(ord,ShiftedFineHermOp) ;
   
   
-  TwoLevelADEF2mrhs<LatticeFermion,CoarseVector>
-    HDCGmrhs(1.0e-8, 500,
-	     FineHermOp,
-	     CGsmooth,
-	     HPDSolveMrhs,    // Used in M1
-	     HPDSolveMrhs,          // Used in Vstart
-	     MrhsProjector,
-	     MrhsGuesser,
-	     CoarseMrhs);
+  MrhsADEF2Preconditioner<LatticeFermion,CoarseVector>
+    HDCGmrhs_ADEF2(FineHermOp, CGsmooth, HPDSolveMrhs, HPDSolveMrhs, MrhsProjector, MrhsGuesser, CoarseMrhs);
+  TwoLevelCGmrhs<LatticeFermion> HDCGmrhs(1.0e-8, 500, FineHermOp, HDCGmrhs_ADEF2, MrhsProjector.fine_grid);
     
   std::vector<LatticeFermionD> src_mrhs(nrhs,FrbGrid);
   std::vector<LatticeFermionD> res_mrhs(nrhs,FrbGrid);

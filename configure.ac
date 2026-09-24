@@ -192,6 +192,18 @@ case ${ac_TRACING} in
 	AC_DEFINE([GRID_TRACING_NONE],[1],[no tracing]);;
 esac
 
+############### distributed dense inverse precision (multigrid coarse-coarse bottom)
+AC_ARG_ENABLE([dense-inverse-precision],
+    [AS_HELP_STRING([--enable-dense-inverse-precision=double|single],[precision of the distributed dense coarse-coarse inversion (default double); independent of the coarse-space precision])],
+    [ac_DENSE_INVERSE=${enable_dense_inverse_precision}], [ac_DENSE_INVERSE=double])
+
+case ${ac_DENSE_INVERSE} in
+    single)
+        AC_DEFINE([GRID_DENSE_INVERSE_SINGLE],[1],[fp32 distributed dense inversion]);;
+    *)
+        AC_DEFINE([GRID_DENSE_INVERSE_DOUBLE],[1],[fp64 distributed dense inversion]);;
+esac
+
 ############### fermions
 AC_ARG_ENABLE([fermion-instantiations],
      [AS_HELP_STRING([--enable-fermion-instantiations=yes|no],[enable fermion instantiations])],

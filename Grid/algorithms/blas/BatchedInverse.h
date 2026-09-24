@@ -111,7 +111,9 @@ public:
   // ranks wait on it.  The _64 getrf/getrs pair is the path proven in the
   // 1-rank dense coarse-coarse setup at N=69120 (DenseCoarseMatrix.h).
   // Same in-place, column-major, lda=N contract as inverseBatched.
-  // NB: written to rocSOLVER's documented z*_64 signatures; not compiled on
+  // ComplexD and ComplexF overloads (z*_64 / c*_64), so the distributed
+  // dense inverse can run in either precision (DenseInverseScalar).
+  // NB: written to rocSOLVER's documented *_64 signatures; not compiled on
   // HIP in the air-gapped loop -- verify on first hipcc build.
   ///////////////////////////////////////////////////////////////////////////
   double lastGetrfUs = 0.0, lastGetrsUs = 0.0;   // split timing of the last inverseLU (HIP path)
@@ -142,6 +144,37 @@ public:
 #else
     deviceVector<ComplexD*> bp(1); std::vector<ComplexD*> ptr(1); ptr[0] = A;
     acceleratorCopyToDevice(&ptr[0], &bp[0], sizeof(ComplexD*));
+    inverseBatched(N, bp);
+#endif
+  }
+  // fp32 overload: the Schur-recursion leaf under --enable-dense-inverse-precision=single
+  void inverseLU(int64_t N, ComplexF *A)
+  {
+#ifdef GRID_HIP
+    rocblas_handle handle = Handle();
+    deviceVector<int64_t>  ipiv((uint64_t)N);
+    deviceVector<int64_t>  info(1);
+    double t0 = usecond();
+    auto st1 = rocsolver_cgetrf_64(handle, N, N, (rocblas_float_complex *)A, N, &ipiv[0], &info[0]);
+    GRID_ASSERT(st1 == rocblas_status_success);
+    accelerator_barrier();
+    lastGetrfUs = usecond()-t0;
+    int64_t info_h = -1; acceleratorCopyFromDevice(&info[0], &info_h, sizeof(int64_t));
+    GRID_ASSERT(info_h == 0);
+    deviceVector<ComplexF> X((uint64_t)N*N);
+    { ComplexF *x = &X[0]; const int64_t NN = N;
+      accelerator_for(idx, (uint64_t)N*N, 1, { int64_t j = idx/NN, i = idx - j*NN; x[idx] = (i==j) ? ComplexF(1.0,0.0) : ComplexF(0.0,0.0); });
+      accelerator_barrier(); }
+    auto st2 = rocsolver_cgetrs_64(handle, rocblas_operation_none, N, N,
+                                   (rocblas_float_complex *)A, N, &ipiv[0],
+                                   (rocblas_float_complex *)&X[0], N);
+    GRID_ASSERT(st2 == rocblas_status_success);
+    accelerator_barrier();
+    lastGetrsUs = usecond()-t0-lastGetrfUs;
+    acceleratorCopyDeviceToDevice((void *)&X[0], (void *)A, (uint64_t)N*N*sizeof(ComplexF));
+#else
+    deviceVector<ComplexF*> bp(1); std::vector<ComplexF*> ptr(1); ptr[0] = A;
+    acceleratorCopyToDevice(&ptr[0], &bp[0], sizeof(ComplexF*));
     inverseBatched(N, bp);
 #endif
   }

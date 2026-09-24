@@ -106,7 +106,7 @@ Tests and benchmarks that need optional fermion representations are guarded by `
 ### GPU acceleration and the view/memory-manager discipline
 ### Multigrid (`Grid/algorithms/multigrid/`)
 
-Aggregation-based algebraic multigrid for Wilson-type fermions. Key files: `CoarsenedMatrix.h` (coarse operator), `GeneralCoarsenedMatrix.h` and `GeneralCoarsenedMatrixMultiRHS.h` (general coarsening supporting multi-RHS solves), `Aggregates.h` (near-null vector construction), `Geometry.h` (coarse-grid geometry). `MultiGrid.h` is the top-level include.
+Aggregation-based algebraic multigrid for Wilson-type fermions. Key files: `GeneralCoarsenedMatrixMultiRHSV2.h` (the multi-RHS coarse operator, "V2": coarsening by Fourier probing, batched-GEMM apply on a D+1 grid with rhs innermost and unvectorised), `MultiRHSBlockProject.h` (in `deflation/`; the batched-GEMM transfer operators), `PVdagMMultiGrid.h` (three-level non-Hermitian PVdagM chain with dense bottom) and `HDCGMultiGrid.h` (two-level Hermitian HDCG chain) with their `*Params.h` (XML-serialisable parameters), `MrhsMultiGrid.h` (mrhs V-cycle, preconditioner interface, fp64/fp32 seam), `Smoothers.h`, `MultiGridIO.h`, `Aggregates.h` (near-null vector construction), `Geometry.h` (coarse stencils: max-norm-1 boxes of Manhattan radius 1, 2 or 4), `CoarsenedMatrix.h` (the original nearest-neighbour Wilson multigrid). `deprecated/` holds the V1 coarse operators and the Aggregation-based single-RHS ADEF-2, kept only for the pre-2026 drivers. `MultiGrid.h` is the top-level include.
 
 ### GPU acceleration
 

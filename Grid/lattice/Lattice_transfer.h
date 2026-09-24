@@ -210,6 +210,14 @@ accelerator_inline void convertType(vComplexD2 & out, const vComplexF & in) {
   precisionChange(out,in);
 }
 
+// Precision change in the lex (unvectorised) chart: one lane, so a plain
+// scalar conversion.  Reached by the block operations on an fp32 coarse
+// space, whose inner products accumulate in double and convert back.
+accelerator_inline void convertType(sComplexF & out, const sComplexD & in) { out.v = ComplexF(in.v); }
+accelerator_inline void convertType(sComplexD & out, const sComplexF & in) { out.v = ComplexD(in.v); }
+accelerator_inline void convertType(sRealF    & out, const sRealD    & in) { out.v = RealF(in.v); }
+accelerator_inline void convertType(sRealD    & out, const sRealF    & in) { out.v = RealD(in.v); }
+
 template<typename T1,typename T2>
 accelerator_inline void convertType(iScalar<T1> & out, const iScalar<T2> & in) {
   convertType(out._internal,in._internal);

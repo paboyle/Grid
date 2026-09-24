@@ -37,7 +37,9 @@ template<class Fobj,class CComplex,int nbasis>
 class MultiGeneralCoarsenedOperatorV2 : public SparseMatrixBase<Lattice<iVector<CComplex,nbasis > > >  {
 public:
   typedef typename CComplex::scalar_object SComplex;
-  typedef GeneralCoarsenedMatrix<Fobj,CComplex,nbasis> GeneralCoarseOp;
+  // The BLAS scalar of this level follows the coefficient precision:
+  // ComplexF for an fp32 coarse space, ComplexD for fp64.
+  typedef typename GridTypeMapper<CComplex>::scalar_type CoarseBLASScalar;
   typedef MultiGeneralCoarsenedOperatorV2<Fobj,CComplex,nbasis> MultiGeneralCoarseOp;
 
   typedef iVector<CComplex,nbasis >           siteVector;
@@ -82,9 +84,80 @@ public:
   deviceVector<calcVector> BLAS_C;
   std::vector<deviceVector<calcMatrix> > BLAS_A;
 
-  std::vector<deviceVector<ComplexD *> > BLAS_AP;
-  std::vector<deviceVector<ComplexD *> > BLAS_BP;
-  deviceVector<ComplexD *>               BLAS_CP;
+  std::vector<deviceVector<CoarseBLASScalar *> > BLAS_AP;
+  std::vector<deviceVector<CoarseBLASScalar *> > BLAS_BP;
+  deviceVector<CoarseBLASScalar *>               BLAS_CP;
+
+  ///////////////////////////////////////////////////////////////////////////
+  // Stencil legs carried in the BATCH dimension, LegGroup at a time.
+  //
+  // One call per stencil point batches over the local coarse volume alone,
+  // which at the production point is 1024 sites.  That is too few for the
+  // single-precision kernel: it then runs at half the bandwidth the double
+  // one reaches and takes the same time, so an fp32 coarse space buys
+  // nothing in the operator.  The same shape at four times the batch runs
+  // 1.7x faster in fp32 than fp64, so the fix is more batch, not fewer
+  // bytes.  Grouping G legs multiplies the batch by G and divides the launch
+  // count by G, at the price of G partial outputs summed at the end.
+  //
+  // G must divide npoint; 3 divides both the 33 point (next-to-nearest) and
+  // 81 point (full box) stencils.  G=1 is the ungrouped form.  The only
+  // numerical difference is the ORDER of the sum over stencil points.
+  ///////////////////////////////////////////////////////////////////////////
+  // The group need not divide npoint: the last call carries the remainder,
+  // with its own smaller tables.  The batch a call presents is LegGroup times
+  // the local coarse volume, so the group that saturates the kernel depends
+  // on the decomposition, and the default is chosen from it rather than
+  // fixed.  TargetBatch is where the measured single-precision curve flattens
+  // (530 GB/s at 1024, 695 at 9216, 728 at 33792 for 60x12x60 on MI250X).
+  //
+  // 9216 is nine times the production local coarse volume, so the default
+  // lands on nine legs per call: 81 = 9x9 for the full-box stencil and
+  // 33 = 9+9+9+6 for the next-to-nearest one, which is the grouping the
+  // earlier HDCG coarse operator used.
+  static const int TargetBatch = 9216;
+
+  int LegGroup = 1;
+  std::vector<deviceVector<CoarseBLASScalar *> > BLAS_APg; // per group
+  std::vector<deviceVector<CoarseBLASScalar *> > BLAS_BPg;
+  deviceVector<CoarseBLASScalar *>               BLAS_CPg; // LegGroup*sites
+  deviceVector<CoarseBLASScalar *>               BLAS_CPr; // remainder*sites
+  deviceVector<calcVector>                       BLAS_Cg;  // LegGroup partials
+
+  int LegGroups(void)    const { return geom.npoint/LegGroup; }          // full
+  int LegRemainder(void) const { return geom.npoint%LegGroup; }
+
+  ///////////////////////////////////////////////////////////////////////////
+  // Matrix pointer table for the grouped call.  Group g holds legs
+  // g*LegGroup .. and the batch index runs site fastest within a leg.  The
+  // last group is short when LegGroup does not divide npoint.
+  ///////////////////////////////////////////////////////////////////////////
+  void BuildGroupedA(void)
+  {
+    int32_t sites = _CoarseGrid->lSites();
+    int ng = LegGroups() + (LegRemainder()?1:0);
+    BLAS_APg.resize(ng);
+    for(int g=0;g<ng;g++){
+      int legs = (g<LegGroups()) ? LegGroup : LegRemainder();
+      BLAS_APg[g].resize(legs*sites);
+      for(int l=0;l<legs;l++){
+	int p = g*LegGroup+l;
+	for(int32_t ss=0;ss<sites;ss++){
+	  CoarseBLASScalar *ptr = (CoarseBLASScalar *)&BLAS_A[p][ss];
+	  acceleratorPut(BLAS_APg[g][l*sites+ss],ptr);
+	}
+      }
+    }
+  }
+
+  void SetLegGroup(int G)
+  {
+    GRID_ASSERT( G>=1 );
+    GRID_ASSERT( G<=geom.npoint );   // every partial must get an initialising call
+    LegGroup = G;
+    BuildGroupedA();
+    if ( _CoarseGridMulti ) SetGrid(_CoarseGridMulti);   // rebuild the rest
+  }
 
   ///////////////////////
   // Interface
@@ -115,6 +188,15 @@ public:
   // D+1 multiRHS grid here, so a consumer wanting the space the elements live
   // on must ask for CoarseGridD().
   //////////////////////////////////////////////////////////////////////////
+  // Resident device memory this operator holds (matrix elements and the
+  // Nrhs-dependent BLAS buffers).  Not evictable.
+  uint64_t DeviceBytes(void)
+  {
+    uint64_t b = (uint64_t)(BLAS_B.capacity()+BLAS_C.capacity()+BLAS_Cg.capacity())*sizeof(calcVector);
+    for(int p=0;p<(int)BLAS_A.size();p++) b += (uint64_t)BLAS_A[p].capacity()*sizeof(calcMatrix);
+    return b;
+  }
+
   NonLocalStencilGeometry & Geometry(void)      { return geom_srhs; };
   void ExtractMatrix(int p,CoarseMatrix &A)     { BLAStoGrid(A,BLAS_A[p]); };
 
@@ -130,30 +212,7 @@ public:
     GRID_ASSERT(A.size()==geom_srhs.npoint);
     BLAStoGrid(A[p],BLAS_A[p]);
   }
-  void CopyMatrix (GeneralCoarseOp &_Op)
-  {
-    for(int p=0;p<geom.npoint;p++){
-      auto Aup = _Op.Cell.Extract(_Op._A[p]);
-      //Unpadded
-      GridtoBLAS(Aup,BLAS_A[p]);
-    }
-  }
-  /*
-  void CheckMatrix (GeneralCoarseOp &_Op)
-  {
-    std::cout <<"************* Checking the little direc operator mRHS"<<std::endl;
-    for(int p=0;p<geom.npoint;p++){
-      //Unpadded
-      auto Aup = _Op.Cell.Extract(_Op._A[p]);
-      auto Ack = Aup;
-      BLAStoGrid(Ack,BLAS_A[p]);
-      std::cout << p<<" Ack "<<norm2(Ack)<<std::endl;
-      std::cout << p<<" Aup "<<norm2(Aup)<<std::endl;
-    }
-    std::cout <<"************* "<<std::endl;
-  }
-  */
-  
+
   ///////////////////////////////////////////////////////////////////////////
   // Constructor takes the D dimensional coarse grid. Everything built here
   // is independent of Nrhs, in particular the matrix elements, which must
@@ -184,10 +243,24 @@ public:
     // Site identity mapping for A
     for(int p=0;p<geom.npoint;p++){
       for(int ss=0;ss<unpadded_sites;ss++){
-	ComplexD *ptr = (ComplexD *)&BLAS_A[p][ss];
+	CoarseBLASScalar *ptr = (CoarseBLASScalar *)&BLAS_A[p][ss];
 	acceleratorPut(BLAS_AP[p][ss],ptr);
       }
     }
+
+    // Enough legs to bring the batch up to where the kernel saturates, and
+    // never more legs than the stencil has.
+    LegGroup = (TargetBatch + unpadded_sites - 1)/unpadded_sites;
+    if ( LegGroup < 1 )            LegGroup = 1;
+    if ( LegGroup > geom.npoint )  LegGroup = geom.npoint;
+    BuildGroupedA();
+    std::cout << GridLogMessage << "MultiGeneralCoarsenedOperatorV2: stencil "
+	      << geom.npoint << " points, local coarse volume " << unpadded_sites
+	      << ", legs per GEMM " << LegGroup
+	      << " (batch " << LegGroup*unpadded_sites << ", "
+	      << LegGroups() << " full call(s)"
+	      << (LegRemainder() ? " + a remainder of "+std::to_string(LegRemainder()) : "")
+	      << ")" << std::endl;
   }
 
   virtual ~MultiGeneralCoarsenedOperatorV2()
@@ -209,6 +282,11 @@ public:
 
     BLAS_B.resize(0);
     BLAS_C.resize(0);
+    BLAS_Cg.resize(0);
+    BLAS_CPg.resize(0);
+    BLAS_CPr.resize(0);
+    for(int g=0;g<(int)BLAS_BPg.size();g++){ BLAS_BPg[g].resize(0); }
+    BLAS_BPg.resize(0);
     for(int p=0;p<BLAS_BP.size();p++){
       BLAS_BP[p].resize(0);
     }
@@ -277,8 +355,31 @@ public:
 
     // Site identity mapping for C
     for(int ss=0;ss<unpadded_sites;ss++){
-      ComplexD *ptr = (ComplexD *)&BLAS_C[ss*nrhs];
+      CoarseBLASScalar *ptr = (CoarseBLASScalar *)&BLAS_C[ss*nrhs];
       acceleratorPut(BLAS_CP[ss],ptr);
+    }
+
+    // Grouped output: LegGroup partial results, each the full C volume, and
+    // their pointer table.  The batch index runs site fastest within a leg,
+    // matching the grouped A and B tables.  The remainder call writes into
+    // the first few partials, so it needs a truncated copy of the table.
+    int nfull = LegGroups();
+    int rem   = LegRemainder();
+    int ng    = nfull + (rem?1:0);
+    BLAS_Cg.resize (LegGroup*nrhs*unpadded_sites);
+    BLAS_CPg.resize(LegGroup*unpadded_sites);
+    BLAS_CPr.resize(rem*unpadded_sites);
+    for(int l=0;l<LegGroup;l++){
+      for(int ss=0;ss<unpadded_sites;ss++){
+	CoarseBLASScalar *ptr = (CoarseBLASScalar *)&BLAS_Cg[(l*unpadded_sites+ss)*nrhs];
+	acceleratorPut(BLAS_CPg[l*unpadded_sites+ss],ptr);
+	if ( l<rem ) acceleratorPut(BLAS_CPr[l*unpadded_sites+ss],ptr);
+      }
+    }
+    BLAS_BPg.resize(ng);
+    for(int g=0;g<ng;g++){
+      int legs = (g<nfull) ? LegGroup : rem;
+      BLAS_BPg[g].resize(legs*unpadded_sites);
     }
 
     // Neighbour table is more complicated
@@ -298,8 +399,9 @@ public:
  	  int32_t nbr = Stencil._entries[i]._offset*CComplex::Nsimd(); // oSite -> lSite, D dim
 	  nbr = nbr*nrhs;                                              // D -> D+1, rhs innermost
 	  GRID_ASSERT(nbr<BLAS_B.size());
-	  ComplexD * ptr = (ComplexD *)&BLAS_B[nbr];
+	  CoarseBLASScalar * ptr = (CoarseBLASScalar *)&BLAS_B[nbr];
 	  acceleratorPut(BLAS_BP[point][j],ptr); // neighbour indexing in ghost zone volume
+	  acceleratorPut(BLAS_BPg[point/LegGroup][(point%LegGroup)*unpadded_sites+j],ptr);
 	}
 	j++;
       }
@@ -411,11 +513,43 @@ public:
   //     Where q_k = delta_k . (2*M_PI/global_nb[mu])
   //     Then A{ji}^{b,b+l} = M^{-1}_{lm} ComputeProj_{m,b,i,j}
   ///////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////
+  // Probe momenta.  The stencil DISPLACEMENTS are the +-1 box; the momenta
+  // used to separate them are free, and are chosen here to span the
+  // Brillouin zone: k_mu = K_mu * shift_mu with K_mu ~ L_mu/3, so a phase
+  // is ~2pi/3 per unit displacement rather than 2pi/L_mu.
+  //
+  // This is what conditions the extraction.  With K_mu = 1 every entry of
+  // the phase matrix tends to 1 as the coarse lattice grows, the matrix
+  // tends to rank one, and its inverse amplifies any error in the measured
+  // projections: at 24.24.16.32 the condition number is 2.7e5, so fp32
+  // projections give coarse matrix elements wrong by ~1e-3.  Spread momenta
+  // bring it to ~20, independent of the lattice size.
+  //
+  // K_mu is stepped away from L_mu/2, where +k and -k alias into the same
+  // momentum and the matrix is singular.
+  ///////////////////////////////////////////////////////////////////////////
+  void CoarsenMomenta(GridBase *CoarseGrid,Coordinate &K)
+  {
+    Coordinate clatt = CoarseGrid->GlobalDimensions();
+    int Nd = CoarseGrid->Nd();
+    K.resize(Nd);
+    for(int mu=0;mu<Nd;mu++){
+      int L = clatt[mu];
+      int k = (L>=3) ? (int)std::lround(L/3.0) : 1;
+      if ( k < 1 ) k = 1;
+      if ( (L>2) && ((2*k)%L == 0) ) k = k-1;     // +k and -k must differ
+      if ( k < 1 ) k = 1;
+      K[mu] = k;
+    }
+  }
+
   void CoarsenFourierMatrix(GridBase *CoarseGrid,Eigen::MatrixXcd &invMkl)
   {
     const int npoint = geom_srhs.npoint;
     Coordinate clatt = CoarseGrid->GlobalDimensions();
     int Nd = CoarseGrid->Nd();
+    Coordinate K;  CoarsenMomenta(CoarseGrid,K);
 
     Eigen::MatrixXcd Mkl = Eigen::MatrixXcd::Zero(npoint,npoint);
     ComplexD ci(0.0,1.0);
@@ -424,13 +558,21 @@ public:
 	ComplexD phase(0.0,0.0);
 	for(int mu=0;mu<Nd;mu++){
 	  RealD TwoPiL =  M_PI * 2.0/ clatt[mu];
-	  phase=phase+TwoPiL*geom_srhs.shifts[k][mu]*geom_srhs.shifts[l][mu];
+	  phase=phase+TwoPiL*K[mu]*geom_srhs.shifts[k][mu]*geom_srhs.shifts[l][mu];
 	}
 	phase=exp(phase*ci);
 	Mkl(k,l) = phase;
       }
     }
     invMkl = Mkl.inverse();
+
+    // The extraction's error amplification, printed because it is the thing
+    // that decides whether an fp32 coarse sector is usable.
+    Eigen::JacobiSVD<Eigen::MatrixXcd> svd(Mkl);
+    RealD cond = svd.singularValues()(0)/svd.singularValues()(npoint-1);
+    std::cout << GridLogMessage << "CoarsenOperator: probe momenta "<<K
+	      <<" on coarse lattice "<<clatt
+	      <<" ; Fourier matrix condition number "<<cond<<std::endl;
   }
 
   ///////////////////////////////////////////////////////////////////////////
@@ -477,10 +619,13 @@ public:
     const int npoint = geom_srhs.npoint;
     Coordinate clatt = CoarseGrid->GlobalDimensions();
     int Nd = CoarseGrid->Nd();
+    Coordinate K;  CoarsenMomenta(CoarseGrid,K);
     ComplexD ci(0.0,1.0);
 
-    typedef typename CComplex::scalar_type SComplex;
-    FineComplexField one(grid); one=SComplex(1.0);
+    // The fine-side scratch carries the FINE level's precision, which need
+    // not be the coarse one (fp64 fine, fp32 coarse at L1).
+    typedef typename GridTypeMapper<FineInner>::scalar_type FineScalar;
+    FineComplexField one(grid); one=FineScalar(1.0);
     FineComplexField zz(grid);  zz = Zero();
     BlockComplexField pha_blk (BlockGrid);
     BlockComplexField blk_coor(BlockGrid);
@@ -492,9 +637,9 @@ public:
       for(int mu=0;mu<Nd;mu++){
 	RealD TwoPiL =  M_PI * 2.0/ clatt[mu];
 	LatticeCoordinate(coor,mu);
-	pha[p]  = pha[p]  + (TwoPiL * geom_srhs.shifts[p][mu]) * coor;
+	pha[p]  = pha[p]  + (TwoPiL * K[mu] * geom_srhs.shifts[p][mu]) * coor;
 	LatticeCoordinate(blk_coor,mu);
-	pha_blk = pha_blk + (TwoPiL * geom_srhs.shifts[p][mu]) * blk_coor;
+	pha_blk = pha_blk + (TwoPiL * K[mu] * geom_srhs.shifts[p][mu]) * blk_coor;
       }
       pha[p] =exp(pha[p] *ci);
       pha_blk=exp(pha_blk*ci);
@@ -558,10 +703,25 @@ public:
   // ExtractSlice/InsertSlice pair per rhs; prefer the single RHS variant
   // below in that case.
   ///////////////////////////////////////////////////////////////////////////
+  // Owning the transfer operator: the caller passes one, this imports the
+  // orthonormalised basis into it, and the caller keeps it for the solve.
+  // The overload below makes its own and is kept for the pre-2026 drivers;
+  // it costs a second full basis store, which is why nothing new should use
+  // it (documentation/MultiGridMemoryAudit.md).
   void CoarsenOperator(LinearOperatorBase<Lattice<Fobj> > &linop,
 		       GridCartesian *FineGridMulti,
 		       std::vector<FineField> &Subspace,
 		       GridBase *CoarseGrid)
+  {
+    MultiRHSBlockProject<Lattice<Fobj> > Projector;
+    CoarsenOperator(linop,FineGridMulti,Subspace,CoarseGrid,Projector);
+  }
+  template<class Projector_t>
+  void CoarsenOperator(LinearOperatorBase<Lattice<Fobj> > &linop,
+		       GridCartesian *FineGridMulti,
+		       std::vector<FineField> &Subspace,
+		       GridBase *CoarseGrid,
+		       Projector_t &Projector)
   {
     RealD tproj=0.0, tmat=0.0, tphase=0.0, tphaseBZ=0.0, tslice=0.0, tinv=0.0;
 
@@ -585,7 +745,7 @@ public:
     BlockComplexField InnerProd(&BlockGrid);
     blockOrthogonalise(InnerProd,Subspace);
 
-    MultiRHSBlockProject<Lattice<Fobj> >    Projector;
+    // the caller owns it; import the basis we have just orthonormalised
     Projector.Allocate(nbasis,grid,CoarseGrid);
     Projector.ImportBasis(Subspace);
 
@@ -675,6 +835,16 @@ public:
 		       GridBase *CoarseGrid,
 		       int batch)
   {
+    MultiRHSBlockProject<Lattice<Fobj> > Projector;
+    CoarsenOperator(linop,Subspace,CoarseGrid,batch,Projector);
+  }
+  template<class Projector_t>
+  void CoarsenOperator(LinearOperatorBase<Lattice<Fobj> > &linop,
+		       std::vector<FineField> &Subspace,
+		       GridBase *CoarseGrid,
+		       int batch,
+		       Projector_t &Projector)
+  {
     RealD tproj=0.0, tmat=0.0, tphase=0.0, tphaseBZ=0.0, tslice=0.0, tinv=0.0;
 
     std::cout << GridLogMessage<< "GeneralCoarsenMatrixMrhs (single RHS fine operator)"<< std::endl;
@@ -690,7 +860,7 @@ public:
     BlockComplexField InnerProd(&BlockGrid);
     blockOrthogonalise(InnerProd,Subspace);
 
-    MultiRHSBlockProject<Lattice<Fobj> >    Projector;
+    // the caller owns it; import the basis we have just orthonormalised
     Projector.Allocate(nbasis,grid,CoarseGrid);
     Projector.ImportBasis(Subspace);
 
@@ -787,15 +957,14 @@ public:
 
     GRID_TRACE("CoarseV2Mult");
     t_tot=-usecond();
-    CoarseVector tin=in;
     t_exch=-usecond();
-    // lambda scope so the roctx range covers exactly the exchange; the
-    // PaddedCellFwd/BwdMPI markers inside it then nest properly.
+    // The exchange takes its input by const reference, so it reads the
+    // caller's field directly.  lambda scope so the roctx range covers
+    // exactly the exchange; the PaddedCellFwd/BwdMPI markers inside it then
+    // nest properly.
     CoarseVector pin = [&](){ GRID_TRACE("CoarseV2Exchange");
-                              return CellMulti->ExchangePeriodic(tin); }(); //padded input
+                              return CellMulti->ExchangePeriodic(in); }(); //padded input
     t_exch+=usecond();
-
-    CoarseVector pout(pin.Grid());
 
     int npoint = geom.npoint;
     typedef calcMatrix* Aview;
@@ -825,21 +994,63 @@ public:
 
     t_mult=-usecond();
     { GRID_TRACE("CoarseV2StencilGEMM");
-    for(int p=0;p<geom.npoint;p++){
-      RealD c = 1.0;
-      if (p==0) c = 0.0;
-      ComplexD beta(c);
-
-      BLAS.gemmBatched(nbasis,nrhs,nbasis,
-		       ComplexD(1.0),
-		       BLAS_AP[p], 
-		       BLAS_BP[p], 
-		       ComplexD(c), 
-		       BLAS_CP);
+    // The scalar type selects the GEMM: Cgemm for an fp32 coarse space,
+    // Zgemm for fp64.
+    if ( LegGroup == 1 ) {
+      for(int p=0;p<geom.npoint;p++){
+	RealD c = (p==0) ? 0.0 : 1.0;
+	BLAS.gemmBatched(nbasis,nrhs,nbasis,
+			 CoarseBLASScalar(1.0),
+			 BLAS_AP[p],
+			 BLAS_BP[p],
+			 CoarseBLASScalar(c),
+			 BLAS_CP);
+      }
+    } else {
+      // LegGroup legs per call: the batch is LegGroup times the local volume
+      // and there are LegGroup partial outputs, accumulated across the
+      // groups and summed below.  A final short call carries the remainder
+      // when the group does not divide the stencil; it writes into the first
+      // few partials, which the full calls have already initialised.
+      int nfull = LegGroups();
+      int rem   = LegRemainder();
+      for(int g=0;g<nfull;g++){
+	RealD c = (g==0) ? 0.0 : 1.0;
+	BLAS.gemmBatched(nbasis,nrhs,nbasis,
+			 CoarseBLASScalar(1.0),
+			 BLAS_APg[g],
+			 BLAS_BPg[g],
+			 CoarseBLASScalar(c),
+			 BLAS_CPg);
+      }
+      if ( rem ) {
+	RealD c = (nfull==0) ? 0.0 : 1.0;
+	BLAS.gemmBatched(nbasis,nrhs,nbasis,
+			 CoarseBLASScalar(1.0),
+			 BLAS_APg[nfull],
+			 BLAS_BPg[nfull],
+			 CoarseBLASScalar(c),
+			 BLAS_CPr);
+      }
     }
     BLAS.synchronise();
     }
     t_mult+=usecond();
+
+    if ( LegGroup > 1 ) { GRID_TRACE("CoarseV2LegSum");
+      // Sum the LegGroup partial results into the single output buffer.
+      // Flat over scalars: a calcVector is nbasis of them and the partials
+      // are contiguous, one whole C volume after another.
+      int64_t nscalar = (int64_t)BLAS_C.size()*nbasis;   // one whole C volume
+      const int G = LegGroup;
+      CoarseBLASScalar *dst = (CoarseBLASScalar *)&BLAS_C[0];
+      CoarseBLASScalar *src = (CoarseBLASScalar *)&BLAS_Cg[0];
+      accelerator_for(i,nscalar,1,{
+	  CoarseBLASScalar sum = src[i];
+	  for(int l=1;l<G;l++) sum = sum + src[(int64_t)l*nscalar + i];
+	  dst[i] = sum;
+	});
+    }
 
     t_BtoG=-usecond();
     { GRID_TRACE("CoarseV2BLASToGrid");

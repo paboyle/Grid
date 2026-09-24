@@ -64,7 +64,8 @@ NAMESPACE_BEGIN(Grid);
 // VERIFY ||A Ainv x - x||/||x|| certifies the DEVICE slab + split-K path at the
 // end of Import, since the single-RHS apply routes through the same core.
 //
-// Tensor-depth agnostic: site scalar objects treated as contiguous ComplexD
+// Tensor-depth agnostic: site scalar objects treated as contiguous coarse
+// scalars (ComplexF or ComplexD, following the coefficient precision)
 // (iScalar wrappers add no data), so any MG level's coarse operator imports.
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -85,6 +86,10 @@ public:
   typedef typename vobj::scalar_object  sobj;
   typedef typename CoarseMatrix::vector_object Mvobj;
   typedef typename Mvobj::scalar_object        Msobj;
+  // Scalar of the coarse site objects (ComplexF or ComplexD): the apply slab
+  // is always fp32 and the inversion always fp64, but the SOURCE of both --
+  // the coarse operator's matrix elements -- carries this precision.
+  typedef typename GridTypeMapper<CComplex>::scalar_type CoarseScalar;
 
   GridBase *grid;
   int      nd;
@@ -115,11 +120,20 @@ public:
   std::vector<ComplexF>   hY;
   int NK;                           // split-K chunk count (divides N)
 
+  // Resident device memory: the apply slab and its staging.  deviceVector is
+  // not evictable, so this counts against the hard budget, not the cache.
+  uint64_t DeviceBytes(void)
+  {
+    return (uint64_t)(dSlab.capacity()+dX.capacity()+dY.capacity()+dG.capacity()+dPartial.capacity())*sizeof(ComplexF)
+         + (uint64_t)dLex2Rank.capacity()*sizeof(int)
+         + (uint64_t)dRm2G.capacity()*sizeof(int64_t);
+  }
+
   DenseCoarseMatrix(GridBase *g)
     : grid(g)
   {
-    GRID_ASSERT( sizeof(sobj)  == nbasis*sizeof(ComplexD) );
-    GRID_ASSERT( sizeof(Msobj) == nbasis*nbasis*sizeof(ComplexD) );
+    GRID_ASSERT( sizeof(sobj)  == nbasis*sizeof(CoarseScalar) );
+    GRID_ASSERT( sizeof(Msobj) == nbasis*nbasis*sizeof(CoarseScalar) );
     nd     = grid->_ndimension;
     N      = grid->gSites() * nbasis;
     lsites = grid->lSites();
@@ -228,7 +242,7 @@ public:
     ////////////////////////////////////////////////////////////////////
     {
       Field x(grid); Field y(grid); Field z(grid);
-      x = ComplexD(1.0,0.0);
+      x = CoarseScalar(1.0,0.0);
       double ta = usecond();
       (*this)(x, y);
       double tb = usecond();
@@ -263,7 +277,7 @@ public:
     Field min(mgrid), mout(mgrid);
     for(int r=0;r<nr;r++){
       Field scaled(grid);
-      scaled = ComplexD(r+1.0,0.0)*in;
+      scaled = CoarseScalar(r+1.0,0.0)*in;
       InsertSliceFast(scaled,min,r,0);
     }
 
@@ -273,13 +287,18 @@ public:
     for(int r=1;r<nr;r++){
       Field sr(grid),d(grid);
       ExtractSliceFast(sr,mout,r,0);
-      d = sr - ComplexD(r+1.0,0.0)*out;
+      d = sr - CoarseScalar(r+1.0,0.0)*out;
       RealD rel = std::sqrt(norm2(d)/norm2(sr));
-      if ( rel >= 1.0e-6 ) {
+      // Slices differ by rounding amplified by the operator's conditioning
+      // when the product cancels (A applied to A^-1 x): the tolerance follows
+      // the coarse precision (fp32 measured ~5e-6 here).  A genuine rhs
+      // mix-up is O(1).
+      const RealD otol = (sizeof(CoarseScalar)==sizeof(ComplexF)) ? 1.0e-4 : 1.0e-6;
+      if ( rel >= otol ) {
         std::cout << GridLogMessage << "DenseCoarseMatrix: oracle rhs "<<r
                   <<" inconsistent with rhs 0, rel "<<rel<<std::endl;
       }
-      GRID_ASSERT( rel < 1.0e-6 );
+      GRID_ASSERT( rel < otol );
     }
   }
 
@@ -313,7 +332,7 @@ public:
         Lexicographic::IndexFromCoor(ncoor, nsite, gdims);
         Msobj m;
         peekLocalSite(m, Av, myLcoor[ss]);
-        ComplexD *md = (ComplexD *)&m;
+        CoarseScalar *md = (CoarseScalar *)&m;
         // The operator contracts out(s,b) = sum_a A[p](s)(a,b) in(nbr,a)
         // (GeneralCoarsenedMatrix.h Mult kernel): the stored site matrix
         // acts TRANSPOSED, so element (a,b) lands at dense row (s,b),
@@ -382,7 +401,7 @@ public:
       sobj s;
       for(int b=0; b<nbasis; b++){
         double ph = 0.37*(double)(myGsite[ss]*nbasis+b);
-        ((ComplexD *)&s)[b] = ComplexD(std::cos(ph),std::sin(0.61*ph));
+        ((CoarseScalar *)&s)[b] = CoarseScalar(std::cos(ph),std::sin(0.61*ph));
       }
       pokeLocalSite(s, x, myLcoor[ss]);
     }
@@ -391,7 +410,7 @@ public:
     for(int ss=0; ss<lsites; ss++){
       sobj s;
       peekLocalSite(s, x, myLcoor[ss]);
-      for(int b=0; b<nbasis; b++) xh[ myGsite[ss]*nbasis + b ] = ((ComplexD *)&s)[b];
+      for(int b=0; b<nbasis; b++) xh[ myGsite[ss]*nbasis + b ] = ComplexD(((CoarseScalar *)&s)[b]);
     }
     grid->GlobalSumVector(&xh[0], (int)N);
     std::vector<ComplexD> yh(nrows);
@@ -403,7 +422,7 @@ public:
     });
     for(int ss=0; ss<lsites; ss++){
       sobj s;
-      for(int b=0; b<nbasis; b++) ((ComplexD *)&s)[b] = yh[ss*nbasis+b];
+      for(int b=0; b<nbasis; b++) ((CoarseScalar *)&s)[b] = CoarseScalar(yh[ss*nbasis+b]);
       pokeLocalSite(s, Dx, myLcoor[ss]);
     }
     ApplyOracle(Op, x, Ax);
@@ -414,7 +433,7 @@ public:
     if ( rel >= 1.0e-3 ) {
       std::cout << GridLogMessage << "DenseCoarseMatrix: IMPORT CERTIFICATE FAILED. If O(1), the "
                 << "stencil shift-sign convention of the coarse operator has changed: "
-                << "the import in ImportDense/ImportDenseFP64 must change with it"
+                << "the import in ImportDense/ImportDenseForInversion must change with it"
                 << std::endl;
     }
     GRID_ASSERT(rel < 1.0e-3);
@@ -468,24 +487,25 @@ public:
   }
 
   ////////////////////////////////////////////////////////////////////
-  // 3b. Direct stencil -> fp64 rank-major import of MY ROWS of A (the
-  //    end-to-end fp64 path: the stencil source IS ComplexD; nothing is
-  //    rounded through fp32 on the way into the inversion).  Same
+  // 3b. Direct stencil -> rank-major import of MY ROWS of A in the
+  //    inversion precision (DenseInverseScalar): the stencil source is
+  //    read once, straight into the buffer the Schur recursion factorises,
+  //    never via the fp32 apply slab.  Same
   //    loop/sign/accumulate/transposed-contraction discipline as
   //    ImportDense; output is column-major rows x N with columns in
   //    rank-major order (g2rm).
-  //    ALWAYS-ON CERTIFICATE: the fp64 import, rounded, must agree with
+  //    ALWAYS-ON CERTIFICATE: this import, rounded, must agree with
   //    the fp32 slab entry at the corresponding global column, over the
   //    WHOLE of my rows (few ulp: wrapped-shift collisions accumulate in
   //    different precision order).  NaN-proof: non-finite entries are
   //    counted explicitly since max() silently masks NaN.
   ////////////////////////////////////////////////////////////////////
   template<class CoarseOp>
-  void ImportDenseFP64(CoarseOp &Op, BlockRows &S, std::vector<int64_t> &g2rm)
+  void ImportDenseForInversion(CoarseOp &Op, BlockRows &S, std::vector<int64_t> &g2rm)
   {
     Coordinate gdims = grid->GlobalDimensions();
 
-    std::vector<ComplexD> h((uint64_t)nrows*N, ComplexD(0.0,0.0));
+    std::vector<DenseInverseScalar> h((uint64_t)nrows*N, DenseInverseScalar(0.0,0.0));
     for(int p=0; p<Op.Geometry().npoint; p++)
     {
       Coordinate shift = Op.Geometry().shifts[p];
@@ -502,7 +522,7 @@ public:
         Lexicographic::IndexFromCoor(ncoor, nsite, gdims);
         Msobj m;
         peekLocalSite(m, Av, myLcoor[ss]);
-        ComplexD *md = (ComplexD *)&m;
+        CoarseScalar *md = (CoarseScalar *)&m;
         // Transposed contraction as ImportDense: (a,b) lands at
         // row (s,b), column (nbr,a); column index in rank-major order.
         for(int a=0; a<nbasis; a++)
@@ -510,7 +530,7 @@ public:
           int64_t jj = g2rm[ nsite*nbasis + a ];
           for(int b=0; b<nbasis; b++)
           {
-            h[(uint64_t)(ss*nbasis+b) + (uint64_t)jj*nrows] += md[a*nbasis+b];
+            h[(uint64_t)(ss*nbasis+b) + (uint64_t)jj*nrows] += DenseInverseScalar(md[a*nbasis+b]);
           }
         }
       });
@@ -523,7 +543,7 @@ public:
     {
       for(int64_t gcol=0; gcol<N; gcol++)
       {
-        ComplexD d64 = h[(uint64_t)(i + g2rm[gcol]*nrows)];
+        ComplexD d64 = ComplexD(h[(uint64_t)(i + g2rm[gcol]*nrows)]);
         ComplexF f32 = slab[(uint64_t)i*N + gcol];
         double dev = abs(ComplexD(f32) - d64);
         if ( !std::isfinite(dev) ) nbad++;
@@ -534,21 +554,22 @@ public:
     RealD gbad = (RealD)nbad;
     grid->GlobalMax(gmx);
     grid->GlobalSumVector(&gbad, 1);
-    std::cout << GridLogMessage << "DenseCoarseMatrix: fp64 import certificate "
-              << "max|A64 - A32| = " << gmx
+    std::cout << GridLogMessage << "DenseCoarseMatrix: inversion-source import certificate "
+              << "max|A_inv - A_slab| = " << gmx
               << "  non-finite entries " << (int64_t)gbad << std::endl;
     GRID_ASSERT( gbad == 0 );
     GRID_ASSERT( gmx < 1.0e-5 );
 
     S.Resize(nrows, N);
-    acceleratorCopyToDevice(&h[0], &S.data[0], (uint64_t)nrows*N*sizeof(ComplexD));
+    acceleratorCopyToDevice(&h[0], &S.data[0], (uint64_t)nrows*N*sizeof(DenseInverseScalar));
   }
 
   ////////////////////////////////////////////////////////////////////
-  // 3c. The inverse: distributed recursive Schur, END-TO-END fp64.
-  //    stencil (ComplexD) -> fp64 rank-major import -> fp64 recursion ->
-  //    ONE terminal rounding into the fp32 apply slab.  Everything
-  //    downstream (device residency, split-K apply, VERIFY) is fp32.
+  // 3c. The inverse: distributed recursive Schur, end to end in the
+  //    inversion precision (DenseInverseScalar, a configure-time choice):
+  //    stencil -> rank-major import -> recursion -> ONE terminal rounding
+  //    into the fp32 apply slab.  Everything downstream (device
+  //    residency, split-K apply, VERIFY) is fp32 regardless.
   ////////////////////////////////////////////////////////////////////
   template<class CoarseOp>
   void InvertDense(CoarseOp &Op)
@@ -578,7 +599,7 @@ public:
     }
 
     BlockRows S;
-    ImportDenseFP64(Op, S, g2rm);
+    ImportDenseForInversion(Op, S, g2rm);
 
     ////////////////////////////////////////////////////////////////
     // The 2D block-cyclic recursion (BlockCyclicSchurInverse).
@@ -609,8 +630,8 @@ public:
     // The single terminal rounding: fp64 inverse -> fp32 apply slab
     // (row-major, global columns)
     {
-      std::vector<ComplexD> h((uint64_t)nrows*N);
-      acceleratorCopyFromDevice(&S.data[0], &h[0], (uint64_t)nrows*N*sizeof(ComplexD));
+      std::vector<DenseInverseScalar> h((uint64_t)nrows*N);
+      acceleratorCopyFromDevice(&S.data[0], &h[0], (uint64_t)nrows*N*sizeof(DenseInverseScalar));
       thread_for(gcol, N, {
         int64_t jj = g2rm[gcol];
         for(int64_t i=0; i<nrows; i++)
@@ -620,7 +641,9 @@ public:
       });
     }
     double t4 = usecond();
-    std::cout << GridLogMessage << "DenseCoarseMatrix: SCHUR fp64 distributed invert took "
+    std::cout << GridLogMessage << "DenseCoarseMatrix: SCHUR "
+              << (sizeof(DenseInverseScalar)==sizeof(ComplexF) ? "fp32" : "fp64")
+              << " distributed invert took "
               << (t4-t1)/1.0e6 << " s (recursion " << (t3-t2)/1.0e6 << " s)" << std::endl;
   }
 
@@ -717,7 +740,7 @@ public:
         sobj s;
         peekLocalSite(s, src, myLcoor[ss]);
         for(int b=0; b<nbasis; b++)
-          hX[ myGsite[ss]*nbasis + b ] = ComplexF(((ComplexD *)&s)[b]);
+          hX[ myGsite[ss]*nbasis + b ] = ComplexF(((CoarseScalar *)&s)[b]);
       }
     }
     SlabApplyPacked(1, nullptr);
@@ -725,7 +748,7 @@ public:
       for(int ss=0; ss<lsites; ss++){
         sobj s;
         for(int b=0; b<nbasis; b++)
-          ((ComplexD *)&s)[b] = ComplexD(hY[ss*nbasis + b]);
+          ((CoarseScalar *)&s)[b] = CoarseScalar(hY[ss*nbasis + b]);
         pokeLocalSite(s, psi, myLcoor[ss]);
       }
     }
@@ -762,7 +785,7 @@ public:
           sobj s;
           peekLocalSite(s, src[rr], myLcoor[ss]);
           for(int b=0; b<nbasis; b++)
-            hX[ (uint64_t)rr*N + myGsite[ss]*nbasis + b ] = ComplexF(((ComplexD *)&s)[b]);
+            hX[ (uint64_t)rr*N + myGsite[ss]*nbasis + b ] = ComplexF(((CoarseScalar *)&s)[b]);
         }
       }
     }
@@ -772,7 +795,7 @@ public:
         for(int ss=0; ss<lsites; ss++){
           sobj s;
           for(int b=0; b<nbasis; b++)
-            ((ComplexD *)&s)[b] = ComplexD(hY[(uint64_t)rr*nrows + (ss*nbasis+b)]);
+            ((CoarseScalar *)&s)[b] = CoarseScalar(hY[(uint64_t)rr*nrows + (ss*nbasis+b)]);
           pokeLocalSite(s, psi[rr], myLcoor[ss]);
         }
       }
@@ -815,7 +838,7 @@ public:
           sobj s;
           peekLocalSite(s, iv, c6);
           for(int b=0; b<nbasis; b++)
-            hX[(uint64_t)rr*N + myGsite[ss]*nbasis + b] = ComplexF(((ComplexD *)&s)[b]);
+            hX[(uint64_t)rr*N + myGsite[ss]*nbasis + b] = ComplexF(((CoarseScalar *)&s)[b]);
         }
       }
     }
@@ -832,7 +855,7 @@ public:
           c6[0] = rr;
           sobj s;
           for(int b=0; b<nbasis; b++)
-            ((ComplexD *)&s)[b] = ComplexD(hY[(uint64_t)rr*nrows + (ss*nbasis+b)]);  // Y col-major
+            ((CoarseScalar *)&s)[b] = CoarseScalar(hY[(uint64_t)rr*nrows + (ss*nbasis+b)]);  // Y col-major
           pokeLocalSite(s, ov, c6);
         }
       }

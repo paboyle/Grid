@@ -33,7 +33,11 @@ Author: Peter Boyle <pboyle@bnl.gov>
 // parameter.  The effective parameters are always printed, so the log
 // describes its own run.
 //
-// Compile-time: -DNBASIS=8 cuts the basis down for laptop runs.
+// Compile-time: NBASIS defaults to 60, the production basis; a subspace file
+// may hold more vectors, the load reads only the first NBASIS.  -DNBASIS=8
+// cuts it down for laptop runs.
+// examples/Makefile.am builds the fp32-coarse and fp32-dense-inversion
+// variants below as their own binaries.
 //
 #include <Grid/Grid.h>
 #include <Grid/lattice/PaddedCell.h>
@@ -46,6 +50,16 @@ using namespace Grid;
 
 #ifndef NBASIS
 #define NBASIS 60
+#endif
+
+// Precision of the coarse + coarse-coarse sector is a compile-time
+// instantiation: -DCOARSE_SINGLE builds the fp32 coarse space (the dense
+// bottom's apply slab is fp32 either way; its inversion is a configure
+// option).  Both levels carry the same site type iVector<CoarseScalar,NBASIS>.
+#ifdef COARSE_SINGLE
+typedef sTComplexF CoarseScalar_t;
+#else
+typedef sTComplexD CoarseScalar_t;
 #endif
 
 struct PVdagMDriverParams : Serializable {
@@ -123,22 +137,46 @@ int main (int argc, char ** argv)
 
   //////////////////////////////////////////////////////////////////////
   // Grids -> coarsening -> dense bottom.  Scope order is lifetime order.
+  //
+  // The fine operator applied during setup is always fp64, on the fp64
+  // basis.  Everything the coarsening produces -- the Galerkin matrix
+  // elements and the transfer operator's store -- takes the coarse precision
+  // (CoarseScalar_t, a compile-time choice).
+  //
+  // There is exactly ONE fine transfer operator.  Its STORE follows the
+  // coarse sector, since the coarse space is what it feeds, while its import
+  // and export accept either fine precision: they are already a layout
+  // transformation, and a scalar conversion inside one is free.  So the fp64
+  // setup and an fp32 V-cycle share the same object and the same basis store.
+  // FinePrecision selects only the fine operator and smoother; the outer
+  // Krylov and its true-residual check stay fp64 throughout.
   //////////////////////////////////////////////////////////////////////
-  typedef PVdagMMultiGridCoarsening<vSpinColourVector,sTComplexD,NBASIS> Coarsening_t;
+  typedef PVdagMMultiGridCoarsening<vSpinColourVector,CoarseScalar_t,NBASIS> Coarsening_t;
+  std::cout << GridLogMessage << "Coarse sector precision (compiled): "
+            << (sizeof(typename GridTypeMapper<CoarseScalar_t>::scalar_type)==sizeof(ComplexF) ? "fp32" : "fp64")
+            << ", nbasis " << NBASIS << std::endl;
 
   MGCoarseGrids CGrids(FGrid, P.MultiGrid.Setup);
-  Coarsening_t  Coarsening(CGrids, P.MultiGrid.Setup);
+  MGFineGridsF  FGridsF(FGrid);
+
+  LatticeGaugeFieldF UmuF(FGridsF.UGridF);
+  precisionChange(UmuF,Umu);
+  MobiusFermionF DdwfF(UmuF,*FGridsF.FGridF,*FGridsF.FrbGridF,*FGridsF.UGridF,*FGridsF.UrbGridF,P.Mass,P.M5,P.MobiusB,P.MobiusC);
+  MobiusFermionF DpvF (UmuF,*FGridsF.FGridF,*FGridsF.FrbGridF,*FGridsF.UGridF,*FGridsF.UrbGridF,1.0,   P.M5,P.MobiusB,P.MobiusC);
+
+  Coarsening_t  Coarsening(CGrids, FGridsF, P.MultiGrid.Setup);
 
   Coarsening.GetSubspace(RNG5, PVdagM);
   Coarsening.Coarsen(PVdagM);
   Coarsening.BuildDenseBottom();
+  Coarsening.CertifyCoarsening(PVdagM);
 
   //////////////////////////////////////////////////////////////////////
   // Solves: mrhs then (optionally) single RHS through the SAME objects.
   //////////////////////////////////////////////////////////////////////
   auto RunSolve = [&](int nr)
   {
-    PVdagMMultiGridSolver<MobiusFermionD,Coarsening_t> Solver(Ddwf,Dpv,Coarsening,P.MultiGrid,nr);
+    PVdagMMultiGridSolver<MobiusFermionD,MobiusFermionF,Coarsening_t> Solver(Ddwf,Dpv,DdwfF,DpvF,Coarsening,P.MultiGrid,nr);
     std::vector<LatticeFermionD> src(nr,FGrid), sol(nr,FGrid);
     for(int r=0;r<nr;r++){ gaussian(RNG5,src[r]); sol[r]=Zero(); }
     Solver.Solve(src,sol);

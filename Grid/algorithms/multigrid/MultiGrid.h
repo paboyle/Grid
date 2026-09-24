@@ -30,13 +30,22 @@ Author: Peter Boyle <pboyle@bnl.gov>
 #include <Grid/algorithms/multigrid/Aggregates.h>
 #include <Grid/algorithms/multigrid/Geometry.h>
 #include <Grid/algorithms/multigrid/CoarsenedMatrix.h>
-#include <Grid/algorithms/multigrid/GeneralCoarsenedMatrix.h>
-#include <Grid/algorithms/multigrid/GeneralCoarsenedMatrixMultiRHS.h>
 #include <Grid/algorithms/multigrid/GeneralCoarsenedMatrixMultiRHSV2.h>
+// DEPRECATED: the V1 coarse operators and the Aggregation-based single-RHS
+// ADEF-2.  Nothing in the library uses them; the PVdagM and HDCG chains are
+// on V2 (PVdagMMultiGrid.h, HDCGMultiGrid.h).  Kept so the pre-2026 drivers
+// in tests/debug and examples still build; removing this block is the
+// deletion gate for them.
+#include <Grid/algorithms/multigrid/deprecated/GeneralCoarsenedMatrix.h>
+#include <Grid/algorithms/multigrid/deprecated/GeneralCoarsenedMatrixMultiRHS.h>
+#include <Grid/algorithms/multigrid/deprecated/TwoLevelADEF2.h>
 #include <Grid/algorithms/multigrid/MrhsPromotedOperator.h>
 #include <Grid/algorithms/multigrid/Smoothers.h>
 #include <Grid/algorithms/multigrid/PVdagMMultiGridParams.h>
 // PVdagMOperators.h / MrhsMultiGrid.h / PVdagMMultiGrid.h /
-// DenseCoarseMatrix.h are NOT in this umbrella: consumers of the PVdagM
-// chain include PVdagMMultiGrid.h explicitly (it pulls the dense stack
-// and BLAS).
+// DenseCoarseMatrix.h / MultiGridIO.h / HDCGMultiGrid.h are NOT in this
+// umbrella: consumers include PVdagMMultiGrid.h or HDCGMultiGrid.h
+// explicitly (they pull the dense stack, BLAS, and the scidac I/O, which
+// is declared after Algorithms.h in Grid.h).  Keeping MrhsMultiGrid.h out
+// of the Algorithms.h chain also keeps its class names away from the
+// pre-2026 drivers that define their own copies.

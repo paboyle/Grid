@@ -20,20 +20,10 @@ Author: Peter Boyle <pboyle@bnl.gov>
 #pragma once
 
 #include <Grid/algorithms/deflation/MultiRHSBlockProject.h>
+#include <Grid/algorithms/multigrid/MrhsPreconditioner.h>
 
 NAMESPACE_BEGIN(Grid);
 
-//////////////////////////////////////////////////////////////////////
-// mrhs LinearFunction interface: vector-of-fields in, vector out.
-// The outer level carries mrhs as std::vector<Field>; below it mrhs
-// is PACKED into a single D+1 field (rhs = dim 0) and the coarse
-// classes are plain LinearFunctions on that.
-//////////////////////////////////////////////////////////////////////
-template<class Field>
-class MrhsLinearFunction {
-public:
-  virtual void operator()(std::vector<Field> &in, std::vector<Field> &out) = 0;
-};
 
 //////////////////////////////////////////////////////////////////////
 // Single-polynomial mrhs PGCR: one step length and one set of
@@ -54,18 +44,21 @@ public:
   RealD Tolerance; Integer MaxIterations; int mmax,nstep,steps,level;
   int ZeroGuess = 0; int FirstCycle = 0;
   std::string name = "Level 1";
+  // Trace range names carry the instance name, so a profile separates the
+  // solvers that otherwise nest as one shared range.
+  std::string trace_op = "MrhsPGCR::vOp", trace_orthog = "MrhsPGCR orthog";
   LinearOperatorBase<Field> &Linop;
   MrhsLinearFunction<Field> &Preconditioner;
   std::function<void(int)> OnStep;      // called with the outer step count after every step
   void Level(int lv){ name = "Level " + std::to_string(lv); level=lv; }
-  void Name(std::string n){ name = n; }
+  void Name(std::string n){ name = n; trace_op = name+" MrhsPGCR::vOp"; trace_orthog = name+" MrhsPGCR orthog"; }
   void SetZeroGuess(int z){ ZeroGuess=z; }
   MrhsPGCRNonHermitian(RealD tol,Integer maxit,LinearOperatorBase<Field> &_Linop,MrhsLinearFunction<Field> &Prec,int _mmax,int _nstep)
     : Tolerance(tol),MaxIterations(maxit),Linop(_Linop),Preconditioner(Prec),mmax(_mmax),nstep(_nstep){ level=1; }
   static RealD vnorm2(std::vector<Field> &x){ RealD s=0; for(auto &f:x) s+=norm2(f); return s; }
   static ComplexD vinnerProduct(std::vector<Field> &x,std::vector<Field> &y){ ComplexD s(0); for(int r=0;r<(int)x.size();r++) s+=innerProduct(x[r],y[r]); return s; }
   static void vaxpy(std::vector<Field> &z,ComplexD a,std::vector<Field> &x,std::vector<Field> &y){ for(int r=0;r<(int)z.size();r++) axpy(z[r],a,x[r],y[r]); }
-  void vOp(std::vector<Field> &in,std::vector<Field> &out){ GRID_TRACE("MrhsPGCR::vOp"); for(int r=0;r<(int)in.size();r++) Linop.Op(in[r],out[r]); }
+  void vOp(std::vector<Field> &in,std::vector<Field> &out){ GRID_TRACE(trace_op.c_str()); for(int r=0;r<(int)in.size();r++) Linop.Op(in[r],out[r]); }
   void operator()(std::vector<Field> &src,std::vector<Field> &psi){
     RealD cp,ssq,rsq; int nrhs=src.size(); GridBase *grid=src[0].Grid();
     ssq=vnorm2(src); rsq=Tolerance*Tolerance*ssq;
@@ -108,7 +101,7 @@ public:
       vOp(p[peri_kp],q[peri_kp]);
       int northog=((kp)>(mmax-1))?(mmax-1):(kp);
       {
-        GRID_TRACE("MrhsPGCR orthog");
+        GRID_TRACE(trace_orthog.c_str());
         // Classical Gram-Schmidt: all coefficients against the UN-updated new q
         // (independent, batchable), then apply.  Complex coefficient: the
         // operator is non-Hermitian, real(<q_j,Aq>) alone left q's non-orthogonal.
@@ -203,19 +196,23 @@ public:
 // is wired by the composer to PVdagMLinearOperator::SloppyComms (a
 // no-op by default), replacing the file-scope global the example used.
 //////////////////////////////////////////////////////////////////////
-template<class FineField, class MrhsCoarseVector, class FineSmoother>
-class MrhsTwoLevelMG : public MrhsLinearFunction<FineField> {
+// Projector_t defaults to a transfer operator whose STORE matches FineField,
+// which is the case whenever the coarse sector and the fine level share a
+// precision; pass it explicitly when they differ.
+template<class FineField, class MrhsCoarseVector, class FineSmoother,
+         class Projector_t = MultiRHSBlockProject<FineField> >
+class MrhsTwoLevelMG : public MrhsPreconditioner<FineField> {
 public:
   typedef MrhsCoarseVector CoarseVector;
   LinearOperatorBase<FineField>   &_FineOperator;
   FineSmoother                    &_PostSmoother;
-  MultiRHSBlockProject<FineField> &_Projector;
+  Projector_t                     &_Projector;   // store precision need not match FineField
   LinearFunction<CoarseVector>    &_CoarseSolve;
   GridBase *_CoarseGrid, *_CoarseGridMrhs;
   std::function<void(int)> SetSloppy = [](int){};
   int SloppyComms = 0;                 // value passed to SetSloppy on entry
   MrhsTwoLevelMG(LinearOperatorBase<FineField> &FineOp, FineSmoother &Post,
-                 MultiRHSBlockProject<FineField> &Projector, LinearFunction<CoarseVector> &CoarseSolve,
+                 Projector_t &Projector, LinearFunction<CoarseVector> &CoarseSolve,
                  GridBase *CoarseGrid, GridBase *CoarseGridMrhs)
     : _FineOperator(FineOp),_PostSmoother(Post),_Projector(Projector),_CoarseSolve(CoarseSolve),
       _CoarseGrid(CoarseGrid),_CoarseGridMrhs(CoarseGridMrhs){}
@@ -251,6 +248,54 @@ public:
     }
     SetSloppy(0);
   }
+};
+
+//////////////////////////////////////////////////////////////////////
+// The fp64/fp32 seam of the solve chain.  The outer Krylov hands fp64
+// residuals to its preconditioner; this adapter converts them to fp32,
+// runs an fp32 preconditioner (the whole V-cycle), and converts the
+// correction back.  Two precisionChange per outer step per rhs, on
+// workspaces built once.  The outer operator never sees fp32.
+//
+// The fp32 scratch is allocated ON FIRST USE, not in the constructor: the
+// solver builds this seam whichever precision is selected, and at Nrhs 12
+// on a 48^3x96 Ls=24 rank the scratch is 2 GB of device memory.  A seam
+// that is never called must cost nothing.  Same idiom as the GCR history
+// vectors: re-made only if the grid or the rhs count changes.
+//////////////////////////////////////////////////////////////////////
+template<class FieldD, class FieldF>
+class MrhsMixedPrecPreconditioner : public MrhsPreconditioner<FieldD> {
+public:
+  MrhsPreconditioner<FieldF> &_Inner;
+  precisionChangeWorkspace    _ws_d2f;   // out fp32, in fp64
+  precisionChangeWorkspace    _ws_f2d;   // out fp64, in fp32
+  GridBase                   *_gridF;
+  std::vector<FieldF>         _in_f, _out_f;
+  MrhsMixedPrecPreconditioner(MrhsPreconditioner<FieldF> &Inner, GridBase *gridD, GridBase *gridF, int nrhs)
+    : _Inner(Inner), _ws_d2f(gridF,gridD), _ws_f2d(gridD,gridF), _gridF(gridF) {}
+  void Scratch(int nrhs){
+    if ( (int)_in_f.size() == nrhs ) return;
+    _in_f.clear();  _in_f.reserve(nrhs);
+    _out_f.clear(); _out_f.reserve(nrhs);
+    for(int r=0;r<nrhs;r++){ _in_f.emplace_back(_gridF); _out_f.emplace_back(_gridF); }
+  }
+  virtual void operator()(std::vector<FieldD> &in, std::vector<FieldD> &out){
+    GRID_TRACE("MGPrecisionSeam");
+    int nrhs=in.size(); Scratch(nrhs);
+    for(int r=0;r<nrhs;r++) precisionChange(_in_f[r],in[r],_ws_d2f);
+    _Inner(_in_f,_out_f);
+    for(int r=0;r<nrhs;r++) precisionChange(out[r],_out_f[r],_ws_f2d);
+  }
+  // The start and the timers are the inner preconditioner's
+  virtual void Vstart(std::vector<FieldD> &x, std::vector<FieldD> &src){
+    GRID_TRACE("MGPrecisionSeamVstart");
+    int nrhs=src.size(); Scratch(nrhs);
+    for(int r=0;r<nrhs;r++) precisionChange(_in_f[r],src[r],_ws_d2f);
+    _Inner.Vstart(_out_f,_in_f);
+    for(int r=0;r<nrhs;r++) precisionChange(x[r],_out_f[r],_ws_f2d);
+  }
+  virtual void ResetTimers(void)                       { _Inner.ResetTimers(); }
+  virtual void ReportTimers(const std::string &prefix) { _Inner.ReportTimers(prefix); }
 };
 
 NAMESPACE_END(Grid);

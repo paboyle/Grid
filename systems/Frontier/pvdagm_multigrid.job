@@ -21,10 +21,14 @@
 # only code path (2D block-cyclic dense inverse, ring-allgather apply,
 # inverseLU big leaves) and are gone from the environment.
 #
-# The binary must be built with -DNBASIS=64 to match the subspace file.
+# The binary is a plain `make` target with the default basis, 60.  The
+# subspace load reads the first 60 vectors of the file.
+# <FinePrecision> selects the arithmetic of the fine level
+# INSIDE the preconditioner (fp64 here; the outer Krylov is fp64 and exact
+# either way).  The precision sweep is in pvdagm_mixed_precision.job.
 ##############################################################################
 
-root=$HOME/PVdagM/Grid/systems/Frontier
+root=/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/MGrewrite/Grid/systems/Frontier
 source $root/sourceme-rocm7.2.sh
 
 # Paths substituted into the XML below.
@@ -48,6 +52,8 @@ exec numactl -m \$NUMA -N \$NUMA \$*
 EOF
 chmod +x ./select_gpu
 
+# sourceme sets FI_HMEM_ROCR_USE_DMABUF=0 -- the standing avoidance of the CXI
+# NO_TRANSLATION fault at NRHS>=12 (libfabric #12775).
 
 export OMP_NUM_THREADS=7
 ulimit -c 0                             # no 22 GB GPU core dumps
@@ -89,11 +95,13 @@ cat << EOF > params.xml
     <SolveSingleRHS>1</SolveSingleRHS>
     <MultiGrid>
       <Setup>
-        <Block><elem>2</elem><elem>2</elem><elem>3</elem><elem>3</elem></Block>
+        <Block1><elem>2</elem><elem>2</elem><elem>3</elem><elem>3</elem></Block1>
         <Block2><elem>4</elem><elem>4</elem><elem>2</elem><elem>4</elem></Block2>
         <CoarsenBatch>9</CoarsenBatch>
         <SubspaceFile>$SUBSPACE</SubspaceFile>
         <FineSloppyComms>1</FineSloppyComms>
+        <FinePrecision>fp64</FinePrecision>
+        <RetainSubspace>0</RetainSubspace>
       </Setup>
       <FineSmoother>
         <Shift>0.1</Shift><Nstep>6</Nstep><Mmax>4</Mmax>

@@ -592,7 +592,7 @@ public:
     }
   }
   virtual void RefineSubspaceHDCG(LinearOperatorBase<FineField> &hermop,
-				  TwoLevelADEF2mrhs<FineField,CoarseVector> & theHDCG,
+				  TwoLevelCGmrhs<FineField> & theHDCG,
 				  int nrhs)
   {
     std::vector<FineField> src_mrhs(nrhs,FineGrid);
