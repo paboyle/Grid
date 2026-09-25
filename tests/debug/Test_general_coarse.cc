@@ -40,29 +40,6 @@ using namespace Grid;
 // a second definition here is a duplicate-symbol link error the moment the
 // archive member is pulled in.
 
-///////////////////////
-// Tells little dirac op to use MdagM as the .Op()
-///////////////////////
-template<class Field>
-class HermOpAdaptor : public LinearOperatorBase<Field>
-{
-  LinearOperatorBase<Field> & wrapped;
-public:
-  HermOpAdaptor(LinearOperatorBase<Field> &wrapme) : wrapped(wrapme)  {};
-  void OpDiag (const Field &in, Field &out) {    GRID_ASSERT(0);  }
-  void OpDir  (const Field &in, Field &out,int dir,int disp) {    GRID_ASSERT(0);  }
-  void OpDirAll  (const Field &in, std::vector<Field> &out){    GRID_ASSERT(0);  };
-  void Op     (const Field &in, Field &out){
-    wrapped.HermOp(in,out);
-  }
-  void AdjOp     (const Field &in, Field &out){
-    wrapped.HermOp(in,out);
-  }
-  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){    GRID_ASSERT(0);  }
-  void HermOp(const Field &in, Field &out){
-    wrapped.HermOp(in,out);
-  }
-};
 
 
 int main (int argc, char ** argv)

@@ -20,6 +20,7 @@ Author: Peter Boyle <pboyle@bnl.gov>
 #pragma once
 
 #include <Grid/algorithms/multigrid/DenseCoarseMatrix.h>
+#include <Grid/algorithms/multigrid/MultiGridIO.h>
 #include <Grid/algorithms/multigrid/PVdagMOperators.h>
 #include <Grid/algorithms/multigrid/MrhsMultiGrid.h>
 
@@ -48,36 +49,13 @@ NAMESPACE_BEGIN(Grid);
 //////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////
-// Subspace I/O: bare-vector scidac records.  Loaded vectors are RAW --
-// deliberately NOT re-orthogonalised: CoarsenOperator block
-// orthonormalises in place, and projecting a block-orthonormal vector
-// onto its own block-orthonormalised aggregation gives e_k with the
-// near-null content silently gone.  GramGuard below catches that.
+// Subspace I/O is in MultiGridIO.h (shared with the HDCG chain).
+// Loaded vectors are RAW -- deliberately NOT re-orthogonalised:
+// CoarsenOperator block orthonormalises in place, and projecting a
+// block-orthonormal vector onto its own block-orthonormalised
+// aggregation gives e_k with the near-null content silently gone.
+// GramGuard below catches that.
 //////////////////////////////////////////////////////////////////////
-template <class Field>
-void saveSubspace(std::vector<Field> &subspace, std::string const fname){
-#ifdef HAVE_LIME
-  Grid::emptyUserRecord record;
-  Grid::ScidacWriter SW(subspace[0].Grid()->IsBoss());
-  SW.open(fname);
-  for (int k = 0; k < (int)subspace.size(); k++) {
-    SW.writeScidacFieldRecord(subspace[k], record);
-  }
-  SW.close();
-#endif
-}
-template <class Field>
-void loadSubspace(std::vector<Field> &subspace, std::string const fname){
-#ifdef HAVE_LIME
-  Grid::emptyUserRecord record;
-  Grid::ScidacReader SR;
-  SR.open(fname);
-  for (int k = 0; k < (int)subspace.size(); k++) {
-    SR.readScidacFieldRecord(subspace[k], record);
-  }
-  SR.close();
-#endif
-}
 
 //////////////////////////////////////////////////////////////////////
 // ||<v|v> - I||_F over a set of coarse vectors.  Small means the raw
@@ -146,14 +124,14 @@ public:
 
     clatt.resize(4); cclatt.resize(4);
     for(int d=0;d<4;d++){
-      GRID_ASSERT( fdims[d+1] % P.Block[d] == 0 );
-      clatt[d] = fdims[d+1] / P.Block[d];
+      GRID_ASSERT( fdims[d+1] % P.Block1[d] == 0 );
+      clatt[d] = fdims[d+1] / P.Block1[d];
     }
     for(int d=0;d<4;d++){
       GRID_ASSERT( clatt[d] % P.Block2[d] == 0 );
       cclatt[d] = clatt[d] / P.Block2[d];
     }
-    std::cout << GridLogMessage << "MGCoarseGrids: Block  " << P.Block  << "  coarse lattice        " << clatt  << std::endl;
+    std::cout << GridLogMessage << "MGCoarseGrids: Block1 " << P.Block1 << "  coarse lattice        " << clatt  << std::endl;
     std::cout << GridLogMessage << "MGCoarseGrids: Block2 " << P.Block2 << "  coarse-coarse lattice " << cclatt << std::endl;
 
     Coordinate c5latt({1,clatt[0],clatt[1],clatt[2],clatt[3]});
@@ -182,6 +160,41 @@ public:
 };
 
 //////////////////////////////////////////////////////////////////////
+// The fp32 fine grids: same lattice and decomposition as the fp64 fine
+// grid, vComplexF SIMD layout.  For the fp32 fine level inside the
+// preconditioner (the fp32 fermion operators and the fp32 transfer
+// operator borrow these).  Owned here; declare BEFORE the coarsening.
+//////////////////////////////////////////////////////////////////////
+class MGFineGridsF {
+public:
+  GridCartesian         *UGridF;
+  GridRedBlackCartesian *UrbGridF;
+  GridCartesian         *FGridF;
+  GridRedBlackCartesian *FrbGridF;
+
+  MGFineGridsF(GridCartesian *FGrid)
+  {
+    Coordinate fdims = FGrid->FullDimensions();      // {Ls, x,y,z,t}
+    Coordinate fmpi  = FGrid->_processors;
+    GRID_ASSERT( fdims.size() == 5 );
+    int Ls = fdims[0];
+    Coordinate latt4({fdims[1],fdims[2],fdims[3],fdims[4]});
+    Coordinate mpi4 ({fmpi[1], fmpi[2], fmpi[3], fmpi[4]});
+    UGridF   = SpaceTimeGrid::makeFourDimGrid(latt4,GridDefaultSimd(Nd,vComplexF::Nsimd()),mpi4);
+    UrbGridF = SpaceTimeGrid::makeFourDimRedBlackGrid(UGridF);
+    FGridF   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGridF);
+    FrbGridF = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGridF);
+  }
+  ~MGFineGridsF()
+  {
+    delete FrbGridF;
+    delete FGridF;
+    delete UrbGridF;
+    delete UGridF;
+  }
+};
+
+//////////////////////////////////////////////////////////////////////
 // ALL the coarsening information for one gauge configuration.
 //
 // Owns: the RAW near-null bases (fine and coarse -- retained so the
@@ -202,19 +215,41 @@ public:
   typedef MultiGeneralCoarsenedOperatorV2<Fobj,CComplex,nbasis>         CoarseOperator;
   typedef typename CoarseOperator::CoarseVector                         CoarseVector;
   typedef typename CoarseVector::vector_object                          CoarseSiteObj;
-  typedef iScalar<CComplex>                                             CComplex2;  // coarsening deepens the nest by one iScalar
-  typedef MultiGeneralCoarsenedOperatorV2<CoarseSiteObj,CComplex2,nbasis> CoarseCoarseOperator;
+  // Every coarse level carries the same site type iVector<CComplex,nbasis>:
+  // the coefficient scalar does not deepen with the level (the operator keeps
+  // its own deeper scratch type for the block inner products).  Levels are
+  // told apart by their grids, not their C++ types.
+  typedef MultiGeneralCoarsenedOperatorV2<CoarseSiteObj,CComplex,nbasis> CoarseCoarseOperator;
   typedef typename CoarseCoarseOperator::CoarseVector                   CoarseCoarseVector;
-  typedef DenseCoarseMatrix<CComplex2,nbasis>                           DenseBottom;
+  typedef DenseCoarseMatrix<CComplex,nbasis>                            DenseBottom;
+  // The fp32 fine field, derived from the fp64 one: the fp32 fine level of
+  // the preconditioner projects through the SAME basis in fp32 layout.
+  typedef typename GridTypeMapper<Fobj>::SinglePrecision                FobjF;
+  typedef Lattice<FobjF>                                                FineFieldF;
+
+  //////////////////////////////////////////////////////////////////////
+  // ONE fine transfer operator.  Its STORE follows the coarse sector --
+  // the coarse space is what it feeds -- while its import and export
+  // accept EITHER fine precision, because they are already a layout
+  // transformation and a scalar conversion inside one costs nothing.
+  // So an fp64 outer level and an fp32 V-cycle share this single object,
+  // and no second basis store, handover or retained basis is needed.
+  //////////////////////////////////////////////////////////////////////
+  static const bool CoarseIsSingle =
+    ( sizeof(typename GridTypeMapper<CComplex>::scalar_type) == sizeof(ComplexF) );
+  typedef typename std::conditional<CoarseIsSingle,FineFieldF,FineField>::type ProjectorField;
+  typedef MultiRHSBlockProject<ProjectorField>                          ProjectorL1_t;
+  typedef MultiRHSBlockProject<CoarseVector>                            ProjectorL2_t;
 
   MGCoarseGrids                     &Grids;      // borrowed
+  MGFineGridsF                      &GridsF;     // borrowed
   MGSetupParams                      Params;
   NextToNearestStencilGeometry5D     geom;
   NextToNearestStencilGeometry5D     geom2;
   CoarseOperator                     CoarseOpPV;
   CoarseCoarseOperator               CoarseOpL2;
-  MultiRHSBlockProject<FineField>    MrhsProjector;
-  MultiRHSBlockProject<CoarseVector> MrhsProjectorL2;
+  ProjectorL1_t                      MrhsProjectorL1;  // store follows the coarse sector
+  ProjectorL2_t                      MrhsProjectorL2;
   DenseBottom                       *DenseCC;
   std::vector<FineField>             rawNull;    // RAW fine near-null basis
   std::vector<CoarseVector>          rawPsi;     // RAW coarse near-null basis
@@ -222,8 +257,9 @@ public:
   GridCartesian                     *CCMrhs;
   int                                nrhs;
 
-  PVdagMMultiGridCoarsening(MGCoarseGrids &_Grids, const MGSetupParams &P)
+  PVdagMMultiGridCoarsening(MGCoarseGrids &_Grids, MGFineGridsF &_GridsF, const MGSetupParams &P)
     : Grids(_Grids),
+      GridsF(_GridsF),
       Params(P),
       geom (_Grids.Coarse5d),
       geom2(_Grids.CoarseCoarse5d),
@@ -289,7 +325,7 @@ public:
   // halos follow the FineSloppyComms policy, restored EXACT on exit).
   ////////////////////////////////////////////////////////////////////
   template<class PVdagMOp>
-  void Coarsen(PVdagMOp &FineOp)
+  void Coarsen(PVdagMOp &FineOp, int retain_basis=0)
   {
     GRID_ASSERT( rawNull.size() == nbasis );
 
@@ -301,18 +337,22 @@ public:
     std::cout << GridLogMessage << "PVdagMMultiGridCoarsening: L1 CoarsenOperator, batch "
               << Grids.batch << std::endl;
 
+    // CoarsenOperator orthonormalises sub in place and imports it into OUR
+    // transfer operator, which it then uses.  One basis store, imported once.
+    // The projector's grid carries the STORE's SIMD layout, which is the fp32
+    // fine grid when the coarse sector is fp32; fp64 vectors convert on import.
+    MrhsProjectorL1.Allocate(nbasis,
+                             CoarseIsSingle ? (GridBase *)GridsF.FGridF : (GridBase *)Grids.FGrid,
+                             Grids.Coarse5d);
     FineOp.SloppyComms(Params.FineSloppyComms);
-    CoarseOpPV.CoarsenOperator(FineOp,sub,Grids.Coarse5d,Grids.batch);
+    CoarseOpPV.CoarsenOperator(FineOp,sub,Grids.Coarse5d,Grids.batch,MrhsProjectorL1);
     FineOp.SloppyComms(0);
-
-    // Transfer operators from the orthonormalised basis; then the
-    // Galerkin images of the RAW basis define the L2 null space.
-    MrhsProjector.Allocate(nbasis,Grids.FGrid,Grids.Coarse5d);
-    MrhsProjector.ImportBasis(sub);
+    // The Lattice copy of the basis has served its purpose: the transfer
+    // operator holds it in BLAS layout from here on.
     sub.clear(); sub.shrink_to_fit();
 
     std::vector<CoarseVector> psi(nbasis,Grids.Coarse5d);
-    MrhsProjector.blockProject(rawNull,psi);
+    MrhsProjectorL1.blockProject(rawNull,psi);
     GramGuard("psi_coarse",psi,Grids.Coarse5d);
 
     rawPsi.clear();
@@ -324,16 +364,25 @@ public:
     NonHermitianLinearOperator<CoarseOperator,CoarseVector> LinOpCoarse(CoarseOpPV);
     std::cout << GridLogMessage << "PVdagMMultiGridCoarsening: L2 CoarsenOperator, batch "
               << Grids.batch << std::endl;
-    CoarseOpL2.CoarsenOperator(LinOpCoarse,Grids.CoarseBatch,psi,Grids.CoarseCoarse5d);
-
     MrhsProjectorL2.Allocate(nbasis,Grids.Coarse5d,Grids.CoarseCoarse5d);
-    MrhsProjectorL2.ImportBasis(psi);              // now block orthonormal
+    CoarseOpL2.CoarsenOperator(LinOpCoarse,Grids.CoarseBatch,psi,Grids.CoarseCoarse5d,MrhsProjectorL2);
     {
       std::vector<CoarseCoarseVector> psi_cc(nbasis,Grids.CoarseCoarse5d);
       MrhsProjectorL2.blockProject(rawPsi,psi_cc); // RAW vectors in
       GramGuard("psi_cc",psi_cc,Grids.CoarseCoarse5d);
     }
+    // The RAW basis has done its work (the L2 null space above was its last
+    // use) and is the single largest resident block of the setup, so it is
+    // freed.  retain_basis keeps it for a caller that coarsens again from the
+    // same basis; Setup.RetainSubspace keeps it for the object's whole life,
+    // which is what a fixed-basis rebuild on a changed gauge field (HMC)
+    // needs.  A valence solve never rebuilds.
+    if ( !retain_basis && !Params.RetainSubspace ) DiscardBasis();
+    MrhsProjectorL1.ReleaseScratch();
+    MrhsProjectorL2.ReleaseScratch();
+
     nrhs = -1;                                     // both operators left at the batch grids
+    ReportDeviceFootprint("after Coarsen");
   }
 
   ////////////////////////////////////////////////////////////////////
@@ -373,6 +422,7 @@ public:
     CoarseOpL2.ReleaseGrid();           // let go before the grid dies
     delete CoarseCoarseOne;
     nrhs = -1;
+    ReportDeviceFootprint("after BuildDenseBottom");
   }
 
   ////////////////////////////////////////////////////////////////////
@@ -399,6 +449,66 @@ public:
   }
 
   ////////////////////////////////////////////////////////////////////
+  // Galerkin certificate for the L1 coarsening: ||A_c x - P^dag A P x||
+  // over ||A_c x|| on a random coarse vector, through the SAME transfer
+  // operators the solve uses.  The coarse operator is compared with its
+  // own definition, so this reads the ROUNDING level of the coarsening
+  // (fp64 coarse ~1e-13, fp32 coarse ~1e-6) independently of how the
+  // solve converges.  Drives the fine operator with EXACT halos; at more
+  // than one rank the sloppy-halo coarsening error is included in the
+  // reading.  Nrhs 1; the caller's Nrhs is restored by its own SetNrhs.
+  ////////////////////////////////////////////////////////////////////
+  template<class PVdagMOp>
+  RealD CertifyCoarsening(PVdagMOp &FineOp)
+  {
+    SetNrhs(1);
+    CoarseVector xc(CMrhs), Acx(CMrhs), PtAPx(CMrhs);
+    GridParallelRNG cRNG(CMrhs); cRNG.SeedFixedIntegers(std::vector<int>({21,22,23,24}));
+    random(cRNG,xc);
+
+    CoarseOpPV.M(xc,Acx);                                   // A_c x
+
+    std::vector<FineField> Px(1,Grids.FGrid), APx(1,Grids.FGrid);
+    MrhsProjectorL1.blockPromote(Px,xc);                      // P x
+    FineOp.SloppyComms(0);
+    FineOp.Op(Px[0],APx[0]);                                // A P x
+    MrhsProjectorL1.blockProject(APx,PtAPx);                  // P^dag A P x
+
+    CoarseVector d(CMrhs); d = Acx - PtAPx;
+    RealD rel = std::sqrt(norm2(d)/norm2(Acx));
+    std::cout << GridLogMessage << "PVdagMMultiGridCoarsening: L1 GALERKIN CERTIFICATE "
+              << "||A_c x - P^dag A P x||/||A_c x|| = " << rel << std::endl;
+    return rel;
+  }
+
+
+  ////////////////////////////////////////////////////////////////////
+  // The device memory this coarsening holds that the memory manager
+  // CANNOT evict: BLAS stores, which are plain device allocations.
+  // Lattice fields are omitted on purpose -- they are evictable, so they
+  // cost eviction traffic, not failure.  What is reported is what has to
+  // fit alongside the manager's cache, the comms buffers and the shm
+  // segment, which is the budget an out-of-memory run actually breaks.
+  ////////////////////////////////////////////////////////////////////
+  void ReportDeviceFootprint(const std::string &when)
+  {
+    uint64_t p1 = MrhsProjectorL1.DeviceBytes();
+    uint64_t p2 = MrhsProjectorL2.DeviceBytes();
+    uint64_t o1 = CoarseOpPV.DeviceBytes();
+    uint64_t o2 = CoarseOpL2.DeviceBytes();
+    uint64_t dn = DenseCC ? DenseCC->DeviceBytes() : 0;
+    uint64_t tot = p1+p2+o1+o2+dn;
+    const double G = 1024.*1024.*1024.;
+    std::cout << GridLogMessage << "PVdagMMultiGridCoarsening (" << when << "): resident device memory/rank "
+              << tot/G << " GB = transfer L1 " << p1/G << " + L2 " << p2/G
+              << " + operator L1 " << o1/G << " + L2 " << o2/G
+              << " + dense " << dn/G << " GB" << std::endl;
+    std::cout << GridLogMessage << "PVdagMMultiGridCoarsening (" << when << "): not evictable; must fit alongside the "
+              << MemoryManager::DeviceMaxBytes/G
+              << " GB manager cache, the comms buffers and the shm segment" << std::endl;
+  }
+
+  ////////////////////////////////////////////////////////////////////
   // Free the retained RAW bases (valence use: coarsening is final for
   // this configuration and the fine basis is ~GB-scale host memory).
   ////////////////////////////////////////////////////////////////////
@@ -420,16 +530,18 @@ public:
 // (its applications define what "converged" means), asserted by the
 // FINAL true-residual report in Solve.
 //////////////////////////////////////////////////////////////////////
-template<class Matrix,class Coarsening>
+template<class Matrix,class MatrixF,class Coarsening>
 class PVdagMMultiGridSolver {
 public:
   typedef typename Coarsening::FineField            FineField;
+  typedef typename Coarsening::FineFieldF           FineFieldF;
   typedef typename Coarsening::CoarseOperator       CoarseOperator;
   typedef typename Coarsening::CoarseVector         CoarseVector;
   typedef typename Coarsening::CoarseCoarseOperator CoarseCoarseOperator;
   typedef typename Coarsening::CoarseCoarseVector   CoarseCoarseVector;
   typedef typename Coarsening::DenseBottom          DenseBottom;
   typedef PrecGeneralisedConjugateResidualNonHermitian<FineField>    FineSmoother_t;
+  typedef PrecGeneralisedConjugateResidualNonHermitian<FineFieldF>   FineSmootherF_t;
   typedef PrecGeneralisedConjugateResidualNonHermitian<CoarseVector> CoarseKrylov_t;
 
   Coarsening            &C;
@@ -447,11 +559,20 @@ public:
   CoarseKrylov_t                                CoarseSmootherGCR;
   MrhsCoarseThreeLevelPrec<CoarseVector,CoarseCoarseVector> L2to3Precon;
   CoarseKrylov_t                                L2PGCR;
+  // The fp64 fine level of the preconditioner
   FineSmoother_t                                SmootherGCR;
-  MrhsTwoLevelMG<FineField,CoarseVector,FineSmoother_t> ThreeLevelPrecon;
+  MrhsTwoLevelMG<FineField,CoarseVector,FineSmoother_t,typename Coarsening::ProjectorL1_t> ThreeLevelPrecon;
+  // The fp32 fine level of the preconditioner, behind the fp64/fp32 seam.
+  // Both share the coarse chain (L2PGCR); the outer Krylov picks one.
+  PVdagMLinearOperator<MatrixF,FineFieldF>        PVdagMF;
+  ShiftedPVdagMLinearOperator<MatrixF,FineFieldF> ShiftedPVdagMF;
+  TrivialPrecon<FineFieldF>                       simple_fine_f;
+  FineSmootherF_t                                 SmootherGCRF;
+  MrhsTwoLevelMG<FineFieldF,CoarseVector,FineSmootherF_t,typename Coarsening::ProjectorL1_t> ThreeLevelPreconF;
+  MrhsMixedPrecPreconditioner<FineField,FineFieldF> PreconSeam;
   MrhsPGCRNonHermitian<FineField>               L1PGCR;
 
-  PVdagMMultiGridSolver(Matrix &Ddwf, Matrix &Dpv,
+  PVdagMMultiGridSolver(Matrix &Ddwf, Matrix &Dpv, MatrixF &DdwfF, MatrixF &DpvF,
                         Coarsening &_C, const PVdagMMultiGridParams &P, int nr)
     : C(_C), Params(P), nrhs(nr),
       _regrid((C.SetNrhs(nr),0)),              // members below capture C.CMrhs/C.CCMrhs
@@ -468,11 +589,20 @@ public:
       L2PGCR(P.CoarseSolver.Tol,P.CoarseSolver.Order/16,LinOpC,L2to3Precon,P.CoarseSolver.Mmax,16),
       // Fine smoother: one restart of nstep GCR steps, tolerance 0 = fixed work.
       SmootherGCR(0.0,1,ShiftedPVdagM,simple_fine,P.FineSmoother.Mmax,P.FineSmoother.Nstep),
-      ThreeLevelPrecon(PVdagM,SmootherGCR,C.MrhsProjector,L2PGCR,C.Grids.Coarse5d,C.CMrhs),
-      L1PGCR(P.Outer.Tol,P.Outer.MaxIterations,PVdagM,ThreeLevelPrecon,P.Outer.Mmax,P.Outer.Nstep)
+      ThreeLevelPrecon(PVdagM,SmootherGCR,C.MrhsProjectorL1,L2PGCR,C.Grids.Coarse5d,C.CMrhs),
+      PVdagMF(DdwfF,DpvF),
+      ShiftedPVdagMF(P.FineSmoother.Shift,DdwfF,DpvF),
+      SmootherGCRF(0.0,1,ShiftedPVdagMF,simple_fine_f,P.FineSmoother.Mmax,P.FineSmoother.Nstep),
+      ThreeLevelPreconF(PVdagMF,SmootherGCRF,C.MrhsProjectorL1,L2PGCR,C.Grids.Coarse5d,C.CMrhs),
+      PreconSeam(ThreeLevelPreconF,Ddwf.FermionGrid(),DdwfF.FermionGrid(),nr),
+      L1PGCR(P.Outer.Tol,P.Outer.MaxIterations,PVdagM,
+             (P.Setup.FinePrecision==MGPrecision::fp32)
+               ? static_cast<MrhsLinearFunction<FineField>&>(PreconSeam)
+               : static_cast<MrhsLinearFunction<FineField>&>(ThreeLevelPrecon),
+             P.Outer.Mmax,P.Outer.Nstep)
   {
     GRID_ASSERT( C.DenseCC != nullptr );
-    
+
     CoarseSmootherGCR.Level(2);
     CoarseSmootherGCR.Name("Csmoother");
     CoarseSmootherGCR.SetZeroGuess(1);
@@ -480,23 +610,39 @@ public:
     L2PGCR.Level(2);
     L2PGCR.Name("Couter");
     L2PGCR.SetZeroGuess(1);
-    
+
     SmootherGCR.Level(1);
     SmootherGCR.Name("Fsmoother");
     SmootherGCR.SetZeroGuess(1);
 
+    SmootherGCRF.Level(1);
+    SmootherGCRF.Name("Fsmoother");
+    SmootherGCRF.SetZeroGuess(1);
+
     L1PGCR.Level(1);
     L1PGCR.Name("Fouter");
     L1PGCR.SetZeroGuess(1);
-    
+
     // The V-cycle is preconditioner: sloppy halos inside, exact restored on exit.
     ThreeLevelPrecon.SetSloppy    = [this](int s){ PVdagM.SloppyComms(s); };
     ThreeLevelPrecon.SloppyComms  = Params.Setup.FineSloppyComms;
+    ThreeLevelPreconF.SetSloppy   = [this](int s){ PVdagMF.SloppyComms(s); };
+    ThreeLevelPreconF.SloppyComms = Params.Setup.FineSloppyComms;
     PVdagM.SloppyComms(0);
-    std::cout << GridLogMessage << "PVdagMMultiGridSolver: Nrhs " << nr
-              << ", fine halo policy: preconditioner+coarsening "
-              << (Params.Setup.FineSloppyComms ? "SLOPPY (fp32 wire)" : "exact")
-              << ", outer Krylov EXACT" << std::endl;
+    PVdagMF.SloppyComms(0);
+    // Three stages, three arithmetics, and a wire format that follows the
+    // ARITHMETIC of the stage it serves: fp32 on an fp64 operator, bf16 on
+    // an fp32 one.  The coarsening always applies the fp64 operator, so its
+    // wire is fp32 whatever the preconditioner runs in.
+    const bool sloppy = Params.Setup.FineSloppyComms;
+    const bool pfp32  = (Params.Setup.FinePrecision==MGPrecision::fp32);
+    std::cout << GridLogMessage << "PVdagMMultiGridSolver: Nrhs " << nr << std::endl;
+    std::cout << GridLogMessage << "  outer Krylov       : fp64, halos EXACT (the true residual is measured here)" << std::endl;
+    std::cout << GridLogMessage << "  preconditioner fine: " << (pfp32 ? "fp32 (seam at the outer Krylov)" : "fp64")
+              << ", halos " << (sloppy ? (pfp32 ? "SLOPPY bf16 wire" : "SLOPPY fp32 wire") : "exact") << std::endl;
+    std::cout << GridLogMessage << "  coarsening (done)  : fp64 operator, halos "
+              << (sloppy ? "SLOPPY fp32 wire" : "exact")
+              << " -- the coarse operator does not follow FinePrecision" << std::endl;
   }
 
   void Solve(std::vector<FineField> &src, std::vector<FineField> &sol)

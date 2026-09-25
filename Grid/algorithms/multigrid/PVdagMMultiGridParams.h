@@ -42,6 +42,12 @@ NAMESPACE_BEGIN(Grid);
 // not consumer knobs.
 //////////////////////////////////////////////////////////////////////////////////////
 
+// Arithmetic precision of the fine level INSIDE the preconditioner -- the
+// smoother and the V-cycle's own fine residuals.  The outer Krylov is
+// always fp64: the fp64/fp32 seam sits at its preconditioner call.
+// Orthogonal to FineSloppyComms, which is the halo WIRE format.
+GRID_SERIALIZABLE_ENUM(MGPrecision, undef, fp64, 1, fp32, 2);
+
 // The smoother is the adaptive shifted PGCR -- the one correct route for
 // this non-Hermitian chain (stationary replay and Chebyshev were explored
 // and did not win here; Chebyshev remains the HERMITIAN chain's smoother).
@@ -79,14 +85,17 @@ struct MGDenseParams : Serializable {
 
 struct MGSetupParams : Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(MGSetupParams,
-                                  std::vector<int>, Block,           // fine -> coarse blocking
+                                  std::vector<int>, Block1,          // fine -> coarse blocking
                                   std::vector<int>, Block2,          // coarse -> coarse-coarse blocking
                                   int,              CoarsenBatch,
                                   std::string,      SubspaceFile,    // scidac; empty = create from noise, no I/O
-                                  int,              FineSloppyComms);// fp32 wire INSIDE the preconditioner only
+                                  int,              FineSloppyComms, // reduced-precision halo WIRE inside the preconditioner only: fp32 on the fp64 operator, bf16 on the fp32 operator
+                                  MGPrecision,      FinePrecision,   // fine-level ARITHMETIC inside the preconditioner
+                                  int,              RetainSubspace); // keep the RAW basis after setup (nbasis fine vectors); needed ONLY for a fixed-basis rebuild on a changed gauge field (HMC).  A valence solve never rebuilds, so 0 frees it.
   MGSetupParams()
-    : Block({2,2,3,3}), Block2({4,4,2,4}), CoarsenBatch(9),
-      SubspaceFile(""), FineSloppyComms(1) {};
+    : Block1({2,2,3,3}), Block2({4,4,2,4}), CoarsenBatch(9),
+      SubspaceFile(""), FineSloppyComms(1), FinePrecision(MGPrecision::fp64),
+      RetainSubspace(0) {};
 };
 
 struct PVdagMMultiGridParams : Serializable {
@@ -104,9 +113,10 @@ struct PVdagMMultiGridParams : Serializable {
 
 inline void CheckValidity(const PVdagMMultiGridParams &P)
 {
-  GRID_ASSERT( P.Setup.Block.size()  == 4 );
+  GRID_ASSERT( P.Setup.Block1.size() == 4 );
   GRID_ASSERT( P.Setup.Block2.size() == 4 );
   GRID_ASSERT( P.Setup.CoarsenBatch  >= 1 );
+  GRID_ASSERT( P.Setup.FinePrecision != MGPrecision::undef );
   GRID_ASSERT( P.FineSmoother.Nstep   > 0 );
   GRID_ASSERT( P.CoarseSmoother.Nstep > 0 );
   GRID_ASSERT( P.CoarseSolver.Tol     > 0.0 );

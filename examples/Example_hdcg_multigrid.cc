@@ -2,7 +2,7 @@
 
     Grid physics library, www.github.com/paboyle/Grid
 
-    Source file: ./examples/Example_pvdagm_multigrid.cc
+    Source file: ./examples/Example_hdcg_multigrid.cc
 
     Copyright (C) 2026
 
@@ -19,93 +19,85 @@ Author: Peter Boyle <pboyle@bnl.gov>
 /*  END LEGAL */
 
 //
-// The canonical three-level mrhs PVdagM multigrid driver, on the library
-// objects (Grid/algorithms/multigrid/PVdagMMultiGrid.h).
+// The two-level mrhs HDCG driver on the library objects
+// (Grid/algorithms/multigrid/HDCGMultiGrid.h): the Schur-preconditioned
+// M^dag M of a Mobius/Shamir fermion on one checkerboard, coarsened on V2.
 //
-// Every parameter is in ONE serialisable struct, read from XML:
+//   ./Example_hdcg_multigrid --grid 48.48.48.96 --mpi ... --hdcg-params params.xml
 //
-//   ./Example_pvdagm_multigrid --grid 48.48.48.96 --mpi ... \
-//                              --pvdagm-params params.xml
+// With no --hdcg-params the built-in defaults run (hot-start gauge field
+// unless Config is set).  A missing file gets a template written next to
+// it and the program exits: the template documents every parameter.
 //
-// With no --pvdagm-params the built-in defaults run (hot-start gauge field
-// unless Config is set in the file).  A missing file gets a template
-// written next to it and the program exits: the template documents every
-// parameter.  The effective parameters are always printed, so the log
-// describes its own run.
-//
-// Compile-time: NBASIS defaults to 60, the production basis; a subspace file
-// may hold more vectors, the load reads only the first NBASIS.  -DNBASIS=8
-// cuts it down for laptop runs.
-// examples/Makefile.am builds the fp32-coarse and fp32-dense-inversion
-// variants below as their own binaries.
+// Compile-time: -DNBASIS=8 cuts the basis down for laptop runs;
+// -DCOARSE_SINGLE builds the fp32 coarse space, which examples/Makefile.am
+// builds as its own binary, Example_hdcg_multigrid_fp32coarse.
 //
 #include <Grid/Grid.h>
 #include <Grid/lattice/PaddedCell.h>
 #include <Grid/stencil/GeneralLocalStencil.h>
 #include <Grid/algorithms/iterative/PrecGeneralisedConjugateResidualNonHermitian.h>
-#include <Grid/algorithms/multigrid/PVdagMMultiGrid.h>
+#include <Grid/algorithms/multigrid/HDCGMultiGrid.h>
 
 using namespace std;
 using namespace Grid;
 
 #ifndef NBASIS
-#define NBASIS 60
+#define NBASIS 62
 #endif
 
-// Precision of the coarse + coarse-coarse sector is a compile-time
-// instantiation: -DCOARSE_SINGLE builds the fp32 coarse space (the dense
-// bottom's apply slab is fp32 either way; its inversion is a configure
-// option).  Both levels carry the same site type iVector<CoarseScalar,NBASIS>.
 #ifdef COARSE_SINGLE
 typedef sTComplexF CoarseScalar_t;
 #else
 typedef sTComplexD CoarseScalar_t;
 #endif
 
-struct PVdagMDriverParams : Serializable {
-  GRID_SERIALIZABLE_CLASS_MEMBERS(PVdagMDriverParams,
+struct HDCGDriverParams : Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(HDCGDriverParams,
                                   int,         Ls,
                                   RealD,       Mass,
                                   RealD,       M5,
                                   RealD,       MobiusB,
                                   RealD,       MobiusC,
                                   std::string, Config,          // empty: hot start
+                                  int,         Checkerboard,    // 0 Even, 1 Odd: the Schur operator's checkerboard
                                   int,         Nrhs,
                                   int,         SolveSingleRHS,  // also run Nrhs=1 through the same objects
-                                  PVdagMMultiGridParams, MultiGrid);
-  PVdagMDriverParams()
+                                  HDCGMultiGridParams, MultiGrid);
+  HDCGDriverParams()
     : Ls(24), Mass(0.00078), M5(1.8), MobiusB(1.5), MobiusC(0.5),
-      Config(""), Nrhs(12), SolveSingleRHS(1) {};
+      Config(""), Checkerboard(0), Nrhs(12), SolveSingleRHS(1) {};
 };
 
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  PVdagMDriverParams P;
+  HDCGDriverParams P;
   {
     std::string pfile("");
-    if( GridCmdOptionExists(argv,argv+argc,"--pvdagm-params") )
-      pfile = GridCmdOptionPayload(argv,argv+argc,"--pvdagm-params");
+    if( GridCmdOptionExists(argv,argv+argc,"--hdcg-params") )
+      pfile = GridCmdOptionPayload(argv,argv+argc,"--hdcg-params");
     if ( pfile.length() ) {
       bool good; { std::ifstream f(pfile); good = f.good(); }
       if ( !good ) {
         if ( GlobalSharedMemory::WorldRank == 0 ) {
           XmlWriter WR(pfile+".templ");
-          write(WR, "PVdagMDriver", P);
+          write(WR, "HDCGDriver", P);
           std::cout << GridLogMessage << pfile << " does not exist; template written to "
                     << pfile << ".templ" << std::endl;
         }
         Grid_finalize(); return 0;
       }
       XmlReader RD(pfile);
-      read(RD, "PVdagMDriver", P);
+      read(RD, "HDCGDriver", P);
     }
     CheckValidity(P.MultiGrid);
-    std::cout << GridLogMessage << "PVdagMDriver parameters ("
+    std::cout << GridLogMessage << "HDCGDriver parameters ("
               << (pfile.length() ? pfile : std::string("defaults")) << "):" << std::endl;
     std::cout << P << std::endl;
   }
+  const int cb = P.Checkerboard;
 
   Coordinate latt = GridDefaultLatt();
   Coordinate mpi  = GridDefaultMpi();
@@ -130,28 +122,15 @@ int main (int argc, char ** argv)
   }
 
   MobiusFermionD Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,P.Mass,P.M5,P.MobiusB,P.MobiusC);
-  MobiusFermionD Dpv (Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,   P.M5,P.MobiusB,P.MobiusC);
-
-  typedef PVdagMLinearOperator<MobiusFermionD,LatticeFermionD> PVdagM_t;
-  PVdagM_t PVdagM(Ddwf,Dpv);
+  SchurDiagMooeeOperator<MobiusFermionD,LatticeFermionD> HermOpEO(Ddwf);
+  HermOpAdaptor<LatticeFermionD> FineOp(HermOpEO);     // Op = HermOp, for the coarsening
 
   //////////////////////////////////////////////////////////////////////
-  // Grids -> coarsening -> dense bottom.  Scope order is lifetime order.
-  //
-  // The fine operator applied during setup is always fp64, on the fp64
-  // basis.  Everything the coarsening produces -- the Galerkin matrix
-  // elements and the transfer operator's store -- takes the coarse precision
-  // (CoarseScalar_t, a compile-time choice).
-  //
-  // There is exactly ONE fine transfer operator.  Its STORE follows the
-  // coarse sector, since the coarse space is what it feeds, while its import
-  // and export accept either fine precision: they are already a layout
-  // transformation, and a scalar conversion inside one is free.  So the fp64
-  // setup and an fp32 V-cycle share the same object and the same basis store.
-  // FinePrecision selects only the fine operator and smoother; the outer
-  // Krylov and its true-residual check stay fp64 throughout.
+  // Grids -> coarsening.  Scope order is lifetime order.  The fp32 fine
+  // grids and fermion operator serve the fp32 fine level of the
+  // preconditioner (MultiGrid.Setup.FinePrecision, a run-time choice).
   //////////////////////////////////////////////////////////////////////
-  typedef PVdagMMultiGridCoarsening<vSpinColourVector,CoarseScalar_t,NBASIS> Coarsening_t;
+  typedef HDCGCoarsening<vSpinColourVector,CoarseScalar_t,NBASIS> Coarsening_t;
   std::cout << GridLogMessage << "Coarse sector precision (compiled): "
             << (sizeof(typename GridTypeMapper<CoarseScalar_t>::scalar_type)==sizeof(ComplexF) ? "fp32" : "fp64")
             << ", nbasis " << NBASIS << std::endl;
@@ -162,24 +141,28 @@ int main (int argc, char ** argv)
   LatticeGaugeFieldF UmuF(FGridsF.UGridF);
   precisionChange(UmuF,Umu);
   MobiusFermionF DdwfF(UmuF,*FGridsF.FGridF,*FGridsF.FrbGridF,*FGridsF.UGridF,*FGridsF.UrbGridF,P.Mass,P.M5,P.MobiusB,P.MobiusC);
-  MobiusFermionF DpvF (UmuF,*FGridsF.FGridF,*FGridsF.FrbGridF,*FGridsF.UGridF,*FGridsF.UrbGridF,1.0,   P.M5,P.MobiusB,P.MobiusC);
 
-  Coarsening_t  Coarsening(CGrids, FGridsF, P.MultiGrid.Setup);
+  Coarsening_t Coarsening(CGrids, FGridsF, FrbGrid, cb, P.MultiGrid);
 
-  Coarsening.GetSubspace(RNG5, PVdagM);
-  Coarsening.Coarsen(PVdagM);
-  Coarsening.BuildDenseBottom();
-  Coarsening.CertifyCoarsening(PVdagM);
+  Coarsening.GetSubspace(RNG5, FineOp);
+  HDCGRefineSubspace(Coarsening, Ddwf, DdwfF, FineOp, P.Nrhs);    // no-op unless Refine is HDCG
+  Coarsening.Coarsen(FineOp);
+  Coarsening.CertifyCoarsening(FineOp);
+  Coarsening.CoarseLanczos(P.Nrhs);
 
   //////////////////////////////////////////////////////////////////////
   // Solves: mrhs then (optionally) single RHS through the SAME objects.
   //////////////////////////////////////////////////////////////////////
   auto RunSolve = [&](int nr)
   {
-    PVdagMMultiGridSolver<MobiusFermionD,MobiusFermionF,Coarsening_t> Solver(Ddwf,Dpv,DdwfF,DpvF,Coarsening,P.MultiGrid,nr);
-    std::vector<LatticeFermionD> src(nr,FGrid), sol(nr,FGrid);
-    for(int r=0;r<nr;r++){ gaussian(RNG5,src[r]); sol[r]=Zero(); }
+    HDCGSolver<MobiusFermionD,MobiusFermionF,Coarsening_t> Solver(Ddwf,DdwfF,Coarsening,P.MultiGrid,nr);
+    std::vector<LatticeFermionD> src(nr,FrbGrid), sol(nr,FrbGrid);
+    for(int r=0;r<nr;r++){ src[r].Checkerboard()=cb; sol[r].Checkerboard()=cb; gaussian(RNG5,src[r]); sol[r]=Zero(); }
     Solver.Solve(src,sol);
+    if ( nr == 1 ) {            // the same solve through the LinearFunction interface
+      LatticeFermionD x(FrbGrid); x.Checkerboard()=cb; x=Zero();
+      Solver.Solve(src[0],x);
+    }
   };
 
   RunSolve(P.Nrhs);

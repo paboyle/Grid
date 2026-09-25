@@ -36,6 +36,8 @@ NAMESPACE_BEGIN(Grid);
 //                              smoother operator such as shifted PVdagM.
 //   ChebyshevInverter          one Chebyshev-corrected step with residual print.
 //   MirsSmoother               shifted-MdagM CG, HDCG arXiv:1402.2585.
+//   CGSmoother                 fixed-iteration CG on an already-shifted
+//                              Hermitian operator: the mrhs HDCG smoother.
 //   GCRReplaySmoother          replays a GCR's recorded step lengths a_k and
 //                              orthogonalisation coefficients b_kj with NO
 //                              inner products: one matvec per step, zero
@@ -188,6 +190,30 @@ public:
     SmootherOperator.AdjOp(in,src);
     Guess(src,out);
     CG(MdagMOp,src,out);
+  }
+};
+
+//////////////////////////////////////////////////////////////////////////////
+// Fixed-iteration CG on an (already shifted) Hermitian operator, tolerance
+// zero so the work is fixed.  NOT a stationary preconditioner: the CG
+// coefficients depend on the input, so the map is nonlinear.  Use under a
+// flexible outer (fPcg); BlockCGrQ needs the Chebyshev smoother.
+//////////////////////////////////////////////////////////////////////////////
+template<class Field> class CGSmoother : public LinearFunction<Field>
+{
+public:
+  using LinearFunction<Field>::operator();
+  LinearOperatorBase<Field> &_Op;
+  int iters;
+  CGSmoother(int _iters, LinearOperatorBase<Field> &Op) : _Op(Op), iters(_iters)
+  {
+    std::cout << GridLogMessage << "CGSmoother order " << iters << std::endl;
+  }
+  void operator() (const Field &in, Field &out)
+  {
+    ConjugateGradient<Field> CG(0.0,iters,false);   // never converges: by design
+    out = Zero();
+    CG(_Op,in,out);
   }
 };
 

@@ -59,6 +59,7 @@ public:
 
   typedef typename Field::scalar_type   scalar;
   typedef typename Field::scalar_object scalar_object;
+  typedef typename Field::vector_object vobj;
 
   int nev;
   std::vector<RealD> eval;
@@ -80,10 +81,18 @@ public:
     grid=nullptr;
     vol=0;
     words=0;
-    BLAS_E.resize(0);
-    BLAS_R.resize(0);
-    BLAS_C.resize(0);
-    BLAS_G.resize(0);
+    // deviceVector is a std::vector with a device allocator: resize(0) drops
+    // the size and keeps the capacity, returning no device memory.  Swapping
+    // with an empty vector destroys the buffer.
+    deviceVector<scalar>().swap(BLAS_E);
+    deviceVector<scalar>().swap(BLAS_R);
+    deviceVector<scalar>().swap(BLAS_C);
+    deviceVector<scalar>().swap(BLAS_G);
+  }
+  // Resident (non-evictable) device memory held by this deflator.
+  uint64_t DeviceBytes(void)
+  {
+    return (BLAS_E.capacity()+BLAS_R.capacity()+BLAS_C.capacity()+BLAS_G.capacity())*sizeof(scalar);
   }
   void Allocate(int _nev,GridBase *_grid)
   {
@@ -123,31 +132,98 @@ public:
       ImportEigenVector(evec[_ev0+e],_eval[_ev0+e],e);
     }
   }
+  /////////////////////////////////////////////////////////////////////////
+  // Sources as a vector of D-dimensional fields: each is one contiguous
+  // column of BLAS_R already, so import/export are straight copies.
+  // The eigenvectors may live on a D grid or on the Nrhs=1 D+1 grid of the
+  // same local volume; the two are the same bytes, so only the site count
+  // is checked, not grid identity.
+  /////////////////////////////////////////////////////////////////////////
   void DeflateSources(std::vector<Field> &source,std::vector<Field> & guess)
   {
     int nrhs = source.size();
     GRID_ASSERT(source.size()==guess.size());
-    GRID_ASSERT(grid == guess[0].Grid());
+    GRID_ASSERT(grid->lSites() == guess[0].Grid()->lSites());
     conformable(guess[0],source[0]);
 
     int64_t vw = vol * words;
-
-    RealD t0 = usecond();
     BLAS_R.resize(nrhs * vw); // cost free if size doesn't change
     BLAS_G.resize(nrhs * vw); // cost free if size doesn't change
     BLAS_C.resize(nev * nrhs);// cost free if size doesn't change
 
-    /////////////////////////////////////////////
-    // Copy in the multi-rhs sources
-    /////////////////////////////////////////////
-    //    for(int r=0;r<nrhs;r++){
-    //      std::cout << " source["<<r<<"] = "<<norm2(source[r])<<std::endl;
-    //    }
     for(int r=0;r<nrhs;r++){
       int64_t offset = r*vw;
       autoView(v,source[r],AcceleratorRead);
       acceleratorCopyDeviceToDevice(&v[0],&BLAS_R[offset],sizeof(scalar_object)*vol);
     }
+    DeflateBLAS(nrhs);
+    for(int r=0;r<nrhs;r++){
+      int64_t offset = r*vw;
+      autoView(v,guess[r],AcceleratorWrite);
+      acceleratorCopyDeviceToDevice(&BLAS_G[offset],&v[0],sizeof(scalar_object)*vol);
+    }
+  }
+  /////////////////////////////////////////////////////////////////////////
+  // Sources as ONE D+1 dimensional multiRHS field, rhs innermost
+  // (dimension 0, undistributed) on an UNVECTORISED coarse space, so the
+  // site index is rhs + nrhs*x with x the D-dimensional site.  The GEMM
+  // wants x contiguous per rhs, so the import is a permutation, one fused
+  // pass over the field; likewise the export.  No slices.
+  /////////////////////////////////////////////////////////////////////////
+  void DeflateSources(const Field &source_mrhs, Field &guess_mrhs)
+  {
+    conformable(source_mrhs,guess_mrhs);
+    GridBase *hi = source_mrhs.Grid();
+    GRID_ASSERT(hi->_ndimension    == grid->_ndimension+1);
+    GRID_ASSERT(hi->_processors[0] == 1);
+    GRID_ASSERT(hi->_simd_layout[0]== 1);
+    GRID_ASSERT(vobj::Nsimd()      == 1);
+    int nrhs = hi->_fdimensions[0];
+    GRID_ASSERT(hi->lSites() == nrhs*vol);
+
+    int64_t vw = vol * words;
+    BLAS_R.resize(nrhs * vw);
+    BLAS_G.resize(nrhs * vw);
+    BLAS_C.resize(nev * nrhs);
+
+    ImportSourcesMrhs(source_mrhs,nrhs);
+    DeflateBLAS(nrhs);
+    ExportGuessMrhs(guess_mrhs,nrhs);
+  }
+  void ImportSourcesMrhs(const Field &source_mrhs,int nrhs)
+  {
+    const int64_t lwords = words, lnrhs = nrhs, vw = vol*words;
+    autoView(v,source_mrhs,AcceleratorRead);
+    auto vp = &v[0];
+    scalar *R = &BLAS_R[0];
+    accelerator_for(scr, lnrhs*vol, 1, {
+      int64_t r = scr % lnrhs;
+      int64_t x = scr / lnrhs;
+      const scalar *s = (const scalar *)&vp[scr];
+      for(int64_t w=0;w<lwords;w++) R[r*vw + x*lwords + w] = s[w];
+    });
+  }
+  void ExportGuessMrhs(Field &guess_mrhs,int nrhs)
+  {
+    const int64_t lwords = words, lnrhs = nrhs, vw = vol*words;
+    autoView(v,guess_mrhs,AcceleratorWrite);
+    auto vp = &v[0];
+    scalar *G = &BLAS_G[0];
+    accelerator_for(scr, lnrhs*vol, 1, {
+      int64_t r = scr % lnrhs;
+      int64_t x = scr / lnrhs;
+      scalar *g = (scalar *)&vp[scr];
+      for(int64_t w=0;w<lwords;w++) g[w] = G[r*vw + x*lwords + w];
+    });
+  }
+  /////////////////////////////////////////////////////////////////////////
+  // BLAS_R (nrhs columns of vol*words) -> BLAS_G, through the imported
+  // eigenbasis: C = E^dag R / lambda, G = E C.
+  /////////////////////////////////////////////////////////////////////////
+  void DeflateBLAS(int nrhs)
+  {
+    int64_t vw = vol * words;
+    RealD t0 = usecond();
 
   /*
    * in Fortran column major notation (cuBlas order)
@@ -195,7 +271,7 @@ public:
     acceleratorCopyFromDevice(&BLAS_C[0],&HOST_C[0],BLAS_C.size()*sizeof(scalar));
     grid->GlobalSumVector(&HOST_C[0],nev*nrhs);
     for(int e=0;e<nev;e++){
-      RealD lam(1.0/eval[e]);
+      scalar lam(1.0/eval[e]);          // in the coarse scalar: fp32 coarse spaces too
       for(int r=0;r<nrhs;r++){
 	int off = e+nev*r;
 	HOST_C[off]=HOST_C[off] * lam;
@@ -216,15 +292,6 @@ public:
 		     scalar(0.0),
 		     Gd);
     BLAS.synchronise();
-
-    ///////////////////////////////////////
-    // Copy out the multirhs
-    ///////////////////////////////////////
-    for(int r=0;r<nrhs;r++){
-      int64_t offset = r*vw;
-      autoView(v,guess[r],AcceleratorWrite);
-      acceleratorCopyDeviceToDevice(&BLAS_G[offset],&v[0],sizeof(scalar_object)*vol);
-    }
     RealD t1 = usecond();
     std::cout << GridLogMessage << "MultiRHSDeflation for "<<nrhs<<" sources with "<<nev<<" eigenvectors took " << (t1-t0)/1e3 <<" ms"<<std::endl;
   }

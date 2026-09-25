@@ -214,6 +214,29 @@ public:
   }
 };
 
+////////////////////////////////////////////////////////////////////
+// Present any LinearOperatorBase as Hermitian: Op = AdjOp = HermOp.
+// For coarsening (CoarsenOperator applies Op) an HPD operator whose
+// Op is a factor and HermOp the product, e.g. SchurDiagMooee or MdagM.
+////////////////////////////////////////////////////////////////////
+template<class Field>
+class HermOpAdaptor : public LinearOperatorBase<Field> {
+  LinearOperatorBase<Field> &_Mat;
+public:
+  HermOpAdaptor(LinearOperatorBase<Field> &Mat): _Mat(Mat){};
+  void OpDiag (const Field &in, Field &out)                   { GRID_ASSERT(0); }
+  void OpDir  (const Field &in, Field &out,int dir,int disp)  { GRID_ASSERT(0); }
+  void OpDirAll(const Field &in, std::vector<Field> &out)     { GRID_ASSERT(0); }
+  void Op     (const Field &in, Field &out){ _Mat.HermOp(in,out); }
+  void AdjOp  (const Field &in, Field &out){ _Mat.HermOp(in,out); }
+  void HermOp (const Field &in, Field &out){ _Mat.HermOp(in,out); }
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
+    HermOp(in,out);
+    ComplexD dot = innerProduct(in,out);
+    n1=real(dot);
+    n2=norm2(out);
+  }
+};
 
 ////////////////////////////////////////////////////////////////////
 // Wrap an already herm matrix

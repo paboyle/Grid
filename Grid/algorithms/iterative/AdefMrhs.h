@@ -27,9 +27,10 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #pragma once
 
+#include <Grid/algorithms/multigrid/MrhsPreconditioner.h>
 
   /*
-   * Compared to Tang-2009:  P=Pleft. P^T = PRight Q=MssInv. 
+   * Compared to Tang-2009:  P=Pleft. P^T = PRight Q=MssInv.
    * Script A = SolverMatrix 
    * Script P = Preconditioner
    *
@@ -42,58 +43,64 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 
+//////////////////////////////////////////////////////////////////////
+// Two-level CG family on a vector of right-hand sides, with the
+// preconditioner (M1 and Vstart) as an MrhsPreconditioner object:
+//   fPcg           flexible PCG, one Krylov per rhs, shared M1 call
+//   PrecBlockCGrQ  preconditioned BlockCGrQ (arXiv:2409.03904 s2.2);
+//                  assumes a stationary preconditioner; not the
+//                  production choice (its linalg grows as nrhs^2)
+// Also a LinearFunction<Field>: one rhs is the nrhs=1 case.
+//////////////////////////////////////////////////////////////////////
+enum class MrhsCGAlgorithm { fPcg, PrecBlockCGrQ };
+
 template<class Field>
-class TwoLevelCGmrhs
+class TwoLevelCGmrhs : public LinearFunction<Field>
 {
  public:
+  using LinearFunction<Field>::operator();
   RealD   Tolerance;
   Integer MaxIterations;
   GridBase *grid;
+  MrhsCGAlgorithm Algorithm;
 
-  // Fine operator, Smoother, CoarseSolver
-  LinearOperatorBase<Field>   &_FineLinop;
-  LinearFunction<Field>   &_Smoother;
-  MultiRHSBlockCGLinalg<Field> _BlockCGLinalg;
+  LinearOperatorBase<Field>    &_FineLinop;
+  MrhsPreconditioner<Field>    &_Precon;
+  MultiRHSBlockCGLinalg<Field>  _BlockCGLinalg;
 
-  GridStopWatch ProjectTimer;
-  GridStopWatch PromoteTimer;
-  GridStopWatch DeflateTimer;
-  GridStopWatch CoarseTimer;
-  GridStopWatch FineTimer;
-  GridStopWatch SmoothTimer;
-  GridStopWatch InsertTimer;
-
-  /*
-    Field rrr;
-  Field sss;
-  Field qqq;
-  Field zzz;
-  */  
-  // more most opertor functions
   TwoLevelCGmrhs(RealD tol,
 		 Integer maxit,
-		 LinearOperatorBase<Field>   &FineLinop,
-		 LinearFunction<Field>       &Smoother,
-		 GridBase *fine) : 
-    Tolerance(tol), 
+		 LinearOperatorBase<Field> &FineLinop,
+		 MrhsPreconditioner<Field> &Precon,
+		 GridBase *fine,
+		 MrhsCGAlgorithm alg = MrhsCGAlgorithm::fPcg) :
+    Tolerance(tol),
     MaxIterations(maxit),
+    Algorithm(alg),
     _FineLinop(FineLinop),
-    _Smoother(Smoother)
-    /*
-    rrr(fine),
-    sss(fine),
-    qqq(fine),
-    zzz(fine)
-*/
+    _Precon(Precon)
   {
-    grid       = fine;
+    grid = fine;
   };
-  
-  // Vector case
+
+  // mrhs entry point
   virtual void operator() (std::vector<Field> &src, std::vector<Field> &x)
   {
-    SolveSingleSystem(src,x);
-	// SolvePrecBlockCG(src,x);
+    if ( Algorithm == MrhsCGAlgorithm::PrecBlockCGrQ ) SolvePrecBlockCG(src,x);
+    else                                              SolveSingleSystem(src,x);
+  }
+  // LinearFunction entry points
+  virtual void operator() (const Field &src, Field &x)
+  {
+    std::vector<Field> S(1,src);
+    std::vector<Field> X(1,x);
+    (*this)(S,X);
+    x = X[0];
+  }
+  virtual void operator() (const std::vector<Field> &src, std::vector<Field> &x)
+  {
+    std::vector<Field> S(src);
+    (*this)(S,x);
   }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -220,7 +227,7 @@ class TwoLevelCGmrhs
     //////////////////////////
     // x0 = Vstart -- possibly modify guess
     //////////////////////////
-    Vstart(X,src);
+    _Precon.Vstart(X,src);
 
     //////////////////////////
     // R = B-AX
@@ -234,7 +241,7 @@ class TwoLevelCGmrhs
     //////////////////////////////////
     // Compute MZ = M1 Z = M1 B - M1 A x0
     //////////////////////////////////
-    PcgM1(Z,MZ);  
+    _Precon(Z,MZ);  
 
     //////////////////////////////////
     // QC = Z
@@ -248,13 +255,7 @@ class TwoLevelCGmrhs
 
     std::cout << GridLogMessage<<"PrecBlockCGrQ vec computed initial residual and QR fact " <<std::endl;
 
-    ProjectTimer.Reset();
-    PromoteTimer.Reset();
-    DeflateTimer.Reset();
-    CoarseTimer.Reset();
-    SmoothTimer.Reset();
-    FineTimer.Reset();
-    InsertTimer.Reset();
+    _Precon.ResetTimers();
 
     GridStopWatch M1Timer;
     GridStopWatch M2Timer;
@@ -278,10 +279,9 @@ class TwoLevelCGmrhs
       // MZ  = M1 Z <==== the Multigrid preconditioner
       ////////////////////
       M1Timer.Start();
-      PcgM1(Z,MZ);
+      _Precon(Z,MZ);
       M1Timer.Stop();
 
-      FineTimer.Start();
       ////////////////////
       // M  = [D^dag Z]^{-1} = (<Ddag MZ>_M)^{-1} inner prod, generalising Saad derivation of Precon CG
       ////////////////////
@@ -326,7 +326,6 @@ class TwoLevelCGmrhs
       ////////////////////////////
       m_rr = m_C.adjoint() * m_C;
       
-      FineTimer.Stop();
 
       RealD max_resid=0;
       RealD rrsum=0;
@@ -350,14 +349,7 @@ class TwoLevelCGmrhs
 	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : Linalg  "<<LinalgTimer.Elapsed()<<std::endl;;
 	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : fine H  "<<M3Timer.Elapsed()<<std::endl;;
 	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : prec M1 "<<M1Timer.Elapsed()<<std::endl;;
-	std::cout<<GridLogMessage<<"**** M1 breakdown:"<<std::endl;
-	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : Project "<<ProjectTimer.Elapsed()<<std::endl;;
-	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : Promote "<<PromoteTimer.Elapsed()<<std::endl;;
-	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : Deflate "<<DeflateTimer.Elapsed()<<std::endl;;
-	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : Coarse  "<<CoarseTimer.Elapsed()<<std::endl;;
-	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : Fine    "<<FineTimer.Elapsed()<<std::endl;;
-	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : Smooth  "<<SmoothTimer.Elapsed()<<std::endl;;
-	std::cout<<GridLogMessage<<"HDCG: mrhs PrecBlockCGrQ : Insert  "<<InsertTimer.Elapsed()<<std::endl;;
+	_Precon.ReportTimers("HDCG: mrhs PrecBlockCGrQ : ");
 
 	for(int rhs=0;rhs<nrhs;rhs++){
 
@@ -423,7 +415,7 @@ class TwoLevelCGmrhs
     //////////////////////////
     // x0 = Vstart -- possibly modify guess
     //////////////////////////
-    Vstart(x,src);
+    _Precon.Vstart(x,src);
 
     for(int rhs=0;rhs<nrhs;rhs++){
       // r0 = b -A x0
@@ -435,7 +427,7 @@ class TwoLevelCGmrhs
     // Compute z = M1 x
     //////////////////////////////////
     // This needs a multiRHS version for acceleration
-    PcgM1(r,z);
+    _Precon(r,z);
 
     std::vector<RealD> ssq(nrhs);
     std::vector<RealD> rsq(nrhs);
@@ -449,13 +441,7 @@ class TwoLevelCGmrhs
       //      std::cout << GridLogMessage<<"mrhs HDCG: "<<rhs<<" k=0 residual "<<rtzp[rhs]<<" rsq "<<rsq[rhs]<<"\n";
     }
 
-    ProjectTimer.Reset();
-    PromoteTimer.Reset();
-    DeflateTimer.Reset();
-    CoarseTimer.Reset();
-    SmoothTimer.Reset();
-    FineTimer.Reset();
-    InsertTimer.Reset();
+    _Precon.ResetTimers();
 
     GridStopWatch M1Timer;
     GridStopWatch M2Timer;
@@ -488,7 +474,7 @@ class TwoLevelCGmrhs
 
       // Compute z = M x (for *all* RHS)
       M1Timer.Start();
-      PcgM1(r,z);
+      _Precon(r,z);
       M1Timer.Stop();
       
       RealD max_rn=0.0;
@@ -530,14 +516,7 @@ class TwoLevelCGmrhs
 	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg : Linalg  "<<LinalgTimer.Elapsed()<<std::endl;;
 	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg : fine M3 "<<M3Timer.Elapsed()<<std::endl;;
 	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg : prec M1 "<<M1Timer.Elapsed()<<std::endl;;
-	std::cout<<GridLogMessage<<"**** M1 breakdown:"<<std::endl;
-	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg : Project "<<ProjectTimer.Elapsed()<<std::endl;;
-	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg : Promote "<<PromoteTimer.Elapsed()<<std::endl;;
-	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg : Deflate "<<DeflateTimer.Elapsed()<<std::endl;;
-	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg : Coarse  "<<CoarseTimer.Elapsed()<<std::endl;;
-	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg : Fine    "<<FineTimer.Elapsed()<<std::endl;;
-	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg : Smooth  "<<SmoothTimer.Elapsed()<<std::endl;;
-	std::cout<<GridLogMessage<<"HDCG: mrhs fPcg : Insert  "<<InsertTimer.Elapsed()<<std::endl;;
+	_Precon.ReportTimers("HDCG: mrhs fPcg : ");
 
 	for(int rhs=0;rhs<nrhs;rhs++){
 	  _FineLinop.HermOp(x[rhs],mmp[rhs][0]);			  
@@ -568,167 +547,114 @@ class TwoLevelCGmrhs
       std::cout<<GridLogMessage<<"HDCG: non-converged solution "<<xnorm<<" source "<<srcnorm<<std::endl;
     }
   }
-  
 
- public:
-
-  virtual void PcgM1(std::vector<Field> & in,std::vector<Field> & out) = 0;
-  virtual void Vstart(std::vector<Field> & x,std::vector<Field> & src) = 0;
-  virtual void PcgM2(const Field & in, Field & out) {
-    out=in;
-  }
-
-  virtual RealD PcgM3(const Field & p, Field & mmp){
+  RealD PcgM3(const Field & p, Field & mmp){
     RealD dd;
     _FineLinop.HermOp(p,mmp);
     ComplexD dot = innerProduct(p,mmp);
     dd=real(dot);
     return dd;
   }
-
 };
 
-template<class Field, class CoarseField>
-class TwoLevelADEF2mrhs : public TwoLevelCGmrhs<Field>
+//////////////////////////////////////////////////////////////////////
+// ADEF-2 as an mrhs preconditioner object (Tang, Nabben, Vuik, Erlangga):
+//   M1     = [1 - Q A] M + Q   with  Q = P A_c^{-1} P^dag  (deflated coarse solve)
+//   Vstart = Q b               the coarse-corrected start (precise coarse solve)
+// The coarse space is the D+1 multiRHS field throughout: the projector's
+// mixed overloads take the vector of fine fields straight to it, and the
+// deflator and coarse solver act on it.  No per-rhs slices anywhere.
+// The D+1 grid follows the solver's Nrhs through SetCoarseGridMrhs.
+//////////////////////////////////////////////////////////////////////
+// Projector_t defaults to a transfer operator whose STORE matches Field.
+template<class Field, class CoarseField, class Projector_t = MultiRHSBlockProject<Field> >
+class MrhsADEF2Preconditioner : public MrhsPreconditioner<Field>
 {
 public:
-  GridBase *coarsegrid;
-  GridBase *coarsegridmrhs;
-  LinearFunction<CoarseField> &_CoarseSolverMrhs;
-  LinearFunction<CoarseField> &_CoarseSolverPreciseMrhs;
-  MultiRHSBlockProject<Field>    &_Projector;
-  MultiRHSDeflation<CoarseField> &_Deflator;
+  GridBase                       *grid;             // fine
+  GridBase                       *coarsegridmrhs;   // D+1, rhs innermost
+  LinearOperatorBase<Field>      &_FineLinop;
+  LinearFunction<Field>          &_Smoother;
+  LinearFunction<CoarseField>    &_CoarseSolver;        // in M1
+  LinearFunction<CoarseField>    &_CoarseSolverPrecise; // in Vstart
+  Projector_t                    &_Projector;   // store precision need not match Field
+  MultiRHSDeflation<CoarseField> &_Deflator;            // nev==0: no deflation, zero coarse guess
 
-  
-  TwoLevelADEF2mrhs(RealD tol,
-		    Integer maxit,
-		    LinearOperatorBase<Field>    &FineLinop,
-		    LinearFunction<Field>        &Smoother,
-		    LinearFunction<CoarseField>  &CoarseSolverMrhs,
-		    LinearFunction<CoarseField>  &CoarseSolverPreciseMrhs,
-		    MultiRHSBlockProject<Field>    &Projector,
-		    MultiRHSDeflation<CoarseField> &Deflator,
-		    GridBase *_coarsemrhsgrid) :
-    TwoLevelCGmrhs<Field>(tol, maxit,FineLinop,Smoother,Projector.fine_grid),
-    _CoarseSolverMrhs(CoarseSolverMrhs),
-    _CoarseSolverPreciseMrhs(CoarseSolverPreciseMrhs),
-    _Projector(Projector),
-    _Deflator(Deflator)
+  MrhsADEF2Preconditioner(LinearOperatorBase<Field>      &FineLinop,
+			  LinearFunction<Field>          &Smoother,
+			  LinearFunction<CoarseField>    &CoarseSolver,
+			  LinearFunction<CoarseField>    &CoarseSolverPrecise,
+			  Projector_t                    &Projector,
+			  MultiRHSDeflation<CoarseField> &Deflator,
+			  GridBase *CoarseGridMrhs,
+			  GridBase *FineGrid) :
+    _FineLinop(FineLinop), _Smoother(Smoother),
+    _CoarseSolver(CoarseSolver), _CoarseSolverPrecise(CoarseSolverPrecise),
+    _Projector(Projector), _Deflator(Deflator)
   {
-    coarsegrid = Projector.coarse_grid;
-    coarsegridmrhs = _coarsemrhsgrid;// Thi could be in projector
+    // The fine grid is given, NOT taken from the projector: the projector's
+    // grid carries its STORE's layout, which need not be this Field's (an
+    // fp32 preconditioner may project through an fp64 store, or the reverse).
+    grid           = FineGrid;
+    coarsegridmrhs = CoarseGridMrhs;
   };
+  // Store matches Field: the projector's grid IS this Field's grid.
+  MrhsADEF2Preconditioner(LinearOperatorBase<Field>      &FineLinop,
+			  LinearFunction<Field>          &Smoother,
+			  LinearFunction<CoarseField>    &CoarseSolver,
+			  LinearFunction<CoarseField>    &CoarseSolverPrecise,
+			  Projector_t                    &Projector,
+			  MultiRHSDeflation<CoarseField> &Deflator,
+			  GridBase *CoarseGridMrhs) :
+    MrhsADEF2Preconditioner(FineLinop,Smoother,CoarseSolver,CoarseSolverPrecise,
+			    Projector,Deflator,CoarseGridMrhs,Projector.fine_grid) {};
 
-  // Override Vstart
-  virtual void Vstart(std::vector<Field> & x,std::vector<Field> & src)
+  void SetCoarseGridMrhs(GridBase *CoarseGridMrhs) { coarsegridmrhs = CoarseGridMrhs; }
+
+  // The coarse solver's starting guess: deflated, or zero
+  void CoarseGuess(CoarseField &src,CoarseField &guess)
   {
-    int nrhs=x.size();
-    ///////////////////////////////////
-    // Choose x_0 such that 
-    // x_0 = guess +  (A_ss^inv) r_s = guess + Ass_inv [src -Aguess]
-    //                               = [1 - Ass_inv A] Guess + Assinv src
-    //                               = P^T guess + Assinv src 
-    //                               = Vstart  [Tang notation]
-    // This gives:
-    // W^T (src - A x_0) = src_s - A guess_s - r_s
-    //                   = src_s - (A guess)_s - src_s  + (A guess)_s 
-    //                   = 0 
-    ///////////////////////////////////
-    std::vector<CoarseField> PleftProj(nrhs,this->coarsegrid);
-    std::vector<CoarseField> PleftMss_proj(nrhs,this->coarsegrid);
-    CoarseField PleftProjMrhs(this->coarsegridmrhs);
-    CoarseField PleftMss_projMrhs(this->coarsegridmrhs);
-
-    this->_Projector.blockProject(src,PleftProj);
-    this->_Deflator.DeflateSources(PleftProj,PleftMss_proj);
-    for(int rhs=0;rhs<nrhs;rhs++) {
-      InsertSliceFast(PleftProj[rhs],PleftProjMrhs,rhs,0);
-      InsertSliceFast(PleftMss_proj[rhs],PleftMss_projMrhs,rhs,0); // the guess
-    }
-    
-    this->_CoarseSolverPreciseMrhs(PleftProjMrhs,PleftMss_projMrhs); // Ass^{-1} r_s
-
-    for(int rhs=0;rhs<nrhs;rhs++) {
-      ExtractSliceFast(PleftMss_proj[rhs],PleftMss_projMrhs,rhs,0);
-    }
-    this->_Projector.blockPromote(x,PleftMss_proj);
-  }
-
-  virtual void PcgM1(std::vector<Field> & in,std::vector<Field> & out){
-
-    int nrhs=in.size();
-
-    // [PTM+Q] in = [1 - Q A] M in + Q in = Min + Q [ in -A Min]
-    std::vector<Field> tmp(nrhs,this->grid);
-    std::vector<Field> Min(nrhs,this->grid);
-
-    std::vector<CoarseField> PleftProj(nrhs,this->coarsegrid);
-    std::vector<CoarseField> PleftMss_proj(nrhs,this->coarsegrid);
-
-    CoarseField PleftProjMrhs(this->coarsegridmrhs);
-    CoarseField PleftMss_projMrhs(this->coarsegridmrhs);
-
-    //    this->rrr=in[0];
-
-#undef SMOOTHER_BLOCK_SOLVE
-#if SMOOTHER_BLOCK_SOLVE
-    this->SmoothTimer.Start();
-    this->_Smoother(in,Min);
-    this->SmoothTimer.Stop();
-#else
-    for(int rhs=0;rhs<nrhs;rhs++) {
-      this->SmoothTimer.Start();
-      this->_Smoother(in[rhs],Min[rhs]);
-      this->SmoothTimer.Stop();
-    }
-#endif
-    //    this->sss=Min[0];
-    
-    for(int rhs=0;rhs<nrhs;rhs++) {
-      
-      this->FineTimer.Start();
-      this->_FineLinop.HermOp(Min[rhs],out[rhs]);
-      axpy(tmp[rhs],-1.0,out[rhs],in[rhs]);          // resid  = in - A Min
-      this->FineTimer.Stop();
-
-    }
-
-    this->ProjectTimer.Start();
-    this->_Projector.blockProject(tmp,PleftProj);
-    this->ProjectTimer.Stop();
     this->DeflateTimer.Start();
-    this->_Deflator.DeflateSources(PleftProj,PleftMss_proj);
+    if ( _Deflator.nev > 0 ) _Deflator.DeflateSources(src,guess);
+    else                     guess = Zero();
     this->DeflateTimer.Stop();
-    this->InsertTimer.Start();
-    for(int rhs=0;rhs<nrhs;rhs++) {
-      InsertSliceFast(PleftProj[rhs],PleftProjMrhs,rhs,0);
-      InsertSliceFast(PleftMss_proj[rhs],PleftMss_projMrhs,rhs,0); // the guess
-    }
-    this->InsertTimer.Stop();
+  }
+  // x_0 = Q b
+  virtual void Vstart(std::vector<Field> &x,std::vector<Field> &src)
+  {
+    CoarseField Csrc(coarsegridmrhs), Csol(coarsegridmrhs);
+    this->ProjectTimer.Start();  _Projector.blockProject(src,Csrc);  this->ProjectTimer.Stop();
+    CoarseGuess(Csrc,Csol);
+    this->CoarseTimer.Start();   _CoarseSolverPrecise(Csrc,Csol);    this->CoarseTimer.Stop();
+    this->PromoteTimer.Start();  _Projector.blockPromote(x,Csol);    this->PromoteTimer.Stop();
+  }
+  // [1 - Q A] M in + Q in = Min + Q [in - A Min]
+  virtual void operator()(std::vector<Field> &in,std::vector<Field> &out)
+  {
+    int nrhs=in.size();
+    std::vector<Field> tmp(nrhs,grid), Min(nrhs,grid);
+    CoarseField Csrc(coarsegridmrhs), Csol(coarsegridmrhs);
 
-    this->CoarseTimer.Start();
-    this->_CoarseSolverMrhs(PleftProjMrhs,PleftMss_projMrhs); // Ass^{-1} [in - A Min]_s
-    this->CoarseTimer.Stop();
+    this->SmoothTimer.Start();
+    for(int r=0;r<nrhs;r++) _Smoother(in[r],Min[r]);
+    this->SmoothTimer.Stop();
 
-    this->InsertTimer.Start();
-    for(int rhs=0;rhs<nrhs;rhs++) {
-      ExtractSliceFast(PleftMss_proj[rhs],PleftMss_projMrhs,rhs,0);
-    }
-    this->InsertTimer.Stop();
-    this->PromoteTimer.Start();
-    this->_Projector.blockPromote(tmp,PleftMss_proj);// tmp= Q[in - A Min]  
-    this->PromoteTimer.Stop();
     this->FineTimer.Start();
-    //    this->qqq=tmp[0];
-    for(int rhs=0;rhs<nrhs;rhs++) {
-      axpy(out[rhs],1.0,Min[rhs],tmp[rhs]); // Min+tmp
+    for(int r=0;r<nrhs;r++){
+      _FineLinop.HermOp(Min[r],out[r]);
+      axpy(tmp[r],-1.0,out[r],in[r]);          // in - A Min
     }
-    //    this->zzz=out[0];
+    this->FineTimer.Stop();
+
+    this->ProjectTimer.Start();  _Projector.blockProject(tmp,Csrc);  this->ProjectTimer.Stop();
+    CoarseGuess(Csrc,Csol);
+    this->CoarseTimer.Start();   _CoarseSolver(Csrc,Csol);           this->CoarseTimer.Stop();
+    this->PromoteTimer.Start();  _Projector.blockPromote(tmp,Csol);  this->PromoteTimer.Stop();
+
+    this->FineTimer.Start();
+    for(int r=0;r<nrhs;r++) axpy(out[r],1.0,Min[r],tmp[r]);       // Min + Q[in - A Min]
     this->FineTimer.Stop();
   }
 };
 
-
 NAMESPACE_END(Grid);
-
-

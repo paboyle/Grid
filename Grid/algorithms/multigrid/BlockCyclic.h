@@ -22,6 +22,20 @@ Author: Peter Boyle <pboyle@bnl.gov>
 NAMESPACE_BEGIN(Grid);
 
 ///////////////////////////////////////////////////////////////////////////////
+// Scalar of the distributed dense inversion: block-cyclic redistribution,
+// SUMMA, the Schur recursion and its LU leaf.  A configure-time choice
+// (--enable-dense-inverse-precision=double|single), INDEPENDENT of the
+// coarse-space precision: the matrix elements arrive in the coarse scalar
+// and the apply slab is fp32 either way; only the factorisation's
+// arithmetic and footprint follow this type.
+///////////////////////////////////////////////////////////////////////////////
+#ifdef GRID_DENSE_INVERSE_SINGLE
+typedef ComplexF DenseInverseScalar;
+#else
+typedef ComplexD DenseInverseScalar;
+#endif
+
+///////////////////////////////////////////////////////////////////////////////
 // BlockCyclicLayout: the index arithmetic of a 2D block-cyclic distribution
 // of an N x N matrix over a Pr x Pc logical process grid with block size nb.
 //

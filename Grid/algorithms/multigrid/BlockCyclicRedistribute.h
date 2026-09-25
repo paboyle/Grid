@@ -34,7 +34,7 @@ NAMESPACE_BEGIN(Grid);
 class BlockRows
 {
 public:
-  deviceVector<ComplexD> data;
+  deviceVector<DenseInverseScalar> data;
   int64_t                rows;
   int64_t                cols;
   int64_t                ld;
@@ -52,7 +52,7 @@ public:
     ld   = r;
     data.resize((uint64_t)r*c);
   }
-  ComplexD *ColumnWindow(int64_t col0)
+  DenseInverseScalar *ColumnWindow(int64_t col0)
   {
     GRID_ASSERT( col0 >= 0 );
     GRID_ASSERT( col0 <= cols );
@@ -128,10 +128,10 @@ public:
   //   buffer(a,b) = elem(rows[a], cols[b]),  a fastest.
   /////////////////////////////////////////////////////////////////////////
   static void MoveEdge(int toBuffer,
-                       ComplexD *mat, int64_t ld,
+                       DenseInverseScalar *mat, int64_t ld,
                        const std::vector<int64_t> &roff,  // per-row offset in mat
                        const std::vector<int64_t> &coff,  // per-col offset in mat
-                       ComplexD *buf)
+                       DenseInverseScalar *buf)
   {
     int64_t nr = roff.size();
     int64_t nc = coff.size();
@@ -193,7 +193,7 @@ public:
   /////////////////////////////////////////////////////////////////////////
   static void Redistribute(int dir, GridBase *grid,
                            const std::vector<int64_t> &rowStart,
-                           ComplexD *rows1d, int64_t myrows,
+                           DenseInverseScalar *rows1d, int64_t myrows,
                            BlockCyclicMatrix &A)
   {
     BlockCyclicLayout &L = A.layout;
@@ -206,7 +206,7 @@ public:
     int64_t ld1  = myrows ? myrows : 1;
 
     std::vector<int64_t> rows, cols, roff, coff;
-    deviceVector<ComplexD> sbuf(1), rbuf(1);
+    deviceVector<DenseInverseScalar> sbuf(1), rbuf(1);
 
     ///////////////////////////////////////////////////////////////////////
     // Self edge: purely local, via a bounce buffer (shares all the code).
@@ -261,7 +261,7 @@ public:
       }
       grid->SendToRecvFrom((void *)&sbuf[0], partner,
                            (void *)&rbuf[0], partner,
-                           nmax*sizeof(ComplexD));
+                           nmax*sizeof(DenseInverseScalar));
       if ( nin ){
         if ( dir > 0 ) { Offsets2D(L, irow, icol, roff, coff);
                          MoveEdge(0, &A.data[0], L.mloc, roff, coff, &rbuf[0]); }
@@ -272,11 +272,11 @@ public:
   }
 
   static void RowsToCyclic(GridBase *grid, const std::vector<int64_t> &rowStart,
-                           ComplexD *rows1d, int64_t myrows, BlockCyclicMatrix &A)
+                           DenseInverseScalar *rows1d, int64_t myrows, BlockCyclicMatrix &A)
   { Redistribute(+1, grid, rowStart, rows1d, myrows, A); }
 
   static void CyclicToRows(GridBase *grid, const std::vector<int64_t> &rowStart,
-                           BlockCyclicMatrix &A, ComplexD *rows1d, int64_t myrows)
+                           BlockCyclicMatrix &A, DenseInverseScalar *rows1d, int64_t myrows)
   { Redistribute(-1, grid, rowStart, rows1d, myrows, A); }
 };
 

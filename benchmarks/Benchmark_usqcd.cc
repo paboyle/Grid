@@ -276,14 +276,31 @@ public:
 
     GridBLAS blas;
 
+    // The batched GEMMs of a coarse multigrid level are memory bound, not
+    // flop bound: each call streams the matrices once and does O(1) flops per
+    // element.  So report the effective bandwidth beside the flop rate --
+    // measured against the device's peak it says whether a shape is running
+    // well, which the flop rate alone does not.  beta=1, so C is read as well
+    // as written.
+    auto Report = [&](int M,int N,int K,int BATCH)
+    {
+      double gf    = blas.benchmark<CComplex>(M,N,K,BATCH);
+      double flops = 8.0*M*N*K*BATCH;
+      double bytes = 1.0*sizeof(CComplex)*(1.0*M*K + 1.0*K*N + 2.0*M*N)*BATCH;
+      double gbs   = gf*bytes/flops;
+      fprintf(FP,"%d, %d, %d, %d, %f, %f\n", M, N, K, BATCH, gf, gbs);
+      std::cout<<GridLogMessage<<std::setprecision(3)
+	       << M<<"\t\t"<<N<<"\t\t"<<K<<"\t\t"<<BATCH<<"\t\t"<<gf<<"\t\t"<<gbs<<std::endl;
+    };
+
     int fpbits = sizeof(CComplex)*4;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << "= batched GEMM fp"<<fpbits<<std::endl;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"Gflop/s / rank (coarse mrhs)"<<std::endl;
+    std::cout<<GridLogMessage << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"BATCH"<<"\t\t"<<"Gflop/s"<<"\t\t"<<"GB/s / rank (coarse mrhs)"<<std::endl;
     std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
   
-    fprintf(FP,"GEMM\n\n M, N, K, BATCH, GF/s per rank fp%d\n",fpbits);
+    fprintf(FP,"GEMM\n\n M, N, K, BATCH, GF/s per rank, GB/s per rank fp%d\n",fpbits);
 
     for(int b=0;b<3;b++){
     for(int r=0;r<3;r++){
@@ -291,15 +308,10 @@ public:
       int N=rhs[r];
       int K=basis[b];
       int BATCH=vol;
-      double p=blas.benchmark<CComplex>(M,N,K,BATCH);
-
-      fprintf(FP,"%d, %d, %d, %d, %f\n", M, N, K, BATCH, p);
-      
-      std::cout<<GridLogMessage<<std::setprecision(3) 
-	       << M<<"\t\t"<<N<<"\t\t"<<K<<"\t\t"<<BATCH<<"\t\t"<<p<<std::endl;
+      Report(M,N,K,BATCH);
     }}
     std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
-    std::cout<<GridLogMessage << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"Gflop/s / rank (block project)"<<std::endl;
+    std::cout<<GridLogMessage << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"BATCH"<<"\t\t"<<"Gflop/s"<<"\t\t"<<"GB/s / rank (block project)"<<std::endl;
     std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
     for(int b=0;b<3;b++){
     for(int r=0;r<3;r++){
@@ -307,14 +319,10 @@ public:
       int N=rhs[r];
       int K=blk;
       int BATCH=vol;
-      double p=blas.benchmark<CComplex>(M,N,K,BATCH);
-
-      fprintf(FP,"%d, %d, %d, %d, %f\n", M, N, K, BATCH, p);
-      std::cout<<GridLogMessage<<std::setprecision(3) 
-	       << M<<"\t\t"<<N<<"\t\t"<<K<<"\t\t"<<BATCH<<"\t\t"<<p<<std::endl;
+      Report(M,N,K,BATCH);
     }}
     std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
-    std::cout<<GridLogMessage << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"Gflop/s / rank (block promote)"<<std::endl;
+    std::cout<<GridLogMessage << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"BATCH"<<"\t\t"<<"Gflop/s"<<"\t\t"<<"GB/s / rank (block promote)"<<std::endl;
     std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
     for(int b=0;b<3;b++){
     for(int r=0;r<3;r++){
@@ -322,12 +330,54 @@ public:
       int N=blk;
       int K=basis[b];
       int BATCH=vol;
-      double p=blas.benchmark<CComplex>(M,N,K,BATCH);
-
-      fprintf(FP,"%d, %d, %d, %d, %f\n", M, N, K, BATCH, p);
-      std::cout<<GridLogMessage<<std::setprecision(3) 
-	       << M<<"\t\t"<<N<<"\t\t"<<K<<"\t\t"<<BATCH<<"\t\t"<<p<<std::endl;
+      Report(M,N,K,BATCH);
     }}
+
+    ///////////////////////////////////////////////////////////////////////////
+    // The coarse stencil apply as the multigrid actually issues it, swept in
+    // the batch count.  One call per stencil point, M = K = nbasis, N = Nrhs,
+    // batch = the LOCAL coarse volume: at 48^3x96 over 288 GCDs with a
+    // {2,2,3,3} block that is 1024 sites, which is small, and the trace shows
+    // the single-precision kernel taking as long as the double one.  The
+    // sweep spans that point and the alternative organisation in which the
+    // stencil legs ride in the batch dimension instead of being separate
+    // calls: 9x and 33x the sites, with the partial results summed after.
+    // Nrhs 1 is the latency-bound case that a single-right-hand-side solve
+    // pays throughout.
+    ///////////////////////////////////////////////////////////////////////////
+    {
+      int  nb[]    = { 60, 64 };
+      int  nrhs_[] = { 1, 12, 24, 32 };
+      // 1024 is the local coarse volume at the production point; the rest are
+      // that times the number of stencil legs folded into the batch.  3 is
+      // the common divisor of the 33-point (PVdagM) and 81-point (HDCG)
+      // stencils, so x3 is the grouping that serves both and leaves only a
+      // three-way linear combination at the end.
+      int  batches[] = { 256, 1024, 3072, 4096, 9216, 33792 };
+      std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
+      std::cout<<GridLogMessage << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"BATCH"<<"\t\t"<<"Gflop/s"<<"\t\t"<<"GB/s / rank (coarse stencil, production shapes)"<<std::endl;
+      std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
+      for(int b=0;b<2;b++){
+      for(int r=0;r<4;r++){
+      for(int v=0;v<6;v++){
+	Report(nb[b],nrhs_[r],nb[b],batches[v]);
+      }}}
+
+      // The same work with the stencil sum folded along the CONTRACTION
+      // instead of the batch: one GEMM per site with K = npoint*nbasis.  Both
+      // precisions reach their best rates at large K (the block-project
+      // shape, K=256), which this pushes further, at the price of gathering
+      // the neighbour vectors.  33 points is the next-to-nearest stencil,
+      // 81 the full box.
+      std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
+      std::cout<<GridLogMessage << "  M  "<<"\t\t"<<"N"<<"\t\t\t"<<"K"<<"\t\t"<<"BATCH"<<"\t\t"<<"Gflop/s"<<"\t\t"<<"GB/s / rank (stencil folded along K)"<<std::endl;
+      std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
+      for(int b=0;b<2;b++){
+      for(int r=0;r<4;r++){
+	Report(nb[b],nrhs_[r],33*nb[b],1024);
+	Report(nb[b],nrhs_[r],81*nb[b],1024);
+      }}
+    }
     fprintf(FP,"\n\n\n");
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   };

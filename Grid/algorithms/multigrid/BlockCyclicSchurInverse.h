@@ -115,7 +115,7 @@ public:
   // Window copy-scale:  Dst[i0:i1, j0:j1] = alpha * Src[same window].
   // Both share one layout, so the local bands coincide; pure local kernel.
   ///////////////////////////////////////////////////////////////////////////
-  void WindowCopyScale(ComplexD alpha,
+  void WindowCopyScale(DenseInverseScalar alpha,
                        BlockCyclicMatrix &Src, BlockCyclicMatrix &Dst,
                        int64_t i0, int64_t i1, int64_t j0, int64_t j1)
   {
@@ -127,8 +127,8 @@ public:
     L.ColRange(j0,j1, lj0,lj1);
     int64_t m = li1-li0, n = lj1-lj0;
     if ( !(m && n) ) return;
-    ComplexD *src = Src.LocalWindow(li0,lj0);
-    ComplexD *dst = Dst.LocalWindow(li0,lj0);
+    DenseInverseScalar *src = Src.LocalWindow(li0,lj0);
+    DenseInverseScalar *dst = Dst.LocalWindow(li0,lj0);
     int64_t ldS = Src.layout.mloc;
     int64_t ldD = L.mloc;
     tCopy -= usecond();
@@ -164,10 +164,10 @@ public:
     GRID_ASSERT( lc1-lc0 == w );
 
     // Pack the strided block dense (inverseBatched assumes lda == w).
-    deviceVector<ComplexD> dense((uint64_t)w*w);
+    deviceVector<DenseInverseScalar> dense((uint64_t)w*w);
     {
-      ComplexD *src = A.LocalWindow(lr0,lc0);
-      ComplexD *dst = &dense[0];
+      DenseInverseScalar *src = A.LocalWindow(lr0,lc0);
+      DenseInverseScalar *dst = &dense[0];
       int64_t   ld  = L.mloc;
       accelerator_for(idx, (uint64_t)(w*w), 1, {
         int64_t jj = idx / w;
@@ -176,15 +176,15 @@ public:
       });
     }
     {
-      deviceVector<ComplexD*> bp(1);
-      std::vector<ComplexD*>  ptr(1);
+      deviceVector<DenseInverseScalar*> bp(1);
+      std::vector<DenseInverseScalar*>  ptr(1);
       ptr[0] = &dense[0];
-      acceleratorCopyToDevice(&ptr[0], &bp[0], sizeof(ComplexD*));
+      acceleratorCopyToDevice(&ptr[0], &bp[0], sizeof(DenseInverseScalar*));
       INV.inverseBatched(w, bp);
     }
     {
-      ComplexD *src = &dense[0];
-      ComplexD *dst = A.LocalWindow(lr0,lc0);
+      DenseInverseScalar *src = &dense[0];
+      DenseInverseScalar *dst = A.LocalWindow(lr0,lc0);
       int64_t   ld  = L.mloc;
       accelerator_for(idx, (uint64_t)(w*w), 1, {
         int64_t jj = idx / w;
@@ -194,8 +194,8 @@ public:
     }
     // Growth telemetry, local only.
     {
-      std::vector<ComplexD> h((uint64_t)w*w);
-      acceleratorCopyFromDevice(&dense[0], &h[0], h.size()*sizeof(ComplexD));
+      std::vector<DenseInverseScalar> h((uint64_t)w*w);
+      acceleratorCopyFromDevice(&dense[0], &h[0], h.size()*sizeof(DenseInverseScalar));
       double mx = 0.0;
       for(auto &z : h){
         double re=z.real(), im=z.imag();
@@ -232,23 +232,23 @@ public:
     int64_t lr0,lr1,lc0,lc1; L.RowRange(c0,c1,lr0,lr1); L.ColRange(c0,c1,lc0,lc1);
     const int64_t mq = lr1-lr0, nq = lc1-lc0;
 
-    deviceVector<ComplexD> dense;            // root only: W x W column major
-    deviceVector<ComplexD> piece, dummy;     // piece: my mq x nq contiguous; dummy: reverse-direction filler
+    deviceVector<DenseInverseScalar> dense;            // root only: W x W column major
+    deviceVector<DenseInverseScalar> piece, dummy;     // piece: my mq x nq contiguous; dummy: reverse-direction filler
     if ( me == root ) dense.resize((uint64_t)W*W);
 
-    auto pack_piece = [&](ComplexD *dst, int64_t m, int64_t n, int64_t r0, int64_t cc0){
-      ComplexD *src = A.LocalWindow(r0,cc0); const int64_t ld = L.mloc;
+    auto pack_piece = [&](DenseInverseScalar *dst, int64_t m, int64_t n, int64_t r0, int64_t cc0){
+      DenseInverseScalar *src = A.LocalWindow(r0,cc0); const int64_t ld = L.mloc;
       accelerator_for(idx,(uint64_t)(m*n),1,{ int64_t jj=idx/m, ii=idx-jj*m; dst[ii+jj*m] = src[ii+jj*ld]; });
     };
-    auto unpack_piece = [&](ComplexD *src, int64_t m, int64_t n, int64_t r0, int64_t cc0){
-      ComplexD *dst = A.LocalWindow(r0,cc0); const int64_t ld = L.mloc;
+    auto unpack_piece = [&](DenseInverseScalar *src, int64_t m, int64_t n, int64_t r0, int64_t cc0){
+      DenseInverseScalar *dst = A.LocalWindow(r0,cc0); const int64_t ld = L.mloc;
       accelerator_for(idx,(uint64_t)(m*n),1,{ int64_t jj=idx/m, ii=idx-jj*m; dst[ii+jj*ld] = src[ii+jj*m]; });
     };
     // root: piece of rank q  <->  dense, via the closed-form block map
-    auto root_place = [&](ComplexD *pc, int64_t m, int64_t n, int q, int to_dense){
+    auto root_place = [&](DenseInverseScalar *pc, int64_t m, int64_t n, int q, int to_dense){
       const int pq=q/Pc, cq=q%Pc;
       const int64_t brq0=FirstBlock(b0,pq,Pr), bcq0=FirstBlock(b0,cq,Pc);
-      ComplexD *dn = &dense[0]; const int64_t WW=W, NB=nb, PR=Pr, PC=Pc, C0=c0;
+      DenseInverseScalar *dn = &dense[0]; const int64_t WW=W, NB=nb, PR=Pr, PC=Pc, C0=c0;
       accelerator_for(idx,(uint64_t)(m*n),1,{
         int64_t jj=idx/m, ii=idx-jj*m;
         int64_t gr = (brq0 + (ii/NB)*PR)*NB + ii%NB - C0;
@@ -266,18 +266,18 @@ public:
     tBigGather -= usecond();
     if ( mq*nq ) { piece.resize((uint64_t)mq*nq); dummy.resize((uint64_t)mq*nq); pack_piece(&piece[0],mq,nq,lr0,lc0); accelerator_barrier(); }
     if ( me == root ) {
-      deviceVector<ComplexD> stage;
+      deviceVector<DenseInverseScalar> stage;
       for(int q=0;q<Pr*Pc;q++){
         int64_t m,n; piece_dims(q,m,n); if ( !(m*n) ) continue;
         if ( q == root ) { root_place(&piece[0],m,n,q,1); continue; }
         if ( stage.size() < (uint64_t)(m*n) ) stage.resize((uint64_t)m*n);
-        deviceVector<ComplexD> junk((uint64_t)m*n);
-        grid->SendToRecvFrom((void *)&junk[0], q, (void *)&stage[0], q, (uint64_t)m*n*sizeof(ComplexD));
+        deviceVector<DenseInverseScalar> junk((uint64_t)m*n);
+        grid->SendToRecvFrom((void *)&junk[0], q, (void *)&stage[0], q, (uint64_t)m*n*sizeof(DenseInverseScalar));
         root_place(&stage[0],m,n,q,1);
       }
       accelerator_barrier();
     } else if ( mq*nq ) {
-      grid->SendToRecvFrom((void *)&piece[0], root, (void *)&dummy[0], root, (uint64_t)mq*nq*sizeof(ComplexD));
+      grid->SendToRecvFrom((void *)&piece[0], root, (void *)&dummy[0], root, (uint64_t)mq*nq*sizeof(DenseInverseScalar));
     }
     tBigGather += usecond();
 
@@ -289,17 +289,17 @@ public:
     // ---- scatter ----
     tBigScatter -= usecond();
     if ( me == root ) {
-      deviceVector<ComplexD> stage;
+      deviceVector<DenseInverseScalar> stage;
       for(int q=0;q<Pr*Pc;q++){
         int64_t m,n; piece_dims(q,m,n); if ( !(m*n) ) continue;
         if ( q == root ) { root_place(&piece[0],m,n,q,0); accelerator_barrier(); continue; }
         if ( stage.size() < (uint64_t)(m*n) ) stage.resize((uint64_t)m*n);
-        deviceVector<ComplexD> junk((uint64_t)m*n);
+        deviceVector<DenseInverseScalar> junk((uint64_t)m*n);
         root_place(&stage[0],m,n,q,0); accelerator_barrier();
-        grid->SendToRecvFrom((void *)&stage[0], q, (void *)&junk[0], q, (uint64_t)m*n*sizeof(ComplexD));
+        grid->SendToRecvFrom((void *)&stage[0], q, (void *)&junk[0], q, (uint64_t)m*n*sizeof(DenseInverseScalar));
       }
     } else if ( mq*nq ) {
-      grid->SendToRecvFrom((void *)&dummy[0], root, (void *)&piece[0], root, (uint64_t)mq*nq*sizeof(ComplexD));
+      grid->SendToRecvFrom((void *)&dummy[0], root, (void *)&piece[0], root, (uint64_t)mq*nq*sizeof(DenseInverseScalar));
     }
     if ( mq*nq ) { unpack_piece(&piece[0],mq,nq,lr0,lc0); accelerator_barrier(); }
     tBigScatter += usecond();
@@ -326,7 +326,7 @@ public:
     int64_t c0 = b0*L.nb;
     int64_t m  = bm*L.nb;
     int64_t c1 = std::min(L.N, b1*L.nb);
-    ComplexD one (1.0,0.0), mone(-1.0,0.0), zero(0.0,0.0);
+    DenseInverseScalar one (1.0,0.0), mone(-1.0,0.0), zero(0.0,0.0);
 
     // 1. A11 -> A11inv
     SchurNode(A,Bt,Ct,Tt,Ut, b0,bm);
