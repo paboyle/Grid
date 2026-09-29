@@ -39,8 +39,7 @@ typedef ComplexD DenseInverseScalar;
 // BlockCyclicLayout: the index arithmetic of a 2D block-cyclic distribution
 // of an N x N matrix over a Pr x Pc logical process grid with block size nb.
 //
-// This is stage 1 of the 2D distributed dense inverse
-// (documentation/DistributedDenseInverse2D.tex).  It is deliberately
+// This is stage 1 of the 2D distributed dense inverse.  It is deliberately
 // COMMUNICATOR-FREE: every mapping is a static pure function of
 // (N, nb, Pr, Pc), so the whole layout is exhaustively unit-testable on one
 // rank with no MPI in the loop (Test_blockcyclic).  A thin instance layer

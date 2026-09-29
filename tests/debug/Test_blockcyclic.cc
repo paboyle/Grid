@@ -20,7 +20,7 @@ Author: Peter Boyle <pboyle@bnl.gov>
 
 //////////////////////////////////////////////////////////////////////////////
 // Regression gate for BlockCyclicLayout -- stage 1 of the 2D distributed
-// dense inverse (documentation/DistributedDenseInverse2D.tex).
+// dense inverse.
 //
 // The layout is pure index arithmetic, so this test is EXHAUSTIVE rather
 // than statistical: every stage sweeps a battery of (N, nb, Pr, Pc)
