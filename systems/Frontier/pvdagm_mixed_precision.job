@@ -1,0 +1,206 @@
+#!/bin/bash -l
+#SBATCH --job-name=pvdagm-mixed-precision
+#SBATCH --nodes=36
+#SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=7
+#SBATCH --gpus-per-node=8
+#SBATCH --time=2:00:00
+#SBATCH --account=phy157_dwf
+#SBATCH --gpu-bind=none
+#SBATCH --exclusive
+#SBATCH --mem=0
+#SBATCH -S 0
+
+##############################################################################
+# The three precision axes of the PVdagM multigrid, on the banked point of
+# pvdagm_multigrid.job (48^3x96, Ls=24, nbasis=60, 288 GCDs).  The outer
+# Krylov is fp64 and exact in every cell, so fp32 below it costs convergence
+# rate only, never correctness -- the FINAL exact-halo true residual is the
+# proof and is printed by every cell.
+#
+#   1. fine level inside the preconditioner   run time  <FinePrecision>
+#   2. coarse + coarse-coarse sector          compile   -DCOARSE_SINGLE
+#   3. distributed dense coarse-coarse invert compile   -DGRID_DENSE_INVERSE_SINGLE
+#
+# The compile-time axes are separate binaries from the same source, all
+# plain `make` targets (examples/Makefile.am):
+#   Example_pvdagm_multigrid                          fp64 coarse, fp64 dense
+#   Example_pvdagm_multigrid_fp32coarse               fp32 coarse, fp64 dense
+#   Example_pvdagm_multigrid_fp32coarse_fp32dense     fp32 coarse, fp32 dense
+# The default basis is 60.  The subspace load reads the first 60 vectors
+# of the file.
+##############################################################################
+
+LUSTRE=/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle
+RUNDIR=$LUSTRE/runs/${SLURM_JOB_NAME}_${SLURM_JOB_ID}
+mkdir -p $RUNDIR && cd $RUNDIR && echo "RUNDIR $RUNDIR"
+
+cat << EOF > select_gpu
+#!/bin/bash
+export GPU_MAP=(0 1 2 3 7 6 5 4)
+export NUMA_MAP=(3 3 1 1 2 2 0 0)
+export GPU=\${GPU_MAP[\$SLURM_LOCALID]}
+export NUMA=\${NUMA_MAP[\$SLURM_LOCALID]}
+export HIP_VISIBLE_DEVICES=\$GPU
+unset ROCR_VISIBLE_DEVICES
+if [ \$SLURM_PROCID = "0" ]; then echo \$*; fi
+exec numactl -m \$NUMA -N \$NUMA \$*
+EOF
+chmod +x ./select_gpu
+
+root=/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle/MGrewrite/Grid/systems/Frontier
+source $root/sourceme-rocm7.2.sh
+# sourceme sets FI_HMEM_ROCR_USE_DMABUF=0 -- the standing avoidance of the CXI
+# NO_TRANSLATION fault at NRHS>=12 (libfabric #12775).
+
+export OMP_NUM_THREADS=7
+ulimit -c 0                             # no 22 GB GPU core dumps
+export FI_MR_CACHE_MONITOR=kdreg2       # site default; device-buffer MPI on Slingshot
+export MPICH_GPU_SUPPORT_ENABLED=1
+export MPICH_SMP_SINGLE_COPY_MODE=CMA
+export MPICH_OFI_NIC_POLICY=GPU
+export GRID_ALLOC_NCACHE_LARGE=64       # allocator large-ring depth, not a solver knob
+module load libfabric
+
+C64D64=$root/examples/Example_pvdagm_multigrid
+C32D64=$root/examples/Example_pvdagm_multigrid_fp32coarse
+C32D32=$root/examples/Example_pvdagm_multigrid_fp32coarse_fp32dense
+# 40000, not 32000: at Nrhs 12 the working set is about 37 GB (outer restart
+# history 24.5, fine smoother history 8.2, sources and solutions 4.1), so a
+# 32 GB cache evicts.  Measured: 808 ms of device-to-host copies in a 20 s
+# window, and 9.706 s per rhs against 8.748 with the larger cache.  The
+# non-evictable total is 6.3 GiB in the fp32 sector, so 40 GB of cache plus
+# comms and shm still fits a 64 GB device.
+OPTS="--accelerator-threads 8 --shm 4096 --shm-mpi 1 --device-mem 40000 --comms-overlap"
+vol=48.48.48.96
+MPI_GEOM=3.6.4.4
+
+SUBSPACE=$LUSTRE/subspace_nb64.scidac
+CONFIG=/ccs/home/poare/ckpoint_lat.1000
+
+##############################################################################
+# write_params <file> <FinePrecision> <FineSloppyComms>
+#
+# Everything else is the banked adaptive operating point of
+# pvdagm_multigrid.job, unchanged, so the cells differ only in precision.
+##############################################################################
+write_params () {
+  local f=$1 fprec=$2 sloppy=$3
+cat << EOF > $f
+<?xml version="1.0"?>
+<grid>
+  <PVdagMDriver>
+    <Ls>24</Ls>
+    <Mass>0.00078</Mass>
+    <M5>1.8</M5>
+    <MobiusB>1.5</MobiusB>
+    <MobiusC>0.5</MobiusC>
+    <Config>$CONFIG</Config>
+    <Nrhs>12</Nrhs>
+    <SolveSingleRHS>1</SolveSingleRHS>
+    <MultiGrid>
+      <Setup>
+        <Block1><elem>2</elem><elem>2</elem><elem>3</elem><elem>3</elem></Block1>
+        <Block2><elem>4</elem><elem>4</elem><elem>2</elem><elem>4</elem></Block2>
+        <CoarsenBatch>9</CoarsenBatch>
+        <SubspaceFile>$SUBSPACE</SubspaceFile>
+        <FineSloppyComms>$sloppy</FineSloppyComms>
+        <FinePrecision>$fprec</FinePrecision>
+        <RetainSubspace>0</RetainSubspace>
+      </Setup>
+      <FineSmoother>
+        <Shift>0.1</Shift><Nstep>6</Nstep><Mmax>4</Mmax>
+      </FineSmoother>
+      <CoarseSmoother>
+        <Shift>2.0</Shift><Nstep>2</Nstep><Mmax>2</Mmax>
+      </CoarseSmoother>
+      <CoarseSolver>
+        <Tol>0.05</Tol><Order>200</Order><Mmax>8</Mmax>
+      </CoarseSolver>
+      <Outer>
+        <Tol>1e-8</Tol><MaxIterations>1000</MaxIterations><Mmax>6</Mmax><Nstep>12</Nstep>
+      </Outer>
+      <Dense>
+        <LeafSpan>9</LeafSpan>
+      </Dense>
+    </MultiGrid>
+  </PVdagMDriver>
+</grid>
+EOF
+}
+
+##############################################################################
+# run_cell <name> <binary> <FinePrecision> <FineSloppyComms>
+##############################################################################
+run_cell () {
+  name=$1; bin=$2; fprec=$3; sloppy=$4
+  if [ ! -x "$bin" ]; then
+    echo "----- $name : SKIPPED, no binary $bin"
+    echo "        build it with a plain make in examples/"
+    return
+  fi
+  write_params params.$name.xml $fprec $sloppy
+  echo "----- $name : fine=$fprec sloppy=$sloppy bin=$(basename $bin) -----"
+  export GRID_STDOUT_ROOT=$RUNDIR/mg_$name
+  srun -N36 -n288 --kill-on-bad-exit=1 ./select_gpu $bin --mpi ${MPI_GEOM} --grid $vol $OPTS \
+       --pvdagm-params params.$name.xml --debug-stdout --log Error,Warning,Message,Performance \
+       > log.mg.$name 2>&1
+  echo "  exit $?"; sleep 30
+  # Device OOM is reported on stderr as "hipMalloc failed for <bytes> out of
+  # memory" and nowhere else, so it must be in this pattern or a cell that
+  # died of it looks like a cell that printed nothing.
+  f=$(grep -l "Memory access fault\|NO_TRANSLATION\|hipMalloc failed\|out of memory\|illegal memory access" $GRID_STDOUT_ROOT/*/Grid.stderr.* 2>/dev/null | head -1)
+  if [ -n "$f" ]; then
+    echo "  FAULT in $f  (rank $(basename $f | sed 's/Grid.stderr.//'))"; tail -20 $f | cut -c1-160
+  else
+    echo "  certificates, convergence, timing:"
+    grep -h "Coarse sector precision\|GALERKIN CERTIFICATE\|IMPORT CERTIFICATE\|inversion-source import\|SCHUR .* distributed invert\|VERIFY\|PVdagMMultiGridSolver: Nrhs\|MrhsPGCR: Converged\|FINAL Nrhs .*worst" \
+         $GRID_STDOUT_ROOT/0/Grid.stdout.0 2>/dev/null | cut -c1-150
+  fi
+}
+
+##############################################################################
+# Cells.  P0 is the regression gate: with fp64 everywhere it must reproduce
+# the banked outer count and residual of pvdagm_multigrid.job.  If it does
+# not, nothing downstream means anything, and the Galerkin certificate
+# (2.3e-15 expected in fp64) separates a coarsening change from a solve one.
+##############################################################################
+
+#           name          binary   fineprec sloppy
+run_cell    P0_fp64       $C64D64  fp64     1
+run_cell    P1_fp32fine   $C64D64  fp32     1
+run_cell    P2_fp32coarse $C32D64  fp64     1
+run_cell    P3_fp32both   $C32D64  fp32     1
+run_cell    P4_denseF32   $C32D32  fp32     1
+
+# Halo wire format is orthogonal to arithmetic: on an fp32 operator
+# FineSloppyComms is bf16 compression, on an fp64 operator it is fp32.  One
+# exact-halo cell to price it inside the preconditioner.
+run_cell    P5_exacthalo  $C32D64  fp32     0
+
+##############################################################################
+# What to read.
+#
+# P0: the gate.  Outer count and s/RHS against the banked numbers.
+#
+# P1 vs P0: fp32 fine level.  Laptop 8^4 saw the same outer count and ~12%
+# less wall; here the fine level is the dominant cost and the halo is real,
+# so this is where the fp32 case is actually made or lost.
+#
+# P2 vs P0: fp32 coarse sector.  Watch the Galerkin certificate move from
+# ~2e-15 to ~3e-7 -- that is fp32 rounding in the coarsening, not an error --
+# and check the outer count does not move with it.  Halves the coarse
+# operator's storage and its comms.
+#
+# P4 vs P3: fp32 dense coarse-coarse inversion.  The reading is the VERIFY
+# certificate ||A Ainv x - x||/||x||, which scales as kappa(A_cc) * eps32 and
+# so measures the conditioning of the coarse-coarse operator at production
+# size.  The laptop's N=128 was too small to say anything (5.3e-6 -> 6.7e-6);
+# at N=69120 it is a real test.  If VERIFY degrades but the outer count holds,
+# the fp32 factorisation is fine and halves that footprint; if the outer count
+# moves, the fallback is fp32 factorise plus one fp64 refinement step, which
+# is two extra dense applies and is not yet written.
+#
+# P5 vs P3: what the reduced-precision halo is worth once the arithmetic is
+# already fp32 (bf16 wire on an fp32 operator).
+##############################################################################
