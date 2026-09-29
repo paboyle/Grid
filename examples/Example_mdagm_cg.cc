@@ -31,7 +31,7 @@ Author: Peter Boyle <pboyle@bnl.gov>
 //
 // Operator hierarchy:
 //   Fine:   M†M, acted on via HermOpAdaptor so Op = HermOp = M†M
-//   Coarse: 33-point GeneralCoarsenedMatrix (NextToNearest, 2-hop M†M)
+//   Coarse: 33-point DeprecatedGeneralCoarsenedMatrix (NextToNearest, 2-hop M†M)
 //
 // Setup:
 //   1. Chebyshev filter (T_600 x T_2500) on M†M to build near-null subspace {ψᵢ}
@@ -198,7 +198,7 @@ int main(int argc, char **argv)
   ///////////////////////////////////////////////////////////
   // Coarse operator: 33-point stencil for 2-hop M†M
   ///////////////////////////////////////////////////////////
-  typedef GeneralCoarsenedMatrix<vSpinColourVector, vTComplex, nbasis> LittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector, vTComplex, nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
 
   NextToNearestStencilGeometry5D geom(Coarse5d);

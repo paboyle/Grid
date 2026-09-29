@@ -156,7 +156,7 @@ int main (int argc, char ** argv)
   }
 
   ////////////////////////////////////////////////////
-  // Dwf matrix — verify Fourier representation using PlannedFFT<LatticeFermionD>
+  // Dwf matrix -- verify Fourier representation using PlannedFFT<LatticeFermionD>
   ////////////////////////////////////////////////////
   {
     std::cout<<"****************************************"<<std::endl;

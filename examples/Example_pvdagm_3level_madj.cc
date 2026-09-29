@@ -323,7 +323,7 @@ void runMG(
   TrivialPrecon<LatticeFermionD>   simple_fine;
 
   //////////////////////////////////////////////////////////////////////
-  // Level 0→1: coarsen PVdagM, build LinOpCoarse
+  // Level 0->1: coarsen PVdagM, build LinOpCoarse
   //////////////////////////////////////////////////////////////////////
   LittleDiracOperator LittleDiracOpPV(geom, FGrid, Coarse5d);
   LittleDiracOpPV.CoarsenOperator(PVdagM, AggregatesPD);
@@ -348,7 +348,7 @@ void runMG(
   //////////////////////////////////////////////////////////////////////
   // psi_coarse: coarse projections of pre-GS fine null vectors.
   // These are the Level 1 near-null vectors, promoted from Level 0.
-  // Used as the aggregation basis for Level 1→2 coarsening.
+  // Used as the aggregation basis for Level 1->2 coarsening.
   //////////////////////////////////////////////////////////////////////
   std::vector<CoarseVector> psi_coarse(nbasis, Coarse5d);
   for (int k = 0; k < nbasis; k++)
@@ -378,22 +378,22 @@ void runMG(
     RealD normC      = C.norm();
     RealD normCmCdag = (C - C.adjoint()).norm();
     std::cout << GridLogMessage << "Coarse null matrix ||C||            = " << normC << std::endl;
-    std::cout << GridLogMessage << "Coarse null matrix ||C - C†||/||C|| = " << normCmCdag/normC << std::endl;
+    std::cout << GridLogMessage << "Coarse null matrix ||C - C^dag||/||C|| = " << normCmCdag/normC << std::endl;
     std::cout << GridLogMessage << "Galerkin check ||C||/||W||          = " << normC/normW << std::endl;
   }
 
   //////////////////////////////////////////////////////////////////////
-  // Level 1→2: set up aggregation using psi_coarse as subspace.
+  // Level 1->2: set up aggregation using psi_coarse as subspace.
   // Block factor 2,2,3,2 (removes odd local sublattice in z given MPI
-  // geometry 3×6×4×4 where z-local at Level 1 is 6).
+  // geometry 3x6x4x4 where z-local at Level 1 is 6).
   // psi_coarse are assigned directly; CoarsenOperator performs
   // block-GS orthogonalisation before building LinOpCoarseCoarse.
   //////////////////////////////////////////////////////////////////////
   // innerProduct(CoarseSiteObj, CoarseSiteObj) returns iScalar<vTComplex>, so CComplex
-  // for the L1→L2 level must be iScalar<vTComplex>, not vTComplex.
+  // for the L1->L2 level must be iScalar<vTComplex>, not vTComplex.
   typedef typename CoarseVector::vector_object                            CoarseSiteObj;
   typedef iScalar<vTComplex>                                              vTTComplex;
-  typedef GeneralCoarsenedMatrix<CoarseSiteObj,vTTComplex,NB>            LittleDiracOperatorL2;
+  typedef DeprecatedGeneralCoarsenedMatrix<CoarseSiteObj,vTTComplex,NB>            LittleDiracOperatorL2;
   typedef typename LittleDiracOperatorL2::CoarseVector                   CoarseCoarseVector;
   typedef Aggregation<CoarseSiteObj,vTTComplex,NB>                       SubspaceL2;
   typedef MGPreconditioner<CoarseSiteObj,vTTComplex,NB>                  L1to2MG;
@@ -412,14 +412,14 @@ void runMG(
   // Level 2 solver: plain GCR, no further coarsening
   //////////////////////////////////////////////////////////////////////
   TrivialPrecon<CoarseCoarseVector> simpleCC;
-  // L3PGCR is an inner solver inside the L1→2 V-cycle; does not need to converge
+  // L3PGCR is an inner solver inside the L1->2 V-cycle; does not need to converge
   // to fine-grid precision. Loose tolerance (3e-2) and large restart (64) to allow
   // the Krylov space to span enough of the near-null spectrum of LinOpCC per cycle.
   PrecGeneralisedConjugateResidualNonHermitian<CoarseCoarseVector> L3PGCR(1.0e-4,5,LinOpCC,simpleCC,64,64);
   L3PGCR.Level(3);
 
   //////////////////////////////////////////////////////////////////////
-  // Coarse-level GCR smoother for Level 1→2 V-cycle.
+  // Coarse-level GCR smoother for Level 1->2 V-cycle.
   // Mirrors fine-grid SmootherGCR: shifted operator + fixed step count.
   // coarse_smoother_shift and coarse_smoother_nstep are the tuning knobs.
   //////////////////////////////////////////////////////////////////////
@@ -433,7 +433,7 @@ void runMG(
   CoarseSmootherGCR.Level(2);
 
   //////////////////////////////////////////////////////////////////////
-  // Level 1→2 V-cycle preconditioner.
+  // Level 1->2 V-cycle preconditioner.
   //////////////////////////////////////////////////////////////////////
   L1to2MG L1to2Precon(AggregatesL2,
 		      LinOpCoarse,
@@ -474,7 +474,7 @@ void runMG(
   f_src = one;
 
   // Pre-smoother: none (TrivialPrecon); post-smoother: shifted PGCR.
-  // Coarse solver: L2MGsolver (PGCR preconditioned by Level 1→2 V-cycle).
+  // Coarse solver: L2MGsolver (PGCR preconditioned by Level 1->2 V-cycle).
   TwoLevelMG ThreeLevelPrecon(AggregatesPD,
 			      PVdagM,
 			      simple_fine,
@@ -518,7 +518,7 @@ int main (int argc, char ** argv)
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
-  // Level 1 coarse grid: block 2^4 from fine (48×48×48×96 → 24×24×24×48, Ls=1)
+  // Level 1 coarse grid: block 2^4 from fine (48x48x48x96 -> 24x24x24x48, Ls=1)
   Coordinate clatt = lat_size;
   for (int d = 0; d < 4; d++) clatt[d] /= 2;
   std::cout << GridLogMessage << "Level 1 coarse lattice: " << clatt << std::endl;
@@ -526,13 +526,13 @@ int main (int argc, char ** argv)
   GridCartesian *Coarse4d  = SpaceTimeGrid::makeFourDimGrid(clatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridCartesian *Coarse5d  = SpaceTimeGrid::makeFiveDimGrid(1,Coarse4d);
 
-  // Level 2 coarse-coarse grid: block 2,2,3,3 from Level 1 (24×24×24×48 → 12×12×8×16, Ls=1).
+  // Level 2 coarse-coarse grid: block 2,2,3,3 from Level 1 (24x24x24x48 -> 12x12x8x16, Ls=1).
   // MPI geometry 3.6.4.4 (288 ranks): fine local {16,8,12,24}.
   // Level 1 local {8,4,6,12}; Level 2 local {4,2,2,4}.
-  // z blocked by 3: z-Level1-local=6; 6/3=2 (even), 6/2=3 (odd) → must use 3.
+  // z blocked by 3: z-Level1-local=6; 6/3=2 (even), 6/2=3 (odd) -> must use 3.
   // t blocked by 3: t-Level1-local=12; 12/3=4 divisible by Nsimd=4 (gen-simd-width=64).
-  //   t-block=2 gives t2-local=6, 6 mod 4 ≠ 0, fails Grid SIMD assertion. ✓
-  // With {4,2,2,4}: Nsimd=4 goes into x or t (both =4). ✓
+  //   t-block=2 gives t2-local=6, 6 mod 4 != 0, fails Grid SIMD assertion.
+  // With {4,2,2,4}: Nsimd=4 goes into x or t (both =4).
   Coordinate clatt2 = clatt;
   clatt2[0] /= 2;
   clatt2[1] /= 2;
@@ -566,7 +566,7 @@ int main (int argc, char ** argv)
 
   typedef PVdagMLinearOperator<MobiusFermionD,LatticeFermionD>        PVdagM_t;
   typedef ShiftedPVdagMLinearOperator<MobiusFermionD,LatticeFermionD> ShiftedPVdagM_t;
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>  LittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>  LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector                           CoarseVector;
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis>             Subspace;
   typedef MGPreconditioner<vSpinColourVector,vTComplex,nbasis>        TwoLevelMG;

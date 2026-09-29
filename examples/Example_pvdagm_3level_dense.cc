@@ -212,8 +212,8 @@ public:
   }
 };
 
-// Lüscher deflated guesser (arXiv:0706.2298 Sec A.3) for a non-Hermitian solve.
-// C_{st} = <psi[s] | LinOp | psi[t]>;  guess = sum_s c_s psi[s]  where c = C^{-1} psi† src.
+// Luscher deflated guesser (arXiv:0706.2298 Sec A.3) for a non-Hermitian solve.
+// C_{st} = <psi[s] | LinOp | psi[t]>;  guess = sum_s c_s psi[s]  where c = C^{-1} psi^dag src.
 template<class Field>
 class LuscherGuesser : public LinearFunction<Field> {
   const std::vector<Field> &psi;
@@ -704,7 +704,7 @@ void runMG(
   TrivialPrecon<LatticeFermionD>   simple_fine;
 
   //////////////////////////////////////////////////////////////////////
-  // Level 0→1: coarsen PVdagM, build LinOpCoarse
+  // Level 0->1: coarsen PVdagM, build LinOpCoarse
   //////////////////////////////////////////////////////////////////////
   LittleDiracOperator LittleDiracOpPV(geom, FGrid, Coarse5d);
   LittleDiracOpPV.CoarsenOperator(PVdagM, AggregatesPD);
@@ -736,7 +736,7 @@ void runMG(
   // Optional sigma-ordering of psi_coarse (SVD_REORDER set): replace the crude
   // first-NB_CC slice with the NB_CC most-null directions of span(psi_coarse)
   // under LinOpCoarse.  Nullness measure = singular values (eig of the
-  // Gram-whitened Psi†A†APsi), NOT the numerical range Q†AQ which
+  // Gram-whitened Psi^dag A^dag APsi), NOT the numerical range Q^dag AQ which
   // non-normality contaminates.  The printed sigma spectrum shows where the
   // truncation cliff sits.  Unset => raw first-30 (crude GS-ordered slice).
   //////////////////////////////////////////////////////////////////////
@@ -787,7 +787,7 @@ void runMG(
   }
 
   //////////////////////////////////////////////////////////////////////
-  // Level 1→2: SUPERCOARSE aggregation using psi_coarse as subspace.
+  // Level 1->2: SUPERCOARSE aggregation using psi_coarse as subspace.
   // Maximal block {8,4,3,6}: CC = [3,6,8,8] = the dense-invertible floor.
   //
   // UNBLOCKING TRUNCATION NB_CC = 30 (first-30 slice of psi_coarse):
@@ -811,7 +811,7 @@ void runMG(
 
   typedef typename CoarseVector::vector_object                            CoarseSiteObj;
   typedef iScalar<vTComplex>                                              vTTComplex;
-  typedef GeneralCoarsenedMatrix<CoarseSiteObj,vTTComplex,NB_CC>         LittleDiracOperatorL2;
+  typedef DeprecatedGeneralCoarsenedMatrix<CoarseSiteObj,vTTComplex,NB_CC>         LittleDiracOperatorL2;
   typedef typename LittleDiracOperatorL2::CoarseVector                   CoarseCoarseVector;
   typedef Aggregation<CoarseSiteObj,vTTComplex,NB_CC>                    SubspaceL2;
   typedef MGPreconditioner<CoarseSiteObj,vTTComplex,NB_CC>               L1to2MG;
@@ -830,7 +830,7 @@ void runMG(
 
   //////////////////////////////////////////////////////////////////////
   // CC solve: DENSE (exact, non-iterative) by default; DENSE_CC=0 gives
-  // the previous iterative L3PGCR + Lüscher-guesser path for A/B.
+  // the previous iterative L3PGCR + Luscher-guesser path for A/B.
   //////////////////////////////////////////////////////////////////////
   int use_dense = 1;
   if (getenv("DENSE_CC")) use_dense = atoi(getenv("DENSE_CC"));
@@ -859,7 +859,7 @@ void runMG(
     ccGuess = &simpleCC;      // exact solve ignores/overwrites any guess
   } else {
     ////////////////////////////////////////////////////////////////////
-    // Lüscher deflation guesser (arXiv:0706.2298 A.3) for the iterative CC
+    // Luscher deflation guesser (arXiv:0706.2298 A.3) for the iterative CC
     // solve, as in the earlier supercoarse configuration.
     ////////////////////////////////////////////////////////////////////
     psi_cc.resize(nbasis, CoarseCoarse5d);
@@ -900,7 +900,7 @@ void runMG(
   }
 
   //////////////////////////////////////////////////////////////////////
-  // Coarse-level GCR smoother for Level 1→2 V-cycle.
+  // Coarse-level GCR smoother for Level 1->2 V-cycle.
   //////////////////////////////////////////////////////////////////////
   RealD coarse_smoother_shift = 0.1;
   int   coarse_smoother_nstep = 2;
@@ -914,7 +914,7 @@ void runMG(
   CoarseSmootherGCR.SetZeroGuess(1);  // post-smoother slot: caller zeroes vec2 (NOT L2MGsolver: it takes the Luscher guess)
 
   //////////////////////////////////////////////////////////////////////
-  // Level 1→2 V-cycle preconditioner.
+  // Level 1->2 V-cycle preconditioner.
   //////////////////////////////////////////////////////////////////////
   L1to2MG L1to2Precon(AggregatesL2,
                        LinOpCoarse,
@@ -998,7 +998,7 @@ int main (int argc, char ** argv)
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
-  // Level 1 coarse grid: block 2^4 from fine (48×48×48×96 → 24×24×24×48, Ls=1)
+  // Level 1 coarse grid: block 2^4 from fine (48x48x48x96 -> 24x24x24x48, Ls=1)
   Coordinate clatt = lat_size;
   //  Coordinate Block1({2,2,2,2});
   //  Coordinate Block2({8,4,3,6});
@@ -1047,7 +1047,7 @@ int main (int argc, char ** argv)
 
   typedef PVdagMLinearOperator<MobiusFermionD,LatticeFermionD>        PVdagM_t;
   typedef ShiftedPVdagMLinearOperator<MobiusFermionD,LatticeFermionD> ShiftedPVdagM_t;
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>  LittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>  LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector                           CoarseVector;
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis>             Subspace;
   typedef MGPreconditioner<vSpinColourVector,vTComplex,nbasis>        TwoLevelMG;

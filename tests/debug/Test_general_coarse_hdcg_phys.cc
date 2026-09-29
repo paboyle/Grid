@@ -189,7 +189,7 @@ int main (int argc, char ** argv)
   ////////////////////////////////////////////////////////////
   ///////////// Coarse basis and Little Dirac Operator ///////
   ////////////////////////////////////////////////////////////
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
 
   NextToNextToNextToNearestStencilGeometry5D geom(Coarse5d);
@@ -371,7 +371,7 @@ slurm-1482367.out:Grid : Message : 6169.469330 s : HDCG: Pcg converged in 487 it
       //////////////////////////////////////////
       // Build a HDCG solver
       //////////////////////////////////////////
-      TwoLevelADEF2<LatticeFermion,CoarseVector,Subspace>
+      DeprecatedTwoLevelADEF2<LatticeFermion,CoarseVector,Subspace>
 	HDCG(1.0e-8, 700,
 	     FineHermOp,
 	     CGsmooth,

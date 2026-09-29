@@ -369,8 +369,8 @@ int main (int argc, char ** argv)
   //  }
   
   
-  //  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,2*nbasis> LittleDiracOperator;
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
+  //  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,2*nbasis> LittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
   LittleDiracOperator LittleDiracOpPV(geom,FGrid,Coarse5d);
   LittleDiracOpPV.CoarsenOperator(PVdagM,V,V);

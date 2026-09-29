@@ -114,7 +114,7 @@ int main (int argc, char ** argv)
   ///////////////////////////////////////////////////
   std::cout<<GridLogMessage << "Building little Dirac operator"<< std::endl;
 
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
 
   NextToNextToNextToNearestStencilGeometry5D geom(Coarse5d);
@@ -223,7 +223,7 @@ int main (int argc, char ** argv)
   GridCartesian *CoarseMrhs = new GridCartesian(rhLatt,rhSimd,rhMpi); 
 
 #if 0  
-  MultiGeneralCoarsenedMatrix mrhs(LittleDiracOp,CoarseMrhs);
+  DeprecatedMultiGeneralCoarsenedMatrix mrhs(LittleDiracOp,CoarseMrhs);
   typedef decltype(mrhs) MultiGeneralCoarsenedMatrix_t;
   
   //////////////////////////////////////////

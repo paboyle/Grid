@@ -70,7 +70,7 @@ export GRID_ALLOC_NCACHE_LARGE=0       # allocator large-ring depth (Grid alloca
 module load libfabric
 
 BIN=$root/examples/Example_pvdagm_multigrid
-OPTS="--accelerator-threads 8 --shm 4096 --shm-mpi 0 --device-mem 32000 --comms-overlap"
+OPTS="--accelerator-threads 8 --shm 4096 --shm-mpi 0 --device-mem 40000 --comms-overlap"
 vol=48.48.48.96
 MPI_GEOM=3.6.4.4
 

@@ -105,6 +105,119 @@ inline double usecond(void) {
   return 1.0e6*tv.tv_sec + 1.0*tv.tv_usec;
 }
 /**************************************************************
+ * Point to point cost, per Cartesian direction.
+ *
+ * PaddedCell::Face_exchange issues one MPI_Sendrecv per dimension and waits,
+ * so the quantity that bounds a halo round is the sendrecv time for that
+ * direction, not a one way ping-pong.  Sweeping the size gives the latency
+ * intercept and the bandwidth slope separately.
+ *
+ * Each direction is labelled on- or off-node, which is what decides whether a
+ * halo round rides the intra-node fabric or the network, and therefore which
+ * dimension ordering costs least.  Times are reduced across ranks: the max is
+ * the one that bounds a collective halo round.
+ **************************************************************
+ */
+void PingPong(std::vector<int> cart_geom,bool use_device,int ncall)
+{
+  int Nd=cart_geom.size();
+  std::vector<int> periodic(Nd,1);
+  std::vector<int> coor(Nd);
+  int rank;
+
+  MPI_Comm communicator;
+  MPI_Cart_create(WorldComm,Nd,&cart_geom[0],&periodic[0],0,&communicator);
+  MPI_Comm_rank(communicator,&rank);
+  MPI_Cart_coords(communicator,rank,Nd,&coor[0]);
+
+  // An identifier every rank on a node agrees on, so a neighbour can be
+  // classified by comparing it.
+  int node_id = WorldRank;
+  MPI_Bcast(&node_id,1,MPI_INT,0,WorldShmComm);
+
+  size_t max_bytes = 2*1024*1024;
+  void *xmit, *recv;
+  if ( use_device ) {
+    xmit = acceleratorAllocDevice(max_bytes);
+    recv = acceleratorAllocDevice(max_bytes);
+  } else {
+    xmit = malloc(max_bytes);
+    recv = malloc(max_bytes);
+  }
+
+  if ( !WorldRank ) {
+    printf("= dim  dir       bytes      us(max)      us(min)        MB/s   off-node ranks\n");
+    fflush(stdout);
+  }
+
+  for(int d=0;d<Nd;d++){
+
+    // An undecomposed dimension is a local wrap in PaddedCell and carries no
+    // message at all; a shift here would only time a rank talking to itself.
+    if ( cart_geom[d] == 1 ) continue;
+
+    for(int sign=-1;sign<=1;sign+=2){
+
+      int from,to;
+      MPI_Cart_shift(communicator,d,sign,&from,&to);
+
+      // Fetch the identifier of the neighbour we SEND to, which means sending
+      // ours the other way round the shift.
+      int peer_node=node_id;
+      MPI_Sendrecv(&node_id, 1,MPI_INT,from,rank,
+		   &peer_node,1,MPI_INT,to,  to,
+		   communicator,MPI_STATUS_IGNORE);
+      int offnode = (peer_node != node_id) ? 1 : 0;
+      int offnode_count=0;
+      MPI_Reduce(&offnode,&offnode_count,1,MPI_INT,MPI_SUM,0,communicator);
+
+      for(size_t bytes=8; bytes<=max_bytes; bytes*=8){
+
+	// Latency needs the repeats; bandwidth does not, and large messages
+	// would otherwise dominate the run time.
+	int nc = (bytes<=32768) ? ncall : (ncall/20 > 10 ? ncall/20 : 10);
+
+	// Untimed warm-up: the first exchange on a fresh buffer pays connection
+	// setup and registration, and would otherwise land in the first row.
+	MPI_Sendrecv(xmit,bytes,MPI_CHAR,to,rank,
+		     recv,bytes,MPI_CHAR,from,from,
+		     communicator,MPI_STATUS_IGNORE);
+
+	MPI_Barrier(communicator);
+	double t0=usecond();
+	for(int i=0;i<nc;i++){
+	  MPI_Sendrecv(xmit,bytes,MPI_CHAR,to,rank,
+		       recv,bytes,MPI_CHAR,from,from,
+		       communicator,MPI_STATUS_IGNORE);
+	}
+	double t1=usecond();
+
+	double us = (t1-t0)/(double)nc;
+	double us_max, us_min;
+	MPI_Reduce(&us,&us_max,1,MPI_DOUBLE,MPI_MAX,0,communicator);
+	MPI_Reduce(&us,&us_min,1,MPI_DOUBLE,MPI_MIN,0,communicator);
+
+	if ( !WorldRank ) {
+	  printf("= %3d  %s  %10zu  %11.2f  %11.2f  %10.1f   %d\n",
+		 d, sign>0?"+":"-", bytes, us_max, us_min,
+		 (double)bytes/us_max, offnode_count);
+	  fflush(stdout);
+	}
+      }
+    }
+  }
+
+  if ( use_device ) {
+    acceleratorFreeDevice(xmit);
+    acceleratorFreeDevice(recv);
+  } else {
+    free(xmit);
+    free(recv);
+  }
+  MPI_Comm_free(&communicator);
+}
+
+/**************************************************************
  * Main benchmark routine
  **************************************************************
  */
@@ -303,6 +416,20 @@ int main(int argc, char **argv)
   }
 
   
+  if( !WorldRank ) {
+    printf("=========================================================\n");
+    printf("= Point to point cost per direction, HOST memory         \n");
+    printf("=========================================================\n");fflush(stdout);
+  }
+  PingPong(mpi,false,1000);
+
+  if( !WorldRank ) {
+    printf("=========================================================\n");
+    printf("= Point to point cost per direction, DEVICE memory       \n");
+    printf("=========================================================\n");fflush(stdout);
+  }
+  PingPong(mpi,true,1000);
+
   if( !WorldRank ) {
     printf("=========================================================\n");
     printf("= Benchmarking HOST memory MPI performance               \n");

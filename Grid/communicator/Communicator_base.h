@@ -133,6 +133,7 @@ public:
 
   template<class obj> void GlobalSumP2P(obj &o)
   {
+    GRID_TRACE("GlobalSumP2P");
     std::vector<obj> column;
     obj accum = o;
     int source,dest;

@@ -38,10 +38,10 @@ NAMESPACE_BEGIN(Grid);
 // Fine Object == (per site) type of fine field
 // nbasis      == number of deflation vectors
 template<class Fobj,class CComplex,int nbasis>
-class GeneralCoarsenedMatrix : public SparseMatrixBase<Lattice<iVector<CComplex,nbasis > > >  {
+class DeprecatedGeneralCoarsenedMatrix : public SparseMatrixBase<Lattice<iVector<CComplex,nbasis > > >  {
 public:
 
-  typedef GeneralCoarsenedMatrix<Fobj,CComplex,nbasis> GeneralCoarseOp;
+  typedef DeprecatedGeneralCoarsenedMatrix<Fobj,CComplex,nbasis> GeneralCoarseOp;
   typedef iVector<CComplex,nbasis >           siteVector;
   typedef iMatrix<CComplex,nbasis >           siteMatrix;
   typedef Lattice<iScalar<CComplex> >         CoarseComplexField;
@@ -103,7 +103,7 @@ public:
   void ProjectNearestNeighbour(RealD shift, GeneralCoarseOp &CopyMe)
   {
     int nfound=0;
-    std::cout << GridLogMessage <<"GeneralCoarsenedMatrix::ProjectNearestNeighbour "<< CopyMe._A[0].Grid()<<std::endl;
+    std::cout << GridLogMessage <<"DeprecatedGeneralCoarsenedMatrix::ProjectNearestNeighbour "<< CopyMe._A[0].Grid()<<std::endl;
     for(int p=0;p<geom.npoint;p++){
       for(int pp=0;pp<CopyMe.geom.npoint;pp++){
  	// Search for the same relative shift
@@ -120,7 +120,7 @@ public:
   }
   */
   
-  GeneralCoarsenedMatrix(NonLocalStencilGeometry &_geom,GridBase *FineGrid, GridCartesian * CoarseGrid,int _herm=1)
+  DeprecatedGeneralCoarsenedMatrix(NonLocalStencilGeometry &_geom,GridBase *FineGrid, GridCartesian * CoarseGrid,int _herm=1)
     : geom(_geom),
       _FineGrid(FineGrid),
       _CoarseGrid(CoarseGrid),

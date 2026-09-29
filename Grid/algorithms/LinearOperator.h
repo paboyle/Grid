@@ -667,6 +667,9 @@ public:
       (*this)(in[i], out[i]);
     }
   }
+  // The identity, if a derived class says so.  A caller can then use its input
+  // where it would otherwise have materialised the output, and skip the copy.
+  virtual int isTrivial(void) { return 0; };
   virtual ~LinearFunction(){};
 };
 

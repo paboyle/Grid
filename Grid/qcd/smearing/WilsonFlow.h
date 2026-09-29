@@ -52,7 +52,7 @@ protected:
 public:
 
 //Define the action used to evolve the plaquettes
-//(Lüscher: https://arxiv.org/pdf/1006.4518 eq. 1.4)
+//(Luscher: https://arxiv.org/pdf/1006.4518 eq. 1.4)
 //V'(t) = -g^2 * ( d/dVt S[Vt](g) ) * Vt
 //      = -g^2 * ( d/dVt (1/g^2 * sum_p Re tr{ 1 - Vt(p) } ) ) * Vt
 //      = - d/dVt ( sum_p ( Nc - Re tr Vt(p) ) * Vt
@@ -157,7 +157,7 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 //Compute t^2 <E(t)> for time from the plaquette form
-//(Lüscher: https://arxiv.org/pdf/1006.4518 eq. 3.1)
+//(Luscher: https://arxiv.org/pdf/1006.4518 eq. 3.1)
 //E(t) = 2 * sum_p Retr{ 1 - Vt(p) } =
 //     = 2 * sum_p ( Nc - Retr Vt(p) ) =
 //     = 2 * Nc * sum_p ( 1 - Retr Vt(p)/Nc )

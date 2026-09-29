@@ -375,10 +375,10 @@ int main (int argc, char ** argv)
     std::cout <<bl<<" "<<br<<"\t"<<innerProduct(U.subspace[bl],src)<<std::endl;
   }}
 
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperatorV;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperatorV;
   typedef LittleDiracOperatorV::CoarseVector CoarseVectorV;
   
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,2*nbasis> LittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,2*nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
 
   V.Orthogonalise();

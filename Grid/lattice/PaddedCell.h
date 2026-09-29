@@ -94,7 +94,7 @@ template<class vobj> inline void ScatterSlice(const deviceVector<vobj> &buf,
   // FIXME -- can put internal indices into thread loop
   auto buf_p = & buf[0];
   autoView(lat_v, lat, AcceleratorWrite);
-  accelerator_for(ss, face_ovol/simd[dim],Nsimd,{
+  accelerator_forNB(ss, face_ovol/simd[dim],Nsimd,{
 
     // scalar layout won't coalesce
 #ifdef GRID_SIMT
@@ -180,7 +180,7 @@ template<class vobj> inline void GatherSlice(deviceVector<vobj> &buf,
   //for cross platform
   //For CPU perhaps just run a loop over Nsimd
   auto buf_p = & buf[0];
-  accelerator_for(ss, face_ovol/simd[dim],Nsimd,{
+  accelerator_forNB(ss, face_ovol/simd[dim],Nsimd,{
 
     // scalar layout won't coalesce
 #ifdef GRID_SIMT
@@ -303,10 +303,17 @@ public:
   template<class vobj>
   inline Lattice<vobj> Exchange(const Lattice<vobj> &in, const CshiftImplBase<vobj> &cshift = CshiftImplDefault<vobj>()) const
   {
-    GridBase *old_grid = in.Grid();
-    int dims = old_grid->Nd();
-    Lattice<vobj> tmp = in;
-    for(int d=0;d<dims;d++){
+    Coordinate processors=unpadded_grid->_processors;
+    int dims = in.Grid()->Nd();
+    // An undecomposed dimension is not padded, so Expand on it would only copy
+    // its input onto the same grid: those are skipped.  The first decomposed
+    // dimension expands from `in` itself, so the chain needs no seed copy.
+    int first=-1;
+    for(int d=0;d<dims;d++) if ( processors[d] > 1 ) { first=d; break; }
+    if ( first < 0 ) return in;  // nothing decomposed: the padded grid IS the input grid
+    Lattice<vobj> tmp = Expand(first,in,cshift);
+    for(int d=first+1;d<dims;d++){
+      if ( processors[d] == 1 ) continue;
       tmp = Expand(d,tmp,cshift); // rvalue && assignment
     }
     return tmp;
@@ -314,10 +321,18 @@ public:
   template<class vobj>
   inline Lattice<vobj> ExchangePeriodic(const Lattice<vobj> &in) const
   {
-    GridBase *old_grid = in.Grid();
-    int dims = old_grid->Nd();
-    Lattice<vobj> tmp = in;
-    for(int d=0;d<dims;d++){
+    Coordinate processors=unpadded_grid->_processors;
+    int dims = in.Grid()->Nd();
+    // As Exchange: undecomposed dimensions are pure copies and are skipped, and
+    // the first decomposed dimension expands from `in` so there is no seed copy.
+    // On the D+1 mrhs coarse grid (nrhs,1,x,y,z,t) this removes three full
+    // coarse-field copies per operator application.
+    int first=-1;
+    for(int d=0;d<dims;d++) if ( processors[d] > 1 ) { first=d; break; }
+    if ( first < 0 ) return in;  // nothing decomposed: the padded grid IS the input grid
+    Lattice<vobj> tmp = ExpandPeriodic(first,in);
+    for(int d=first+1;d<dims;d++){
+      if ( processors[d] == 1 ) continue;
       tmp = ExpandPeriodic(d,tmp); // rvalue && assignment
     }
     return tmp;
@@ -513,12 +528,18 @@ public:
     RealD t_tot=-usecond();
     int plane=0;
     for ( int d=0;d < depth ; d ++ ) {
-      int tag = d*1024 + dimension*2+0;
-
       t=usecond();
       GatherSlice(send_buf,from,d,dimension,plane*buffer_size); plane++;
       t_gather+=usecond()-t;
-
+    }
+    for ( int d=0;d < depth ; d ++ ) {
+      t=usecond();
+      GatherSlice(send_buf,from,ld-depth+d,dimension,plane*buffer_size); plane++;
+      t_gather+= usecond() - t;
+    }
+    accelerator_barrier();
+    for ( int d=0;d < depth ; d ++ ) {
+      int tag = d*1024 + dimension*2+0;
       t=usecond();
 
       if(d==0) fwd_trace = traceStart("PaddedCellFwdMPI");
@@ -533,14 +554,9 @@ public:
 				(void *)&hrecv_buf[d*buffer_size], recv_from_rank, bytes, tag);
 #endif
       t_comms+=usecond()-t;
-     }
+    }
     for ( int d=0;d < depth ; d ++ ) {
       int tag = d*1024 + dimension*2+1;
-
-      t=usecond();
-      GatherSlice(send_buf,from,ld-depth+d,dimension,plane*buffer_size); plane++;
-      t_gather+= usecond() - t;
-
       t=usecond();
       if (d==0) bwd_trace = traceStart("PaddedCellBwdMPI");
 #ifdef ACCELERATOR_AWARE_MPI
@@ -603,8 +619,10 @@ public:
     for ( int d=0;d < depth ; d ++ ) {
       ScatterSlice(recv_buf,to,d,dimension,plane*buffer_size); plane++;
     }
+    accelerator_barrier();
     t_scatter+= usecond() - t;
     t_tot+=usecond();
+
 
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: gather :" << t_gather/1000  << "ms"<<std::endl;
     std::cout << GridLogPerformance << "PaddedCell::Expand new timings: scatter:" << t_scatter/1000   << "ms"<<std::endl;

@@ -66,7 +66,7 @@ export MPICH_SMP_SINGLE_COPY_MODE=CMA
 export MPICH_OFI_NIC_POLICY=GPU
 module load libfabric
 
-BIN=$root/examples/Example_pvdagm_v2_3level_DenseCoarseMatrix
+BIN=$root/examples/Example_pvdagm_3level_DenseCoarseMatrix
 OPTS1="--accelerator-threads 8 --shm 4096 --shm-mpi 1"
 # LOCAL VOLUME MATCHED to production: 48.48.48.96 on 3.6.4.4 is local 16.8.12.24; on 8 GCDs
 # (1.1.2.4) that is global 16.8.24.96 with the production blockings 2.2.3.3 / 4.4.2.4:
@@ -112,7 +112,7 @@ run_cell () {
   logopt=""; [ -n "$GRID_LOG_EXTRA" ] && logopt="--log Error,Warning,Message,$GRID_LOG_EXTRA"
   env "$@" srun -N1 -n8 --kill-on-bad-exit=1 ./select_gpu $BIN --mpi ${MPI_GEOM} --grid $vol $OPTS1 --device-mem $devmem --comms-overlap $logopt > $fname 2>&1
   echo "  exit $?"; sleep 10
-  grep -h "V2 3-level solve\|Memory access fault\|GRID_ASSERT\|Converged on iteration" $fname | sed 's/^Grid : Message : [0-9.]* s : //' | tail -4 | cut -c1-140
+  grep -h "3-level solve\|Memory access fault\|GRID_ASSERT\|Converged on iteration" $fname | sed 's/^Grid : Message : [0-9.]* s : //' | tail -4 | cut -c1-140
   grep -n -B3 "Memory access fault" $fname | tail -5 | cut -c1-160
 }
 
@@ -124,5 +124,5 @@ run_cell   F3_nrhs6_nodense 16000 NRHS=6 DENSE_CC=0                             
 run_cell   F4_nrhs6_bigmem 48000 NRHS=6                                                    # no MemoryManager eviction
 
 echo "========================================================="
-for f in log.fault.F*; do echo "$f: $(grep -c 'Memory access fault' $f) faults; $(grep -h 'V2 3-level solve' $f | tail -1 | sed 's/.*V2/V2/' | cut -c1-60)"; done
+for f in log.fault.F*; do echo "$f: $(grep -c 'Memory access fault' $f) faults; $(grep -h '3-level solve' $f | tail -1 | sed 's/.*3-level/3-level/' | cut -c1-60)"; done
 echo "========================================================="

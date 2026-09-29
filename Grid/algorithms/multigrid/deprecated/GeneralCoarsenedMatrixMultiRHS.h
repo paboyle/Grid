@@ -34,11 +34,11 @@ NAMESPACE_BEGIN(Grid);
 // Fine Object == (per site) type of fine field
 // nbasis      == number of deflation vectors
 template<class Fobj,class CComplex,int nbasis>
-class MultiGeneralCoarsenedMatrix : public SparseMatrixBase<Lattice<iVector<CComplex,nbasis > > >  {
+class DeprecatedMultiGeneralCoarsenedMatrix : public SparseMatrixBase<Lattice<iVector<CComplex,nbasis > > >  {
 public:
   typedef typename CComplex::scalar_object SComplex;
-  typedef GeneralCoarsenedMatrix<Fobj,CComplex,nbasis> GeneralCoarseOp;
-  typedef MultiGeneralCoarsenedMatrix<Fobj,CComplex,nbasis> MultiGeneralCoarseOp;
+  typedef DeprecatedGeneralCoarsenedMatrix<Fobj,CComplex,nbasis> GeneralCoarseOp;
+  typedef DeprecatedMultiGeneralCoarsenedMatrix<Fobj,CComplex,nbasis> MultiGeneralCoarseOp;
 
   typedef iVector<CComplex,nbasis >           siteVector;
   typedef iMatrix<CComplex,nbasis >           siteMatrix;
@@ -78,12 +78,32 @@ public:
   GridCartesian * CoarseGrid(void)     { return _CoarseGridMulti; };   // this is all the linalg routines need to know
 
   //////////////////////////////////////////////////////////////////////////
-  // Bilingual accessors, matching GeneralCoarsenedMatrix. Grid() here is the
+  // Accessors shared with DeprecatedGeneralCoarsenedMatrix. Grid() here is the
   // D+1 multiRHS grid and this class never holds the D dimensional one, so
   // ExtractMatrix writes into whatever grid the caller's lattice is on.
   //////////////////////////////////////////////////////////////////////////
   NonLocalStencilGeometry & Geometry(void)      { return geom_srhs; };
   void ExtractMatrix(int p,CoarseMatrix &A)     { BLAStoGrid(A,BLAS_A[p]); };
+
+  // One stencil point in or out, matching MultiGeneralCoarsenedOperator, so a
+  // caller can read or write a point without knowing which of the two layouts
+  // (per-point here, site-major there) holds it.
+  void MatrixPointIn(int p,const deviceVector<calcMatrix> &src)
+  {
+    int64_t sites = BLAS_A[p].size();
+    GRID_ASSERT((int64_t)src.size() == sites);
+    calcMatrix       *dst = &BLAS_A[p][0];
+    const calcMatrix *sp  = &src[0];
+    accelerator_for(ss,sites,1,{ dst[ss] = sp[ss]; });
+  }
+  void MatrixPointOut(int p,deviceVector<calcMatrix> &dst)
+  {
+    int64_t sites = BLAS_A[p].size();
+    dst.resize(sites);
+    const calcMatrix *sp = &BLAS_A[p][0];
+    calcMatrix       *dp = &dst[0];
+    accelerator_for(ss,sites,1,{ dp[ss] = sp[ss]; });
+  }
 
   // I/O on the operator matrices, via the BLAS layout array. The parameter is
   // a vector over the geometry points; the body indexes A[p].
@@ -121,7 +141,7 @@ public:
   }
   */
   
-  MultiGeneralCoarsenedMatrix(NonLocalStencilGeometry &_geom,GridCartesian *CoarseGridMulti) :
+  DeprecatedMultiGeneralCoarsenedMatrix(NonLocalStencilGeometry &_geom,GridCartesian *CoarseGridMulti) :
     _CoarseGridMulti(CoarseGridMulti),
     geom_srhs(_geom),
     geom(_CoarseGridMulti,_geom.hops,_geom.skip+1),

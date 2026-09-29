@@ -38,7 +38,7 @@ NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////////////////////////////////////////////
 // DenseCoarseMatrix: a coarsened operator treated as a DENSE matrix -- explicit,
-// row-distributed A^{-1} of a GeneralCoarsenedMatrix.
+// row-distributed A^{-1} of a coarsened operator.
 //
 //  - Stencil -> dense DIRECT IMPORT.  The coarse operator IS the dense matrix
 //    unrolled: Dense[(s,a),(s+shift_p,b)] += A[p][s]_{a,b}.  Rows of my sites are
@@ -176,6 +176,7 @@ public:
   {
     double t0 = usecond();
     {
+      CheckMrhsSlices(Op);    // the batched apply keeps its slices apart
       ImportDense(Op);        // slab <- my rows of A   (LOCAL, no comms)
       ImportCertificate(Op);  // dense apply == Op.M, before inversion
       InvertDense(Op);        // slab <- my rows of A^{-1}
@@ -274,32 +275,67 @@ public:
     GRID_ASSERT(mgrid->_ndimension == nd+1);
     int nr = mgrid->_fdimensions[0];
 
+    // Every slice carries the same vector; slice 0 is the answer.  The
+    // slices are not a check here -- see CheckMrhsSlices, which does that
+    // once on a field chosen for the purpose.
+    Field min(mgrid), mout(mgrid);
+    for(int r=0;r<nr;r++) InsertSliceFast(in,min,r,0);
+    Op.M(min,mout);
+    ExtractSliceFast(out,mout,0,0);
+  }
+
+  ////////////////////////////////////////////////////////////////////
+  // Do the multiRHS slices stay independent?  Slice r carries (r+1) times
+  // one RANDOM field, so linearity says the results scale likewise, and a
+  // slot reading another slot's data is an O(1) error.
+  //
+  // The field is random on purpose.  Run on the output of the inverse, as
+  // this check once was, it measures the cancellation in A applied to
+  // A^-1 x instead: at the production point that is 1.3e-4 in an fp32
+  // sector with an fp32 inversion, so the check then fires on any change
+  // of summation order while saying nothing about slice independence.
+  // Once per import, not per apply.
+  ////////////////////////////////////////////////////////////////////
+  template<class CoarseOp>
+  void CheckMrhsSlices(CoarseOp &Op)
+  {
+    if ( Op.Grid() == grid ) return;               // single rhs: nothing to mix
+
+    GridBase *mgrid = Op.Grid();
+    GRID_ASSERT(mgrid->_ndimension == nd+1);
+    int nr = mgrid->_fdimensions[0];
+    if ( nr < 2 ) return;
+
+    Field in(grid);
+    GridParallelRNG rng(grid); rng.SeedFixedIntegers(std::vector<int>({7,8,9,10}));
+    random(rng,in);
+
     Field min(mgrid), mout(mgrid);
     for(int r=0;r<nr;r++){
       Field scaled(grid);
       scaled = CoarseScalar(r+1.0,0.0)*in;
       InsertSliceFast(scaled,min,r,0);
     }
-
     Op.M(min,mout);
 
-    ExtractSliceFast(out,mout,0,0);
+    Field s0(grid);
+    ExtractSliceFast(s0,mout,0,0);
+    RealD worst=0.0;
     for(int r=1;r<nr;r++){
       Field sr(grid),d(grid);
       ExtractSliceFast(sr,mout,r,0);
-      d = sr - CoarseScalar(r+1.0,0.0)*out;
+      d = sr - CoarseScalar(r+1.0,0.0)*s0;
       RealD rel = std::sqrt(norm2(d)/norm2(sr));
-      // Slices differ by rounding amplified by the operator's conditioning
-      // when the product cancels (A applied to A^-1 x): the tolerance follows
-      // the coarse precision (fp32 measured ~5e-6 here).  A genuine rhs
-      // mix-up is O(1).
+      worst = std::max(worst,rel);
       const RealD otol = (sizeof(CoarseScalar)==sizeof(ComplexF)) ? 1.0e-4 : 1.0e-6;
       if ( rel >= otol ) {
-        std::cout << GridLogMessage << "DenseCoarseMatrix: oracle rhs "<<r
-                  <<" inconsistent with rhs 0, rel "<<rel<<std::endl;
+        std::cout << GridLogMessage << "DenseCoarseMatrix: mrhs slice "<<r
+                  <<" inconsistent with slice 0, rel "<<rel<<std::endl;
       }
       GRID_ASSERT( rel < otol );
     }
+    std::cout << GridLogMessage << "DenseCoarseMatrix: mrhs slices independent to "
+              << worst << " over " << nr << " right hand sides" << std::endl;
   }
 
   ////////////////////////////////////////////////////////////////////
@@ -317,9 +353,8 @@ public:
 
     for(int p=0; p<Op.Geometry().npoint; p++){
       Coordinate shift = Op.Geometry().shifts[p];
-      // _A[p] is PADDED after ExchangeCoarseLinks (end of CoarsenOperator):
-      // extract the unpadded field before peeking with unpadded coordinates
-      // (exactly as MultiGeneralCoarsenedMatrix::CopyMatrix does).
+      // ExtractMatrix hands back the unpadded matrix field, which is what the
+      // unpadded coordinates below index.
       CoarseMatrix Aun(grid);  Op.ExtractMatrix(p,Aun);
       autoView(Av, Aun, CpuRead);
       thread_for(ss, lsites, {

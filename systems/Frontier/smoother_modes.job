@@ -121,10 +121,10 @@ run_cell () {
   export FineSmootherMode=$5; export CoarseSmootherMode=$6
   echo "----- $name : Fso=$FineSmootherOrder Fss=$FineSmootherShift Csn=$CoarseSmootherNstep fine=$FineSmootherMode coarse=$CoarseSmootherMode -----"
   fname=log.ladder.$name
-  srun -N36 -n288 --kill-on-bad-exit=1 ./select_gpu $root/examples/Example_pvdagm_v2_3level_DenseCoarseMatrix \
+  srun -N36 -n288 --kill-on-bad-exit=1 ./select_gpu $root/examples/Example_pvdagm_3level_DenseCoarseMatrix \
        --mpi ${MPI_GEOM} --grid $vol $OPTS1 --comms-overlap > $fname 2>&1
   echo "  exit $?"; sleep 60
-  echo "  $(grep -h 'V2 3-level solve Nrhs' $fname | sed 's/.*V2/V2/' | tr '\n' ' ')"
+  echo "  $(grep -h '3-level solve Nrhs' $fname | sed 's/.*3-level/3-level/' | tr '\n' ' ')"
   echo "  $(grep -h 'Fouter MrhsPGCR: Converged' $fname | sed 's/.*Converged/Converged/' | cut -c1-60 | tr '\n' ' ')"
   echo "  replay per-call |r|/|r0| (Nrhs=1 solve): $(awk '/THREE-level solve, Nrhs = 1/{s=1} s && /Fsmoother replay \|r\|/{v=$NF; n++; t+=v; if(v>mx)mx=v} END{if(n) printf "mean %.4f max %.4f over %d calls", t/n, mx, n}' $fname)"
   grep -h "SCHUR fp64 distributed invert took\|GB/s/rank\|BIG LEAVES\|ring histogram\|^Grid : Message : [0-9.]* s :    >=" $fname | sed 's/^Grid : Message : [0-9.]* s : //' | cut -c1-150 | head -12

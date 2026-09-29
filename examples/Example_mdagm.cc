@@ -87,7 +87,7 @@ int main (int argc, char ** argv)
   HermOpAdaptor<LatticeFermionD> HermFineOp(MdagMOp);
 
   // ── Coarse geometry ────────────────────────────────────────────────────
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis> Subspace;
 
@@ -171,7 +171,7 @@ int main (int argc, char ** argv)
   LatticeFermionD src(FGrid);    random(RNG5, src);
   LatticeFermionD result(FGrid); result = Zero();
 
-  TwoLevelADEF2<LatticeFermionD, CoarseVector, Subspace>
+  DeprecatedTwoLevelADEF2<LatticeFermionD, CoarseVector, Subspace>
     HDCG(1.0e-8, 1000,
          HermFineOp,
          Smoother,

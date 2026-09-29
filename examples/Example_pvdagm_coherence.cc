@@ -275,7 +275,7 @@ int main (int argc, char ** argv)
   MobiusFermionD Dpv (Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0, M5,b,c);
 
   typedef PVdagMLinearOperator<MobiusFermionD,LatticeFermionD>       PVdagM_t;
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector                          CoarseVector;
   // Grid index contraction is positional (colour/spin/lorentz order is meaningful),
   // so each MG projection adds one index to the tensor nest rather than reusing a slot:

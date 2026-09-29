@@ -34,7 +34,7 @@ NAMESPACE_BEGIN(Grid);
 //   HDCGCoarsening                 everything that is a function of the gauge
 //                                  field: the raw near-null basis (and its
 //                                  refinement), the transfer operators, the
-//                                  Galerkin coarse operator (V2, Hermitian),
+//                                  Galerkin coarse operator (Hermitian),
 //                                  the coarse eigenvectors for deflation
 //   HDCGSolver                     the solve chain on a borrowed coarsening:
 //                                  smoother, deflated coarse solve, ADEF-2
@@ -51,7 +51,7 @@ template<class Fobj,class CComplex,int nbasis>
 class HDCGCoarsening {
 public:
   typedef Lattice<Fobj>                                          FineField;
-  typedef MultiGeneralCoarsenedOperatorV2<Fobj,CComplex,nbasis>  CoarseOperator;
+  typedef MultiGeneralCoarsenedOperator<Fobj,CComplex,nbasis>  CoarseOperator;
   typedef typename CoarseOperator::CoarseVector                  CoarseVector;
   typedef typename GridTypeMapper<Fobj>::SinglePrecision         FobjF;
   typedef Lattice<FobjF>                                         FineFieldF;

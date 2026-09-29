@@ -185,7 +185,7 @@ int main (int argc, char ** argv)
   const int cb = 0 ;
   LatticeFermion prom(FGrid);
 
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,2*nbasis> LittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,2*nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
 
   NearestStencilGeometry4D geom(Coarse4d);

@@ -131,14 +131,14 @@ export NRHS=4
 
 echo "----- F4a: 1D baseline (DENSE_SCHUR2D unset) -----"
 unset DENSE_SCHUR2D
-srun -N36 -n288 ./select_gpu $root/examples/Example_pvdagm_v2_3level_DenseCoarseMatrix \
+srun -N36 -n288 ./select_gpu $root/examples/Example_pvdagm_3level_DenseCoarseMatrix \
      --mpi ${MPI_GEOM} --grid $vol $OPTS1 --comms-overlap
 
 if [ $F3RC -eq 0 ]
 then
 echo "----- F4b: 2D block-cyclic (DENSE_SCHUR2D=1) -----"
 export DENSE_SCHUR2D=1
-srun -N36 -n288 ./select_gpu $root/examples/Example_pvdagm_v2_3level_DenseCoarseMatrix \
+srun -N36 -n288 ./select_gpu $root/examples/Example_pvdagm_3level_DenseCoarseMatrix \
      --mpi ${MPI_GEOM} --grid $vol $OPTS1 --comms-overlap
 else
 echo "----- F4b SKIPPED: F3 failed (rc=$F3RC), not spending the setup on it -----"

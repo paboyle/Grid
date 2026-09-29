@@ -58,12 +58,12 @@ static void tryPlanAndExec(int G, long howmany) {
   hipfftDoubleComplex *dbuf = nullptr;
   hipError_t herr = hipMalloc(&dbuf, nelems * sizeof(hipfftDoubleComplex));
   if (herr != hipSuccess) {
-    printf("  hipMalloc failed (%d) for %ld elems — skipping\n\n", (int)herr, nelems);
+    printf("  hipMalloc failed (%d) for %ld elems -- skipping\n\n", (int)herr, nelems);
     return;
   }
   hipMemset(dbuf, 0, nelems * sizeof(hipfftDoubleComplex));
 
-  // 1. hipfftPlanMany (one-step, nullptr embed) — current Grid path
+  // 1. hipfftPlanMany (one-step, nullptr embed) -- current Grid path
   {
     hipfftHandle p;
     hipfftResult rv = hipfftPlanMany(&p, 1, n,
@@ -79,7 +79,7 @@ static void tryPlanAndExec(int G, long howmany) {
     }
   }
 
-  // 2. hipfftCreate + hipfftMakePlanMany (two-step) — also current Grid path
+  // 2. hipfftCreate + hipfftMakePlanMany (two-step) -- also current Grid path
   {
     hipfftHandle p;
     size_t workSize = 0;

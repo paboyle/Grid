@@ -27,15 +27,15 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #pragma once
 
-// DEPRECATED with the V1 coarse operators: the single-RHS ADEF-2 on an
+// DEPRECATED with the other classes in deprecated/: the single-RHS ADEF-2 on an
 // Aggregation (ProjectToSubspace/PromoteFromSubspace) and a D-dimensional
 // coarse operator.  The mrhs solver in AdefMrhs.h covers one right-hand
-// side through its LinearFunction interface, on the V2 coarse operator.
+// side through its LinearFunction interface, on MultiGeneralCoarsenedOperator.
 
 NAMESPACE_BEGIN(Grid);
 
 template<class Field, class CoarseField, class Aggregation>
-class TwoLevelADEF2 : public TwoLevelCG<Field>
+class DeprecatedTwoLevelADEF2 : public TwoLevelCG<Field>
 {
  public:
   ///////////////////////////////////////////////////////////////////////////////////
@@ -50,7 +50,7 @@ class TwoLevelADEF2 : public TwoLevelCG<Field>
   ///////////////////////////////////////////////////////////////////////////////////
   
   // more most opertor functions
-  TwoLevelADEF2(RealD tol,
+  DeprecatedTwoLevelADEF2(RealD tol,
 		Integer maxit,
 		LinearOperatorBase<Field>    &FineLinop,
 		LinearFunction<Field>        &Smoother,

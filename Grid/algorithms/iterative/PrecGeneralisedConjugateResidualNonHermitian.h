@@ -43,8 +43,51 @@ NAMESPACE_BEGIN(Grid);
 
 template<class Field>
 class PrecGeneralisedConjugateResidualNonHermitian : public LinearFunction<Field> {
-public:                                                
+public:
   using LinearFunction<Field>::operator();
+
+  PrecGeneralisedConjugateResidualNonHermitian(RealD tol,Integer maxit,LinearOperatorBase<Field> &_Linop,LinearFunction<Field> &Prec,int _mmax,int _nstep) :
+    Tolerance(tol),
+    MaxIterations(maxit),
+    mmax(_mmax),
+    nstep(_nstep),
+    Preconditioner(Prec),
+    Linop(_Linop)
+  {
+    Level(1);
+    verbose=1;
+    trivial_prec = Preconditioner.isTrivial();
+  };
+
+  // The name is also the trace range's, so a profile separates the four
+  // instances (Fouter, Fsmoother, Couter, Csmoother) that otherwise nest
+  // indistinguishably as one shared range.
+  void Name(std::string _name) { name = _name; trace_step = name + " PGCR_step"; };
+
+  void Level(int n) { Name("Level " + std::to_string(n)); level = n; }
+
+  void SetZeroGuess(int z) { ZeroGuess = z; };
+
+  // Steps taken by the last solve.
+  int  Steps(void) const { return steps; };
+
+  // Coefficient logging: one line per step with the step length a_k and the
+  // orthogonalisation coefficients b_{k,j}.  These are the data from which a
+  // FIXED polynomial smoother can be harvested: if they are stable from call
+  // to call, the adaptive GCR can be replaced by a stationary p(A) with the
+  // same applies and no reductions.  Off by default; boss rank prints.
+  void LogCoefficients(int l) { LogCoeffs = l; };
+
+  // Optional recorder of the per-step coefficients (means over calls), for
+  // replay by GCRReplaySmoother (Smoothers.h).  Records only; no effect on
+  // the iteration.
+  void SetCoefficientRecorder(GCRCoefficients *r) { Recorder = r; if(r) r->mmax = mmax; };
+
+  // Free the persistent history (e.g. when this solver is replaced by a
+  // replayed polynomial): re-made on the next call if ever needed again.
+  void ReleaseHistory(void) { q.clear(); p.clear(); qq.clear(); hist_grid = nullptr; };
+
+private:
   RealD   Tolerance;
   RealD   SSQ;
   Integer MaxIterations;
@@ -65,45 +108,14 @@ public:
   std::vector<Field>  p;
   std::vector<RealD>  qq;
   int FirstCycle = 0;
+  int  LogCoeffs = 0;
+  int  trivial_prec;      // Preconditioner is the identity: p == r, copies fold away
+  GCRCoefficients *Recorder = nullptr;
 
   LinearFunction<Field>     &Preconditioner;
   LinearOperatorBase<Field> &Linop;
 
-  // The name is also the trace range's, so a profile separates the four
-  // instances (Fouter, Fsmoother, Couter, Csmoother) that otherwise nest
-  // indistinguishably as one shared range.
-  void Name(std::string _name) { name = _name; trace_step = name + " PGCR_step"; };
-
-  void Level(int n) { Name("Level " + std::to_string(n)); level = n; }
-
-  void SetZeroGuess(int z) { ZeroGuess = z; };
-  // Coefficient logging: one line per step with the step length a_k and the
-  // orthogonalisation coefficients b_{k,j}.  These are the data from which a
-  // FIXED polynomial smoother can be harvested: if they are stable from call
-  // to call, the adaptive GCR can be replaced by a stationary p(A) with the
-  // same applies and no reductions.  Off by default; boss rank prints.
-  int  LogCoeffs = 0;
-  void LogCoefficients(int l) { LogCoeffs = l; };
-  // Optional recorder of the per-step coefficients (means over calls), for
-  // replay by GCRReplaySmoother (Smoothers.h).  Records only; no effect on
-  // the iteration.
-  GCRCoefficients *Recorder = nullptr;
-  void SetCoefficientRecorder(GCRCoefficients *r) { Recorder = r; if(r) r->mmax = mmax; };
-  // Free the persistent history (e.g. when this solver is replaced by a
-  // replayed polynomial): re-made on the next call if ever needed again.
-  void ReleaseHistory(void) { q.clear(); p.clear(); qq.clear(); hist_grid = nullptr; };
-
-  PrecGeneralisedConjugateResidualNonHermitian(RealD tol,Integer maxit,LinearOperatorBase<Field> &_Linop,LinearFunction<Field> &Prec,int _mmax,int _nstep) : 
-    Tolerance(tol), 
-    MaxIterations(maxit),
-    Linop(_Linop),
-    Preconditioner(Prec),
-    mmax(_mmax),
-    nstep(_nstep)
-  {
-    Level(1);
-    verbose=1;
-  };
+public:
 
   void operator() (const Field &src, Field &psi){
 
@@ -151,6 +163,7 @@ public:
     //    GRID_ASSERT(0);
   }
 
+private:
   RealD GCRnStep(const Field &src, Field &psi,RealD rsq){
 
     RealD cp;
@@ -189,18 +202,20 @@ public:
     // contract (enforced here), so r0 = src exactly; skip the apply.
     // Restart cycles (psi!=0) always do the full computation.
     //////////////////////////////////
-    if (ZeroGuess && FirstCycle) {
-      psi = Zero();
-      LinalgTimer.Start();
-      r = src;
-      LinalgTimer.Stop();
-    } else {
+    // The residual is READ through rp and only materialised in r when it is
+    // first written, at the k=0 update.  On a zero-guess first cycle r0 IS src,
+    // so no copy is made; a restart cycle computes r and rp points at it.
+    const Field *rp = &src;
+    GRID_ASSERT(nstep>=1);   // psi is first written at k=0; see zero_start below
+    int zero_start = (ZeroGuess && FirstCycle);
+    if ( !zero_start ) {
       MatTimer.Start();
       Linop.Op(psi,Az);
       MatTimer.Stop();
       LinalgTimer.Start();
       r=src-Az;
       LinalgTimer.Stop();
+      rp = &r;
     }
     FirstCycle=0;
 
@@ -208,9 +223,11 @@ public:
     // p = Prec(r)
     /////////////////////
 
-    // p[0] = Prec(r), q[0] = A p[0], written straight into the history slots
+    // p[0] = Prec(r), q[0] = A p[0], written straight into the history slots.
+    // This copy is forced even for a trivial preconditioner: p[0] is history and
+    // must survive while the residual evolves.
     PrecTimer.Start();
-    Preconditioner(r,p[0]);
+    Preconditioner(*rp,p[0]);
     PrecTimer.Stop();
 
     MatTimer.Start();
@@ -221,7 +238,7 @@ public:
 
     qq[0]= norm2(q[0]);
 
-    cp =norm2(r);
+    cp =norm2(*rp);
     LinalgTimer.Stop();
     GCRLogLevel<< "PGCR true residual "<< sqrt(cp/SSQ)     <<std::endl;
 
@@ -234,13 +251,32 @@ public:
       int peri_kp= kp%mmax;
 
       LinalgTimer.Start();
-      rq= innerProduct(q[peri_k],r); // what if rAr not real?
+      rq= innerProduct(q[peri_k],*rp); // what if rAr not real?
       a = rq/qq[peri_k];
       if ( Recorder ) Recorder->RecordA(k,a);
 
-      axpy(psi,a,p[peri_k],psi);         
+      // On a zero-guess first step psi is still unwritten, and the update would
+      // be a*p added to zero: assign it instead, so psi is never zeroed.
+      if ( zero_start && (k==0) ) psi = a*p[peri_k];
+      else                        axpy(psi,a,p[peri_k],psi);
 
-      cp = axpy_norm(r,-a,q[peri_k],r);
+#ifdef GRID_GCR_RESIDUAL_RECURRENCE
+      // |r - a q|^2 = |r|^2 - |<q,r>|^2/|q|^2 with a = <q,r>/|q|^2, so the new
+      // residual norm follows from scalars already in hand and the reduction in
+      // axpy_norm is not needed.  cp then DRIFTS rather than being measured; the
+      // true residual is recomputed at restart and at convergence, which bounds
+      // the exposure.  The drift only matters for an instance driven to a tight
+      // tolerance -- the outer solver -- and there it is the same computed-vs-true
+      // residual gap that CG lives with; the smoother and coarse instances run at
+      // fixed work or loose tolerance and are indifferent to it.
+      // Explicit re/im: ComplexD is thrust::complex under HIP.
+      axpy(r,-a,q[peri_k],*rp);
+      cp = cp - (real(rq)*real(rq)+imag(rq)*imag(rq))/qq[peri_k];
+      if ( cp < 0.0 ) cp = 0.0;          // drift can undershoot; keeps the log finite
+#else
+      cp = axpy_norm(r,-a,q[peri_k],*rp);
+#endif
+      rp = &r;   // the residual now lives in r; src is untouched from here on
       LinalgTimer.Stop();
       if ( LogCoeffs ) {
         GCRLogLevel<<"coeff["<<k<<"] a=("<<real(a)<<","<<imag(a)<<")"
@@ -254,13 +290,21 @@ public:
       }
 
       // New direction written straight into its history slot: p = Prec(r), q = A p.
-      PrecTimer.Start();
-      Preconditioner(r,p[peri_kp]);
-      PrecTimer.Stop();
-
-      MatTimer.Start();
-      Linop.Op(p[peri_kp],q[peri_kp]);
-      MatTimer.Stop();
+      // For a trivial preconditioner p[kp] would only be a copy of the residual,
+      // so the operator is applied to the residual directly and the copy folds
+      // into the orthogonalisation pass below.
+      if ( trivial_prec ) {
+        MatTimer.Start();
+        Linop.Op(*rp,q[peri_kp]);
+        MatTimer.Stop();
+      } else {
+        PrecTimer.Start();
+        Preconditioner(*rp,p[peri_kp]);
+        PrecTimer.Stop();
+        MatTimer.Start();
+        Linop.Op(p[peri_kp],q[peri_kp]);
+        MatTimer.Stop();
+      }
 
       LinalgTimer.Start();
 
@@ -289,16 +333,19 @@ public:
         if ( LogCoeffs ) bs<<" b["<<back<<"]="<<bcoef[back];
       }
       if ( Recorder && northog ) Recorder->RecordB(k,bcoef);
+      // axpyMultiNorm returns |q|^2 from the update pass, so qq is complete here:
+      // a separate norm2 would be a second reduction and a second GlobalSum.
       if ( northog ) {
-	axpyMulti(p[peri_kp],bcoef,pwin);
-	qq[peri_kp]=axpyMultiNorm(q[peri_kp],bcoef,qwin);
+        if ( trivial_prec ) axpyMultiFrom(p[peri_kp],*rp,bcoef,pwin);
+        else                axpyMulti(p[peri_kp],bcoef,pwin);
+        qq[peri_kp]=axpyMultiNorm(q[peri_kp],bcoef,qwin);
       } else {
-	qq[peri_kp]=norm2(q[peri_kp]);
+        if ( trivial_prec ) p[peri_kp] = *rp;   // no pass to fold the copy into
+        qq[peri_kp]=norm2(q[peri_kp]);
       }
       if ( LogCoeffs && northog ) {
         GCRLogLevel<<"coeff["<<k<<"]"<<bs.str()<<std::endl;
       }
-      qq[peri_kp]=norm2(q[peri_kp]); // could use axpy_norm
       LinalgTimer.Stop();
     }
     GRID_ASSERT(0); // never reached

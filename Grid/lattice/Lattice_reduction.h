@@ -898,7 +898,8 @@ template<int B,class vobj>
 void axpyMultiChunk(Lattice<vobj> &z,const ComplexD *b,
 		    const std::vector<const Lattice<vobj>*> &x,int m,
 		    int do_norm,
-		    decltype(innerProduct(vobj(),vobj())) *inner_tmp_v)
+                    decltype(innerProduct(vobj(),vobj())) *inner_tmp_v,
+                    const Lattice<vobj> *from=nullptr)
 {
   typedef decltype(z.View(AcceleratorRead)) View;
   GRID_ASSERT(m>=1 && m<=B);
@@ -917,13 +918,29 @@ void axpyMultiChunk(Lattice<vobj> &z,const ComplexD *b,
   }
   for(int j=m;j<B;j++){ pack.set(j,h_v[0]); pack.b[j] = ComplexD(0.0); }
 
-  autoView(z_v,z,AcceleratorWrite);
-  accelerator_for(ss,sites,nsimd,{
-      auto acc = coalescedRead(z_v[ss]);
-      for(int j=0;j<B;j++) if ( j<m ) acc = acc + pack.b[j]*coalescedRead(pack.v(j)[ss]);
-      coalescedWrite(z_v[ss],acc);
-      if ( do_norm ) coalescedWrite(inner_tmp_v[ss],innerProduct(acc,acc));
-  });
+  if ( from == nullptr ) {
+    autoView(z_v,z,AcceleratorWrite);
+    accelerator_for(ss,sites,nsimd,{
+        auto acc = coalescedRead(z_v[ss]);
+        for(int j=0;j<B;j++) if ( j<m ) acc = acc + pack.b[j]*coalescedRead(pack.v(j)[ss]);
+        coalescedWrite(z_v[ss],acc);
+        if ( do_norm ) coalescedWrite(inner_tmp_v[ss],innerProduct(acc,acc));
+    });
+  } else {
+    // z = from + sum_j b[j] x[j].  The accumulator is seeded from another field,
+    // so z is written without being read and the caller needs no copy into it.
+    conformable(*from,z);
+    GRID_ASSERT(from!=&z);
+    const Lattice<vobj> &y = *from;   // named: autoView is a macro, *p.View() misparses
+    autoView(y_v,y,AcceleratorRead);
+    autoView(z_v,z,AcceleratorWriteDiscard);
+    accelerator_for(ss,sites,nsimd,{
+        auto acc = coalescedRead(y_v[ss]);
+        for(int j=0;j<B;j++) if ( j<m ) acc = acc + pack.b[j]*coalescedRead(pack.v(j)[ss]);
+        coalescedWrite(z_v[ss],acc);
+        if ( do_norm ) coalescedWrite(inner_tmp_v[ss],innerProduct(acc,acc));
+    });
+  }
   for(int j=0;j<m;j++) h_v[j].ViewClose();
 }
 
@@ -931,7 +948,8 @@ void axpyMultiChunk(Lattice<vobj> &z,const ComplexD *b,
 // (last) pass.  Chunks of 16 for windows longer than 16.
 template<class vobj>
 RealD axpyMultiNormImpl(Lattice<vobj> &z,const std::vector<ComplexD> &b,
-			const std::vector<const Lattice<vobj>*> &x,int do_norm)
+                        const std::vector<const Lattice<vobj>*> &x,int do_norm,
+                        const Lattice<vobj> *from=nullptr)
 {
   typedef decltype(innerProduct(vobj(),vobj())) inner_t;
   int m = x.size();
@@ -943,6 +961,7 @@ RealD axpyMultiNormImpl(Lattice<vobj> &z,const std::vector<ComplexD> &b,
   inner_t *inner_tmp_v = &inner_tmp[0];
 
   if ( m==0 ) {
+    if ( from ) z = *from;
     if ( do_norm ) return norm2(z);
     return 0.0;
   }
@@ -951,10 +970,12 @@ RealD axpyMultiNormImpl(Lattice<vobj> &z,const std::vector<ComplexD> &b,
     int last = (j0+mm>=m);
     std::vector<const Lattice<vobj>*> sub(x.begin()+j0,x.begin()+j0+mm);
     int dn = do_norm && last;
-    if      ( mm<=2 ) axpyMultiChunk<2> (z,&b[j0],sub,mm,dn,inner_tmp_v);
-    else if ( mm<=4 ) axpyMultiChunk<4> (z,&b[j0],sub,mm,dn,inner_tmp_v);
-    else if ( mm<=8 ) axpyMultiChunk<8> (z,&b[j0],sub,mm,dn,inner_tmp_v);
-    else              axpyMultiChunk<16>(z,&b[j0],sub,mm,dn,inner_tmp_v);
+    // Only the first chunk is seeded from `from`; later chunks accumulate into z.
+    const Lattice<vobj> *f = (j0==0) ? from : nullptr;
+    if      ( mm<=2 ) axpyMultiChunk<2> (z,&b[j0],sub,mm,dn,inner_tmp_v,f);
+    else if ( mm<=4 ) axpyMultiChunk<4> (z,&b[j0],sub,mm,dn,inner_tmp_v,f);
+    else if ( mm<=8 ) axpyMultiChunk<8> (z,&b[j0],sub,mm,dn,inner_tmp_v,f);
+    else              axpyMultiChunk<16>(z,&b[j0],sub,mm,dn,inner_tmp_v,f);
   }
 
   RealD nrm = 0.0;
@@ -968,6 +989,15 @@ template<class vobj>
 void axpyMulti(Lattice<vobj> &z,const std::vector<ComplexD> &b,const std::vector<const Lattice<vobj>*> &x)
 {
   axpyMultiNormImpl(z,b,x,0);
+}
+// z = y + sum_j b[j] x[j].  Same single pass as axpyMulti, but the accumulator
+// starts from y, so a caller whose z would otherwise have to be primed with a
+// copy of y does not make that copy.
+template<class vobj>
+void axpyMultiFrom(Lattice<vobj> &z,const Lattice<vobj> &y,
+                   const std::vector<ComplexD> &b,const std::vector<const Lattice<vobj>*> &x)
+{
+  axpyMultiNormImpl(z,b,x,0,&y);
 }
 template<class vobj>
 RealD axpyMultiNorm(Lattice<vobj> &z,const std::vector<ComplexD> &b,const std::vector<const Lattice<vobj>*> &x)

@@ -33,7 +33,7 @@ int main(void) {
     int n[] = {G};
     long nelems = (long)G * howmany;
 
-    // Plan created BEFORE hipMalloc — succeeds for all G
+    // Plan created BEFORE hipMalloc -- succeeds for all G
     hipfftHandle p;
     size_t workSize = 0;
     hipfftCreate(&p);

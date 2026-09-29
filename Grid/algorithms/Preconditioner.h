@@ -45,6 +45,7 @@ public:
   virtual void operator()(const Field &src, Field & psi){
     psi = src;
   }
+  virtual int isTrivial(void) { return 1; };
   TrivialPrecon(void){};
 };
 

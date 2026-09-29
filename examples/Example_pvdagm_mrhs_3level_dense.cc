@@ -237,7 +237,7 @@ public:
 #endif
   // NB: the apply GEMM (Y = slab^dag X) is a tiny-output/huge-K shape that
   // under-fills the GPU (~13ms).  The fix is a software split-K via
-  // GridBLAS.gemmBatched (see MultiRHSBlockCGLinalg.h / 2409.03904 Fig 11) —
+  // GridBLAS.gemmBatched (see MultiRHSBlockCGLinalg.h / 2409.03904 Fig 11) --
   // NOT a raw rocblas strided-batched batch, which hung on Frontier and was
   // removed.  TODO: reimplement through GridBLAS when the ~1.4 s/RHS is wanted.
 
@@ -891,16 +891,16 @@ int main (int argc, char ** argv)
   typedef ShiftedPVdagMLinearOperator<MobiusFermionD,LatticeFermionD> ShiftedPVdagM_t;
 
   // Level 1 tensor types
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>       LittleDiracOperator;
-  typedef MultiGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>  MrhsLittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>       LittleDiracOperator;
+  typedef DeprecatedMultiGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>  MrhsLittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector                                CoarseVector;
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis>                  Subspace;
 
   // Level 2 tensor types (coarsening deepens the nest by one iScalar)
   typedef CoarseVector::vector_object                                      CoarseSiteObj;
   typedef iScalar<vTComplex>                                              vTTComplex;
-  typedef GeneralCoarsenedMatrix<CoarseSiteObj,vTTComplex,nbasis>          LittleDiracOperatorL2;
-  typedef MultiGeneralCoarsenedMatrix<CoarseSiteObj,vTTComplex,nbasis>     MrhsLittleDiracOperatorL2;
+  typedef DeprecatedGeneralCoarsenedMatrix<CoarseSiteObj,vTTComplex,nbasis>          LittleDiracOperatorL2;
+  typedef DeprecatedMultiGeneralCoarsenedMatrix<CoarseSiteObj,vTTComplex,nbasis>     MrhsLittleDiracOperatorL2;
   typedef LittleDiracOperatorL2::CoarseVector                              CoarseCoarseVector;
   typedef Aggregation<CoarseSiteObj,vTTComplex,nbasis>                     SubspaceL2;
 

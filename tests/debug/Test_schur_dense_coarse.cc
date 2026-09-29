@@ -30,7 +30,7 @@ Author: Peter Boyle <pboyle@bnl.gov>
 // The DenseCoarseMatrix GLUE test, on a real (tiny) lattice coarse
 // operator, CPU laptop build.
 //
-// Builds a genuine GeneralCoarsenedMatrix (DWF MdagM + 0.5 shift for a
+// Builds a genuine DeprecatedGeneralCoarsenedMatrix (DWF MdagM + 0.5 shift for a
 // guaranteed-invertible Galerkin coarse op, random aggregation basis)
 // and runs the whole Import certificate chain through the glue:
 //   - fresh ImportDense + IMPORT CERTIFICATE vs Op.M
@@ -143,7 +143,7 @@ int main (int argc, char ** argv)
   Aggregates.CreateSubspaceRandom(RNG5);
 
   std::cout << GridLogMessage << "Coarsening shifted MdagM" << std::endl;
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
   NextToNextToNextToNearestStencilGeometry5D geom(Coarse5d);
   LittleDiracOperator LittleDiracOp(geom,FGrid,Coarse5d);

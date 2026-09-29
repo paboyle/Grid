@@ -1002,10 +1002,10 @@ accelerator_inline void precisionChange(vRealD    *out,const vRealF    *in,int n
     Optimization::PrecisionChange::StoD(in[m].v,out[n].v,out[n+1].v);
     // Bug in gcc 10.0.1 and gcc 10.1 using fixed-size SVE ACLE data types  CAS-159553-Y1K4C6
     // function call results in compile-time error:
-    // In function ‘void Grid::precisionChange(Grid::vRealD*, Grid::vRealF*, int)’:
+    // In function 'void Grid::precisionChange(Grid::vRealD*, Grid::vRealF*, int)':
     // .../Grid_vector_types.h:961:56: error:
-    // cannot bind non-const lvalue reference of type ‘vecd&’ {aka ‘svfloat64_t&’}
-    // to an rvalue of type ‘vecd’ {aka ‘svfloat64_t’}
+    // cannot bind non-const lvalue reference of type 'vecd&' {aka 'svfloat64_t&'}
+    // to an rvalue of type 'vecd' {aka 'svfloat64_t'}
     // 961 |     Optimization::PrecisionChange::StoD(in[m].v,out[n].v,out[n+1].v);
     //  |                                                 ~~~~~~~^
   }

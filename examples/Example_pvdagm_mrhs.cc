@@ -38,7 +38,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 //   precon: V-cycle -- per-RHS fine post-smoother (16-step shifted GCR),
 //           batched restriction (MultiRHSBlockProject / GEMM),
 //           ONE coarse PGCR on the 6D mrhs coarse operator
-//           (MultiGeneralCoarsenedMatrix, GEMM mults -- the ~10x win),
+//           (DeprecatedMultiGeneralCoarsenedMatrix, GEMM mults -- the ~10x win),
 //           batched prolongation.
 //
 // The coarse operator is coarsened once with the standard single-RHS
@@ -260,8 +260,8 @@ int main (int argc, char ** argv)
 
   typedef PVdagMLinearOperator<MobiusFermionD,LatticeFermionD>        PVdagM_t;
   typedef ShiftedPVdagMLinearOperator<MobiusFermionD,LatticeFermionD> ShiftedPVdagM_t;
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>  LittleDiracOperator;
-  typedef MultiGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> MrhsLittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>  LittleDiracOperator;
+  typedef DeprecatedMultiGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> MrhsLittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector                           CoarseVector;
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis>             Subspace;
 

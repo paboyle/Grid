@@ -8,7 +8,7 @@
  then repeatedly applies FFT_all_dim to the same propagator 400 times.
 
  If PlannedFFT is working correctly the RSS should remain flat after the first
- iteration — no new plans, no new deviceVector allocations beyond the per-call
+ iteration -- no new plans, no new deviceVector allocations beyond the per-call
  pencil buffer which is freed at the end of each FFT_dim_execute call.
 
  Build exactly like any other Grid test, e.g.:
@@ -63,7 +63,7 @@ static long getGPUUsedMb()
 }
 
 // ============================================================
-//  Convenience struct — one snapshot of both sides
+//  Convenience struct -- one snapshot of both sides
 // ============================================================
 struct MemSnapshot {
   long cpu_rss_kb;   // host RSS in kB  (-1 if unavailable)
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
             << "Grid is setup to use " << threads << " threads" << std::endl;
 
   // ------------------------------------------------------------------
-  // Grid setup — use whatever lattice/mpi/simd was passed on the CLI,
+  // Grid setup -- use whatever lattice/mpi/simd was passed on the CLI,
   // e.g.  --grid 8.8.8.8 --mpi 1.1.1.1
   // ------------------------------------------------------------------
   Coordinate latt_size   = GridDefaultLatt();
@@ -174,13 +174,13 @@ int main(int argc, char **argv)
             << std::endl;
  
   // ------------------------------------------------------------------
-  // Create the PlannedFFT — plans are allocated here ONCE for all
+  // Create the PlannedFFT -- plans are allocated here ONCE for all
   // dimensions and stored inside the object.
   // ------------------------------------------------------------------
   PlannedFFT<iSpinColourMatrix<vComplexD>> plannedFFT(&GRID);
 
   // ------------------------------------------------------------------
-  // Snapshot AFTER plan construction — this is the true baseline
+  // Snapshot AFTER plan construction -- this is the true baseline
   // for the loop, because cufftPlanMany itself grabs device memory.
   // ------------------------------------------------------------------
   MemSnapshot snap_after_plan = takeSnapshot();
@@ -197,7 +197,7 @@ int main(int argc, char **argv)
   // ------------------------------------------------------------------
   // 400-iteration loop.
   // Each iteration computes the full 4d forward FFT of `prop`.
-  // We deliberately do NOT cache the result — we always start from
+  // We deliberately do NOT cache the result -- we always start from
   // the same `prop` so the FFT is recomputed identically each time.
   // The point is to watch memory, not correctness.
   // ------------------------------------------------------------------
@@ -229,7 +229,7 @@ int main(int argc, char **argv)
     }
  
     // cudaMemGetInfo reflects the state *after* any pooled frees have
-    // been committed, so this is accurate without an explicit sync —
+    // been committed, so this is accurate without an explicit sync --
     // FFT_dim_execute already calls accelerator_barrier() internally.
     MemSnapshot snap_now = takeSnapshot();
     printRow(i, snap_now, snap_prev);

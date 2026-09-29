@@ -273,11 +273,15 @@ public:
 
   static void RowsToCyclic(GridBase *grid, const std::vector<int64_t> &rowStart,
                            DenseInverseScalar *rows1d, int64_t myrows, BlockCyclicMatrix &A)
-  { Redistribute(+1, grid, rowStart, rows1d, myrows, A); }
+  {
+    Redistribute(+1, grid, rowStart, rows1d, myrows, A);
+  }
 
   static void CyclicToRows(GridBase *grid, const std::vector<int64_t> &rowStart,
                            BlockCyclicMatrix &A, DenseInverseScalar *rows1d, int64_t myrows)
-  { Redistribute(-1, grid, rowStart, rows1d, myrows, A); }
+  {
+    Redistribute(-1, grid, rowStart, rows1d, myrows, A);
+  }
 };
 
 NAMESPACE_END(Grid);

@@ -38,8 +38,8 @@ static const char *hipfftResultString(hipfftResult r) {
 // Plan creation + execution for (G, howmany).
 // Tests two orderings to isolate whether a prior hipMalloc poisons hipfft
 // plan creation for small G on ROCm 7:
-//   A) plan BEFORE hipMalloc  — hypothesis: succeeds
-//   B) hipMalloc BEFORE plan  — hypothesis: fails for G < 32
+//   A) plan BEFORE hipMalloc  -- hypothesis: succeeds
+//   B) hipMalloc BEFORE plan  -- hypothesis: fails for G < 32
 static void tryPlanAndExec(int G, long howmany) {
   int n[] = {G};
   long nelems = (long)G * howmany;

@@ -23,7 +23,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 // with L3_DEFL=0 (NO deflation), applied to the enlarged block-diagonal mRHS system:
 // the coarse and coarse-coarse levels run a SINGLE Krylov (one GCR polynomial, inner
 // products summed over rhs) on the packed 6D mrhs fields, so both coarse levels batch
-// through GEMM (MultiGeneralCoarsenedMatrix) -- the valence throughput win at BOTH levels.
+// through GEMM (DeprecatedMultiGeneralCoarsenedMatrix) -- the valence throughput win at BOTH levels.
 //
 // Level structure (each coarse level is a single-field PGCR on a packed 6D mrhs field):
 //   L1 (fine)         : std::vector<LatticeFermionD>, MrhsPGCRNonHermitian on PVdagM,
@@ -227,16 +227,16 @@ int main (int argc, char ** argv)
   typedef ShiftedPVdagMLinearOperator<MobiusFermionD,LatticeFermionD> ShiftedPVdagM_t;
 
   // Level 1 tensor types
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>       LittleDiracOperator;
-  typedef MultiGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>  MrhsLittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>       LittleDiracOperator;
+  typedef DeprecatedMultiGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>  MrhsLittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector                                CoarseVector;
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis>                  Subspace;
 
   // Level 2 tensor types (coarsening deepens the nest by one iScalar -- see CLAUDE.md)
   typedef CoarseVector::vector_object                                      CoarseSiteObj;
   typedef iScalar<vTComplex>                                              vTTComplex;
-  typedef GeneralCoarsenedMatrix<CoarseSiteObj,vTTComplex,nbasis>          LittleDiracOperatorL2;
-  typedef MultiGeneralCoarsenedMatrix<CoarseSiteObj,vTTComplex,nbasis>     MrhsLittleDiracOperatorL2;
+  typedef DeprecatedGeneralCoarsenedMatrix<CoarseSiteObj,vTTComplex,nbasis>          LittleDiracOperatorL2;
+  typedef DeprecatedMultiGeneralCoarsenedMatrix<CoarseSiteObj,vTTComplex,nbasis>     MrhsLittleDiracOperatorL2;
   typedef LittleDiracOperatorL2::CoarseVector                              CoarseCoarseVector;
   typedef Aggregation<CoarseSiteObj,vTTComplex,nbasis>                     SubspaceL2;
 

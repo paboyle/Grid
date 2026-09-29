@@ -221,11 +221,11 @@ judgement.
   the exact inverse of whatever matrix it was handed. Both certify the import
   and inversion, not the accuracy of `A_c`.
   The instruments that DO see it: coarsen twice and compare `BLAS_A` element by
-  element against an exact run (the comparison `Test_coarse_v2_coarsen` already
-  performs between V1 and V2), or the outer iteration count and time to
+  element against an exact run (the comparison `Test_coarse_coarsen` already
+  performs against the deprecated operator), or the outer iteration count and time to
   solution.
 - **Does not reach the coarse levels.** `SloppyComms` sets a flag on
-  `Stencil`/`StencilEven`/`StencilOdd`; V2's `M` uses `PaddedCell::Face_exchange`,
+  `Stencil`/`StencilEven`/`StencilOdd`; the coarse operator.s `M` uses `PaddedCell::Face_exchange`,
   which sends raw `vobj` bytes with no precision option. Coarse levels are less
   bandwidth sensitive, so this matters less than it sounds.
 - **Object sharing caveat:** the flag is per fermion operator. A single

@@ -233,16 +233,16 @@ int main (int argc, char ** argv)
   typedef ShiftedPVdagMLinearOperator<MobiusFermionD,LatticeFermionD> ShiftedPVdagM_t;
 
   // Level 1 tensor types
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>       LittleDiracOperator;
-  typedef MultiGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>  MrhsLittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>       LittleDiracOperator;
+  typedef DeprecatedMultiGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>  MrhsLittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector                                CoarseVector;
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis>                  Subspace;
 
   // Level 2 tensor types (coarsening deepens the nest by one iScalar)
   typedef CoarseVector::vector_object                                      CoarseSiteObj;
   typedef iScalar<vTComplex>                                              vTTComplex;
-  typedef GeneralCoarsenedMatrix<CoarseSiteObj,vTTComplex,nbasis>          LittleDiracOperatorL2;
-  typedef MultiGeneralCoarsenedMatrix<CoarseSiteObj,vTTComplex,nbasis>     MrhsLittleDiracOperatorL2;
+  typedef DeprecatedGeneralCoarsenedMatrix<CoarseSiteObj,vTTComplex,nbasis>          LittleDiracOperatorL2;
+  typedef DeprecatedMultiGeneralCoarsenedMatrix<CoarseSiteObj,vTTComplex,nbasis>     MrhsLittleDiracOperatorL2;
   typedef LittleDiracOperatorL2::CoarseVector                              CoarseCoarseVector;
   typedef Aggregation<CoarseSiteObj,vTTComplex,nbasis>                     SubspaceL2;
 

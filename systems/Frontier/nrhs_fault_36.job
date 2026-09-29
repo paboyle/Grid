@@ -67,7 +67,7 @@ export MPICH_SMP_SINGLE_COPY_MODE=CMA
 export MPICH_OFI_NIC_POLICY=GPU
 module load libfabric
 
-BIN=$root/examples/Example_pvdagm_v2_3level_DenseCoarseMatrix
+BIN=$root/examples/Example_pvdagm_3level_DenseCoarseMatrix
 OPTS1="--accelerator-threads 8 --shm 4096 --shm-mpi 1 --device-mem 32000"
 OVERLAP="--comms-overlap"          # set empty for a no-overlap job
 vol=48.48.48.96
@@ -112,7 +112,7 @@ run_cell () {
     tail -15 $(dirname $f)/Grid.stdout.$rank | cut -c1-160
   else
     echo "  no 'Memory access fault' in any Grid.stderr.*"
-    grep -h "V2 3-level solve\|Fouter MrhsPGCR: Converged" $GRID_STDOUT_ROOT/0/Grid.stdout.0 | tail -3 | cut -c1-120
+    grep -h "3-level solve\|Fouter MrhsPGCR: Converged" $GRID_STDOUT_ROOT/0/Grid.stdout.0 | tail -3 | cut -c1-120
   fi
 }
 

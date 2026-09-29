@@ -364,7 +364,7 @@ void runMG(
 ) {
 
   // typedef Aggregation<vSpinColourVector,vTComplex,nbasis> Subspace;
-  // typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
+  // typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   // typedef LittleDiracOperator::CoarseVector CoarseVector;
   ParseEnvironment();
 
@@ -620,7 +620,7 @@ int main (int argc, char ** argv)
 
   // assert(nbasis <= Nevecs);     // need to have enough evecs
 
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
 
   NextToNearestStencilGeometry5D geom(Coarse5d);

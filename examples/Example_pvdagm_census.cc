@@ -49,7 +49,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 //   sigma_min << min|lambda|                       : non-normal near origin
 //   lambda_min(H) < 0                              : half-plane condition violated
 //
-// Requires the dagger code path in GeneralCoarsenedMatrix:
+// Requires the dagger code path in DeprecatedGeneralCoarsenedMatrix:
 //   _Adag allocated, PopulateAdag active, _Adag exchanged, hermitian=0.
 //
 // Env vars:
@@ -308,7 +308,7 @@ int main (int argc, char ** argv)
 
   typedef PVdagMLinearOperator<MobiusFermionD,LatticeFermionD>        PVdagM_t;
   typedef ShiftedPVdagMLinearOperator<MobiusFermionD,LatticeFermionD> ShiftedPVdagM_t;
-  typedef GeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>  LittleDiracOperator;
+  typedef DeprecatedGeneralCoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>  LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector                           CoarseVector;
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis>             Subspace;
 

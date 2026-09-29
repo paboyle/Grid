@@ -3,9 +3,9 @@
  *
  * Tests three orderings with an empty rocFFT cache to find which GPU
  * operation before plan creation triggers the failure:
- *   A) hipMalloc only            — hypothesis: passes (no async GPU work)
- *   B) hipMalloc + hipMemset     — hypothesis: fails  (async GPU work in flight)
- *   C) hipMalloc + hipMemset     — hypothesis: passes (work completed before plan)
+ *   A) hipMalloc only            -- hypothesis: passes (no async GPU work)
+ *   B) hipMalloc + hipMemset     -- hypothesis: fails  (async GPU work in flight)
+ *   C) hipMalloc + hipMemset     -- hypothesis: passes (work completed before plan)
  *      + hipDeviceSynchronize
  *
  * Compile:
@@ -59,13 +59,13 @@ int main(void) {
     hipfftResult rvB = makePlan(G, howmany);
     printf("G=%-4d  B) hipMalloc + hipMemset       : %s\n", G, res(rvB));
 
-    // C: hipMalloc + hipMemset + sync — does syncing before plan creation fix it?
+    // C: hipMalloc + hipMemset + sync -- does syncing before plan creation fix it?
     hipMemset(buf, 0, nelems * sizeof(hipfftDoubleComplex));
     hipDeviceSynchronize();
     hipfftResult rvC = makePlan(G, howmany);
     printf("G=%-4d  C) hipMalloc + hipMemset + sync: %s\n", G, res(rvC));
 
-    // A last: hipMalloc only, no async GPU work — should always pass
+    // A last: hipMalloc only, no async GPU work -- should always pass
     hipfftResult rvA = makePlan(G, howmany);
     printf("G=%-4d  A) hipMalloc only             : %s\n\n", G, res(rvA));
 

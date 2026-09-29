@@ -36,17 +36,54 @@ NAMESPACE_BEGIN(Grid);
 //////////////////////////////////////////////////////////////////////
 template<class Matrix,class Field>
 class PVdagMLinearOperator : public LinearOperatorBase<Field> {
-  Matrix &_Mat; Matrix &_PV;
+  Matrix &_Mat;
+  Matrix &_PV;
 public:
-  PVdagMLinearOperator(Matrix &Mat,Matrix &PV): _Mat(Mat),_PV(PV) {};
-  void SloppyComms(int sloppy) { _Mat.SloppyComms(sloppy); _PV.SloppyComms(sloppy); }
-  void OpDiag (const Field &in, Field &out) { GRID_ASSERT(0); }
-  void OpDir  (const Field &in, Field &out,int dir,int disp) { GRID_ASSERT(0); }
-  void OpDirAll  (const Field &in, std::vector<Field> &out){ GRID_ASSERT(0); };
-  void Op     (const Field &in, Field &out){ Field tmp(in.Grid()); _Mat.M(in,tmp); _PV.Mdag(tmp,out); }
-  void AdjOp  (const Field &in, Field &out){ Field tmp(in.Grid()); _PV.M(in,tmp); _Mat.Mdag(tmp,out); }
-  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){ HermOp(in,out); ComplexD d=innerProduct(in,out); n1=real(d); n2=norm2(out); }
-  void HermOp(const Field &in, Field &out){ Field tmp(in.Grid()); Op(in,tmp); AdjOp(tmp,out); }
+  PVdagMLinearOperator(Matrix &Mat,Matrix &PV):
+    _Mat(Mat),_PV(PV)
+  {};
+  void SloppyComms(int sloppy)
+  {
+    _Mat.SloppyComms(sloppy);
+    _PV.SloppyComms(sloppy);
+  }
+  void OpDiag (const Field &in, Field &out)
+  {
+    GRID_ASSERT(0);
+  }
+  void OpDir  (const Field &in, Field &out,int dir,int disp)
+  {
+    GRID_ASSERT(0);
+  }
+  void OpDirAll  (const Field &in, std::vector<Field> &out)
+  {
+    GRID_ASSERT(0);
+  };
+  void Op     (const Field &in, Field &out)
+  {
+    Field tmp(in.Grid());
+    _Mat.M(in,tmp);
+    _PV.Mdag(tmp,out);
+  }
+  void AdjOp  (const Field &in, Field &out)
+  {
+    Field tmp(in.Grid());
+    _PV.M(in,tmp);
+    _Mat.Mdag(tmp,out);
+  }
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2)
+  {
+    HermOp(in,out);
+    ComplexD d=innerProduct(in,out);
+    n1=real(d);
+    n2=norm2(out);
+  }
+  void HermOp(const Field &in, Field &out)
+  {
+    Field tmp(in.Grid());
+    Op(in,tmp);
+    AdjOp(tmp,out);
+  }
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -55,17 +92,46 @@ public:
 //////////////////////////////////////////////////////////////////////
 template<class Matrix,class Field>
 class ShiftedPVdagMLinearOperator : public LinearOperatorBase<Field> {
-  Matrix &_Mat; Matrix &_PV;
+  Matrix &_Mat;
+  Matrix &_PV;
 public:
   RealD shift;
   ShiftedPVdagMLinearOperator(RealD _shift,Matrix &Mat,Matrix &PV): shift(_shift),_Mat(Mat),_PV(PV){};
-  void OpDiag (const Field &in, Field &out) { GRID_ASSERT(0); }
-  void OpDir  (const Field &in, Field &out,int dir,int disp) { GRID_ASSERT(0); }
-  void OpDirAll  (const Field &in, std::vector<Field> &out){ GRID_ASSERT(0); };
-  void Op     (const Field &in, Field &out){ Field tmp(in.Grid()); _Mat.M(in,tmp); _PV.Mdag(tmp,out); out = out + shift*in; }
-  void AdjOp  (const Field &in, Field &out){ Field tmp(in.Grid()); _PV.M(in,tmp); _Mat.Mdag(tmp,out); out = out + shift*in; }
-  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){ GRID_ASSERT(0); }
-  void HermOp(const Field &in, Field &out){ Field tmp(in.Grid()); Op(in,tmp); AdjOp(tmp,out); }
+  void OpDiag (const Field &in, Field &out)
+  {
+    GRID_ASSERT(0);
+  }
+  void OpDir  (const Field &in, Field &out,int dir,int disp)
+  {
+    GRID_ASSERT(0);
+  }
+  void OpDirAll  (const Field &in, std::vector<Field> &out)
+  {
+    GRID_ASSERT(0);
+  };
+  void Op     (const Field &in, Field &out)
+  {
+    Field tmp(in.Grid());
+    _Mat.M(in,tmp);
+    _PV.Mdag(tmp,out);
+    out = out + shift*in;
+  }
+  void AdjOp  (const Field &in, Field &out)
+  {
+    Field tmp(in.Grid());
+    _PV.M(in,tmp);
+    _Mat.Mdag(tmp,out);
+    out = out + shift*in;
+  }
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2)
+  {
+    GRID_ASSERT(0);
+  }
+  void HermOp(const Field &in, Field &out){
+    Field tmp(in.Grid());
+    Op(in,tmp);
+    AdjOp(tmp,out);
+  }
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -73,16 +139,41 @@ public:
 //////////////////////////////////////////////////////////////////////
 template<class Field>
 class ShiftedLinearOperator : public LinearOperatorBase<Field> {
-  LinearOperatorBase<Field> &_Op; RealD shift;
+  LinearOperatorBase<Field> &_Op;
+  RealD shift;
 public:
   ShiftedLinearOperator(RealD _shift, LinearOperatorBase<Field> &Op) : _Op(Op), shift(_shift) {}
-  void OpDiag  (const Field &in, Field &out) { GRID_ASSERT(0); }
-  void OpDir   (const Field &in, Field &out,int dir,int disp) { GRID_ASSERT(0); }
-  void OpDirAll (const Field &in, std::vector<Field> &out) { GRID_ASSERT(0); }
-  void Op      (const Field &in, Field &out) { _Op.Op(in,out);    out = out + shift*in; }
-  void AdjOp   (const Field &in, Field &out) { _Op.AdjOp(in,out); out = out + shift*in; }
-  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){ GRID_ASSERT(0); }
-  void HermOp  (const Field &in, Field &out) { Field tmp(in.Grid()); Op(in,tmp); AdjOp(tmp,out); }
+  void OpDiag  (const Field &in, Field &out)
+  {
+    GRID_ASSERT(0);
+  }
+  void OpDir   (const Field &in, Field &out,int dir,int disp)
+  {
+    GRID_ASSERT(0);
+  }
+  void OpDirAll (const Field &in, std::vector<Field> &out)
+  {
+    GRID_ASSERT(0);
+  }
+  void Op      (const Field &in, Field &out)
+  {
+    _Op.Op(in,out);
+    out = out + shift*in;
+  }
+  void AdjOp   (const Field &in, Field &out) {
+    _Op.AdjOp(in,out);
+    out = out + shift*in;
+  }
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2)
+  {
+    GRID_ASSERT(0);
+  }
+  void HermOp  (const Field &in, Field &out)
+  {
+    Field tmp(in.Grid());
+    Op(in,tmp);
+    AdjOp(tmp,out);
+  }
 };
 
 NAMESPACE_END(Grid);

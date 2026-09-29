@@ -212,14 +212,14 @@ template<class Fobj,class CComplex,int nbasis>
 class PVdagMMultiGridCoarsening {
 public:
   typedef Lattice<Fobj>                                                 FineField;
-  typedef MultiGeneralCoarsenedOperatorV2<Fobj,CComplex,nbasis>         CoarseOperator;
+  typedef MultiGeneralCoarsenedOperator<Fobj,CComplex,nbasis>         CoarseOperator;
   typedef typename CoarseOperator::CoarseVector                         CoarseVector;
   typedef typename CoarseVector::vector_object                          CoarseSiteObj;
   // Every coarse level carries the same site type iVector<CComplex,nbasis>:
   // the coefficient scalar does not deepen with the level (the operator keeps
   // its own deeper scratch type for the block inner products).  Levels are
   // told apart by their grids, not their C++ types.
-  typedef MultiGeneralCoarsenedOperatorV2<CoarseSiteObj,CComplex,nbasis> CoarseCoarseOperator;
+  typedef MultiGeneralCoarsenedOperator<CoarseSiteObj,CComplex,nbasis> CoarseCoarseOperator;
   typedef typename CoarseCoarseOperator::CoarseVector                   CoarseCoarseVector;
   typedef DenseCoarseMatrix<CComplex,nbasis>                            DenseBottom;
   // The fp32 fine field, derived from the fp64 one: the fp32 fine level of
@@ -359,7 +359,7 @@ public:
     rawPsi.reserve(nbasis);
     for(int k=0;k<nbasis;k++) rawPsi.push_back(psi[k]);
 
-    // L2: the V2 L1 operator is natively multiRHS at the batch grid
+    // L2: the L1 operator is natively multiRHS at the batch grid
     CoarseOpL2.SetGrid(Grids.CoarseCoarseBatch);
     NonHermitianLinearOperator<CoarseOperator,CoarseVector> LinOpCoarse(CoarseOpPV);
     std::cout << GridLogMessage << "PVdagMMultiGridCoarsening: L2 CoarsenOperator, batch "

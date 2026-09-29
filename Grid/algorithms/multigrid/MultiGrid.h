@@ -30,12 +30,12 @@ Author: Peter Boyle <pboyle@bnl.gov>
 #include <Grid/algorithms/multigrid/Aggregates.h>
 #include <Grid/algorithms/multigrid/Geometry.h>
 #include <Grid/algorithms/multigrid/CoarsenedMatrix.h>
-#include <Grid/algorithms/multigrid/GeneralCoarsenedMatrixMultiRHSV2.h>
-// DEPRECATED: the V1 coarse operators and the Aggregation-based single-RHS
-// ADEF-2.  Nothing in the library uses them; the PVdagM and HDCG chains are
-// on V2 (PVdagMMultiGrid.h, HDCGMultiGrid.h).  Kept so the pre-2026 drivers
-// in tests/debug and examples still build; removing this block is the
-// deletion gate for them.
+#include <Grid/algorithms/multigrid/GeneralCoarsenedMatrixMultiRHS.h>
+// DEPRECATED: the superseded coarse operators and the Aggregation-based
+// single-RHS ADEF-2.  Nothing in the library uses them; the PVdagM and HDCG
+// chains are on MultiGeneralCoarsenedOperator (PVdagMMultiGrid.h,
+// HDCGMultiGrid.h).  Kept so the pre-2026 drivers in tests/debug and
+// examples still build; removing this block is the deletion gate for them.
 #include <Grid/algorithms/multigrid/deprecated/GeneralCoarsenedMatrix.h>
 #include <Grid/algorithms/multigrid/deprecated/GeneralCoarsenedMatrixMultiRHS.h>
 #include <Grid/algorithms/multigrid/deprecated/TwoLevelADEF2.h>

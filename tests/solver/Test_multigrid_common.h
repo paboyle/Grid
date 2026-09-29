@@ -397,7 +397,7 @@ public:
     MdagMLinearOperator<CoarseDiracMatrix, CoarseVector> coarseMdagMOp(_CoarseMatrix);
 
     std::cout << GridLogMG << " Level " << _CurrentLevel << ": **************************************************" << std::endl;
-    std::cout << GridLogMG << " Level " << _CurrentLevel << ": MG correctness check: 0 == (M - (Mdiag + Σ_μ Mdir_μ)) * v" << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": MG correctness check: 0 == (M - (Mdiag + Sum_mu Mdir_mu)) * v" << std::endl;
     std::cout << GridLogMG << " Level " << _CurrentLevel << ": **************************************************" << std::endl;
 
     random(_LevelInfo.PRNGs[_CurrentLevel], fineTmps[0]);
@@ -406,22 +406,22 @@ public:
     fineMdagMOp.OpDiag(fineTmps[0], fineTmps[2]); // Mdiag * v
 
     fineTmps[4] = zero;
-    for(int dir = 0; dir < 4; dir++) { //       Σ_μ Mdir_μ * v
+    for(int dir = 0; dir < 4; dir++) { //       Sum_mu Mdir_mu * v
       for(auto disp : {+1, -1}) {
         fineMdagMOp.OpDir(fineTmps[0], fineTmps[3], dir, disp);
         fineTmps[4] = fineTmps[4] + fineTmps[3];
       }
     }
 
-    fineTmps[5] = fineTmps[2] + fineTmps[4]; // (Mdiag + Σ_μ Mdir_μ) * v
+    fineTmps[5] = fineTmps[2] + fineTmps[4]; // (Mdiag + Sum_mu Mdir_mu) * v
 
     fineTmps[6]    = fineTmps[1] - fineTmps[5];
     auto deviation = std::sqrt(norm2(fineTmps[6]) / norm2(fineTmps[1]));
 
     std::cout << GridLogMG << " Level " << _CurrentLevel << ": norm2(M * v)                    = " << norm2(fineTmps[1]) << std::endl;
     std::cout << GridLogMG << " Level " << _CurrentLevel << ": norm2(Mdiag * v)                = " << norm2(fineTmps[2]) << std::endl;
-    std::cout << GridLogMG << " Level " << _CurrentLevel << ": norm2(Σ_μ Mdir_μ * v)           = " << norm2(fineTmps[4]) << std::endl;
-    std::cout << GridLogMG << " Level " << _CurrentLevel << ": norm2((Mdiag + Σ_μ Mdir_μ) * v) = " << norm2(fineTmps[5]) << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": norm2(Sum_mu Mdir_mu * v)           = " << norm2(fineTmps[4]) << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": norm2((Mdiag + Sum_mu Mdir_mu) * v) = " << norm2(fineTmps[5]) << std::endl;
     std::cout << GridLogMG << " Level " << _CurrentLevel << ": relative deviation              = " << deviation;
 
     if(deviation > tolerance) {
@@ -664,7 +664,7 @@ createMGInstance(WilsonMGParams &mgParams, LevelInfo &levelInfo, Matrix &FineMat
     CASE_FOR_N_LEVELS(3);
     CASE_FOR_N_LEVELS(4);
     default:
-      std::cout << GridLogError << "We currently only support nLevels ∈ {2, 3, 4}" << std::endl;
+      std::cout << GridLogError << "We currently only support nLevels in {2, 3, 4}" << std::endl;
       exit(EXIT_FAILURE);
       break;
   }

@@ -215,7 +215,11 @@ public:
   // SendToRecvFrom with root (symmetric byte count: the reverse direction
   // carries a same-size dummy -- a leaf-local cost, accepted for simplicity).
   ///////////////////////////////////////////////////////////////////////////
-  static int64_t FirstBlock(int64_t b0, int p, int Pg){ int64_t r = ((b0 % Pg) <= p) ? b0 - (b0 % Pg) + p : b0 - (b0 % Pg) + Pg + p; return r; }
+  static int64_t FirstBlock(int64_t b0, int p, int Pg)
+  {
+    int64_t r = ((b0 % Pg) <= p) ? b0 - (b0 % Pg) + p : b0 - (b0 % Pg) + Pg + p;
+    return r;
+  }
   void BigLeaf(BlockCyclicMatrix &A, int64_t b0, int64_t b1)
   {
     GRID_TRACE("SchurBigLeaf");
