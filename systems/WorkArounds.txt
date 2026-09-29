@@ -9,7 +9,7 @@ Contents:
 3. Profiling
 
 ************************
-* 1. INTERCONNECT + MPI
+* 0. MPI IO
 ************************
 
 --------------------------------------------------------------------
@@ -26,6 +26,89 @@ Use later MPICH
 https://github.com/paboyle/Grid/issues/381
 
 https://github.com/pmodels/mpich/commit/3a479ab0
+
+--------------------------------------------------------------------
+MPI2-IO performance: introduced All to all based aggregation no changes required.
+--------------------------------------------------------------------
+
+https://github.com/pmodels/mpich/issues/7935
+
+MPI_File_write_all / read_all collective buffering does not scale for 4D block-decomposed subarray views (Lustre): 6x slower than a user-level MPI_Alltoallv + POSIX transposition
+
+/* phase 1: redistribute within the row subcommunicator.
+   sendcounts/senddispls derived analytically from the plan; iodata untouched. */
+MPI_Alltoallv(iodata,     sendcounts, senddispls, MPI_BYTE,
+              aggregated, recvcounts, recvdispls, MPI_BYTE, rowcomm);
+
+/* phase 2: a handful of large contiguous writes per rank, no MPI-IO involved */
+for (e = 0; e < nextent; e++) {
+    lseek(fd, offset + extentGsite[e]*sizeof(fobj), SEEK_SET);
+    write(fd, aggregated + extentLocal[e], extentSites[e]*sizeof(fobj));
+}
+
+************************
+* 1. INTERCONNECT + MPI
+************************
+
+============================================================================
+Piz Daint
+============================================================================
+
+https://github.com/ofiwg/libfabric/issues/11451
+
+SEGFAULT in first MPI_Comm_dup on more than one node, after MPI_Init
+ 
+Cause: symptom (ALPS/CSCS, aarch64 Grace/H200, cray-mpich 8.1.32, libfabric 1.22): the
+memhooks monitor intercepts munmap by PATCHING THE PLT at MPI_Init
+(ofi_memhooks_start -> ofi_write_patch with a garbage data_size); the write overruns
+munmap@plt into the NEXT PLT entry (MPI_Comm_dup in Grid's binary)
+leaving
+`br x15` where an adrp belongs ->
+
+Diagnosed with a hardware watchpoint on the PLT entry during MPI_Init; see the issue for the
+gdb transcript.  Reproduce on one node with MPICH_SINGLE_HOST_ENABLED=0.
+
+Fix (either):
+                export FI_MR_CACHE_MONITOR=kdreg2
+OR                                                 
+                export FI_MR_CACHE_MONITOR=disabled
+                export FI_MR_CACHE_MAX_COUNT=0
+
+On ALPS this is a CORRECTNESS requirement for MPI on Slingshot, not a tuning.
+
+
+============================================================================
+Frontier
+============================================================================
+
+a) FI_MR_CACHE_MONITOR=kdreg2 (site default) leads to Runtime MPI errors with "NO_TRANSLATION"
+   userfaultfd and memhooks also fail.
+
+https://github.com/ofiwg/libfabric/issues/12775
+
+Symptom (Frontier, x86, Cray MPICH 8.1.x, ROCm 7.2): device-buffer MPI fails with
+   MPI_Waitall ... MPIDI_OFI_handle_cq_error: OFI poll failed
+   (ofi_events.c:MPIDI_OFI_handle_cq_error: Input/output error - NO_TRANSLATION)
+on a LIVE, never-freed hipMalloc buffer
+
+
+b)              export FI_MR_CACHE_MONITOR=disabled
+                export FI_MR_CACHE_MAX_COUNT=0
+
+Leads to INCORRECT RESULTS, see 
+
+https://github.com/ofiwg/libfabric/issues/12773
+
+Fix:
+
+export FI_HMEM_ROCR_USE_DMABUF=0
+and use site default
+FI_MR_CACHE_MONITOR=kdreg2
+
+Every systems/Frontier job and sourceme now sets kdreg2 on OLCF's recommendation;
+whether it resolves the Frontier NO_TRANSLATION is the pending test above.
+
+
 
 --------------------------------------------------------------------
 Slingshot: Frontier and Perlmutter libfabric slow down 
@@ -187,7 +270,6 @@ unset MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE
 unset MPIR_CVAR_CH4_POSIX_COLL_SELECTION_TUNING_JSON_FILE
 
 
-
 ************************
 * 3. Visual profile tools
 ************************
@@ -196,68 +278,97 @@ unset MPIR_CVAR_CH4_POSIX_COLL_SELECTION_TUNING_JSON_FILE
 Frontier/rocprof
 --------------------------------------------------------------------
 
+cat << EOF > select_gpu
+#!/bin/bash
+export GPU_MAP=(0 1 2 3 7 6 5 4)
+export NUMA_MAP=(3 3 1 1 2 2 0 0)
+export GPU=\${GPU_MAP[\$SLURM_LOCALID]}
+export NUMA=\${NUMA_MAP[\$SLURM_LOCALID]}
+export HIP_VISIBLE_DEVICES=\$GPU
+unset ROCR_VISIBLE_DEVICES
+if [ \$SLURM_PROCID = "0" ]; then echo \$*; fi
+
+if [ "1" = "1" ]
+then
+if [ \$SLURM_PROCID = "0" ]
+then
+  exec numactl -m \$NUMA -N \$NUMA rocprofv3 -d $TRACE -o mgtrace.\$SLURM_JOBID \
+     -r -f csv pftrace --stats -D \
+     -P 140:20:1 \
+     -- \$*
+else 
+  exec numactl -m \$NUMA -N \$NUMA \$*
+fi
+else 
+  exec numactl -m \$NUMA -N \$NUMA \$*
+fi
+
+EOF
+chmod +x ./select_gpu
+
 --------------------------------------------------------------------
 Aurora/unitrace
 --------------------------------------------------------------------
+select_gpu:
 
+#!/bin/bash
+
+export NUMA_PMAP=(0 0 0 1 1 1 0 0 0 1 1 1 );
+export NUMA_HMAP=(2 2 2 3 3 3 3 2 2 2 2 3 3 3 );
+export  GPU_MAP=(0.0 1.0 2.0 3.0 4.0 5.0 0.1 1.1 2.1 3.1 4.1 5.1 )
+
+export NUMAP=${NUMA_PMAP[$PALS_LOCAL_RANKID]}
+export NUMAH=${NUMA_HMAP[$PALS_LOCAL_RANKID]}
+export gpu_id=${GPU_MAP[$PALS_LOCAL_RANKID]}
+  
+unset EnableWalkerPartition
+export EnableImplicitScaling=0
+export ZE_AFFINITY_MASK=$gpu_id
+export ONEAPI_DEVICE_FILTER=gpu,level_zero
+
+export SYCL_PI_LEVEL_ZERO_DEVICE_SCOPE_EVENTS=0
+export SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1
+export SYCL_PI_LEVEL_ZERO_USE_COPY_ENGINE=0:4
+export SYCL_PI_LEVEL_ZERO_USE_COPY_ENGINE_FOR_D2D_COPY=1
+echo "rank $PALS_RANKID ; local rank $PALS_LOCAL_RANKID ; ZE_AFFINITY_MASK=$ZE_AFFINITY_MASK ; NUMA $NUMA "
+
+if [ $PALS_RANKID = "0" ]
+then
+    numactl -p $NUMAP -N $NUMAP unitrace --chrome-kernel-logging --chrome-mpi-logging --chrome-sycl-logging --demangle "$@"
+else 
+    numactl -p $NUMAP -N $NUMAP  "$@"
+fi
 
 --------------------------------------------------------------------
 Tursa/nsight-sys
 --------------------------------------------------------------------
 
-============================================================================
-Piz Daint
-============================================================================
+cat << EOF > mpiwrapper.sh
+#!/bin/bash
+lrank=\$OMPI_COMM_WORLD_LOCAL_RANK
+numa1=\$(( 2 * \$lrank ))
+numa2=\$(( 2 * \$lrank + 1 ))
+export CUDA_VISIBLE_DEVICES=\$lrank
+export UCX_NET_DEVICES=mlx5_\${lrank}:1
+if [ \$OMPI_COMM_WORLD_RANK = "0" ]; then echo \$*; fi
 
-https://github.com/ofiwg/libfabric/issues/11451
+if [ "1" = "1" ]
+then
+if [ \$OMPI_COMM_WORLD_RANK = "0" ]
+then
+  exec numactl --interleave=\$numa1,\$numa2 nsys profile \
+     -o $TRACE/nsys.\$SLURM_JOB_ID --force-overwrite=true \
+     --trace=cuda,nvtx,mpi,osrt --mpi-impl=op
+     --sample=none --cpuctxsw=none \
+     --delay=140 --duration=20 --stats=true \
+     \$*
+else
+  exec numactl --interleave=\$numa1,\$numa2 \$*
+fi
+else
+  exec numactl --interleave=\$numa1,\$numa2 \
+fi
+EOF
+chmod +x ./mpiwrapper.sh
 
-SEGFAULT in first MPI_Comm_dup on more than one node, after MPI_Init
- 
-Cause: symptom (ALPS/CSCS, aarch64 Grace/H200, cray-mpich 8.1.32, libfabric 1.22): the
-memhooks monitor intercepts munmap by PATCHING THE PLT at MPI_Init
-(ofi_memhooks_start -> ofi_write_patch with a garbage data_size); the write overruns
-munmap@plt into the NEXT PLT entry (MPI_Comm_dup in Grid's binary)
-leaving
-`br x15` where an adrp belongs ->
-
-Diagnosed with a hardware watchpoint on the PLT entry during MPI_Init; see the issue for the
-gdb transcript.  Reproduce on one node with MPICH_SINGLE_HOST_ENABLED=0.
-
-Fix (either):
-                export FI_MR_CACHE_MONITOR=kdreg2
-OR                                                 
-                export FI_MR_CACHE_MONITOR=disabled
-                export FI_MR_CACHE_MAX_COUNT=0
-
-On ALPS this is a CORRECTNESS requirement for MPI on Slingshot, not a tuning.
-
-
-
-============================================================================
-Frontier
-============================================================================
-
-a) FI_MR_CACHE_MONITOR=kdreg2 leads to Runtime MPI errors with "NO_TRANSLATION"
-
-Symptom (Frontier, x86, Cray MPICH 8.1.x, ROCm 7.2): device-buffer MPI fails with
-   MPI_Waitall ... MPIDI_OFI_handle_cq_error: OFI poll failed
-   (ofi_events.c:MPIDI_OFI_handle_cq_error: Input/output error - NO_TRANSLATION)
-on a LIVE, never-freed hipMalloc buffer
-
-
-b)              export FI_MR_CACHE_MONITOR=disabled
-                export FI_MR_CACHE_MAX_COUNT=0
-
-Leads to INCORRECT RESULTS
-
-https://github.com/ofiwg/libfabric/issues/12773
-
-https://github.com/ofiwg/libfabric/issues/12775
-
-Fix:
-
-export FI_HMEM_ROCR_USE_DMABUF=0
-
-Every systems/Frontier job and sourceme now sets kdreg2 on OLCF's recommendation;
-whether it resolves the Frontier NO_TRANSLATION is the pending test above.
-
+mpirun -np $SLURM_NTASKS -x LD_LIBRARY_PATH --bind-to none ./mpiwrapper.sh <binary> <args>
