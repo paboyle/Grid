@@ -53,6 +53,7 @@ struct WilsonImplParams {
   AcceleratorVector<Real,Nd> twist_n_2pi_L;
   AcceleratorVector<Complex,Nd> boundary_phases;
   WilsonImplParams()  {
+    overlapCommsCompute=true;
     dirichlet.resize(0);
     partialDirichlet=0;
     boundary_phases.resize(Nd, 1.0);
