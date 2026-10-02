@@ -125,6 +125,16 @@ public:
     return SmearedSet[Level];
   }
 
+  /*! @brief Level n of the smearing chain: 0 is the thin links, n is n smearing steps */
+  const GaugeField &get_level(int n) const
+  {
+    GRID_ASSERT(n >= 0 && n <= (int)smearingLevels);
+    if ( n == 0 ) {
+      return *ThinLinks;
+    }
+    return SmearedSet[n-1];
+  }
+
   //====================================================================
   void set_iLambda(GaugeLinkField& iLambda, GaugeLinkField& e_iQ,
                    const GaugeLinkField& iQ, const GaugeLinkField& Sigmap,
@@ -276,6 +286,45 @@ public:
     }  // if smearingLevels = 0 do nothing
     SigmaTilde=Gimpl::projectForce(SigmaTilde); // Ta
       
+  }
+
+  //====================================================================
+  // Force on the thin links from an action that depends on every level of the chain.
+  // LevelForce[n], n = 0..smearingLevels, is the force on level n in the same
+  // "U times dS/dU" form smeared_force takes (zero fields allowed). The chain rule is
+  // applied from the top level down, adding each level's own force on the way:
+  //   Sigma_L = U_L^dag F_L
+  //   Sigma_n = AnalyticSmearedForce(Sigma_{n+1}, U_n) + U_n^dag F_n
+  //   ThinForce = Ta( U_0 Sigma_0 )
+  // With force on the top level only this is smeared_force.
+  // SmearedConfigurationMasked would need its own: its chain rule is level dependent.
+  virtual void smeared_force_levels(const std::vector<GaugeField> &LevelForce, GaugeField &ThinForce)
+  {
+    GRID_ASSERT(LevelForce.size() == smearingLevels+1);
+
+    GridBase *grid = LevelForce[0].Grid();
+    GaugeField Sigma(grid);
+    GaugeLinkField tmp_mu(grid);
+
+    // Sigma = U_L^dag F_L
+    for (int mu = 0; mu < Nd; mu++) {
+      tmp_mu = adj(peekLorentz(get_level(smearingLevels), mu)) * peekLorentz(LevelForce[smearingLevels], mu);
+      pokeLorentz(Sigma, tmp_mu, mu);
+    }
+
+    for (int n = (int)smearingLevels - 1; n >= 0; n--) {
+      Sigma = AnalyticSmearedForce(Sigma, get_level(n));
+      for (int mu = 0; mu < Nd; mu++) {
+        tmp_mu = peekLorentz(Sigma, mu) + adj(peekLorentz(get_level(n), mu)) * peekLorentz(LevelForce[n], mu);
+        pokeLorentz(Sigma, tmp_mu, mu);
+      }
+    }
+
+    for (int mu = 0; mu < Nd; mu++) {
+      tmp_mu = peekLorentz(*ThinLinks, mu) * peekLorentz(Sigma, mu);
+      pokeLorentz(ThinForce, tmp_mu, mu);
+    }
+    ThinForce = Gimpl::projectForce(ThinForce); // Ta
   }
   //====================================================================
 
