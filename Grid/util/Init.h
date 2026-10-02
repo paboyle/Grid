@@ -49,6 +49,11 @@ void Grid_unquiesce_nodes(void);
 const Coordinate  GridDefaultSimd(int dims,int nsimd);
 const Coordinate &GridDefaultLatt(void);
 const Coordinate &GridDefaultMpi(void);
+// --batched-solver-split a.b.c.d : MPI layout of each partition for batched solves.
+// --batched-solver-split node    : one partition per node.
+// Not given: empty Coordinate and false, meaning no split.
+const Coordinate &GridDefaultBatchedSolverSplit(void);
+bool              GridDefaultBatchedSolverSplitNode(void);
 const int        &GridThreads(void)  ;
 void              GridSetThreads(int t) ;
 void GridLogTimestamp(int);
