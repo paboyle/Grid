@@ -35,7 +35,7 @@ Author: Peter Boyle <pboyle@bnl.gov>
 //     composition identity [P M^-1 V Pdag][P V^-1 M Pdag] = 1 for the chosen
 //     (P,Pdag) wall pair.  NO PREDICTION is made about which convention
 //     passes -- that is what the test decides.
-//  T2 ForceTest (idiom from Test_double_ratio.cc) : midpoint-derivative
+//  T2 ForceTest (tests/forces/ForceTest.h) : midpoint-derivative
 //     check of deriv against S.  Should PASS for BOTH conventions (S and
 //     deriv use the same literal-adjoint pair by construction).
 //  T3 Trivial-ratio control (V == M) : T1 with NumOp = DenOp.  The solve
@@ -124,69 +124,7 @@ RealD HeatbathIdentityTest(TwoFlavourRatio4DPseudoFermionAction<Impl> &action,
   return defect;
 }
 
-////////////////////////////////////////////////////////////////////
-// T2 : ForceTest idiom from Test_double_ratio.cc (midpoint derivative)
-////////////////////////////////////////////////////////////////////
-template<class Gimpl>
-void ForceTest(Action<LatticeGaugeField> &action,LatticeGaugeField & U,MomentumFilterBase<LatticeGaugeField> &Filter)
-{
-  GridBase *UGrid = U.Grid();
-
-  std::vector<int> seeds({1,2,3,5});
-  GridSerialRNG            sRNG;         sRNG.SeedFixedIntegers(seeds);
-  GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds);
-
-  LatticeColourMatrix Pmu(UGrid);
-  LatticeGaugeField P(UGrid);
-  LatticeGaugeField UdSdU(UGrid);
-
-  std::cout << GridLogMessage << "*********************************************************"<<std::endl;
-  std::cout << GridLogMessage << " Force test for "<<action.action_name()<<std::endl;
-  std::cout << GridLogMessage << "*********************************************************"<<std::endl;
-
-  RealD eps=0.005;
-
-  Gimpl::generate_momenta(P,sRNG,RNG4);
-  Filter.applyFilter(P);
-
-  action.refresh(U,sRNG,RNG4);
-
-  RealD S1 = action.S(U);
-
-  Gimpl::update_field(P,U,eps);
-
-  action.deriv(U,UdSdU);
-  UdSdU = Ta(UdSdU);
-  Filter.applyFilter(UdSdU);
-
-  DumpSliceNorm("Force",UdSdU,Nd-1);
-
-  Gimpl::update_field(P,U,eps);
-
-  RealD S2 = action.S(U);
-
-  // Use the derivative
-  LatticeComplex dS(UGrid); dS = Zero();
-  for(int mu=0;mu<Nd;mu++){
-    auto UdSdUmu = PeekIndex<LorentzIndex>(UdSdU,mu);
-    Pmu= PeekIndex<LorentzIndex>(P,mu);
-    dS = dS - trace(Pmu*UdSdUmu)*eps*2.0*2.0;
-  }
-  ComplexD dSpred    = sum(dS);
-  RealD diff =  S2-S1-dSpred.real();
-
-  std::cout<< GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
-  std::cout<< GridLogMessage << "S1 : "<< S1    <<std::endl;
-  std::cout<< GridLogMessage << "S2 : "<< S2    <<std::endl;
-  std::cout<< GridLogMessage << "dS : "<< S2-S1 <<std::endl;
-  std::cout<< GridLogMessage << "dSpred : "<< dSpred.real() <<std::endl;
-  std::cout<< GridLogMessage << "diff : "<< diff<<std::endl;
-  std::cout<< GridLogMessage << "diff/dS : "<< diff/(S2-S1)<<std::endl;
-  std::cout<< GridLogMessage << "*********************************************************"<<std::endl;
-  //  GRID_ASSERT(diff<1.0);
-  std::cout<< GridLogMessage << "Done" <<std::endl;
-  std::cout << GridLogMessage << "*********************************************************"<<std::endl;
-}
+#include "ForceTest.h"
 
 int main (int argc, char ** argv)
 {
