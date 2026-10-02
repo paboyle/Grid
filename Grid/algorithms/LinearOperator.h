@@ -52,8 +52,30 @@ public:
   virtual void AdjOp  (const Field &in, Field &out) = 0; // Abstract base
   virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2)=0;
   virtual void HermOp(const Field &in, Field &out)=0;
+
+  // As CheckerBoardedSparseMatrixBase::SplitClone; the returned bundle's Linop is the
+  // same kind of wrapper as this one. Collective. nullptr if not supported.
+  virtual SplitOperator<Field> *SplitClone(const Coordinate &mpi_split)
+  {
+    return nullptr;
+  }
+
   virtual ~LinearOperatorBase(){};
 };
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+// The wrappers below are templates on an arbitrary Matrix, and their virtual SplitClone is
+// instantiated with the class, so it must compile for Matrix types with no SplitClone.
+/////////////////////////////////////////////////////////////////////////////////////////////
+template<class Field,class Matrix>
+SplitOperator<Field> *SplitCloneMatrix(Matrix &Mat,const Coordinate &mpi_split)
+{
+  if constexpr ( std::is_base_of<CheckerBoardedSparseMatrixBase<Field>,Matrix>::value ) {
+    return Mat.SplitClone(mpi_split);
+  } else {
+    return nullptr;
+  }
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -101,6 +123,17 @@ public:
   }
   void HermOp(const Field &in, Field &out){
     _Mat.MdagM(in,out);
+  }
+
+  virtual SplitOperator<Field> *SplitClone(const Coordinate &mpi_split)
+  {
+    SplitOperator<Field> *split = SplitCloneMatrix<Field>(_Mat,mpi_split);
+    if ( split == nullptr ) {
+      return nullptr;
+    }
+    split->Linop     = new MdagMLinearOperator<CheckerBoardedSparseMatrixBase<Field>,Field>(*split->Matrix);
+    split->FieldGrid = split->Matrix->Grid();
+    return split;
   }
 };
 template<class Matrix,class Field>
@@ -401,6 +434,17 @@ template<class Matrix,class Field>
       _Mat.MooeeDag(in,out);
       axpy(out,-1.0,tmp,out);
     }
+
+    virtual SplitOperator<Field> *SplitClone(const Coordinate &mpi_split)
+    {
+      SplitOperator<Field> *split = SplitCloneMatrix<Field>(_Mat,mpi_split);
+      if ( split == nullptr ) {
+        return nullptr;
+      }
+      split->Linop     = new SchurDiagMooeeOperator<CheckerBoardedSparseMatrixBase<Field>,Field>(*split->Matrix);
+      split->FieldGrid = split->Matrix->RedBlackGrid();
+      return split;
+    }
 };
 template<class Matrix,class Field>
   class SchurDiagOneOperator :  public SchurOperatorBase<Field> {
@@ -426,6 +470,17 @@ template<class Matrix,class Field>
       _Mat.MooeeInvDag(tmp,out);
       _Mat.MeooeDag(out,tmp);
       axpy(out,-1.0,tmp,in);
+    }
+
+    virtual SplitOperator<Field> *SplitClone(const Coordinate &mpi_split)
+    {
+      SplitOperator<Field> *split = SplitCloneMatrix<Field>(_Mat,mpi_split);
+      if ( split == nullptr ) {
+        return nullptr;
+      }
+      split->Linop     = new SchurDiagOneOperator<CheckerBoardedSparseMatrixBase<Field>,Field>(*split->Matrix);
+      split->FieldGrid = split->Matrix->RedBlackGrid();
+      return split;
     }
 };
 template<class Matrix,class Field>
@@ -454,6 +509,17 @@ template<class Matrix,class Field>
       _Mat.MooeeInvDag(out,tmp);
 
       axpy(out,-1.0,tmp,in);
+    }
+
+    virtual SplitOperator<Field> *SplitClone(const Coordinate &mpi_split)
+    {
+      SplitOperator<Field> *split = SplitCloneMatrix<Field>(_Mat,mpi_split);
+      if ( split == nullptr ) {
+        return nullptr;
+      }
+      split->Linop     = new SchurDiagTwoOperator<CheckerBoardedSparseMatrixBase<Field>,Field>(*split->Matrix);
+      split->FieldGrid = split->Matrix->RedBlackGrid();
+      return split;
     }
 };
 
@@ -522,6 +588,17 @@ class NonHermitianSchurDiagMooeeOperator :  public NonHermitianSchurOperatorBase
     
     axpy(out, -1.0, tmp, out);
   }
+
+  virtual SplitOperator<Field> *SplitClone(const Coordinate &mpi_split)
+  {
+    SplitOperator<Field> *split = SplitCloneMatrix<Field>(_Mat,mpi_split);
+    if ( split == nullptr ) {
+      return nullptr;
+    }
+    split->Linop     = new NonHermitianSchurDiagMooeeOperator<CheckerBoardedSparseMatrixBase<Field>,Field>(*split->Matrix);
+    split->FieldGrid = split->Matrix->RedBlackGrid();
+    return split;
+  }
 };
     
 template<class Matrix,class Field>
@@ -551,6 +628,17 @@ class NonHermitianSchurDiagOneOperator : public NonHermitianSchurOperatorBase<Fi
     _Mat.MeooeDag(out, tmp);
     
     axpy(out, -1.0, tmp, in);
+  }
+
+  virtual SplitOperator<Field> *SplitClone(const Coordinate &mpi_split)
+  {
+    SplitOperator<Field> *split = SplitCloneMatrix<Field>(_Mat,mpi_split);
+    if ( split == nullptr ) {
+      return nullptr;
+    }
+    split->Linop     = new NonHermitianSchurDiagOneOperator<CheckerBoardedSparseMatrixBase<Field>,Field>(*split->Matrix);
+    split->FieldGrid = split->Matrix->RedBlackGrid();
+    return split;
   }
 };
 
@@ -582,6 +670,17 @@ class NonHermitianSchurDiagTwoOperator : public NonHermitianSchurOperatorBase<Fi
     _Mat.MooeeInvDag(out, tmp);
 
     axpy(out, -1.0, tmp, in);
+  }
+
+  virtual SplitOperator<Field> *SplitClone(const Coordinate &mpi_split)
+  {
+    SplitOperator<Field> *split = SplitCloneMatrix<Field>(_Mat,mpi_split);
+    if ( split == nullptr ) {
+      return nullptr;
+    }
+    split->Linop     = new NonHermitianSchurDiagTwoOperator<CheckerBoardedSparseMatrixBase<Field>,Field>(*split->Matrix);
+    split->FieldGrid = split->Matrix->RedBlackGrid();
+    return split;
   }
 };
 
@@ -635,6 +734,17 @@ class SchurStaggeredOperator :  public SchurOperatorBase<Field> {
   }
   virtual void MpcDagMpc(const Field &in, Field &out) {
     GRID_ASSERT(0);// Never need with staggered
+  }
+
+  virtual SplitOperator<Field> *SplitClone(const Coordinate &mpi_split)
+  {
+    SplitOperator<Field> *split = SplitCloneMatrix<Field>(_Mat,mpi_split);
+    if ( split == nullptr ) {
+      return nullptr;
+    }
+    split->Linop     = new SchurStaggeredOperator<CheckerBoardedSparseMatrixBase<Field>,Field>(*split->Matrix);
+    split->FieldGrid = split->Matrix->RedBlackGrid();
+    return split;
   }
 };
 template<class Matrix,class Field> using SchurStagOperator = SchurStaggeredOperator<Matrix,Field>;

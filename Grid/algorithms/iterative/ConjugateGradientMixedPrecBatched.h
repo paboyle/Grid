@@ -51,6 +51,12 @@ public:
   LinearFunction<FieldF> *guesser;
   bool updateResidual;
   
+  // Inner solves on independent partitions of the communicator (--batched-solver-split).
+  // BatchedSplit is the partition MPI layout, empty for no split; BatchedSplitNode selects
+  // one partition per node. Default from the command line; callers may override.
+  Coordinate BatchedSplit;
+  bool       BatchedSplitNode;
+
   MixedPrecisionConjugateGradientBatched(RealD tol, 
           Integer maxinnerit, 
           Integer maxouterit, 
@@ -61,7 +67,8 @@ public:
           bool _updateResidual=true) :
     Linop_f(_Linop_f), Linop_d(_Linop_d),
     Tolerance(tol), InnerTolerance(tol), MaxInnerIterations(maxinnerit), MaxOuterIterations(maxouterit), MaxPatchupIterations(maxpatchit), SinglePrecGrid(_sp_grid),
-    OuterLoopNormMult(100.), guesser(NULL), updateResidual(_updateResidual) { };
+    OuterLoopNormMult(100.), guesser(NULL), updateResidual(_updateResidual),
+    BatchedSplit(GridDefaultBatchedSolverSplit()), BatchedSplitNode(GridDefaultBatchedSolverSplitNode()) { };
 
   void useGuesser(LinearFunction<FieldF> &g){
     guesser = &g;
@@ -130,6 +137,20 @@ public:
     ConjugateGradient<FieldF> CG_f(inner_tol, MaxInnerIterations);
     CG_f.ErrorOnNoConverge = false;
     
+    //Optionally clone the single precision operator onto split-communicator partitions
+    GridStopWatch SplitTimer;
+    SplitOperator<FieldF> *split = nullptr;
+    int partitions;
+    Coordinate layout = BatchedSolverSplitLayout(SinglePrecGrid,BatchedSplit,BatchedSplitNode,NBatch,partitions);
+    if ( partitions > 1 ) {
+      SplitTimer.Start();
+      split = Linop_f.SplitClone(layout);
+      SplitTimer.Stop();
+      if ( split == nullptr ) {
+        std::cout << GridLogMessage << "MixedPrecisionConjugateGradientBatched: operator cannot be split; serial inner solves" << std::endl;
+      }
+    }
+    
     Integer &outer_iter = TotalOuterIterations; //so it will be equal to the final iteration count
       
     for(outer_iter = 0; outer_iter < MaxOuterIterations; outer_iter++){
@@ -169,12 +190,18 @@ public:
         (*guesser)(src_f, sol_f);
       }
 
+      if ( split != nullptr ) {
+        InnerSplitSolves(*split, CG_f, src_f, sol_f, TotalInnerIterations, InnerCGtimer, SplitTimer);
+      }
+
       for (int i=0; i<NBatch; i++) {
         //Inner CG
-        InnerCGtimer.Start();
-        CG_f(Linop_f, src_f[i], sol_f[i]);
-        InnerCGtimer.Stop();
-        TotalInnerIterations[i] += CG_f.IterationsToComplete;
+        if ( split == nullptr ) {
+          InnerCGtimer.Start();
+          CG_f(Linop_f, src_f[i], sol_f[i]);
+          InnerCGtimer.Stop();
+          TotalInnerIterations[i] += CG_f.IterationsToComplete;
+        }
         
         //Convert sol back to double and add to double prec solution
         PrecChangeTimer.Start();
@@ -185,6 +212,8 @@ public:
       }
 
     }
+
+    delete split;
     
     //Final trial CG
     std::cout << GridLogMessage << std::endl;
@@ -203,8 +232,77 @@ public:
       std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: solve " << i << " Inner CG iterations " << TotalInnerIterations[i] << " Restarts " << TotalOuterIterations << " Final CG iterations " << TotalFinalStepIterations[i] << std::endl;
     }
     std::cout << GridLogMessage << std::endl;
-    std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: Total time " << TotalTimer.Elapsed() << " Precision change " << PrecChangeTimer.Elapsed() << " Inner CG total " << InnerCGtimer.Elapsed() << std::endl;
+    std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: Total time " << TotalTimer.Elapsed() << " Precision change " << PrecChangeTimer.Elapsed() << " Inner CG total " << InnerCGtimer.Elapsed() << " Split setup and transfer " << SplitTimer.Elapsed() << std::endl;
     
+  }
+
+private:
+
+  ////////////////////////////////////////////////////////////////////////////////////////
+  // One inner solve per partition, in groups of Partitions right-hand sides. The last
+  // group is zero-padded; a zero source returns at once from CG. Collective.
+  ////////////////////////////////////////////////////////////////////////////////////////
+  void InnerSplitSolves(SplitOperator<FieldF> &split,
+                        ConjugateGradient<FieldF> &CG_f,
+                        std::vector<FieldF> &src_f,
+                        std::vector<FieldF> &sol_f,
+                        std::vector<Integer> &TotalInnerIterations,
+                        GridStopWatch &InnerCGtimer,
+                        GridStopWatch &SplitTimer)
+  {
+    int NBatch = src_f.size();
+    int P      = split.Partitions;
+    int cb     = src_f[0].Checkerboard();
+
+    FieldF s_src(split.FieldGrid);
+    FieldF s_sol(split.FieldGrid);
+    std::vector<FieldF> group_src(P,SinglePrecGrid);
+    std::vector<FieldF> group_sol(P,SinglePrecGrid);
+    std::vector<uint64_t> iters(P);
+
+    for(int g=0;g<NBatch;g+=P){
+
+      // Gather the group; zero-pad past the end of the batch
+      for(int p=0;p<P;p++){
+        group_src[p].Checkerboard() = cb;
+        group_sol[p].Checkerboard() = cb;
+        if ( g+p < NBatch ) {
+          group_src[p] = src_f[g+p];
+          group_sol[p] = sol_f[g+p];
+        } else {
+          group_src[p] = Zero();
+          group_sol[p] = Zero();
+        }
+      }
+
+      // The initial guess (e.g. from the guesser) travels with the source
+      SplitTimer.Start();
+      Grid_split(group_src,s_src);
+      Grid_split(group_sol,s_sol);
+      SplitTimer.Stop();
+
+      InnerCGtimer.Start();
+      CG_f(*split.Linop,s_src,s_sol);
+      InnerCGtimer.Stop();
+
+      SplitTimer.Start();
+      Grid_unsplit(group_sol,s_sol);
+      SplitTimer.Stop();
+
+      // One iteration count per partition, contributed by the partition's rank 0 only
+      for(int p=0;p<P;p++){
+        iters[p] = 0;
+      }
+      if ( split.FieldGrid->ThisRank() == 0 ) {
+        iters[split.Partition] = CG_f.IterationsToComplete;
+      }
+      SinglePrecGrid->GlobalSumVector(&iters[0],P);
+
+      for(int p=0;p<P && g+p<NBatch;p++){
+        sol_f[g+p] = group_sol[p];
+        TotalInnerIterations[g+p] += iters[p];
+      }
+    }
   }
 };
 
