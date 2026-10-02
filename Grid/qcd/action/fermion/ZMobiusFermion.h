@@ -67,6 +67,44 @@ public:
     this->SetCoefficientsInternal(1.0,zgamma,b,c);
   }
 
+  // Exact type only: derived operators must not inherit this
+  virtual SplitOperator<FermionField> *SplitClone(const Coordinate &mpi_split)
+  {
+    if ( typeid(*this) != typeid(ZMobiusFermion<Impl>) ) {
+      return nullptr;
+    }
+    if ( this->Dirichlet || Impl::LsVectorised || Impl::isGparity ) {
+      return nullptr;
+    }
+    SplitOperator<FermionField> *split = this->MakeSplitGrids(mpi_split);
+
+    // Placeholder links; the doubled field is overwritten below
+    GaugeField Uplaceholder(split->GaugeGrid);
+    Uplaceholder = Zero();
+
+    // Constructor argument only; CloneCoefficientsInto restores _gamma at full precision
+    std::vector<ComplexD> gamma(this->Ls);
+    for ( int s=0; s<this->Ls; s++ ) {
+      gamma[s] = this->_gamma[s];
+    }
+
+    ZMobiusFermion<Impl> *clone = new ZMobiusFermion<Impl>(Uplaceholder,
+                                                           *split->FermionGrid,
+                                                           *split->FermionRBGrid,
+                                                           *split->GaugeGrid,
+                                                           *split->GaugeRBGrid,
+                                                           this->mass_plus,
+                                                           this->M5,
+                                                           gamma,
+                                                           this->_b,
+                                                           this->_c,
+                                                           this->Params);
+    this->CloneCoefficientsInto(*clone);
+    this->SplitDoubledGaugeInto(*clone);
+    split->Matrix = clone;
+    return split;
+  }
+
 };
 
 NAMESPACE_END(Grid);

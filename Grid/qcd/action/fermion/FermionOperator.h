@@ -59,6 +59,35 @@ public:
   virtual GridBase *GaugeGrid(void)           =0;
   virtual GridBase *GaugeRedBlackGrid(void)   =0;
 
+  ////////////////////////////////////////////////////////////////
+  // Split-communicator copies of this operator's gauge and fermion
+  // grids, returned in a new bundle with no Matrix or Linop yet.
+  // Partitions have MPI layout mpi_split. Collective.
+  ////////////////////////////////////////////////////////////////
+  SplitOperator<FermionField> *MakeSplitGrids(const Coordinate &mpi_split)
+  {
+    GridCartesian *U = dynamic_cast<GridCartesian *>(GaugeGrid());
+    GRID_ASSERT(U != nullptr);
+    GRID_ASSERT(mpi_split.size() == Nd);
+
+    SplitOperator<FermionField> *split = new SplitOperator<FermionField>();
+
+    split->GaugeGrid   = new GridCartesian(U->FullDimensions(),U->_simd_layout,mpi_split,*U);
+    split->GaugeRBGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(split->GaugeGrid);
+    split->Partition   = GridSplitVectorIndex(U,split->GaugeGrid);
+    split->Partitions  = U->ProcessorCount()/split->GaugeGrid->ProcessorCount();
+
+    if ( FermionGrid()->Nd() == Nd+1 ) {
+      int Ls = FermionGrid()->_fdimensions[0];
+      split->FermionGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,split->GaugeGrid);
+      split->FermionRBGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,split->GaugeGrid);
+    } else {
+      split->FermionGrid   = split->GaugeGrid;
+      split->FermionRBGrid = split->GaugeRBGrid;
+    }
+    return split;
+  }
+
   // override multiply
   virtual void  M    (const FermionField &in, FermionField &out)=0;
   virtual void  Mdag (const FermionField &in, FermionField &out)=0;
@@ -87,6 +116,10 @@ public:
   virtual void DhopDeriv  (GaugeField &mat,const FermionField &U,const FermionField &V,int dag)=0;
   virtual void DhopDerivEO(GaugeField &mat,const FermionField &U,const FermionField &V,int dag)=0;
   virtual void DhopDerivOE(GaugeField &mat,const FermionField &U,const FermionField &V,int dag)=0;
+
+  // 1 if MoeDeriv/MeoDeriv return a force on a single 4D checkerboard (4D red-black),
+  // 0 if they return it on the full 4D gauge grid (a checkerboard that includes s)
+  virtual int CheckerboardedForce(void) { return 1; };
 
   virtual void  Mdiag  (const FermionField &in, FermionField &out) { Mooee(in,out);};   // Same as Mooee applied to both CB's
   virtual void  Mdir   (const FermionField &in, FermionField &out,int dir,int disp)=0;   // case by case Wilson, Clover, Cayley, ContFrac, PartFrac

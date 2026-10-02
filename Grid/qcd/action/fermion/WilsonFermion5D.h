@@ -181,6 +181,22 @@ public:
   // DoubleStore
   void ImportGauge(const GaugeField &_Umu);
     
+  // Install an already doubled gauge field (phases, twists and -1/2 applied)
+  void ImportDoubledGauge(const DoubledGaugeField &U)
+  {
+    Umu = U;
+    pickCheckerboard(Even,UmuEven,Umu);
+    pickCheckerboard(Odd ,UmuOdd ,Umu);
+  }
+
+  // Redistribute this operator's doubled gauge field onto clone's split grid. Collective.
+  void SplitDoubledGaugeInto(WilsonFermion5D<Impl> &clone)
+  {
+    DoubledGaugeField sUmu(clone.GaugeGrid());
+    Grid_split(Umu,sUmu);
+    clone.ImportDoubledGauge(sUmu);
+  }
+
   ///////////////////////////////////////////////////////////////
   // Data members require to support the functionality
   ///////////////////////////////////////////////////////////////

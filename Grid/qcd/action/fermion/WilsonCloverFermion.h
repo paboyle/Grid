@@ -91,6 +91,60 @@ public:
   // Derivative parts unpreconditioned pseudofermions
   void MDeriv(GaugeField &force, const FermionField &X, const FermionField &Y, int dag);
 
+  // Install already computed clover term and inverse, and derive the checkerboarded parts
+  void ImportCloverTerms(const CloverField &C, const CloverField &Cinv)
+  {
+    CloverTerm    = C;
+    CloverTermInv = Cinv;
+    pickCheckerboard(Even, CloverTermEven, CloverTerm);
+    pickCheckerboard(Odd,  CloverTermOdd,  CloverTerm);
+    pickCheckerboard(Even, CloverTermDagEven, adj(CloverTerm));
+    pickCheckerboard(Odd,  CloverTermDagOdd,  adj(CloverTerm));
+    pickCheckerboard(Even, CloverTermInvEven, CloverTermInv);
+    pickCheckerboard(Odd,  CloverTermInvOdd,  CloverTermInv);
+    pickCheckerboard(Even, CloverTermInvDagEven, adj(CloverTermInv));
+    pickCheckerboard(Odd,  CloverTermInvDagOdd,  adj(CloverTermInv));
+  }
+
+  // Exact type only: derived operators must not inherit this
+  virtual SplitOperator<FermionField> *SplitClone(const Coordinate &mpi_split)
+  {
+    if ( typeid(*this) != typeid(WilsonCloverFermion<Impl,CloverHelpers>) ) {
+      return nullptr;
+    }
+    if ( Impl::isGparity ) {
+      return nullptr;
+    }
+    SplitOperator<FermionField> *split = this->MakeSplitGrids(mpi_split);
+
+    // Placeholder links; the doubled field and clover terms are overwritten below
+    GaugeField Uplaceholder(split->GaugeGrid);
+    Uplaceholder = Zero();
+
+    WilsonCloverFermion<Impl,CloverHelpers> *clone =
+      new WilsonCloverFermion<Impl,CloverHelpers>(Uplaceholder,
+                                                  *split->GaugeGrid,
+                                                  *split->GaugeRBGrid,
+                                                  this->mass,
+                                                  csw_r,
+                                                  csw_t,
+                                                  this->anisotropyCoeff,
+                                                  this->Params);
+    // The stored coefficients are post-scaled; the constructor would scale them again
+    clone->csw_r = csw_r;
+    clone->csw_t = csw_t;
+
+    CloverField sC(split->GaugeGrid);
+    CloverField sCinv(split->GaugeGrid);
+    Grid_split(CloverTerm,sC);
+    Grid_split(CloverTermInv,sCinv);
+    clone->ImportCloverTerms(sC,sCinv);
+
+    this->SplitDoubledGaugeInto(*clone);
+    split->Matrix = clone;
+    return split;
+  }
+
 public:
   // here fixing the 4 dimensions, make it more general?
 
