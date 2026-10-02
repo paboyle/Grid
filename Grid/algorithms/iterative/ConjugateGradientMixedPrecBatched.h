@@ -98,6 +98,8 @@ public:
 
     GridStopWatch InnerCGtimer;
     GridStopWatch PrecChangeTimer;
+    GridStopWatch OuterResidualTimer;
+    GridStopWatch PatchupTimer;
     
     int cb = src_d_in[0].Checkerboard();
     
@@ -138,14 +140,15 @@ public:
     CG_f.ErrorOnNoConverge = false;
     
     //Optionally clone the single precision operator onto split-communicator partitions
-    GridStopWatch SplitTimer;
+    GridStopWatch SplitCloneTimer;
+    SplitTimers   splitTimers;
     SplitOperator<FieldF> *split = nullptr;
     int partitions;
     Coordinate layout = BatchedSolverSplitLayout(SinglePrecGrid,BatchedSplit,BatchedSplitNode,NBatch,partitions);
     if ( partitions > 1 ) {
-      SplitTimer.Start();
+      SplitCloneTimer.Start();
       split = Linop_f.SplitClone(layout);
-      SplitTimer.Stop();
+      SplitCloneTimer.Stop();
       if ( split == nullptr ) {
         std::cout << GridLogMessage << "MixedPrecisionConjugateGradientBatched: operator cannot be split; serial inner solves" << std::endl;
       }
@@ -161,8 +164,10 @@ public:
       
       for (int i=0; i<NBatch; i++) {
         //Compute double precision rsd and also new RHS vector.
+        OuterResidualTimer.Start();
         Linop_d.HermOp(sol_d[i], tmp_d);
         norm[i] = axpy_norm(src_d[i], -1., tmp_d, src_d_in[i]); //src_d is residual vector
+        OuterResidualTimer.Stop();
         
         std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: Outer iteration " << outer_iter <<" solve " << i << " residual "<< norm[i] << " target "<< stop[i] <<std::endl;
 
@@ -191,7 +196,7 @@ public:
       }
 
       if ( split != nullptr ) {
-        InnerSplitSolves(*split, CG_f, src_f, sol_f, TotalInnerIterations, InnerCGtimer, SplitTimer);
+        InnerSplitSolves(*split, CG_f, src_f, sol_f, TotalInnerIterations, InnerCGtimer, splitTimers);
       }
 
       for (int i=0; i<NBatch; i++) {
@@ -213,17 +218,21 @@ public:
 
     }
 
+    SplitCloneTimer.Start();
     delete split;
+    SplitCloneTimer.Stop();
     
     //Final trial CG
     std::cout << GridLogMessage << std::endl;
     std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: Starting final patch-up double-precision solve"<<std::endl;
     
+    PatchupTimer.Start();
     for (int i=0; i<NBatch; i++) {
       ConjugateGradient<FieldD> CG_d(Tolerance, MaxPatchupIterations);
       CG_d(Linop_d, src_d_in[i], sol_d[i]);
       TotalFinalStepIterations[i] += CG_d.IterationsToComplete;
     }
+    PatchupTimer.Stop();
 
     TotalTimer.Stop();
 
@@ -232,11 +241,36 @@ public:
       std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: solve " << i << " Inner CG iterations " << TotalInnerIterations[i] << " Restarts " << TotalOuterIterations << " Final CG iterations " << TotalFinalStepIterations[i] << std::endl;
     }
     std::cout << GridLogMessage << std::endl;
-    std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: Total time " << TotalTimer.Elapsed() << " Precision change " << PrecChangeTimer.Elapsed() << " Inner CG total " << InnerCGtimer.Elapsed() << " Split setup and transfer " << SplitTimer.Elapsed() << std::endl;
+    std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: Total time " << TotalTimer.Elapsed() << " Precision change " << PrecChangeTimer.Elapsed() << " Inner CG total " << InnerCGtimer.Elapsed() << std::endl;
+    std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: Outer residual " << OuterResidualTimer.Elapsed() << " Patch-up " << PatchupTimer.Elapsed() << std::endl;
+    if ( partitions > 1 ) {
+      std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: Split clone and delete " << SplitCloneTimer.Elapsed()
+               << " Grid_split " << splitTimers.Split.Elapsed() << " (" << splitTimers.SplitCalls << " calls)"
+               << " Grid_unsplit " << splitTimers.Unsplit.Elapsed() << " (" << splitTimers.UnsplitCalls << " calls)"
+               << " Staging copies " << splitTimers.Staging.Elapsed()
+               << " Host to device " << splitTimers.H2D.Elapsed()
+               << " Iteration count sum " << splitTimers.Reduce.Elapsed() << std::endl;
+    }
+    double accounted = PrecChangeTimer.useconds() + InnerCGtimer.useconds() + OuterResidualTimer.useconds()
+                     + PatchupTimer.useconds() + SplitCloneTimer.useconds() + splitTimers.Split.useconds()
+                     + splitTimers.Unsplit.useconds() + splitTimers.Staging.useconds() + splitTimers.H2D.useconds()
+                     + splitTimers.Reduce.useconds();
+    std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: Unaccounted " << (TotalTimer.useconds()-accounted)/1.0e6 << " s" << std::endl;
     
   }
 
 private:
+
+  // Coarse breakdown of the split path outside the inner CG
+  struct SplitTimers {
+    GridStopWatch Split;
+    GridStopWatch Unsplit;
+    GridStopWatch Staging;
+    GridStopWatch H2D;
+    GridStopWatch Reduce;
+    int SplitCalls   = 0;
+    int UnsplitCalls = 0;
+  };
 
   ////////////////////////////////////////////////////////////////////////////////////////
   // One inner solve per partition, in groups of Partitions right-hand sides. The last
@@ -248,7 +282,7 @@ private:
                         std::vector<FieldF> &sol_f,
                         std::vector<Integer> &TotalInnerIterations,
                         GridStopWatch &InnerCGtimer,
-                        GridStopWatch &SplitTimer)
+                        SplitTimers &timers)
   {
     int NBatch = src_f.size();
     int P      = split.Partitions;
@@ -263,6 +297,7 @@ private:
     for(int g=0;g<NBatch;g+=P){
 
       // Gather the group; zero-pad past the end of the batch
+      timers.Staging.Start();
       for(int p=0;p<P;p++){
         group_src[p].Checkerboard() = cb;
         group_sol[p].Checkerboard() = cb;
@@ -274,22 +309,34 @@ private:
           group_sol[p] = Zero();
         }
       }
+      timers.Staging.Stop();
 
       // The initial guess (e.g. from the guesser) travels with the source
-      SplitTimer.Start();
+      timers.Split.Start();
       Grid_split(group_src,s_src);
       Grid_split(group_sol,s_sol);
-      SplitTimer.Stop();
+      timers.Split.Stop();
+      timers.SplitCalls += 2;
+
+      // Grid_split leaves its output on the host; move it now so the copy is not in the CG time
+      timers.H2D.Start();
+      {
+        autoView(s_src_v, s_src, AcceleratorRead);
+        autoView(s_sol_v, s_sol, AcceleratorRead);
+      }
+      timers.H2D.Stop();
 
       InnerCGtimer.Start();
       CG_f(*split.Linop,s_src,s_sol);
       InnerCGtimer.Stop();
 
-      SplitTimer.Start();
+      timers.Unsplit.Start();
       Grid_unsplit(group_sol,s_sol);
-      SplitTimer.Stop();
+      timers.Unsplit.Stop();
+      timers.UnsplitCalls += 1;
 
       // One iteration count per partition, contributed by the partition's rank 0 only
+      timers.Reduce.Start();
       for(int p=0;p<P;p++){
         iters[p] = 0;
       }
@@ -297,11 +344,15 @@ private:
         iters[split.Partition] = CG_f.IterationsToComplete;
       }
       SinglePrecGrid->GlobalSumVector(&iters[0],P);
+      timers.Reduce.Stop();
 
+      // Includes the host to device copy of group_sol left by Grid_unsplit
+      timers.Staging.Start();
       for(int p=0;p<P && g+p<NBatch;p++){
         sol_f[g+p] = group_sol[p];
         TotalInnerIterations[g+p] += iters[p];
       }
+      timers.Staging.Stop();
     }
   }
 };

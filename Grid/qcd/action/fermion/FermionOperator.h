@@ -70,6 +70,8 @@ public:
     GRID_ASSERT(U != nullptr);
     GRID_ASSERT(mpi_split.size() == Nd);
 
+    double t0 = usecond();
+
     SplitOperator<FermionField> *split = new SplitOperator<FermionField>();
 
     split->GaugeGrid   = new GridCartesian(U->FullDimensions(),U->_simd_layout,mpi_split,*U);
@@ -85,6 +87,7 @@ public:
       split->FermionGrid   = split->GaugeGrid;
       split->FermionRBGrid = split->GaugeRBGrid;
     }
+    std::cout << GridLogPerformance << "MakeSplitGrids: " << (usecond()-t0)/1.0e6 << " s" << std::endl;
     return split;
   }
 

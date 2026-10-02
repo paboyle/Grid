@@ -192,9 +192,14 @@ public:
   // Redistribute this operator's doubled gauge field onto clone's split grid. Collective.
   void SplitDoubledGaugeInto(WilsonFermion5D<Impl> &clone)
   {
+    double t0 = usecond();
     DoubledGaugeField sUmu(clone.GaugeGrid());
     Grid_split(Umu,sUmu);
+    double t1 = usecond();
     clone.ImportDoubledGauge(sUmu);
+    double t2 = usecond();
+    std::cout << GridLogPerformance << "SplitDoubledGaugeInto: Grid_split " << (t1-t0)/1.0e6
+              << " s import " << (t2-t1)/1.0e6 << " s" << std::endl;
   }
 
   ///////////////////////////////////////////////////////////////

@@ -1637,17 +1637,35 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
     ratio[d] = full_grid->_processors[d]/ split_grid->_processors[d];
   }
 
+  // Coarse phase timers, reported on GridLogPerformance
+  double t_start   = usecond();
+  double t_d2h     = 0;
+  double t_unvec   = 0;
+  double t_a2a     = 0;
+  double t_reorder = 0;
+  double t_vec     = 0;
+  double t0;
+
   uint64_t lsites = full_grid->lSites();
   uint64_t     sz = lsites * nvector;
   std::vector<Sobj> tmpdata(sz);
   std::vector<Sobj> alldata(sz);
   std::vector<Sobj> scalardata(lsites); 
+  double t_alloc = usecond() - t_start;
 
   for(int v=0;v<nvector;v++){
+    // Open and close a host view first so any device to host copy is timed on its own
+    t0 = usecond();
+    {
+      autoView(full_v, full[v], CpuRead);
+    }
+    t_d2h += usecond() - t0;
+    t0 = usecond();
     unvectorizeToLexOrdArray(scalardata,full[v]);    
     thread_for(site,lsites,{
       alldata[v*lsites+site] = scalardata[site];
     });
+    t_unvec += usecond() - t0;
   }
 
   int nvec = nvector; // Counts down to 1 as we collapse dims
@@ -1657,11 +1675,14 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 
     if ( ratio[d] != 1 ) {
 
+      t0 = usecond();
       full_grid ->AllToAll(d,alldata,tmpdata);
       if ( split_grid->_processors[d] > 1 ) {
 	alldata=tmpdata;
 	split_grid->AllToAll(d,alldata,tmpdata);
       }
+      t_a2a += usecond() - t0;
+      t0 = usecond();
 
       auto rdims = ldims; 
       auto     M = ratio[d];
@@ -1701,12 +1722,25 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 	  }
 	}
       });
+      t_reorder += usecond() - t0;
       ldims[d]*= ratio[d];
       lsites  *= ratio[d];
 
     }
   }
+  t0 = usecond();
   vectorizeFromLexOrdArray(alldata,split);    
+  t_vec = usecond() - t0;
+  double t_total = usecond() - t_start;
+
+  // Host to device copy of split happens lazily at its first accelerator use; not counted here
+  std::cout << GridLogPerformance << "Grid_split: " << nvector << " x " << sz/nvector*sizeof(Sobj)/1.0e6
+            << " MB/rank total " << t_total/1.0e6 << " s : alloc " << t_alloc/1.0e6
+            << " d2h " << t_d2h/1.0e6
+            << " unvectorise " << t_unvec/1.0e6
+            << " alltoall " << t_a2a/1.0e6
+            << " reorder " << t_reorder/1.0e6
+            << " vectorise " << t_vec/1.0e6 << std::endl;
 }
 
 template<class Vobj>
@@ -1763,13 +1797,29 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
     ratio[d] = full_grid->_processors[d]/ split_grid->_processors[d];
   }
 
+  // Coarse phase timers, reported on GridLogPerformance
+  double t_start   = usecond();
+  double t_a2a     = 0;
+  double t_reorder = 0;
+  double t_vec     = 0;
+  double t0;
+
   uint64_t lsites = full_grid->lSites();
   uint64_t     sz = lsites * nvector;
   std::vector<Sobj> tmpdata(sz);
   std::vector<Sobj> alldata(sz);
   std::vector<Sobj> scalardata(lsites); 
+  double t_alloc = usecond() - t_start;
 
+  // Open and close a host view first so any device to host copy is timed on its own
+  t0 = usecond();
+  {
+    autoView(split_v, split, CpuRead);
+  }
+  double t_d2h = usecond() - t0;
+  t0 = usecond();
   unvectorizeToLexOrdArray(alldata,split);    
+  double t_unvec = usecond() - t0;
 
   /////////////////////////////////////////////////////////////////
   // Start from split grid and work towards full grid
@@ -1794,6 +1844,7 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
       int fvol   = lsites;
       int chunk  = (nvec*fvol)/sP;          GRID_ASSERT(chunk*sP == nvec*fvol);
 	
+      t0 = usecond();
       {
 	// Loop over reordered data post A2A
 	thread_for(c, chunk,{
@@ -1821,17 +1872,22 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
         });
       }
 
+      t_reorder += usecond() - t0;
+
+      t0 = usecond();
       if ( split_grid->_processors[d] > 1 ) {
 	split_grid->AllToAll(d,tmpdata,alldata);
 	tmpdata=alldata;
       }
       full_grid ->AllToAll(d,tmpdata,alldata);
+      t_a2a += usecond() - t0;
       rdims[d]/= M;
       rsites  /= M;
       nvec    *= M;       // Increase nvec by subdivision factor
     }
   }
 
+  t0 = usecond();
   lsites = full_grid->lSites();
   for(int v=0;v<nvector;v++){
     thread_for(site, lsites,{
@@ -1839,6 +1895,17 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
     });
     vectorizeFromLexOrdArray(scalardata,full[v]);    
   }
+  t_vec = usecond() - t0;
+  double t_total = usecond() - t_start;
+
+  // Host to device copies of full happen lazily at their first accelerator use; not counted here
+  std::cout << GridLogPerformance << "Grid_unsplit: " << nvector << " x " << sz/nvector*sizeof(Sobj)/1.0e6
+            << " MB/rank total " << t_total/1.0e6 << " s : alloc " << t_alloc/1.0e6
+            << " d2h " << t_d2h/1.0e6
+            << " unvectorise " << t_unvec/1.0e6
+            << " alltoall " << t_a2a/1.0e6
+            << " reorder " << t_reorder/1.0e6
+            << " vectorise " << t_vec/1.0e6 << std::endl;
 }
 
 //////////////////////////////////////////////////////
