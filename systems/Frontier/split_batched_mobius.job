@@ -1,0 +1,119 @@
+#!/bin/bash -l
+#SBATCH --job-name=split-batched-mobius
+#SBATCH --nodes=4
+#SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=7
+#SBATCH --gpus-per-node=8
+#SBATCH --time=1:30:00
+#SBATCH --account=phy157_dwf
+#SBATCH --gpu-bind=none
+#SBATCH --exclusive
+#SBATCH --mem=0
+#SBATCH -S 0
+##SBATCH -q debug
+
+##############################################################################
+# MixedPrecisionConjugateGradientBatched with split inner solves, at production
+# size: Mobius 64^3x128, Ls=12, mass 0.026, b=1.5 c=0.5 M5=1.8, antiperiodic
+# in time, Hadrons default SchurDiagMooeeOperator.
+#
+# 4 nodes = 32 GCDs, --mpi 2.2.2.4 (local 32^4).  --batched-solver-split node
+# makes each node one partition (P=4), so Nbatch=4 is one round with no
+# zero padding.  The driver solves the same batch twice from zero guesses:
+#   UNSPLIT  inner CG on all 32 GCDs, one rhs after another (existing path)
+#   SPLIT    four independent inner CGs, one per node
+# and prints per-rhs iterations, true residuals and wall clock for each.
+#
+# Build (in the Frontier build tree, after ./scripts/filelist in the source
+# root so the new test is in tests/solver/Make.inc):
+#   make -C tests/solver Test_split_mobius_batched
+#
+# Memory, per GCD (evictable Lattice fields, so bounded by --device-mem):
+#   double RB 5d field 1.21 GB, float 0.60 GB
+#   driver src+sol 9.7, solver batch copies 9.7, split partition fields and
+#   inner CG on the 4x larger split local volume ~20, gauge copies ~5
+#   => ~45 GB, hence --device-mem 40000 as in pvdagm_mixed_precision.job.
+# Host memory: the device is an inclusive cache, so host RSS per rank is the whole
+# ~45 GB working set (plus transient Grid_split staging): ~400 GB of a node's 512 GB.
+# The driver prints MEMORY lines (host RSS, peak, allocator caches) at each phase.
+# Grid_split stages 2 x 4.8 GB per rank on the host per transfer.
+##############################################################################
+
+LUSTRE=/lustre/orion/phy157/proj-shared/phy157_dwf/paboyle
+RUNDIR=$LUSTRE/runs/${SLURM_JOB_NAME}_${SLURM_JOB_ID}
+mkdir -p $RUNDIR && cd $RUNDIR && echo "RUNDIR $RUNDIR"
+
+cat << EOF > select_gpu
+#!/bin/bash
+export GPU_MAP=(0 1 2 3 7 6 5 4)
+export NUMA_MAP=(3 3 1 1 2 2 0 0)
+export GPU=\${GPU_MAP[\$SLURM_LOCALID]}
+export NUMA=\${NUMA_MAP[\$SLURM_LOCALID]}
+export HIP_VISIBLE_DEVICES=\$GPU
+unset ROCR_VISIBLE_DEVICES
+if [ \$SLURM_PROCID = "0" ]; then echo \$*; fi
+exec numactl -m \$NUMA -N \$NUMA \$*
+EOF
+chmod +x ./select_gpu
+
+# Source tree and build of THIS branch (feature/splitGridCGBatch) on Frontier
+root=$LUSTRE/SplitCG/Grid/systems/Frontier
+source $root/sourceme-rocm7.2.sh
+
+export OMP_NUM_THREADS=7
+ulimit -c 0                             # no 22 GB GPU core dumps
+export FI_MR_CACHE_MONITOR=kdreg2       # site default; device-buffer MPI on Slingshot
+export MPICH_GPU_SUPPORT_ENABLED=1
+export MPICH_SMP_SINGLE_COPY_MODE=CMA
+export MPICH_OFI_NIC_POLICY=GPU
+# No GRID_ALLOC_NCACHE_LARGE here. With --enable-unified=no every Lattice lives in host
+# memory (the device is an inclusive cache), so a deep large-allocation cache keeps freed
+# host blocks on top of the full working set: measured on the laptop at 64 entries it
+# held about as much again as the working set, enough to OOM a 4-node run of this job.
+module load libfabric
+
+BIN=$root/tests/solver/Test_split_mobius_batched
+OPTS="--accelerator-threads 8 --shm 4096 --shm-mpi 1 --device-mem 40000 --comms-overlap"
+vol=64.64.64.128
+MPI_GEOM=2.2.2.4
+
+# A thermalised 64^3x128 NERSC configuration.  Leave empty for a hot start:
+# fine for plumbing, but mass 0.026 on a hot field is not a physical
+# iteration count and may run long.
+CONFIG=
+
+PHYS="--Ls 12 --mass 0.026 --M5 1.8 --b 1.5 --c 0.5 --nbatch 4 --tol 1e-8"
+if [ -n "$CONFIG" ]; then PHYS="$PHYS --config $CONFIG"; fi
+
+export GRID_STDOUT_ROOT=$RUNDIR/split
+srun -N4 -n32 --kill-on-bad-exit=1 ./select_gpu $BIN --mpi $MPI_GEOM --grid $vol $OPTS \
+     $PHYS --batched-solver-split node \
+     --debug-stdout --log Error,Warning,Message,Performance \
+     > log.split 2>&1
+echo "exit $?"
+
+##############################################################################
+# Readout.  Device OOM appears only on stderr as "hipMalloc failed".
+##############################################################################
+f=$(grep -l "Memory access fault\|NO_TRANSLATION\|hipMalloc failed\|out of memory\|illegal memory access\|GRID_ASSERT" $GRID_STDOUT_ROOT/*/Grid.stderr.* 2>/dev/null | head -1)
+if [ -n "$f" ]; then
+  echo "FAULT in $f"; tail -20 $f | cut -c1-160
+fi
+grep -h "MEMORY\|BatchedSolverSplit\|Inner CG iterations\|Total time\|true residual\|SUMMARY" \
+     $GRID_STDOUT_ROOT/0/Grid.stdout.0 2>/dev/null | cut -c1-200
+
+##############################################################################
+# What to read.
+#
+# BatchedSolverSplit line: the partition layout must equal the node layout
+# (ShmGrid), e.g. [1 2 2 2] of [2 2 2 4] : 4 partitions.  A "straddle node
+# boundaries" warning means the rank reordering did not give node-aligned
+# blocks; the result is still correct but the inner CG talks off node.
+#
+# UNSPLIT vs SPLIT: per-rhs inner iterations should agree closely (the same
+# solves, different reduction order); the SUMMARY lines give the wall clock.
+# The gain is the strong-scaling loss of the 32-GCD inner CG against four
+# 8-GCD CGs with node-local halos.  "Split setup and transfer" in the Total
+# time line prices the clone (grids, gauge split) and the Grid_split /
+# Grid_unsplit traffic, which is host-staged.
+##############################################################################
