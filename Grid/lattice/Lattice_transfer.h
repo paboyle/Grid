@@ -1550,212 +1550,277 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
 ////////////////////////////////////////////////////////////////////////////////
 // Communicate between grids
 ////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-// SIMPLE CASE:
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+// Grid_split / Grid_unsplit
 //
-// Mesh of nodes (2x2) ; subdivide to  1x1 subdivisions
+// The split grid divides the full grid's processor layout Pf into partitions of layout
+// Ps; ratio R = Pf/Ps per dimension, nvector = prod R partitions. A rank at full processor
+// coordinate c belongs to partition q = c/Ps at split coordinate s = c%Ps, and partition q
+// holds vector index lex(q,R) (GridSplitVectorIndex). Local volumes satisfy
+// Ls = Lf * R per dimension.
 //
-// Lex ord:   
-//          N0 va0 vb0 vc0 vd0       N1 va1 vb1 vc1 vd1  
-//          N2 va2 vb2 vc2 vd2       N3 va3 vb3 vc3 vd3 
+// Every full-grid rank's local block of field v lies wholly inside one split-grid rank's
+// local volume, in the sub-box at offset o = c%R (units of Lf), on the rank of partition
+// q(v) at split coordinate c/R. The redistribution is therefore nvector whole-block
+// point-to-point exchanges, nothing finer, and no data moves twice. Step k (a coordinate in
+// the R box) pairs every rank with one sender and one receiver:
 //
-// Ratio = full[dim] / split[dim]
+//   send  field q = (c%R + k)%R      to   full coordinate q*Ps + c/R
+//   recv  sub-box o = (c/Ps - k)%R   from full coordinate (c%Ps)*R + o
 //
-// For each dimension do an all to all; get Nvec -> Nvec / ratio
-//                                          Ldim -> Ldim * ratio
-//                                          LocalVol -> LocalVol * ratio
-// full AllToAll(0)
-//          N0 va0 vb0 va1 vb1       N1 vc0 vd0 vc1 vd1   
-//          N2 va2 vb2 va3 vb3       N3 vc2 vd2 vc3 vd3 
+// Within a step the send map is a permutation of the ranks and the receive map is its
+// inverse, so each step is one symmetric SendToRecvFrom per rank; a rank paired with
+// itself copies locally. Grid_unsplit runs the same steps with the roles exchanged.
 //
-// REARRANGE
-//          N0 va01 vb01      N1 vc01 vd01
-//          N2 va23 vb23      N3 vc23 vd23
-//
-// full AllToAll(1)           // Not what is wanted. FIXME
-//          N0 va01 va23      N1 vc01 vc23 
-//          N2 vb01 vb23      N3 vd01 vd23
-// 
-// REARRANGE
-//          N0 va0123      N1 vc0123
-//          N2 vb0123      N3 vd0123
-//
-// Must also rearrange data to get into the NEW lex order of grid at each stage. Some kind of "insert/extract".
-// NB: Easiest to programme if keep in lex order.
-/*
- *  Let chunk = (fvol*nvec)/sP be size of a chunk.         ( Divide lexico vol * nvec into fP/sP = M chunks )
- *  
- *  2nd A2A (over sP nodes; subdivide the fP into sP chunks of M)
- * 
- *     node 0     1st chunk of node 0M..(1M-1); 2nd chunk of node 0M..(1M-1)..   data chunk x M x sP = fL / sP * M * sP = fL * M growth
- *     node 1     1st chunk of node 1M..(2M-1); 2nd chunk of node 1M..(2M-1)..
- *     node 2     1st chunk of node 2M..(3M-1); 2nd chunk of node 2M..(3M-1)..
- *     node 3     1st chunk of node 3M..(3M-1); 2nd chunk of node 2M..(3M-1)..
- *  etc...
- */
+// Data stays on the device. A block on the full grid is the local volume in lexicographic
+// order; the split grid's local volume is staged box-major (sub-box index, then
+// lexicographic within the sub-box), so every exchanged block is contiguous. Packing and
+// unpacking are accelerator kernels. Buffers are deviceVectors: the staged split volume
+// plus one block. Without ACCELERATOR_AWARE_MPI each block is staged through host memory.
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+// Scalar sites of in, written to buf in box-major order: sub-boxes of extent bdims taken
+// lexicographically, sites lexicographically within each. bdims = local dimensions gives
+// plain lexicographic order.
+template<class vobj>
+void GridSplitUnvectorise(const Lattice<vobj> &in,typename vobj::scalar_object *buf,const Coordinate &bdims)
+{
+  GridBase *grid = in.Grid();
+  int nd = grid->_ndimension;
+  Coordinate rdims = grid->_rdimensions;
+  Coordinate simd  = grid->_simd_layout;
+  Coordinate nbox(nd);
+  int64_t bvol = 1;
+  for(int d=0;d<nd;d++){
+    GRID_ASSERT( (grid->_ldimensions[d] % bdims[d]) == 0 );
+    nbox[d] = grid->_ldimensions[d] / bdims[d];
+    bvol   *= bdims[d];
+  }
+  const int Nsimd = grid->Nsimd();
+  autoView( in_v , in, AcceleratorRead);
+  accelerator_for(ss, grid->oSites(), 1, {
+    Coordinate ocoor(nd);
+    Coordinate icoor(nd);
+    Coordinate bcoor(nd);
+    Coordinate wcoor(nd);
+    Lexicographic::CoorFromIndex(ocoor,ss,rdims);
+    for(int lane=0;lane<Nsimd;lane++){
+      Lexicographic::CoorFromIndex(icoor,lane,simd);
+      for(int d=0;d<nd;d++){
+        int l = ocoor[d] + rdims[d]*icoor[d];
+        bcoor[d] = l / bdims[d];
+        wcoor[d] = l % bdims[d];
+      }
+      int64_t b;
+      int64_t w;
+      Lexicographic::IndexFromCoor(bcoor,b,nbox);
+      Lexicographic::IndexFromCoor(wcoor,w,bdims);
+      buf[b*bvol+w] = extractLane(lane,in_v[ss]);
+    }
+  });
+}
+
+// Inverse of GridSplitUnvectorise: every site of out is written
+template<class vobj>
+void GridSplitVectorise(const typename vobj::scalar_object *buf,Lattice<vobj> &out,const Coordinate &bdims)
+{
+  GridBase *grid = out.Grid();
+  int nd = grid->_ndimension;
+  Coordinate rdims = grid->_rdimensions;
+  Coordinate simd  = grid->_simd_layout;
+  Coordinate nbox(nd);
+  int64_t bvol = 1;
+  for(int d=0;d<nd;d++){
+    GRID_ASSERT( (grid->_ldimensions[d] % bdims[d]) == 0 );
+    nbox[d] = grid->_ldimensions[d] / bdims[d];
+    bvol   *= bdims[d];
+  }
+  const int Nsimd = grid->Nsimd();
+  autoView( out_v , out, AcceleratorWriteDiscard);
+  accelerator_for(ss, grid->oSites(), 1, {
+    Coordinate ocoor(nd);
+    Coordinate icoor(nd);
+    Coordinate bcoor(nd);
+    Coordinate wcoor(nd);
+    Lexicographic::CoorFromIndex(ocoor,ss,rdims);
+    for(int lane=0;lane<Nsimd;lane++){
+      Lexicographic::CoorFromIndex(icoor,lane,simd);
+      for(int d=0;d<nd;d++){
+        int l = ocoor[d] + rdims[d]*icoor[d];
+        bcoor[d] = l / bdims[d];
+        wcoor[d] = l % bdims[d];
+      }
+      int64_t b;
+      int64_t w;
+      Lexicographic::IndexFromCoor(bcoor,b,nbox);
+      Lexicographic::IndexFromCoor(wcoor,w,bdims);
+      insertLane(lane,out_v[ss],buf[b*bvol+w]);
+    }
+  });
+}
+
+// Step schedule shared by Grid_split and Grid_unsplit; see the description above
+class GridSplitSchedule
+{
+public:
+  int        nd;
+  int        nvector;
+  Coordinate ratio;      // R
+  Coordinate fldims;     // full grid local dimensions = sub-box extent on the split grid
+  GridBase  *full_grid;
+
+  // Step k: this rank sends field Field(k) to rank FieldRank(k) and receives sub-box
+  // Box(k) from rank BoxRank(k) (Grid_split); Grid_unsplit reverses both
+  std::vector<int> Field;
+  std::vector<int> FieldRank;
+  std::vector<int> Box;
+  std::vector<int> BoxRank;
+
+  GridSplitSchedule(GridBase *_full_grid,GridBase *split_grid) : full_grid(_full_grid)
+  {
+    nd = full_grid->_ndimension;
+    GRID_ASSERT(split_grid->_ndimension == nd);
+    ratio.resize(nd);
+    fldims = full_grid->_ldimensions;
+    Coordinate sprocs = split_grid->_processors;
+    Coordinate fcoor  = full_grid->_processor_coor;
+    nvector = 1;
+    for(int d=0;d<nd;d++){
+      GRID_ASSERT(full_grid->_gdimensions[d] == split_grid->_gdimensions[d]);
+      GRID_ASSERT(full_grid->_fdimensions[d] == split_grid->_fdimensions[d]);
+      GRID_ASSERT( (full_grid->_processors[d] % sprocs[d]) == 0 );
+      ratio[d] = full_grid->_processors[d] / sprocs[d];
+      GRID_ASSERT(split_grid->_ldimensions[d] == fldims[d]*ratio[d]);
+      nvector *= ratio[d];
+    }
+    GRID_ASSERT(nvector*split_grid->_Nprocessors == full_grid->_Nprocessors);
+
+    Field.resize(nvector);
+    FieldRank.resize(nvector);
+    Box.resize(nvector);
+    BoxRank.resize(nvector);
+    for(int k=0;k<nvector;k++){
+      Coordinate kc(nd);
+      Coordinate q(nd);
+      Coordinate dest(nd);
+      Coordinate o(nd);
+      Coordinate from(nd);
+      Lexicographic::CoorFromIndex(kc,k,ratio);
+      for(int d=0;d<nd;d++){
+        q[d]    = (fcoor[d] % ratio[d] + kc[d]) % ratio[d];
+        dest[d] = q[d]*sprocs[d] + fcoor[d] / ratio[d];
+        o[d]    = (fcoor[d] / sprocs[d] - kc[d] + ratio[d]) % ratio[d];
+        from[d] = (fcoor[d] % sprocs[d])*ratio[d] + o[d];
+      }
+      Lexicographic::IndexFromCoor(q,Field[k],ratio);
+      Lexicographic::IndexFromCoor(o,Box[k],ratio);
+      FieldRank[k] = full_grid->RankFromProcessorCoor(dest);
+      BoxRank[k]   = full_grid->RankFromProcessorCoor(from);
+    }
+  }
+
+  // One step's exchange; returns the bytes that left this rank
+  uint64_t Exchange(void *xmit,int dest,void *recv,int from,uint64_t bytes)
+  {
+    int me = full_grid->ThisRank();
+    // The send map is a permutation and the receive map its inverse: self pairs with self
+    GRID_ASSERT( (dest == me) == (from == me) );
+    if ( dest == me ) {
+      acceleratorCopyDeviceToDevice(xmit,recv,bytes);
+      return 0;
+    }
+    GRID_ASSERT( (bytes % sizeof(int32_t)) == 0 );
+    GRID_ASSERT( bytes/sizeof(int32_t) < (1ULL<<31) );   // SendToRecvFrom counts int32 words
+#ifdef ACCELERATOR_AWARE_MPI
+    full_grid->SendToRecvFrom(xmit,dest,recv,from,bytes);
+#else
+    std::vector<char> hxmit(bytes);
+    std::vector<char> hrecv(bytes);
+    acceleratorCopyFromDevice(xmit,&hxmit[0],bytes);
+    full_grid->SendToRecvFrom(&hxmit[0],dest,&hrecv[0],from,bytes);
+    acceleratorCopyToDevice(&hrecv[0],recv,bytes);
+#endif
+    return bytes;
+  }
+};
+
+// Common body: full[v] may alias one another (the single field overload)
 template<class Vobj>
-void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
+void Grid_split(const std::vector<const Lattice<Vobj> *> &full,Lattice<Vobj> &split)
 {
   typedef typename Vobj::scalar_object Sobj;
 
-  int full_vecs   = full.size();
-
-  GRID_ASSERT(full_vecs>=1);
-
-  GridBase * full_grid = full[0].Grid();
+  GRID_ASSERT(full.size()>=1);
+  GridBase *full_grid  = full[0]->Grid();
   GridBase *split_grid = split.Grid();
 
-  int       ndim  = full_grid->_ndimension;
-  int  full_nproc = full_grid->_Nprocessors;
-  int split_nproc =split_grid->_Nprocessors;
-
-  ////////////////////////////////
-  // Checkerboard management
-  ////////////////////////////////
-  int cb = full[0].Checkerboard();
+  int cb = full[0]->Checkerboard();
   split.Checkerboard() = cb;
-
-  //////////////////////////////
-  // Checks
-  //////////////////////////////
-  GRID_ASSERT(full_grid->_ndimension==split_grid->_ndimension);
-  for(int n=0;n<full_vecs;n++){
-    GRID_ASSERT(full[n].Checkerboard() == cb);
-    for(int d=0;d<ndim;d++){
-      GRID_ASSERT(full[n].Grid()->_gdimensions[d]==split.Grid()->_gdimensions[d]);
-      GRID_ASSERT(full[n].Grid()->_fdimensions[d]==split.Grid()->_fdimensions[d]);
-    }
+  for(int n=0;n<full.size();n++){
+    GRID_ASSERT(full[n]->Grid() == full_grid);
+    GRID_ASSERT(full[n]->Checkerboard() == cb);
   }
 
-  int   nvector   =full_nproc/split_nproc; 
-  GRID_ASSERT(nvector*split_nproc==full_nproc);
-  GRID_ASSERT(nvector == full_vecs);
+  double t_start = usecond();
+  GridSplitSchedule sched(full_grid,split_grid);
+  GRID_ASSERT(sched.nvector == full.size());
 
-  Coordinate ratio(ndim);
-  for(int d=0;d<ndim;d++){
-    ratio[d] = full_grid->_processors[d]/ split_grid->_processors[d];
-  }
-
-  // Coarse phase timers, reported on GridLogPerformance
-  double t_start   = usecond();
-  double t_d2h     = 0;
-  double t_unvec   = 0;
-  double t_a2a     = 0;
-  double t_reorder = 0;
-  double t_vec     = 0;
-  double t0;
-
-  uint64_t lsites = full_grid->lSites();
-  uint64_t     sz = lsites * nvector;
-  std::vector<Sobj> tmpdata(sz);
-  std::vector<Sobj> alldata(sz);
-  std::vector<Sobj> scalardata(lsites); 
+  uint64_t fvol  = full_grid->lSites();
+  uint64_t bytes = fvol*sizeof(Sobj);
+  deviceVector<Sobj> staged(split_grid->lSites());
+  deviceVector<Sobj> block(fvol);
+  Sobj *staged_p = &staged[0];
+  Sobj *block_p  = &block[0];
   double t_alloc = usecond() - t_start;
 
-  for(int v=0;v<nvector;v++){
-    // Open and close a host view first so any device to host copy is timed on its own
-    t0 = usecond();
-    {
-      autoView(full_v, full[v], CpuRead);
-    }
-    t_d2h += usecond() - t0;
-    t0 = usecond();
-    unvectorizeToLexOrdArray(scalardata,full[v]);    
-    thread_for(site,lsites,{
-      alldata[v*lsites+site] = scalardata[site];
-    });
-    t_unvec += usecond() - t0;
+  double t_pack = 0;
+  double t_comm = 0;
+  uint64_t offrank = 0;
+  for(int k=0;k<sched.nvector;k++){
+    double t0 = usecond();
+    GridSplitUnvectorise(*full[sched.Field[k]],block_p,full_grid->_ldimensions);
+    double t1 = usecond();
+    offrank += sched.Exchange((void *)block_p,sched.FieldRank[k],
+                              (void *)&staged_p[sched.Box[k]*fvol],sched.BoxRank[k],bytes);
+    double t2 = usecond();
+    t_pack += t1-t0;
+    t_comm += t2-t1;
   }
 
-  int nvec = nvector; // Counts down to 1 as we collapse dims
-  Coordinate ldims = full_grid->_ldimensions;
+  double t0 = usecond();
+  GridSplitVectorise(staged_p,split,sched.fldims);
+  double t_unpack = usecond() - t0;
+  double t_total  = usecond() - t_start;
 
-  for(int d=ndim-1;d>=0;d--){
-
-    if ( ratio[d] != 1 ) {
-
-      t0 = usecond();
-      full_grid ->AllToAll(d,alldata,tmpdata);
-      if ( split_grid->_processors[d] > 1 ) {
-	alldata=tmpdata;
-	split_grid->AllToAll(d,alldata,tmpdata);
-      }
-      t_a2a += usecond() - t0;
-      t0 = usecond();
-
-      auto rdims = ldims; 
-      auto     M = ratio[d];
-      auto rsites= lsites*M;// increases rsites by M
-      nvec      /= M;       // Reduce nvec by subdivision factor
-      rdims[d]  *= M;       // increase local dim by same factor
-
-      int sP =   split_grid->_processors[d];
-      int fP =    full_grid->_processors[d];
-
-      int fvol   = lsites;
-      
-      int chunk  = (nvec*fvol)/sP;          GRID_ASSERT(chunk*sP == nvec*fvol);
-
-      // Loop over reordered data post A2A
-      thread_for(c, chunk, {
-	Coordinate coor(ndim);
-	for(int m=0;m<M;m++){
-	  for(int s=0;s<sP;s++){
-	    
-	    // addressing; use lexico
-	    int lex_r;
-	    uint64_t lex_c        = c+chunk*m+chunk*M*s;
-	    uint64_t lex_fvol_vec = c+chunk*s;
-	    uint64_t lex_fvol     = lex_fvol_vec%fvol;
-	    uint64_t lex_vec      = lex_fvol_vec/fvol;
-
-	    // which node sets an adder to the coordinate
-	    Lexicographic::CoorFromIndex(coor, lex_fvol, ldims);	  
-	    coor[d] += m*ldims[d];
-	    Lexicographic::IndexFromCoor(coor, lex_r, rdims);	  
-	    lex_r += lex_vec * rsites;
-
-	    // LexicoFind coordinate & vector number within split lattice
-	    alldata[lex_r] = tmpdata[lex_c];
-
-	  }
-	}
-      });
-      t_reorder += usecond() - t0;
-      ldims[d]*= ratio[d];
-      lsites  *= ratio[d];
-
-    }
-  }
-  t0 = usecond();
-  vectorizeFromLexOrdArray(alldata,split);    
-  t_vec = usecond() - t0;
-  double t_total = usecond() - t_start;
-
-  // Host to device copy of split happens lazily at its first accelerator use; not counted here
-  std::cout << GridLogPerformance << "Grid_split: " << nvector << " x " << sz/nvector*sizeof(Sobj)/1.0e6
+  std::cout << GridLogPerformance << "Grid_split: " << sched.nvector << " x " << bytes/1.0e6
             << " MB/rank total " << t_total/1.0e6 << " s : alloc " << t_alloc/1.0e6
-            << " d2h " << t_d2h/1.0e6
-            << " unvectorise " << t_unvec/1.0e6
-            << " alltoall " << t_a2a/1.0e6
-            << " reorder " << t_reorder/1.0e6
-            << " vectorise " << t_vec/1.0e6 << std::endl;
-  // Staging vectors are still live here, so this is the high-water point of the call
+            << " pack " << t_pack/1.0e6
+            << " exchange " << t_comm/1.0e6 << " (" << offrank/1.0e6 << " MB off rank, "
+            << offrank/(t_comm+1.0e-9)/1.0e3 << " GB/s)"
+            << " unpack " << t_unpack/1.0e6 << std::endl;
+  // Staging buffers are still live here, so this is the high-water point of the call
   if ( GridLogPerformance.isActive() ) {
     HostMemoryReport(full_grid,GridLogPerformance,"Grid_split");
   }
 }
 
 template<class Vobj>
+void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
+{
+  std::vector<const Lattice<Vobj> *> full_p(full.size());
+  for(int n=0;n<full.size();n++){
+    full_p[n] = &full[n];
+  }
+  Grid_split(full_p,split);
+}
+
+// The same field to every partition
+template<class Vobj>
 void Grid_split(Lattice<Vobj> &full,Lattice<Vobj>   & split)
 {
   int nvector = full.Grid()->_Nprocessors / split.Grid()->_Nprocessors;
-  std::vector<Lattice<Vobj> > full_v(nvector,full.Grid());
-  for(int n=0;n<nvector;n++){
-    full_v[n] = full;
-  }
-  Grid_split(full_v,split);
+  std::vector<const Lattice<Vobj> *> full_p(nvector,&full);
+  Grid_split(full_p,split);
 }
 
 template<class Vobj>
@@ -1763,154 +1828,55 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 {
   typedef typename Vobj::scalar_object Sobj;
 
-  int full_vecs   = full.size();
-
-  GRID_ASSERT(full_vecs>=1);
-
-  GridBase * full_grid = full[0].Grid();
+  GRID_ASSERT(full.size()>=1);
+  GridBase *full_grid  = full[0].Grid();
   GridBase *split_grid = split.Grid();
 
-  int       ndim  = full_grid->_ndimension;
-  int  full_nproc = full_grid->_Nprocessors;
-  int split_nproc =split_grid->_Nprocessors;
-
-  ////////////////////////////////
-  // Checkerboard management
-  ////////////////////////////////
   int cb = full[0].Checkerboard();
   split.Checkerboard() = cb;
-
-  //////////////////////////////
-  // Checks
-  //////////////////////////////
-  GRID_ASSERT(full_grid->_ndimension==split_grid->_ndimension);
-  for(int n=0;n<full_vecs;n++){
+  for(int n=0;n<full.size();n++){
+    GRID_ASSERT(full[n].Grid() == full_grid);
     GRID_ASSERT(full[n].Checkerboard() == cb);
-    for(int d=0;d<ndim;d++){
-      GRID_ASSERT(full[n].Grid()->_gdimensions[d]==split.Grid()->_gdimensions[d]);
-      GRID_ASSERT(full[n].Grid()->_fdimensions[d]==split.Grid()->_fdimensions[d]);
-    }
   }
 
-  int   nvector   =full_nproc/split_nproc; 
-  GRID_ASSERT(nvector*split_nproc==full_nproc);
-  GRID_ASSERT(nvector == full_vecs);
+  double t_start = usecond();
+  GridSplitSchedule sched(full_grid,split_grid);
+  GRID_ASSERT(sched.nvector == full.size());
 
-  Coordinate ratio(ndim);
-  for(int d=0;d<ndim;d++){
-    ratio[d] = full_grid->_processors[d]/ split_grid->_processors[d];
-  }
-
-  // Coarse phase timers, reported on GridLogPerformance
-  double t_start   = usecond();
-  double t_a2a     = 0;
-  double t_reorder = 0;
-  double t_vec     = 0;
-  double t0;
-
-  uint64_t lsites = full_grid->lSites();
-  uint64_t     sz = lsites * nvector;
-  std::vector<Sobj> tmpdata(sz);
-  std::vector<Sobj> alldata(sz);
-  std::vector<Sobj> scalardata(lsites); 
+  uint64_t fvol  = full_grid->lSites();
+  uint64_t bytes = fvol*sizeof(Sobj);
+  deviceVector<Sobj> staged(split_grid->lSites());
+  deviceVector<Sobj> block(fvol);
+  Sobj *staged_p = &staged[0];
+  Sobj *block_p  = &block[0];
   double t_alloc = usecond() - t_start;
 
-  // Open and close a host view first so any device to host copy is timed on its own
-  t0 = usecond();
-  {
-    autoView(split_v, split, CpuRead);
+  double t0 = usecond();
+  GridSplitUnvectorise(split,staged_p,sched.fldims);
+  double t_pack = usecond() - t0;
+
+  double t_comm   = 0;
+  double t_unpack = 0;
+  uint64_t offrank = 0;
+  for(int k=0;k<sched.nvector;k++){
+    double t1 = usecond();
+    offrank += sched.Exchange((void *)&staged_p[sched.Box[k]*fvol],sched.BoxRank[k],
+                              (void *)block_p,sched.FieldRank[k],bytes);
+    double t2 = usecond();
+    GridSplitVectorise(block_p,full[sched.Field[k]],full_grid->_ldimensions);
+    double t3 = usecond();
+    t_comm   += t2-t1;
+    t_unpack += t3-t2;
   }
-  double t_d2h = usecond() - t0;
-  t0 = usecond();
-  unvectorizeToLexOrdArray(alldata,split);    
-  double t_unvec = usecond() - t0;
-
-  /////////////////////////////////////////////////////////////////
-  // Start from split grid and work towards full grid
-  /////////////////////////////////////////////////////////////////
-
-  int nvec = 1;
-  uint64_t rsites        = split_grid->lSites();
-  Coordinate rdims = split_grid->_ldimensions;
-
-  for(int d=0;d<ndim;d++){
-
-    if ( ratio[d] != 1 ) {
-
-      auto     M = ratio[d];
-
-      int sP =   split_grid->_processors[d];
-      int fP =    full_grid->_processors[d];
-      
-      auto ldims = rdims;  ldims[d]  /= M;  // Decrease local dims by same factor
-      auto lsites= rsites/M;                // Decreases rsites by M
-      
-      int fvol   = lsites;
-      int chunk  = (nvec*fvol)/sP;          GRID_ASSERT(chunk*sP == nvec*fvol);
-	
-      t0 = usecond();
-      {
-	// Loop over reordered data post A2A
-	thread_for(c, chunk,{
-	  Coordinate coor(ndim);
-	  for(int m=0;m<M;m++){
-	    for(int s=0;s<sP;s++){
-
-	      // addressing; use lexico
-	      int lex_r;
-	      uint64_t lex_c = c+chunk*m+chunk*M*s;
-	      uint64_t lex_fvol_vec = c+chunk*s;
-	      uint64_t lex_fvol     = lex_fvol_vec%fvol;
-	      uint64_t lex_vec      = lex_fvol_vec/fvol;
-	      
-	      // which node sets an adder to the coordinate
-	      Lexicographic::CoorFromIndex(coor, lex_fvol, ldims);	  
-	      coor[d] += m*ldims[d];
-	      Lexicographic::IndexFromCoor(coor, lex_r, rdims);	  
-	      lex_r += lex_vec * rsites;
-	      
-	      // LexicoFind coordinate & vector number within split lattice
-	      tmpdata[lex_c] = alldata[lex_r];
-	    }
-	  }
-        });
-      }
-
-      t_reorder += usecond() - t0;
-
-      t0 = usecond();
-      if ( split_grid->_processors[d] > 1 ) {
-	split_grid->AllToAll(d,tmpdata,alldata);
-	tmpdata=alldata;
-      }
-      full_grid ->AllToAll(d,tmpdata,alldata);
-      t_a2a += usecond() - t0;
-      rdims[d]/= M;
-      rsites  /= M;
-      nvec    *= M;       // Increase nvec by subdivision factor
-    }
-  }
-
-  t0 = usecond();
-  lsites = full_grid->lSites();
-  for(int v=0;v<nvector;v++){
-    thread_for(site, lsites,{
-      scalardata[site] = alldata[v*lsites+site];
-    });
-    vectorizeFromLexOrdArray(scalardata,full[v]);    
-  }
-  t_vec = usecond() - t0;
   double t_total = usecond() - t_start;
 
-  // Host to device copies of full happen lazily at their first accelerator use; not counted here
-  std::cout << GridLogPerformance << "Grid_unsplit: " << nvector << " x " << sz/nvector*sizeof(Sobj)/1.0e6
+  std::cout << GridLogPerformance << "Grid_unsplit: " << sched.nvector << " x " << bytes/1.0e6
             << " MB/rank total " << t_total/1.0e6 << " s : alloc " << t_alloc/1.0e6
-            << " d2h " << t_d2h/1.0e6
-            << " unvectorise " << t_unvec/1.0e6
-            << " alltoall " << t_a2a/1.0e6
-            << " reorder " << t_reorder/1.0e6
-            << " vectorise " << t_vec/1.0e6 << std::endl;
-  // Staging vectors are still live here, so this is the high-water point of the call
+            << " pack " << t_pack/1.0e6
+            << " exchange " << t_comm/1.0e6 << " (" << offrank/1.0e6 << " MB off rank, "
+            << offrank/(t_comm+1.0e-9)/1.0e3 << " GB/s)"
+            << " unpack " << t_unpack/1.0e6 << std::endl;
+  // Staging buffers are still live here, so this is the high-water point of the call
   if ( GridLogPerformance.isActive() ) {
     HostMemoryReport(full_grid,GridLogPerformance,"Grid_unsplit");
   }
