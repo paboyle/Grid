@@ -56,6 +56,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/communicator/Communicator.h> 
 #include <Grid/communicator/RingAllReduce.h>
 #include <Grid/cartesian/Cartesian.h>
+#include <Grid/perfmon/HostMemory.h>
 #include <Grid/tensors/Tensors.h>      
 #include <Grid/lattice/Lattice.h>      
 #include <Grid/cshift/Cshift.h>       

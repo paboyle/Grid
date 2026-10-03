@@ -151,6 +151,8 @@ public:
       SplitCloneTimer.Stop();
       if ( split == nullptr ) {
         std::cout << GridLogMessage << "MixedPrecisionConjugateGradientBatched: operator cannot be split; serial inner solves" << std::endl;
+      } else {
+        HostMemoryReport(DoublePrecGrid,GridLogMessage,"MixedPrecisionConjugateGradientBatched: after split clone");
       }
     }
     
@@ -159,6 +161,7 @@ public:
     for(outer_iter = 0; outer_iter < MaxOuterIterations; outer_iter++){
       std::cout << GridLogMessage << std::endl;
       std::cout << GridLogMessage << "Outer iteration " << outer_iter << std::endl;
+      HostMemoryReport(DoublePrecGrid,GridLogMessage,"MixedPrecisionConjugateGradientBatched: outer iteration "+std::to_string(outer_iter));
       
       bool allConverged = true;
       

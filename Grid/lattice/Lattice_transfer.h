@@ -1741,6 +1741,10 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
             << " alltoall " << t_a2a/1.0e6
             << " reorder " << t_reorder/1.0e6
             << " vectorise " << t_vec/1.0e6 << std::endl;
+  // Staging vectors are still live here, so this is the high-water point of the call
+  if ( GridLogPerformance.isActive() ) {
+    HostMemoryReport(full_grid,GridLogPerformance,"Grid_split");
+  }
 }
 
 template<class Vobj>
@@ -1906,6 +1910,10 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
             << " alltoall " << t_a2a/1.0e6
             << " reorder " << t_reorder/1.0e6
             << " vectorise " << t_vec/1.0e6 << std::endl;
+  // Staging vectors are still live here, so this is the high-water point of the call
+  if ( GridLogPerformance.isActive() ) {
+    HostMemoryReport(full_grid,GridLogPerformance,"Grid_unsplit");
+  }
 }
 
 //////////////////////////////////////////////////////

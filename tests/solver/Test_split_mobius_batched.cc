@@ -93,6 +93,7 @@ void ReportMemory(GridBase *grid,const std::string &phase)
             << " : host RSS " << rss << " GB, peak " << peak
             << " GB; allocator cache host " << hostcache << " GB, device " << devcache
             << " GB (max over ranks)" << std::endl;
+  HostMemoryReport(grid,GridLogMessage,phase);
 }
 
 typedef LatticeFermionD FieldD;
