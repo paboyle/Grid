@@ -104,13 +104,11 @@ inline int GridSplitVectorIndex(GridBase *full,GridBase *split)
 // line (--batched-solver-split). Uses the trailing dimensions of grid's processor and shm
 // layouts, so it works for 4d and 5d grids. Returns grid's own processor layout (one
 // partition) when no split is requested. Asserts divisibility; warns when partitions
-// straddle nodes, when node boundaries are not visible, or when there are more partitions
-// than right-hand sides.
+// straddle nodes or when node boundaries are not visible.
 /////////////////////////////////////////////////////////////////////////////////////////////
 inline Coordinate BatchedSolverSplitLayout(GridBase *grid,
                                            const Coordinate &request,
                                            bool node,
-                                           int nbatch,
                                            int &partitions)
 {
   int nd  = GridDefaultMpi().size();
@@ -167,10 +165,6 @@ inline Coordinate BatchedSolverSplitLayout(GridBase *grid,
   } else if ( !inside_node && !whole_nodes ) {
     std::cout << GridLogWarning << "BatchedSolverSplit: partitions " << split
               << " straddle node boundaries (node layout " << shm << "); inner solves will communicate off node" << std::endl;
-  }
-  if ( partitions > nbatch ) {
-    std::cout << GridLogWarning << "BatchedSolverSplit: " << partitions << " partitions for "
-              << nbatch << " right-hand sides; the extra partitions only solve zero padding" << std::endl;
   }
   return split;
 }

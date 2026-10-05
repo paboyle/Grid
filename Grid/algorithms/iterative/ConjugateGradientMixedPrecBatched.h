@@ -53,9 +53,17 @@ public:
   
   // Inner solves on independent partitions of the communicator (--batched-solver-split).
   // BatchedSplit is the partition MPI layout, empty for no split; BatchedSplitNode selects
-  // one partition per node. Default from the command line; callers may override.
-  Coordinate BatchedSplit;
-  bool       BatchedSplitNode;
+  // one partition per node. Fixed at construction, default from the command line.
+  const Coordinate BatchedSplit;
+  const bool       BatchedSplitNode;
+
+  // Copy of Linop_f on the partitions, made once at construction and owned; nullptr when
+  // there is no split or the operator cannot be split. It holds the gauge field as it was at
+  // construction: a solver must not outlive a change of the operator's gauge field. The
+  // outer defect correction uses Linop_d, so a stale copy would cost convergence, not
+  // correctness.
+  SplitOperator<FieldF> *split = nullptr;
+  int                    Partitions = 1;
 
   MixedPrecisionConjugateGradientBatched(RealD tol, 
           Integer maxinnerit, 
@@ -64,11 +72,37 @@ public:
           GridBase* _sp_grid, 
           LinearOperatorBase<FieldF> &_Linop_f, 
           LinearOperatorBase<FieldD> &_Linop_d,
-          bool _updateResidual=true) :
+          bool _updateResidual=true,
+          const Coordinate &_split=GridDefaultBatchedSolverSplit(),
+          bool _split_node=GridDefaultBatchedSolverSplitNode()) :
     Linop_f(_Linop_f), Linop_d(_Linop_d),
     Tolerance(tol), InnerTolerance(tol), MaxInnerIterations(maxinnerit), MaxOuterIterations(maxouterit), MaxPatchupIterations(maxpatchit), SinglePrecGrid(_sp_grid),
     OuterLoopNormMult(100.), guesser(NULL), updateResidual(_updateResidual),
-    BatchedSplit(GridDefaultBatchedSolverSplit()), BatchedSplitNode(GridDefaultBatchedSolverSplitNode()) { };
+    BatchedSplit(_split), BatchedSplitNode(_split_node)
+  {
+    Coordinate layout = BatchedSolverSplitLayout(SinglePrecGrid,BatchedSplit,BatchedSplitNode,Partitions);
+    if ( Partitions > 1 ) {
+      double t0 = usecond();
+      split = Linop_f.SplitClone(layout);
+      double t1 = usecond();
+      if ( split == nullptr ) {
+        std::cout << GridLogMessage << "MixedPrecisionConjugateGradientBatched: operator cannot be split; serial inner solves" << std::endl;
+      } else {
+        std::cout << GridLogMessage << "MixedPrecisionConjugateGradientBatched: split clone " << (t1-t0)/1.0e6 << " s" << std::endl;
+        HostMemoryReport(SinglePrecGrid,GridLogMessage,"MixedPrecisionConjugateGradientBatched: after split clone");
+      }
+    }
+  };
+
+  // Owns split
+  MixedPrecisionConjugateGradientBatched(const MixedPrecisionConjugateGradientBatched &) = delete;
+
+  MixedPrecisionConjugateGradientBatched &operator=(const MixedPrecisionConjugateGradientBatched &) = delete;
+
+  ~MixedPrecisionConjugateGradientBatched(void)
+  {
+    delete split;
+  }
 
   void useGuesser(LinearFunction<FieldF> &g){
     guesser = &g;
@@ -139,21 +173,10 @@ public:
     ConjugateGradient<FieldF> CG_f(inner_tol, MaxInnerIterations);
     CG_f.ErrorOnNoConverge = false;
     
-    //Optionally clone the single precision operator onto split-communicator partitions
-    GridStopWatch SplitCloneTimer;
-    SplitTimers   splitTimers;
-    SplitOperator<FieldF> *split = nullptr;
-    int partitions;
-    Coordinate layout = BatchedSolverSplitLayout(SinglePrecGrid,BatchedSplit,BatchedSplitNode,NBatch,partitions);
-    if ( partitions > 1 ) {
-      SplitCloneTimer.Start();
-      split = Linop_f.SplitClone(layout);
-      SplitCloneTimer.Stop();
-      if ( split == nullptr ) {
-        std::cout << GridLogMessage << "MixedPrecisionConjugateGradientBatched: operator cannot be split; serial inner solves" << std::endl;
-      } else {
-        HostMemoryReport(DoublePrecGrid,GridLogMessage,"MixedPrecisionConjugateGradientBatched: after split clone");
-      }
+    SplitTimers splitTimers;
+    if ( split != nullptr && split->Partitions > NBatch ) {
+      std::cout << GridLogWarning << "MixedPrecisionConjugateGradientBatched: " << split->Partitions << " partitions for "
+                << NBatch << " right-hand sides; the extra partitions only solve zero padding" << std::endl;
     }
     
     Integer &outer_iter = TotalOuterIterations; //so it will be equal to the final iteration count
@@ -221,10 +244,6 @@ public:
 
     }
 
-    SplitCloneTimer.Start();
-    delete split;
-    SplitCloneTimer.Stop();
-    
     //Final trial CG
     std::cout << GridLogMessage << std::endl;
     std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: Starting final patch-up double-precision solve"<<std::endl;
@@ -246,16 +265,15 @@ public:
     std::cout << GridLogMessage << std::endl;
     std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: Total time " << TotalTimer.Elapsed() << " Precision change " << PrecChangeTimer.Elapsed() << " Inner CG total " << InnerCGtimer.Elapsed() << std::endl;
     std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: Outer residual " << OuterResidualTimer.Elapsed() << " Patch-up " << PatchupTimer.Elapsed() << std::endl;
-    if ( partitions > 1 ) {
-      std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: Split clone and delete " << SplitCloneTimer.Elapsed()
-               << " Grid_split " << splitTimers.Split.Elapsed() << " (" << splitTimers.SplitCalls << " calls)"
+    if ( split != nullptr ) {
+      std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: Grid_split " << splitTimers.Split.Elapsed() << " (" << splitTimers.SplitCalls << " calls)"
                << " Grid_unsplit " << splitTimers.Unsplit.Elapsed() << " (" << splitTimers.UnsplitCalls << " calls)"
                << " Staging copies " << splitTimers.Staging.Elapsed()
                << " Host to device " << splitTimers.H2D.Elapsed()
                << " Iteration count sum " << splitTimers.Reduce.Elapsed() << std::endl;
     }
     double accounted = PrecChangeTimer.useconds() + InnerCGtimer.useconds() + OuterResidualTimer.useconds()
-                     + PatchupTimer.useconds() + SplitCloneTimer.useconds() + splitTimers.Split.useconds()
+                     + PatchupTimer.useconds() + splitTimers.Split.useconds()
                      + splitTimers.Unsplit.useconds() + splitTimers.Staging.useconds() + splitTimers.H2D.useconds()
                      + splitTimers.Reduce.useconds();
     std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradientBatched: Unaccounted " << (TotalTimer.useconds()-accounted)/1.0e6 << " s" << std::endl;

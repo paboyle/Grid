@@ -213,25 +213,24 @@ int main (int argc, char ** argv)
 
   ReportMemory(UGrid_d,"operators and sources ready");
 
-  MixedPrecisionConjugateGradientBatched<FieldD,FieldF> mCG(tol,10000,50,10000,FrbGrid_f,Linop_f,Linop_d);
-
-  Coordinate split     = mCG.BatchedSplit;
-  bool       splitnode = mCG.BatchedSplitNode;
-
   if ( unsplit ) {
-    mCG.BatchedSplit     = Coordinate();
-    mCG.BatchedSplitNode = false;
+    MixedPrecisionConjugateGradientBatched<FieldD,FieldF> mCG(tol,10000,50,10000,FrbGrid_f,Linop_f,Linop_d,
+                                                              true,Coordinate(),false);
     SolveAndReport("UNSPLIT",mCG,Linop_d,src,sol);
     ReportMemory(UGrid_d,"after unsplit solve");
   }
 
-  mCG.BatchedSplit     = split;
-  mCG.BatchedSplitNode = splitnode;
-  // Repeated split solves expose allocations not released between calls
-  for(int r=0;r<repeat;r++){
-    SolveAndReport("SPLIT",mCG,Linop_d,src,sol);
-    ReportMemory(UGrid_d,"after split solve "+std::to_string(r));
+  if ( repeat > 0 ) {
+    // Split layout from the command line; the split operator is cloned here, once
+    MixedPrecisionConjugateGradientBatched<FieldD,FieldF> mCG(tol,10000,50,10000,FrbGrid_f,Linop_f,Linop_d);
+    ReportMemory(UGrid_d,"after split solver construction");
+    // Repeated split solves reuse the clone and expose allocations not released between calls
+    for(int r=0;r<repeat;r++){
+      SolveAndReport("SPLIT",mCG,Linop_d,src,sol);
+      ReportMemory(UGrid_d,"after split solve "+std::to_string(r));
+    }
   }
+  ReportMemory(UGrid_d,"after split solver destruction");
 
   Grid_finalize();
 }

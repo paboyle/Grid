@@ -145,16 +145,19 @@ void CheckSplitBatched(const std::string &name,
     sol_split[i] = Zero();
   }
 
-  MixedPrecisionConjugateGradientBatched<FieldD,FieldF> mCG(TOLERANCE,10000,50,1000,grid_f,Linop_f,Linop_d);
-
-  std::cout << GridLogMessage << name << ": unsplit batched solve" << std::endl;
-  mCG.BatchedSplit     = Coordinate();
-  mCG.BatchedSplitNode = false;
-  mCG(src,sol_ref);
-
-  std::cout << GridLogMessage << name << ": split batched solve, partition layout " << layout << std::endl;
-  mCG.BatchedSplit = layout;
-  mCG(src,sol_split);
+  {
+    std::cout << GridLogMessage << name << ": unsplit batched solve" << std::endl;
+    MixedPrecisionConjugateGradientBatched<FieldD,FieldF> mCG(TOLERANCE,10000,50,1000,grid_f,Linop_f,Linop_d,
+                                                              true,Coordinate(),false);
+    mCG(src,sol_ref);
+  }
+  {
+    std::cout << GridLogMessage << name << ": split batched solve, partition layout " << layout << std::endl;
+    MixedPrecisionConjugateGradientBatched<FieldD,FieldF> mCG(TOLERANCE,10000,50,1000,grid_f,Linop_f,Linop_d,
+                                                              true,layout,false);
+    GRID_ASSERT( (mCG.Partitions == 1) || (mCG.split != nullptr) );
+    mCG(src,sol_split);
+  }
 
   FieldD Msol(src[0].Grid());
   Msol.Checkerboard() = cb;
