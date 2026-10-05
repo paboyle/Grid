@@ -81,6 +81,15 @@ public:
     mass_minus=_mass_minus;
     SetCoefficientsInternal(_zolo_hi,_gamma,_b,_c);  // Reset coeffs
   } ;
+
+  // Everything SetMass needs, plus the boost, then rebuild the coefficient arrays in clone
+  void CloneCoefficientsInto(CayleyFermion5D<Impl> &clone)
+  {
+    clone.mass_plus  = mass_plus;
+    clone.mass_minus = mass_minus;
+    clone.qmu        = qmu;
+    clone.SetCoefficientsInternal(_zolo_hi,_gamma,_b,_c);
+  }
   void  P(const FermionField &psi, FermionField &chi);
   void  Pdag(const FermionField &psi, FermionField &chi);
   

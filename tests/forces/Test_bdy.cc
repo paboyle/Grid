@@ -99,90 +99,11 @@ Author: Peter Boyle <pboyle@bnl.gov>
 using namespace std;
 using namespace Grid;
 
+#include "ForceTest.h"
+
 typedef MobiusFermionD FermionAction;
 typedef WilsonImplD FimplD;
 typedef WilsonImplD FermionImplPolicy;
-
-template<class Gimpl>
-void ForceTest(Action<LatticeGaugeField> &action,LatticeGaugeField & U,MomentumFilterBase<LatticeGaugeField> &Filter)
-{
-  GridBase *UGrid = U.Grid();
-
-  std::vector<int> seeds({1,2,3,5});
-  GridSerialRNG            sRNG;         sRNG.SeedFixedIntegers(seeds);
-  GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds);
-
-  LatticeColourMatrix Pmu(UGrid); 
-  LatticeGaugeField P(UGrid); 
-  LatticeGaugeField UdSdU(UGrid); 
-
-  std::cout << GridLogMessage << "*********************************************************"<<std::endl;
-  std::cout << GridLogMessage << " Force test for "<<action.action_name()<<std::endl;
-  std::cout << GridLogMessage << "*********************************************************"<<std::endl;
-  
-  RealD eps=0.005;
-
-  std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
-  std::cout << GridLogMessage << " Refresh "<<action.action_name()<<std::endl;
-  std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
-  
-  Gimpl::generate_momenta(P,sRNG,RNG4);
-  Filter.applyFilter(P);
-
-#if  0
-  FieldMetaData header;
-  std::string file("./ckpoint_lat.2000");
-  NerscIO::readConfiguration(U,header,file);
-#else
-  U = 1.0;
-#endif
-  action.refresh(U,sRNG,RNG4);
-
-  std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
-  std::cout << GridLogMessage << " Action "<<action.action_name()<<std::endl;
-  std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
-
-  RealD S1 = action.S(U);
-
-  Gimpl::update_field(P,U,eps);
-
-  std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
-  std::cout << GridLogMessage << " Derivative "<<action.action_name()<<std::endl;
-  std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
-  action.deriv(U,UdSdU);
-  UdSdU = Ta(UdSdU);
-  Filter.applyFilter(UdSdU);
-
-  DumpSliceNorm("Force",UdSdU,Nd-1);
-  
-  Gimpl::update_field(P,U,eps);
-  std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
-  std::cout << GridLogMessage << " Action "<<action.action_name()<<std::endl;
-  std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
-  
-  RealD S2 = action.S(U);
-
-  // Use the derivative
-  LatticeComplex dS(UGrid); dS = Zero();
-  for(int mu=0;mu<Nd;mu++){
-    auto UdSdUmu = PeekIndex<LorentzIndex>(UdSdU,mu);
-    Pmu= PeekIndex<LorentzIndex>(P,mu);
-    dS = dS - trace(Pmu*UdSdUmu)*eps*2.0*2.0;
-  }
-  ComplexD dSpred    = sum(dS);
-  RealD diff =  S2-S1-dSpred.real();
-
-  std::cout<< GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
-  std::cout<< GridLogMessage << "S1 : "<< S1    <<std::endl;
-  std::cout<< GridLogMessage << "S2 : "<< S2    <<std::endl;
-  std::cout<< GridLogMessage << "dS : "<< S2-S1 <<std::endl;
-  std::cout<< GridLogMessage << "dSpred : "<< dSpred.real() <<std::endl;
-  std::cout<< GridLogMessage << "diff : "<< diff<<std::endl;
-  std::cout<< GridLogMessage << "*********************************************************"<<std::endl;
-  //  GRID_ASSERT(diff<1.0);
-  std::cout<< GridLogMessage << "Done" <<std::endl;
-  std::cout << GridLogMessage << "*********************************************************"<<std::endl;
-}
 
 int main (int argc, char ** argv)
 {
@@ -230,6 +151,7 @@ int main (int argc, char ** argv)
 
   ///////////////////// Gauge Field and Gauge Forces ////////////////////////////
   LatticeGaugeField U(UGrid);
+  U = 1.0;
 
   RealD beta=6.0;
   WilsonGaugeActionR PlaqAction(beta);

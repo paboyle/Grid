@@ -33,6 +33,7 @@ NAMESPACE_CHECK(blas);
 #include <Grid/algorithms/blas/BatchedBlas.h>
 
 NAMESPACE_CHECK(algorithms);
+#include <Grid/algorithms/SplitOperator.h>
 #include <Grid/algorithms/SparseMatrix.h>
 #include <Grid/algorithms/LinearOperator.h>
 #include <Grid/algorithms/Preconditioner.h>

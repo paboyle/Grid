@@ -147,6 +147,48 @@ public:
   // DoubleStore impl dependent
   void ImportGauge(const GaugeField &_Umu);
 
+  // Install an already doubled gauge field (phases, twists, anisotropy and -1/2 applied)
+  void ImportDoubledGauge(const DoubledGaugeField &U)
+  {
+    Umu = U;
+    pickCheckerboard(Even,UmuEven,Umu);
+    pickCheckerboard(Odd ,UmuOdd ,Umu);
+  }
+
+  // Redistribute this operator's doubled gauge field onto clone's split grid. Collective.
+  void SplitDoubledGaugeInto(WilsonFermion<Impl> &clone)
+  {
+    DoubledGaugeField sUmu(clone.GaugeGrid());
+    Grid_split(Umu,sUmu);
+    clone.ImportDoubledGauge(sUmu);
+  }
+
+  // Exact type only: derived operators (e.g. WilsonTMFermion) must not inherit this
+  virtual SplitOperator<FermionField> *SplitClone(const Coordinate &mpi_split)
+  {
+    if ( typeid(*this) != typeid(WilsonFermion<Impl>) ) {
+      return nullptr;
+    }
+    if ( Impl::isGparity ) {
+      return nullptr;
+    }
+    SplitOperator<FermionField> *split = this->MakeSplitGrids(mpi_split);
+
+    // Placeholder links; the doubled field is overwritten below
+    GaugeField Uplaceholder(split->GaugeGrid);
+    Uplaceholder = Zero();
+
+    WilsonFermion<Impl> *clone = new WilsonFermion<Impl>(Uplaceholder,
+                                                         *split->GaugeGrid,
+                                                         *split->GaugeRBGrid,
+                                                         mass,
+                                                         this->Params,
+                                                         anisotropyCoeff);
+    SplitDoubledGaugeInto(*clone);
+    split->Matrix = clone;
+    return split;
+  }
+
   ///////////////////////////////////////////////////////////////
   // Data members require to support the functionality
   ///////////////////////////////////////////////////////////////

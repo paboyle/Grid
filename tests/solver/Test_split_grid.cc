@@ -56,14 +56,12 @@ int main (int argc, char ** argv)
   // Split into 1^4 mpi communicators
   /////////////////////////////////////////////
 
-  for(int i=0;i<argc;i++){
-    if(std::string(argv[i]) == "--split"){
-      for(int k=0;k<mpi_layout.size();k++){
-	std::stringstream ss; 
-	ss << argv[i+1+k]; 
-	ss >> mpi_split[k];
-      }
-      break;
+  if ( GridCmdOptionExists(argv,argv+argc,"--split") ) {
+    std::vector<int> split;
+    GridCmdOptionIntVector(GridCmdOptionPayload(argv,argv+argc,"--split"),split);
+    GRID_ASSERT(split.size() == mpi_layout.size());
+    for(int k=0;k<mpi_layout.size();k++){
+      mpi_split[k] = split[k];
     }
   }
 

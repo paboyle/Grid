@@ -70,6 +70,37 @@ public:
  
   }
 
+  // Exact type only: derived operators (e.g. ScaledShamirFermion) must not inherit this
+  virtual SplitOperator<FermionField> *SplitClone(const Coordinate &mpi_split)
+  {
+    if ( typeid(*this) != typeid(MobiusFermion<Impl>) ) {
+      return nullptr;
+    }
+    if ( this->Dirichlet || Impl::LsVectorised || Impl::isGparity ) {
+      return nullptr;
+    }
+    SplitOperator<FermionField> *split = this->MakeSplitGrids(mpi_split);
+
+    // Placeholder links; the doubled field is overwritten below
+    GaugeField Uplaceholder(split->GaugeGrid);
+    Uplaceholder = Zero();
+
+    MobiusFermion<Impl> *clone = new MobiusFermion<Impl>(Uplaceholder,
+                                                         *split->FermionGrid,
+                                                         *split->FermionRBGrid,
+                                                         *split->GaugeGrid,
+                                                         *split->GaugeRBGrid,
+                                                         this->mass_plus,
+                                                         this->M5,
+                                                         this->_b,
+                                                         this->_c,
+                                                         this->Params);
+    this->CloneCoefficientsInto(*clone);
+    this->SplitDoubledGaugeInto(*clone);
+    split->Matrix = clone;
+    return split;
+  }
+
 };
 
 NAMESPACE_END(Grid);

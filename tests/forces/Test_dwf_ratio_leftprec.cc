@@ -38,7 +38,7 @@ Author: Peter Boyle <pboyle@bnl.gov>
 //             BOTH classes (E0a also validates the twin-eta capture).
 //   E1      : S_classic == S_leftprec       (relative, ~1e-8)
 //   E2      : deriv_classic == deriv_leftprec (pointwise field norm, ~1e-8)
-//   F1      : ForceTest (Test_double_ratio.cc idiom) on the LeftPrec class.
+//   F1      : ForceTest (tests/forces/ForceTest.h) on the LeftPrec class.
 //
 // All asserts are hard: this is the regression gate for the new class.
 // Run small, e.g.:  ./Test_dwf_ratio_leftprec --grid 8.8.8.8
@@ -138,67 +138,7 @@ public:
   }
 };
 
-////////////////////////////////////////////////////////////////////
-// ForceTest idiom from Test_double_ratio.cc (midpoint derivative)
-////////////////////////////////////////////////////////////////////
-template<class Gimpl>
-void ForceTest(Action<LatticeGaugeField> &action,LatticeGaugeField & U,MomentumFilterBase<LatticeGaugeField> &Filter)
-{
-  GridBase *UGrid = U.Grid();
-
-  std::vector<int> seeds({1,2,3,5});
-  GridSerialRNG            sRNG;         sRNG.SeedFixedIntegers(seeds);
-  GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds);
-
-  LatticeColourMatrix Pmu(UGrid);
-  LatticeGaugeField P(UGrid);
-  LatticeGaugeField UdSdU(UGrid);
-
-  std::cout << GridLogMessage << "*********************************************************"<<std::endl;
-  std::cout << GridLogMessage << " Force test for "<<action.action_name()<<std::endl;
-  std::cout << GridLogMessage << "*********************************************************"<<std::endl;
-
-  RealD eps=0.005;
-
-  Gimpl::generate_momenta(P,sRNG,RNG4);
-  Filter.applyFilter(P);
-
-  action.refresh(U,sRNG,RNG4);
-
-  RealD S1 = action.S(U);
-
-  Gimpl::update_field(P,U,eps);
-
-  action.deriv(U,UdSdU);
-  UdSdU = Ta(UdSdU);
-  Filter.applyFilter(UdSdU);
-
-  DumpSliceNorm("Force",UdSdU,Nd-1);
-
-  Gimpl::update_field(P,U,eps);
-
-  RealD S2 = action.S(U);
-
-  LatticeComplex dS(UGrid); dS = Zero();
-  for(int mu=0;mu<Nd;mu++){
-    auto UdSdUmu = PeekIndex<LorentzIndex>(UdSdU,mu);
-    Pmu= PeekIndex<LorentzIndex>(P,mu);
-    dS = dS - trace(Pmu*UdSdUmu)*eps*2.0*2.0;
-  }
-  ComplexD dSpred    = sum(dS);
-  RealD diff =  S2-S1-dSpred.real();
-
-  std::cout<< GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
-  std::cout<< GridLogMessage << "S1 : "<< S1    <<std::endl;
-  std::cout<< GridLogMessage << "S2 : "<< S2    <<std::endl;
-  std::cout<< GridLogMessage << "dS : "<< S2-S1 <<std::endl;
-  std::cout<< GridLogMessage << "dSpred : "<< dSpred.real() <<std::endl;
-  std::cout<< GridLogMessage << "diff : "<< diff<<std::endl;
-  std::cout<< GridLogMessage << "diff/dS : "<< diff/(S2-S1)<<std::endl;
-  std::cout<< GridLogMessage << "*********************************************************"<<std::endl;
-  std::cout<< GridLogMessage << "Done" <<std::endl;
-  std::cout << GridLogMessage << "*********************************************************"<<std::endl;
-}
+#include "ForceTest.h"
 
 int main (int argc, char ** argv)
 {

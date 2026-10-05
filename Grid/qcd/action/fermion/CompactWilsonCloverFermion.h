@@ -189,6 +189,71 @@ public:
 
   void ImportGauge(const GaugeField& _Umu) override;
 
+  // Install already computed clover fields and inverses, and derive the checkerboarded parts
+  void ImportCloverTerms(const CloverDiagonalField& D,
+                         const CloverTriangleField& T,
+                         const CloverDiagonalField& Dinv,
+                         const CloverTriangleField& Tinv)
+  {
+    Diagonal    = D;
+    Triangle    = T;
+    DiagonalInv = Dinv;
+    TriangleInv = Tinv;
+    pickCheckerboard(Even, DiagonalEven,    Diagonal);
+    pickCheckerboard(Even, TriangleEven,    Triangle);
+    pickCheckerboard(Odd,  DiagonalOdd,     Diagonal);
+    pickCheckerboard(Odd,  TriangleOdd,     Triangle);
+    pickCheckerboard(Even, DiagonalInvEven, DiagonalInv);
+    pickCheckerboard(Even, TriangleInvEven, TriangleInv);
+    pickCheckerboard(Odd,  DiagonalInvOdd,  DiagonalInv);
+    pickCheckerboard(Odd,  TriangleInvOdd,  TriangleInv);
+  }
+
+  // Exact type only: derived operators must not inherit this
+  SplitOperator<FermionField> *SplitClone(const Coordinate& mpi_split) override
+  {
+    if ( typeid(*this) != typeid(CompactWilsonCloverFermion<Impl,CloverHelpers>) ) {
+      return nullptr;
+    }
+    if ( Impl::isGparity ) {
+      return nullptr;
+    }
+    SplitOperator<FermionField> *split = this->MakeSplitGrids(mpi_split);
+
+    // Placeholder links; the doubled field and clover fields are overwritten below.
+    // Boundary masks are rebuilt by the constructor from global coordinates.
+    GaugeField Uplaceholder(split->GaugeGrid);
+    Uplaceholder = Zero();
+
+    CompactWilsonCloverFermion<Impl,CloverHelpers> *clone =
+      new CompactWilsonCloverFermion<Impl,CloverHelpers>(Uplaceholder,
+                                                         *split->GaugeGrid,
+                                                         *split->GaugeRBGrid,
+                                                         this->mass,
+                                                         csw_r,
+                                                         csw_t,
+                                                         cF,
+                                                         this->anisotropyCoeff,
+                                                         this->Params);
+    // The stored coefficients are post-scaled; the constructor would scale them again
+    clone->csw_r = csw_r;
+    clone->csw_t = csw_t;
+
+    CloverDiagonalField sD(split->GaugeGrid);
+    CloverTriangleField sT(split->GaugeGrid);
+    CloverDiagonalField sDinv(split->GaugeGrid);
+    CloverTriangleField sTinv(split->GaugeGrid);
+    Grid_split(Diagonal,sD);
+    Grid_split(Triangle,sT);
+    Grid_split(DiagonalInv,sDinv);
+    Grid_split(TriangleInv,sTinv);
+    clone->ImportCloverTerms(sD,sT,sDinv,sTinv);
+
+    this->SplitDoubledGaugeInto(*clone);
+    split->Matrix = clone;
+    return split;
+  }
+
   /////////////////////////////////////////////
   // Helpers
   /////////////////////////////////////////////

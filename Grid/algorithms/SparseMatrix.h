@@ -78,6 +78,17 @@ public:
   virtual  void MeooeDag    (const Field &in, Field &out)=0;
   virtual  void MooeeDag    (const Field &in, Field &out)=0;
   virtual  void MooeeInvDag (const Field &in, Field &out)=0;
+
+  //////////////////////////////////////////////////////////////////////
+  // Copy of this operator on grids whose communicator is split into
+  // partitions of MPI layout mpi_split. Collective over the full
+  // communicator. nullptr if this operator cannot be cloned.
+  //////////////////////////////////////////////////////////////////////
+  virtual SplitOperator<Field> *SplitClone(const Coordinate &mpi_split)
+  {
+    return nullptr;
+  }
+
   virtual ~CheckerBoardedSparseMatrixBase() {};
 };
 

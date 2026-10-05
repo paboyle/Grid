@@ -109,10 +109,69 @@ public:
   ////////////////////////
   // Derivative interface
   ////////////////////////
-  // Interface calls an internal routine
-  void DhopDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag)  { GRID_ASSERT(0);};
-  void DhopDerivOE(GaugeField &mat,const FermionField &U,const FermionField &V,int dag){ GRID_ASSERT(0);};
-  void DhopDerivEO(GaugeField &mat,const FermionField &U,const FermionField &V,int dag){ GRID_ASSERT(0);};
+  // Force on every link of every s-slice, in the form WilsonFermion5D uses:
+  //   F5[mu](x,s) = tr_spin[ Btilde(x,s) A(x,s)^dag ]
+  //   Btilde(x,s) = -1/2 U_mu(x,s) (1 -+ gamma_mu) B(x+mu,s), lower sign for dag
+  // Dhop5 carries no gauge links and contributes nothing.
+  void DhopDeriv5D(std::vector<GaugeLinkField> &F5,const FermionField &A,const FermionField &B,int dag)
+  {
+    RealD sgn= 1.0;
+    if (dag ) sgn=-1.0;
+
+    Gamma::Algebra Gmu [] = {
+			 Gamma::Algebra::GammaX,
+			 Gamma::Algebra::GammaY,
+			 Gamma::Algebra::GammaZ,
+			 Gamma::Algebra::GammaT
+    };
+
+    FermionField tmp(B.Grid());
+    FermionField Btilde(B.Grid());
+    for(int mu=0;mu<Nd;mu++){
+      tmp    = Umu[mu] * Cshift(B,mu+1,1);
+      Btilde = tmp - Gamma(Gmu[mu])*tmp*sgn;
+      Btilde = -0.5*Btilde;
+      F5[mu] = TraceIndex<SpinIndex>(outerProduct(Btilde,A));
+    }
+  }
+
+  // Every slice holds the same 4D gauge field, so the 4D force is the sum over slices
+  void DhopDeriv(GaugeField &mat,const FermionField &A,const FermionField &B,int dag)
+  {
+    std::vector<GaugeLinkField> F5(Nd,_grid);
+    DhopDeriv5D(F5,A,B,dag);
+
+    GaugeLinkField slice(_grid4);
+    GaugeLinkField sum(_grid4);
+    for(int mu=0;mu<Nd;mu++){
+      sum = Zero();
+      for(int s=0;s<Ls;s++){
+        ExtractSlice(slice,F5[mu],s,0);
+        sum = sum + slice;
+      }
+      PokeIndex<LorentzIndex>(mat,sum,mu);
+    }
+  }
+
+  // The checkerboard here is 5D, so a field on one checkerboard touches links at both 4D
+  // parities: the even-odd forces are returned on the full 4D gauge grid.
+  int CheckerboardedForce(void) { return 0; };
+
+  // A and B on opposite 5D checkerboards, placed in zeroed full fields: the full-lattice
+  // derivative then picks up exactly the links Meooe uses between them.
+  void DhopDerivCB(GaugeField &mat,const FermionField &A,const FermionField &B,int dag)
+  {
+    GRID_ASSERT(A.Checkerboard() != B.Checkerboard());
+    FermionField Afull(_grid);
+    FermionField Bfull(_grid);
+    Afull = Zero();
+    Bfull = Zero();
+    setCheckerboard(Afull,A);
+    setCheckerboard(Bfull,B);
+    DhopDeriv(mat,Afull,Bfull,dag);
+  }
+  void DhopDerivOE(GaugeField &mat,const FermionField &U,const FermionField &V,int dag){ DhopDerivCB(mat,U,V,dag);};
+  void DhopDerivEO(GaugeField &mat,const FermionField &U,const FermionField &V,int dag){ DhopDerivCB(mat,U,V,dag);};
 
   ///////////////////////////////////////////////////////////////
   // non-hermitian hopping term; half cb or both
@@ -200,6 +259,7 @@ public:
     _grid(&Fgrid),
     _cbgrid(&Hgrid),
     _grid4(_Umu.Grid()),
+    _cbgrid4(nullptr),  // the checkerboard is 5D; there is no 4D red-black grid
     Umu(Nd,&Fgrid),
     UmuEven(Nd,&Hgrid),
     UmuOdd(Nd,&Hgrid),
@@ -221,10 +281,6 @@ public:
       MassField =scalar(-mass);
       one       =scalar(1.0);
       MassField =where(coor==Integer(Ls-1),MassField,one);
-      for(int mu=0;mu<Nd;mu++){
-	pickCheckerboard(Even,UmuEven[mu],Umu[mu]);
-	pickCheckerboard(Odd ,UmuOdd[mu],Umu[mu]);
-      }
       pickCheckerboard(Even,MassFieldEven,MassField);
       pickCheckerboard(Odd ,MassFieldOdd,MassField);
       
@@ -239,6 +295,8 @@ public:
       for(int s=0;s<this->Ls;s++){
 	InsertSlice(U4,Umu[mu],s,0);
       }
+      pickCheckerboard(Even,UmuEven[mu],Umu[mu]);
+      pickCheckerboard(Odd ,UmuOdd[mu],Umu[mu]);
     }
   }
 
