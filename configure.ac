@@ -174,7 +174,7 @@ esac
 ############### fermions
 AC_ARG_ENABLE([fermion-instantiations],
      [AS_HELP_STRING([--enable-fermion-instantiations=yes|no],[enable fermion instantiations])],
-     [ac_FERMION_REPS=${enable_fermion_instantiations}], [ac_FERMION_INSTANTIATIONS=yes])
+     [ac_FERMION_INSTANTIATIONS=${enable_fermion_instantiations}], [ac_FERMION_INSTANTIATIONS=yes])
 
 AM_CONDITIONAL(BUILD_FERMION_INSTANTIATIONS, [ test "${ac_FERMION_INSTANTIATIONS}X" == "yesX" ])
 
