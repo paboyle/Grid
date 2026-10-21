@@ -38,6 +38,10 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 extern bool Stencil_force_mpi ;
+#ifdef GRID_FJMPI
+// Fujitsu MPI persistent requests for the halo exchange with other nodes (set by --comms-overlap)
+extern bool Stencil_persistent ;
+#endif
 extern bool Stencil_force_barrier ;
 
 class CartesianCommunicator : public SharedMemory {
@@ -201,6 +205,11 @@ public:
 
   // Could do a PollHtoD and have a CommsMerge dependence
   void StencilSendToRecvFromPollDtoH (std::vector<CommsRequest_t> &list);
+#ifdef A64FX
+  // Make progress on outstanding requests without blocking (MPI only progresses
+  // inside MPI calls on Fugaku); safe to call repeatedly before Complete.
+  void StencilSendToRecvFromProgress(std::vector<CommsRequest_t> &list);
+#endif
   void StencilSendToRecvFromPollIRecv(std::vector<CommsRequest_t> &list);
 
   double StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,

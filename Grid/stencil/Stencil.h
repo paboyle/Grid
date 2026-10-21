@@ -630,6 +630,13 @@ public:
     }
   }
 
+#ifdef A64FX
+  // Progress outstanding communications while computing (see CommunicateBegin)
+  void CommunicateProgress(void)
+  {
+    _grid->StencilSendToRecvFromProgress(MpiReqs);
+  }
+#endif
   void CommunicateComplete(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
     //    std::cout << "Communicate Complete "<<std::endl;

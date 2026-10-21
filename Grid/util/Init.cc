@@ -371,13 +371,6 @@ void Grid_init(int *argc,char ***argv)
     GlobalSharedMemory::Hugepages = 1;
   }
 
-#if defined(A64FX)
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-overlap") ){
-    std::cout << "Option --comms-overlap currently not supported on QPACE4. Exiting." << std::endl;
-    exit(EXIT_FAILURE);
-  }
-#endif
-
   //////////////////////////////////////////////////////////
   // Memory manager
   //////////////////////////////////////////////////////////
@@ -595,6 +588,9 @@ void Grid_init(int *argc,char ***argv)
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-overlap") ){
     WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute;
     StaggeredKernelsStatic::Comms = StaggeredKernelsStatic::CommsAndCompute;
+#ifdef GRID_FJMPI
+    Stencil_persistent = true;
+#endif
   } else {
     WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsThenCompute;
     StaggeredKernelsStatic::Comms = StaggeredKernelsStatic::CommsThenCompute;

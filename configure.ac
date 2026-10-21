@@ -846,6 +846,33 @@ esac
 AM_CONDITIONAL(BUILD_COMMS_MPI3,  [ test "${comms_type}X" == "mpi3X" ] )
 AM_CONDITIONAL(BUILD_COMMS_NONE,  [ test "${comms_type}X" == "noneX" ])
 
+############### Fujitsu MPI extensions (persistent halo requests, Tofu topology)
+AC_ARG_ENABLE([fjmpi],[AS_HELP_STRING([--enable-fjmpi=auto|yes|no],[Use the Fujitsu MPI extensions (default: auto, if mpi-ext.h declares them)])],[ac_FJMPI=${enable_fjmpi}],[ac_FJMPI=auto])
+fjmpi=no
+case ${ac_FJMPI} in
+     yes|no|auto) ;;
+     *) AC_MSG_ERROR([${ac_FJMPI} unsupported --enable-fjmpi option]);;
+esac
+if test "${comms_type}X" == "mpi3X" && test "${ac_FJMPI}X" != "noX"; then
+  ac_save_CXXFLAGS=$CXXFLAGS
+  CXXFLAGS="$MPI_CXXFLAGS $CXXFLAGS"
+  AC_MSG_CHECKING([for the Fujitsu MPI extensions])
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>
+#include <mpi-ext.h>]],
+    [[MPI_Request r; int c[3];
+      FJMPI_Prequest_start(&r);
+      FJMPI_Topology_get_coords(MPI_COMM_WORLD,0,FJMPI_LOGICAL,3,c);]])],
+    [fjmpi=yes],[fjmpi=no])
+  AC_MSG_RESULT([${fjmpi}])
+  CXXFLAGS=$ac_save_CXXFLAGS
+fi
+if test "${ac_FJMPI}X" == "yesX" && test "${fjmpi}X" != "yesX"; then
+  AC_MSG_ERROR([--enable-fjmpi=yes but the Fujitsu MPI extensions were not found (needs --enable-comms=mpi and Fujitsu MPI)])
+fi
+if test "${fjmpi}X" == "yesX"; then
+  AC_DEFINE([GRID_FJMPI],[1],[Fujitsu MPI extensions])
+fi
+
 ############### RNG selection
 AC_ARG_ENABLE([rng],[AS_HELP_STRING([--enable-rng=ranlux48|mt19937|sitmo],[\
 	            Select Random Number Generator to be used])],\
@@ -955,6 +982,7 @@ Threading                   : ${ac_openmp}
 Acceleration                : ${ac_ACCELERATOR}
 Unified virtual memory      : ${ac_UNIFIED}
 Communications type         : ${comms_type}
+Fujitsu MPI extensions      : ${fjmpi}
 Shared memory allocator     : ${ac_SHM}
 Shared memory mmap path     : ${ac_SHMPATH}
 Default precision           : ${ac_PRECISION}

@@ -34,6 +34,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 bool Stencil_force_mpi = true;
+#ifdef GRID_FJMPI
+bool Stencil_persistent = false;
+#endif
 bool Stencil_force_barrier = false;
 
 ///////////////////////////////////////////////////////////////
