@@ -479,6 +479,21 @@ extern "C" {
     int sF = ss*Ls;							\
     WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,Ls,1,in_v,out_v);		\
   });
+#ifdef A64FX
+// Exterior kernel on the surface 4d sites only (the surface list holds Ls
+// consecutive 5d entries per surface 4d site)
+#define ASM_CALL_EXT(A)							\
+  const uint64_t nsurf = st.surface_list.size()/Ls;			\
+  auto surf = &st.surface_list[0];					\
+  thread_for( sss, nsurf, {						\
+    int sU = surf[sss*Ls]/Ls;						\
+    int sF = sU*Ls;							\
+    WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,Ls,1,in_v,out_v);		\
+  });
+#else
+#define ASM_CALL_EXT(A)      ASM_CALL(A)
+#endif
+
 #define ASM_CALL_SLICE(A)						\
   auto grid = in.Grid() ;						\
   int nt = grid->LocalDimensions()[4];					\
@@ -522,7 +537,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
      if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL_EXT(GenericDhopSiteExt); return;}
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL_EXT(HandDhopSiteExt);    return;}
 #ifndef GRID_CUDA
-     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteExt);    return;}
+     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL_EXT(AsmDhopSiteExt);    return;}
 #endif
    }
    GRID_ASSERT(0 && " Kernel optimisation case not covered ");
@@ -568,7 +583,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
      if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL_EXT(GenericDhopSiteDagExt); return;}
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL_EXT(HandDhopSiteDagExt);    return;}
 #ifndef GRID_CUDA
-     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDagExt);     return;}
+     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL_EXT(AsmDhopSiteDagExt);     return;}
 #endif
    }
    GRID_ASSERT(0 && " Kernel optimisation case not covered ");

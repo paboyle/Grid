@@ -39,8 +39,13 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define UNLOCK_GAUGE(A)  
 #define MASK_REGS                      DECLARATIONS_A64FXd  
 #define SAVE_RESULT(A,B)               RESULT_A64FXd(A);  
-#define MULT_2SPIN_1(Dir)              MULT_2SPIN_1_A64FXd(Dir)  
-#define MULT_2SPIN_2                   MULT_2SPIN_2_A64FXd  
+#ifdef GRID_A64FX_FCMLA
+#define MULT_2SPIN_1(Dir)              MULT_2SPIN_1_FCMLA_A64FXd(Dir)
+#define MULT_2SPIN_2                   MULT_2SPIN_2_FCMLA_A64FXd
+#else
+#define MULT_2SPIN_1(Dir)              MULT_2SPIN_1_FMLA_A64FXd(Dir)
+#define MULT_2SPIN_2                   MULT_2SPIN_2_FMLA_A64FXd
+#endif
 #define LOAD_CHI(base)                 LOAD_CHI_A64FXd(base)  
 #define ZERO_PSI                       ZERO_PSI_A64FXd  
 #define ADD_RESULT(base,basep)         LOAD_CHIMU(base); ADD_RESULT_INTERNAL_A64FXd; RESULT_A64FXd(base)  
@@ -273,8 +278,88 @@ Author: Nils Meyer <nils.meyer@ur.de>
     U_11 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-2));  \
     U_21 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(1));  \
 }
+// MULT_2SPIN with FMLA instead of FCMLA (3 uops on A64FX):
+//   UChi = sum_b Re(U_ab) Chi_b + Im(U_ab) (i Chi_b)
+// column by column. Re(U)/Im(U) are duplicated over each complex with trn1/trn2,
+// i Chi_b is formed in place with fcadd once Chi_b has been used (Chi is dead after
+// the multiply). U_00, U_10, U_20 hold column b, U_01 is a temporary.
+// Define GRID_A64FX_FCMLA to use the original FCMLA version.
+#define MULT_2SPIN_1_FMLA_A64FXd(A)  \
+{ \
+    const auto & ref(U[sU](A)); baseU = (uint64_t)&ref; \
+    U_00 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-6));  \
+    U_10 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-3));  \
+    U_20 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(0));  \
+    U_01 = svtrn1(U_00, U_00); \
+    UChi_00 = svmul_x(pg1, U_01, Chi_00); \
+    UChi_10 = svmul_x(pg1, U_01, Chi_10); \
+    U_01 = svtrn1(U_10, U_10); \
+    UChi_01 = svmul_x(pg1, U_01, Chi_00); \
+    UChi_11 = svmul_x(pg1, U_01, Chi_10); \
+    U_01 = svtrn1(U_20, U_20); \
+    UChi_02 = svmul_x(pg1, U_01, Chi_00); \
+    UChi_12 = svmul_x(pg1, U_01, Chi_10); \
+    Chi_00 = svcadd_x(pg1, zero0, Chi_00, 90); \
+    Chi_10 = svcadd_x(pg1, zero0, Chi_10, 90); \
+    U_01 = svtrn2(U_00, U_00); \
+    UChi_00 = svmla_x(pg1, UChi_00, U_01, Chi_00); \
+    UChi_10 = svmla_x(pg1, UChi_10, U_01, Chi_10); \
+    U_01 = svtrn2(U_10, U_10); \
+    UChi_01 = svmla_x(pg1, UChi_01, U_01, Chi_00); \
+    UChi_11 = svmla_x(pg1, UChi_11, U_01, Chi_10); \
+    U_01 = svtrn2(U_20, U_20); \
+    UChi_02 = svmla_x(pg1, UChi_02, U_01, Chi_00); \
+    UChi_12 = svmla_x(pg1, UChi_12, U_01, Chi_10); \
+    U_00 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-5));  \
+    U_10 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-2));  \
+    U_20 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(1));  \
+    U_01 = svtrn1(U_00, U_00); \
+    UChi_00 = svmla_x(pg1, UChi_00, U_01, Chi_01); \
+    UChi_10 = svmla_x(pg1, UChi_10, U_01, Chi_11); \
+    U_01 = svtrn1(U_10, U_10); \
+    UChi_01 = svmla_x(pg1, UChi_01, U_01, Chi_01); \
+    UChi_11 = svmla_x(pg1, UChi_11, U_01, Chi_11); \
+    U_01 = svtrn1(U_20, U_20); \
+    UChi_02 = svmla_x(pg1, UChi_02, U_01, Chi_01); \
+    UChi_12 = svmla_x(pg1, UChi_12, U_01, Chi_11); \
+    Chi_01 = svcadd_x(pg1, zero0, Chi_01, 90); \
+    Chi_11 = svcadd_x(pg1, zero0, Chi_11, 90); \
+    U_01 = svtrn2(U_00, U_00); \
+    UChi_00 = svmla_x(pg1, UChi_00, U_01, Chi_01); \
+    UChi_10 = svmla_x(pg1, UChi_10, U_01, Chi_11); \
+    U_01 = svtrn2(U_10, U_10); \
+    UChi_01 = svmla_x(pg1, UChi_01, U_01, Chi_01); \
+    UChi_11 = svmla_x(pg1, UChi_11, U_01, Chi_11); \
+    U_01 = svtrn2(U_20, U_20); \
+    UChi_02 = svmla_x(pg1, UChi_02, U_01, Chi_01); \
+    UChi_12 = svmla_x(pg1, UChi_12, U_01, Chi_11); \
+    U_00 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-4));  \
+    U_10 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-1));  \
+    U_20 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(2));  \
+    U_01 = svtrn1(U_00, U_00); \
+    UChi_00 = svmla_x(pg1, UChi_00, U_01, Chi_02); \
+    UChi_10 = svmla_x(pg1, UChi_10, U_01, Chi_12); \
+    U_01 = svtrn1(U_10, U_10); \
+    UChi_01 = svmla_x(pg1, UChi_01, U_01, Chi_02); \
+    UChi_11 = svmla_x(pg1, UChi_11, U_01, Chi_12); \
+    U_01 = svtrn1(U_20, U_20); \
+    UChi_02 = svmla_x(pg1, UChi_02, U_01, Chi_02); \
+    UChi_12 = svmla_x(pg1, UChi_12, U_01, Chi_12); \
+    Chi_02 = svcadd_x(pg1, zero0, Chi_02, 90); \
+    Chi_12 = svcadd_x(pg1, zero0, Chi_12, 90); \
+    U_01 = svtrn2(U_00, U_00); \
+    UChi_00 = svmla_x(pg1, UChi_00, U_01, Chi_02); \
+    UChi_10 = svmla_x(pg1, UChi_10, U_01, Chi_12); \
+    U_01 = svtrn2(U_10, U_10); \
+    UChi_01 = svmla_x(pg1, UChi_01, U_01, Chi_02); \
+    UChi_11 = svmla_x(pg1, UChi_11, U_01, Chi_12); \
+    U_01 = svtrn2(U_20, U_20); \
+    UChi_02 = svmla_x(pg1, UChi_02, U_01, Chi_02); \
+    UChi_12 = svmla_x(pg1, UChi_12, U_01, Chi_12); \
+}
+#define MULT_2SPIN_2_FMLA_A64FXd
 // MULT_2SPIN
-#define MULT_2SPIN_1_A64FXd(A)  \
+#define MULT_2SPIN_1_FCMLA_A64FXd(A)  \
 { \
     const auto & ref(U[sU](A)); baseU = (uint64_t)&ref; \
     U_00 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-6));  \
@@ -300,7 +385,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
     U_20 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(2));  \
 }
 // MULT_2SPIN_BACKEND
-#define MULT_2SPIN_2_A64FXd  \
+#define MULT_2SPIN_2_FCMLA_A64FXd  \
 { \
     UChi_00 = svcmla_x(pg1, UChi_00, U_01, Chi_01, 0); \
     UChi_10 = svcmla_x(pg1, UChi_10, U_01, Chi_11, 0); \
