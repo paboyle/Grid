@@ -367,6 +367,10 @@ void Grid_init(int *argc,char ***argv)
     GlobalSharedMemory::HPEhypercube = enable;
   }
 
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--tofu") ){
+    GlobalSharedMemory::TofuPlacement = 1;
+  }
+
   if( GridCmdOptionExists(*argv,*argv+*argc,"--shm-hugepages") ){
     GlobalSharedMemory::Hugepages = 1;
   }
@@ -534,6 +538,7 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"Geometry:"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"  --mpi n.n.n.n   : default MPI decomposition"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --tofu          : place ranks on the job's Tofu torus (Fujitsu MPI only)"<<std::endl;
     std::cout<<GridLogMessage<<"  --threads n     : default number of OMP threads"<<std::endl;
     std::cout<<GridLogMessage<<"  --grid n.n.n.n  : default Grid size"<<std::endl;
     std::cout<<GridLogMessage<<"  --shm  M        : allocate M megabytes of shared memory for comms"<<std::endl;

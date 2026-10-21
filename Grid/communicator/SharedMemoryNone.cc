@@ -50,6 +50,10 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
 
 void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_MPI_Comm & optimal_comm,Coordinate &SHM)
 {
+  if ( TofuPlacement ) {
+    std::cerr << "Grid --tofu: using a comms=none build" << std::endl;
+    exit(EXIT_FAILURE);
+  }
   optimal_comm = WorldComm;
   SHM = Coordinate(processors.size(),1);
 }
