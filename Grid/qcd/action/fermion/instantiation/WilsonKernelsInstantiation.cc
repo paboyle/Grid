@@ -34,6 +34,10 @@ NAMESPACE_BEGIN(Grid);
 
 // Move these
 int WilsonKernelsStatic::Opt   = WilsonKernelsStatic::OptGeneric;
+#ifdef A64FX
+void (*WilsonKernelsStatic::CommsProgress)(void *) = nullptr;
+void *WilsonKernelsStatic::CommsProgressArg = nullptr;
+#endif
 int WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute;
 
 NAMESPACE_END(Grid);

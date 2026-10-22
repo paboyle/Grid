@@ -42,6 +42,12 @@ public:
   enum { CommsAndCompute, CommsThenCompute };
   static int Opt;  
   static int Comms;
+#ifdef A64FX
+  // If set, called by thread 0 every few sites of the interior kernel so that
+  // communications started before it progress during the compute.
+  static void (*CommsProgress)(void *);
+  static void *CommsProgressArg;
+#endif
 };
  
 template<class Impl> class WilsonKernels : public FermionOperator<Impl> , public WilsonKernelsStatic { 

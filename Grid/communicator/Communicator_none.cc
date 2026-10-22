@@ -167,6 +167,9 @@ double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
 }
 void CartesianCommunicator::StencilSendToRecvFromPollIRecv(std::vector<CommsRequest_t> &list) {};
 void CartesianCommunicator::StencilSendToRecvFromPollDtoH(std::vector<CommsRequest_t> &list) {};
+#ifdef A64FX
+void CartesianCommunicator::StencilSendToRecvFromProgress(std::vector<CommsRequest_t> &list) {};
+#endif
 double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequest_t> &list,
 							   void *xmit,
 							   int xmit_to_rank,int dox,

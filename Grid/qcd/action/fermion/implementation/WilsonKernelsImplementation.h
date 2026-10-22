@@ -479,6 +479,49 @@ extern "C" {
     int sF = ss*Ls;							\
     WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,Ls,1,in_v,out_v);		\
   });
+#ifdef A64FX
+// Interior kernel with communication progress: thread 0 calls the progress hook
+// between chunks of sites; dynamic scheduling lets the other threads pick up the
+// sites thread 0 has no time for while it drives the communications. Chunks of
+// 8 4d sites for 5d operators, 32 sites for 4d operators (measured on Fugaku).
+#define ASM_CALL_PROGRESS(A)						\
+  if ( WilsonKernelsStatic::CommsProgress ) {				\
+    auto progress     = WilsonKernelsStatic::CommsProgress;		\
+    auto progress_arg = WilsonKernelsStatic::CommsProgressArg;		\
+    const uint64_t chunk = std::max<uint64_t>(8,32/Ls);			\
+    const uint64_t nchunk = (Nsite + chunk - 1)/chunk;			\
+    thread_region {							\
+      const bool master = (thread_num() == 0);				\
+      DO_PRAGMA(omp for schedule(dynamic,1) nowait)			\
+      for(uint64_t c=0;c<nchunk;c++){					\
+	const uint64_t hi = std::min((c+1)*chunk,(uint64_t)Nsite);	\
+	for(uint64_t sss=c*chunk;sss<hi;sss++){				\
+	  int sU = sss;							\
+	  int sF = sss*Ls;						\
+	  WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,Ls,1,in_v,out_v);	\
+	}								\
+	if ( master ) progress(progress_arg);				\
+      }									\
+    }									\
+  } else {								\
+    ASM_CALL(A);							\
+  }
+
+// Exterior kernel on the surface 4d sites only (the surface list holds Ls
+// consecutive 5d entries per surface 4d site)
+#define ASM_CALL_EXT(A)							\
+  const uint64_t nsurf = st.surface_list.size()/Ls;			\
+  auto surf = &st.surface_list[0];					\
+  thread_for( sss, nsurf, {						\
+    int sU = surf[sss*Ls]/Ls;						\
+    int sF = sU*Ls;							\
+    WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,Ls,1,in_v,out_v);		\
+  });
+#else
+#define ASM_CALL_PROGRESS(A) ASM_CALL(A)
+#define ASM_CALL_EXT(A)      ASM_CALL(A)
+#endif
+
 #define ASM_CALL_SLICE(A)						\
   auto grid = in.Grid() ;						\
   int nt = grid->LocalDimensions()[4];					\
@@ -514,7 +557,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
      if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALLNB(GenericDhopSiteInt); return;}
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALLNB(HandDhopSiteInt);    return;}
 #ifndef GRID_CUDA
-     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteInt);    return;}
+     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL_PROGRESS(AsmDhopSiteInt);    return;}
 #endif
    } else if( exterior ) {
      //     // dependent on result of merge
@@ -522,7 +565,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
      if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL_EXT(GenericDhopSiteExt); return;}
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL_EXT(HandDhopSiteExt);    return;}
 #ifndef GRID_CUDA
-     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteExt);    return;}
+     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL_EXT(AsmDhopSiteExt);    return;}
 #endif
    }
    GRID_ASSERT(0 && " Kernel optimisation case not covered ");
@@ -560,7 +603,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
      if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALLNB(GenericDhopSiteDagInt); return;}
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALLNB(HandDhopSiteDagInt);    return;}
 #ifndef GRID_CUDA
-     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDagInt);     return;}
+     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL_PROGRESS(AsmDhopSiteDagInt);     return;}
 #endif
    } else if( exterior ) {
      // Dependent on result of merge
@@ -568,7 +611,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
      if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL_EXT(GenericDhopSiteDagExt); return;}
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL_EXT(HandDhopSiteDagExt);    return;}
 #ifndef GRID_CUDA
-     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDagExt);     return;}
+     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL_EXT(AsmDhopSiteDagExt);     return;}
 #endif
    }
    GRID_ASSERT(0 && " Kernel optimisation case not covered ");

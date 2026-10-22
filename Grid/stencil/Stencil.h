@@ -630,6 +630,13 @@ public:
     }
   }
 
+#ifdef A64FX
+  // Progress outstanding communications while computing (see CommunicateBegin)
+  void CommunicateProgress(void)
+  {
+    _grid->StencilSendToRecvFromProgress(MpiReqs);
+  }
+#endif
   void CommunicateComplete(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
     //    std::cout << "Communicate Complete "<<std::endl;
@@ -879,6 +886,15 @@ public:
   template<class decompressor>
   void CommsMerge(decompressor decompress,std::vector<Merge> &mm,std::vector<Decompress> &dd)
   {
+#ifdef GRID_FUSED_HALO_LOOPS
+    if ( dd.size()==0 ) { // merges only: run them in one parallel region (SimpleCompressor.h)
+      FusedHaloLoops::begin();
+      for(int i=0;i<mm.size();i++) decompressor::MergeFace(decompress,mm[i]);
+      FusedHaloLoops::end();
+      acceleratorFenceComputeStream();
+      return;
+    }
+#endif
     for(int i=0;i<mm.size();i++){
       decompressor::MergeFace(decompress,mm[i]);
     }

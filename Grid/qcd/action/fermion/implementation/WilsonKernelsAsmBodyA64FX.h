@@ -95,7 +95,6 @@ Author:  Nils Meyer  <nils.meyer@ur.de>  Regensburg University
 #ifdef INTERIOR_AND_EXTERIOR
 
 #define ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
-      basep = st.GetPFInfo(nent,plocal); nent++;			\
       if ( local ) {							            \
     LOAD_CHIMU(base);                                       \
     LOAD_TABLE(PERMUTE_DIR);                                \
@@ -106,23 +105,15 @@ Author:  Nils Meyer  <nils.meyer@ur.de>  Regensburg University
       }									                    \
       base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
     MULT_2SPIN_1(Dir);					                    \
-    PREFETCH_CHIMU(base);                                   \
-    PREFETCH_CHIMU_L2(basep);                               \
-    /* PREFETCH_GAUGE_L1(NxtDir); */                        \
     MULT_2SPIN_2;					                        \
-    if (s == 0) {                                           \
-      if ((Dir == 0) || (Dir == 4)) { PREFETCH_GAUGE_L2(Dir); } \
-    }                                                       \
     RECON;								                    \
 
 /*
-NB: picking PREFETCH_GAUGE_L2(Dir+4); here results in performance penalty
-    though I expected that it would improve on performance
+No software prefetch: the hardware prefetcher handles the neighbour and gauge link streams better on A64FX.
 */
 
 #define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)	    \
   base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++; \
-  PREFETCH1_CHIMU(base);						            \
   ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)
 
 #define RESULT(base,basep) SAVE_RESULT(base,basep);
@@ -130,12 +121,11 @@ NB: picking PREFETCH_GAUGE_L2(Dir+4); here results in performance penalty
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-// Pre comms kernel -- prefetch like normal because it is mostly right
+// Pre comms kernel -- gauge link prefetch into L2 only
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef INTERIOR
 
 #define ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
-      basep = st.GetPFInfo(nent,plocal); nent++;			\
       if ( local ) {							\
   LOAD_CHIMU(base);                                       \
   LOAD_TABLE(PERMUTE_DIR);                                \
@@ -148,12 +138,15 @@ NB: picking PREFETCH_GAUGE_L2(Dir+4); here results in performance penalty
   RECON;								\
       }									\
   base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
-  PREFETCH_CHIMU(base);						\
-  PREFETCH_CHIMU_L2(basep);                               \
+  if (s == 0) {                                           \
+    if ((Dir == 0) || (Dir == 4)) { PREFETCH_GAUGE_L2(Dir); } \
+  }                                                       \
+
+/* No software prefetch of the neighbours (the hardware prefetcher handles them better on A64FX);
+   the gauge links of the next site are prefetched into L2. */
 
 #define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
   base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
-  PREFETCH1_CHIMU(base);						\
   { ZERO_PSI; }								\
   ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)
 

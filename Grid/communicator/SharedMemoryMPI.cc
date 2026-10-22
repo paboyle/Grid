@@ -32,6 +32,10 @@ Author: Christoph Lehner <christoph@lhnr.de>
 #include <Grid/GridCore.h>
 #include <pwd.h>
 
+#ifdef GRID_FJMPI
+#include <mpi-ext.h>
+#endif
+
 #ifdef GRID_CUDA
 #include <cuda_runtime_api.h>
 #endif
@@ -278,6 +282,18 @@ void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_M
   gethostname(name,namelen);
   int nscan = sscanf(name,"r%di%dn%d",&R,&I,&N) ;
 
+  if ( TofuPlacement ) {
+#ifdef GRID_FJMPI
+    OptimalCommunicatorTofu(processors,optimal_comm,SHM);
+#else
+    if ( WorldRank==0 ) {
+      std::cerr << "Grid --tofu: not built with Fujitsu MPI" << std::endl;
+    }
+    MPI_Barrier(WorldComm);
+    MPI_Abort(WorldComm,EXIT_FAILURE);
+#endif
+    return;
+  }
   if(nscan==3 && HPEhypercube ) OptimalCommunicatorHypercube(processors,optimal_comm,SHM);
   else                          OptimalCommunicatorSharedMemory(processors,optimal_comm,SHM);
 }
@@ -450,6 +466,202 @@ void GlobalSharedMemory::OptimalCommunicatorSharedMemory(const Coordinate &proce
   int ierr= MPI_Comm_split(WorldComm,0,rank,&optimal_comm);
   GRID_ASSERT(ierr==0);
 }
+#ifdef GRID_FJMPI
+////////////////////////////////////////////////////////////////////////////////////////////
+// Tofu placement (--tofu): lay the node grid onto the job's logical torus (pjsub -L node=AxBxC:torus),
+// each direction along a job axis of the same extent. Errors are detected on all ranks alike.
+////////////////////////////////////////////////////////////////////////////////////////////
+static void TofuPlacementError(const std::string &msg)
+{
+  if ( GlobalSharedMemory::WorldRank==0 ) std::cerr << "Grid --tofu: " << msg << std::endl;
+  MPI_Barrier(GlobalSharedMemory::WorldComm);
+  MPI_Abort(GlobalSharedMemory::WorldComm,EXIT_FAILURE);
+}
+static std::string TofuJoin(const std::vector<int> &v,const char *sep)
+{
+  std::ostringstream os;
+  for(int i=0;i<v.size();i++) os << (i ? sep : "") << v[i];
+  return os.str();
+}
+void GlobalSharedMemory::OptimalCommunicatorTofu(const Coordinate &processors,Grid_MPI_Comm & optimal_comm,Coordinate &SHM)
+{
+  int ndimension = processors.size();
+  Coordinate WorldDims = processors; Coordinate ShmDims(ndimension);  Coordinate NodeDims (ndimension);
+  Coordinate ShmCoor(ndimension);    Coordinate NodeCoor(ndimension);   Coordinate WorldCoor(ndimension);
+
+  GetShmDims(WorldDims,ShmDims);
+  SHM=ShmDims;
+  int nodes=1;
+  for(int d=0;d<ndimension;d++){
+    NodeDims[d] = WorldDims[d]/ShmDims[d];
+    nodes *= NodeDims[d];
+  }
+  int Nprocessors=1;
+  for(int i=0;i<ndimension;i++){
+    Nprocessors*=processors[i];
+  }
+  GRID_ASSERT(WorldSize==Nprocessors);
+
+  std::vector<int> pvec(processors.begin(),processors.end());
+  std::vector<int> nvec(NodeDims.begin(),NodeDims.end());
+  std::vector<int> svec(ShmDims.begin(),ShmDims.end());
+  std::string layout = "--mpi " + TofuJoin(pvec,".") + " gives a node grid " + TofuJoin(nvec,".")
+    + " (" + std::to_string(nodes) + " nodes, ranks per node " + TofuJoin(svec,".") + ")";
+
+  ////////////////////////////////////////////////////////////////
+  // Shape of the job's logical node torus and this node's coordinate in it
+  ////////////////////////////////////////////////////////////////
+  int jdim=0;
+  if ( FJMPI_Topology_get_dimension(&jdim)!=FJMPI_SUCCESS || jdim<1 || jdim>3 ) {
+    TofuPlacementError("cannot read the job's node shape (FJMPI_Topology_get_dimension); "
+                       "is this a Fujitsu MPI job on whole nodes?");
+  }
+  std::vector<int> jshape(3,1), jcoor(3,0);
+  if ( FJMPI_Topology_get_shape(&jshape[0],&jshape[1],&jshape[2])!=FJMPI_SUCCESS ) {
+    TofuPlacementError("cannot read the job's node shape (FJMPI_Topology_get_shape)");
+  }
+  for(int a=jdim;a<3;a++) jshape[a]=1;
+  if ( FJMPI_Topology_get_coords(WorldComm,WorldRank,FJMPI_LOGICAL,jdim,&jcoor[0])!=FJMPI_SUCCESS ) {
+    TofuPlacementError("cannot read the node coordinates (FJMPI_Topology_get_coords)");
+  }
+  std::vector<int> jvec(jshape.begin(),jshape.begin()+jdim);
+  int jnodes = jshape[0]*jshape[1]*jshape[2];
+
+  ////////////////////////////////////////////////////////////////
+  // Lay each node grid direction of extent > 1 along an unused job axis of the same extent
+  ////////////////////////////////////////////////////////////////
+  std::vector<int> axis(ndimension,-1);
+  std::vector<int> used(3,0);
+  bool solvable = (nodes==WorldNodes) && (jnodes==WorldNodes);
+  for(int d=0;d<ndimension && solvable;d++){
+    if ( NodeDims[d]==1 ) continue;
+    for(int a=0;a<3;a++){
+      if ( !used[a] && jshape[a]==NodeDims[d] ) { axis[d]=a; used[a]=1; break; }
+    }
+    if ( axis[d]==-1 ) solvable=false;
+  }
+  for(int a=0;a<3;a++) if ( jshape[a]>1 && !used[a] ) solvable=false;
+  if ( !solvable ) {
+    std::vector<int> want;
+    for(int d=0;d<ndimension;d++) if ( NodeDims[d]>1 ) want.push_back(NodeDims[d]);
+    std::ostringstream os;
+    os << layout << ", which cannot be laid onto the job's node shape " << TofuJoin(jvec,"x")
+       << " (" << jnodes << " nodes, " << WorldNodes << " in use): every node grid extent larger than 1"
+       << " must equal a different extent of the job shape. ";
+    if ( want.size()>=1 && want.size()<=3 ) {
+      while ( want.size()<3 ) want.push_back(1);
+      os << "Request a job shape with the extents " << TofuJoin(want,", ") << " in any order"
+         << " (pjsub -L \"node=" << TofuJoin(want,"x") << ":torus\"), or change --mpi.";
+    } else {
+      os << "At most 3 node grid directions may have more than one node; change --mpi.";
+    }
+    TofuPlacementError(os.str());
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // Processor coordinate: node block from the torus, on-node block as in the default layout
+  ////////////////////////////////////////////////////////////////
+  for(int d=0;d<ndimension;d++) NodeCoor[d] = (axis[d]>=0) ? jcoor[axis[d]] : 0;
+  Lexicographic::CoorFromIndexReversed(ShmCoor ,WorldShmRank,ShmDims);
+  for(int d=0;d<ndimension;d++) WorldCoor[d] = NodeCoor[d]*ShmDims[d]+ShmCoor[d];
+  int rank;
+  Lexicographic::IndexFromCoorReversed(WorldCoor,rank,WorldDims);
+
+  ////////////////////////////////////////////////////////////////
+  // Every processor coordinate must be taken exactly once
+  ////////////////////////////////////////////////////////////////
+  std::vector<int> ranks(WorldSize);
+  MPI_Allgather(&rank,1,MPI_INT,&ranks[0],1,MPI_INT,WorldComm);
+  std::vector<int> owner(WorldSize,-1);
+  for(int r=0;r<WorldSize;r++){
+    int k = ranks[r];
+    if ( owner[k]!=-1 ) {
+      std::ostringstream os;
+      os << layout << ": world ranks " << owner[k] << " and " << r << " get the same position; the job's"
+         << " logical node coordinates are not one per node, or the ranks per node differ from " << WorldShmSize;
+      TofuPlacementError(os.str());
+    }
+    owner[k]=r;
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // Log the placement once per processor grid: summary, then (Debug) one line per rank
+  // and the Tofu hop counts between neighbouring ranks on different nodes
+  ////////////////////////////////////////////////////////////////
+  static std::vector<Coordinate> logged;
+  if ( std::find(logged.begin(),logged.end(),processors)==logged.end() ) {
+    logged.push_back(processors);
+    struct TofuRankInfo {
+      int tofu[6], logical[3];
+      char host[32];
+    } me;
+    for(int i=0;i<6;i++) me.tofu[i]=-1;
+    FJMPI_Topology_get_coords(WorldComm,WorldRank,FJMPI_TOFU_SYS,6,me.tofu);
+    for(int i=0;i<3;i++) me.logical[i]=jcoor[i];
+    memset(me.host,0,sizeof(me.host));
+    gethostname(me.host,sizeof(me.host)-1);
+    std::vector<TofuRankInfo> all(WorldSize);
+    MPI_Allgather(&me,sizeof(me),MPI_BYTE,&all[0],sizeof(me),MPI_BYTE,WorldComm);
+
+    std::vector<std::string> along;
+    for(int d=0;d<ndimension;d++){
+      if ( axis[d]>=0 ) along.push_back("dimension " + std::to_string(d) + " along job axis " + std::to_string(axis[d]));
+    }
+    std::ostringstream os;
+    for(int i=0;i<along.size();i++) os << (i ? ", " : "") << along[i];
+    std::cout << GridLogMessage << "Tofu placement: " << layout << ", job shape " << TofuJoin(jvec,"x")
+              << ": " << os.str() << std::endl;
+
+    // Tofu hops: sum over X,Y,Z,A,B,C, B a ring of 3; approximate, X,Y,Z are taken without wrap
+    auto hops = [](const TofuRankInfo &p,const TofuRankInfo &q) {
+      int h=0;
+      for(int i=0;i<6;i++){
+        int dd = std::abs(p.tofu[i]-q.tofu[i]);
+        if ( i==4 ) dd = std::min(dd,3-dd);
+        h += dd;
+      }
+      return h;
+    };
+    for(int k=0;k<WorldSize;k++){
+      const TofuRankInfo &r = all[owner[k]];
+      Coordinate c;
+      Lexicographic::CoorFromIndexReversed(c,k,WorldDims);
+      std::vector<int> cv(c.begin(),c.end());
+      char line[256];
+      snprintf(line,sizeof(line),"rank %5d coor %-14s world %5d host %-16s tofu %2d %2d %2d %d %d %d logical %2d %2d %2d",
+               k,TofuJoin(cv,".").c_str(),owner[k],r.host,r.tofu[0],r.tofu[1],r.tofu[2],r.tofu[3],r.tofu[4],r.tofu[5],
+               r.logical[0],r.logical[1],r.logical[2]);
+      std::cout << GridLogDebug << "Tofu placement: " << line << std::endl;
+    }
+    for(int d=0;d<ndimension;d++){
+      if ( WorldDims[d]==1 ) continue;
+      std::map<int,int> hist;
+      int onnode=0;
+      for(int k=0;k<WorldSize;k++){
+        Coordinate c;
+        Lexicographic::CoorFromIndexReversed(c,k,WorldDims);
+        c[d] = (c[d]+1)%WorldDims[d];
+        int n;
+        Lexicographic::IndexFromCoorReversed(c,n,WorldDims);
+        const TofuRankInfo &p = all[owner[k]], &q = all[owner[n]];
+        if ( strncmp(p.host,q.host,sizeof(p.host))==0 ) onnode++;
+        else hist[hops(p,q)]++;
+      }
+      std::ostringstream hs;
+      for(auto &h : hist) hs << " " << h.second << " at " << h.first << (h.first==1 ? " hop;" : " hops;");
+      std::cout << GridLogDebug << "Tofu placement: dimension " << d << " (" << WorldDims[d] << " ranks): "
+                << onnode << " of " << WorldSize << " +1 neighbours on the same node;" << hs.str()
+                << " (hops approximate, X/Y/Z not wrapped)" << std::endl;
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////
+  // Build the new communicator
+  /////////////////////////////////////////////////////////////////
+  int ierr= MPI_Comm_split(WorldComm,0,rank,&optimal_comm);
+  GRID_ASSERT(ierr==0);
+}
+#endif
 ////////////////////////////////////////////////////////////////////////////////////////////
 // SHMGET
 ////////////////////////////////////////////////////////////////////////////////////////////

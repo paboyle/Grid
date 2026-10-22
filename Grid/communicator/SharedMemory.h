@@ -99,6 +99,10 @@ public:
   // HPE 8600 hypercube optimisation
   ///////////////////////////////////////
   static int HPEhypercube;
+  ///////////////////////////////////////
+  // Tofu (Fujitsu MPI) node placement, --tofu
+  ///////////////////////////////////////
+  static int TofuPlacement;
 
   static int      ShmSetup(void)      { return _ShmSetup; }
   static int      ShmAlloc(void)      { return _ShmAlloc; }
@@ -131,6 +135,7 @@ public:
   static void OptimalCommunicator            (const Coordinate &processors,Grid_MPI_Comm & optimal_comm,Coordinate &ShmDims); 
   static void OptimalCommunicatorHypercube   (const Coordinate &processors,Grid_MPI_Comm & optimal_comm,Coordinate &ShmDims); 
   static void OptimalCommunicatorSharedMemory(const Coordinate &processors,Grid_MPI_Comm & optimal_comm,Coordinate &ShmDims); 
+  static void OptimalCommunicatorTofu        (const Coordinate &processors,Grid_MPI_Comm & optimal_comm,Coordinate &ShmDims);
   static void GetShmDims(const Coordinate &WorldDims,Coordinate &ShmDims);
   ///////////////////////////////////////////////////
   // Provide shared memory facilities off comm world

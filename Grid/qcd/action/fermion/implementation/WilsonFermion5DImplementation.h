@@ -346,6 +346,11 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st,
   // do the compute interior
   /////////////////////////////
   int Opt = WilsonKernelsStatic::Opt; // Why pass this. Kernels should know
+#ifdef A64FX
+  // MPI does not progress outside MPI calls: let the interior kernel poll
+  WilsonKernelsStatic::CommsProgress    = [](void *s) { ((StencilImpl *)s)->CommunicateProgress(); };
+  WilsonKernelsStatic::CommsProgressArg = (void *)&st;
+#endif
   if (dag == DaggerYes) {
     GRID_TRACE("DhopDagInterior");
     Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,1,0);
@@ -353,6 +358,10 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st,
     GRID_TRACE("DhopInterior");
     Kernels::DhopKernel   (Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,1,0);
   }
+#ifdef A64FX
+  WilsonKernelsStatic::CommsProgress    = nullptr;
+  WilsonKernelsStatic::CommsProgressArg = nullptr;
+#endif
   
   //ifdef GRID_ACCELERATED
 #if 0

@@ -28,6 +28,90 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/GridCore.h>
 #include <Grid/communicator/SharedMemory.h>
 
+// Fujitsu MPI extended persistent requests (FJMPI_Prequest_*, Fujitsu MPI User's Guide J2UL-2565 5.3).
+// Fujitsu MPI moves the body of a large non-blocking message only inside MPI calls (6.2), so the halo
+// exchange does not overlap the interior kernel. With these requests the partners exchange buffer
+// information once, at initialisation, and FJMPI_Prequest_start starts the transfer of the message body.
+// GRID_FJMPI is set by configure (--enable-fjmpi) when mpi-ext.h declares the Fujitsu extensions.
+#ifdef GRID_FJMPI
+#include <mpi-ext.h>
+
+NAMESPACE_BEGIN(Grid);
+namespace {
+// Persistent halo requests are used with --comms-overlap (Stencil_persistent); they bring nothing
+// without overlap. Only for peers on other nodes: persistent transfers to peers on the same node delay
+// the transfers to other nodes.
+bool PersistentHaloOn(void) { return Stencil_persistent; }
+bool PersistentHaloPeer(int grank) { return grank==MPI_UNDEFINED; }
+struct PersistentHaloReq {
+  void *buf; int count; MPI_Request req;
+};
+// Requests are keyed by (send, communicator, peer, tag): Fujitsu MPI allows one request per
+// (peer, tag, communicator). Several stencils can use the same communicator (e.g. even and odd
+// checkerboards), so each distinct pair of halo buffers of a direction gets a slot, in order of
+// first use, and the slot enters the tag. All ranks run the same sequence of stencils, so partners
+// agree on the slot.
+struct PersistentHaloCache {
+  std::map<std::pair<MPI_Comm,int>, std::vector<std::pair<void *,void *> > > slots;
+  std::map<std::tuple<int,MPI_Comm,int,int>, PersistentHaloReq> reqs;
+  int tag_ub = -1;
+};
+PersistentHaloCache &PersistentHalo(void) { static PersistentHaloCache c; return c; }
+
+int PersistentHaloSlot(MPI_Comm comm,int dir,void *xmit,void *recv)
+{
+  auto &v = PersistentHalo().slots[std::make_pair(comm,dir)];
+  for(int k=0;k<v.size();k++) if ( v[k].first==xmit && v[k].second==recv ) return k;
+  v.push_back(std::make_pair(xmit,recv));
+  return v.size()-1;
+}
+// Tag of a halo message: the usual tag (dir + 32 * sender rank) shifted by the slot; -1 if it
+// exceeds MPI_TAG_UB (both partners then fall back to MPI_Isend/MPI_Irecv)
+int PersistentHaloTag(int dir,int sender,int nprocs,int slot)
+{
+  auto &c = PersistentHalo();
+  if ( c.tag_ub < 0 ) {
+    int *ub, flag;
+    MPI_Comm_get_attr(MPI_COMM_WORLD,MPI_TAG_UB,&ub,&flag);
+    c.tag_ub = flag ? *ub : 32767;
+  }
+  int64_t tag = dir + 32*((int64_t)sender + (int64_t)nprocs*slot);
+  return (tag <= c.tag_ub) ? (int)tag : -1;
+}
+// The inactive persistent request of one message, created on first use and recreated if the
+// buffer or size changed (a stencil freed and another one allocated at the same address)
+MPI_Request PersistentHaloGet(int send,void *buf,int count,int peer,int tag,MPI_Comm comm)
+{
+  auto key = std::make_tuple(send,comm,peer,tag);
+  auto &reqs = PersistentHalo().reqs;
+  auto it = reqs.find(key);
+  if ( it != reqs.end() ) {
+    if ( it->second.buf==buf && it->second.count==count ) return it->second.req;
+    MPI_Request_free(&it->second.req);
+    reqs.erase(it);
+  }
+  PersistentHaloReq r = {buf,count,MPI_REQUEST_NULL};
+  int ierr = send ? FJMPI_Prequest_send_init(buf,count,MPI_INT32_T,peer,tag,comm,&r.req)
+                  : FJMPI_Prequest_recv_init(buf,count,MPI_INT32_T,peer,tag,comm,&r.req);
+  GRID_ASSERT(ierr==0);
+  reqs[key] = r;
+  return r.req;
+}
+void PersistentHaloFree(MPI_Comm comm)
+{
+  auto &c = PersistentHalo();
+  for(auto it=c.reqs.begin();it!=c.reqs.end();) {
+    if ( std::get<1>(it->first)==comm ) { MPI_Request_free(&it->second.req); it=c.reqs.erase(it); }
+    else ++it;
+  }
+  for(auto it=c.slots.begin();it!=c.slots.end();) {
+    if ( it->first.first==comm ) it=c.slots.erase(it); else ++it;
+  }
+}
+}
+NAMESPACE_END(Grid);
+#endif
+
 void GridAbort(void) { MPI_Abort(MPI_COMM_WORLD,SIGABRT); }
 extern void * Grid_backtrace_buffer[_NBACKTRACE];
 
@@ -262,6 +346,9 @@ CartesianCommunicator::~CartesianCommunicator()
   if (communicator && !MPI_is_finalised) {
     MPI_Comm_free(&communicator);
     for(int i=0;i<communicator_halo.size();i++){
+#ifdef GRID_FJMPI
+      PersistentHaloFree(communicator_halo[i]);
+#endif
       MPI_Comm_free(&communicator_halo[i]);
     }
   }
@@ -421,6 +508,18 @@ int CartesianCommunicator::IsOffNode(int rank)
 #ifdef ACCELERATOR_AWARE_MPI
 void CartesianCommunicator::StencilSendToRecvFromPollIRecv(std::vector<CommsRequest_t> &list) {};
 void CartesianCommunicator::StencilSendToRecvFromPollDtoH(std::vector<CommsRequest_t> &list) {};
+#ifdef A64FX
+void CartesianCommunicator::StencilSendToRecvFromProgress(std::vector<CommsRequest_t> &list)
+{
+  int nreq=list.size();
+  if (nreq==0) return;
+  int flag;
+  // completed requests become MPI_REQUEST_NULL (persistent ones become inactive), which the final
+  // Waitall handles
+  int ierr = MPI_Testall(nreq,&list[0],&flag,MPI_STATUSES_IGNORE);
+  GRID_ASSERT(ierr==0);
+}
+#endif
 double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequest_t> &list,
 							   void *xmit,
 							   int dest,int dox,
@@ -428,6 +527,34 @@ double CartesianCommunicator::StencilSendToRecvFromPrepare(std::vector<CommsRequ
 							   int from,int dor,
 							   uint64_t xbytes,uint64_t rbytes,int dir)
 {
+#ifdef GRID_FJMPI
+  // Persistent requests. Starting a persistent receive waits until the partner has created the
+  // matching send request, and starting a send waits until the partner has started the receive
+  // (measured; the manual documents the latter). So both requests of this packet are created here
+  // before its receive is started, and all receives are started before any send is started in
+  // StencilSendToRecvFromBegin. Partners process the packets in the same order, so no cycle forms.
+  if ( PersistentHaloOn() ) {
+    int ncomm  =communicator_halo.size();
+    int commdir=dir%ncomm;
+    int gfrom = ShmRanks[from];
+    int gdest = ShmRanks[dest];
+    MPI_Comm comm = communicator_halo[commdir];
+    int slot = PersistentHaloSlot(comm,dir,xmit,recv);
+    int rtag = PersistentHaloTag(dir,from,_Nprocessors,slot);
+    int xtag = PersistentHaloTag(dir,_processor,_Nprocessors,slot);
+    bool mpi_recv = dor && ( (gfrom ==MPI_UNDEFINED) || Stencil_force_mpi ) && rtag >= 0 && PersistentHaloPeer(gfrom);
+    bool mpi_send = dox && ( (gdest ==MPI_UNDEFINED) || Stencil_force_mpi ) && xtag >= 0 && PersistentHaloPeer(gdest);
+    MPI_Request rrq;
+    if ( mpi_recv ) rrq = PersistentHaloGet(0,recv,(int)(rbytes/sizeof(int32_t)),from,rtag,comm);
+    if ( mpi_send ) PersistentHaloGet(1,xmit,(int)(xbytes/sizeof(int32_t)),dest,xtag,comm);
+    if ( mpi_recv ) {
+      int ierr = FJMPI_Prequest_start(&rrq);
+      GRID_ASSERT(ierr==0);
+      list.push_back(rrq);
+      return rbytes;
+    }
+  }
+#endif
   return 0.0; // Do nothing -- no preparation required
 }
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
@@ -454,7 +581,19 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
   double off_node_bytes=0.0;
   int tag;
   
+#ifdef GRID_FJMPI
+  // Persistent requests (see StencilSendToRecvFromPrepare): same slot and tags on both sides
+  int ptag_recv = -1, ptag_send = -1;
+  if ( PersistentHaloOn() ) {
+    MPI_Comm comm = communicator_halo[commdir];
+    int slot = PersistentHaloSlot(comm,dir,xmit_comp,recv_comp);
+    if ( PersistentHaloPeer(gfrom) ) ptag_recv = PersistentHaloTag(dir,from,_Nprocessors,slot);
+    if ( PersistentHaloPeer(gdest) ) ptag_send = PersistentHaloTag(dir,_processor,_Nprocessors,slot);
+  }
+  if ( dor && ptag_recv < 0 ) { // receive not started in StencilSendToRecvFromPrepare
+#else
   if ( dor ) {
+#endif
     if ( (gfrom ==MPI_UNDEFINED) || Stencil_force_mpi ) {
       tag= dir+from*32;
       //      std::cout << " StencilSendToRecvFrom "<<dir<<" MPI_Irecv "<<std::hex<<recv<<std::dec<<std::endl;
@@ -475,8 +614,18 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
   // This is a NVLINK PUT  
   if (dox) {
     if ( (gdest == MPI_UNDEFINED) || Stencil_force_mpi ) {
+#ifdef GRID_FJMPI
+      if ( ptag_send >= 0 ) {
+	xrq = PersistentHaloGet(1,xmit_comp,(int)(xbytes/sizeof(int32_t)),dest,ptag_send,communicator_halo[commdir]);
+	ierr = FJMPI_Prequest_start(&xrq);
+      } else {
+	tag= dir+_processor*32;
+	ierr =MPI_Isend(xmit_comp,(int)(xbytes/sizeof(int32_t)), MPI_INT32_T,dest,tag,communicator_halo[commdir],&xrq);
+      }
+#else
       tag= dir+_processor*32;
       ierr =MPI_Isend(xmit_comp,(int)(xbytes/sizeof(int32_t)), MPI_INT32_T,dest,tag,communicator_halo[commdir],&xrq);
+#endif
       GRID_ASSERT(ierr==0);
       list.push_back(xrq);
       off_node_bytes+=xbytes;
@@ -506,6 +655,9 @@ void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsReque
 }
 
 #else /* NOT     ... ACCELERATOR_AWARE_MPI */
+#ifdef A64FX
+void CartesianCommunicator::StencilSendToRecvFromProgress(std::vector<CommsRequest_t> &list) {};
+#endif
 ///////////////////////////////////////////
 // Pipeline mode through host memory
 ///////////////////////////////////////////

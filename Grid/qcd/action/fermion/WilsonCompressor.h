@@ -253,6 +253,11 @@ public:
 
     int dag = compress.dag;
     int face_idx=0;
+#ifdef GRID_FUSED_HALO_LOOPS
+    // queue the face gathers and run them together below (not on the first call, which builds the face tables)
+    const bool fused = this->face_table_computed;
+    if ( fused ) FusedHaloLoops::begin();
+#endif
 #define vet_same_node(a,b) \
       { auto tmp = b;  }
     if ( dag ) { 
@@ -274,6 +279,9 @@ public:
       vet_same_node(this->same_node[Zm],this->HaloGatherDir(source,ZpCompress,Zm,face_idx));
       vet_same_node(this->same_node[Tm],this->HaloGatherDir(source,TpCompress,Tm,face_idx));
     }
+#ifdef GRID_FUSED_HALO_LOOPS
+    if ( fused ) FusedHaloLoops::end();
+#endif
     this->face_table_computed=1;
     GRID_ASSERT(this->u_comm_offset==this->_unified_buffer_size);
     accelerator_barrier();

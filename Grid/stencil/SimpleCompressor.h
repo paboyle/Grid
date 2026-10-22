@@ -11,6 +11,43 @@ public:
 };
 
 
+// On A64FX (OpenMP CPU builds) the face gathers of one halo exchange, and the merges, run in one parallel
+// region: each loop is queued, then every thread takes its static share of each loop, with one barrier at
+// the end instead of one parallel region per face. The gathers also prefetch the source sites 4 entries
+// ahead. CPU only: the queued loops run after the views of the source field are closed, which is safe
+// only because a CPU view is a plain pointer to host memory.
+#if defined(A64FX) && defined(_OPENMP) && !defined(GRID_SIMT)
+#define GRID_FUSED_HALO_LOOPS
+struct FusedHaloLoops {
+  // a queued loop over sites [0,n): body(lo,hi) runs sites lo..hi-1
+  typedef std::pair<uint64_t, std::function<void(uint64_t,uint64_t)> > Loop;
+  static std::vector<Loop> &queue(void) { static std::vector<Loop> q; return q; }
+  static bool &deferring(void) { static bool d = false; return d; }
+  // between begin() and end(), the face loops are queued (push) instead of run; end() runs them all
+  static void begin(void) { deferring() = true; }
+  static void end(void)   { deferring() = false; run(); }
+  static void push(uint64_t n,std::function<void(uint64_t,uint64_t)> body) { queue().push_back({n,body}); }
+  static const int prefetch_distance = 4;
+  template<class T> static inline void prefetch(const T *p) {
+    for(int o=0;o<(int)sizeof(T);o+=256) __builtin_prefetch((const char *)p+o,0,3); // 256-byte lines
+  }
+  static void run(void) {
+    auto &q = queue();
+    if ( q.empty() ) return;
+    // one chunk per thread, as in the lattice reductions (Lattice_reduction.h)
+    const int nthread = GridThread::GetThreads();
+    thread_for(thr,nthread,{
+      for(auto &loop : q) {
+	int mywork, myoff;
+	GridThread::GetWork((int)loop.first,thr,mywork,myoff);
+	if ( mywork > 0 ) loop.second(myoff,myoff+mywork);
+      }
+    });
+    q.clear();
+  }
+};
+#endif
+
 // Compressors will inherit buffer management policies
 // Standard comms buffer management
 class FaceGatherSimple
@@ -29,6 +66,20 @@ public:
     std::pair<int,int> *table_v = & table[0];
     
     auto rhs_v = rhs.View(AcceleratorRead);
+#ifdef GRID_FUSED_HALO_LOOPS
+    if ( FusedHaloLoops::deferring() ) {
+      const vobj *rp = &rhs_v[0];
+      const int pf = FusedHaloLoops::prefetch_distance;
+      FusedHaloLoops::push((uint64_t)num, [=](uint64_t lo,uint64_t hi) {
+	for(uint64_t i=lo;i<hi;i++){
+	  if ( i+pf<hi ) FusedHaloLoops::prefetch(&rp[so+table_v[i+pf].second]);
+	  compress.Compress(buffer[off+table_v[i].first],rp[so+table_v[i].second]);
+	}
+      });
+      rhs_v.ViewClose();
+      return;
+    }
+#endif
     accelerator_forNB( i,num, vobj::Nsimd(), {
 	compress.Compress(buffer[off+table_v[i].first],rhs_v[so+table_v[i].second]);
     });
@@ -48,6 +99,23 @@ public:
     auto p1=&pointers[1][0];
     auto tp=&table[0];
     auto rhs_p = &rhs_v[0];
+#ifdef GRID_FUSED_HALO_LOOPS
+    if ( FusedHaloLoops::deferring() ) {
+      const vobj *rp = rhs_p;
+      const int pf = FusedHaloLoops::prefetch_distance;
+      FusedHaloLoops::push((uint64_t)num, [=](uint64_t lo,uint64_t hi) {
+	for(uint64_t j=lo;j<hi;j++){
+	  if ( j+pf<hi ) {
+	    FusedHaloLoops::prefetch(&rp[so+tp[2*(j+pf)].second]);
+	    FusedHaloLoops::prefetch(&rp[so+tp[2*(j+pf)+1].second]);
+	  }
+	  compress.CompressExchange(p0[j],p1[j],rp[so+tp[2*j].second],rp[so+tp[2*j+1].second],type);
+	}
+      });
+      rhs_v.ViewClose();
+      return;
+    }
+#endif
     accelerator_forNB(j, num, vobj::Nsimd(), {
 	compress.CompressExchange(p0[j],p1[j],
 				  rhs_p[so+tp[2*j  ].second],
@@ -73,6 +141,14 @@ public:
     auto vp0= &mm.vpointers[0][0];
     auto vp1= &mm.vpointers[1][0];
     auto type= mm.type;
+#ifdef GRID_FUSED_HALO_LOOPS
+    if ( FusedHaloLoops::deferring() ) {
+      FusedHaloLoops::push((uint64_t)(mm.buffer_size/2), [=](uint64_t lo,uint64_t hi) {
+	for(uint64_t o=lo;o<hi;o++) decompress.Exchange(mp[2*o],mp[2*o+1],vp0[o],vp1[o],type);
+      });
+      return;
+    }
+#endif
     accelerator_forNB(o,mm.buffer_size/2,Merger::Nsimd,{
 	decompress.Exchange(mp[2*o],mp[2*o+1],vp0[o],vp1[o],type);
     });
