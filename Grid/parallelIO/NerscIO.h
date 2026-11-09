@@ -60,6 +60,20 @@ public:
     return field.data_start;
   }
 
+  // SEQUENCE_NUMBER is metadata only. GPT writes free text, e.g. "stream a - trajectory 650", so take the trailing integer.
+  // A value with no trailing integer becomes 0 with a warning, rather than throwing.
+  static inline unsigned int readSequenceNumber(const std::string &val)
+  {
+    std::size_t pos = val.find_last_not_of("0123456789");
+    std::string num = (pos == std::string::npos) ? val : val.substr(pos + 1);
+    if (num.empty()) {
+      std::cout << GridLogWarning << "NERSC header: SEQUENCE_NUMBER '" << val
+                << "' has no trailing integer, using 0" << std::endl;
+      return 0;
+    }
+    return std::stoul(num);
+  }
+
   // for the header-reader
   static inline int readHeader(std::string file,GridBase *grid,  FieldMetaData &field)
   {
@@ -122,7 +136,7 @@ public:
     field.checksum = std::stoul(header["CHECKSUM"],0,16);
     field.ensemble_id      = header["ENSEMBLE_ID"];
     field.ensemble_label   = header["ENSEMBLE_LABEL"];
-    field.sequence_number  = std::stol(header["SEQUENCE_NUMBER"]);
+    field.sequence_number  = readSequenceNumber(header["SEQUENCE_NUMBER"]);
     field.creator          = header["CREATOR"];
     field.creator_hardware = header["CREATOR_HARDWARE"];
     field.creation_date    = header["CREATION_DATE"];
